@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import signal
 import logging
 import sys
 from concurrent.futures import Future
@@ -7,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 from enum import Enum
 from pathlib import Path
-from time import monotonic
+from time import monotonic, sleep
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
@@ -39,6 +40,7 @@ UPLOAD_CANCEL = "/files/cancelUpload"
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
 DOWNLOAD_URL = "/files/download"
 
+MAX_UPLOAD_RETRIES = 3
 S3_MAX_RETRIES = 60  # same as frontend
 S3_READ_TIMEOUT = 60 * 5  # 5 minutes
 
@@ -151,6 +153,37 @@ class UploadState(Enum):
     CANCELED = 3
 
 
+def _get_upload_credentials_with_retry(
+    client, pbar, filename, mission_id, max_attempts=5
+):
+    """
+    Retrieves upload credentials with retry logic.
+
+    Args:
+        client: The client object used for retrieving credentials.
+        filename: The internal filename.
+        mission_id: The mission ID.
+        max_attempts: Maximum number of retry attempts.
+
+    Returns:
+        The upload credentials or None if retrieval fails after all attempts.
+    """
+    attempt = 0
+    while attempt < max_attempts:
+        creds = _get_upload_creditials(
+            client, internal_filename=filename, mission_id=mission_id
+        )
+        if creds is not None:
+            return creds
+
+        attempt += 1
+        if attempt < max_attempts:
+            delay = 2**attempt  # Exponential backoff (2, 4, 8, 16...)
+            sleep(delay)
+
+    return None
+
+
 # TODO: i dont want to handle errors at this level
 def upload_file(
     client: AuthenticatedClient,
@@ -161,40 +194,54 @@ def upload_file(
     verbose: bool = False,
     s3_endpoint: Optional[str] = None,
 ) -> Tuple[UploadState, int]:
-    """\
+    """
     returns UploadState and bytes uploaded (0 if not uploaded)
+    Retries up to 3 times on failure.
     """
     if s3_endpoint is None:
         s3_endpoint = get_config().endpoint.s3
 
     total_size = path.stat().st_size
-    with tqdm(
-        total=total_size,
-        unit="B",
-        unit_scale=True,
-        desc=f"uploading {path}...",
-        leave=False,
-        disable=not verbose,
-    ) as pbar:
-        # get per file upload credentials
-        creds = _get_upload_creditials(
-            client, internal_filename=filename, mission_id=mission_id
-        )
-        if creds is None:
-            return UploadState.EXISTS, 0
+    for attempt in range(MAX_UPLOAD_RETRIES):
+        with tqdm(
+            total=total_size,
+            unit="B",
+            unit_scale=True,
+            desc=f"uploading {path}...",
+            leave=False,
+            disable=not verbose,
+        ) as pbar:
 
-        try:
-            _s3_upload(path, endpoint=s3_endpoint, credentials=creds, pbar=pbar)
-        except Exception as e:
-            logger.error(format_traceback(e))
+            # get per file upload credentials
+            creds = _get_upload_credentials_with_retry(
+                client, pbar, filename, mission_id, max_attempts=5 if attempt > 0 else 1
+            )
+
+            if creds is None:
+                return UploadState.EXISTS, 0
+
             try:
-                _cancel_file_upload(client, creds.file_id, mission_id)
-            except Exception as cancel_e:
-                logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
-            raise e from e
-        else:
-            _confirm_file_upload(client, creds.file_id, b64_md5(path))
-            return UploadState.UPLOADED, total_size
+                _s3_upload(path, endpoint=s3_endpoint, credentials=creds, pbar=pbar)
+            except Exception as e:
+                logger.error(format_traceback(e))
+                try:
+                    _cancel_file_upload(client, creds.file_id, mission_id)
+                except Exception as cancel_e:
+                    logger.error(
+                        f"Failed to cancel upload for {creds.file_id}: {cancel_e}"
+                    )
+
+                if attempt < 2:  # Retry if not the last attempt
+                    pbar.update(0)
+                    logger.error(f"Retrying upload for {attempt + 1}")
+                    continue
+                else:
+                    logger.error(f"Cancelling upload for {attempt}")
+                    raise e from e
+
+            else:
+                _confirm_file_upload(client, creds.file_id, b64_md5(path))
+                return UploadState.UPLOADED, total_size
 
 
 def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
@@ -420,6 +467,9 @@ def upload_files(
     ) as pbar:
         start = monotonic()
         futures: Dict[Future[Tuple[UploadState, int]], Path] = {}
+
+        skipped_files = 0
+        failed_files = 0
         with ThreadPoolExecutor(max_workers=n_workers) as executor:
             for name, path in files.items():
                 if not path.is_file():
@@ -441,6 +491,16 @@ def upload_files(
 
             total_uploaded_bytes = 0
             for future in as_completed(futures):
+
+                if future.exception():
+                    failed_files += 1
+
+                if (
+                    future.exception() is None
+                    and future.result()[0] == UploadState.EXISTS
+                ):
+                    skipped_files += 1
+
                 path = futures[future]
                 uploaded_bytes = _upload_handler(future, path, verbose=verbose)
                 total_uploaded_bytes += uploaded_bytes
@@ -454,6 +514,16 @@ def upload_files(
         console.print(f"Upload took {elapsed_time:.2f} seconds")
         console.print(f"Total uploaded: {format_bytes(total_uploaded_bytes)}")
         console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
+
+        if failed_files > 0:
+            console.print(
+                f"\nUploaded {len(files) - failed_files - skipped_files} files, {skipped_files} skipped, {failed_files} uploads failed",
+                style="red",
+            )
+        else:
+            console.print(
+                f"\nUploaded {len(files) - skipped_files} files, {skipped_files} skipped"
+            )
 
 
 def download_files(
