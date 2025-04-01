@@ -1,6 +1,7 @@
-import { HeaderCreator } from '../../utils/api-calls';
-import { clearAllData, db as database } from '../../utils/database-utilities';
+import jwt from 'jsonwebtoken';
 import process from 'node:process';
+import { HeaderCreator } from '../../utils/api-calls';
+import { clearAllData, database } from '../../utils/database-utilities';
 
 describe('Verify JWT Handling', () => {
     beforeAll(async () => {
@@ -14,15 +15,13 @@ describe('Verify JWT Handling', () => {
     });
 
     test('reject allow self-signed JWT token', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const jwt = require('jsonwebtoken');
         const token = jwt.sign({ user: '' }, 'this-is-not-the-server-secret');
         
         const headersBuilder = new HeaderCreator();
         headersBuilder.addHeader('Content-Type', 'application/json');
         headersBuilder.addHeader('cookie', `authtoken=${token}`,);
         
-        const res = await fetch(`http://localhost:3000/project`, {
+        const response = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
             headers: headersBuilder.getHeaders(),
             body: JSON.stringify({
@@ -32,22 +31,21 @@ describe('Verify JWT Handling', () => {
             }),
         });
 
-        expect(res.status).toBe(401);
+        expect(response.status).toBe(401);
     });
 
     test('reject corrupted (empty) JWT token', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const jwt = require('jsonwebtoken');
+        // Use the already imported jwt module
         const token = jwt.sign(
             { user: { uuid: '' } },
-            process.env['JWT_SECRET'],
+            process.env['JWT_SECRET'] || 'default-secret',
         );
 
         const headersBuilder = new HeaderCreator();
         headersBuilder.addHeader('Content-Type', 'application/json');
         headersBuilder.addHeader('cookie', `authtoken=${token}`,);
 
-        const res = await fetch(`http://localhost:3000/project`, {
+        const response = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
             headers: headersBuilder.getHeaders(),
             body: JSON.stringify({
@@ -56,6 +54,6 @@ describe('Verify JWT Handling', () => {
                 requiredTags: [],
             }),
         });
-        expect(res.status).toBe(401);
+        expect(response.status).toBe(401);
     });
 });

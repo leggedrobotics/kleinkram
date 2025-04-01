@@ -1,10 +1,10 @@
-import {
-    clearAllData,
-    db as database,
-    mockDbUser as mockDatabaseUser,
-} from './utils/database-utilities';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
+import {
+    clearAllData,
+    database,
+    mockDatabaseUser,
+} from './utils/database-utilities';
 
 describe('Test Suite Utils', () => {
     beforeAll(async () => {

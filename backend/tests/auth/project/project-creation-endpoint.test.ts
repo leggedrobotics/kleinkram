@@ -1,19 +1,19 @@
-import { clearAllData, db as database } from '../../utils/database-utilities';
+import { clearAllData, database } from '../../utils/database-utilities';
 
 import {
+    createMissionUsingPost,
     createProjectUsingPost,
     HeaderCreator,
-    createMissionUsingPost,
 } from '../../utils/api-calls';
 
 import {
     AccessGroupRights
 } from '../../../../common/frontend_shared/enum';
 
+import User from '@common/entities/user/user.entity';
 import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
 import Project from '../../../../common/entities/project/project.entity';
-import User from '@common/entities/user/user.entity';
-import {DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
+import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
 /**
  * This test suite tests the project endpoints of the application.
@@ -34,7 +34,7 @@ describe('Verification project endpoint', () => {
         ({
             user: globalThis.creator as User, 
             token: globalThis.creator.token, 
-            res: globalThis.creator.Response
+            response: globalThis.creator.Response
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global creator: ${globalThis.creator.name}`);
         
@@ -42,7 +42,7 @@ describe('Verification project endpoint', () => {
         ({
             user: globalThis.user as User, 
             token: globalThis.userToken, 
-            res: globalThis.userResponse
+            response: globalThis.userResponse
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global user: ${globalThis.user.name}`);
         
@@ -50,7 +50,7 @@ describe('Verification project endpoint', () => {
         ({
             user: globalThis.externalUser as User, 
             token: globalThis.externalUser.token, 
-            res: globalThis.externalUser.response
+            response: globalThis.externalUser.response
         } = await generateAndFetchDatabaseUser('external', 'user'));
         console.log(`[DEBUG]: Global external user: ${globalThis.externalUser.name}`);
         
@@ -58,7 +58,7 @@ describe('Verification project endpoint', () => {
         ({
             user: globalThis.admin as User, 
             token: globalThis.admin.token, 
-            res: globalThis.admin.response
+            response: globalThis.admin.response
         } = await generateAndFetchDatabaseUser('internal', 'admin'));
         console.log(`[DEBUG]: Global admin: ${globalThis.admin.name}`);
 

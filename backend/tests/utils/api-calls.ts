@@ -3,17 +3,17 @@ import { CreateMission } from '@common/api/types/create-mission.dto';
 import QueueEntity from '@common/entities/queue/queue.entity';
 import { QueueState } from '@common/frontend_shared/enum';
 
-import * as fs from 'node:fs';
-import { uploadFileMultipart } from './multipartUpload';
 import { S3Client } from '@aws-sdk/client-s3';
-import crypto from 'node:crypto';
-import { CreateProject } from '../../../common/api/types/create-project.dto';
-import User from '../../../common/entities/user/user.entity';
-import { CreateTagTypeDto } from '../../../common/api/types/tags/create-tag-type.dto';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import { CreateProject } from '../../../common/api/types/create-project.dto';
+import { CreateTagTypeDto } from '../../../common/api/types/tags/create-tag-type.dto';
+import User from '../../../common/entities/user/user.entity';
 import { DEFAULT_URL } from '../auth/utilities';
-import { db, getJwtToken } from './database-utilities';
+import { database, getJwtToken } from './database-utilities';
+import { uploadFileMultipart } from './multipartUpload';
 
 export class HeaderCreator {
     headers: Headers;
@@ -123,7 +123,7 @@ export async function uploadFile(
     user: User,
     filename: string,
     missionUuid: string,
-) {
+): Promise<ArrayBuffer> {
     const response = await fetch(`${DEFAULT_URL}/file/temporaryAccess`, {
         method: 'POST',
         headers: {
@@ -204,7 +204,7 @@ export async function uploadFile(
         expect(responseActive.status).toBe(200);
         const active = await responseActive.json();
         if (
-            active.find(
+            active.some(
                 (x: QueueEntity) =>
                     x.uuid === fileresponseponse.queueUUID &&
                     x.state === QueueState.COMPLETED,
@@ -258,7 +258,7 @@ export const createAccessGroupUsingPost = async (
     });
 
     // get access group
-    const testAccesGroup = await db
+    const testAccesGroup = await database
         .getRepository<AccessGroup>('AccessGroup')
         .findOneOrFail({ where: { name: accessGroup.name } });
 
@@ -269,7 +269,7 @@ export const createAccessGroupUsingPost = async (
     // add users to access group
     await Promise.all(
         userList.map(async (user) => {
-            const response = await fetch(
+            const groupResponse = await fetch(
                 `${DEFAULT_URL}/access/addUserToAccessGroup`,
                 {
                     method: 'POST',
@@ -280,8 +280,8 @@ export const createAccessGroupUsingPost = async (
                     }),
                 },
             );
-            expect(response.status).toBeLessThan(300);
-            const json = await response.json();
+            expect(groupResponse.status).toBeLessThan(300);
+            const json = await groupResponse.json();
             console.log(
                 `['DEBUG'] Added user ${user.uuid} to access group:`,
                 json,

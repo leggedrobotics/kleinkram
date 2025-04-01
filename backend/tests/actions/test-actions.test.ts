@@ -1,18 +1,8 @@
 import {
     clearAllData,
-    db as database,
-    getJwtToken,
-    getUserFromDb as getUserFromDatabase,
-    mockDbUser as mockDatabaseUser,
+    database
 } from '../utils/database-utilities';
-import {
-    createMissionUsingPost,
-    createProjectUsingPost,
-    uploadFile,
-} from '../utils/api-calls';
-import { AccessGroupRights, ActionState } from '@common/frontend_shared/enum';
 
-import { SubmitActionDto } from '../../../common/api/types/submit-action-response.dto';
 
 describe('Verify Action', () => {
     beforeAll(async () => {
