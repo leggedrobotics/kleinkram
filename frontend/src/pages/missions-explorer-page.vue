@@ -68,9 +68,7 @@
                             </edit-project-dialog-opener>
                             <DeleteProjectDialogOpener
                                 :project_uuid="projectUuid ?? ''"
-                                :has_missions="
-                                    (project?.missions?.length ?? 0) > 0
-                                "
+                                :has_missions="(project?.missionCount ?? 0) > 0"
                             >
                                 <q-item
                                     v-ripple

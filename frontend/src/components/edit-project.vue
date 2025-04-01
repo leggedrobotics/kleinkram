@@ -73,7 +73,7 @@ import { computed, Ref, ref, watch } from 'vue';
 import { Notify, QInput } from 'quasar';
 import { updateProject } from 'src/services/mutations/project';
 import { useProjectQuery } from '../hooks/query-hooks';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
+import { ProjectWithRequiredTags } from '@api/types/project/project-with-required-tags';
 
 const { project_uuid } = defineProps<{
     project_uuid: string;
@@ -91,7 +91,7 @@ const { data: project } = useProjectQuery(computed(() => project_uuid));
 
 watch(
     () => project.value,
-    (newVale: ProjectWithMissionsDto | undefined) => {
+    (newVale: ProjectWithRequiredTags | undefined) => {
         if (newVale) {
             projectName.value = newVale.name;
             projectDescription.value = newVale.description;

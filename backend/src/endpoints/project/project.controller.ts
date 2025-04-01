@@ -33,7 +33,6 @@ import { ApiOkResponse, ApiResponse, OutputDto } from '../../decarators';
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
-import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { DeleteProjectResponseDto } from '@common/api/types/project/delete-project-response.dto';
 import { UpdateTagTypesDto } from '@common/api/types/update-tag-types.dto';
@@ -44,6 +43,8 @@ import {
     ProjectAccessListDto,
 } from '@common/api/types/access-control/project-access.dto';
 import { AccessService } from '../../services/access.service';
+import { ProjectWithRequiredTags } from '@common/api/types/project/project-with-required-tags';
+import { ProjectDto } from '@common/api/types/project/base-project.dto';
 
 @Controller(['project', 'projects']) // TODO: over time we will migrate to 'projects'
 export class ProjectController {
@@ -56,12 +57,12 @@ export class ProjectController {
     @CanCreate()
     @ApiOkResponse({
         description: 'Returns the updated project',
-        type: ProjectWithMissionsDto,
+        type: ProjectDto,
     })
     async createProject(
         @Body() dto: CreateProject,
         @AddUser() user: AuthHeader,
-    ): Promise<ProjectWithMissionsDto> {
+    ): Promise<ProjectDto> {
         return this.projectService.create(dto, user);
     }
 
@@ -70,11 +71,11 @@ export class ProjectController {
     @CanReadProject()
     @ApiOkResponse({
         description: 'Returns the project',
-        type: ProjectWithMissionsDto,
+        type: ProjectWithRequiredTags,
     })
     async getProjectById(
         @ParameterUID('uuid') uuid: string,
-    ): Promise<ProjectWithMissionsDto> {
+    ): Promise<ProjectWithRequiredTags> {
         return this.projectService.findOne(uuid);
     }
 
@@ -82,12 +83,12 @@ export class ProjectController {
     @CanWriteProject()
     @ApiOkResponse({
         description: 'Returns the updated project',
-        type: ProjectWithMissionsDto,
+        type: ProjectDto,
     })
     async updateProject(
         @ParameterUID('uuid') uuid: string,
         @Body() dto: CreateProject,
-    ): Promise<ProjectWithMissionsDto> {
+    ): Promise<ProjectDto> {
         return this.projectService.update(uuid, dto);
     }
 

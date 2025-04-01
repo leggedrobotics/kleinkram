@@ -16,7 +16,7 @@ import {
 } from '@common/frontend_shared/enum';
 import {
     projectEntityToDtoWithMissionCount,
-    projectEntityToDtoWithMissions,
+    projectEntityToDtoWithRequiredTags,
 } from '../serialization';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
@@ -27,9 +27,10 @@ import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto';
 import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
-import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import { SortOrder } from '@common/api/types/pagination';
+import { ProjectWithRequiredTags } from '@common/api/types/project/project-with-required-tags';
+import { ProjectDto } from '@common/api/types/project/base-project.dto';
 
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',
@@ -188,15 +189,11 @@ export class ProjectService {
         };
     }
 
-    async findOne(uuid: string): Promise<ProjectWithMissionsDto> {
-        const mission = await this.projectRepository
+    async findOne(uuid: string): Promise<ProjectWithRequiredTags> {
+        const missionPromise = this.projectRepository
             .createQueryBuilder('project')
             .where('project.uuid = :uuid', { uuid })
             .leftJoinAndSelect('project.creator', 'creator')
-            .leftJoinAndSelect('project.missions', 'missions')
-            // TODO: remove the following two joins, there are never used in the frontend...
-            .leftJoinAndSelect('missions.creator', 'mission_creator')
-            .leftJoinAndSelect('missions.project', 'mission_project')
             .leftJoinAndSelect('project.requiredTags', 'requiredTags')
             .leftJoinAndSelect('project.project_accesses', 'project_accesses')
             .leftJoinAndSelect('project_accesses.accessGroup', 'accessGroup')
@@ -204,7 +201,17 @@ export class ProjectService {
             .leftJoinAndSelect('memberships.user', 'user')
             .getOneOrFail();
 
-        return projectEntityToDtoWithMissions(mission);
+        const missionCountPromise = this.projectRepository
+            .createQueryBuilder('project')
+            .leftJoin('project.missions', 'missions')
+            .where('project.uuid = :uuid', { uuid })
+            .getCount();
+
+        const [mission, missionCount] = await Promise.all([
+            missionPromise,
+            missionCountPromise,
+        ]);
+        return projectEntityToDtoWithRequiredTags(mission, missionCount);
     }
 
     async getRecentProjects(
@@ -339,7 +346,7 @@ export class ProjectService {
     async create(
         project: CreateProject,
         auth: AuthHeader,
-    ): Promise<ProjectWithMissionsDto> {
+    ): Promise<ProjectDto> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name) },
         });
@@ -424,13 +431,10 @@ export class ProjectService {
         );
         return (await this.projectRepository.findOneOrFail({
             where: { uuid: transactedProject.uuid },
-        })) as unknown as ProjectWithMissionsDto;
+        })) as unknown as ProjectDto;
     }
 
-    async update(
-        uuid: string,
-        project: CreateProject,
-    ): Promise<ProjectWithMissionsDto> {
+    async update(uuid: string, project: CreateProject): Promise<ProjectDto> {
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name), uuid: Not(uuid) },
         });
@@ -449,7 +453,7 @@ export class ProjectService {
         });
         return (await this.projectRepository.findOneOrFail({
             where: { uuid },
-        })) as unknown as ProjectWithMissionsDto;
+        })) as unknown as ProjectDto;
     }
 
     async addTagType(uuid: string, tagTypeUUID: string): Promise<void> {
