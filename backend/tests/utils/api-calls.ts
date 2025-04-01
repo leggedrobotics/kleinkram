@@ -5,6 +5,7 @@ import { QueueState } from '@common/frontend_shared/enum';
 
 import { S3Client } from '@aws-sdk/client-s3';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
+import { CreateTemplateDto } from '@common/api/types/create-template.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import crypto from 'node:crypto';
 import * as fs from 'node:fs';
@@ -292,4 +293,25 @@ export const createAccessGroupUsingPost = async (
     console.log(`['DEBUG'] Users added to access group:`, groupJson);
 
     return testAccesGroup.uuid;
+};
+
+export const createActionUsingPost = async (
+    action: CreateTemplateDto,
+    user: User,
+): Promise<string> => {
+    // generate header
+    const headersBuilder = new HeaderCreator(user);
+    headersBuilder.addHeader('Content-Type', 'application/json');
+
+    const response = await fetch(`${DEFAULT_URL}/action/createTemplate`, {
+        method: 'POST',
+        headers: headersBuilder.getHeaders(),
+        body: JSON.stringify(action),
+        credentials: 'include',
+    });
+
+    const json = await response.json();
+    console.log(`['DEBUG'] Created action:`, json);
+    expect(response.status).toBeLessThan(300);
+    return json.uuid;
 };
