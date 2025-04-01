@@ -19,8 +19,8 @@ import Dockerode from 'dockerode';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import env from '@common/environment';
-import si from 'systeminformation';
 import environment from '@common/environment';
+import si from 'systeminformation';
 
 @Injectable()
 export class ActionManagerService {
