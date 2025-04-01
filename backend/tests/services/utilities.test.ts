@@ -1,8 +1,8 @@
 import {
-    stringToDate,
     stringToBoolean,
-    stringToNumber,
+    stringToDate,
     stringToLocation,
+    stringToNumber,
 } from '../../src/services/utilities';
 
 import { parseISO } from 'date-fns';

@@ -1,17 +1,18 @@
 import AccessGroup from '../../../common/entities/auth/accessgroup.entity';
-import { db as database,
+import {
+    database,
     getJwtToken,
-    getUserFromDb as getUserFromDatabase,
-    mockDbUser as mockDatabaseUser,
- } from '../utils/database-utilities';
+    getUserFromDatabase,
+    mockDatabaseUser,
+} from '../utils/database-utilities';
 
-import{
+import {
     HeaderCreator
 } from '../utils/api-calls';
 
 
  import {
-     AccessGroupType,
+    AccessGroupType,
     UserRole,
 } from '../../../common/frontend_shared/enum';
 
@@ -92,7 +93,7 @@ export const getAccessGroupForEmail = (
 export const generateAndFetchDatabaseUser = async (
     userType: 'internal' | 'external',
     userRole: 'user' | 'admin'
-): Promise<{ user: any; token: string; res: Response }> => {
+): Promise<{ user: User; token: string; response: Response }> => {
     try {
         const roleEnum = userRole === 'admin' ? UserRole.ADMIN : UserRole.USER;
 
@@ -129,7 +130,7 @@ export const generateAndFetchDatabaseUser = async (
         // Header
         const headerCreator = new HeaderCreator(user);
         
-        const res = await fetch(
+        const response = await fetch(
             `${DEFAULT_URL}/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false`,
             {
                 method: 'GET',
@@ -137,11 +138,11 @@ export const generateAndFetchDatabaseUser = async (
             }
         );
 
-        if (!res.ok) {
-            throw new Error(`Failed to fetch data: ${res.status} ${res.statusText}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
         }
         
-        return { user, token, res };
+        return { user, token, response };
     } catch (error) {
         console.error('Error in generateAndFetchDbUser:', error);
         throw error;

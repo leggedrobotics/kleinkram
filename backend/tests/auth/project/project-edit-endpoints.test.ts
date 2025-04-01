@@ -1,21 +1,21 @@
-import { clearAllData, db as database } from '../../utils/database-utilities';
+import { clearAllData, database } from '../../utils/database-utilities';
 
 import {
     AccessGroupRights,
     DataType,
 } from '../../../../common/frontend_shared/enum';
 
+import ProjectAccess from '@common/entities/auth/project-access.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
+import User from '@common/entities/user/user.entity';
 import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
 import Project from '../../../../common/entities/project/project.entity';
-import TagType from '@common/entities/tagType/tag-type.entity';
-import {DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
-import User from '@common/entities/user/user.entity';
 import {
     createMetadataUsingPost,
     createProjectUsingPost,
     HeaderCreator,
 } from '../../utils/api-calls';
-import ProjectAccess from '@common/entities/auth/project-access.entity';
+import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
 globalThis.tagName = 'test_tag_STRING';
 
@@ -38,7 +38,7 @@ describe('Verify project manipulation endpoints', () => {
         ({
             user: globalThis.creator as User, 
             token: globalThis.creator.token, 
-            res: globalThis.creator.Response
+            response: globalThis.creator.Response
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global creator: ${globalThis.creator.name}`);
         
@@ -46,7 +46,7 @@ describe('Verify project manipulation endpoints', () => {
         ({
             user: globalThis.user as User, 
             token: globalThis.userToken, 
-            res: globalThis.userResponse
+            response: globalThis.userResponse
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global user: ${globalThis.user.name}`);
 

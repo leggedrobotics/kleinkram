@@ -1,6 +1,6 @@
 import {
     clearAllData,
-    db as database,
+    database,
 } from '../../utils/database-utilities';
 
 /**

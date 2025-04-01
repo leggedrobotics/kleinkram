@@ -14,7 +14,7 @@ function readFileIfExists(filePath: string): PackageJson | null {
         // Check if the file exists and is readable.
         accessSync(filePath, constants.R_OK);
         return JSON.parse(fs.readFileSync(filePath, 'utf8')) as PackageJson;
-    } catch (error) {
+    } catch {
         return null;
     }
 }
