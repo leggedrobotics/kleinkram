@@ -84,10 +84,10 @@
   resolved "https://registry.yarnpkg.com/@nestjs/mapped-types/-/mapped-types-2.1.0.tgz#b9b536b7c3571567aa1d0223db8baa1a51505a19"
   integrity sha512-W+n+rM69XsFdwORF11UqJahn4J3xi4g/ZEOlJNL6KoW5ygWSmBB2p0S2BZ4FQeS/NDH72e6xIcu35SfJnE8bXw==
 
-"@nestjs/swagger@^11.0.7":
-  version "11.0.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.0.7.tgz#1c895a02a627e8e2bfb6ef99b074e3d9919ae29f"
-  integrity sha512-WQBDs7yM8KhEKK/ukJOqse6/qLrDKbIIYJjpYvUH79Y9Fm/+9l6lQ3buqBf6jzwmzTaVCw9GVu3vhIuKlYVYRA==
+"@nestjs/swagger@^11.1.0":
+  version "11.1.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.1.0.tgz#4ce1463cb59dd408cee3f128b2d8158c946bb250"
+  integrity sha512-+GQ+q1ASTBvGi0DYHukWi8NVVVLszedwLLqHdLRnJh8rjokt8YTDb7roImvT/YMmYgPvaWBv/4JYdZH4FueLPQ==
   dependencies:
     "@microsoft/tsdoc" "0.15.1"
     "@nestjs/mapped-types" "2.1.0"
