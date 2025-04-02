@@ -59,7 +59,7 @@ export class ActionDto {
     @ApiProperty()
     @ValidateNested({ each: true })
     @Type(() => LogsDto)
-    logs!: LogsDto[];
+    logs?: LogsDto[];
 
     @ApiProperty()
     @IsString()

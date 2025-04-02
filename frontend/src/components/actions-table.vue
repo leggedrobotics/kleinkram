@@ -109,11 +109,11 @@ properties.handler.setDescending(true);
 const { data: rawData, isLoading } = useActions(
     computed(() => properties.handler.projectUuid ?? ''),
     computed(() => properties.handler.missionUuid ?? ''),
-    properties.handler.take,
-    properties.handler.skip,
-    properties.handler.sortBy,
-    properties.handler.descending,
-    properties.handler.searchParams.name,
+    computed(() => properties.handler.take ?? 100),
+    computed(() => properties.handler.skip ?? 0),
+    computed(() => properties.handler.sortBy ?? ''),
+    computed(() => properties.handler.descending ?? false),
+    computed(() => properties.handler.searchParams.name ?? ''),
     JSON.stringify(properties.handler.queryKey),
 );
 

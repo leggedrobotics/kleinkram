@@ -1,6 +1,8 @@
 import {
     ArgumentsHost,
     BadRequestException,
+    ForbiddenException,
+    UnauthorizedException,
     Catch,
     ExceptionFilter,
 } from '@nestjs/common';
@@ -23,8 +25,36 @@ export class GlobalErrorFilter implements ExceptionFilter {
         response.header('kleinkram-version', appVersion);
         response.header('Access-Control-Expose-Headers', 'kleinkram-version');
 
+        //////////////////////////////
+        // Errors that don't get logged
+        //////////////////////////////
+
+        if (exception.name === 'InvalidJwtTokenException') {
+            response.status(401).json({
+                statusCode: 401,
+                message: 'Invalid JWT token. Are you logged in?',
+            });
+            return;
+        }
+
+        if (
+            exception instanceof ForbiddenException ||
+            exception instanceof UnauthorizedException
+        ) {
+            response.status(exception.getStatus()).json({
+                statusCode: exception.getStatus(),
+                message: exception.message,
+            });
+            return;
+        }
+
+        //////////////////////////////
+        // Errors that get logged
+        //////////////////////////////
+
+        const request: Request = host.switchToHttp().getRequest();
         logger.error(
-            `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion}`,
+            `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion} on endpoint ${request.url} with method ${request.method}`,
         );
         logger.error(exception);
         logger.error(exception.stack);
@@ -50,14 +80,6 @@ export class GlobalErrorFilter implements ExceptionFilter {
             response.status(exception.getStatus()).json({
                 statusCode: exception.getStatus(),
                 message: exception.message,
-            });
-            return;
-        }
-
-        if (exception.name === 'InvalidJwtTokenException') {
-            response.status(401).json({
-                statusCode: 401,
-                message: 'Invalid JWT token. Are you logged in?',
             });
             return;
         }

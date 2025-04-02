@@ -184,7 +184,7 @@ import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';
 import DeleteFileDialogOpener from '../button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from '../button-wrapper/edit-file-dialog-opener.vue';
 import MoveFileDialogOpener from '../button-wrapper/move-file-dialog-opener.vue';
-import { useProjectQuery } from '../../hooks/query-hooks';
+import { useMissionsOfProjectMinimal } from '../../hooks/query-hooks';
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
@@ -192,27 +192,28 @@ const $router = useRouter();
 const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
 
-const { data: project } = useProjectQuery(project_uuid);
+// TODO: this does not work across pages
+const { data: missions } = useMissionsOfProjectMinimal(project_uuid, 100, 0);
 
 const nextMissionUuid = computed(() => {
-    const indexOfMission = unref(project)?.missions.findIndex(
-        (m) => m.uuid === mission_uuid.value,
+    const indexOfMission = unref(missions)?.data.findIndex(
+        (mission) => mission.uuid === mission_uuid.value,
     );
     if (indexOfMission === undefined || indexOfMission === -1) {
         return '';
     }
-    const nextMission = unref(project)?.missions[indexOfMission + 1];
+    const nextMission = unref(missions)?.data[indexOfMission + 1];
     return nextMission ? nextMission.uuid : '';
 });
 
 const previousMissionUuid = computed(() => {
-    const indexOfMission = unref(project)?.missions.findIndex(
-        (m) => m.uuid === mission_uuid.value,
+    const indexOfMission = unref(missions)?.data.findIndex(
+        (mission) => mission.uuid === mission_uuid.value,
     );
     if (indexOfMission === undefined || indexOfMission === -1) {
         return '';
     }
-    const previousMission = unref(project)?.missions[indexOfMission - 1];
+    const previousMission = unref(missions)?.data[indexOfMission - 1];
     return previousMission ? previousMission.uuid : '';
 });
 

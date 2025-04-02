@@ -260,6 +260,24 @@ export const projectEntityToDtoWithMissionCount = (
     };
 };
 
+export const projectEntityToDtoWithRequiredTags = (
+    project: Project,
+    missionCount: number,
+): ProjectWithMissionsDto => {
+    if (project.creator === undefined) {
+        throw new Error('Creator can never be undefined');
+    }
+
+    return {
+        ...(projectEntityToDto(project) as ProjectWithMissionsDto),
+        creator: userEntityToDto(project.creator),
+        missionCount: missionCount,
+        requiredTags: project.requiredTags.map((element) =>
+            tagTypeEntityToDto(element),
+        ),
+    };
+};
+
 export const projectEntityToDtoWithMissions = (
     project: Project,
 ): ProjectWithMissionsDto => {

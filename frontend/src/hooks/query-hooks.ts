@@ -65,9 +65,9 @@ import { FilesDto } from '@api/types/file/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import { ActionsDto } from '@api/types/actions/action.dto';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
 import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
+import { ProjectWithRequiredTags } from '@api/types/project/project-with-required-tags';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,
@@ -214,10 +214,10 @@ export const canDeleteProject = (
 
 export const useProjectQuery = (
     projectUuid: Ref<string | undefined> | string | undefined,
-): UseQueryReturnType<ProjectWithMissionsDto, Error> =>
-    useQuery<ProjectWithMissionsDto>({
+): UseQueryReturnType<ProjectWithRequiredTags, Error> =>
+    useQuery<ProjectWithRequiredTags>({
         queryKey: ['project', projectUuid],
-        queryFn: (): Promise<ProjectWithMissionsDto> => {
+        queryFn: (): Promise<ProjectWithRequiredTags> => {
             return getProject(unref(projectUuid) ?? '');
         },
         enabled: () => unref(projectUuid) !== undefined,
@@ -425,13 +425,14 @@ export const useFilteredProjects = (
 };
 
 export const useMissionsOfProjectMinimal = (
-    projectUuid: string | Ref<string>,
+    projectUuid: string | Ref<string | undefined>,
     take: number,
     skip: number,
 ): UseQueryReturnType<MissionsDto | undefined, Error> => {
     return useQuery<MissionsDto>({
         queryKey: ['missions', projectUuid],
-        queryFn: () => missionsOfProjectMinimal(unref(projectUuid), take, skip),
+        queryFn: () =>
+            missionsOfProjectMinimal(unref(projectUuid) ?? '', take, skip),
     });
 };
 
@@ -488,16 +489,21 @@ export const useActions = (
             projectUuid,
             missionUuid,
             queryKey,
+            take,
+            skip,
+            sortBy,
+            descending,
+            search,
         ]),
         queryFn: () =>
             getActions(
                 unref(projectUuid),
                 unref(missionUuid) ?? '',
-                take,
-                skip,
-                sortBy,
-                descending,
-                search,
+                unref(take),
+                unref(skip),
+                unref(sortBy),
+                unref(descending),
+                unref(search),
             ),
         staleTime: 0,
         refetchInterval: 4000,

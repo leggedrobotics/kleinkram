@@ -1,6 +1,6 @@
 {
     "name": "kleinkram-backend",
-    "version": "0.43.5",
+    "version": "0.43.6",
     "description": "",
     "author": "",
     "private": true,
@@ -84,7 +84,7 @@
         "@types/express": "^5.0.0",
         "@types/jest": "^29.5.2",
         "@types/node": "^22.13.10",
-        "@types/supertest": "^6.0.0",
+        "@types/supertest": "^6.0.3",
         "@typescript-eslint/eslint-plugin": "^8.28.0",
         "@typescript-eslint/parser": "^8.25.0",
         "eslint": "^9.22.0",
@@ -98,6 +98,6 @@
         "ts-loader": "^9.4.3",
         "ts-node": "^10.9.1",
         "tsconfig-paths": "^4.2.0",
-        "typescript": "5.7.3"
+        "typescript": "5.8.2"
     }
 }

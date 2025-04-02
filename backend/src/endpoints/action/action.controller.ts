@@ -134,13 +134,6 @@ export class ActionController {
         @Query() dto: ActionQuery,
         @AddUser() auth: AuthHeader,
         // TODO: bring back filter options
-        /* @QuerySortBy('sortBy') sortBy: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryOptionalString(
-            'search',
-            'Searchkey in name, state_cause or image_name',
-        )
-        search: string,*/
     ): Promise<ActionsDto> {
         let missionUuid = dto.mission_uuid;
         if (auth.apikey) {
@@ -152,14 +145,9 @@ export class ActionController {
             auth.user.uuid,
             Number.parseInt((dto.skip ?? 0).toString()),
             Number.parseInt((dto.take ?? 0).toString()),
-            'updatedAt',
-            'ASC',
-            '',
-            /*
-            sortBy,
-            sortDirection,
-            search,
-             */
+            dto.sortBy ?? '',
+            (dto.sortDirection as 'ASC' | 'DESC') ?? 'DESC',
+            dto.search ?? '',
         );
     }
 
