@@ -16,13 +16,18 @@ export const filteredProjects = async (
         take: take.toString(),
         skip: skip.toString(),
         sortBy: sortBy.toString(),
-        sortDirection: descending ? 'DESC' : 'ASC',
+        sortOrder: descending ? 'DESC' : 'ASC',
     };
-    if (searchParameters && Object.keys(searchParameters).length > 0) {
-        parameters.searchParams = JSON.stringify(searchParameters);
+    if (searchParameters && 'name' in searchParameters) {
+        parameters.projectPatterns = `${searchParameters.name}`;
     }
+
+    if (searchParameters && 'creator.uuid' in searchParameters) {
+        parameters.creatorUuid = `${searchParameters['creator.uuid']}`;
+    }
+
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
-        '/oldProject/filtered',
+        '/projects',
         {
             params: parameters,
         },

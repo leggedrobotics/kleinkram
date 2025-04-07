@@ -18,14 +18,7 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 import { ProjectQueryDto } from '@common/api/types/project/project-query.dto';
-import {
-    QueryProjectSearchParameters as QueryProjectSearchParameter,
-    QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
-    QueryTake,
-    QueryUUID,
-} from '../../validation/query-decorators';
+import { QueryTake, QueryUUID } from '../../validation/query-decorators';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { BodyUUIDArray } from '../../validation/body-decorators';
 import { ApiOperation } from '@nestjs/swagger';
@@ -121,6 +114,7 @@ export class ProjectController {
             query.sortOrder,
             query.skip,
             query.take,
+            query.creatorUuid,
             user.user.uuid,
         );
     }
@@ -204,37 +198,6 @@ export class ProjectController {
 @Controller('oldProject')
 export class OldProjectController {
     constructor(private readonly projectService: ProjectService) {}
-
-    @Get('filtered')
-    @UserOnly()
-    @ApiOperation({
-        summary: 'Get all projects',
-        description:
-            'Get all projects with optional search, filter, and pagination options',
-    })
-    @ApiOkResponse({
-        description: 'Returns the most recent projects',
-        type: ProjectsDto,
-    })
-    async allProjects(
-        @AddUser()
-        authHeader: AuthHeader,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QuerySortBy('sortBy') sortBy: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryProjectSearchParameter('searchParams', 'search name and creator')
-        searchParameters: Map<string, string>,
-    ): Promise<ProjectsDto> {
-        return this.projectService.findAll(
-            authHeader.user,
-            skip,
-            take,
-            sortBy,
-            sortDirection,
-            searchParameters,
-        );
-    }
 
     @Get('recent')
     @UserOnly()
