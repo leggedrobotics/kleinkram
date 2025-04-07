@@ -32,7 +32,15 @@ def verify(
         None, "--project", "-p", help="project id or name"
     ),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
-    skip_hash: bool = typer.Option(False, help="skip hash check"),
+    skip_hash: bool = typer.Option(None, help="skip hash check"),
+    check_file_hash: bool = typer.Option(
+        True,
+        help="check file hash. If True, file names and file hashes are checked.",
+    ),
+    check_file_size: bool = typer.Option(
+        True,
+        help="check file size. If True, file names and file sizes are checked.",
+    ),
 ) -> None:
     # get all filepaths
     file_paths = [Path(file) for file in files]
@@ -51,6 +59,8 @@ def verify(
         query=mission_query,
         file_paths=file_paths,
         skip_hash=skip_hash,
+        check_file_hash=check_file_hash,
+        check_file_size=check_file_size,
         verbose=verbose,
     )
     print_file_verification_status(file_status, pprint=verbose)

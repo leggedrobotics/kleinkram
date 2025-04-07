@@ -82,4 +82,5 @@ class FileVerificationStatus(str, Enum):
     COMPUTING_HASH = "computing hash"
     MISSING = "missing"
     MISMATCHED_HASH = "hash mismatch"
+    MISMATCHED_SIZE = "size mismatch"
     UNKNOWN = "unknown"

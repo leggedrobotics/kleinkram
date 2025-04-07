@@ -42,6 +42,7 @@ FILE_VERIFICATION_STATUS_STYLES = {
     FileVerificationStatus.UPLOADING: "yellow",
     FileVerificationStatus.MISSING: "yellow",
     FileVerificationStatus.MISMATCHED_HASH: "red",
+    FileVerificationStatus.MISMATCHED_SIZE: "red",
     FileVerificationStatus.UNKNOWN: "gray",
     FileVerificationStatus.COMPUTING_HASH: "purple",
 }
