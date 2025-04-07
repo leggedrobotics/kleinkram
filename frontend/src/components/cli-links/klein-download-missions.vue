@@ -31,10 +31,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
 
 const { missions } = defineProps<{
-    missions: MissionWithFilesDto[];
+    missions: FlatMissionDto[];
 }>();
 
 const echoCommand = computed(() => {

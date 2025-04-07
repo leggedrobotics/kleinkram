@@ -20,6 +20,7 @@ import { deleteMission } from 'src/services/mutations/mission';
 import ROUTES from 'src/router/routes';
 import { useRoute, useRouter } from 'vue-router';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { AxiosError } from 'axios';
 
 const missionNameCheck = ref('');
 const client = useQueryClient();
@@ -67,14 +68,27 @@ const deleteMissionAction = async (): Promise<void> => {
             })
             .catch((error: unknown) => {
                 let errorMessage = '';
-                errorMessage =
-                    error instanceof Error
-                        ? error.message
-                        : ((
-                              error as {
-                                  response?: { data?: { message?: string } };
-                              }
-                          ).response?.data?.message ?? 'Unknown error');
+
+                if (error instanceof AxiosError) {
+                    if (error.response) {
+                        const status = error.response.status;
+                        if (status === 403) {
+                            errorMessage = 'Mission access denied.';
+                        } else if (status === 409) {
+                            errorMessage = 'Mission may contain files.';
+                        } else {
+                            errorMessage = `Server responded with status: ${status}`;
+                        }
+                    } else if (error.request) {
+                        errorMessage = 'No response received from the server';
+                    } else {
+                        errorMessage = error.message;
+                    }
+                } else if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = 'An unknown error occurred';
+                }
 
                 Notify.create({
                     message: `Error deleting mission: ${errorMessage}`,
