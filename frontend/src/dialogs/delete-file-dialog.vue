@@ -13,7 +13,7 @@
                     deleteFileReference?.file_name_check !== file?.filename
                 "
                 label="Delete File"
-                class="bg-button-primary"
+                class="bg-button-danger"
                 @click="deleteFileAction"
             />
         </template>
