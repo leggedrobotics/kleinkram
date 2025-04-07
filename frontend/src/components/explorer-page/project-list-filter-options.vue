@@ -8,7 +8,7 @@
             <q-input
                 v-model="search"
                 debounce="300"
-                placeholder="Search by Name"
+                placeholder="Search by Project Name"
                 dense
                 outlined
             >
