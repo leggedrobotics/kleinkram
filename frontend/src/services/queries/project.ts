@@ -19,11 +19,11 @@ export const filteredProjects = async (
         sortOrder: descending ? 'DESC' : 'ASC',
     };
     if (searchParameters && 'name' in searchParameters) {
-        parameters.projectPatterns = `${searchParameters.name}`;
+        parameters.projectPatterns = searchParameters.name;
     }
 
     if (searchParameters && 'creator.uuid' in searchParameters) {
-        parameters.creatorUuid = `${searchParameters['creator.uuid']}`;
+        parameters.creatorUuid = searchParameters['creator.uuid'];
     }
 
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
