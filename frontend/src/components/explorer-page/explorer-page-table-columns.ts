@@ -133,7 +133,7 @@ export const missionColumns: ProjectColumnType[] = [
     {
         name: 'NrOfFiles',
         required: true,
-        label: 'Nr of Files',
+        label: '# Files',
         align: 'left',
         field: (row: FlatMissionDto) => row.filesCount,
         format: (value: number) => value.toString(),

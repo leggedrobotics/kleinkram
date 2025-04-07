@@ -280,7 +280,7 @@ const accessGroupsColumns = [
     {
         name: 'NrOfUsers',
         required: true,
-        label: 'Nr of Users',
+        label: '# Users',
         align: 'center',
         field: (row: AccessGroupDto): string =>
             row.memberships.length.toString(),
@@ -291,7 +291,7 @@ const accessGroupsColumns = [
     {
         name: 'NrOfProjects',
         required: true,
-        label: 'Nr of Projects',
+        label: '# Projects',
         align: 'center',
         field: (row: AccessGroupDto): string =>
             row.memberships.length.toString(),
