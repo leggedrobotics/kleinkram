@@ -400,7 +400,7 @@ export const useFilteredProjects = (
         | Ref<Record<string, string>>,
 ): UseQueryReturnType<ProjectsDto | undefined, Error> => {
     return useQuery<ProjectsDto>({
-        queryKey: ['projects'],
+        queryKey: ['projects', take, skip, sortBy, descending, searchParameter],
         queryFn: () => {
             const _take = typeof take === 'number' ? take : take.value;
             const _skip = typeof skip === 'number' ? skip : skip.value;
