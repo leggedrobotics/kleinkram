@@ -180,22 +180,22 @@ def verify(
         elif remote_file.state == FileState.OK:
 
             # default case, will be overwritten if we find a mismatch
-            file_status[file] = FileVerificationStatus.UPLAODED
+            file_status[file] = FileVerificationStatus.UPLOADED
 
             if check_file_size:
                 if remote_file.size == file.stat().st_size:
-                    file_status[file] = FileVerificationStatus.UPLAODED
+                    file_status[file] = FileVerificationStatus.UPLOADED
                 else:
                     file_status[file] = FileVerificationStatus.MISMATCHED_SIZE
 
-            if file_status[file] != FileVerificationStatus.UPLAODED:
+            if file_status[file] != FileVerificationStatus.UPLOADED:
                 continue  # abort if we already found a mismatch
 
             if check_file_hash:
                 if remote_file.hash is None:
                     file_status[file] = FileVerificationStatus.COMPUTING_HASH
                 elif remote_file.hash == b64_md5(file):
-                    file_status[file] = FileVerificationStatus.UPLAODED
+                    file_status[file] = FileVerificationStatus.UPLOADED
                 else:
                     file_status[file] = FileVerificationStatus.MISMATCHED_HASH
 

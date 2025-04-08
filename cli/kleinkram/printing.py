@@ -38,7 +38,7 @@ FILE_STATE_COLOR = {
 
 
 FILE_VERIFICATION_STATUS_STYLES = {
-    FileVerificationStatus.UPLAODED: "green",
+    FileVerificationStatus.UPLOADED: "green",
     FileVerificationStatus.UPLOADING: "yellow",
     FileVerificationStatus.MISSING: "yellow",
     FileVerificationStatus.MISMATCHED_HASH: "red",
@@ -297,7 +297,7 @@ def print_file_verification_status(
     else:
         for path, status in file_status.items():
             stream = (
-                sys.stdout if status == FileVerificationStatus.UPLAODED else sys.stderr
+                sys.stdout if status == FileVerificationStatus.UPLOADED else sys.stderr
             )
             print(path, file=stream, flush=True)
 
