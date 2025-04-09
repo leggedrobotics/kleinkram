@@ -43,7 +43,8 @@ def download(
         False, help="save files in nested directories, project-name/mission-name"
     ),
     overwrite: bool = typer.Option(
-        False, help="overwrite files if they already exist and don't match the filehash"
+        False,
+        help="overwrite files if they already exist and don't match the file size or file hash",
     ),
 ) -> None:
     # create destionation directory
