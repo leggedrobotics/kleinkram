@@ -320,7 +320,7 @@ def download_file(
 
             elif verbose:
                 tqdm.write(
-                    styled_string(f"overwriting {path}, hash missmatch", style="yellow")
+                    styled_string(f"overwriting {path}, hash mismatch", style="yellow")
                 )
 
         elif not overwrite and file.size is not None:
@@ -328,9 +328,7 @@ def download_file(
 
         elif verbose:
             tqdm.write(
-                styled_string(
-                    f"overwriting {path}, file size missmatch", style="yellow"
-                )
+                styled_string(f"overwriting {path}, file size mismatch", style="yellow")
             )
 
     # request a download url
