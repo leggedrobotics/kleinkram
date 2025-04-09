@@ -21,7 +21,7 @@
                 flat
                 :disable="fileNameCheck !== filename"
                 label="Delete File"
-                class="bg-button-primary"
+                class="bg-button-danger"
                 @click="onDialogOK"
             />
         </template>

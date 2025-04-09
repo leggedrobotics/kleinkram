@@ -77,9 +77,10 @@ class File:
 
 # this is the file state for the verify command
 class FileVerificationStatus(str, Enum):
-    UPLAODED = "uploaded"
+    UPLOADED = "uploaded"
     UPLOADING = "uploading"
     COMPUTING_HASH = "computing hash"
     MISSING = "missing"
     MISMATCHED_HASH = "hash mismatch"
+    MISMATCHED_SIZE = "size mismatch"
     UNKNOWN = "unknown"

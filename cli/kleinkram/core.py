@@ -133,9 +133,20 @@ def verify(
     client: AuthenticatedClient,
     query: MissionQuery,
     file_paths: Sequence[Path],
-    skip_hash: bool = False,
+    skip_hash: Optional[bool] = None,
+    check_file_hash: bool = True,
+    check_file_size: bool = False,
     verbose: bool = False,
 ) -> Dict[Path, FileVerificationStatus]:
+
+    # add deprecated warning for skip_hash
+    if skip_hash is not None:
+        print(
+            "Warning: --skip-hash is deprecated and will be removed in a future version. "
+            "Use --check-file-hash=False instead.",
+        )
+        check_file_hash = not skip_hash
+
     # check that file paths are for valid files and have valid suffixes
     check_file_paths(file_paths)
 
@@ -167,14 +178,30 @@ def verify(
         if remote_file.state == FileState.UPLOADING:
             file_status[file] = FileVerificationStatus.UPLOADING
         elif remote_file.state == FileState.OK:
-            if remote_file.hash is None:
-                file_status[file] = FileVerificationStatus.COMPUTING_HASH
-            elif skip_hash or remote_file.hash == b64_md5(file):
-                file_status[file] = FileVerificationStatus.UPLAODED
-            else:
-                file_status[file] = FileVerificationStatus.MISMATCHED_HASH
+
+            # default case, will be overwritten if we find a mismatch
+            file_status[file] = FileVerificationStatus.UPLOADED
+
+            if check_file_size:
+                if remote_file.size == file.stat().st_size:
+                    file_status[file] = FileVerificationStatus.UPLOADED
+                else:
+                    file_status[file] = FileVerificationStatus.MISMATCHED_SIZE
+
+            if file_status[file] != FileVerificationStatus.UPLOADED:
+                continue  # abort if we already found a mismatch
+
+            if check_file_hash:
+                if remote_file.hash is None:
+                    file_status[file] = FileVerificationStatus.COMPUTING_HASH
+                elif remote_file.hash == b64_md5(file):
+                    file_status[file] = FileVerificationStatus.UPLOADED
+                else:
+                    file_status[file] = FileVerificationStatus.MISMATCHED_HASH
+
         else:
             file_status[file] = FileVerificationStatus.UNKNOWN
+
     return file_status
 
 

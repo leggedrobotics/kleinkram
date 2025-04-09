@@ -236,7 +236,7 @@ async function _createFileAction(
                     name: file.name,
                     size: file.size,
                     fileUUID: accessResp.fileUUID,
-                    uuid: selectedMission.uuid,
+                    missionUuid: selectedMission.uuid,
                 } as unknown as FileWithTopicDto;
                 const newFileUploadReference = ref(newFileUpload);
                 injectedFiles.value.push(newFileUploadReference);
@@ -260,7 +260,6 @@ async function _createFileAction(
                             errorMessage = error.message;
                         }
 
-                        console.error('err', error);
                         newFileUploadReference.value.canceled = true;
                         Notify.create({
                             message: `Upload of File ${file.name} failed: ${errorMessage}`,
@@ -268,6 +267,10 @@ async function _createFileAction(
                             spinner: false,
                             timeout: 0,
                             closeBtn: true,
+                        });
+                    } finally {
+                        await queryClient.invalidateQueries({
+                            queryKey: ['files'],
                         });
                     }
                     return;
@@ -346,7 +349,7 @@ async function uploadFileMultipart(
     key: string,
     minioClient: S3Client,
     newFileUpload: Ref<FileWithTopicDto>,
-): Promise<string> {
+): Promise<string | undefined> {
     let uploadId: string | undefined;
     try {
         const createMultipartUploadCommand = new CreateMultipartUploadCommand({
@@ -436,10 +439,10 @@ async function uploadFileMultipart(
         }
 
         await cancelUploads(
-            [newFileUpload.value.uuid],
-            newFileUpload.value.missionUUID ?? '',
+            // @ts-ignore
+            [newFileUpload.value.fileUUID],
+            // @ts-ignore
+            newFileUpload.value.missionUuid ?? '',
         );
-
-        throw error;
     }
 }

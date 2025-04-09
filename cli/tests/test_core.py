@@ -167,7 +167,7 @@ def test_verify(mission):
     )
 
     assert all(
-        status == FileVerificationStatus.UPLAODED for status in verify_status.values()
+        status == FileVerificationStatus.UPLOADED for status in verify_status.values()
     )
 
 

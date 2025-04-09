@@ -17,4 +17,9 @@ export class ProjectQueryDto extends SortablePaginatedQueryDto {
     @IsString({ each: true })
     @ApiProperty({ required: false })
     projectPatterns?: string[];
+
+    @IsOptional()
+    @IsUUID('4')
+    @ApiProperty({ required: false })
+    creatorUuid?: string;
 }

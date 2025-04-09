@@ -17,6 +17,7 @@ export default class Project extends BaseEntity {
 
     @OneToMany(() => Mission, (mission) => mission.project)
     missions?: Mission[];
+    readonly missionCount?: number;
 
     @OneToMany(() => ProjectAccess, (projectAccess) => projectAccess.project, {
         cascade: true,

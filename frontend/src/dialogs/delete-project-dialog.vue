@@ -15,7 +15,7 @@
                 flat
                 :disable="deleteProject?.project_name_check !== project?.name"
                 label="Delete Project"
-                class="bg-button-primary"
+                class="bg-button-danger"
                 @click="deleteProjectAction"
             />
         </template>

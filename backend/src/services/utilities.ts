@@ -1,7 +1,7 @@
-import { Repository, SelectQueryBuilder, Brackets } from 'typeorm';
+import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import Project from '@common/entities/project/project.entity';
 import Mission from '@common/entities/mission/mission.entity';
-import { parseISO, isValid } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import File from '@common/entities/file/file.entity';
 import { MethodNotAllowedException } from '@nestjs/common';
@@ -66,9 +66,14 @@ export const getFilteredProjectIdSubQuery = (
     }
 
     if (projectPatterns.length > 0) {
-        query.orWhere('project.name LIKE ANY(ARRAY[:...projectPatterns])', {
-            projectPatterns,
-        });
+        query.orWhere(
+            'LOWER(project.name) LIKE ANY(ARRAY[:...projectPatterns])',
+            {
+                projectPatterns: projectPatterns.map(
+                    (pattern) => `%${pattern.toLowerCase()}%`,
+                ),
+            },
+        );
     }
 
     return query;
@@ -179,6 +184,31 @@ export const getFilteredFileIdSubQuery = (
     if (filePatterns.length > 0) {
         query.orWhere('file.filename LIKE ANY(ARRAY[:...filePatterns])', {
             filePatterns,
+        });
+    }
+
+    return query;
+};
+
+export const addMissionCount = (
+    query: SelectQueryBuilder<any>,
+): SelectQueryBuilder<any> => {
+    query.loadRelationCountAndMap(
+        'project.missionCount',
+        'project.missions',
+        'mission',
+    );
+
+    return query;
+};
+
+export const addProjectCreatorFilter = (
+    query: SelectQueryBuilder<any>,
+    creatorUuid: string | undefined,
+): SelectQueryBuilder<any> => {
+    if (creatorUuid) {
+        query.andWhere('project.creator.uuid = :creatorUuid', {
+            creatorUuid,
         });
     }
 

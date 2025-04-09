@@ -7,7 +7,12 @@ import User from '@common/entities/user/user.entity';
 import { UserService } from './user.service';
 import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
 
-import { addProjectFilters, addSort } from './utilities';
+import {
+    addMissionCount,
+    addProjectCreatorFilter,
+    addProjectFilters,
+    addSort,
+} from './utilities';
 
 import {
     AccessGroupRights,
@@ -34,6 +39,7 @@ import { ProjectDto } from '@common/api/types/project/base-project.dto';
 
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',
+    description: 'project.description',
     name: 'project.name',
     createdAt: 'project.createdAt',
     updatedAt: 'project.updatedAt',
@@ -62,94 +68,6 @@ export class ProjectService {
         this.config = config;
     }
 
-    async findAll(
-        user: User,
-        skip: number,
-        take: number,
-        sortBy: string,
-        sortDirection: 'ASC' | 'DESC',
-        searchParameters: Map<string, string>,
-    ): Promise<ProjectsDto> {
-        // convert take and skip to numbers
-        take = Number(take);
-        skip = Number(skip);
-
-        let baseQuery = this.projectRepository
-            .createQueryBuilder('project')
-            .leftJoinAndSelect('project.creator', 'creator')
-            .leftJoinAndSelect('project.missions', 'missions');
-
-        // if not admin, only show projects that the user has access to
-        if (user.role !== UserRole.ADMIN) {
-            baseQuery = baseQuery
-                .leftJoin('project.project_accesses', 'projectAccesses')
-                .leftJoin('projectAccesses.accessGroup', 'accessGroup')
-                .innerJoin(
-                    'accessGroup.memberships',
-                    'memberships',
-                    'memberships.expirationDate IS NULL OR memberships.expirationDate > NOW()',
-                )
-                .leftJoin('memberships.user', 'user')
-                .where('projectAccesses.rights >= :rights', {
-                    rights: AccessGroupRights.READ,
-                })
-                .andWhere('user.uuid = :uuid', { uuid: user.uuid });
-        }
-
-        // add sorting
-        if (
-            sortBy &&
-            [
-                'name',
-                'createdAt',
-                'updatedAt',
-                'creator',
-                'description',
-            ].includes(sortBy) // SQL Sanitization
-        ) {
-            baseQuery = baseQuery.orderBy(`project.${sortBy}`, sortDirection);
-        } else if (sortBy !== undefined && sortBy !== '') {
-            throw new ConflictException('Invalid sortBy parameter');
-        }
-
-        if (searchParameters) {
-            for (const [index, key] of Object.keys(
-                searchParameters,
-            ).entries()) {
-                if (!['name', 'creator.uuid'].includes(key)) {
-                    continue;
-                }
-                baseQuery = key.toLowerCase().includes('uuid')
-                    ? baseQuery.andWhere(
-                          `project.${key} = :${index.toString()}`,
-                          {
-                              [index]: searchParameters[key],
-                          },
-                      )
-                    : baseQuery.andWhere(
-                          `project.${key} ILIKE :${index.toString()}`,
-                          {
-                              [index]: `%${searchParameters[key].toString()}%`,
-                          },
-                      );
-            }
-        }
-
-        const [projects, count] = await baseQuery
-            .skip(skip)
-            .take(take)
-            .getManyAndCount();
-
-        return {
-            data: projects.map((element) =>
-                projectEntityToDtoWithMissionCount(element),
-            ),
-            count,
-            skip,
-            take,
-        };
-    }
-
     async findMany(
         projectUuids: string[],
         projectPatterns: string[],
@@ -157,6 +75,7 @@ export class ProjectService {
         sortOrder: SortOrder,
         skip: number,
         take: number,
+        creatorUuid: string | undefined,
         userUuid: string,
     ): Promise<ProjectsDto> {
         let query = this.projectRepository
@@ -175,6 +94,9 @@ export class ProjectService {
         if (sortBy !== undefined) {
             query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
         }
+
+        query = addProjectCreatorFilter(query, creatorUuid);
+        query = addMissionCount(query);
 
         query.skip(skip).take(take);
         const [projects, count] = await query.getManyAndCount();

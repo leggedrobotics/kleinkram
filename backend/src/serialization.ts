@@ -256,7 +256,7 @@ export const projectEntityToDtoWithMissionCount = (
     return {
         ...(projectEntityToDto(project) as ProjectWithMissionCountDto),
         creator: userEntityToDto(project.creator),
-        missionCount: project.missions?.length ?? 0,
+        missionCount: project.missionCount ?? 0,
     };
 };
 

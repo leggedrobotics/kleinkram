@@ -106,7 +106,7 @@
                 <q-input
                     v-model="search"
                     debounce="300"
-                    placeholder="Search"
+                    placeholder="Search by Mission Name"
                     dense
                     outlined
                 >
@@ -181,13 +181,25 @@
                         padding="6px"
                         icon="sym_o_delete"
                         color="white"
-                        :disable="selectedMissions.length !== 1"
+                        :disable="
+                            selectedMissions.length !== 1 ||
+                            (selectedMissions.length === 1 &&
+                                selectedMissions[0]?.filesCount > 0)
+                        "
                         @click="deleteMission"
                     >
                         Delete
-
                         <q-tooltip v-if="selectedMissions.length !== 1">
                             You can only delete one mission at a time
+                        </q-tooltip>
+
+                        <q-tooltip
+                            v-if="
+                                selectedMissions.length === 1 &&
+                                selectedMissions[0]?.filesCount > 0
+                            "
+                        >
+                            You cannot delete missions with files
                         </q-tooltip>
                     </q-btn>
                     <q-btn
@@ -237,7 +249,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref } from 'vue';
 import { useQuasar } from 'quasar';
 import DeleteMissionDialog from '../dialogs/delete-mission-dialog.vue';
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import KleinDownloadMissions from '@components/cli-links/klein-download-missions.vue';
 import ButtonGroupOverlay from '@components/buttons/button-group-overlay.vue';
 import CreateMissionDialogOpener from '@components/button-wrapper/dilaog-opener-create-mission.vue';
@@ -279,7 +291,7 @@ const deleteMission = (): void => {
     deselect();
 };
 
-const selectedMissions: Ref<MissionWithFilesDto[]> = ref([]);
+const selectedMissions: Ref<FlatMissionDto[]> = ref([]);
 
 const search = computed({
     get: () => handler.value.searchParams.name,

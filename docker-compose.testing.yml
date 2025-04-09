@@ -124,6 +124,8 @@ services:
             - '--config.file=/etc/prometheus/prometheus.yml'
             - '--storage.tsdb.path=/prometheus'
             - '--web.enable-remote-write-receiver'
+            - '--enable-feature=exemplar-storage'
+            - '--enable-feature=native-histograms'
         ports:
             - '9090:9090'
         networks:

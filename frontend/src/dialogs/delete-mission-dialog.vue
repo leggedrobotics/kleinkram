@@ -17,7 +17,7 @@
                     deleteMissionReference?.mission_name_check !== mission?.name
                 "
                 label="Delete Mission"
-                class="bg-button-primary"
+                class="bg-button-danger"
                 @click="deleteMissionAction"
             />
         </template>

@@ -249,7 +249,7 @@
 </template>
 <script setup lang="ts">
 import { formatDate } from '../services/date-formating';
-import { computed, Ref, ref } from 'vue';
+import { computed, Ref, ref, unref } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 import ROUTES from 'src/router/routes';
 import { downloadFile } from 'src/services/queries/file';
@@ -317,7 +317,9 @@ const displayTopics = computed(() => {
     );
 });
 const mcap = computed(() =>
-    filesReturn.value.length > 0 ? filesReturn.value[0] : undefined,
+    filesReturn.value.length > 0
+        ? unref(filesReturn).find((file) => file.filename === unref(mcapName))
+        : undefined,
 );
 
 const columns = [

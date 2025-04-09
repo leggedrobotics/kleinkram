@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import signal
 import logging
 import sys
 from concurrent.futures import Future
@@ -18,6 +17,9 @@ from uuid import UUID
 import boto3.s3.transfer
 import botocore.config
 import httpx
+from rich.console import Console
+from tqdm import tqdm
+
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
@@ -28,8 +30,6 @@ from kleinkram.utils import format_bytes
 from kleinkram.utils import format_error
 from kleinkram.utils import format_traceback
 from kleinkram.utils import styled_string
-from rich.console import Console
-from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +267,7 @@ def _url_download(
     if path.exists() and not overwrite:
         raise FileExistsError(f"file already exists: {path}")
 
-    with httpx.stream("GET", url) as response:
+    with httpx.stream("GET", url, timeout=S3_READ_TIMEOUT) as response:
         response.raise_for_status()
         with open(path, "wb") as f:
             with tqdm(
@@ -289,6 +289,7 @@ class DownloadState(Enum):
     DOWNLOADED_INVALID_HASH = 3
     SKIPPED_INVALID_HASH = 4
     SKIPPED_INVALID_REMOTE_STATE = 5
+    SKIPPED_FILE_SIZE_MISMATCH = 6
 
 
 def download_file(
@@ -307,17 +308,27 @@ def download_file(
         return DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0
 
     if path.exists():
-        local_hash = b64_md5(path)
-        if local_hash != file.hash and not overwrite and file.hash is not None:
-            return DownloadState.SKIPPED_INVALID_HASH, 0
 
-        elif local_hash == file.hash:
-            return DownloadState.SKIPPED_OK, 0
+        # compare file size
+        if file.size == path.stat().st_size:
+            local_hash = b64_md5(path)
+            if local_hash != file.hash and not overwrite and file.hash is not None:
+                return DownloadState.SKIPPED_INVALID_HASH, 0
 
-        # this has to be here
-        if verbose:
+            elif local_hash == file.hash:
+                return DownloadState.SKIPPED_OK, 0
+
+            elif verbose:
+                tqdm.write(
+                    styled_string(f"overwriting {path}, hash mismatch", style="yellow")
+                )
+
+        elif not overwrite and file.size is not None:
+            return DownloadState.SKIPPED_FILE_SIZE_MISMATCH, 0
+
+        elif verbose:
             tqdm.write(
-                styled_string(f"overwriting {path}, hash missmatch", style="yellow")
+                styled_string(f"overwriting {path}, file size mismatch", style="yellow")
             )
 
     # request a download url
@@ -400,6 +411,7 @@ DOWNLOAD_STATE_COLOR = {
     DownloadState.SKIPPED_OK: "green",
     DownloadState.DOWNLOADED_INVALID_HASH: "red",
     DownloadState.SKIPPED_INVALID_HASH: "yellow",
+    DownloadState.SKIPPED_FILE_SIZE_MISMATCH: "yellow",
     DownloadState.SKIPPED_INVALID_REMOTE_STATE: "purple",
 }
 
@@ -432,6 +444,8 @@ def _download_handler(
         msg = f"skipped {path} already downloaded (hash ok)"
     elif state == DownloadState.SKIPPED_INVALID_HASH:
         msg = f"skipped {path}, exists with hash mismatch (use --overwrite?)"
+    elif state == DownloadState.SKIPPED_FILE_SIZE_MISMATCH:
+        msg = f"skipped {path}, exists with file size mismatch (use --overwrite?)"
     elif state == DownloadState.SKIPPED_INVALID_REMOTE_STATE:
         msg = f"skipped {path}, remote file has invalid state ({file.state.value})"
     else:
