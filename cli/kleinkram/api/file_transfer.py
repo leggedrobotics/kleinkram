@@ -17,6 +17,7 @@ from uuid import UUID
 import boto3.s3.transfer
 import botocore.config
 import httpx
+from httpx import RemoteProtocolError
 from rich.console import Console
 from tqdm import tqdm
 
@@ -43,6 +44,9 @@ DOWNLOAD_URL = "/files/download"
 MAX_UPLOAD_RETRIES = 3
 S3_MAX_RETRIES = 60  # same as frontend
 S3_READ_TIMEOUT = 60 * 5  # 5 minutes
+
+RETRY_BACKOFF_BASE = 2  # exponential backoff base
+MAX_RETRIES = 5
 
 
 class UploadCredentials(NamedTuple):
@@ -264,23 +268,69 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
 def _url_download(
     url: str, *, path: Path, size: int, overwrite: bool = False, verbose: bool = False
 ) -> None:
-    if path.exists() and not overwrite:
-        raise FileExistsError(f"file already exists: {path}")
+    if path.exists():
+        if overwrite:
+            path.unlink()
+            downloaded = 0
+        else:
+            downloaded = path.stat().st_size
+            if downloaded >= size:
+                raise FileExistsError(f"file already exists and is complete: {path}")
+    else:
+        downloaded = 0
 
-    with httpx.stream("GET", url, timeout=S3_READ_TIMEOUT) as response:
-        response.raise_for_status()
-        with open(path, "wb") as f:
-            with tqdm(
-                total=size,
-                desc=f"downloading {path.name}",
-                unit="B",
-                unit_scale=True,
-                leave=False,
-                disable=not verbose,
-            ) as pbar:
-                for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
-                    f.write(chunk)
-                    pbar.update(len(chunk))
+    attempt = 0
+    while downloaded < size:
+        try:
+            headers = {"Range": f"bytes={downloaded}-"}
+            with httpx.stream(
+                "GET", url, headers=headers, timeout=S3_READ_TIMEOUT
+            ) as response:
+                # Accept both 206 Partial Content and 200 OK if starting from 0
+                if not (
+                    response.status_code == 206
+                    or (downloaded == 0 and response.status_code == 200)
+                ):
+                    response.raise_for_status()
+                    raise RuntimeError(
+                        f"Expected 206 Partial Content, got {response.status_code}"
+                    )
+
+                mode = "ab" if downloaded > 0 else "wb"
+                with open(path, mode) as f:
+                    with tqdm(
+                        total=size,
+                        initial=downloaded,
+                        desc=f"downloading {path.name}",
+                        unit="B",
+                        unit_scale=True,
+                        leave=False,
+                        disable=not verbose,
+                    ) as pbar:
+                        for chunk in response.iter_bytes(
+                            chunk_size=DOWNLOAD_CHUNK_SIZE
+                        ):
+                            attempt = 0  # reset attempt counter on successful download of non-empty chunk
+                            if not chunk:
+                                break
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            pbar.update(len(chunk))
+            break  # download complete
+        except RemoteProtocolError as e:
+            logger.info(f"Error: {e}, retrying...")
+            attempt += 1
+            if attempt > MAX_RETRIES:
+                raise RuntimeError(
+                    f"Download failed after {MAX_RETRIES} retries due to RemoteProtocolError"
+                ) from e
+            if verbose:
+                print(
+                    f"RemoteProtocolError on attempt {attempt}/{MAX_RETRIES}, retrying after backoff..."
+                )
+            sleep(RETRY_BACKOFF_BASE**attempt)
+        except Exception as e:
+            raise RuntimeError(f"Failed to download: {e}") from e
 
 
 class DownloadState(Enum):
