@@ -451,7 +451,7 @@ const {
     isLoadingError,
     error: missionError,
 } = useMission(
-    missionUuid.value ?? '',
+    missionUuid,
     (error: unknown) => {
         const errorMessage =
             (error as { response?: { data?: { message?: string } } }).response
