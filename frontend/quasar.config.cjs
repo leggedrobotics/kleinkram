@@ -11,7 +11,7 @@
 const { configure } = require('quasar/wrappers');
 const path = require('path');
 
-module.exports = configure(function (/* ctx */) {
+module.exports = configure(function(/* ctx */) {
     return {
         // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
         // preFetch: true,
@@ -46,15 +46,10 @@ module.exports = configure(function (/* ctx */) {
                 '@components': path.resolve(__dirname, 'src/components'),
             },
 
-            target: {
-                browser: [
-                    'es2019',
-                    'edge88',
-                    'firefox78',
-                    'chrome87',
-                    'safari13.1',
-                ],
-                node: 'node22',
+            strict: true,
+            vueShim: true,
+            extendTsConfig(tsConfig) {
+                tsConfig.compilerOptions.baseUrl = '.';
             },
 
             vueRouterMode: 'history', // available values: 'hash', 'history'
