@@ -23,12 +23,12 @@ jobs:
             - name: Install dependencies
               run: yarn install --immutable
 
-            - name: Run ESLint (with info to run `yarn eslint-full` to reproduce locally)
+            - name: Run ESLint
               run: |
                   if ! yarn eslint-full:check; then
-                    echo "ESLint check failed. Run 'yarn eslint-full' locally to reproduce."
-                    exit 1 # Explicitly fail the step
-                fi
+                      echo "ESLint check failed. Run 'yarn eslint-full' locally to reproduce."
+                      exit 1 # Explicitly fail the step
+                  fi
 
             # Uninstall when you're done
             - name: Clean up
