@@ -52,7 +52,7 @@ jobs:
                   # Modify test command to output JSON and ensure the step continues even on failure
                   # The || true allows the next step (reporting) to run even if tests fail.
                   # The reporting action will correctly mark the check as failed based on the JSON.
-                  yarn test --json --outputFile=test-results.json || true
+                  yarn test --ci --reporters=default --reporters=jest-junit || true
                   echo "Tests finished. Proceeding to reporting."
                   # Optionally stop the docker stack here if not needed for reporting
                   # docker compose -f ../docker-compose.testing.yml down
@@ -61,7 +61,7 @@ jobs:
               uses: EnricoMi/publish-unit-test-result-action@v2
               if: always()
               with:
-                  files: ./backend/test-results.json
+                  files: backend/junit.xml
                   check_name: 'Jest Test Results'
 
             # Uninstall yarn when you're done
