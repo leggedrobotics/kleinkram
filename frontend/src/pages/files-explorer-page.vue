@@ -517,6 +517,7 @@ const { mutate: _deleteFiles } = useMutation({
                 query.queryKey[0] === 'files' &&
                 query.queryKey[1] === missionUuid.value,
         });
+        selectedFiles.value = [];
     },
     onError: (error: unknown) => {
         const errorMessage =
