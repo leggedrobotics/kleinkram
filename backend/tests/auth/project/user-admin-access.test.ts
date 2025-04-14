@@ -173,7 +173,7 @@ describe('Verify project user/admin access', () => {
                 headers: headerCreator.getHeaders(),
                 body: JSON.stringify({
                     name: `newName${index}`,
-                    description: `decription${index}`,
+                    description: `description${index}`,
                     autoConvert: false,
                 }),
             });

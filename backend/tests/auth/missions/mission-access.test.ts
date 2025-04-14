@@ -258,7 +258,7 @@ describe('Verify Mission File Level User Access', () => {
     });
 
     // user: delete access
-    test('if user with delte access on a mission can move files in a mission', async () => {
+    test('if user with delete access on a mission can move files in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
