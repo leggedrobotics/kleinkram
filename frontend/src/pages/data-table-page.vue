@@ -538,6 +538,7 @@ const columns = [
         label: 'Health',
         style: 'width: 10px',
         align: 'center',
+        sortable: true,
     },
     {
         name: 'project.name',
