@@ -191,12 +191,14 @@ export const fileEntityToDto = (file: FileEntity): FileDto => {
 export const fileEntityToDtoWithTopic = (
     file: FileEntity,
 ): FileWithTopicDto => {
-    if (!file.topics) {
-        throw new Error('File topics are not set');
-    }
+    // extract topics from file or relatedFile
+    let topics = file.topics;
+    if (topics?.length === 0) topics = file.relatedFile?.topics ?? [];
+
+    if (!topics) throw new Error('File topics are not set');
     return {
         ...(fileEntityToDto(file) as FileWithTopicDto),
-        topics: file.topics.map((element) => topicEntityToDto(element)),
+        topics: topics.map((element) => topicEntityToDto(element)),
     };
 };
 

@@ -176,7 +176,7 @@
 
     <div class="q-my-lg">
         <div class="flex justify-between items-center">
-            <h2 class="text-h4 q-mb-xs">All ROS Topics</h2>
+            <h2 class="text-h4 q-mb-xs">All Messages</h2>
 
             <button-group>
                 <q-input
@@ -191,6 +191,38 @@
                         <q-icon name="sym_o_search" />
                     </template>
                 </q-input>
+
+                <div
+                    v-if="
+                        file?.state === FileState.OK && !!file.relatedFileUuid
+                    "
+                    class="flex column"
+                >
+                    <q-btn
+                        :label="`to ${file.type === FileType.BAG ? 'MCAP' : 'BAG'} file`"
+                        flat
+                        class="button-border full-height"
+                        icon="sym_o_note_stack"
+                        @click="redirectToMcap"
+                    />
+                </div>
+
+                <div
+                    v-if="file?.state === FileState.OK && !file.relatedFileUuid"
+                    class="flex column"
+                >
+                    <q-btn
+                        :label="`link ${file.type === FileType.BAG ? 'MCAP' : 'BAG'} file`"
+                        flat
+                        disable
+                        class="button-border full-height"
+                        icon="sym_o_note_stack_add"
+                    >
+                        <q-tooltip>
+                            This feature is not available yet.
+                        </q-tooltip>
+                    </q-btn>
+                </div>
             </button-group>
         </div>
 
@@ -208,30 +240,14 @@
                 row-key="uuid"
                 :loading="isLoading"
                 :filter="filterKey"
-            />
-
-            <div
-                v-if="
-                    !displayTopics &&
-                    file?.state === FileState.OK &&
-                    !!file.relatedFileUuid
-                "
-                class="flex column"
             >
-                <span class="q-my-sm">
-                    Kleinkram does ony extract topics for mcap files.
-                    <br>Please switch to the mcap file to see the topics.
-                </span>
+                <template v-slot:no-data>
+                    <q-card-section class="q-pa-none">
+                        <div class="q-mt-md q-mb-md">No messages found.</div>
+                    </q-card-section>
+                </template>
+            </q-table>
 
-                <q-btn
-                    label="Go to Mcap"
-                    flat
-                    class="button-border"
-                    style="width: 350px"
-                    icon="sym_o_turn_slight_right"
-                    @click="redirectToMcap"
-                />
-            </div>
             <div v-if="file?.state !== FileState.OK">
                 <h5 style="margin-top: 10px; margin-bottom: 10px">
                     Queues related to this file
@@ -253,7 +269,7 @@
 </template>
 <script setup lang="ts">
 import { formatDate } from '../services/date-formating';
-import { computed, Ref, ref, unref } from 'vue';
+import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 import ROUTES from 'src/router/routes';
 import { downloadFile } from 'src/services/queries/file';
@@ -271,12 +287,11 @@ import { useRouter } from 'vue-router';
 import {
     registerNoPermissionErrorHandler,
     useFile,
-    useMcapFilesOfMission,
     useQueueForFile,
 } from '../hooks/query-hooks';
 import { formatSize } from '../services/general-formatting';
 import { FileState, FileType } from '@common/enum';
-import { useFileUUID, useMissionUUID } from '../hooks/router-hooks';
+import { useFileUUID } from '../hooks/router-hooks';
 import DeleteFileDialogOpener from './button-wrapper/delete-file-dialog-opener.vue';
 import ButtonGroup from './buttons/button-group.vue';
 import EditFileButton from './buttons/edit-file-button.vue';
@@ -304,9 +319,7 @@ const displayTopics = computed(() => {
         return false;
     }
 
-    return (
-        file.value.type === FileType.MCAP && file.value.state === FileState.OK
-    );
+    return file.value.state === FileState.OK;
 });
 
 const columns = [
