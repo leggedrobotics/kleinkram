@@ -129,8 +129,9 @@ export class GroupMembershipDto {
     canEditGroup!: boolean;
 
     @ApiProperty({
-        type: [AccessGroupDto, null],
+        type: AccessGroupDto,
         description: 'Access Group',
+        nullable: true,
     })
     @IsNotUndefined()
     @IsOptional()

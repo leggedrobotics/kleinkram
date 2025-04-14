@@ -1,14 +1,15 @@
 import * as assert from 'node:assert';
+import { HeaderCreator } from '../utils/api-calls';
 import { getEndpoints } from '../utils/endpoints';
 
-const UNAUTHENTICATED_ENDPOINTS = [
+const UNAUTHENTICATED_ENDPOINTS = new Set([
     '/auth/google',
     '/auth/google/callback',
     '/auth/logout',
     '/metrics',
     '/swagger/json',
     '/swagger-yaml',
-];
+]);
 
 /**
  *
@@ -26,14 +27,18 @@ describe('Unauthenticated users trigger 401', () => {
     const endpoints = getEndpoints();
     for (const endpoint of endpoints) {
         // skip endpoints that are not protected
-        if (UNAUTHENTICATED_ENDPOINTS.includes(endpoint.url)) continue;
+        if (UNAUTHENTICATED_ENDPOINTS.has(endpoint.url)) continue;
 
         test(`test if rejects unauthorized request (401): \t${endpoint.method.toUpperCase()}\t ${endpoint.url}`, async () => {
-            const res = await fetch(`http://localhost:3000${endpoint.url}`, {
+            
+            const headersBuilder = new HeaderCreator();
+            headersBuilder.addHeader('Content-Type', 'application/json');
+            const response = await fetch(`http://localhost:3000${endpoint.url}`, {
                 method: endpoint.method,
+                headers: headersBuilder.getHeaders(),
             });
             assert.equal(
-                res.status,
+                response.status,
                 401,
                 `endpoint\t${endpoint.method.toUpperCase()}\t${endpoint.url} does not return 401`,
             );
