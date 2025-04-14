@@ -248,21 +248,23 @@
                 </template>
             </q-table>
 
-            <div v-if="file?.state !== FileState.OK">
-                <h5 style="margin-top: 10px; margin-bottom: 10px">
-                    Queues related to this file
-                </h5>
-                This file has not yet completed uploading or processing.
-                <q-separator style="margin-top: 6px; margin-bottom: 6px" />
+            <div class="text-grey-8">
+                <h2 class="text-h5 q-mb-xs q-mt-lg text-grey-9">
+                    File History
+                    <q-badge color="green" outline>BETA</q-badge>
+                </h2>
+
                 <div v-for="queue in queues?.data" :key="queue.uuid">
-                    {{ queue.display_name }} -
-                    <q-badge :color="getColor(queue.state)">
-                        <q-tooltip>
-                            {{ getDetailedFileState(queue.state) }}
-                        </q-tooltip>
-                        {{ getSimpleFileStateName(queue.state) }}
-                    </q-badge>
+                    <b>{{ formatDate(queue.updatedAt) }}:</b>
+                    {{ getSimpleFileStateName(queue.state) }}
+
+                    <br />
+                    &nbsp; » {{ getDetailedFileState(queue.state) }}
                 </div>
+
+                <span v-if="queues?.count === 0">
+                    No file history available for this file.
+                </span>
             </div>
         </div>
     </div>
@@ -275,7 +277,6 @@ import ROUTES from 'src/router/routes';
 import { downloadFile } from 'src/services/queries/file';
 import {
     _downloadFile,
-    getColor,
     getColorFileState,
     getDetailedFileState,
     getIcon,
@@ -309,10 +310,7 @@ const fileUuid = useFileUUID();
 const { isLoading, data: file, error, isLoadingError } = useFile(fileUuid);
 registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
 
-const { data: queues } = useQueueForFile(
-    file.value?.filename.replace(/\.(bag|mcap)$/, ''),
-    file.value?.mission.uuid ?? '',
-);
+const { data: queues } = useQueueForFile(file);
 
 const displayTopics = computed(() => {
     if (file.value === undefined) {
@@ -348,7 +346,6 @@ const columns = [
 
 async function redirectToMcap(): Promise<void> {
     if (file.value?.relatedFileUuid) {
-        console.log(`Redirecting to mcap ${file.value.mission.project.uuid}`);
         await $router.push({
             name: ROUTES.FILE.routeName,
             params: {
