@@ -291,7 +291,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         const mcapFilename = originalFileName.replace('.bag', '.mcap');
 
         // exit if autoConvert is disabled
-        if (!queue.mission.project.autoConvert) {
+        if (!queue.mission.project.autoConvert && sourceIsBag) {
             logger.debug(
                 `AutoConvert is disabled, skipping conversion for ${originalFileName}`,
             );
