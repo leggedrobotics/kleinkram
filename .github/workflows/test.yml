@@ -17,8 +17,7 @@ jobs:
 
         steps:
             - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0 # Ensure a full update
+              clean: true
 
             - name: Use Node.js
               uses: actions/setup-node@v4.3.0
@@ -69,3 +68,11 @@ jobs:
             - name: Clean up
               if: always()
               run: npm uninstall -g yarn
+
+            - name: Stop Docker stack
+              if: always()
+              run: docker compose -f docker-compose.testing.yml down
+
+            - name: Delete Docker volumes
+              if: always()
+              run: docker volume prune -f
