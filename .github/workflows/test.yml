@@ -16,8 +16,14 @@ jobs:
             pull-requests: write # Allows adding comments to PRs
 
         steps:
+            - name: 'Cleanup build folder'
+              run: |
+                  ls -la ./
+                  rm -rf ./* || true
+                  rm -rf ./.??* || true
+                  ls -la ./
+
             - uses: actions/checkout@v4
-              clean: true
 
             - name: Use Node.js
               uses: actions/setup-node@v4.3.0
