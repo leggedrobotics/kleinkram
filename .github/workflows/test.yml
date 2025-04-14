@@ -18,6 +18,9 @@ jobs:
               with:
                   node-version: '22'
 
+            - name: Install yarn
+              run: npm install -g yarn
+
             - name: install dependencies
               run: yarn install --immutable
 
@@ -39,3 +42,8 @@ jobs:
                       echo "waiting for endpoints"
                   done
                   yarn test
+
+            # Uninstall when you're done
+            - name: Clean up
+              if: always()
+              run: npm uninstall -g yarn
