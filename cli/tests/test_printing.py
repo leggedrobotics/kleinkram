@@ -15,14 +15,14 @@ from kleinkram.printing import parse_metadata_value
 def test_format_bytes():
     assert format_bytes(0) == "0 B"
     assert format_bytes(1) == "1 B"
-    assert format_bytes(1000) == "1000 B"
-    assert format_bytes(1024) == "1.00 KB"
-    assert format_bytes(1025) == "1.00 KB"
-    assert format_bytes(2048) == "2.00 KB"
-    assert format_bytes(2**20) == "1.00 MB"
-    assert format_bytes(2**30) == "1.00 GB"
-    assert format_bytes(2**40) == "1.00 TB"
-    assert format_bytes(2**50) == "1.00 PB"
+    assert format_bytes(999) == "999 B"
+    assert format_bytes(1000) == "1.00 KB"
+    assert format_bytes(1001) == "1.00 KB"
+    assert format_bytes(2000) == "2.00 KB"
+    assert format_bytes(10**6) == "1.00 MB"
+    assert format_bytes(10**9) == "1.00 GB"
+    assert format_bytes(10**12) == "1.00 TB"
+    assert format_bytes(10**15) == "1.00 PB"
 
 
 def test_add_placeholder_row():

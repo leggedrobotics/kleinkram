@@ -85,8 +85,8 @@ def format_bytes(size: int) -> str:
     index = 0
 
     fsize: float = size
-    while fsize >= 1024 and index < len(units) - 1:
-        fsize /= 1024.0
+    while fsize >= 1000 and index < len(units) - 1:
+        fsize /= 1000.0
         index += 1
 
     # Format to 2 decimal places if needed
