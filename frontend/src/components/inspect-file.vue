@@ -212,7 +212,7 @@
                     class="flex column"
                 >
                     <q-btn
-                        :label="`link ${file.type === FileType.BAG ? 'MCAP' : 'BAG'} file`"
+                        :label="`Link ${file.type === FileType.BAG ? 'MCAP' : 'BAG'} File`"
                         flat
                         disable
                         class="button-border full-height"
