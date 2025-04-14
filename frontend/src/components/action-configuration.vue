@@ -85,9 +85,7 @@
                         </q-chip>
                     </div>
                 </div>
-                <span class="text-h5" style="margin-top: 32px"
-                    >Define the Action</span
-                >
+                <span class="text-h5" style="margin-top: 32px">Define the Action</span>
                 <div class="flex column" style="gap: 12px; margin-top: 16px">
                     <div>
                         <label for="dockerImage">Define the Action</label>

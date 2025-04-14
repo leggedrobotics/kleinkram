@@ -18,8 +18,7 @@
         "
         >{{ BUILD_INFO.version }} ({{
             new Date(BUILD_INFO.timestamp).toLocaleString()
-        }})</a
-    >
+        }})</a>
     <footer-separator />
     <a
         class="text-placeholder"
