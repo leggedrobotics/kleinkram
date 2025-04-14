@@ -11,6 +11,9 @@ jobs:
 
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # Ensure a full update
+
             - name: Use Node.js
               uses: actions/setup-node@v4.3.0
               with:
