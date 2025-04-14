@@ -3,12 +3,13 @@
         v-if="selected"
         v-model="selected"
         multiple
-        clearable
-        dense
         option-label="name"
         option-value="uuid"
         :options="categories"
         placeholder="Select Categories"
+        clearable
+        dense
+        outlined
         use-input
         input-debounce="300"
         @clear="clear"

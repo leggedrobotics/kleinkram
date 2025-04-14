@@ -163,10 +163,11 @@
             <ButtonGroup>
                 <q-select
                     v-model="selectedFileHealth"
-                    dense
-                    clearable
                     :options="fileHealthOptions"
-                    style="min-width: 120px"
+                    style="min-width: 160px"
+                    clearable
+                    dense
+                    outlined
                     label="File Health"
                     @clear="clearSelectedFileState"
                 >
