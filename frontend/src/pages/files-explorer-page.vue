@@ -163,10 +163,11 @@
             <ButtonGroup>
                 <q-select
                     v-model="selectedFileHealth"
-                    dense
-                    clearable
                     :options="fileHealthOptions"
-                    style="min-width: 120px"
+                    style="min-width: 160px"
+                    clearable
+                    dense
+                    outlined
                     label="File Health"
                     @clear="clearSelectedFileState"
                 >
@@ -451,7 +452,7 @@ const {
     isLoadingError,
     error: missionError,
 } = useMission(
-    missionUuid.value ?? '',
+    missionUuid,
     (error: unknown) => {
         const errorMessage =
             (error as { response?: { data?: { message?: string } } }).response
@@ -475,7 +476,10 @@ registerNoPermissionErrorHandler(
     missionError,
 );
 
-const { data: all_categories } = useCategories(projectUuid.value ?? '', '');
+const { data: all_categories } = useCategories(
+    projectUuid.value ?? '',
+    ref(''),
+);
 const allCategories: Ref<CategoryDto[]> = computed(() =>
     all_categories.value ? all_categories.value.data : [],
 );
@@ -513,6 +517,7 @@ const { mutate: _deleteFiles } = useMutation({
                 query.queryKey[0] === 'files' &&
                 query.queryKey[1] === missionUuid.value,
         });
+        selectedFiles.value = [];
     },
     onError: (error: unknown) => {
         const errorMessage =

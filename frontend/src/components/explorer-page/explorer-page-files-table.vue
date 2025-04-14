@@ -54,6 +54,32 @@
                 />
             </q-td>
         </template>
+
+        <template #no-data>
+            <div
+                class="flex flex-center"
+                style="justify-content: center; margin: auto"
+            >
+                <div
+                    class="q-pa-md flex flex-center column q-gutter-md"
+                    style="min-height: 200px"
+                >
+                    <span class="text-subtitle1"> No Files Found </span>
+
+                    <create-file-dialog-opener :mission="mission_data">
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            class="button-border"
+                            label="Upload File"
+                            icon="sym_o_add"
+                        />
+                    </create-file-dialog-opener>
+                </div>
+            </div>
+        </template>
+
         <template #body-cell-fileaction="props">
             <q-td :props="props">
                 <q-btn
@@ -163,7 +189,7 @@
 
 <script setup lang="ts">
 import { QTable } from 'quasar';
-import { computed, ref, unref, watch } from 'vue';
+import { computed, defineModel, unref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from '../../services/query-handler';
@@ -184,13 +210,20 @@ import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';
 import DeleteFileDialogOpener from '../button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from '../button-wrapper/edit-file-dialog-opener.vue';
 import MoveFileDialogOpener from '../button-wrapper/move-file-dialog-opener.vue';
-import { useMissionsOfProjectMinimal } from '../../hooks/query-hooks';
+import {
+    useMission,
+    useMissionsOfProjectMinimal,
+} from '../../hooks/query-hooks';
+import CreateFileDialogOpener from '@components/button-wrapper/dialog-opener-create-file.vue';
+
+const selected = defineModel('selected', { required: true, type: Array });
 
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
 
 const project_uuid = useProjectUUID();
 const mission_uuid = useMissionUUID();
+const { data: mission_data } = useMission(mission_uuid);
 
 // TODO: this does not work across pages
 const { data: missions } = useMissionsOfProjectMinimal(project_uuid, 100, 0);
@@ -242,7 +275,6 @@ const pagination = computed(() => {
     };
 });
 
-const selected = ref([]);
 const queryKey = computed(() => [
     'files',
     mission_uuid.value,

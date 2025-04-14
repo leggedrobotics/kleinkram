@@ -46,15 +46,10 @@ module.exports = configure(function (/* ctx */) {
                 '@components': path.resolve(__dirname, 'src/components'),
             },
 
-            target: {
-                browser: [
-                    'es2019',
-                    'edge88',
-                    'firefox78',
-                    'chrome87',
-                    'safari13.1',
-                ],
-                node: 'node22',
+            strict: true,
+            vueShim: true,
+            extendTsConfig(tsConfig) {
+                tsConfig.compilerOptions.baseUrl = '.';
             },
 
             vueRouterMode: 'history', // available values: 'hash', 'history'

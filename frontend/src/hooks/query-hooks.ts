@@ -511,14 +511,20 @@ export const useActions = (
 };
 
 export const useQueueForFile = (
-    filename: string | undefined,
+    file: Ref<FilesDto> | undefined,
     missionUUID: string | undefined,
 ): UseQueryReturnType<FileQueueEntriesDto | undefined, Error> =>
     useQuery<FileQueueEntriesDto>({
-        queryKey: ['queue', filename],
-        queryFn: () => getQueueForFile(filename ?? '', missionUUID ?? ''),
+        queryKey: ['queue', file],
+        queryFn: () =>
+            getQueueForFile(
+                file.value?.filename ?? '',
+                file.value?.mission.uuid ?? '',
+            ),
         enabled: () =>
-            !(filename === undefined) && !(missionUUID === undefined),
+            !(file.value?.filename === undefined) &&
+            !(file.value?.mission.uuid === undefined),
+        refetchInterval: 1000,
     });
 
 export const useFilteredTag = (
@@ -535,11 +541,11 @@ export const useFilteredTag = (
 
 export const useCategories = (
     uuid: string,
-    filter: string,
+    filter: Ref<string>,
 ): UseQueryReturnType<CategoriesDto | undefined, Error> => {
     return useQuery<CategoriesDto>({
         queryKey: computed(() => ['categories', uuid, filter]),
-        queryFn: () => getCategories(uuid, filter),
+        queryFn: () => getCategories(uuid, filter.value),
     });
 };
 

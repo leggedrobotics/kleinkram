@@ -29,6 +29,31 @@
             <q-inner-loading showing color="primary" />
         </template>
 
+        <template #no-data>
+            <div
+                class="flex flex-center"
+                style="justify-content: center; margin: auto"
+            >
+                <div
+                    class="q-pa-md flex flex-center column q-gutter-md"
+                    style="min-height: 200px"
+                >
+                    <span class="text-subtitle1"> No Projects Found </span>
+
+                    <dialog-opener-create-project>
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            class="button-border"
+                            label="Create Project"
+                            icon="sym_o_add"
+                        />
+                    </dialog-opener-create-project>
+                </div>
+            </div>
+        </template>
+
         <template #body-cell-project-action="props">
             <Suspense>
                 <q-td :props="props">
@@ -117,6 +142,7 @@ import DeleteProjectDialogOpener from '../button-wrapper/delete-project-dialog-o
 import ConfigureTagsDialogOpener from '../button-wrapper/dialog-opener-configure-tags.vue';
 import EditProjectDialogOpener from '../button-wrapper/edit-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from '../button-wrapper/dialog-opener-change-project-rights.vue';
+import DialogOpenerCreateProject from '@components/button-wrapper/dialog-opener-create-project.vue';
 
 const urlHandler = useHandler();
 

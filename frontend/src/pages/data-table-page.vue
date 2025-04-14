@@ -291,11 +291,11 @@
                 <link
                     rel="stylesheet"
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-                />
+                >
                 <link
                     rel="stylesheet"
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
-                />
+                >
             </q-td>
         </template>
         <template #body-cell-action="props">
@@ -538,6 +538,7 @@ const columns = [
         label: 'Health',
         style: 'width: 10px',
         align: 'center',
+        sortable: true,
     },
     {
         name: 'project.name',
