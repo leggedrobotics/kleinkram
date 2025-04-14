@@ -17,7 +17,6 @@ from uuid import UUID
 import boto3.s3.transfer
 import botocore.config
 import httpx
-from httpx import RemoteProtocolError
 from rich.console import Console
 from tqdm import tqdm
 
@@ -317,20 +316,18 @@ def _url_download(
                             downloaded += len(chunk)
                             pbar.update(len(chunk))
             break  # download complete
-        except RemoteProtocolError as e:
+        except Exception as e:
             logger.info(f"Error: {e}, retrying...")
             attempt += 1
             if attempt > MAX_RETRIES:
                 raise RuntimeError(
-                    f"Download failed after {MAX_RETRIES} retries due to RemoteProtocolError"
+                    f"Download failed after {MAX_RETRIES} retries due to {e}"
                 ) from e
             if verbose:
                 print(
-                    f"RemoteProtocolError on attempt {attempt}/{MAX_RETRIES}, retrying after backoff..."
+                    f"{e} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff..."
                 )
             sleep(RETRY_BACKOFF_BASE**attempt)
-        except Exception as e:
-            raise RuntimeError(f"Failed to download: {e}") from e
 
 
 class DownloadState(Enum):
