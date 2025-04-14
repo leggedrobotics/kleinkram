@@ -84,17 +84,17 @@
   resolved "https://registry.yarnpkg.com/@nestjs/mapped-types/-/mapped-types-2.1.0.tgz#b9b536b7c3571567aa1d0223db8baa1a51505a19"
   integrity sha512-W+n+rM69XsFdwORF11UqJahn4J3xi4g/ZEOlJNL6KoW5ygWSmBB2p0S2BZ4FQeS/NDH72e6xIcu35SfJnE8bXw==
 
-"@nestjs/swagger@^11.1.1":
-  version "11.1.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.1.1.tgz#07d5461567b1b7d92693ee381d6b444a13f81f70"
-  integrity sha512-k7jEiocSQ5bL6RSnEjQ1h4uT4fErgshWQIhaVjyvufIEyBfH0Fv0Q2lihH2QLqeDjBkrH5bW0Twbqf3SlLOwCw==
+"@nestjs/swagger@^11.1.3":
+  version "11.1.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.1.3.tgz#525a88049e5f420a703b77d22e16ecdbe23b982d"
+  integrity sha512-vhbW/Xu05Diti/EwYQp3Ea7Hj2M++wiakCcxqUUDA2n7NvCZC8LKsrcGynw6/x/lugdXyklYS+s2FhdAfeAikg==
   dependencies:
     "@microsoft/tsdoc" "0.15.1"
     "@nestjs/mapped-types" "2.1.0"
     js-yaml "4.1.0"
     lodash "4.17.21"
     path-to-regexp "8.2.0"
-    swagger-ui-dist "5.20.5"
+    swagger-ui-dist "5.21.0"
 
 "@scarf/scarf@=1.4.0":
   version "1.4.0"
@@ -1298,10 +1298,10 @@ supports-color@^7.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-swagger-ui-dist@5.20.5:
-  version "5.20.5"
-  resolved "https://registry.yarnpkg.com/swagger-ui-dist/-/swagger-ui-dist-5.20.5.tgz#3cbb2852ca2c5bce57bd5267bd747cb2ab3ed371"
-  integrity sha512-7DqzFVHAW5MRhmWRDgd2Xr7RQUGaJv+7RfGmwChlOxz+tMLBmvHDz3vuVgaoj2CWNpTHxIm8aTsCBeJVxNrpjA==
+swagger-ui-dist@5.21.0:
+  version "5.21.0"
+  resolved "https://registry.yarnpkg.com/swagger-ui-dist/-/swagger-ui-dist-5.21.0.tgz#aed230fe6e294c9470217e67697d601e3bb8eb9d"
+  integrity sha512-E0K3AB6HvQd8yQNSMR7eE5bk+323AUxjtCz/4ZNKiahOlPhPJxqn3UPIGs00cyY/dhrTDJ61L7C/a8u6zhGrZg==
   dependencies:
     "@scarf/scarf" "=1.4.0"
 
