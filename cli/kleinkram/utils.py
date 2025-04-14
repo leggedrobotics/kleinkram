@@ -229,10 +229,10 @@ def format_bytes(size_bytes: int | float, speed: bool = False) -> str:
         return "0 B/s" if speed else "0 B"
 
     units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-    power = math.floor(math.log(size_bytes, 1024))
+    power = math.floor(math.log(size_bytes, 1000))
     unit_index = min(power, len(units) - 1)
 
-    value = size_bytes / (1024**unit_index)
+    value = size_bytes / (1000**unit_index)
 
     unit_suffix = "/s" if speed else ""
     return f"{value:.2f} {units[unit_index]}{unit_suffix}"
