@@ -1,7 +1,4 @@
-import {
-    clearAllData,
-    database,
-} from '../../utils/database-utilities';
+import { clearAllData, database } from '../../utils/database-utilities';
 
 /**
  * This test suite tests the access control of the application.
@@ -22,6 +19,5 @@ describe('Verify Project Level Access', () => {
     test('if user ...', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
-
     });
 });

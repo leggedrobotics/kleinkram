@@ -30,7 +30,8 @@ export class HeaderCreator {
             this.headers.append('cookie', `authtoken=${getJwtToken(user)}`);
         }
         // used to avoid usage of older versions of kleinkram
-        this.headers.append('kleinkram-client-version', '0.43.0');
+        // TODO: load version from package.json
+        this.headers.append('kleinkram-client-version', '0.44.1');
     }
 
     /**
@@ -178,20 +179,17 @@ export async function uploadFile(
 
     // confirm upload
     // http://localhost:3000/queue/confirmUpload
-    const responseConfirm = await fetch(
-        `${DEFAULT_URL}/queue/confirmUpload`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                cookie: `authtoken=${await getJwtToken(user)}`,
-            },
-            body: JSON.stringify({
-                uuid: fileresponseponse.fileUUID,
-                md5: hash.digest('base64'),
-            }),
+    const responseConfirm = await fetch(`${DEFAULT_URL}/queue/confirmUpload`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            cookie: `authtoken=${await getJwtToken(user)}`,
         },
-    );
+        body: JSON.stringify({
+            uuid: fileresponseponse.fileUUID,
+            md5: hash.digest('base64'),
+        }),
+    });
     expect(responseConfirm.status).toBe(201);
 
     while (true) {

@@ -1,8 +1,4 @@
-import {
-    clearAllData,
-    database,
-} from './utils/database-utilities';
-
+import { clearAllData, database } from './utils/database-utilities';
 
 describe('Verify File Handling', () => {
     beforeAll(async () => {

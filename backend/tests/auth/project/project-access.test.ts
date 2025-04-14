@@ -5,7 +5,6 @@ import { clearAllData, database } from '../../utils/database-utilities';
  *
  */
 
-
 describe('Verify Project Groups Access', () => {
     beforeAll(async () => {
         await database.initialize();

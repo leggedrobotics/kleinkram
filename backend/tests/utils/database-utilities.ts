@@ -93,16 +93,18 @@ export const mockDatabaseUser = async (
         await userRepository.save(user);
     }
 
-    const user = await userRepository.findOneOrFail({ where: { email: email } });
+    const user = await userRepository.findOneOrFail({
+        where: { email: email },
+    });
     return user.uuid;
 };
-
-
 
 export const getJwtToken = (user: User): string => {
     const jwtSecret = process.env['JWT_SECRET'];
     if (!jwtSecret) {
-        throw new Error('JWT_SECRET is not defined in the environment variables.');
+        throw new Error(
+            'JWT_SECRET is not defined in the environment variables.',
+        );
     }
     return jwt.sign({ uuid: user.uuid }, jwtSecret);
 };

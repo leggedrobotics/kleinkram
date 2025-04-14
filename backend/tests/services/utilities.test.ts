@@ -8,7 +8,6 @@ import {
 import { parseISO } from 'date-fns';
 
 describe('utilities', () => {
-
     test('string to bool', () => {
         expect(stringToBoolean('true')).toBe(true);
         expect(stringToBoolean('false')).toBe(false);
@@ -42,5 +41,4 @@ describe('utilities', () => {
         expect(stringToLocation('')).toBe('');
         expect(stringToLocation('anything')).toBe('anything');
     });
-
 });

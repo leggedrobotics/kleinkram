@@ -1,8 +1,5 @@
 import User from '@common/entities/user/user.entity';
-import {
-    clearAllData,
-    database
-} from '../utils/database-utilities';
+import { clearAllData, database } from '../utils/database-utilities';
 
 import { SubmitActionDto } from '@common/api/types/submit-action-response.dto';
 import ActionTemplate from '@common/entities/action/action-template.entity';
@@ -11,11 +8,14 @@ import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import Project from '@common/entities/project/project.entity';
 import { AccessGroupRights } from '@common/frontend_shared/enum';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
-import { createActionUsingPost, createMissionUsingPost, createProjectUsingPost, HeaderCreator } from '../utils/api-calls';
-
+import {
+    createActionUsingPost,
+    createMissionUsingPost,
+    createProjectUsingPost,
+    HeaderCreator,
+} from '../utils/api-calls';
 
 describe('Verify Action', () => {
-
     beforeAll(async () => {
         await database.initialize();
         await clearAllData();
@@ -25,41 +25,43 @@ describe('Verify Action', () => {
 
         // Create internal user
         ({
-            user: globalThis.creator as User, 
-            token: globalThis.creator.token, 
-            response: globalThis.creator.Response
+            user: globalThis.creator as User,
+            token: globalThis.creator.token,
+            response: globalThis.creator.Response,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global creator: ${globalThis.creator.name}`);
-        
+
         // Create 2nd internal user
         ({
-            user: globalThis.user as User, 
-            token: globalThis.userToken, 
-            response: globalThis.userResponse
+            user: globalThis.user as User,
+            token: globalThis.userToken,
+            response: globalThis.userResponse,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global user: ${globalThis.user.name}`);
-        
+
         // Create external user
         ({
-            user: globalThis.externalUser as User, 
-            token: globalThis.externalUser.token, 
-            response: globalThis.externalUser.response
+            user: globalThis.externalUser as User,
+            token: globalThis.externalUser.token,
+            response: globalThis.externalUser.response,
         } = await generateAndFetchDatabaseUser('external', 'user'));
-        console.log(`[DEBUG]: Global external user: ${globalThis.externalUser.name}`);
-        
+        console.log(
+            `[DEBUG]: Global external user: ${globalThis.externalUser.name}`,
+        );
+
         // Create admin user
         ({
-            user: globalThis.admin as User, 
-            token: globalThis.admin.token, 
-            response: globalThis.admin.response
+            user: globalThis.admin as User,
+            token: globalThis.admin.token,
+            response: globalThis.admin.response,
         } = await generateAndFetchDatabaseUser('internal', 'admin'));
         console.log(`[DEBUG]: Global admin: ${globalThis.admin.name}`);
-
     });
 
     beforeEach(async () => {
         // get access group for creator and user
-        const accessGroupRepository = database.getRepository<AccessGroup>('access_group');
+        const accessGroupRepository =
+            database.getRepository<AccessGroup>('access_group');
         const accessGroupCreator = await accessGroupRepository.findOneOrFail({
             where: { name: globalThis.creator.name },
         });
@@ -83,7 +85,7 @@ describe('Verify Action', () => {
                     },
                 ],
             },
-            globalThis.creator
+            globalThis.creator,
         );
 
         // check if project is created
@@ -95,28 +97,30 @@ describe('Verify Action', () => {
         expect(project.name).toBe('test_project');
         expect(project.description).toBe('This is a test project');
         expect(project.uuid).toBe(globalThis.projectUuid);
-        
+
         // create a mission
         globalThis.missionUuid = await createMissionUsingPost(
-                {
-                    name: 'test_mission',
-                    projectUUID: globalThis.projectUuid,
-                    tags: {},
-                    ignoreTags: true,
-                },
-                globalThis.creator,
+            {
+                name: 'test_mission',
+                projectUUID: globalThis.projectUuid,
+                tags: {},
+                ignoreTags: true,
+            },
+            globalThis.creator,
         );
 
         // check if mission is generated
         const missionRepository = database.getRepository('Mission');
         const mission = await missionRepository.findOneOrFail({
-                where: { uuid: globalThis.missionUuid },
+            where: { uuid: globalThis.missionUuid },
         });
         expect(mission['name']).toBe('test_mission');
         const missions = await missionRepository.find();
         expect(missions.length).toBe(1);
-        console.log(`[DEBUG]: Mission created with UUID: ${globalThis.missionUuid}`);
-    
+        console.log(
+            `[DEBUG]: Mission created with UUID: ${globalThis.missionUuid}`,
+        );
+
         // create action
         globalThis.actionUuid = await createActionUsingPost(
             {
@@ -129,19 +133,22 @@ describe('Verify Action', () => {
                 dockerImage: 'rslethz/test',
                 accessRights: AccessGroupRights.DELETE,
                 maxRuntime: 1,
-                searchable: false
+                searchable: false,
             },
             globalThis.creator,
         );
         // check if action is generated
-        const actionRepository = database.getRepository<ActionTemplate>('ActionTemplate');
+        const actionRepository =
+            database.getRepository<ActionTemplate>('ActionTemplate');
         const action = await actionRepository.findOneOrFail({
             where: { uuid: globalThis.actionUuid },
         });
         expect(action['name']).toBe('test_action');
         const actions = await actionRepository.find();
         expect(actions.length).toBe(1);
-        console.log(`[DEBUG]: Action created with UUID: ${globalThis.actionUuid}`);    
+        console.log(
+            `[DEBUG]: Action created with UUID: ${globalThis.actionUuid}`,
+        );
     });
 
     afterEach(async () => {
@@ -149,7 +156,7 @@ describe('Verify Action', () => {
         const userRepository = database.getRepository<User>('User');
         const users = await userRepository.find();
         expect(users.length).toBe(4);
-        
+
         // Ensure only the four users created in beforeAll are present
         const expectedUserUuids = [
             globalThis.creator.uuid,
@@ -157,18 +164,19 @@ describe('Verify Action', () => {
             globalThis.externalUser.uuid,
             globalThis.admin.uuid,
         ];
-        const actualUserUuids = users.map(user => user.uuid);
+        const actualUserUuids = users.map((user) => user.uuid);
         expect(actualUserUuids.sort()).toEqual(expectedUserUuids.sort());
 
         // delete all action templates
-        const actionTemplateRepository = database.getRepository<ActionTemplate>('action_template');
+        const actionTemplateRepository =
+            database.getRepository<ActionTemplate>('action_template');
         const allActionTemplates = await actionTemplateRepository.find();
 
-        console.log('DEBUG: all templates',allActionTemplates);
+        console.log('DEBUG: all templates', allActionTemplates);
 
         await actionTemplateRepository.remove(allActionTemplates);
         const remainingActionTemplates = await actionTemplateRepository.find();
-        
+
         expect(remainingActionTemplates.length).toBe(0);
         console.log(`[DEBUG]: All Action Template removed.`);
 
@@ -177,7 +185,7 @@ describe('Verify Action', () => {
         const allActions = await actionsRepository.find();
         await actionsRepository.remove(allActions);
         const remainingActions = await actionsRepository.find();
-        
+
         expect(remainingActions.length).toBe(0);
         console.log(`[DEBUG]: All Actions removed.`);
 
@@ -194,7 +202,7 @@ describe('Verify Action', () => {
         const allProjects = await projectRepository.find();
         await projectRepository.remove(allProjects);
         const remainingProjects = await projectRepository.find();
-        
+
         expect(remainingProjects.length).toBe(0);
         console.log(`[DEBUG]: All Projects removed.`);
     });
@@ -204,9 +212,10 @@ describe('Verify Action', () => {
     //     await database.destroy();
     // });
 
-    test('if a internal user with create rights can create a action template',async () => {
+    test('if a internal user with create rights can create a action template', async () => {
         // created in beforeEach()
-        const actionRepository = database.getRepository<ActionTemplate>('ActionTemplate');
+        const actionRepository =
+            database.getRepository<ActionTemplate>('ActionTemplate');
         const action = await actionRepository.findOneOrFail({
             where: { uuid: globalThis.actionUuid },
         });
@@ -215,21 +224,20 @@ describe('Verify Action', () => {
         expect(actions.length).toBe(1);
     });
 
-    test('if a internal user with create rights can submit a action template',async () => {
-
+    test('if a internal user with create rights can submit a action template', async () => {
         const headersBuilder = new HeaderCreator(globalThis.creator);
         headersBuilder.addHeader('Content-Type', 'application/json');
-    
+
         const response = await fetch(`${DEFAULT_URL}/action/submit`, {
             method: 'POST',
             headers: headersBuilder.getHeaders(),
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
-                templateUUID: globalThis.actionUuid
+                templateUUID: globalThis.actionUuid,
             } as SubmitActionDto),
             credentials: 'include',
         });
-    
+
         const json = await response.json();
         console.log(`['DEBUG'] Created action:`, json);
         expect(response.status).toBeLessThan(300);
@@ -239,7 +247,6 @@ describe('Verify Action', () => {
     //     // TODO: implement this test
     //     expect(true).toBe(true);
     // });
-
 
     // // file handling tests
     // test('if file is uploaded and can be downloaded again inside an action', async () => {
@@ -388,7 +395,7 @@ describe('Verify Action', () => {
     // test('if a user with read (viewer) access on a mission can view an action', () => {
     //     // TODO: implement this test
     //     expect(true).toBe(true);
-    // });   
+    // });
 
     // test('if a user with read access (viewer) on a mission can not create an action', () => {
     //     // TODO: implement this test
@@ -441,5 +448,4 @@ describe('Verify Action', () => {
     //     // TODO: implement this test
     //     expect(true).toBe(true);
     // });
-
 });

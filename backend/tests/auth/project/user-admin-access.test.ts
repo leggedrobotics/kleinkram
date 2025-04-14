@@ -1,12 +1,8 @@
 import { clearAllData, database } from '../../utils/database-utilities';
 
-import {
-    HeaderCreator,
-} from '../../utils/api-calls';
+import { HeaderCreator } from '../../utils/api-calls';
 
-import {
-    AccessGroupRights,
-} from '../../../../common/frontend_shared/enum';
+import { AccessGroupRights } from '../../../../common/frontend_shared/enum';
 
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
@@ -19,7 +15,6 @@ import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
  */
 
 describe('Verify project user/admin access', () => {
-
     beforeAll(async () => {
         await database.initialize();
         await clearAllData();
@@ -29,41 +24,43 @@ describe('Verify project user/admin access', () => {
 
         // Create internal user
         ({
-            user: globalThis.creator as User, 
-            token: globalThis.creator.token, 
-            response: globalThis.creator.Response
+            user: globalThis.creator as User,
+            token: globalThis.creator.token,
+            response: globalThis.creator.Response,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global creator: ${globalThis.creator.name}`);
 
-                // Create internal user
+        // Create internal user
         ({
-            user: globalThis.user as User, 
-            token: globalThis.user.token, 
-            response: globalThis.user.Response
+            user: globalThis.user as User,
+            token: globalThis.user.token,
+            response: globalThis.user.Response,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global user: ${globalThis.user.name}`);
-               
+
         // Create external user
         ({
-            user: globalThis.externalUser as User, 
-            token: globalThis.externalUser.token, 
-            response: globalThis.externalUser.response
+            user: globalThis.externalUser as User,
+            token: globalThis.externalUser.token,
+            response: globalThis.externalUser.response,
         } = await generateAndFetchDatabaseUser('external', 'user'));
-        console.log(`[DEBUG]: Global external user: ${globalThis.externalUser.name}`);
-        
+        console.log(
+            `[DEBUG]: Global external user: ${globalThis.externalUser.name}`,
+        );
+
         // Create admin user
         ({
-            user: globalThis.admin as User, 
-            token: globalThis.admin.token, 
-            response: globalThis.admin.response
+            user: globalThis.admin as User,
+            token: globalThis.admin.token,
+            response: globalThis.admin.response,
         } = await generateAndFetchDatabaseUser('internal', 'admin'));
         console.log(`[DEBUG]: Global admin: ${globalThis.admin.name}`);
-
     });
 
     beforeEach(async () => {
         // get access group for creator
-        const accessGroupRepository = database.getRepository<AccessGroup>('access_group');
+        const accessGroupRepository =
+            database.getRepository<AccessGroup>('access_group');
         const accessGroupCreator = await accessGroupRepository.findOneOrFail({
             where: { name: globalThis.creator.name },
         });
@@ -106,7 +103,7 @@ describe('Verify project user/admin access', () => {
             }),
         );
         const projects = await projectRepository.find();
-        expect(projects.length).toBe(10); 
+        expect(projects.length).toBe(10);
     });
 
     afterEach(async () => {
@@ -114,7 +111,7 @@ describe('Verify project user/admin access', () => {
         const userRepository = database.getRepository<User>('User');
         const users = await userRepository.find();
         expect(users.length).toBe(4);
-        
+
         // Ensure only the four users created in beforeAll are present
         const expectedUserUuids = [
             globalThis.creator.uuid,
@@ -122,7 +119,7 @@ describe('Verify project user/admin access', () => {
             globalThis.externalUser.uuid,
             globalThis.admin.uuid,
         ];
-        const actualUserUuids = users.map(user => user.uuid);
+        const actualUserUuids = users.map((user) => user.uuid);
         expect(actualUserUuids.sort()).toEqual(expectedUserUuids.sort());
 
         // delete all missions
@@ -162,8 +159,8 @@ describe('Verify project user/admin access', () => {
             expect(response.status).toBe(200);
             const json = await response.json();
             expect(json['name']).toBe(`test_project${index + 1}`);
-            }
-        });
+        }
+    });
 
     test('if user with admin role can edit any project', async () => {
         const headerCreator = new HeaderCreator(globalThis.admin);
@@ -215,7 +212,7 @@ describe('Verify project user/admin access', () => {
                 const project = await projectRepository.findOneOrFail({
                     where: { uuid: globalThis.projectUuids[index] },
                 });
-                
+
                 const mission = await missionRepository.save(
                     missionRepository.create({
                         creator: { uuid: globalThis.creator.uuid },
@@ -243,7 +240,6 @@ describe('Verify project user/admin access', () => {
 
     // // external
     test('third party user cannot view any project by default', async () => {
-
         // try to get all projects with internal user
         const headerInternal = new HeaderCreator(globalThis.user);
         headerInternal.addHeader('Content-Type', 'application/json');
@@ -272,7 +268,6 @@ describe('Verify project user/admin access', () => {
     });
 
     test('if external user cannot create a new project', async () => {
-
         const headersBuilder = new HeaderCreator(globalThis.externalUser);
         headersBuilder.addHeader('Content-Type', 'application/json');
 
@@ -295,7 +290,6 @@ describe('Verify project user/admin access', () => {
     });
 
     test('if external user cannot delete any project', async () => {
-
         const externalHeader = new HeaderCreator(globalThis.externalUser);
         externalHeader.addHeader('Content-Type', 'application/json');
         for (const [, uuid] of globalThis.projectUuids.entries()) {

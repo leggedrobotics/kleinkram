@@ -1,8 +1,4 @@
-import {
-    clearAllData,
-    database,
-} from '../../utils/database-utilities';
-
+import { clearAllData, database } from '../../utils/database-utilities';
 
 /**
  * This test suite tests the access control of the application.
@@ -23,7 +19,7 @@ describe('Verify Access Groups External', () => {
     test('Non "leggedrobotics.com" email is not added to default group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
-        
+
         // // create a user with a non default email
         // const mockEmail = 'external-user@third-party.com';
         // const externalUuid = await mockDatabaseUser(mockEmail);
@@ -249,7 +245,7 @@ describe('Verify Access Groups Internal User Access', () => {
     test('if a user with create rights can generate a access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
-        
+
         // const { user: creator } = await generateAndFetchDatabaseUser(
         //     'internal',
         //     'user',

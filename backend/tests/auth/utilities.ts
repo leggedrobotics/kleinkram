@@ -6,12 +6,9 @@ import {
     mockDatabaseUser,
 } from '../utils/database-utilities';
 
+import { HeaderCreator } from '../utils/api-calls';
+
 import {
-    HeaderCreator
-} from '../utils/api-calls';
-
-
- import {
     AccessGroupType,
     UserRole,
 } from '../../../common/frontend_shared/enum';
@@ -20,7 +17,9 @@ import User from '../../../common/entities/user/user.entity';
 
 // DEFAUL_URL for backend
 export const DEFAULT_URL = 'http://localhost:3000';
-export const DEFAULT_GROUP_UUIDS: [string] = ['00000000-0000-0000-0000-000000000000'] as const;
+export const DEFAULT_GROUP_UUIDS: [string] = [
+    '00000000-0000-0000-0000-000000000000',
+] as const;
 export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
     const accessGroupRepository = database.getRepository('AccessGroup');
     return (await accessGroupRepository.find({
@@ -38,7 +37,6 @@ export const getAllAccessGroups = async (): Promise<AccessGroup[]> => {
         },
     })) as AccessGroup[];
 };
-
 
 /**
  * Verify if an access group with the passed uuid exists
@@ -71,7 +69,8 @@ export const getAccessGroupForEmail = (
         accessGroups.filter((_group: AccessGroup) =>
             _group.memberships?.some(
                 (accessGroupUser) =>
-                    accessGroupUser.user?.email === email && _group.type === AccessGroupType.PRIMARY
+                    accessGroupUser.user?.email === email &&
+                    _group.type === AccessGroupType.PRIMARY,
             ),
         ) ?? [];
 
@@ -92,14 +91,15 @@ export const getAccessGroupForEmail = (
  */
 export const generateAndFetchDatabaseUser = async (
     userType: 'internal' | 'external',
-    userRole: 'user' | 'admin'
+    userRole: 'user' | 'admin',
 ): Promise<{ user: User; token: string; response: Response }> => {
     try {
         const roleEnum = userRole === 'admin' ? UserRole.ADMIN : UserRole.USER;
 
-        const baseEmail = userType === 'internal'
-            ? 'internal-user@leggedrobotics.com'
-            : 'external-user@third-party.com';
+        const baseEmail =
+            userType === 'internal'
+                ? 'internal-user@leggedrobotics.com'
+                : 'external-user@third-party.com';
 
         let userEmail = baseEmail;
         let counter = 1;
@@ -111,7 +111,9 @@ export const generateAndFetchDatabaseUser = async (
         // Check if user already exists and find an available email and username
         while (true) {
             try {
-                await userRepository.findOneOrFail({ where: { email: userEmail } });
+                await userRepository.findOneOrFail({
+                    where: { email: userEmail },
+                });
                 // If the user exists, modify the email and username
                 const [name, domain] = baseEmail.split('@');
                 userEmail = `${name}${counter}@${domain}`;
@@ -121,27 +123,29 @@ export const generateAndFetchDatabaseUser = async (
                 break;
             }
         }
-        
+
         const userId = await mockDatabaseUser(userEmail, username, roleEnum);
         const user = await getUserFromDatabase(userId);
-        
-        const token = await getJwtToken(user);
+
+        const token = getJwtToken(user);
 
         // Header
         const headerCreator = new HeaderCreator(user);
-        
+
         const response = await fetch(
-            `${DEFAULT_URL}/oldProject/filtered?take=11&skip=0&sortBy=name&descending=false`,
+            `${DEFAULT_URL}/projects?take=20&skip=0&sortBy=name&sortOrder=ASC`,
             {
                 method: 'GET',
                 headers: headerCreator.getHeaders(),
-            }
+            },
         );
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+            throw new Error(
+                `Failed to fetch data: ${response.status} ${response.statusText}`,
+            );
         }
-        
+
         return { user, token, response };
     } catch (error) {
         console.error('Error in generateAndFetchDbUser:', error);

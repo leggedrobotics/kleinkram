@@ -6,9 +6,7 @@ import {
     HeaderCreator,
 } from '../../utils/api-calls';
 
-import {
-    AccessGroupRights
-} from '../../../../common/frontend_shared/enum';
+import { AccessGroupRights } from '../../../../common/frontend_shared/enum';
 
 import User from '@common/entities/user/user.entity';
 import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
@@ -22,7 +20,6 @@ import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
  */
 
 describe('Verification project endpoint', () => {
-
     beforeAll(async () => {
         await database.initialize();
         await clearAllData();
@@ -32,41 +29,43 @@ describe('Verification project endpoint', () => {
 
         // Create internal user
         ({
-            user: globalThis.creator as User, 
-            token: globalThis.creator.token, 
-            response: globalThis.creator.Response
+            user: globalThis.creator as User,
+            token: globalThis.creator.token,
+            response: globalThis.creator.Response,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global creator: ${globalThis.creator.name}`);
-        
+
         // Create 2nd internal user
         ({
-            user: globalThis.user as User, 
-            token: globalThis.userToken, 
-            response: globalThis.userResponse
+            user: globalThis.user as User,
+            token: globalThis.userToken,
+            response: globalThis.userResponse,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
         console.log(`[DEBUG]: Global user: ${globalThis.user.name}`);
-        
+
         // Create external user
         ({
-            user: globalThis.externalUser as User, 
-            token: globalThis.externalUser.token, 
-            response: globalThis.externalUser.response
+            user: globalThis.externalUser as User,
+            token: globalThis.externalUser.token,
+            response: globalThis.externalUser.response,
         } = await generateAndFetchDatabaseUser('external', 'user'));
-        console.log(`[DEBUG]: Global external user: ${globalThis.externalUser.name}`);
-        
+        console.log(
+            `[DEBUG]: Global external user: ${globalThis.externalUser.name}`,
+        );
+
         // Create admin user
         ({
-            user: globalThis.admin as User, 
-            token: globalThis.admin.token, 
-            response: globalThis.admin.response
+            user: globalThis.admin as User,
+            token: globalThis.admin.token,
+            response: globalThis.admin.response,
         } = await generateAndFetchDatabaseUser('internal', 'admin'));
         console.log(`[DEBUG]: Global admin: ${globalThis.admin.name}`);
-
     });
 
     beforeEach(async () => {
         // get access group for creator
-        const accessGroupRepository = database.getRepository<AccessGroup>('access_group');
+        const accessGroupRepository =
+            database.getRepository<AccessGroup>('access_group');
         const accessGroupCreator = await accessGroupRepository.findOneOrFail({
             where: { name: globalThis.creator.name },
         });
@@ -84,7 +83,7 @@ describe('Verification project endpoint', () => {
                     },
                 ],
             },
-            globalThis.creator
+            globalThis.creator,
         );
 
         // check if project is created
@@ -103,7 +102,7 @@ describe('Verification project endpoint', () => {
         const userRepository = database.getRepository<User>('User');
         const users = await userRepository.find();
         expect(users.length).toBe(4);
-        
+
         // Ensure only the four users created in beforeAll are present
         const expectedUserUuids = [
             globalThis.creator.uuid,
@@ -111,7 +110,7 @@ describe('Verification project endpoint', () => {
             globalThis.externalUser.uuid,
             globalThis.admin.uuid,
         ];
-        const actualUserUuids = users.map(user => user.uuid);
+        const actualUserUuids = users.map((user) => user.uuid);
         expect(actualUserUuids.sort()).toEqual(expectedUserUuids.sort());
 
         // delete all missions
@@ -127,7 +126,7 @@ describe('Verification project endpoint', () => {
         const allProjects = await projectRepository.find();
         const response = await projectRepository.remove(allProjects);
         const remainingProjects = await projectRepository.find();
-        
+
         expect(remainingProjects.length).toBe(0);
         console.log(`[DEBUG]: All Projects removed: ${response}`);
     });
@@ -138,7 +137,6 @@ describe('Verification project endpoint', () => {
     });
 
     test('User with leggedrobotics email can create a new project', async () => {
-
         // happens in beforeAll
         const projectRepository = database.getRepository<Project>('Project');
         const project = await projectRepository.findOneOrFail({
@@ -149,22 +147,18 @@ describe('Verification project endpoint', () => {
 
     test('if it is not possible to create a project with the same name', async () => {
         const header = new HeaderCreator(globalThis.creator);
-        const response = await fetch(
-            `${DEFAULT_URL}/project`,
-            {
-                method: 'POST',
-                headers: header.getHeaders(),
-                body: JSON.stringify({
-                    name: 'test_project',
-                    description: 'This is a test project',
-                }),
-            },
-        );
+        const response = await fetch(`${DEFAULT_URL}/project`, {
+            method: 'POST',
+            headers: header.getHeaders(),
+            body: JSON.stringify({
+                name: 'test_project',
+                description: 'This is a test project',
+            }),
+        });
         expect(response.status).toBe(400);
     });
 
     test('if user with leggedrobotics email have read only access by default', async () => {
-        
         // get project with user 2
         const header = new HeaderCreator(globalThis.user);
         const response = await fetch(
@@ -217,7 +211,6 @@ describe('Verification project endpoint', () => {
     });
 
     test('the creator of a project has delete access to the project', async () => {
-
         // delete the project
         const headerCreator = new HeaderCreator(globalThis.creator);
         const url = `${DEFAULT_URL}/projects/${globalThis.projectUuid}`;
@@ -234,7 +227,6 @@ describe('Verification project endpoint', () => {
     });
 
     test('the creator can add users to with READ access to the project during creation', async () => {
-
         // create project with read access for user2
         const projectUuid = await createProjectUsingPost(
             {
@@ -252,18 +244,15 @@ describe('Verification project endpoint', () => {
 
         // check if project can be manipulated by user2
         const headerCreator = new HeaderCreator(globalThis.user);
-        const response = await fetch(
-            `${DEFAULT_URL}/projects/${projectUuid}`,
-            {
-                method: 'PUT',
-                headers: headerCreator.getHeaders(),
-                body: JSON.stringify({
-                    name: '1234',
-                    description: '1234',
-                    requiredTags: [],
-                }),
-            },
-        );
+        const response = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`, {
+            method: 'PUT',
+            headers: headerCreator.getHeaders(),
+            body: JSON.stringify({
+                name: '1234',
+                description: '1234',
+                requiredTags: [],
+            }),
+        });
         expect(response.status).toBe(403);
 
         // check if project can be deleted by user2
@@ -278,8 +267,8 @@ describe('Verification project endpoint', () => {
     });
 
     test('the creator can add users to with WRITE access to the project during creation', async () => {
-
-        const accessGroupRepository = database.getRepository<AccessGroup>('access_group');
+        const accessGroupRepository =
+            database.getRepository<AccessGroup>('access_group');
         const accessGroupCreator = await accessGroupRepository.findOneOrFail({
             where: { name: globalThis.creator.name },
         });
@@ -308,37 +297,34 @@ describe('Verification project endpoint', () => {
 
         const headerCreator = new HeaderCreator(globalThis.user);
         headerCreator.addHeader('Content-Type', 'application/json');
-        
-        const response = await fetch(
-            `${DEFAULT_URL}/projects/${projectUuid}`,
-            {
-                method: 'PUT',
-                headers: headerCreator.getHeaders(),
-                body: JSON.stringify({
-                    name: '1234',
-                    description: '1234',
-                    requiredTags: [],
-                    accessGroups: [
-                        {
-                            rights: AccessGroupRights.WRITE,
-                            accessGroupUUID: accessGroupUser.uuid,
-                        },
-                        {
-                            rights: AccessGroupRights.DELETE,
-                            accessGroupUUID: accessGroupCreator.uuid,
-                        },
-                    ],
-                }),
-            },
-        );
-        expect(response.status).toBe(200);
 
+        const response = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`, {
+            method: 'PUT',
+            headers: headerCreator.getHeaders(),
+            body: JSON.stringify({
+                name: '1234',
+                description: '1234',
+                requiredTags: [],
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.WRITE,
+                        accessGroupUUID: accessGroupUser.uuid,
+                    },
+                    {
+                        rights: AccessGroupRights.DELETE,
+                        accessGroupUUID: accessGroupCreator.uuid,
+                    },
+                ],
+            }),
+        });
+        expect(response.status).toBe(200);
 
         const headersBuilder = new HeaderCreator(globalThis.user);
         headersBuilder.addHeader('Content-Type', 'application/json');
 
         // check if project can be deleted by user
-        const response2 = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`,
+        const response2 = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}`,
             {
                 method: 'DELETE',
                 headers: headersBuilder.getHeaders(),
@@ -363,9 +349,9 @@ describe('Verification project endpoint', () => {
     });
 
     test('the creator can add users to with CREATE access to the project during creation', async () => {
-
         // create project with CREATE access for user
-        const accessGroupRepository = database.getRepository<AccessGroup>('access_group');
+        const accessGroupRepository =
+            database.getRepository<AccessGroup>('access_group');
         const accessGroupCreator = await accessGroupRepository.findOneOrFail({
             where: { name: globalThis.creator.name },
         });
@@ -392,7 +378,7 @@ describe('Verification project endpoint', () => {
             globalThis.creator,
         );
 
-       const missionUuid = await createMissionUsingPost(
+        const missionUuid = await createMissionUsingPost(
             {
                 name: 'test_mission',
                 projectUUID: projectUuid,
@@ -415,35 +401,33 @@ describe('Verification project endpoint', () => {
         // denied permission to delete project because of mission
         const creatorHeader = new HeaderCreator(globalThis.creator);
         creatorHeader.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`,
-            {
-                method: 'DELETE',
-                headers: creatorHeader.getHeaders(),
-                body: JSON.stringify({
-                    name: '1234',
-                    description: '1234',
-                    requiredTags: [],
-                    accessGroups: [
-                        {
-                            rights: AccessGroupRights.WRITE,
-                            accessGroupUUID: accessGroupUser.uuid,
-                        },
-                        {
-                            rights: AccessGroupRights.DELETE,
-                            accessGroupUUID: accessGroupCreator.uuid,
-                        },
-                    ],
-                }),
-            },
-        );
+        const response = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`, {
+            method: 'DELETE',
+            headers: creatorHeader.getHeaders(),
+            body: JSON.stringify({
+                name: '1234',
+                description: '1234',
+                requiredTags: [],
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.WRITE,
+                        accessGroupUUID: accessGroupUser.uuid,
+                    },
+                    {
+                        rights: AccessGroupRights.DELETE,
+                        accessGroupUUID: accessGroupCreator.uuid,
+                    },
+                ],
+            }),
+        });
         expect(response.status).toBe(409);
 
         // delete mission
         const deleteMissionResponse = await fetch(
             `${DEFAULT_URL}/mission/${missionUuid}`,
             {
-            method: 'DELETE',
-            headers: creatorHeader.getHeaders(),
+                method: 'DELETE',
+                headers: creatorHeader.getHeaders(),
             },
         );
         expect(deleteMissionResponse.status).toBe(200);
@@ -456,7 +440,8 @@ describe('Verification project endpoint', () => {
         // check if project can not be deleted by user
         const userHeader = new HeaderCreator(globalThis.user);
         userHeader.addHeader('Content-Type', 'application/json');
-        const response2 = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`,
+        const response2 = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}`,
             {
                 method: 'DELETE',
                 headers: userHeader.getHeaders(),
@@ -481,12 +466,12 @@ describe('Verification project endpoint', () => {
     });
 
     test('the creator can add users to with DELETE access to the project during creation', async () => {
-
         // create project with delete access for user2
         const headerCreator = new HeaderCreator(globalThis.user);
         headerCreator.addHeader('Content-Type', 'application/json');
 
-        const accessGroupRepository = database.getRepository<AccessGroup>('access_group');
+        const accessGroupRepository =
+            database.getRepository<AccessGroup>('access_group');
         const accessGroupUser = await accessGroupRepository.findOneOrFail({
             where: { name: globalThis.user.name },
         });
@@ -506,13 +491,10 @@ describe('Verification project endpoint', () => {
         );
 
         // check if project can be deleted by user
-        const response = await fetch(
-            `${DEFAULT_URL}/projects/${projectUuid}`,
-            {
-                method: 'DELETE',
-                headers: headerCreator.getHeaders(),
-            },
-        );
+        const response = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`, {
+            method: 'DELETE',
+            headers: headerCreator.getHeaders(),
+        });
         expect(response.status).toBe(200);
     });
 
@@ -541,7 +523,8 @@ describe('Verification project endpoint', () => {
         const creatorHeader = new HeaderCreator(globalThis.creator);
         creatorHeader.addHeader('Content-Type', 'application/json');
 
-        const response = await fetch(`${DEFAULT_URL}/projects/${globalThis.projectUuid}`,
+        const response = await fetch(
+            `${DEFAULT_URL}/projects/${globalThis.projectUuid}`,
             {
                 method: 'DELETE',
                 headers: creatorHeader.getHeaders(),

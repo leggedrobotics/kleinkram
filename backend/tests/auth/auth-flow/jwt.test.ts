@@ -16,11 +16,11 @@ describe('Verify JWT Handling', () => {
 
     test('reject allow self-signed JWT token', async () => {
         const token = jwt.sign({ user: '' }, 'this-is-not-the-server-secret');
-        
+
         const headersBuilder = new HeaderCreator();
         headersBuilder.addHeader('Content-Type', 'application/json');
-        headersBuilder.addHeader('cookie', `authtoken=${token}`,);
-        
+        headersBuilder.addHeader('cookie', `authtoken=${token}`);
+
         const response = await fetch(`http://localhost:3000/project`, {
             method: 'POST',
             headers: headersBuilder.getHeaders(),
@@ -43,7 +43,7 @@ describe('Verify JWT Handling', () => {
 
         const headersBuilder = new HeaderCreator();
         headersBuilder.addHeader('Content-Type', 'application/json');
-        headersBuilder.addHeader('cookie', `authtoken=${token}`,);
+        headersBuilder.addHeader('cookie', `authtoken=${token}`);
 
         const response = await fetch(`http://localhost:3000/project`, {
             method: 'POST',

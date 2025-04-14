@@ -1,10 +1,4 @@
-import {
-    clearAllData,
-    database,
-} from '../../utils/database-utilities';
-
-
-
+import { clearAllData, database } from '../../utils/database-utilities';
 
 /**
  * This test suite tests the access control of the application.
@@ -21,16 +15,15 @@ describe('Verify Project Level Access', () => {
         await database.destroy();
     });
 
-
     // define tests
 
-    test('if viewer of a project cannot add any tag types', async() => {
+    test('if viewer of a project cannot add any tag types', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
-    test('if viewer of a project cannot add any tag types', async() => {
+    test('if viewer of a project cannot add any tag types', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
@@ -49,7 +42,6 @@ describe('Verify Project Level Access', () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
-
 });
 
 describe('Verify tags/metadata type generation', () => {
@@ -66,7 +58,7 @@ describe('Verify tags/metadata type generation', () => {
     test('if internal user can add string tags/metadata', async () => {
         // TODO: finish test
         expect(true).toBe(true);
-        
+
         // const {user:user} = await generateAndFetchDatabaseUser('internal', 'user');
 
         // const projectUuid = await createMetadataUsingPost({
@@ -81,9 +73,7 @@ describe('Verify tags/metadata type generation', () => {
         //     where: { uuid: metadataUuid },
         //     relations: ['project']
         // });
-
     });
-
 
     test('if internal user can add number tags/metadata', async () => {
         // TODO: finish test
@@ -98,7 +88,6 @@ describe('Verify tags/metadata type generation', () => {
         //     user,
         // );
     });
-
 
     test('if internal user can add boolean tags/metadata', async () => {
         // TODO: finish test
@@ -148,7 +137,6 @@ describe('Verify tags/metadata type generation', () => {
         //     },
         //     user,
         // );
-
     });
 
     test('if internal user can add any tags/metadata', async () => {
@@ -166,7 +154,7 @@ describe('Verify tags/metadata type generation', () => {
     test('if internal user can not create metadata with the same name AND datatype', async () => {
         // TODO: finish test
         expect(true).toBe(true);
-        
+
         // const projectUuid = await createMetadataUsingPost({
         //         type: DataType.ANY,
         //         name: 'test_tag'
