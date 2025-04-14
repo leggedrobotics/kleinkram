@@ -476,7 +476,10 @@ registerNoPermissionErrorHandler(
     missionError,
 );
 
-const { data: all_categories } = useCategories(projectUuid.value ?? '', '');
+const { data: all_categories } = useCategories(
+    projectUuid.value ?? '',
+    ref(''),
+);
 const allCategories: Ref<CategoryDto[]> = computed(() =>
     all_categories.value ? all_categories.value.data : [],
 );

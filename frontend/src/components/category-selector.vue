@@ -74,10 +74,7 @@ const clear = () => {
     selected.value = [];
 };
 
-const { data: _categories } = useCategories(
-    properties.project_uuid,
-    filter.value,
-);
+const { data: _categories } = useCategories(properties.project_uuid, filter);
 
 const categories: Ref<CategoryDto[]> = computed(() =>
     _categories.value ? _categories.value.data || [] : [],

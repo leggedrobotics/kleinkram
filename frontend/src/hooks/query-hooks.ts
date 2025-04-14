@@ -535,11 +535,11 @@ export const useFilteredTag = (
 
 export const useCategories = (
     uuid: string,
-    filter: string,
+    filter: Ref<string>,
 ): UseQueryReturnType<CategoriesDto | undefined, Error> => {
     return useQuery<CategoriesDto>({
         queryKey: computed(() => ['categories', uuid, filter]),
-        queryFn: () => getCategories(uuid, filter),
+        queryFn: () => getCategories(uuid, filter.value),
     });
 };
 
