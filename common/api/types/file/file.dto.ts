@@ -8,6 +8,7 @@ import {
     IsDate,
     IsEnum,
     IsNumber,
+    IsOptional,
     IsString,
     ValidateNested,
 } from 'class-validator';
@@ -81,6 +82,11 @@ export class FileDto {
     @ApiProperty()
     @IsString()
     hash!: string;
+
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    relatedFileUuid?: string | undefined;
 }
 
 export class FileWithTopicDto extends FileDto {

@@ -393,6 +393,7 @@ export class FileService implements OnModuleInit {
                 'topics',
                 'mission.project',
                 'creator',
+                'relatedFile',
                 'categories',
             ],
         });

@@ -177,6 +177,7 @@ export const fileEntityToDto = (file: FileEntity): FileDto => {
         type: file.type,
         size: file.size ?? 0,
         hash: file.hash ?? '',
+        relatedFileUuid: file.relatedFile?.uuid,
         creator: userEntityToDto(file.creator),
         mission: missionEntityToDto(file.mission),
         categories:
