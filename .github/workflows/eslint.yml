@@ -10,13 +10,6 @@ jobs:
         runs-on: [self-hosted, linux]
 
         steps:
-            - name: 'Cleanup build folder'
-              run: |
-                  ls -la ./
-                  rm -rf ./* || true
-                  rm -rf ./.??* || true
-                  ls -la ./
-
             - uses: actions/checkout@v4
 
             - name: Use Node.js

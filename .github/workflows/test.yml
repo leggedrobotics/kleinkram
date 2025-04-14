@@ -12,17 +12,11 @@ jobs:
 
         # Add permissions to allow the action to write PR comments
         permissions:
+            contents: read # Allows reading the repository contents
             checks: write # Allows reporting check status
             pull-requests: write # Allows adding comments to PRs
 
         steps:
-            - name: 'Cleanup build folder'
-              run: |
-                  ls -la ./
-                  rm -rf ./* || true
-                  rm -rf ./.??* || true
-                  ls -la ./
-
             - uses: actions/checkout@v4
 
             - name: Use Node.js
