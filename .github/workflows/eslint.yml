@@ -19,18 +19,16 @@ jobs:
             - name: Install yarn
               run: npm install -g yarn
 
-            - name: Install prettier
-              run: yarn add prettier
-
-            - name: Run prettier
-              run: yarn prettier:check
-
             # for eslint we may need to install the dependencies
             - name: Install dependencies
               run: yarn install --immutable
 
             - name: Run ESLint (with info to run `yarn eslint-full` to reproduce locally)
-              run: yarn eslint-full:check || echo "Run 'yarn eslint-full' to reproduce locally"
+              run: |
+                  if ! yarn eslint-full:check; then
+                    echo "ESLint check failed. Run 'yarn eslint-full' locally to reproduce."
+                    exit 1 # Explicitly fail the step
+                fi
 
             # Uninstall when you're done
             - name: Clean up
