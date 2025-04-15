@@ -661,10 +661,10 @@
     path-to-regexp "3.3.0"
     tslib "2.7.0"
 
-"@nestjs/platform-express@^10.0.0":
-  version "10.4.15"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-10.4.15.tgz#117fe7470c2b93e4ac07687b7fa604a17ca240c5"
-  integrity sha512-63ZZPkXHjoDyO7ahGOVcybZCRa7/Scp6mObQKjcX/fTEq1YJeU75ELvMsuQgc8U2opMGOBD7GVuc4DV0oeDHoA==
+"@nestjs/platform-express@^10.4.16":
+  version "10.4.16"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-10.4.16.tgz#c85c182f0628d9e9a05e4afd5b851eeac1eb88c0"
+  integrity sha512-xb8RD9myNjprK3mqhACnwf0AksywZYXQcmbrX0G78N2teieJhT540WCUpFDtIL3WrBgadjFWLPMf0hdNoTKxkg==
   dependencies:
     body-parser "1.20.3"
     cors "2.8.5"
