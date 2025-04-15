@@ -189,7 +189,7 @@
 
 <script setup lang="ts">
 import { QTable } from 'quasar';
-import { computed, defineModel, unref, watch } from 'vue';
+import { computed, unref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
 import { QueryHandler, TableRequest } from '../../services/query-handler';
