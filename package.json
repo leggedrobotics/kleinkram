@@ -12,7 +12,7 @@
         "eslint:check-summary": "T(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -f summary .)",
         "eslint-full:check-summary": "(TIMING=1 yarn run tsc:check); (TIMING=1 node --max-old-space-size=4096 ./node_modules/.bin/eslint -c eslint-full.config.mjs -f summary .)",
         "eslint:check": "(TIMING=1 yarn run tsc:check); (TIMING=1 eslint -f summary .)",
-        "eslint-full:check": "(TIMING=1 yarn run tsc:check); (TIMING=1 node --max-old-space-size=4096 ./node_modules/.bin/eslint -c eslint-full.config.mjs .)",
+        "eslint-full:check": "(TIMING=1 yarn run tsc:check); (TIMING=1 node --max-old-space-size=4096 ./node_modules/.bin/eslint -c eslint-full.config.mjs -f summary .)",
         "eslint:quiet": "(TIMING=1 yarn run tsc:check); (TIMING=1 node --max-old-space-size=4096 ./node_modules/.bin/eslint -c eslint-full.config.mjs --quiet --fix .)",
         "eslint-full:quiet": "(TIMING=1 yarn run tsc:check); (TIMING=1 node --max-old-space-size=4096 ./node_modules/.bin/eslint -c eslint-full.config.mjs --quiet --fix .)",
         "tsc:check": "(tsc --noemit   --project  backend/tsconfig.json); (tsc --noemit   --project  queueConsumer/tsconfig.json); (tsc --noemit   --project  common/tsconfig.json); (vue-tsc --noEmit  --project  frontend/tsconfig.json)",
