@@ -1,6 +1,6 @@
 import { Column, Entity, OneToMany } from 'typeorm';
-import BaseEntity from '../base-entity.entity';
 import Action from '../action/action.entity';
+import BaseEntity from '../base-entity.entity';
 
 @Entity()
 export default class Worker extends BaseEntity {

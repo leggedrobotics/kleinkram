@@ -1,4 +1,3 @@
-import { downloadFile } from 'src/services/queries/file';
 import {
     AccessGroupRights,
     ActionState,
@@ -6,6 +5,7 @@ import {
     FileState,
     QueueState,
 } from '@common/enum';
+import { downloadFile } from 'src/services/queries/file';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 

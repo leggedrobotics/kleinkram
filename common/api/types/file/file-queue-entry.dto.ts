@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { FileLocation, QueueState } from '../../../frontend_shared/enum';
-import { UserDto } from '../user.dto';
+import { Type } from 'class-transformer';
 import {
     IsDate,
     IsEnum,
@@ -9,11 +8,12 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { Paginated } from '../pagination';
+import { FileLocation, QueueState } from '../../../frontend_shared/enum';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 import { MissionDto } from '../mission/mission.dto';
+import { Paginated } from '../pagination';
+import { UserDto } from '../user.dto';
 
 export class FileQueueEntryDto {
     @ApiProperty()

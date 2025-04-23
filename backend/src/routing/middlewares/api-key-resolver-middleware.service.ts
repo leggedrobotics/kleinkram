@@ -1,7 +1,7 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { UserService } from '../../services/user.service';
-import { NextFunction, Request, Response } from 'express';
 import { CookieNames } from '@common/frontend_shared/enum';
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { NextFunction, Request, Response } from 'express';
+import { UserService } from '../../services/user.service';
 
 /**
  *

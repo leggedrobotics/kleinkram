@@ -1,7 +1,7 @@
-import axios from 'src/api/axios';
-import { QueueState } from '@common/enum';
 import { FileQueueEntriesDto } from '@api/types/file/file-queue-entry.dto';
+import { QueueState } from '@common/enum';
 import { AxiosResponse } from 'axios';
+import axios from 'src/api/axios';
 
 export const currentQueue = async (
     startDate: Date,

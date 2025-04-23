@@ -1,14 +1,14 @@
+import env from '@common/environment';
+import { CookieNames } from '@common/frontend_shared/enum';
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
-import { AuthService } from '../../services/auth.service';
-import { UserOnly } from './roles.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
-import { UserService } from '../../services/user.service';
-import { CookieNames } from '@common/frontend_shared/enum';
-import env from '@common/environment';
-import { InvalidJwtTokenException } from './jwt.strategy';
+import { Request, Response } from 'express';
 import { OutputDto } from '../../decarators';
+import { AuthService } from '../../services/auth.service';
+import { UserService } from '../../services/user.service';
+import { InvalidJwtTokenException } from './jwt.strategy';
+import { UserOnly } from './roles.decorator';
 
 @Controller('auth')
 export class AuthController {

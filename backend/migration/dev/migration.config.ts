@@ -1,5 +1,5 @@
-import { getConfig } from './development-datasource.config';
 import { DataSource } from 'typeorm';
+import { getConfig } from './development-datasource.config';
 
 const datasource = new DataSource(getConfig());
 

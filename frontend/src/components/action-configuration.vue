@@ -246,32 +246,32 @@
 <script setup lang="ts">
 import { computed, Ref, ref, watch } from 'vue';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { Notify } from 'quasar';
+import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import {
-    createActionTemplate,
-    createAnalysis,
-    createMultipleAnalysis,
-    createNewActionTemplateVersion,
-} from 'src/services/mutations/action';
+    FlatMissionDto,
+    MissionWithFilesDto,
+} from '@api/types/mission/mission.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
+import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
+import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
+import { AccessGroupRights } from '@common/enum';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import ActionSelector from 'components/action-selector.vue';
+import { Notify } from 'quasar';
 import {
     useFilteredProjects,
     useHandler,
     useManyMissions,
     useMissionsOfProjectMinimal,
 } from 'src/hooks/query-hooks';
-import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
-import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import ActionSelector from 'components/action-selector.vue';
-import { AccessGroupRights } from '@common/enum';
 import {
-    FlatMissionDto,
-    MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
-import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
-import { ProjectDto } from '@api/types/project/base-project.dto';
+    createActionTemplate,
+    createAnalysis,
+    createMultipleAnalysis,
+    createNewActionTemplateVersion,
+} from 'src/services/mutations/action';
+import { listActionTemplates } from 'src/services/queries/action';
 
 const isNameSelected: Ref<boolean> = ref<boolean>(false);
 

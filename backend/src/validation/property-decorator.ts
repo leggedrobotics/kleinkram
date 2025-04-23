@@ -1,10 +1,10 @@
-import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 import { Matches } from 'class-validator';
+import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 import {
     FILE_NAME_REGEX,
     MISSION_NAME_REGEX,
-    PROJECT_NAME_REGEX,
     NON_UUID_REGEX,
+    PROJECT_NAME_REGEX,
 } from './validation-logic';
 
 export const IsNoValidUUID = (

@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import HeaderComponent from './header/header-component.vue';
-import FooterComponent from './footer/footer-component.vue';
 import DevelopmentInstanceWarning from 'src/components/banner/dev-instance-warning-banner.vue';
+import FooterComponent from './footer/footer-component.vue';
+import HeaderComponent from './header/header-component.vue';
 </script>

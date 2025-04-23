@@ -1,11 +1,11 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import Project from '@common/entities/project/project.entity';
-import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProject } from '@common/api/types/create-project.dto';
+import Project from '@common/entities/project/project.entity';
 import User from '@common/entities/user/user.entity';
-import { UserService } from './user.service';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
 import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
+import { UserService } from './user.service';
 
 import {
     addMissionCount,
@@ -14,28 +14,28 @@ import {
     addSort,
 } from './utilities';
 
+import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
+import { DefaultRights } from '@common/api/types/access-control/default-rights';
+import { SortOrder } from '@common/api/types/pagination';
+import { ProjectDto } from '@common/api/types/project/base-project.dto';
+import { ProjectWithRequiredTags } from '@common/api/types/project/project-with-required-tags';
+import { ProjectsDto } from '@common/api/types/project/projects.dto';
+import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import ProjectAccess from '@common/entities/auth/project-access.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '@common/frontend_shared/enum';
+import { ConfigService } from '@nestjs/config';
+import { AccessGroupConfig } from '../app.module';
+import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import {
     projectEntityToDtoWithMissionCount,
     projectEntityToDtoWithRequiredTags,
 } from '../serialization';
-import TagType from '@common/entities/tagType/tag-type.entity';
-import ProjectAccess from '@common/entities/auth/project-access.entity';
-import { ConfigService } from '@nestjs/config';
-import { AccessGroupConfig } from '../app.module';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import { DefaultRights } from '@common/api/types/access-control/default-rights';
-import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto';
-import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
-import { ProjectsDto } from '@common/api/types/project/projects.dto';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
-import { SortOrder } from '@common/api/types/pagination';
-import { ProjectWithRequiredTags } from '@common/api/types/project/project-with-required-tags';
-import { ProjectDto } from '@common/api/types/project/base-project.dto';
 
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',

@@ -24,11 +24,11 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
+import DeleteMission from 'components/delete-mission.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { computed, ref } from 'vue';
 import { useMission } from 'src/hooks/query-hooks';
-import DeleteMission from 'components/delete-mission.vue';
+import { computed, ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteMissionReference = ref<

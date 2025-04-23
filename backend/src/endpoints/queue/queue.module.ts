@@ -1,17 +1,17 @@
+import Action from '@common/entities/action/action.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Account from '@common/entities/auth/account.entity';
+import FileEntity from '@common/entities/file/file.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import Project from '@common/entities/project/project.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
+import Tag from '@common/entities/tag/tag.entity';
+import Worker from '@common/entities/worker/worker.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import QueueEntity from '@common/entities/queue/queue.entity';
+import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
 import { QueueService } from '../../services/queue.service';
 import { QueueController } from './queue.controller';
-import Mission from '@common/entities/mission/mission.entity';
-import Account from '@common/entities/auth/account.entity';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import Project from '@common/entities/project/project.entity';
-import Tag from '@common/entities/tag/tag.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import Worker from '@common/entities/worker/worker.entity';
-import Action from '@common/entities/action/action.entity';
-import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
 
 @Module({
     imports: [

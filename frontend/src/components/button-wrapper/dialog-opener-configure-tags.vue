@@ -16,9 +16,9 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
+import ModifyProjectTagsDialog from 'src/dialogs/modify-project-tags-dialog.vue';
 import { canModifyProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
-import ModifyProjectTagsDialog from 'src/dialogs/modify-project-tags-dialog.vue';
 
 const $q = useQuasar();
 const { projectUuid } = defineProps<{ projectUuid: string }>();

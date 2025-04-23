@@ -48,13 +48,13 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar';
-import { computed, ref } from 'vue';
-import { DataType } from '@common/enum';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { useAllTags } from 'src/hooks/query-hooks';
+import { DataType } from '@common/enum';
 import MetadataFilterInput from 'components/metadata-filter-input.vue';
 import MetadataTypeTable from 'components/metadata-type-table.vue';
+import { useDialogPluginComponent } from 'quasar';
+import { useAllTags } from 'src/hooks/query-hooks';
+import { computed, ref } from 'vue';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 

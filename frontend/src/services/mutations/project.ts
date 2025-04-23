@@ -1,5 +1,5 @@
-import axios from 'src/api/axios';
 import { AccessGroupRights } from '@common/enum';
+import axios from 'src/api/axios';
 
 export const createProject = async (
     name: string,

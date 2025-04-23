@@ -1,13 +1,13 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 import {
     AccessGroupRights,
     AccessGroupType,
 } from '../../../frontend_shared/enum';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
-import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
-import { Type } from 'class-transformer';
+import { Paginated } from '../pagination';
 
 export class ProjectAccessDto {
     @ApiProperty()

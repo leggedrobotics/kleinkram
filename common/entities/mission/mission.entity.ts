@@ -1,13 +1,13 @@
 import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
-import BaseEntity from '../base-entity.entity';
-import Project from '../project/project.entity';
-import FileEntity from '../file/file.entity';
-import QueueEntity from '../queue/queue.entity';
-import User from '../user/user.entity';
-import Apikey from '../auth/apikey.entity';
-import Tag from '../tag/tag.entity';
-import MissionAccess from '../auth/mission-access.entity';
 import Action from '../action/action.entity';
+import Apikey from '../auth/apikey.entity';
+import MissionAccess from '../auth/mission-access.entity';
+import BaseEntity from '../base-entity.entity';
+import FileEntity from '../file/file.entity';
+import Project from '../project/project.entity';
+import QueueEntity from '../queue/queue.entity';
+import Tag from '../tag/tag.entity';
+import User from '../user/user.entity';
 
 @Unique('unique_mission_name_per_project', ['name', 'project'])
 @Entity()

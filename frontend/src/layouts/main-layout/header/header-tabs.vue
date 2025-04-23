@@ -45,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 export interface MainMenu {
     title: string;

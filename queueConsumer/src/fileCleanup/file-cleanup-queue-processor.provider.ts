@@ -1,16 +1,9 @@
-import { InjectQueue, Process, Processor } from '@nestjs/bull';
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { redis, systemUser } from '@common/consts';
 import FileEntity from '@common/entities/file/file.entity';
-import {
-    In,
-    IsNull,
-    LessThanOrEqual,
-    MoreThanOrEqual,
-    Not,
-    Repository,
-} from 'typeorm';
-import { Job, Queue } from 'bull';
+import Mission from '@common/entities/mission/mission.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
+import User from '@common/entities/user/user.entity';
+import env from '@common/environment';
 import {
     AccessGroupRights,
     FileLocation,
@@ -20,20 +13,27 @@ import {
     QueueState,
     UserRole,
 } from '@common/frontend_shared/enum';
-import QueueEntity from '@common/entities/queue/queue.entity';
-import User from '@common/entities/user/user.entity';
-import Mission from '@common/entities/mission/mission.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
-import logger from '../logger';
-import Redlock from 'redlock';
-import { Redis } from 'ioredis';
-import { redis, systemUser } from '@common/consts';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import env from '@common/environment';
 import { getBucketFromFileType, internalMinio } from '@common/minio-helper';
-import crypto from 'node:crypto';
+import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+import { InjectQueue, Process, Processor } from '@nestjs/bull';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Job, Queue } from 'bull';
+import { Redis } from 'ioredis';
 import { Tag } from 'minio';
+import crypto from 'node:crypto';
+import Redlock from 'redlock';
+import {
+    In,
+    IsNull,
+    LessThanOrEqual,
+    MoreThanOrEqual,
+    Not,
+    Repository,
+} from 'typeorm';
+import logger from '../logger';
 
 type CancelUploadJob = Job<{
     uuids: string[];

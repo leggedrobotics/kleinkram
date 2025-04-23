@@ -20,8 +20,8 @@
 </template>
 
 <script setup lang="ts">
-import 'vue-json-pretty/lib/styles.css';
 import { useUser } from 'src/hooks/query-hooks';
+import 'vue-json-pretty/lib/styles.css';
 
 const { data: user } = useUser();
 </script>

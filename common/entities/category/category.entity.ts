@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToMany, ManyToOne, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import Project from '../project/project.entity';
 import FileEntity from '../file/file.entity';
+import Project from '../project/project.entity';
 import User from '../user/user.entity';
 
 @Entity()

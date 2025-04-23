@@ -1,7 +1,7 @@
-import axios from 'src/api/axios';
-import { DataType } from '@common/enum';
 import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
+import { DataType } from '@common/enum';
 import { AxiosResponse } from 'axios';
+import axios from 'src/api/axios';
 
 export const getTagTypes = async (): Promise<TagTypeDto[]> => {
     const response: AxiosResponse<TagsDto> = await axios.get('/tag/all');

@@ -142,23 +142,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, Ref } from 'vue';
-import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { Notify, QInput, useDialogPluginComponent } from 'quasar';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
+import { ProjectsDto } from '@api/types/project/projects.dto';
+import { FileUploadDto } from '@api/types/upload.dto';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { filteredProjects } from 'src/services/queries/project';
-import { createMission } from 'src/services/mutations/mission';
+import CreateFile from 'components/create-file.vue';
+import SelectMissionTags from 'components/select-mission-tags.vue';
+import { Notify, QInput, useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import {
     canCreateMission,
     usePermissionsQuery,
     useProjectQuery,
 } from 'src/hooks/query-hooks';
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import { FileUploadDto } from '@api/types/upload.dto';
-import SelectMissionTags from 'components/select-mission-tags.vue';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import CreateFile from 'components/create-file.vue';
-import { ProjectDto } from '@api/types/project/base-project.dto';
+import { createMission } from 'src/services/mutations/mission';
+import { filteredProjects } from 'src/services/queries/project';
+import { computed, ref, Ref } from 'vue';
 
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;

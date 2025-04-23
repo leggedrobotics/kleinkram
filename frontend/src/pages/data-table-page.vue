@@ -342,31 +342,31 @@
     </q-table>
 </template>
 <script setup lang="ts">
-import { computed, Ref, ref, watch } from 'vue';
-import { QTable, useQuasar } from 'quasar';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
+import { QTable, useQuasar } from 'quasar';
+import { computed, Ref, ref, watch } from 'vue';
 
-import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
-import ROUTES from 'src/router/routes';
-import { formatSize } from 'src/services/general-formatting';
-import { allTopicsNames } from 'src/services/queries/topic';
-import { fetchOverview } from 'src/services/queries/file';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FilesDto } from '@api/types/file/files.dto';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import TagFilter from 'src/dialogs/tag-filter.vue';
 import {
     useFilteredProjects,
     useHandler,
     useMissionsOfProjectMinimal,
 } from 'src/hooks/query-hooks';
+import ROUTES from 'src/router/routes';
+import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
+import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
+import { fetchOverview } from 'src/services/queries/file';
+import { allTopicsNames } from 'src/services/queries/topic';
 import { useRouter } from 'vue-router';
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FilesDto } from '@api/types/file/files.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
-import TitleSection from 'components/title-section.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
+import TitleSection from 'components/title-section.vue';
 
 const $router = useRouter();
 

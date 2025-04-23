@@ -3,10 +3,10 @@ import {
     createParamDecorator,
     ExecutionContext,
 } from '@nestjs/common';
-import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { UUIDValidate } from './validation-types';
+import { validateOrReject } from 'class-validator';
 import { metadataApplier } from './metadata-applier';
+import { UUIDValidate } from './validation-types';
 
 export const ParameterUuid = (
     parameterName: string,

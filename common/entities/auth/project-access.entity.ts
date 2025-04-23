@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import AccessGroup from './accessgroup.entity';
 import Project from '../project/project.entity';
+import AccessGroup from './accessgroup.entity';
 
 import { AccessGroupRights } from '../../frontend_shared/enum';
 

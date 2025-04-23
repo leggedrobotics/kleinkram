@@ -1,22 +1,22 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from 'jsonwebtoken';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import logger from '../logger';
-import { AuthFlowException } from '../routing/filters/auth-flow-exception';
-import Account from '@common/entities/auth/account.entity';
-import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Account from '@common/entities/auth/account.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
+import User from '@common/entities/user/user.entity';
 import {
     AccessGroupType,
     CookieNames,
     Providers,
     UserRole,
 } from '@common/frontend_shared/enum';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { JwtPayload } from 'jsonwebtoken';
+import { Repository } from 'typeorm';
 import { AccessGroupConfig } from '../app.module';
-import GroupMembership from '@common/entities/auth/group-membership.entity';
+import logger from '../logger';
+import { AuthFlowException } from '../routing/filters/auth-flow-exception';
 
 @Injectable()
 export class AuthService implements OnModuleInit {

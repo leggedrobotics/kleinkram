@@ -1,7 +1,7 @@
-import axios from 'src/api/axios';
+import { PermissionsDto } from '@api/types/permissions.dto';
 import { CurrentAPIUserDto, UsersDto } from '@api/types/user.dto';
 import { AxiosResponse } from 'axios';
-import { PermissionsDto } from '@api/types/permissions.dto';
+import axios from 'src/api/axios';
 
 export const searchUsers = async (search: string): Promise<UsersDto> => {
     if (search === '') {

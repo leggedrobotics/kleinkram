@@ -1,5 +1,5 @@
-import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 import { registerDecorator } from 'class-validator';
+import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 
 export function IsTake(validationOptions?: ValidationOptions) {
     return (object: object, propertyName: string): void => {

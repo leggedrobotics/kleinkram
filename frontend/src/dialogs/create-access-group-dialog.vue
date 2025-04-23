@@ -26,9 +26,9 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { ref, watch } from 'vue';
 import { QInput, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const isInErrorStateProjectName = ref(false);

@@ -1,26 +1,25 @@
-import { Injectable } from '@nestjs/common';
-import {
-    ContainerEnvironment as ContainerEnvironment,
-    DockerDaemon,
-    dockerDaemonErrorHandler,
-} from './docker-daemon.service';
-import { tracing } from '../../tracing';
-import logger from '../../logger';
+import Action, { ContainerLog } from '@common/entities/action/action.entity';
+import Apikey from '@common/entities/auth/apikey.entity';
+import environment from '@common/environment';
 import {
     ActionState,
     ArtifactState,
     KeyTypes,
 } from '@common/frontend_shared/enum';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import Action, { ContainerLog } from '@common/entities/action/action.entity';
-import { Repository } from 'typeorm';
-import Apikey from '@common/entities/auth/apikey.entity';
 import Dockerode from 'dockerode';
-import { DisposableAPIKey } from '../helper/disposable-api-key';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
-import env from '@common/environment';
-import environment from '@common/environment';
 import si from 'systeminformation';
+import { Repository } from 'typeorm';
+import logger from '../../logger';
+import { tracing } from '../../tracing';
+import { DisposableAPIKey } from '../helper/disposable-api-key';
+import {
+    ContainerEnvironment,
+    DockerDaemon,
+    dockerDaemonErrorHandler,
+} from './docker-daemon.service';
 
 @Injectable()
 export class ActionManagerService {
@@ -105,8 +104,8 @@ export class ActionManagerService {
                 KLEINKRAM_PROJECT_UUID: action.mission.project.uuid,
                 KLEINKRAM_MISSION_UUID: action.mission.uuid,
                 KLEINKRAM_ACTION_UUID: action.uuid,
-                KLEINKRAM_API_ENDPOINT: env.ENDPOINT,
-                KLEINKRAM_S3_ENDPOINT: `https://${env.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+                KLEINKRAM_API_ENDPOINT: environment.ENDPOINT,
+                KLEINKRAM_S3_ENDPOINT: `https://${environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
 
                 // @deprecated
                 // TODO: the following variables are deprecated
@@ -114,7 +113,7 @@ export class ActionManagerService {
                 PROJECT_UUID: action.mission.project.uuid,
                 MISSION_UUID: action.mission.uuid,
                 ACTION_UUID: action.uuid,
-                ENDPOINT: env.ENDPOINT,
+                ENDPOINT: environment.ENDPOINT,
             };
             const needsGpu = action.template.gpuMemory > 0;
             const { container, repoDigests, sha } =

@@ -46,8 +46,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import axios from 'src/api/axios';
 import { useQuasar } from 'quasar';
+import axios from 'src/api/axios';
 
 const $q = useQuasar();
 

@@ -42,9 +42,9 @@
 </template>
 
 <script setup lang="ts">
-import { defineEmits, defineProps, ref, watch } from 'vue';
-import { DataType } from '@common/enum';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
+import { DataType } from '@common/enum';
+import { defineEmits, defineProps, ref, watch } from 'vue';
 
 const properties = defineProps<{
     tagTypeUuid: string;

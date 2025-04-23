@@ -1,24 +1,24 @@
-import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
-import { TagService } from '../../services/tag.service';
+import { AddTagsDto } from '@common/api/types/tags/add-tags.dto';
+import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
+import { DeleteTagDto } from '@common/api/types/tags/delete-tag.dto';
+import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
 import { DataType } from '@common/frontend_shared/enum';
+import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
+import { ApiOkResponse } from '../../decarators';
+import { TagService } from '../../services/tag.service';
+import { BodyNotNull, BodyUUID } from '../../validation/body-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
+import {
+    QueryOptionalString,
+    QuerySkip,
+    QueryTake,
+} from '../../validation/query-decorators';
 import {
     CanAddTag,
     CanCreate,
     CanDeleteTag,
     LoggedIn,
 } from '../auth/roles.decorator';
-import { BodyNotNull, BodyUUID } from '../../validation/body-decorators';
-import {
-    QueryOptionalString,
-    QuerySkip,
-    QueryTake,
-} from '../../validation/query-decorators';
-import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import { ApiOkResponse } from '../../decarators';
-import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
-import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
-import { DeleteTagDto } from '@common/api/types/tags/delete-tag.dto';
-import { AddTagsDto } from '@common/api/types/tags/add-tags.dto';
 
 @Controller('tag')
 export class TagController {

@@ -12,10 +12,10 @@
 </template>
 
 <script setup lang="ts">
-import CreateMissionDialog from 'src/dialogs/create-mission-dialog.vue';
 import { useQuasar } from 'quasar';
-import { computed, inject } from 'vue';
+import CreateMissionDialog from 'src/dialogs/create-mission-dialog.vue';
 import { canCreateMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { computed, inject } from 'vue';
 
 const { projectUuid } = defineProps<{ projectUuid?: string | undefined }>();
 

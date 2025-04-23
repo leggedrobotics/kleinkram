@@ -1,6 +1,6 @@
-import { ProjectDto } from './base-project.dto';
-import { AccessGroupRights } from '../../../frontend_shared/enum';
 import { IsEnum } from 'class-validator';
+import { AccessGroupRights } from '../../../frontend_shared/enum';
+import { ProjectDto } from './base-project.dto';
 
 import { ApiProperty } from '@nestjs/swagger';
 

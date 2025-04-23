@@ -1,13 +1,13 @@
-import { loadDecompressHandlers } from '@mcap/support';
 import { McapIndexedReader } from '@mcap/core';
+import { loadDecompressHandlers } from '@mcap/support';
 
-import { promisify } from 'node:util';
-import { exec } from 'node:child_process';
-import { traceWrapper } from '../../tracing';
-import logger from '../../logger';
-import { open } from 'node:fs/promises';
-import { FileHandleReadable } from '@mcap/nodejs';
 import Topic from '@common/entities/topic/topic.entity';
+import { FileHandleReadable } from '@mcap/nodejs';
+import { exec } from 'node:child_process';
+import { open } from 'node:fs/promises';
+import { promisify } from 'node:util';
+import logger from '../../logger';
+import { traceWrapper } from '../../tracing';
 
 const execPromisify = promisify(exec);
 

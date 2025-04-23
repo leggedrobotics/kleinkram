@@ -1,6 +1,6 @@
 import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
-import BaseEntity from '../base-entity.entity';
 import { DataType } from '../../frontend_shared/enum';
+import BaseEntity from '../base-entity.entity';
 import Project from '../project/project.entity';
 import Tag from '../tag/tag.entity';
 

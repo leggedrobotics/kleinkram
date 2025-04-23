@@ -177,24 +177,24 @@
 </template>
 
 <script setup lang="ts">
-import { Notify, QTable, useQuasar } from 'quasar';
+import { FileQueueEntryDto } from '@api/types/file/file-queue-entry.dto';
+import { FileLocation, QueueState } from '@common/enum';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { computed, ref, Ref, watch } from 'vue';
-import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
-import { currentQueue } from 'src/services/queries/queue';
-import { findOneByNameAndMission } from 'src/services/queries/file';
+import { Notify, QTable, useQuasar } from 'quasar';
+import ConfirmDeleteFile from 'src/dialogs/confirm-delete-file-dialog.vue';
 import ROUTES from 'src/router/routes';
+import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import {
     _downloadFile,
+    getColor,
     getDetailedFileState,
     getSimpleFileStateName,
 } from 'src/services/generic';
-import { getColor } from 'src/services/generic';
-import { useRouter } from 'vue-router';
 import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
-import ConfirmDeleteFile from 'src/dialogs/confirm-delete-file-dialog.vue';
-import { FileLocation, QueueState } from '@common/enum';
-import { FileQueueEntryDto } from '@api/types/file/file-queue-entry.dto';
+import { findOneByNameAndMission } from 'src/services/queries/file';
+import { currentQueue } from 'src/services/queries/queue';
+import { computed, ref, Ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';

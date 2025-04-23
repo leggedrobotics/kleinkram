@@ -1,18 +1,18 @@
-import { Factory, Seeder } from 'typeorm-seeding';
-import User from '../../entities/user/user.entity';
-import { UserContext } from '../../factories/user/user.factory';
-import { FileType, UserRole } from '../../frontend_shared/enum';
 import { Connection, Not } from 'typeorm';
+import { Factory, Seeder } from 'typeorm-seeding';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
-import { AccessGroupFactoryContext } from '../../factories/auth/accessgroup.factory';
-import Project from '../../entities/project/project.entity';
-import Mission from '../../entities/mission/mission.entity';
-import { extendedFaker } from '../../faker-extended';
-import FileEntity from '../../entities/file/file.entity';
-import Topic from '../../entities/topic/topic.entity';
 import ProjectAccess from '../../entities/auth/project-access.entity';
-import { ProjectContext } from '../../factories/project/project.factory';
+import FileEntity from '../../entities/file/file.entity';
+import Mission from '../../entities/mission/mission.entity';
+import Project from '../../entities/project/project.entity';
 import TagType from '../../entities/tagType/tag-type.entity';
+import Topic from '../../entities/topic/topic.entity';
+import User from '../../entities/user/user.entity';
+import { AccessGroupFactoryContext } from '../../factories/auth/accessgroup.factory';
+import { ProjectContext } from '../../factories/project/project.factory';
+import { UserContext } from '../../factories/user/user.factory';
+import { extendedFaker } from '../../faker-extended';
+import { FileType, UserRole } from '../../frontend_shared/enum';
 
 export default class CreateUsers implements Seeder {
     // Settings for the Seeder

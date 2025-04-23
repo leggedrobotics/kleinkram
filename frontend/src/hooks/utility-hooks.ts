@@ -1,5 +1,5 @@
-import { ref, Ref, unref, watch } from 'vue';
 import { Paginated } from '@api/types/pagination';
+import { ref, Ref, unref, watch } from 'vue';
 
 /**
  * Returns a ref of the data of a paginated response (computed ref)

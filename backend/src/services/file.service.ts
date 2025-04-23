@@ -1,28 +1,9 @@
-import {
-    BadRequestException,
-    ConflictException,
-    Injectable,
-    NotFoundException,
-    OnModuleInit,
-} from '@nestjs/common';
-import jwt from 'jsonwebtoken';
-import { InjectRepository } from '@nestjs/typeorm';
-import { fileEntityToDto, fileEntityToDtoWithTopic } from '../serialization';
 import { SortOrder } from '@common/api/types/pagination';
-import {
-    DataSource,
-    FindOptionsSelect,
-    FindOptionsWhere,
-    ILike,
-    In,
-    MoreThan,
-    Repository,
-} from 'typeorm';
-import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from '@common/api/types/update-file.dto';
-import env from '@common/environment';
+import FileEntity from '@common/entities/file/file.entity';
 import Mission from '@common/entities/mission/mission.entity';
 import Project from '@common/entities/project/project.entity';
+import env from '@common/environment';
 import {
     DataType,
     FileLocation,
@@ -33,20 +14,45 @@ import {
     UserRole,
 } from '@common/frontend_shared/enum';
 import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
+    OnModuleInit,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import jwt from 'jsonwebtoken';
+import {
+    DataSource,
+    FindOptionsSelect,
+    FindOptionsWhere,
+    ILike,
+    In,
+    MoreThan,
+    Repository,
+} from 'typeorm';
+import { fileEntityToDto, fileEntityToDtoWithTopic } from '../serialization';
+import {
     addFileFilters,
     addMissionFilters,
     addProjectFilters,
     addSort,
 } from './utilities';
 
-import User from '@common/entities/user/user.entity';
-import logger from '../logger';
+import {
+    FileExistsResponseDto,
+    TemporaryFileAccessDto,
+    TemporaryFileAccessesDto,
+} from '@common/api/types/file/access.dto';
+import { FileWithTopicDto } from '@common/api/types/file/file.dto';
+import { FilesDto } from '@common/api/types/file/files.dto';
+import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
+import { redis } from '@common/consts';
+import Category from '@common/entities/category/category.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import axios from 'axios';
-import QueueEntity from '@common/entities/queue/queue.entity';
-import Queue from 'bull';
-import { redis } from '@common/consts';
+import User from '@common/entities/user/user.entity';
 import {
     addTagsToMinioObject,
     deleteFileMinio,
@@ -56,23 +62,17 @@ import {
     getInfoFromMinio,
     internalMinio,
 } from '@common/minio-helper';
-import Category from '@common/entities/category/category.entity';
-import { parseMinioMetrics } from '../endpoints/file/utilities';
-import Credentials from 'minio/dist/main/Credentials';
+import axios from 'axios';
+import Queue from 'bull';
 import { BucketItem } from 'minio';
+import Credentials from 'minio/dist/main/Credentials';
 import { TaggingOpts } from 'minio/dist/main/internal/type';
-import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { FilesDto } from '@common/api/types/file/files.dto';
-import { FileWithTopicDto } from '@common/api/types/file/file.dto';
 import {
     addAccessConstraints,
     addAccessConstraintsToFileQuery,
 } from '../endpoints/auth/auth-helper';
-import {
-    FileExistsResponseDto,
-    TemporaryFileAccessDto,
-    TemporaryFileAccessesDto,
-} from '@common/api/types/file/access.dto';
+import { parseMinioMetrics } from '../endpoints/file/utilities';
+import logger from '../logger';
 
 // Type guard function to check if the error has a 'code' property
 function isErrorWithCode(error: unknown): error is { code: string } {

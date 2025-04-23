@@ -42,11 +42,11 @@
     </q-btn-dropdown>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
+import { DataType } from '@common/enum';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { createTagType } from 'src/services/mutations/tag';
-import { DataType } from '@common/enum';
+import { ref } from 'vue';
 
 const tagName = ref('');
 const selectedDataType = ref(DataType.STRING);

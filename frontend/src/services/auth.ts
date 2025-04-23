@@ -1,7 +1,7 @@
-import axios from 'src/api/axios';
-import ENV from '../environment';
-import { getMe } from 'src/services/queries/user';
 import { CurrentAPIUserDto } from '@api/types/user.dto';
+import axios from 'src/api/axios';
+import { getMe } from 'src/services/queries/user';
+import ENV from '../environment';
 
 let userCache: CurrentAPIUserDto | null = null;
 let isFetchingUser = false;

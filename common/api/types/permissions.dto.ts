@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AccessGroupRights, UserRole } from '../../frontend_shared/enum';
-import { IsEnum, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsEnum, IsUUID, ValidateNested } from 'class-validator';
+import { AccessGroupRights, UserRole } from '../../frontend_shared/enum';
 
 export class ProjectPermissions {
     @ApiProperty()

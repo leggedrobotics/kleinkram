@@ -50,10 +50,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue';
 import { GroupMembershipDto } from '@api/types/user.dto';
 import { AccessGroupType } from '@common/enum';
 import { useUser } from 'src/hooks/query-hooks';
+import { computed } from 'vue';
 
 const { data: user } = useUser();
 

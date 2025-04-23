@@ -101,11 +101,11 @@ import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
-import { createFileAction, driveUpload } from 'src/services/file-service';
 import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
 import { useFilteredProjects } from 'src/hooks/query-hooks';
-import { ProjectDto } from '@api/types/project/base-project.dto';
+import { createFileAction, driveUpload } from 'src/services/file-service';
 
 const emit = defineEmits(['update:ready']);
 

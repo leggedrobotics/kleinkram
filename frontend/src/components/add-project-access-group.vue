@@ -47,14 +47,14 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, Ref, ref } from 'vue';
-import { accessGroupRightsMap, icon } from 'src/services/generic';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { addAccessGroupToProject } from 'src/services/mutations/access';
-import { Notify } from 'quasar';
-import { AccessGroupRights } from '@common/enum';
 import { UserDto } from '@api/types/user.dto';
+import { AccessGroupRights } from '@common/enum';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { Notify } from 'quasar';
 import { useFilteredProjects } from 'src/hooks/query-hooks';
+import { accessGroupRightsMap, icon } from 'src/services/generic';
+import { addAccessGroupToProject } from 'src/services/mutations/access';
+import { computed, Ref, ref } from 'vue';
 
 const properties = defineProps<{
     accessGroupUuid: string;

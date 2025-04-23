@@ -1,8 +1,8 @@
-import { google } from 'googleapis';
 import env from '@common/environment';
-import logger from '../../logger';
-import * as fs from 'node:fs';
+import { google } from 'googleapis';
 import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import logger from '../../logger';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 const KEYFILEPATH = env.GOOGLE_KEY_FILE;

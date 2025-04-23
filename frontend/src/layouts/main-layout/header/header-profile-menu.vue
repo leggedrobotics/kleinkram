@@ -72,11 +72,11 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
-import { logout } from 'src/services/auth';
-import ROUTES from 'src/router/routes';
-import { useUser } from 'src/hooks/query-hooks';
 import { UserRole } from '@common/enum';
+import { useUser } from 'src/hooks/query-hooks';
+import ROUTES from 'src/router/routes';
+import { logout } from 'src/services/auth';
+import { useRouter } from 'vue-router';
 
 const $router = useRouter();
 

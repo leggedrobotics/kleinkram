@@ -20,10 +20,10 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { useDialogPluginComponent } from 'quasar';
-import { ref } from 'vue';
 import EditProject from 'components/edit-project.vue';
+import { useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { ref } from 'vue';
 
 const editProjectReference = ref<InstanceType<typeof EditProject> | undefined>(
     undefined,

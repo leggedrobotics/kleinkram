@@ -108,16 +108,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, Ref, watch } from 'vue';
-import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { Notify, QInput, useDialogPluginComponent } from 'quasar';
-import { useQueryClient } from '@tanstack/vue-query';
-import { createMission } from 'src/services/mutations/mission';
-import { createFileAction } from 'src/services/file-service';
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
-import { useProjectQuery } from 'src/hooks/query-hooks';
+import { useQueryClient } from '@tanstack/vue-query';
 import SelectMissionTags from 'components/select-mission-tags.vue';
+import { Notify, QInput, useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { useProjectQuery } from 'src/hooks/query-hooks';
+import { createFileAction } from 'src/services/file-service';
+import { createMission } from 'src/services/mutations/mission';
+import { computed, ref, Ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');

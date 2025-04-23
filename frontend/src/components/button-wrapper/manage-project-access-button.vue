@@ -15,8 +15,8 @@
 </template>
 
 <script setup lang="ts">
-import AccessRightsDialog from 'src/dialogs/modify-access-rights-dialog.vue';
 import { useQuasar } from 'quasar';
+import AccessRightsDialog from 'src/dialogs/modify-access-rights-dialog.vue';
 import { canModifyProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 

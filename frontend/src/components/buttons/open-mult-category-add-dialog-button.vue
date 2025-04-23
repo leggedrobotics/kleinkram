@@ -13,9 +13,9 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
+import AddMultiCategory from 'src/dialogs/add-multi-category.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
-import AddMultiCategory from 'src/dialogs/add-multi-category.vue';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';

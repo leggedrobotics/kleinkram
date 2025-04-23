@@ -34,11 +34,11 @@
 </template>
 
 <script setup lang="ts">
+import { GroupMembershipDto } from '@api/types/user.dto';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { ref } from 'vue';
 import { formatDate, parseDate } from 'src/services/date-formating';
-import { GroupMembershipDto } from '@api/types/user.dto';
+import { ref } from 'vue';
 
 const properties = defineProps<{
     agu: GroupMembershipDto;

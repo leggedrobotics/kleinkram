@@ -52,13 +52,13 @@
     </div>
 </template>
 <script setup lang="ts">
-import { Ref, ref } from 'vue';
-import { icon } from 'src/services/generic';
+import { UserDto } from '@api/types/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { addUserToAccessGroup } from 'src/services/mutations/access';
 import { Notify } from 'quasar';
 import { useUserSearch } from 'src/hooks/query-hooks';
-import { UserDto } from '@api/types/user.dto';
+import { icon } from 'src/services/generic';
+import { addUserToAccessGroup } from 'src/services/mutations/access';
+import { Ref, ref } from 'vue';
 
 const properties = defineProps<{
     accessGroupUuid: string;

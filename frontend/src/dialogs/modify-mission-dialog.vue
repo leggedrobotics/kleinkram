@@ -27,12 +27,12 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
-import { ref } from 'vue';
-import { updateMissionName } from 'src/services/mutations/mission';
-import { useQueryClient } from '@tanstack/vue-query';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { useQueryClient } from '@tanstack/vue-query';
+import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { updateMissionName } from 'src/services/mutations/mission';
+import { ref } from 'vue';
 
 const { dialogRef } = useDialogPluginComponent();
 const $q = useQuasar();

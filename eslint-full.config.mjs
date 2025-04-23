@@ -1,9 +1,9 @@
-import pluginVue from 'eslint-plugin-vue';
 import vueTsEslintConfig from '@vue/eslint-config-typescript';
 import progress from 'eslint-plugin-file-progress';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import tseslint from 'typescript-eslint';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
+import pluginVue from 'eslint-plugin-vue';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
     progress.configs.recommended,

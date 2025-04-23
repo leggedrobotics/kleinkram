@@ -18,9 +18,9 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { computed } from 'vue';
-import { canDeleteProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import ChangeAccessRightsDialog from 'src/dialogs/modify-access-rights-dialog.vue';
+import { canDeleteProject, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { computed } from 'vue';
 
 const $q = useQuasar();
 const properties = defineProps<{

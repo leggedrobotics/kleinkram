@@ -17,9 +17,9 @@
 </template>
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { bullQueue } from 'src/services/queries/queue';
 import { Notify } from 'quasar';
 import { stopQueue } from 'src/services/mutations/queue';
+import { bullQueue } from 'src/services/queries/queue';
 
 const { data } = useQuery({
     queryKey: ['bullQueue'],

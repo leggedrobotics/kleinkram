@@ -21,10 +21,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
-import { createCategory } from 'src/services/mutations/categories';
-import { Notify, QNotifyCreateOptions } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { Notify, QNotifyCreateOptions } from 'quasar';
+import { createCategory } from 'src/services/mutations/categories';
+import { ref } from 'vue';
 
 const properties = defineProps<{
     projectUuid: string;

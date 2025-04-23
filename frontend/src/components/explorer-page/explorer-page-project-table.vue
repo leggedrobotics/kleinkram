@@ -127,22 +127,22 @@
 </template>
 
 <script setup lang="ts">
-import { QTable } from 'quasar';
-import { computed, ref, watch } from 'vue';
-import { TableRequest } from 'src/services/query-handler';
-import ROUTES from 'src/router/routes';
-import { useRouter } from 'vue-router';
+import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
+import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
+import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
+import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
+import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
 import { explorerPageTableColumns } from 'components/explorer-page/explorer-page-table-columns';
+import { QTable } from 'quasar';
 import {
     useFilteredProjects,
     useHandler,
     useUser,
 } from 'src/hooks/query-hooks';
-import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
-import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
-import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
-import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
-import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
+import ROUTES from 'src/router/routes';
+import { TableRequest } from 'src/services/query-handler';
+import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 const urlHandler = useHandler();
 

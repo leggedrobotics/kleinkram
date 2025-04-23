@@ -1,15 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThanOrEqual, Repository } from 'typeorm';
-import User from '@common/entities/user/user.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import Project from '@common/entities/project/project.entity';
+import User from '@common/entities/user/user.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '@common/frontend_shared/enum';
 import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import logger from '../logger';
 
 @Injectable()

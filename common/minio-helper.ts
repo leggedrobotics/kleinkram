@@ -1,9 +1,9 @@
-import environment from './environment';
-import { FileType } from './frontend_shared/enum';
-import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
 import { Client } from 'minio';
+import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
 import Credentials from 'minio/dist/main/Credentials';
 import { Tags } from 'minio/dist/main/internal/type';
+import environment from './environment';
+import { FileType } from './frontend_shared/enum';
 
 export const externalMinio: Client = new Client({
     endPoint: environment.MINIO_ENDPOINT,

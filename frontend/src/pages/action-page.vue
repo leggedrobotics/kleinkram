@@ -110,24 +110,24 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
+import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { filteredProjects } from 'src/services/queries/project';
-import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import {
     canLaunchInMission,
     useHandler,
     usePermissionsQuery,
 } from 'src/hooks/query-hooks';
-import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
+import { missionsOfProjectMinimal } from 'src/services/queries/mission';
+import { filteredProjects } from 'src/services/queries/project';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
-import TitleSection from 'components/title-section.vue';
+import { UserRole } from '@common/enum';
 import ActionConfiguration from 'components/action-configuration.vue';
-import ButtonGroup from 'components/buttons/button-group.vue';
 import ActionsTable from 'components/actions-table.vue';
 import BullQueue from 'components/bull-queue.vue';
-import { UserRole } from '@common/enum';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import TitleSection from 'components/title-section.vue';
 
 const createAction = ref(false);
 

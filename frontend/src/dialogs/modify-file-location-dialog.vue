@@ -94,19 +94,19 @@
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 
-import { computed, ref, reactive, watch } from 'vue';
-import { Notify, useDialogPluginComponent } from 'quasar';
-import { moveFiles } from 'src/services/mutations/file';
-import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
 import {
     FlatMissionDto,
     MissionWithFilesDto,
 } from '@api/types/mission/mission.dto';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import {
     useFilteredProjects,
     useMissionsOfProjectMinimal,
 } from 'src/hooks/query-hooks';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { moveFiles } from 'src/services/mutations/file';
+import { computed, reactive, ref, watch } from 'vue';
 
 const { mission, files } = defineProps<{
     mission: MissionWithFilesDto;

@@ -1,9 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MissionDto } from '../mission/mission.dto';
-import { CategoryDto } from '../category.dto';
-import { FileState, FileType } from '../../../frontend_shared/enum';
-import { UserDto } from '../user.dto';
-import { TopicDto } from '../topic.dto';
+import { Type } from 'class-transformer';
 import {
     IsDate,
     IsEnum,
@@ -12,7 +8,11 @@ import {
     IsString,
     ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { FileState, FileType } from '../../../frontend_shared/enum';
+import { CategoryDto } from '../category.dto';
+import { MissionDto } from '../mission/mission.dto';
+import { TopicDto } from '../topic.dto';
+import { UserDto } from '../user.dto';
 
 export class FileDto {
     @ApiProperty()

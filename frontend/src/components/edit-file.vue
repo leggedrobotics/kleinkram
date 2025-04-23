@@ -133,21 +133,21 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 
-import { computed, Reactive, reactive, ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import { formatDate, parseDate } from 'src/services/date-formating';
-import { filteredProjects } from 'src/services/queries/project';
-import { updateFile } from 'src/services/mutations/file';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { useFile, useMissionsOfProjectMinimal } from 'src/hooks/query-hooks';
+import { formatDate, parseDate } from 'src/services/date-formating';
+import { updateFile } from 'src/services/mutations/file';
+import { filteredProjects } from 'src/services/queries/project';
+import { computed, Reactive, reactive, ref, watch } from 'vue';
 
+import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import ConfigureCategories from 'components/configure-categories.vue';
-import { isAxiosError } from 'axios';
-import { CategoryDto } from '@api/types/category.dto';
 import { ProjectWithCreator } from '@api/types/project/project-with-creator.dto';
+import { ProjectsDto } from '@api/types/project/projects.dto';
+import { isAxiosError } from 'axios';
+import ConfigureCategories from 'components/configure-categories.vue';
 
 const { fileUuid } = defineProps<{ fileUuid: string }>();
 

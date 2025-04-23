@@ -1,10 +1,10 @@
 import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
-import BaseEntity from '../base-entity.entity';
-import Mission from '../mission/mission.entity';
-import User from '../user/user.entity';
-import TagType from '../tagType/tag-type.entity';
 import ProjectAccess from '../auth/project-access.entity';
+import BaseEntity from '../base-entity.entity';
 import CategoryEntity from '../category/category.entity';
+import Mission from '../mission/mission.entity';
+import TagType from '../tagType/tag-type.entity';
+import User from '../user/user.entity';
 
 @Entity()
 export default class Project extends BaseEntity {

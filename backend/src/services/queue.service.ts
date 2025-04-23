@@ -1,5 +1,20 @@
-import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+import { DriveCreate } from '@common/api/types/drive-create.dto';
+import Action from '@common/entities/action/action.entity';
+import FileEntity from '@common/entities/file/file.entity';
+import Mission from '@common/entities/mission/mission.entity';
 import QueueEntity from '@common/entities/queue/queue.entity';
+import Worker from '@common/entities/worker/worker.entity';
+import {
+    ActionState,
+    FileLocation,
+    FileState,
+    FileType,
+    QueueState,
+    UserRole,
+} from '@common/frontend_shared/enum';
+import { RuntimeDescription } from '@common/types';
+import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     FindOptionsWhere,
@@ -10,45 +25,30 @@ import {
     MoreThan,
     Repository,
 } from 'typeorm';
-import { missionEntityToDto } from '../serialization';
-import { DriveCreate } from '@common/api/types/drive-create.dto';
-import Mission from '@common/entities/mission/mission.entity';
-import Worker from '@common/entities/worker/worker.entity';
-import {
-    ActionState,
-    FileLocation,
-    FileState,
-    FileType,
-    QueueState,
-    UserRole,
-} from '@common/frontend_shared/enum';
 import logger from '../logger';
+import { missionEntityToDto } from '../serialization';
 import { UserService } from './user.service';
-import FileEntity from '@common/entities/file/file.entity';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import Action from '@common/entities/action/action.entity';
-import { RuntimeDescription } from '@common/types';
 
-import Queue from 'bull';
-import { addActionQueue } from '@common/scheduling-logic';
+import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';
+import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
+import {
+    FileQueueEntriesDto,
+    FileQueueEntryDto,
+} from '@common/api/types/file/file-queue-entry.dto';
+import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
+import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
+import { redis } from '@common/consts';
+import User from '@common/entities/user/user.entity';
 import {
     getBucketFromFileType,
     getInfoFromMinio,
     internalMinio,
 } from '@common/minio-helper';
-import { redis } from '@common/consts';
+import { addActionQueue } from '@common/scheduling-logic';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import Queue from 'bull';
 import { Gauge } from 'prom-client';
-import User from '@common/entities/user/user.entity';
-import {
-    FileQueueEntriesDto,
-    FileQueueEntryDto,
-} from '@common/api/types/file/file-queue-entry.dto';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
-import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
-import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';
-import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
-import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
 
 function extractFileIdFromUrl(url: string): string | null {
     // Define the regex patterns for file and folder IDs, now including optional /u/[number]/ segments

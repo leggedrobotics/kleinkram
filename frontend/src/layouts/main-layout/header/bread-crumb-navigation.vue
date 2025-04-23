@@ -32,15 +32,15 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useCrumbs } from 'src/hooks/crumbs';
-import { PageBreadCrumb } from 'src/router/routes-utilities';
 import { useFile, useMission, useProjectQuery } from 'src/hooks/query-hooks';
 import {
     useFileUUID,
     useMissionUUID,
     useProjectUUID,
 } from 'src/hooks/router-hooks';
+import { PageBreadCrumb } from 'src/router/routes-utilities';
+import { computed } from 'vue';
 
 const crumbs = useCrumbs();
 

@@ -115,16 +115,16 @@
 <script setup lang="ts">
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 
-import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
-import { computed, Ref, ref, watch } from 'vue';
-import { createProject } from 'src/services/mutations/project';
-import { useQueryClient } from '@tanstack/vue-query';
-import { AccessGroupType } from '@common/enum';
-import { useProjectDefaultAccess } from 'src/hooks/query-hooks';
-import { TagTypeDto } from '@api/types/tags/tags.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import ConfigureMetadata from 'components/configure-metadata.vue';
+import { TagTypeDto } from '@api/types/tags/tags.dto';
+import { AccessGroupType } from '@common/enum';
+import { useQueryClient } from '@tanstack/vue-query';
 import ConfigureAccessRights from 'components/configure-access-rights/configure-access-rights.vue';
+import ConfigureMetadata from 'components/configure-metadata.vue';
+import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
+import { useProjectDefaultAccess } from 'src/hooks/query-hooks';
+import { createProject } from 'src/services/mutations/project';
+import { computed, Ref, ref, watch } from 'vue';
 
 const formIsValid = ref(false);
 const isInErrorStateProjectName = ref(false);

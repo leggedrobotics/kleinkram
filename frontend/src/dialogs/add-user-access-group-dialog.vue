@@ -20,10 +20,10 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
+import AddUserToAccessGroup from 'components/add-user-access-group.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
-import AddUserToAccessGroup from 'components/add-user-access-group.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const addUserReference = ref<InstanceType<typeof AddUserToAccessGroup> | null>(

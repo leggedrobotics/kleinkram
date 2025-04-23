@@ -1,3 +1,16 @@
+import { CreatePreSignedURLSDto } from '@common/api/types/create-pre-signed-url.dto';
+import {
+    FileExistsResponseDto,
+    TemporaryFileAccessesDto,
+} from '@common/api/types/file/access.dto';
+import { FileWithTopicDto } from '@common/api/types/file/file.dto';
+import { FilesDto } from '@common/api/types/file/files.dto';
+import { IsUploadingDto } from '@common/api/types/file/is-uploading.dto';
+import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
+import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
+import { UpdateFile } from '@common/api/types/update-file.dto';
+import env from '@common/environment';
+import { FileType } from '@common/frontend_shared/enum';
 import {
     Body,
     Controller,
@@ -7,21 +20,11 @@ import {
     Put,
     Query,
 } from '@nestjs/common';
-import { FileService } from '../../services/file.service';
-import { UpdateFile } from '@common/api/types/update-file.dto';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import logger from '../../logger';
-import {
-    AdminOnly,
-    CanCreateInMissionByBody,
-    CanDeleteFile,
-    CanDeleteMission,
-    CanMoveFiles,
-    CanReadFile,
-    CanReadMission,
-    CanWriteFile,
-    LoggedIn,
-    UserOnly,
-} from '../auth/roles.decorator';
+import { FileService } from '../../services/file.service';
+import { BodyUUID, BodyUUIDArray } from '../../validation/body-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
     QueryBoolean,
     QueryOptionalDate,
@@ -36,25 +39,22 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
-import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import { FileType } from '@common/frontend_shared/enum';
-import { BodyUUID, BodyUUIDArray } from '../../validation/body-decorators';
-import env from '@common/environment';
-import { ApiOkResponse, OutputDto } from '../../decarators';
-import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
-import { IsUploadingDto } from '@common/api/types/file/is-uploading.dto';
-import { FilesDto } from '@common/api/types/file/files.dto';
-import { FileWithTopicDto } from '@common/api/types/file/file.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
-import { CreatePreSignedURLSDto } from '@common/api/types/create-pre-signed-url.dto';
 import {
-    FileExistsResponseDto,
-    TemporaryFileAccessesDto,
-} from '@common/api/types/file/access.dto';
+    AdminOnly,
+    CanCreateInMissionByBody,
+    CanDeleteFile,
+    CanDeleteMission,
+    CanMoveFiles,
+    CanReadFile,
+    CanReadMission,
+    CanWriteFile,
+    LoggedIn,
+    UserOnly,
+} from '../auth/roles.decorator';
 
-import { FileQueryDto } from '@common/api/types/file/file-query.dto';
 import { CancelFileUploadDto } from '@common/api/types/cancel-file-upload.dto';
+import { FileQueryDto } from '@common/api/types/file/file-query.dto';
 
 @Controller(['file', 'files']) // TODO: migrate to 'files'
 export class FileController {

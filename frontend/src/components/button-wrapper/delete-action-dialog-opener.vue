@@ -18,7 +18,9 @@
 </template>
 
 <script setup lang="ts">
+import { ActionState } from '@common/enum';
 import { useQuasar } from 'quasar';
+import DeleteActionDialog from 'src/dialogs/delete-action-dialog.vue';
 import {
     getPermissionForMission,
     getPermissionForProject,
@@ -26,8 +28,6 @@ import {
     useUser,
 } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
-import DeleteActionDialog from 'src/dialogs/delete-action-dialog.vue';
-import { ActionState } from '@common/enum';
 
 import { ActionDto } from '@api/types/actions/action.dto';
 

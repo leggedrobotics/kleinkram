@@ -1,8 +1,8 @@
+import { ActionWorkersDto } from '@common/api/types/action-workers.dto';
+import Worker from '@common/entities/worker/worker.entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import Worker from '@common/entities/worker/worker.entity';
-import { ActionWorkersDto } from '@common/api/types/action-workers.dto';
 
 @Injectable()
 export class WorkerService {

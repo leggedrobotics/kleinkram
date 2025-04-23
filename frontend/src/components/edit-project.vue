@@ -68,12 +68,12 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useQueryClient } from '@tanstack/vue-query';
-import { computed, Ref, ref, watch } from 'vue';
-import { Notify, QInput } from 'quasar';
-import { updateProject } from 'src/services/mutations/project';
-import { useProjectQuery } from 'src/hooks/query-hooks';
 import { ProjectWithRequiredTags } from '@api/types/project/project-with-required-tags';
+import { useQueryClient } from '@tanstack/vue-query';
+import { Notify, QInput } from 'quasar';
+import { useProjectQuery } from 'src/hooks/query-hooks';
+import { updateProject } from 'src/services/mutations/project';
+import { computed, Ref, ref, watch } from 'vue';
 
 const { projectUuid } = defineProps<{
     projectUuid: string;

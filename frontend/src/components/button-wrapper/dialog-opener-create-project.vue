@@ -15,8 +15,8 @@
 </template>
 
 <script setup lang="ts">
-import CreateProjectDialog from 'src/dialogs/create-project-dialog.vue';
 import { useQuasar } from 'quasar';
+import CreateProjectDialog from 'src/dialogs/create-project-dialog.vue';
 import { canCreateProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 

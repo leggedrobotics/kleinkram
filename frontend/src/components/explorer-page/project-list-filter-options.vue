@@ -46,12 +46,12 @@
 </template>
 
 <script setup lang="ts">
-import { useHandler } from 'src/hooks/query-hooks';
 import { useQueryClient } from '@tanstack/vue-query';
-import { ref, watch } from 'vue';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import MyProjectsSelector from 'components/explorer-page/my-projects-selector.vue';
+import { useHandler } from 'src/hooks/query-hooks';
+import { ref, watch } from 'vue';
 
 const myProjects = defineModel<boolean>();
 const queryClient = useQueryClient();

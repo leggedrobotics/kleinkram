@@ -7,21 +7,12 @@ import {
     Processor,
 } from '@nestjs/bull';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Job, Queue } from 'bull';
 import { IsNull, Like, Repository } from 'typeorm';
 
-import { convertToMcap, mcapMetaInfo } from './helper/converter';
-import {
-    downloadDriveFile,
-    getMetadata,
-    listFiles,
-} from './helper/drive-helper';
-import { downloadMinioFile, uploadLocalFile } from './helper/minio-helper';
-import logger from '../logger';
-import { traceWrapper, tracing } from '../tracing';
-import QueueEntity from '@common/entities/queue/queue.entity';
 import FileEntity from '@common/entities/file/file.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import env from '@common/environment';
 import {
@@ -31,10 +22,19 @@ import {
     FileType,
     QueueState,
 } from '@common/frontend_shared/enum';
+import { addTagsToMinioObject } from '@common/minio-helper';
 import { drive_v3 } from 'googleapis';
 import fs from 'node:fs';
+import logger from '../logger';
+import { traceWrapper, tracing } from '../tracing';
+import { convertToMcap, mcapMetaInfo } from './helper/converter';
+import {
+    downloadDriveFile,
+    getMetadata,
+    listFiles,
+} from './helper/drive-helper';
 import { calculateFileHash } from './helper/hash-helper';
-import { addTagsToMinioObject } from '@common/minio-helper';
+import { downloadMinioFile, uploadLocalFile } from './helper/minio-helper';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports,unicorn/prefer-module
 const fsPromises = require('node:fs').promises;

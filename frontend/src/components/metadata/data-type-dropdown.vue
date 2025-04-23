@@ -48,9 +48,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { DataType } from '@common/enum';
 import { icon } from 'src/services/generic';
+import { computed } from 'vue';
 
 const properties = defineProps<{
     modelValue: DataType | undefined;

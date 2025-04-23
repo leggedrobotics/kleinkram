@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DataType } from '../../../frontend_shared/enum';
+import { Type } from 'class-transformer';
 import {
     IsDate,
     IsDefined,
@@ -9,10 +9,10 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
-import { Paginated } from '../pagination';
+import { DataType } from '../../../frontend_shared/enum';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
-import { Type } from 'class-transformer';
+import { Paginated } from '../pagination';
 
 export class TagTypeDto {
     @ApiProperty()

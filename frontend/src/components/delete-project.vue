@@ -13,11 +13,11 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
-import { deleteProject } from 'src/services/mutations/project';
 import { useHandler } from 'src/hooks/query-hooks';
+import { deleteProject } from 'src/services/mutations/project';
+import { ref } from 'vue';
 
 import { ProjectWithCreator } from '@api/types/project/project-with-creator.dto';
 

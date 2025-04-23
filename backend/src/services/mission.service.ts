@@ -1,38 +1,38 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import Mission from '@common/entities/mission/mission.entity';
-import { ILike, Not, Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMission } from '@common/api/types/create-mission.dto';
-import Project from '@common/entities/project/project.entity';
-import User from '@common/entities/user/user.entity';
-import { UserService } from './user.service';
-import { UserRole } from '@common/frontend_shared/enum';
-import { TagService } from './tag.service';
-import TagType from '@common/entities/tagType/tag-type.entity';
-import { addMissionFilters, addProjectFilters, addSort } from './utilities';
-import {
-    missionEntityToDtoWithCreator,
-    missionEntityToDtoWithFiles,
-    missionEntityToFlatDto,
-    missionEntityToMinimumDto,
-} from '../serialization';
-import {
-    addTagsToMinioObject,
-    externalMinio,
-    getBucketFromFileType,
-} from '@common/minio-helper';
-import logger from '../logger';
 import {
     FlatMissionDto,
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
 } from '@common/api/types/mission/mission.dto';
+import Mission from '@common/entities/mission/mission.entity';
+import Project from '@common/entities/project/project.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
+import User from '@common/entities/user/user.entity';
+import { UserRole } from '@common/frontend_shared/enum';
+import {
+    addTagsToMinioObject,
+    externalMinio,
+    getBucketFromFileType,
+} from '@common/minio-helper';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ILike, Not, Repository } from 'typeorm';
 import {
     addAccessConstraints,
     addAccessConstraintsToMissionQuery,
 } from '../endpoints/auth/auth-helper';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
+import logger from '../logger';
+import {
+    missionEntityToDtoWithCreator,
+    missionEntityToDtoWithFiles,
+    missionEntityToFlatDto,
+    missionEntityToMinimumDto,
+} from '../serialization';
+import { TagService } from './tag.service';
+import { UserService } from './user.service';
+import { addMissionFilters, addProjectFilters, addSort } from './utilities';
 
 import { SortOrder } from '@common/api/types/pagination';
 

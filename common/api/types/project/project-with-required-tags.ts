@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsNumber, ValidateNested } from 'class-validator';
 import { TagTypeDto } from '../tags/tags.dto';
 import { ProjectWithCreator } from './project-with-creator.dto';
 

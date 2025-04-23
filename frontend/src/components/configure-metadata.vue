@@ -75,12 +75,12 @@
 </template>
 
 <script setup lang="ts">
+import { TagTypeDto } from '@api/types/tags/tags.dto';
+import { DataType } from '@common/enum';
+import { QSelect } from 'quasar';
+import { useFilteredTag } from 'src/hooks/query-hooks';
 import { icon } from 'src/services/generic';
 import { computed, ref, watch } from 'vue';
-import { DataType } from '@common/enum';
-import { useFilteredTag } from 'src/hooks/query-hooks';
-import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { QSelect } from 'quasar';
 
 const selectReference = ref<QSelect | undefined>(undefined);
 const tagSearch = ref('');

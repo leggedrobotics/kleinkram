@@ -131,21 +131,21 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 
-import { computed, Ref, ref, watch } from 'vue';
 import { formatDate } from 'src/services/date-formating';
+import { computed, Ref, ref, watch } from 'vue';
 
-import { searchAccessGroups } from 'src/services/queries/access';
-import { useRouter } from 'vue-router';
-import ROUTES from 'src/router/routes';
-import { QTable } from 'quasar';
-import { AccessGroupType } from '@common/enum';
-import { AccessGroupDto } from '@api/types/user.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
+import { AccessGroupDto } from '@api/types/user.dto';
+import { AccessGroupType } from '@common/enum';
+import DeleteAccessGroup from 'components/button-wrapper/delete-access-group.vue';
 import CreateAccessGroupDialogOpener from 'components/button-wrapper/dialog-opener-create-access-group.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
-import DeleteAccessGroup from 'components/button-wrapper/delete-access-group.vue';
 import TitleSection from 'components/title-section.vue';
+import { QTable } from 'quasar';
+import ROUTES from 'src/router/routes';
+import { searchAccessGroups } from 'src/services/queries/access';
+import { useRouter } from 'vue-router';
 
 const $router = useRouter();
 const prefilterOptions = [

@@ -270,11 +270,23 @@
     </div>
 </template>
 <script setup lang="ts">
-import { formatDate } from 'src/services/date-formating';
-import { computed, Ref, ref } from 'vue';
+import { FileDto } from '@api/types/file/file.dto';
+import { FileState, FileType } from '@common/enum';
+import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import EditFileButton from 'components/buttons/edit-file-button.vue';
+import KleinDownloadFile from 'components/cli-links/klein-download-file.vue';
+import TitleSection from 'components/title-section.vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
+import {
+    registerNoPermissionErrorHandler,
+    useFile,
+    useQueueForFile,
+} from 'src/hooks/query-hooks';
+import { useFileUUID } from 'src/hooks/router-hooks';
 import ROUTES from 'src/router/routes';
-import { downloadFile } from 'src/services/queries/file';
+import { formatDate } from 'src/services/date-formating';
+import { formatSize } from 'src/services/general-formatting';
 import {
     _downloadFile,
     getColorFileState,
@@ -284,21 +296,9 @@ import {
     getTooltip,
     hashUUIDtoColor,
 } from 'src/services/generic';
+import { downloadFile } from 'src/services/queries/file';
+import { computed, Ref, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-    registerNoPermissionErrorHandler,
-    useFile,
-    useQueueForFile,
-} from 'src/hooks/query-hooks';
-import { formatSize } from 'src/services/general-formatting';
-import { FileState, FileType } from '@common/enum';
-import { useFileUUID } from 'src/hooks/router-hooks';
-import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
-import ButtonGroup from 'components/buttons/button-group.vue';
-import EditFileButton from 'components/buttons/edit-file-button.vue';
-import KleinDownloadFile from 'components/cli-links/klein-download-file.vue';
-import TitleSection from 'components/title-section.vue';
-import { FileDto } from '@api/types/file/file.dto';
 
 const $router = useRouter();
 

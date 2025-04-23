@@ -151,9 +151,9 @@
     </q-list>
 </template>
 <script setup lang="ts">
+import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import { QSelect } from 'quasar';
 import { computed, Ref, ref } from 'vue';
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 
 const newActionTemplate = ref<ActionTemplateDto | undefined>(undefined);
 

@@ -1,9 +1,56 @@
-import { computed, ComputedRef, ref, Ref, unref, watch } from 'vue';
+import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
+import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
+import { DefaultRights } from '@api/types/access-control/default-rights';
+import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
+import { ActionWorkersDto } from '@api/types/action-workers.dto';
+import { ActionsDto } from '@api/types/actions/action.dto';
+import { CategoriesDto } from '@api/types/category.dto';
+import { FileQueueEntriesDto } from '@api/types/file/file-queue-entry.dto';
+import { FileDto, FileWithTopicDto } from '@api/types/file/file.dto';
+import { FilesDto } from '@api/types/file/files.dto';
+import {
+    MissionsDto,
+    MissionWithFilesDto,
+} from '@api/types/mission/mission.dto';
+import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
+import { ProjectWithRequiredTags } from '@api/types/project/project-with-required-tags';
+import { ProjectsDto } from '@api/types/project/projects.dto';
+import { StorageOverviewDto } from '@api/types/storage-overview.dto';
+import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
+import {
+    AccessGroupDto,
+    CurrentAPIUserDto,
+    UsersDto,
+} from '@api/types/user.dto';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    DataType,
+    FileType,
+    UserRole,
+} from '@common/enum';
 import {
     ThrowOnError,
     useQuery,
     UseQueryReturnType,
 } from '@tanstack/vue-query';
+import { AxiosError } from 'axios';
+import { useQuasar } from 'quasar';
+import ROUTES from 'src/router/routes';
+import { getUser } from 'src/services/auth';
+import {
+    getAccessGroup,
+    getProjectAccess,
+    searchAccessGroups,
+} from 'src/services/queries/access';
+import { getActions, getRunningActions } from 'src/services/queries/action';
+import { getCategories } from 'src/services/queries/categories';
+import {
+    fetchFile,
+    filesOfMission,
+    getIsUploading,
+    getStorage,
+} from 'src/services/queries/file';
 import {
     getMission,
     getMissions,
@@ -14,60 +61,13 @@ import {
     getProject,
     getProjectDefaultAccess,
 } from 'src/services/queries/project';
-import { useRouter } from 'vue-router';
-import { QueryURLHandler } from 'src/services/query-handler';
-import {
-    fetchFile,
-    filesOfMission,
-    getIsUploading,
-    getStorage,
-} from 'src/services/queries/file';
-import { AxiosError } from 'axios';
-import ROUTES from 'src/router/routes';
-import { useQuasar } from 'quasar';
-import { getPermissions, searchUsers } from 'src/services/queries/user';
-import { getUser } from 'src/services/auth';
-import {
-    AccessGroupDto,
-    CurrentAPIUserDto,
-    UsersDto,
-} from '@api/types/user.dto';
-import { DefaultRights } from '@api/types/access-control/default-rights';
-import {
-    AccessGroupRights,
-    AccessGroupType,
-    DataType,
-    FileType,
-    UserRole,
-} from '@common/enum';
-import { StorageOverviewDto } from '@api/types/storage-overview.dto';
-import { allWorkers } from 'src/services/queries/worker';
-import { ActionWorkersDto } from '@api/types/action-workers.dto';
-import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
-import { getFilteredTagTypes, getTagTypes } from 'src/services/queries/tag';
-import {
-    MissionsDto,
-    MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
-import { FileQueueEntriesDto } from '@api/types/file/file-queue-entry.dto';
 import { getQueueForFile } from 'src/services/queries/queue';
-import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
-import { getActions, getRunningActions } from 'src/services/queries/action';
-import { CategoriesDto } from '@api/types/category.dto';
-import { getCategories } from 'src/services/queries/categories';
-import {
-    getAccessGroup,
-    getProjectAccess,
-    searchAccessGroups,
-} from 'src/services/queries/access';
-import { FileDto, FileWithTopicDto } from '@api/types/file/file.dto';
-import { FilesDto } from '@api/types/file/files.dto';
-import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import { ActionsDto } from '@api/types/actions/action.dto';
-import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
-import { ProjectWithRequiredTags } from '@api/types/project/project-with-required-tags';
+import { getFilteredTagTypes, getTagTypes } from 'src/services/queries/tag';
+import { getPermissions, searchUsers } from 'src/services/queries/user';
+import { allWorkers } from 'src/services/queries/worker';
+import { QueryURLHandler } from 'src/services/query-handler';
+import { computed, ComputedRef, ref, Ref, unref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
     PermissionsDto | null,

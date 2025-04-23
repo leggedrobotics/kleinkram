@@ -1,10 +1,10 @@
+import Worker from '@common/entities/worker/worker.entity';
+import Docker from 'dockerode';
+import fs from 'node:fs';
+import { promisify } from 'node:util';
 import si from 'systeminformation';
 import { Repository } from 'typeorm';
-import Worker from '@common/entities/worker/worker.entity';
-import fs from 'node:fs';
-import Docker from 'dockerode';
 import logger from '../../logger';
-import { promisify } from 'node:util';
 
 export async function getDiskSpace() {
     const diskData = await si.fsSize();

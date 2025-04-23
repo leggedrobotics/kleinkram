@@ -352,43 +352,43 @@
 </template>
 
 <script setup lang="ts">
+import { CategoryDto } from '@api/types/category.dto';
+import { TagDto } from '@api/types/tags/tags.dto';
+import { DataType, FileType } from '@common/enum';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { Notify, useQuasar } from 'quasar';
+import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
 import {
     registerNoPermissionErrorHandler,
     useCategories,
     useHandler,
     useMission,
 } from 'src/hooks/query-hooks';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
-import { Notify, useQuasar } from 'quasar';
+import { _downloadFiles } from 'src/services/generic';
+import { deleteFiles } from 'src/services/mutations/file';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { deleteFiles } from 'src/services/mutations/file';
-import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
-import { _downloadFiles } from 'src/services/generic';
-import { DataType, FileType } from '@common/enum';
-import { TagDto } from '@api/types/tags/tags.dto';
-import { CategoryDto } from '@api/types/category.dto';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
-import ButtonGroup from 'components/buttons/button-group.vue';
-import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
-import KleinDownloadMission from 'components/cli-links/klein-download-mission.vue';
-import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
-import CategorySelector from 'components/category-selector.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
+import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
+import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
+import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
 import ButtonGroupOverlay from 'components/buttons/button-group-overlay.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import OpenMultCategoryAdd from 'components/buttons/open-mult-category-add-dialog-button.vue';
+import OpenMultiFileMoveDialog from 'components/buttons/open-multi-file-move-dialog-button.vue';
+import CategorySelector from 'components/category-selector.vue';
 import KleinDownloadFiles from 'components/cli-links/klein-download-files.vue';
+import KleinDownloadMission from 'components/cli-links/klein-download-mission.vue';
 import ExplorerPageFilesTable from 'components/explorer-page/explorer-page-files-table.vue';
+import ExplorerPageTableHeader from 'components/explorer-page/explorer-page-table-header.vue';
 import TitleSection from 'components/title-section.vue';
 import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue';
-import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
-import ExplorerPageTableHeader from 'components/explorer-page/explorer-page-table-header.vue';
-import OpenMultiFileMoveDialog from 'components/buttons/open-multi-file-move-dialog-button.vue';
-import OpenMultCategoryAdd from 'components/buttons/open-mult-category-add-dialog-button.vue';
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 
 const queryClient = useQueryClient();
 const handler = useHandler();

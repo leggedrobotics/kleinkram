@@ -1,17 +1,17 @@
 import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
-import BaseEntity from '../base-entity.entity';
-import Account from '../auth/account.entity';
-import Project from '../project/project.entity';
-import Mission from '../mission/mission.entity';
-import QueueEntity from '../queue/queue.entity';
 import { UserRole } from '../../frontend_shared/enum';
-import FileEntity from '../file/file.entity';
-import Tag from '../tag/tag.entity';
-import Action from '../action/action.entity';
 import ActionTemplate from '../action/action-template.entity';
+import Action from '../action/action.entity';
+import Account from '../auth/account.entity';
 import Apikey from '../auth/apikey.entity';
-import Category from '../category/category.entity';
 import GroupMembership from '../auth/group-membership.entity';
+import BaseEntity from '../base-entity.entity';
+import Category from '../category/category.entity';
+import FileEntity from '../file/file.entity';
+import Mission from '../mission/mission.entity';
+import Project from '../project/project.entity';
+import QueueEntity from '../queue/queue.entity';
+import Tag from '../tag/tag.entity';
 
 @Entity()
 export default class User extends BaseEntity {

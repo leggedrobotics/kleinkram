@@ -1,6 +1,11 @@
-import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
+import { PermissionsDto } from '@common/api/types/permissions.dto';
+import {
+    CurrentAPIUserDto,
+    UserDto,
+    UsersDto,
+} from '@common/api/types/user.dto';
+import { systemUser } from '@common/consts';
+import Apikey from '@common/entities/auth/apikey.entity';
 import User from '@common/entities/user/user.entity';
 import {
     AccessGroupRights,
@@ -8,14 +13,9 @@ import {
     UserRole,
 } from '@common/frontend_shared/enum';
 import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
-import Apikey from '@common/entities/auth/apikey.entity';
-import { systemUser } from '@common/consts';
-import {
-    CurrentAPIUserDto,
-    UserDto,
-    UsersDto,
-} from '@common/api/types/user.dto';
-import { PermissionsDto } from '@common/api/types/permissions.dto';
+import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 
 @Injectable()

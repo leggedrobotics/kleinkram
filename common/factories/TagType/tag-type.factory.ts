@@ -1,6 +1,6 @@
 import { define } from 'typeorm-seeding';
-import { extendedFaker } from '../../faker-extended';
 import TagType from '../../entities/tagType/tag-type.entity';
+import { extendedFaker } from '../../faker-extended';
 
 define(TagType, () => {
     const tagType = new TagType();

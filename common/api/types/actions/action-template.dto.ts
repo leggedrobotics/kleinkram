@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
     IsDate,
     IsEnum,
@@ -8,10 +9,9 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { AccessGroupRights } from '../../../frontend_shared/enum';
-import { Paginated } from '../pagination';
-import { Type } from 'class-transformer';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
+import { Paginated } from '../pagination';
 
 export class ActionTemplateDto {
     @ApiProperty()

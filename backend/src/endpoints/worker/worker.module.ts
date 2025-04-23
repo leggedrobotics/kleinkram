@@ -1,8 +1,8 @@
+import Worker from '@common/entities/worker/worker.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import Worker from '@common/entities/worker/worker.entity';
-import { WorkerController } from './worker.controller';
 import { WorkerService } from '../../services/worker.service';
+import { WorkerController } from './worker.controller';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Worker])],

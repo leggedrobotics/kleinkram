@@ -81,11 +81,11 @@
 </template>
 
 <script setup lang="ts">
-import { login } from 'src/services/auth';
-import { useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
+import { login } from 'src/services/auth';
 import { getMe } from 'src/services/queries/user';
 import { watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 const $router = useRouter();
 

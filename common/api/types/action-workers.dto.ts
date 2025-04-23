@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
     IsBoolean,
     IsDate,
@@ -7,10 +8,9 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { Paginated } from './pagination';
-import { IsTake } from '../../validation/take-validation';
 import { IsSkip } from '../../validation/skip-validation';
+import { IsTake } from '../../validation/take-validation';
+import { Paginated } from './pagination';
 
 export class ActionWorkerDto {
     @ApiProperty()

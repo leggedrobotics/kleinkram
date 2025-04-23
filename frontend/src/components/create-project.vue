@@ -55,11 +55,11 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { createProject } from 'src/services/mutations/project';
 import { useAllTags } from 'src/hooks/query-hooks';
+import { createProject } from 'src/services/mutations/project';
+import { ref } from 'vue';
 
 const projectName = ref('');
 const projectDescription = ref('');

@@ -19,8 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar';
 import AddTag from 'components/AddTag.vue';
+import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();

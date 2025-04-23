@@ -1,10 +1,10 @@
-import { ApiUUIDProperty } from '../../../backend/src/validation/body-decorators';
+import { ApiProperty } from '@nestjs/swagger';
 import {
     Validate,
     ValidatorConstraint,
     ValidatorConstraintInterface,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiUUIDProperty } from '../../../backend/src/validation/body-decorators';
 
 @ValidatorConstraint({ name: 'isDateOrNever', async: false })
 class IsDateOrNeverConstraint implements ValidatorConstraintInterface {

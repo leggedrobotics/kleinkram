@@ -1,9 +1,6 @@
-import { Notify } from 'quasar';
-import {
-    cancelUploads,
-    generateTemporaryCredentials,
-} from 'src/services/mutations/file';
-import ENV from '../environment';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FlatMissionDto, MissionDto } from '@api/types/mission/mission.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
 import {
     AbortMultipartUploadCommand,
     CompleteMultipartUploadCommand,
@@ -11,16 +8,19 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
+import { QueryClient } from '@tanstack/vue-query';
+import { AxiosError } from 'axios';
 import pLimit from 'p-limit';
-import { ref, Ref } from 'vue';
+import { Notify } from 'quasar';
+import SparkMD5 from 'spark-md5';
+import {
+    cancelUploads,
+    generateTemporaryCredentials,
+} from 'src/services/mutations/file';
 import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
-import { QueryClient } from '@tanstack/vue-query';
-import SparkMD5 from 'spark-md5';
-import { FlatMissionDto, MissionDto } from '@api/types/mission/mission.dto';
-import { AxiosError } from 'axios';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { ProjectDto } from '@api/types/project/base-project.dto';
+import { ref, Ref } from 'vue';
+import ENV from '../environment';
 
 const confirmDialog = (event: BeforeUnloadEvent): void => {
     event.preventDefault();
