@@ -11,3 +11,7 @@
 **/__generated__endpoints.json
 **/.mypy_cache
 **/cli
+
+# ignore bag and mcap files
+**/*.mcap
+**/*.bag
