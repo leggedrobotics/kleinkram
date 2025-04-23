@@ -78,7 +78,7 @@
 import { icon } from 'src/services/generic';
 import { computed, ref, watch } from 'vue';
 import { DataType } from '@common/enum';
-import { useFilteredTag } from '../hooks/query-hooks';
+import { useFilteredTag } from 'src/hooks/query-hooks';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
 import { QSelect } from 'quasar';
 

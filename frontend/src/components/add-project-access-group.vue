@@ -54,10 +54,10 @@ import { addAccessGroupToProject } from 'src/services/mutations/access';
 import { Notify } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
 import { UserDto } from '@api/types/user.dto';
-import { useFilteredProjects } from '../hooks/query-hooks';
+import { useFilteredProjects } from 'src/hooks/query-hooks';
 
 const properties = defineProps<{
-    access_group_uuid: string;
+    accessGroupUuid: string;
 }>();
 const queryClient = useQueryClient();
 
@@ -78,7 +78,10 @@ const options = Object.keys(accessGroupRightsMap)
         value: Number.parseInt(key, 10),
     }))
 
-    .filter((option) => option.value !== AccessGroupRights._ADMIN);
+    .filter(
+        (option) =>
+            (option.value as AccessGroupRights) !== AccessGroupRights._ADMIN,
+    );
 
 const { mutate } = useMutation({
     mutationFn: () => {
@@ -86,7 +89,7 @@ const { mutate } = useMutation({
             selected.value.map(async (project) => {
                 return addAccessGroupToProject(
                     project.uuid,
-                    properties.access_group_uuid,
+                    properties.accessGroupUuid,
                     accessRight.value.value,
                 );
             }),
@@ -99,7 +102,7 @@ const { mutate } = useMutation({
             position: 'bottom',
         });
         await queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', properties.access_group_uuid],
+            queryKey: ['AccessGroup', properties.accessGroupUuid],
         });
     },
     onError: () => {

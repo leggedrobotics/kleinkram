@@ -180,7 +180,7 @@
 import { Notify, QTable, useQuasar } from 'quasar';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref, watch } from 'vue';
-import { dateMask, formatDate, parseDate } from '../services/date-formating';
+import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import { currentQueue } from 'src/services/queries/queue';
 import { findOneByNameAndMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
@@ -188,11 +188,11 @@ import {
     _downloadFile,
     getDetailedFileState,
     getSimpleFileStateName,
-} from '../services/generic';
+} from 'src/services/generic';
 import { getColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
-import ConfirmDeleteFile from '../dialogs/confirm-delete-file-dialog.vue';
+import ConfirmDeleteFile from 'src/dialogs/confirm-delete-file-dialog.vue';
 import { FileLocation, QueueState } from '@common/enum';
 import { FileQueueEntryDto } from '@api/types/file/file-queue-entry.dto';
 
@@ -337,8 +337,8 @@ async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
                     name: ROUTES.FILE.routeName,
                     params: {
                         file_uuid: file.uuid,
-                        mission_uuid: row.mission.uuid,
-                        project_uuid: row.mission.project.uuid,
+                        missionUuid: row.mission.uuid,
+                        projectUuid: row.mission.project.uuid,
                     },
                 });
             },

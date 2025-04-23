@@ -29,7 +29,7 @@
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();

@@ -27,17 +27,17 @@
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useQuasar } from 'quasar';
-import AddTagDialog from '../dialogs/add-tag-dialog.vue';
+import AddTagDialog from 'src/dialogs/add-tag-dialog.vue';
 import { removeTag } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
 import { TagDto } from '@api/types/tags/tags.dto';
-import { useMission } from '../hooks/query-hooks';
+import { useMission } from 'src/hooks/query-hooks';
 
 const queryClient = useQueryClient();
 const $q = useQuasar();
 
 const properties = defineProps<{
-    mission_uuid: string;
+    missionUuid: string;
 }>();
 
 const icons = {
@@ -48,7 +48,7 @@ const icons = {
     [DataType.LOCATION]: 'sym_o_place',
 };
 
-const { data } = useMission(properties.mission_uuid);
+const { data } = useMission(properties.missionUuid);
 
 await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
     // @ts-ignore
@@ -77,7 +77,7 @@ const { mutate: removeTagCallback } = useMutation({
             .filter(
                 (query) =>
                     query.queryKey[0] === 'mission' &&
-                    query.queryKey[1] === properties.mission_uuid,
+                    query.queryKey[1] === properties.missionUuid,
             );
         for (const query of filtered) {
             await queryClient.invalidateQueries({
@@ -94,7 +94,7 @@ function openAddTag() {
     $q.dialog({
         component: AddTagDialog,
         componentProps: {
-            missionUuid: properties.mission_uuid,
+            missionUuid: properties.missionUuid,
         },
         persistent: true,
     });

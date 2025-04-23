@@ -26,8 +26,8 @@ import { CanvasRenderer } from 'echarts/renderers';
 import {
     formatGenericNumber,
     formatSize,
-} from '../../services/general-formatting';
-import { useStorageOverview } from '../../hooks/query-hooks';
+} from 'src/services/general-formatting';
+import { useStorageOverview } from 'src/hooks/query-hooks';
 
 use([
     TitleComponent,

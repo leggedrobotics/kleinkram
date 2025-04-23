@@ -11,3 +11,10 @@
 **/__generated__endpoints.json
 **/.mypy_cache
 **/cli
+
+# ignore bag and mcap files
+**/*.mcap
+**/*.bag
+
+# ignore build info file
+frontend/src/build.ts

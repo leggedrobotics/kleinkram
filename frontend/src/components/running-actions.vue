@@ -78,9 +78,9 @@
 import { getActionColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { ActionState } from '@common/enum';
-import { useRunningActions } from '../hooks/query-hooks';
+import { useRunningActions } from 'src/hooks/query-hooks';
 import { ActionDto } from '@api/types/actions/action.dto';
-import ActionBadge from './action-badge.vue';
+import ActionBadge from 'components/action-badge.vue';
 
 const router = useRouter();
 

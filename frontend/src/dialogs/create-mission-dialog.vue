@@ -41,7 +41,7 @@
                     <label for="projectDescription">Project*</label>
                     <q-btn-dropdown
                         v-model="ddr_open"
-                        :disable="!!project_uuid"
+                        :disable="!!projectUuid"
                         :label="project?.name || 'Project'"
                         class="q-uploader--bordered full-width full-height q-mb-lg"
                         flat
@@ -143,7 +143,7 @@
 
 <script setup lang="ts">
 import { computed, ref, Ref } from 'vue';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
@@ -152,12 +152,12 @@ import {
     canCreateMission,
     usePermissionsQuery,
     useProjectQuery,
-} from '../hooks/query-hooks';
+} from 'src/hooks/query-hooks';
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
-import SelectMissionTags from '@components/select-mission-tags.vue';
+import SelectMissionTags from 'components/select-mission-tags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';
-import CreateFile from '@components/create-file.vue';
+import CreateFile from 'components/create-file.vue';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const MIN_MISSION_NAME_LENGTH = 3;
@@ -181,17 +181,17 @@ const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
     undefined,
 );
 
-const { project_uuid: _project_uuid, uploads } = defineProps<{
-    project_uuid: string | undefined;
+const { projectUuid: _project_uuid, uploads } = defineProps<{
+    projectUuid: string | undefined;
     uploads: Ref<FileUploadDto[]>;
 }>();
 
-const project_uuid = ref(_project_uuid);
+const projectUuid = ref(_project_uuid);
 
 const newMission: Ref<FlatMissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
-const { data: project } = useProjectQuery(project_uuid);
+const { data: project } = useProjectQuery(projectUuid);
 
 const missionName = ref('');
 const isValidMissionName = ref(true);
@@ -295,7 +295,7 @@ function clearMissionName(): void {
 }
 
 const onClick = (_project: ProjectDto) => {
-    project_uuid.value = _project.uuid;
+    projectUuid.value = _project.uuid;
     ddr_open.value = false;
 };
 </script>

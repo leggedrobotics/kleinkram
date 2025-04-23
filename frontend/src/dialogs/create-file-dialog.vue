@@ -25,11 +25,11 @@
 
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { Ref, ref } from 'vue';
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
-import CreateFile from '@components/create-file.vue';
+import CreateFile from 'components/create-file.vue';
 
 const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
     undefined,

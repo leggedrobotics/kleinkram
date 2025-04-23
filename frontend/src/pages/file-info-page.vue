@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import InspectFile from '@components/inspect-file.vue';
+import InspectFile from 'components/inspect-file.vue';
 </script>
 
 <style scoped></style>

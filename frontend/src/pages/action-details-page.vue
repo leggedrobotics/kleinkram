@@ -70,7 +70,7 @@
                                     v-if="action.image.repoDigests?.[0]"
                                     style="color: #525252; font-size: 0.8em"
                                 >
-                                    <br>
+                                    <br />
                                     {{ action.image.repoDigests?.[0] }}
                                 </span>
                             </td>
@@ -185,9 +185,9 @@
                             </td>
                             <td class="q-table__cell">
                                 <div v-if="action.template">
-                                    Cores: {{ action.template.cpuCores }}<br>
+                                    Cores: {{ action.template.cpuCores }}<br />
                                     RAM:
-                                    {{ action.template.cpuMemory }} GB<br>
+                                    {{ action.template.cpuMemory }} GB<br />
                                     min vRAM:
                                     <template
                                         v-if="action?.template.gpuMemory >= 0"
@@ -197,7 +197,7 @@
                                     <template v-else>
                                         no GPU requested
                                     </template>
-                                    <br>
+                                    <br />
                                 </div>
                                 <div v-else>N/A</div>
                             </td>
@@ -231,7 +231,7 @@
                                 <div v-else>
                                     {{ artifactState }}
                                 </div>
-                                <br>
+                                <br />
                                 <span style="color: #525252; font-size: 0.8em">
                                     Artifacts are only be stored for 3 months.
                                     Please download them if you need them for
@@ -274,7 +274,8 @@
                                 style="user-select: none; color: #525252"
                                 >{{
                                     formatDate(new Date(log.timestamp), true)
-                                }}</span>
+                                }}</span
+                            >
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #525252"
@@ -295,7 +296,8 @@
                                 style="user-select: none; color: #fd7c7cff"
                                 >{{
                                     formatDate(new Date(log.timestamp), true)
-                                }}</span>
+                                }}</span
+                            >
                             <span
                                 class="q-pr-sm"
                                 style="user-select: none; color: #fd7c7cff"
@@ -345,7 +347,8 @@
                     <span
                         class="q-pr-sm"
                         style="user-select: none; color: #525252"
-                        >{{ log.method }}</span>
+                        >{{ log.method }}</span
+                    >
 
                     <span>
                         {{ log.url }}
@@ -363,14 +366,14 @@ import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
 import { computed, ref } from 'vue';
-import { formatDate } from '../services/date-formating';
+import { formatDate } from 'src/services/date-formating';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { ArtifactState } from '@common/enum';
-import ROUTES from '../router/routes';
+import ROUTES from 'src/router/routes';
 import { ActionDto } from '@api/types/actions/action.dto';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import TitleSection from '@components/title-section.vue';
-import ActionBadge from '@components/action-badge.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import TitleSection from 'components/title-section.vue';
+import ActionBadge from 'components/action-badge.vue';
 
 const tab = ref('info');
 
@@ -410,8 +413,8 @@ const openMission = async (): Promise<void> => {
     await $router.push({
         name: ROUTES.FILES.routeName,
         params: {
-            project_uuid: action.value.mission.project.uuid,
-            mission_uuid: action.value.mission.uuid,
+            projectUuid: action.value.mission.project.uuid,
+            missionUuid: action.value.mission.uuid,
         },
     });
 };

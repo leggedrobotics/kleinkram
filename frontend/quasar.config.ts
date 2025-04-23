@@ -1,17 +1,10 @@
-/* eslint-env node */
-
-/*
- * This file runs in a Node context (it's NOT transpiled by Babel), so use only
- * the ES6 features that are supported by your Node version. https://node.green/
- */
-
 // Configuration for your app
-// https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
+// https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
-const { configure } = require('quasar/wrappers');
-const path = require('path');
+import { defineConfig } from '#q-app/wrappers';
+import { fileURLToPath } from 'node:url';
 
-module.exports = configure(function (/* ctx */) {
+export default defineConfig((/* ctx */) => {
     return {
         // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
         // preFetch: true,
@@ -37,19 +30,23 @@ module.exports = configure(function (/* ctx */) {
             // 'material-symbols-outlined',
         ],
 
-        // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
         build: {
-            // remember to also add the paths to the tsconfig.json file
-            // and to the Dockerfiles
             alias: {
-                '@common': path.resolve(__dirname, 'common/frontend_shared'),
-                '@components': path.resolve(__dirname, 'src/components'),
+                '@common': fileURLToPath(
+                    new URL('../common/frontend_shared', import.meta.url),
+                ),
+                '@api/types': fileURLToPath(
+                    new URL('../common/api/types', import.meta.url),
+                ),
             },
 
-            strict: true,
-            vueShim: true,
-            extendTsConfig(tsConfig) {
-                tsConfig.compilerOptions.baseUrl = '.';
+            typescript: {
+                strict: true,
+                vueShim: true,
+                extendTsConfig(tsConfig) {
+                    if (tsConfig.compilerOptions === undefined) return;
+                    tsConfig.compilerOptions.experimentalDecorators = true;
+                },
             },
 
             vueRouterMode: 'history', // available values: 'hash', 'history'
@@ -138,7 +135,7 @@ module.exports = configure(function (/* ctx */) {
 
         // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
         pwa: {
-            workboxMode: 'generateSW', // or 'injectManifest'
+            workboxMode: 'GenerateSW', // or 'injectManifest'
             injectPwaMetaTags: true,
             swFilename: 'sw.js',
             manifestFilename: 'manifest.json',
@@ -185,14 +182,6 @@ module.exports = configure(function (/* ctx */) {
 
                 appId: 'frontend',
             },
-        },
-
-        // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-browser-extensions/configuring-bex
-        bex: {
-            contentScripts: ['my-content-script'],
-
-            // extendBexScriptsConf (esbuildConf) {}
-            // extendBexManifestJson (json) {}
         },
     };
 });

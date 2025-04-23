@@ -19,8 +19,8 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import { computed } from 'vue';
-import { canDeleteProject, usePermissionsQuery } from '../../hooks/query-hooks';
-import ChangeAccessRightsDialog from '../../dialogs/modify-access-rights-dialog.vue';
+import { canDeleteProject, usePermissionsQuery } from 'src/hooks/query-hooks';
+import ChangeAccessRightsDialog from 'src/dialogs/modify-access-rights-dialog.vue';
 
 const $q = useQuasar();
 const properties = defineProps<{
@@ -40,7 +40,7 @@ const changeRights = (): void => {
     $q.dialog({
         component: ChangeAccessRightsDialog,
         componentProps: {
-            project_uuid: properties.projectUuid,
+            projectUuid: properties.projectUuid,
             project_access_uuid: properties.projectAccessUuid,
         },
     });

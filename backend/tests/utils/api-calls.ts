@@ -14,7 +14,7 @@ import { CreateTagTypeDto } from '../../../common/api/types/tags/create-tag-type
 import User from '../../../common/entities/user/user.entity';
 import { DEFAULT_URL } from '../auth/utilities';
 import { database, getJwtToken } from './database-utilities';
-import { uploadFileMultipart } from './multipartUpload';
+import { uploadFileMultipart } from './multipart-upload';
 
 export class HeaderCreator {
     headers: Headers;

@@ -68,6 +68,7 @@ export default tseslint.config(
             '@typescript-eslint/no-extraneous-class': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
             'unicorn/no-null': 'warn',
+            'unicorn/filename-case': 'error',
 
             // used as we have disabled prettier for the local dev setup
             'vue/html-indent': 'off',
@@ -82,6 +83,8 @@ export default tseslint.config(
             '@typescript-eslint/await-thenable': 'off',
             '@typescript-eslint/no-unnecessary-type-arguments': 'off',
             'vue/multi-word-component-names': 'off',
+            'unicorn/no-array-method-this-argument': 'warn',
+            '@typescript-eslint/restrict-template-expressions': 'off',
             complexity: 'off',
         },
     },
@@ -100,6 +103,7 @@ export default tseslint.config(
             '**/*.mjs',
             '**/environment.d.ts',
             '**/backend/dist/**',
+            'frontend/.quasar/**',
         ],
     },
 );

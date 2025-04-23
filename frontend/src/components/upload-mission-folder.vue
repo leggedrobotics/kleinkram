@@ -14,10 +14,10 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import { computed, inject } from 'vue';
-import { canCreateMission, usePermissionsQuery } from '../hooks/query-hooks';
-import NewMissionByFolderDialog from '../dialogs/create-mission-from-folder-dialog.vue';
+import { canCreateMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import NewMissionByFolderDialog from 'src/dialogs/create-mission-from-folder-dialog.vue';
 
-const { project_uuid } = defineProps<{ project_uuid?: string | undefined }>();
+const { projectUuid } = defineProps<{ projectUuid?: string | undefined }>();
 
 const $q = useQuasar();
 
@@ -26,8 +26,8 @@ const uploads = inject('uploads')!;
 
 const { data: permissions } = usePermissionsQuery();
 const canCreate = computed(() => {
-    if (!project_uuid) return true;
-    return canCreateMission(project_uuid, permissions.value);
+    if (!projectUuid) return true;
+    return canCreateMission(projectUuid, permissions.value);
 });
 
 const createNewMission = () => {
@@ -36,7 +36,7 @@ const createNewMission = () => {
         title: 'Create new mission',
         component: NewMissionByFolderDialog,
         componentProps: {
-            project_uuid: project_uuid,
+            projectUuid: projectUuid,
             uploads,
         },
     });

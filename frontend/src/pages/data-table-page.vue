@@ -145,7 +145,7 @@
                     >
                         <q-item-section class="items-center">
                             <q-toggle
-                                :model-value="fileTypeFilter[index].value"
+                                :model-value="fileTypeFilter[index]?.value"
                                 :label="option.name"
                                 @click="() => onFileTypeClicked(index)"
                             />
@@ -291,11 +291,11 @@
                 <link
                     rel="stylesheet"
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-                >
+                />
                 <link
                     rel="stylesheet"
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
-                >
+                />
             </q-td>
         </template>
         <template #body-cell-action="props">
@@ -346,17 +346,17 @@ import { computed, Ref, ref, watch } from 'vue';
 import { QTable, useQuasar } from 'quasar';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 
-import { dateMask, formatDate, parseDate } from '../services/date-formating';
+import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import ROUTES from 'src/router/routes';
-import { formatSize } from '../services/general-formatting';
+import { formatSize } from 'src/services/general-formatting';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
-import TagFilter from '../dialogs/tag-filter.vue';
+import TagFilter from 'src/dialogs/tag-filter.vue';
 import {
     useFilteredProjects,
     useHandler,
     useMissionsOfProjectMinimal,
-} from '../hooks/query-hooks';
+} from 'src/hooks/query-hooks';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
@@ -364,9 +364,9 @@ import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
-import DeleteFileDialogOpener from '@components/button-wrapper/delete-file-dialog-opener.vue';
-import TitleSection from '@components/title-section.vue';
-import EditFileDialogOpener from '@components/button-wrapper/edit-file-dialog-opener.vue';
+import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
+import TitleSection from 'components/title-section.vue';
+import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 
 const $router = useRouter();
 
@@ -649,15 +649,17 @@ const onRowClick = async (_: any, row: any) => {
         name: ROUTES.FILE.routeName,
         params: {
             file_uuid: row.uuid,
-            mission_uuid: row.mission.uuid,
-            project_uuid: row.mission.project.uuid,
+            missionUuid: row.mission.uuid,
+            projectUuid: row.mission.project.uuid,
         },
     });
 };
 
 function onFileTypeClicked(index: number) {
-    fileTypeFilter.value[index].value = !fileTypeFilter.value[index].value;
-    if (!fileTypeFilter.value[0].value && !fileTypeFilter.value[1].value) {
+    // @ts-ignore
+    fileTypeFilter.value[index].value = !fileTypeFilter.value[index]?.value;
+    if (!fileTypeFilter.value[0]?.value && !fileTypeFilter.value[1]?.value) {
+        // @ts-ignore
         fileTypeFilter.value[1 - index].value = true;
     }
 }

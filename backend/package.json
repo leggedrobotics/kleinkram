@@ -21,7 +21,7 @@
         "@aws-sdk/client-sts": "3.726.1",
         "@google-cloud/local-auth": "^3.0.1",
         "@nestjs/common": "^10.4.7",
-        "@nestjs/config": "^4.0.1",
+        "@nestjs/config": "^4.0.2",
         "@nestjs/core": "^10.4.5",
         "@nestjs/jwt": "^11.0.0",
         "@nestjs/mapped-types": "^2.0.5",
@@ -33,10 +33,10 @@
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/exporter-prometheus": "^0.200.0",
         "@opentelemetry/exporter-trace-otlp-http": "^0.200.0",
-        "@opentelemetry/instrumentation-express": "^0.48.0",
+        "@opentelemetry/instrumentation-express": "^0.48.1",
         "@opentelemetry/instrumentation-fetch": "^0.200.0",
         "@opentelemetry/instrumentation-http": "^0.200.0",
-        "@opentelemetry/instrumentation-nestjs-core": "^0.45.0",
+        "@opentelemetry/instrumentation-nestjs-core": "^0.46.0",
         "@opentelemetry/instrumentation-pg": "^0.52.0",
         "@opentelemetry/instrumentation-winston": "^0.45.0",
         "@opentelemetry/sdk-node": "^0.200.0",
@@ -56,7 +56,7 @@
         "form-data": "^4.0.2",
         "googleapis": "^146.0.0",
         "jsonwebtoken": "^9.0.2",
-        "minio": "8.0.2",
+        "minio": "8.0.5",
         "multer": "^1.4.5-lts.1",
         "passport": "^0.7.0",
         "passport-google-oauth": "^2.0.0",
@@ -70,14 +70,14 @@
         "uuid": "^11.0.5",
         "vue": "^3.5.13",
         "vue-json-pretty": "^2.4.0",
-        "webpack": "^5.98.0",
+        "webpack": "^5.99.6",
         "winston": "^3.17.0",
         "winston-loki": "^6.0.7"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.726.1",
         "@jest/globals": "^29.7.0",
-        "@nestjs/cli": "^11.0.5",
+        "@nestjs/cli": "^11.0.6",
         "@nestjs/schematics": "^11.0.4",
         "@nestjs/testing": "^10.0.0",
         "@types/cookie-parser": "^1.4.7",
@@ -99,6 +99,6 @@
         "ts-loader": "^9.4.3",
         "ts-node": "^10.9.1",
         "tsconfig-paths": "^4.2.0",
-        "typescript": "5.8.2"
+        "typescript": "5.8.3"
     }
 }

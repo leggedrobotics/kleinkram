@@ -35,9 +35,9 @@
 
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
-import { formatDate, parseDate } from '../services/date-formating';
+import { formatDate, parseDate } from 'src/services/date-formating';
 import { GroupMembershipDto } from '@api/types/user.dto';
 
 const properties = defineProps<{

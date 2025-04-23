@@ -25,10 +25,10 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import ROUTES from '../../../router/routes';
+import ROUTES from 'src/router/routes';
 import HeaderRightMenu from './header-right-menu.vue';
 import HeaderTabs, { MainMenu } from './header-tabs.vue';
-import KleinkramLogo from '@components/images/kleinkram-logo.vue';
+import KleinkramLogo from 'src/components/images/kleinkram-logo.vue';
 import BreadCrumbsNavigation from './bread-crumb-navigation.vue';
 
 const $router = useRouter();

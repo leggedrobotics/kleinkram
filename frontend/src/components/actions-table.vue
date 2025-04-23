@@ -86,14 +86,14 @@
 <script setup lang="ts">
 import { QTable } from 'quasar';
 import { computed, ref, Ref, watch } from 'vue';
-import { formatDate } from '../services/date-formating';
+import { formatDate } from 'src/services/date-formating';
 import { useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
-import { QueryHandler, TableRequest } from '../services/query-handler';
+import { QueryHandler, TableRequest } from 'src/services/query-handler';
 import { getActionColor } from 'src/services/generic';
 import { ActionState } from '@common/enum';
-import { useActions } from '../hooks/query-hooks';
-import ActionBadge from './action-badge.vue';
+import { useActions } from 'src/hooks/query-hooks';
+import ActionBadge from 'components/action-badge.vue';
 import DeleteActionDialogOpener from './button-wrapper/delete-action-dialog-opener.vue';
 import { ActionDto } from '@api/types/actions/action.dto';
 

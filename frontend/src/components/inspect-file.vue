@@ -241,7 +241,7 @@
                 :loading="isLoading"
                 :filter="filterKey"
             >
-                <template v-slot:no-data>
+                <template #no-data>
                     <q-card-section class="q-pa-none">
                         <div class="q-mt-md q-mb-md">No messages found.</div>
                     </q-card-section>
@@ -270,7 +270,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { formatDate } from '../services/date-formating';
+import { formatDate } from 'src/services/date-formating';
 import { computed, Ref, ref } from 'vue';
 import { copyToClipboard, Notify, QTable } from 'quasar';
 import ROUTES from 'src/router/routes';
@@ -283,21 +283,22 @@ import {
     getSimpleFileStateName,
     getTooltip,
     hashUUIDtoColor,
-} from '../services/generic';
+} from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import {
     registerNoPermissionErrorHandler,
     useFile,
     useQueueForFile,
-} from '../hooks/query-hooks';
-import { formatSize } from '../services/general-formatting';
+} from 'src/hooks/query-hooks';
+import { formatSize } from 'src/services/general-formatting';
 import { FileState, FileType } from '@common/enum';
-import { useFileUUID } from '../hooks/router-hooks';
-import DeleteFileDialogOpener from './button-wrapper/delete-file-dialog-opener.vue';
-import ButtonGroup from './buttons/button-group.vue';
-import EditFileButton from './buttons/edit-file-button.vue';
-import KleinDownloadFile from './cli-links/klein-download-file.vue';
-import TitleSection from './title-section.vue';
+import { useFileUUID } from 'src/hooks/router-hooks';
+import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import EditFileButton from 'components/buttons/edit-file-button.vue';
+import KleinDownloadFile from 'components/cli-links/klein-download-file.vue';
+import TitleSection from 'components/title-section.vue';
+import { FileDto } from '@api/types/file/file.dto';
 
 const $router = useRouter();
 
@@ -310,7 +311,10 @@ const fileUuid = useFileUUID();
 const { isLoading, data: file, error, isLoadingError } = useFile(fileUuid);
 registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
 
-const { data: queues } = useQueueForFile(file);
+// TODO: fix this type cast; this should be unnecessary...
+const { data: queues } = useQueueForFile(
+    file as unknown as Ref<FileDto> | undefined,
+);
 
 const displayTopics = computed(() => {
     if (file.value === undefined) {
@@ -349,8 +353,8 @@ async function redirectToMcap(): Promise<void> {
         await $router.push({
             name: ROUTES.FILE.routeName,
             params: {
-                project_uuid: file.value.mission.project.uuid,
-                mission_uuid: file.value.mission.uuid,
+                projectUuid: file.value.mission.project.uuid,
+                missionUuid: file.value.mission.uuid,
                 file_uuid: file.value.relatedFileUuid,
             },
         });

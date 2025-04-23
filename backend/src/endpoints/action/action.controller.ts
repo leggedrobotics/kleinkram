@@ -135,12 +135,12 @@ export class ActionController {
         @AddUser() auth: AuthHeader,
         // TODO: bring back filter options
     ): Promise<ActionsDto> {
-        let missionUuid = dto.mission_uuid;
+        let missionUuid = dto.missionUuid;
         if (auth.apikey) {
             missionUuid = auth.apikey.mission.uuid;
         }
         return this.actionService.listActions(
-            dto.project_uuid,
+            dto.projectUuid,
             missionUuid,
             auth.user.uuid,
             Number.parseInt((dto.skip ?? 0).toString()),

@@ -55,7 +55,7 @@ export const mockDatabaseUser = async (
     role: UserRole = UserRole.USER,
 ): Promise<string> => {
     // read config from access_config.json
-     
+
     const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
     const accessGroupRepository = database.getRepository(AccessGroup);
     const groupMembershipRepository = database.getRepository(GroupMembership);

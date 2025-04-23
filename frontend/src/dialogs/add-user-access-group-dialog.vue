@@ -5,7 +5,7 @@
         <template #content>
             <AddUserToAccessGroup
                 ref="addUserReference"
-                :access_group_uuid="accessGroupUuid"
+                :access-group-uuid="accessGroupUuid"
             />
         </template>
 
@@ -21,9 +21,9 @@
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
-import AddUserToAccessGroup from '@components/add-user-access-group.vue';
+import AddUserToAccessGroup from 'components/add-user-access-group.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const addUserReference = ref<InstanceType<typeof AddUserToAccessGroup> | null>(

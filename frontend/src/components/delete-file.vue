@@ -50,8 +50,8 @@ async function deleteFileAction(): Promise<void> {
                     await router.push({
                         name: ROUTES.FILES.routeName,
                         params: {
-                            project_uuid: route.params.project_uuid,
-                            mission_uuid: route.params.mission_uuid,
+                            projectUuid: route.params.projectUuid,
+                            missionUuid: route.params.missionUuid,
                         },
                     });
                 }

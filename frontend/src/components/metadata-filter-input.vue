@@ -4,18 +4,22 @@
     </div>
     <div v-if="tagLookup[tagTypeUuid]" class="col-2">
         <q-input
-            v-if="tagLookup[tagTypeUuid].datatype !== DataType.BOOLEAN"
+            v-if="tagLookup[tagTypeUuid]?.datatype !== DataType.BOOLEAN"
             v-model="internalValue"
             label="Enter Filter Value"
             outlined
             dense
             clearable
             required
-            :type="inputFieldTypeMapping(tagLookup[tagTypeUuid].datatype)"
+            :type="
+                inputFieldTypeMapping(
+                    tagLookup[tagTypeUuid]?.datatype ?? DataType.STRING,
+                )
+            "
             @clear="clearValue"
         />
         <q-toggle
-            v-if="tagLookup[tagTypeUuid].datatype === DataType.BOOLEAN"
+            v-if="tagLookup[tagTypeUuid]?.datatype === DataType.BOOLEAN"
             v-model="internalValue"
             :label="
                 internalValue === undefined

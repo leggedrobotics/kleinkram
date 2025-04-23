@@ -144,7 +144,7 @@
             <Suspense>
                 <ExplorerPageTableHeader
                     v-if="handler"
-                    :url_handler="handler"
+                    :url-handler="handler"
                 />
 
                 <template #fallback>
@@ -206,7 +206,7 @@
                 <CategorySelector
                     v-if="projectUuid"
                     :selected="selectedCategories"
-                    :project_uuid="projectUuid"
+                    :project-uuid="projectUuid"
                     @update:selected="updateSelected"
                 />
                 <q-btn-dropdown
@@ -224,7 +224,7 @@
                         >
                             <q-item-section class="items-baseline">
                                 <q-toggle
-                                    :model-value="fileTypeFilter[index].value"
+                                    :model-value="fileTypeFilter[index]?.value"
                                     :label="option.name"
                                     @click="() => onFileTypeClicked(index)"
                                 />
@@ -256,7 +256,9 @@
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
 
-                <create-file-dialog-opener :mission="mission">
+                <create-file-dialog-opener
+                    :mission="mission as MissionWithFilesDto"
+                >
                     <q-btn
                         flat
                         style="height: 100%"
@@ -355,37 +357,38 @@ import {
     useCategories,
     useHandler,
     useMission,
-} from '../hooks/query-hooks';
+} from 'src/hooks/query-hooks';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { Notify, useQuasar } from 'quasar';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { deleteFiles } from 'src/services/mutations/file';
-import ConfirmDeleteDialog from '../dialogs/confirm-delete-dialog.vue';
+import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
 import { _downloadFiles } from 'src/services/generic';
 import { DataType, FileType } from '@common/enum';
 import { TagDto } from '@api/types/tags/tags.dto';
 import { CategoryDto } from '@api/types/category.dto';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { useMissionUUID, useProjectUUID } from '../hooks/router-hooks';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import MissionMetadataOpener from '@components/button-wrapper/mission-metadata-opener.vue';
-import KleinDownloadMission from '@components/cli-links/klein-download-mission.vue';
-import EditMissionDialogOpener from '@components/button-wrapper/edit-mission-dialog-opener.vue';
-import DeleteMissionDialogOpener from '@components/button-wrapper/delete-mission-dialog-opener.vue';
-import CategorySelector from '@components/category-selector.vue';
-import CreateFileDialogOpener from '@components/button-wrapper/dialog-opener-create-file.vue';
-import ButtonGroupOverlay from '@components/buttons/button-group-overlay.vue';
-import KleinDownloadFiles from '@components/cli-links/klein-download-files.vue';
-import ExplorerPageFilesTable from '@components/explorer-page/explorer-page-files-table.vue';
-import TitleSection from '@components/title-section.vue';
-import ConfirmDeleteFileDialog from '../dialogs/confirm-delete-file-dialog.vue';
-import MoveMissionDialogOpener from '@components/button-wrapper/move-mission-dialog-pener.vue';
-import ExplorerPageTableHeader from '@components/explorer-page/explorer-page-table-header.vue';
-import OpenMultiFileMoveDialog from '@components/buttons/open-multi-file-move-dialog-button.vue';
-import OpenMultCategoryAdd from '@components/buttons/open-mult-category-add-dialog-button.vue';
+import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
+import KleinDownloadMission from 'components/cli-links/klein-download-mission.vue';
+import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
+import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
+import CategorySelector from 'components/category-selector.vue';
+import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
+import ButtonGroupOverlay from 'components/buttons/button-group-overlay.vue';
+import KleinDownloadFiles from 'components/cli-links/klein-download-files.vue';
+import ExplorerPageFilesTable from 'components/explorer-page/explorer-page-files-table.vue';
+import TitleSection from 'components/title-section.vue';
+import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue';
+import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
+import ExplorerPageTableHeader from 'components/explorer-page/explorer-page-table-header.vue';
+import OpenMultiFileMoveDialog from 'components/buttons/open-multi-file-move-dialog-button.vue';
+import OpenMultCategoryAdd from 'components/buttons/open-mult-category-add-dialog-button.vue';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -417,8 +420,10 @@ const selectedFileTypes = computed(() => {
 const fileHealthOptions = ['Healthy', 'Uploading', 'Unhealthy'];
 
 const selectedFileHealth = computed<string, string | undefined>({
+    // @ts-ignore
     get: () => handler.value.searchParams.health,
     set: (value: string | undefined) => {
+        // @ts-ignore
         handler.value.setSearch({ health: value ?? '', name: search.value });
     },
 });
@@ -427,12 +432,12 @@ const selectedFiles: Ref<FileWithTopicDto[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
     () => {
-        if (fileTypeFilter.value[0].value && fileTypeFilter.value[1].value) {
+        if (fileTypeFilter.value[0]?.value && fileTypeFilter.value[1]?.value) {
             handler.value.setFileType(FileType.ALL);
             return;
         }
         handler.value.setFileType(
-            fileTypeFilter.value[0].value ? FileType.BAG : FileType.MCAP,
+            fileTypeFilter.value[0]?.value ? FileType.BAG : FileType.MCAP,
         );
     },
     { deep: true },
@@ -440,8 +445,10 @@ watch(
 
 const onFileTypeClicked = (index: number): void => {
     const updatedFileTypeFilter = [...fileTypeFilter.value]; // Only trigger a single mutation
-    updatedFileTypeFilter[index].value = !updatedFileTypeFilter[index].value;
-    if (!updatedFileTypeFilter[0].value && !updatedFileTypeFilter[1].value) {
+    // @ts-ignore
+    updatedFileTypeFilter[index].value = !updatedFileTypeFilter[index]?.value;
+    if (!updatedFileTypeFilter[0]?.value && !updatedFileTypeFilter[1]?.value) {
+        // @ts-ignore
         updatedFileTypeFilter[1 - index].value = true;
     }
     fileTypeFilter.value = updatedFileTypeFilter;
@@ -649,13 +656,14 @@ const onActionsClick = async (): Promise<void> => {
     await $router.push({
         name: ROUTES.ACTION.routeName,
         query: {
-            project_uuid: projectUuid.value ?? '',
-            mission_uuid: missionUuid.value ?? '',
+            projectUuid: projectUuid.value ?? '',
+            missionUuid: missionUuid.value ?? '',
         },
     });
 };
 
 const clearSelectedFileState = (): void => {
+    // @ts-ignore
     selectedFileHealth.value = undefined;
 };
 </script>

@@ -20,8 +20,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
-import CreateMetadataType from '@components/metadata/create-metadata-type.vue';
-import BaseDialog from './base-dialog.vue';
+import CreateMetadataType from 'components/metadata/create-metadata-type.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 
 const tagType = ref();
 

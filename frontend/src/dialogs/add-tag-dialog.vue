@@ -3,7 +3,7 @@
         <template #title> Add Metadata</template>
 
         <template #content>
-            <AddTag :mission-uuid="mission_uuid" />
+            <AddTag :mission-uuid="missionUuid" />
         </template>
 
         <template #actions>
@@ -21,12 +21,12 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import AddTag from 'components/AddTag.vue';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const { mission_uuid } = defineProps<{
-    mission_uuid: string;
+const { missionUuid } = defineProps<{
+    missionUuid: string;
 }>();
 </script>
 

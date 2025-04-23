@@ -147,7 +147,7 @@ export class ProjectService {
             // This is implemented in SQL as TypeORM does not support sorting by a computed field...
             projects = await this.projectRepository.query(
                 'SELECT DISTINCT\n' +
-                    '    "project"."uuid" AS "project_uuid",\n' +
+                    '    "project"."uuid" AS "projectUuid",\n' +
                     '    "project"."createdAt" AS "project_createdAt",\n' +
                     '    "project"."updatedAt" AS "project_updatedAt",\n' +
                     '    "project"."name" AS "project_name",\n' +
@@ -198,7 +198,7 @@ export class ProjectService {
         if (user.role !== UserRole.ADMIN) {
             projects = await this.projectRepository.query(
                 'SELECT DISTINCT\n' +
-                    '   "project"."uuid" AS "project_uuid",\n' +
+                    '   "project"."uuid" AS "projectUuid",\n' +
                     '   "project"."createdAt" AS "project_createdAt",\n' +
                     '   "project"."updatedAt" AS "project_updatedAt",\n' +
                     '   "project"."name" AS "project_name",\n' +
@@ -253,7 +253,7 @@ export class ProjectService {
             .map((project: any) => {
                 return {
                     name: project.project_name as string,
-                    uuid: project.project_uuid as string,
+                    uuid: project.projectUuid as string,
                     description: project.project_description as string,
                     updatedAt: project.latestUpdate as Date,
                     createdAt: project.project_createdAt as Date,

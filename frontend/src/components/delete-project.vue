@@ -17,7 +17,7 @@ import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
 import { deleteProject } from 'src/services/mutations/project';
-import { useHandler } from '../hooks/query-hooks';
+import { useHandler } from 'src/hooks/query-hooks';
 
 import { ProjectWithCreator } from '@api/types/project/project-with-creator.dto';
 

@@ -243,7 +243,7 @@ export class MissionService {
 
     async findMissionByProject(
         user: User,
-        projectUUID: string,
+        projectUuid: string,
         skip: number,
         take: number,
         search?: string,
@@ -259,7 +259,7 @@ export class MissionService {
             .leftJoin('mission.files', 'files')
             .leftJoinAndSelect('mission.tags', 'tags')
             .leftJoinAndSelect('tags.tagType', 'tagType')
-            .where('project.uuid = :projectUUID', { projectUUID })
+            .where('project.uuid = :projectUuid', { projectUuid })
             .take(take)
             .skip(skip);
 
@@ -287,6 +287,7 @@ export class MissionService {
         const { raw, entities } = await query.getRawAndEntities();
 
         // this is necessary as raw and entities at not of the same length / order
+        // eslint-disable-next-line unicorn/no-array-reduce
         const rawLookup = raw.reduce(
             (lookup: Record<string, any>, rawEntry: any) => {
                 lookup[rawEntry.mission_uuid] = rawEntry;
@@ -300,8 +301,8 @@ export class MissionService {
                 const rawEntry = rawLookup[m.uuid];
                 return {
                     ...missionEntityToDtoWithCreator(m),
-                    filesCount: rawEntry.fileCount,
-                    size: Number.parseInt(rawEntry.totalSize),
+                    filesCount: rawEntry?.fileCount,
+                    size: Number.parseInt(rawEntry?.totalSize),
                 };
             }),
             count,
@@ -343,8 +344,8 @@ export class MissionService {
                     file.uuid,
                     {
                         filename: file.filename,
-                        mission_uuid: missionUUID,
-                        project_uuid: projectUUID,
+                        missionUuid: missionUUID,
+                        projectUuid: projectUUID,
                     },
                 ),
             ),

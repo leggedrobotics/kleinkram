@@ -244,7 +244,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         });
 
         const header =
-            'filename,file_uuid,mission,project,project_uuid,mission_uuid';
+            'filename,file_uuid,mission,project,projectUuid,missionUuid';
         const csv = files
             .map((file) => {
                 if (file.mission === undefined) {
@@ -377,7 +377,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 const tags = result[0] as unknown as Tag[];
 
                 const missionUUID = tags.find(
-                    (tag: Tag) => tag.Key === 'mission_uuid',
+                    (tag: Tag) => tag.Key === 'missionUuid',
                 )?.Value;
                 const filename = tags.find(
                     (tag: Tag) => tag.Key === 'filename',

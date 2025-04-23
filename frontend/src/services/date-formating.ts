@@ -14,6 +14,8 @@ export function formatDate(date: Date, accurate = false) {
 
 export function parseDate(date: string) {
     const [dayMonthYear, time] = date.split(' ');
+    if (dayMonthYear === undefined || time === undefined)
+        throw new Error('Invalid date format');
     const [day, month, year] = dayMonthYear.split('.');
     const [hours, minutes] = time.split(':');
     return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);

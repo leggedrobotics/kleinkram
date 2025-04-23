@@ -14,12 +14,12 @@ export class ActionQuery {
     @ApiProperty()
     @IsOptional()
     @IsUUID()
-    mission_uuid?: string;
+    missionUuid?: string;
 
     @ApiProperty()
     @IsOptional()
     @IsUUID()
-    project_uuid!: string;
+    projectUuid!: string;
 
     @ApiProperty()
     @IsOptional()

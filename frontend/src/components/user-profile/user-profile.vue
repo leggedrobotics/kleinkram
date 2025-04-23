@@ -63,13 +63,13 @@
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
 import { ref } from 'vue';
-import { useHandler, useUser } from '../../hooks/query-hooks';
+import { useHandler, useUser } from 'src/hooks/query-hooks';
 import { UserRole } from '@common/enum';
-import ExplorerPageProjectTable from '../explorer-page/explorer-page-project-table.vue';
-import AdminSettings from './admin-settings.vue';
-import UserProfileDetails from './user-profile-details.vue';
-import UserProfileBanner from './user-profile-banner.vue';
-import TitleSection from '../title-section.vue';
+import ExplorerPageProjectTable from 'components/explorer-page/explorer-page-project-table.vue';
+import AdminSettings from 'components/user-profile/admin-settings.vue';
+import UserProfileDetails from 'components/user-profile/user-profile-details.vue';
+import UserProfileBanner from 'components/user-profile/user-profile-banner.vue';
+import TitleSection from 'components/title-section.vue';
 
 const { data: user } = useUser();
 const tab = ref('Details');

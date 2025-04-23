@@ -17,9 +17,9 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
+import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
-import ModifyMissionTagsDialog from '../../dialogs/modify-mission-tags-dialog.vue';
+import ModifyMissionTagsDialog from 'src/dialogs/modify-mission-tags-dialog.vue';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 
 const $q = useQuasar();
