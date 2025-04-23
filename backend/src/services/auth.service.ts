@@ -14,9 +14,9 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtPayload } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
-import { AccessGroupConfig } from '../app.module';
 import logger from '../logger';
 import { AuthFlowException } from '../routing/filters/auth-flow-exception';
+import { AccessGroupConfig } from '../types/access-group-config';
 
 @Injectable()
 export class AuthService implements OnModuleInit {

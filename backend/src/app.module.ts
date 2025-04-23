@@ -24,11 +24,7 @@ import { APIKeyResolverMiddleware } from './routing/middlewares/api-key-resolver
 import { AuditLoggerMiddleware } from './routing/middlewares/audit-logger-middleware.service';
 import { VersionCheckerMiddlewareService } from './routing/middlewares/version-checker-middleware.service';
 import { DBDumper } from './services/dbdumper.service';
-
-export interface AccessGroupConfig {
-    emails: [{ email: string; access_groups: string[] }];
-    access_groups: [{ name: string; uuid: string; rights: number }];
-}
+import { AccessGroupConfig } from './types/access-group-config';
 
 @Module({
     imports: [

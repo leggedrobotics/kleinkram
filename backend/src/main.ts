@@ -85,6 +85,7 @@ async function bootstrap(): Promise<void> {
         .setVersion('1.0')
         .build();
 
+    logger.debug('Creating Swagger document');
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document, {
         jsonDocumentUrl: 'swagger/json',
@@ -103,5 +104,11 @@ async function bootstrap(): Promise<void> {
 // eslint-disable-next-line unicorn/prefer-top-level-await
 bootstrap().catch((error: unknown) => {
     logger.error('Failed to start application');
-    logger.error(error);
+
+    // print stack trace
+    if (error instanceof Error) {
+        logger.error(error.stack);
+    } else {
+        logger.error(error);
+    }
 });

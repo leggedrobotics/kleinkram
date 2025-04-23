@@ -30,12 +30,12 @@ import {
     UserRole,
 } from '@common/frontend_shared/enum';
 import { ConfigService } from '@nestjs/config';
-import { AccessGroupConfig } from '../app.module';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import {
     projectEntityToDtoWithMissionCount,
     projectEntityToDtoWithRequiredTags,
 } from '../serialization';
+import { AccessGroupConfig } from '../types/access-group-config';
 
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',
