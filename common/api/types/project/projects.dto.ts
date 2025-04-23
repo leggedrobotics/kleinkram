@@ -8,7 +8,7 @@ import { ProjectWithMissionCountDto } from './project-with-mission-count.dto';
 
 export class ProjectsDto implements Paginated<ProjectWithMissionCountDto> {
     @ApiProperty({
-        type: [ProjectWithMissionCountDto],
+        type: () => [ProjectWithMissionCountDto],
         description: 'List of projects',
     })
     @ValidateNested()

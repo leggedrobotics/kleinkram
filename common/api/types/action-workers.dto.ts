@@ -68,7 +68,7 @@ export class ActionWorkerDto {
 
 export class ActionWorkersDto implements Paginated<ActionWorkerDto> {
     @ApiProperty({
-        type: [ActionWorkerDto],
+        type: () => [ActionWorkerDto],
         description: 'List of action workers',
     })
     @ValidateNested({ each: true })

@@ -69,7 +69,7 @@ export class ActionTemplatesDto implements Paginated<ActionTemplateDto> {
     count!: number;
 
     @ApiProperty({
-        type: [ActionTemplateDto],
+        type: () => [ActionTemplateDto],
         description: 'List of templates',
     })
     @ValidateNested({ each: true })

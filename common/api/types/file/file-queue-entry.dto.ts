@@ -61,7 +61,7 @@ export class FileQueueEntryDto {
 
 export class FileQueueEntriesDto implements Paginated<FileQueueEntryDto> {
     @ApiProperty({
-        type: [FileQueueEntryDto],
+        type: () => [FileQueueEntryDto],
         description: 'List of file queue entries',
     })
     @ValidateNested()

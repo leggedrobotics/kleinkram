@@ -25,7 +25,7 @@ export class TopicDto {
 
 export class TopicsDto implements Paginated<TopicDto> {
     @ApiProperty({
-        type: [TopicDto],
+        type: () => [TopicDto],
         description: 'List of topics',
     })
     @ValidateNested()
@@ -51,7 +51,7 @@ export class TopicNamesDto implements Paginated<string> {
     count!: number;
 
     @ApiProperty({
-        type: [String],
+        type: () => [String],
         description: 'List of topic names',
     })
     @IsArray()

@@ -129,7 +129,7 @@ export class GroupMembershipDto {
     canEditGroup!: boolean;
 
     @ApiProperty({
-        type: AccessGroupDto,
+        type: () => AccessGroupDto,
         description: 'Access Group',
         nullable: true,
     })
@@ -142,7 +142,7 @@ export class GroupMembershipDto {
 
 export class CurrentAPIUserDto extends UserDto {
     @ApiProperty({
-        type: [GroupMembershipDto],
+        type: () => [GroupMembershipDto],
         description: 'List of group memberships',
     })
     @ValidateNested({ each: true })
@@ -160,7 +160,7 @@ export class CurrentAPIUserDto extends UserDto {
 
 export class UsersDto {
     @ApiProperty({
-        type: [UserDto],
+        type: () => [UserDto],
         description: 'List of users',
     })
     users!: UserDto[];

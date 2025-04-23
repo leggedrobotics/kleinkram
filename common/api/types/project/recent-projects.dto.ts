@@ -37,7 +37,7 @@ export class ResentProjectsDto implements Paginated<ResentProjectDto> {
     @ApiProperty({
         name: 'data',
         description: 'List of resent projects',
-        type: ResentProjectDto,
+        type: () => ResentProjectDto,
     })
     @ValidateNested()
     @Type(() => ResentProjectDto)

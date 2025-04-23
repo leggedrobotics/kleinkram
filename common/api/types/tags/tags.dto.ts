@@ -71,7 +71,7 @@ export class TagDto {
 
     @ApiProperty({
         description: 'The type of the tag',
-        type: TagTypeDto,
+        type: () => TagTypeDto,
     })
     @ValidateNested()
     @Type(() => TagTypeDto)
@@ -89,7 +89,7 @@ export class TagDto {
 export class TagsDto {
     @ApiProperty({
         description: 'List of tags',
-        type: [TagDto],
+        type: () => [TagDto],
     })
     @ValidateNested()
     @Type(() => TagDto)
@@ -111,7 +111,7 @@ export class TagsDto {
 export class TagTypesDto implements Paginated<TagTypeDto> {
     @ApiProperty({
         description: 'List of tag types',
-        type: [TagTypeDto],
+        type: () => [TagTypeDto],
     })
     @ValidateNested()
     @Type(() => TagTypeDto)

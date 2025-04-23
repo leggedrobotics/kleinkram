@@ -52,7 +52,7 @@ export class TemporaryFileAccessesDto
     implements Paginated<TemporaryFileAccessDto>
 {
     @ApiProperty({
-        type: [TemporaryFileAccessDto],
+        type: () => [TemporaryFileAccessDto],
         description: 'List of temporary file accesses',
     })
     @ValidateNested({ each: true })

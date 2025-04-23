@@ -12,7 +12,7 @@ export class FilesDto implements Paginated<FileDto> {
     count!: number;
 
     @ApiProperty({
-        type: [FileDto],
+        type: () => [FileDto],
         description: 'List of files',
     })
     @ValidateNested()

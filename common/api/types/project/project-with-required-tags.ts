@@ -12,7 +12,7 @@ export class ProjectWithRequiredTags extends ProjectWithCreator {
     missionCount!: number;
 
     @ApiProperty({
-        type: [TagTypeDto],
+        type: () => [TagTypeDto],
         description: 'List of required tags',
     })
     @ValidateNested()

@@ -92,7 +92,7 @@ export class ActionsDto implements Paginated<ActionDto> {
     count!: number;
 
     @ApiProperty({
-        type: [ActionDto],
+        type: () => [ActionDto],
         description: 'List of actions',
     })
     @ValidateNested({ each: true })

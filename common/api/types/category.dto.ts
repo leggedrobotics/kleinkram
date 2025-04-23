@@ -21,7 +21,7 @@ export class CategoriesDto implements Paginated<CategoryDto> {
     count!: number;
 
     @ApiProperty({
-        type: [CategoryDto],
+        type: () => [CategoryDto],
         description: 'List of categories',
     })
     @ValidateNested()

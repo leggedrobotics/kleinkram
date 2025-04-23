@@ -37,7 +37,7 @@ export class FileDto {
 
     @ApiProperty({
         description: 'The mission the file belongs to',
-        type: [MissionDto],
+        type: () => [MissionDto],
     })
     @ValidateNested()
     @Type(() => MissionDto)
@@ -45,7 +45,7 @@ export class FileDto {
 
     @ApiProperty({
         description: 'List of categories',
-        type: [CategoryDto],
+        type: () => [CategoryDto],
     })
     @ValidateNested()
     @Type(() => CategoryDto)
@@ -65,7 +65,7 @@ export class FileDto {
 
     @ApiProperty({
         description: 'The creator of the file',
-        type: UserDto,
+        type: () => UserDto,
     })
     @ValidateNested()
     @Type(() => UserDto)
@@ -92,7 +92,7 @@ export class FileDto {
 export class FileWithTopicDto extends FileDto {
     @ApiProperty({
         description: 'List of topics',
-        type: [TopicDto],
+        type: () => [TopicDto],
     })
     @ValidateNested()
     @Type(() => TopicDto)

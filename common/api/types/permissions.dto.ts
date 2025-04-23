@@ -33,7 +33,7 @@ export class PermissionsDto {
     defaultPermission!: AccessGroupRights;
 
     @ApiProperty({
-        type: [ProjectPermissions],
+        type: () => [ProjectPermissions],
         description: 'List of projects and their access rights',
     })
     @ValidateNested()
@@ -41,7 +41,7 @@ export class PermissionsDto {
     projects!: ProjectPermissions[];
 
     @ApiProperty({
-        type: [MissionPermissions],
+        type: () => [MissionPermissions],
         description: 'List of projects and their access rights',
     })
     @ValidateNested()

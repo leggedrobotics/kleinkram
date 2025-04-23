@@ -12,7 +12,7 @@ export class DefaultRights implements Paginated<DefaultRightDto> {
     count!: number;
 
     @ApiProperty({
-        type: [DefaultRightDto],
+        type: () => [DefaultRightDto],
         description: 'List of default rights',
     })
     @ValidateNested()

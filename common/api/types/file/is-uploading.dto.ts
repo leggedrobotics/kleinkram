@@ -4,7 +4,7 @@ import { IsBoolean } from 'class-validator';
 export class IsUploadingDto {
     @ApiProperty({
         description: 'Is uploading',
-        type: Boolean,
+        type: () => Boolean,
     })
     @IsBoolean()
     isUploading!: boolean;

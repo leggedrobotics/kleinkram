@@ -29,7 +29,7 @@ export class MinimumMissionDto {
 export class MissionDto extends MinimumMissionDto {
     @ApiProperty({
         description: 'The project the mission belongs to',
-        type: ProjectDto,
+        type: () => ProjectDto,
     })
     @ValidateNested()
     @Type(() => ProjectDto)
@@ -45,7 +45,7 @@ export class MissionDto extends MinimumMissionDto {
 
     @ApiProperty({
         description: 'List of tags',
-        type: [TagDto],
+        type: () => [TagDto],
     })
     @ValidateNested()
     @Type(() => TagDto)
@@ -55,7 +55,7 @@ export class MissionDto extends MinimumMissionDto {
 export class MissionWithCreatorDto extends MissionDto {
     @ApiProperty({
         description: 'The creator of the mission',
-        type: UserDto,
+        type: () => UserDto,
     })
     @ValidateNested()
     @Type(() => UserDto)
@@ -74,7 +74,7 @@ export class FlatMissionDto extends MissionWithCreatorDto {
 
 export class MissionWithFilesDto extends MissionWithCreatorDto {
     @ApiProperty({
-        type: FileDto,
+        type: () => FileDto,
         description: 'List of files',
     })
     @ValidateNested()
@@ -89,7 +89,7 @@ export class MissionsDto implements Paginated<FlatMissionDto> {
 
     @ApiProperty({
         description: 'List of missions',
-        type: FlatMissionDto,
+        type: () => FlatMissionDto,
     })
     @ValidateNested()
     @Type(() => FlatMissionDto)
@@ -111,7 +111,7 @@ export class MinimumMissionsDto implements Paginated<MinimumMissionDto> {
 
     @ApiProperty({
         description: 'List of missions',
-        type: MinimumMissionDto,
+        type: () => MinimumMissionDto,
     })
     @ValidateNested()
     @Type(() => MinimumMissionDto)

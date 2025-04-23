@@ -6,7 +6,7 @@ import { ProjectWithRequiredTags } from './project-with-required-tags';
 
 export class ProjectWithMissionsDto extends ProjectWithRequiredTags {
     @ApiProperty({
-        type: [FlatMissionDto],
+        type: () => [FlatMissionDto],
         description: 'List of missions',
     })
     @ValidateNested()
