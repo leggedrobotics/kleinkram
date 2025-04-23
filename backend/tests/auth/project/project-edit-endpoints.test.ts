@@ -1,20 +1,15 @@
-import { clearAllData, database } from '../../utils/database-utilities';
-
-import {
-    AccessGroupRights,
-    DataType,
-} from '../../../../common/frontend_shared/enum';
-
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
+import Project from '@common/entities/project/project.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import User from '@common/entities/user/user.entity';
-import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
-import Project from '../../../../common/entities/project/project.entity';
+import { AccessGroupRights, DataType } from '@common/frontend_shared/enum';
 import {
     createMetadataUsingPost,
     createProjectUsingPost,
     HeaderCreator,
 } from '../../utils/api-calls';
+import { clearAllData, database } from '../../utils/database-utilities';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
 globalThis.tagName = 'test_tag_STRING';

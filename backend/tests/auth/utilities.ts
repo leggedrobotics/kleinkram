@@ -1,19 +1,13 @@
-import AccessGroup from '../../../common/entities/auth/accessgroup.entity';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import User from '@common/entities/user/user.entity';
+import { AccessGroupType, UserRole } from '@common/frontend_shared/enum';
+import { HeaderCreator } from '../utils/api-calls';
 import {
     database,
     getJwtToken,
     getUserFromDatabase,
     mockDatabaseUser,
 } from '../utils/database-utilities';
-
-import { HeaderCreator } from '../utils/api-calls';
-
-import {
-    AccessGroupType,
-    UserRole,
-} from '../../../common/frontend_shared/enum';
-
-import User from '../../../common/entities/user/user.entity';
 
 // DEFAUL_URL for backend
 export const DEFAULT_URL = 'http://localhost:3000';

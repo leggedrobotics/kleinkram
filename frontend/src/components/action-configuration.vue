@@ -2,7 +2,7 @@
     <q-drawer
         v-model="_open"
         side="right"
-        :width="496"
+        :width="1000"
         style="bottom: 0 !important"
         bordered
         behavior="desktop"

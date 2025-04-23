@@ -1,23 +1,22 @@
-import { CreateMission } from '@common/api/types/create-mission.dto';
-
-import QueueEntity from '@common/entities/queue/queue.entity';
-import { QueueState } from '@common/frontend_shared/enum';
-
 import { S3Client } from '@aws-sdk/client-s3';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
+import { CreateMission } from '@common/api/types/create-mission.dto';
+import { CreateProject } from '@common/api/types/create-project.dto';
 import { CreateTemplateDto } from '@common/api/types/create-template.dto';
+import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
+import User from '@common/entities/user/user.entity';
+import { QueueState } from '@common/frontend_shared/enum';
 import crypto from 'node:crypto';
 import * as fs from 'node:fs';
-import { CreateProject } from '../../../common/api/types/create-project.dto';
-import { CreateTagTypeDto } from '../../../common/api/types/tags/create-tag-type.dto';
-import User from '../../../common/entities/user/user.entity';
 import { DEFAULT_URL } from '../auth/utilities';
 import { database, getJwtToken } from './database-utilities';
 import { uploadFileMultipart } from './multipart-upload';
 
 export class HeaderCreator {
     headers: Headers;
+
     /**
      * Creates a HeadersBuilder instance and initializes headers.
      *
@@ -43,6 +42,7 @@ export class HeaderCreator {
     addHeader(key: string, value: string) {
         this.headers.append(key, value);
     }
+
     /**
      * Retrieves the headers object.
      *
