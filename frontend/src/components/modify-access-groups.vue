@@ -79,11 +79,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref } from 'vue';
-import { accessGroupRightsMap } from 'src/services/generic';
-import { QTable } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
-import { useSearchAccessGroup, useUserSearch } from '../hooks/query-hooks';
+import { QTable } from 'quasar';
+import { useSearchAccessGroup, useUserSearch } from 'src/hooks/query-hooks';
+import { accessGroupRightsMap } from 'src/services/generic';
+import { computed, Ref, ref } from 'vue';
 
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 
@@ -112,7 +112,7 @@ const foundAccessGroups = computed(() =>
 function addAccessGroupToProject(accessGroupUUID: string, name: string) {
     emit('addAccessGroupToProject', {
         accessGroupUUID,
-        rights: rights.value[accessGroupUUID].value,
+        rights: rights.value[accessGroupUUID]?.value,
         name,
     });
 }
@@ -120,7 +120,7 @@ function addAccessGroupToProject(accessGroupUUID: string, name: string) {
 function addUserToProject(userUUID: string, name: string) {
     emit('addUsersToProject', {
         userUUID,
-        rights: rights.value[userUUID].value,
+        rights: rights.value[userUUID]?.value,
         name,
     });
 }

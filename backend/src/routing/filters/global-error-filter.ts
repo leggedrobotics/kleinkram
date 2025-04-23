@@ -1,15 +1,15 @@
 import {
     ArgumentsHost,
     BadRequestException,
-    ForbiddenException,
-    UnauthorizedException,
     Catch,
     ExceptionFilter,
+    ForbiddenException,
+    UnauthorizedException,
 } from '@nestjs/common';
-import { Response } from 'express';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
-import logger from '../../logger';
+import { Response } from 'express';
 import { appVersion } from 'src/app-version';
+import logger from '../../logger';
 
 /**
  * A global error filter that catches all errors and logs them.

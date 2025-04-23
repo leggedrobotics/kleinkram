@@ -272,26 +272,26 @@
     </q-tab-panels>
 </template>
 <script setup lang="ts">
+import { GroupMembershipDto } from '@api/types/user.dto';
+import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useRouter } from 'vue-router';
-import { computed, ComputedRef, ref, watch } from 'vue';
+import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';
+import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
+import RemoveProjectDialogOpener from 'components/button-wrapper/remove-project-dialog-opener.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import { projectAccessColumns } from 'components/explorer-page/explorer-page-table-columns';
+import TitleSection from 'components/title-section.vue';
 import { Notify, QTable, useQuasar } from 'quasar';
-import AddProjectToAccessGroupDialog from '../dialogs/add-project-access-group-dialog.vue';
+import AddProjectToAccessGroupDialog from 'src/dialogs/add-project-access-group-dialog.vue';
+import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expiration-date-dialog.vue';
+import { useAccessGroup, useUser } from 'src/hooks/query-hooks';
+import ROUTES from 'src/router/routes';
 import {
     removeUserFromAccessGroup,
     setAccessGroupExpiry,
 } from 'src/services/mutations/access';
-import ROUTES from 'src/router/routes';
-import SetAccessGroupExpirationDialog from '../dialogs/modify-membership-expiration-date-dialog.vue';
-import { AccessGroupRights, AccessGroupType } from '@common/enum';
-import { GroupMembershipDto } from '@api/types/user.dto';
-import { useAccessGroup, useUser } from '../hooks/query-hooks';
-import ChangeProjectRightsDialogOpener from '@components/button-wrapper/dialog-opener-change-project-rights.vue';
-import TitleSection from '@components/title-section.vue';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import RemoveProjectDialogOpener from '@components/button-wrapper/remove-project-dialog-opener.vue';
-import { projectAccessColumns } from '@components/explorer-page/explorer-page-table-columns';
-import DialogOpenerAddUser from '@components/button-wrapper/dialog-opener-add-user.vue';
+import { computed, ComputedRef, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -321,14 +321,7 @@ const pagination2 = ref({
 const queryClient = useQueryClient();
 const user = useUser();
 
-const refetchOnClick: (
-    event_: Event,
-    go?: (options?: {
-        to?: any;
-        replace?: boolean | undefined;
-        returnRouterError?: boolean | undefined;
-    }) => Promise<any>,
-) => void = () => refetch;
+const refetchOnClick: (event_: Event) => void = () => refetch;
 
 const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
 
@@ -382,7 +375,7 @@ const openAddProject = (): void => {
     $q.dialog({
         component: AddProjectToAccessGroupDialog,
         componentProps: {
-            access_group_uuid: uuid.value,
+            accessGroupUuid: uuid.value,
         },
     });
 };
@@ -518,7 +511,7 @@ const rowClick = async (_uuid: string): Promise<void> => {
     await router.push({
         name: ROUTES.MISSIONS.routeName,
         params: {
-            project_uuid: _uuid,
+            projectUuid: _uuid,
         },
     });
 };

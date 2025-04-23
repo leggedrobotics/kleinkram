@@ -1,8 +1,8 @@
+import { Injectable, LoggerService } from '@nestjs/common';
+import { context, trace } from '@opentelemetry/api';
+import { TransformableInfo } from 'logform';
 import winston, { transports } from 'winston';
 import LokiTransport from 'winston-loki';
-import { Injectable, LoggerService } from '@nestjs/common';
-import { TransformableInfo } from 'logform';
-import { context, trace } from '@opentelemetry/api';
 import { appVersion } from './app-version';
 
 const messageOnly = winston.format.printf(

@@ -1,6 +1,6 @@
-import axios from 'src/api/axios';
-import { AccessGroupRights } from '@common/enum';
 import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
+import { AccessGroupRights } from '@common/enum';
+import axios from 'src/api/axios';
 
 import { ActionDto } from '@api/types/actions/action.dto';
 

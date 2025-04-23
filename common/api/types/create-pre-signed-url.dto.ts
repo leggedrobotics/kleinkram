@@ -1,9 +1,9 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 import {
     IsNoValidUUID,
     IsValidFileName,
 } from '../../../backend/src/validation/property-decorator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePreSignedURLSDto {
     @IsString({ each: true })

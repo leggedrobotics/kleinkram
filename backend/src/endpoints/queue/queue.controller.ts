@@ -1,15 +1,17 @@
-import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
-import { QueueService } from '../../services/queue.service';
+import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';
+import { ConfirmUploadDto } from '@common/api/types/confirm-upload.dto';
+import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
 import { DriveCreate } from '@common/api/types/drive-create.dto';
-import {
-    AdminOnly,
-    CanCreateInMissionByBody,
-    CanCreateQueueByBody,
-    CanDeleteMission,
-    CanReadMission,
-    LoggedIn,
-} from '../auth/roles.decorator';
+import { FileQueueEntriesDto } from '@common/api/types/file/file-queue-entry.dto';
+import { QueueActiveDto } from '@common/api/types/queue-active.dto';
+import { BullQueueDto } from '@common/api/types/queue/bull-queue.dto';
+import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
+import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
+import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
+import { ApiOkResponse, OutputDto } from '../../decarators';
+import { QueueService } from '../../services/queue.service';
 import { BodyString, BodyUUID } from '../../validation/body-decorators';
+import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
     QueryDate,
     QueryOptionalString,
@@ -18,17 +20,15 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
-import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import { ApiOkResponse, OutputDto } from '../../decarators';
-import { FileQueueEntriesDto } from '@common/api/types/file/file-queue-entry.dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
-import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dto';
-import { BullQueueDto } from '@common/api/types/queue/bull-queue.dto';
-import { CancleProgessingResponseDto } from '@common/api/types/cancle-progessing-response.dto';
-import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
-import { QueueActiveDto } from '@common/api/types/queue-active.dto';
-import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
-import { ConfirmUploadDto } from '@common/api/types/confirm-upload.dto';
+import {
+    AdminOnly,
+    CanCreateInMissionByBody,
+    CanCreateQueueByBody,
+    CanDeleteMission,
+    CanReadMission,
+    LoggedIn,
+} from '../auth/roles.decorator';
 
 @Controller('queue')
 export class QueueController {

@@ -1,12 +1,12 @@
+import Apikey from '@common/entities/auth/apikey.entity';
+import FileEntity from '@common/entities/file/file.entity';
+import User from '@common/entities/user/user.entity';
+import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import User from '@common/entities/user/user.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
-import logger from '../logger';
-import Apikey from '@common/entities/auth/apikey.entity';
 import { MissionGuardService } from '../endpoints/auth/mission-guard.service';
+import logger from '../logger';
 import { ProjectGuardService } from './project-guard.service';
 
 @Injectable()
@@ -110,7 +110,7 @@ export class FileGuardService {
         if (file.mission === undefined) throw new Error('File has no mission');
 
         return (
-            apiKey?.mission?.project?.uuid === file?.mission?.project?.uuid &&
+            apiKey.mission.project?.uuid === file.mission.project?.uuid &&
             apiKey.rights >= rights
         );
     }

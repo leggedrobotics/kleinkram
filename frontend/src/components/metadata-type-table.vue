@@ -12,8 +12,8 @@
 </template>
 
 <script setup lang="ts">
-import { defineEmits, defineProps } from 'vue';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
+import { defineEmits, defineProps } from 'vue';
 
 defineProps<{ rows: TagTypeDto[]; columns: any[]; filter: string }>();
 

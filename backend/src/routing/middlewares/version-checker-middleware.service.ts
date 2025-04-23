@@ -1,7 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import logger from '../../logger';
 import { appVersion } from '../../app-version';
+import logger from '../../logger';
 
 /**
  *
@@ -10,11 +10,7 @@ import { appVersion } from '../../app-version';
  */
 @Injectable()
 export class VersionCheckerMiddlewareService implements NestMiddleware {
-    async use(
-        request: Request,
-        response: Response,
-        next: NextFunction,
-    ): Promise<void> {
+    use(request: Request, response: Response, next: NextFunction): void {
         let clientVersion = request.headers['kleinkram-client-version'] as
             | string
             | undefined;

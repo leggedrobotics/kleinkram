@@ -1,9 +1,6 @@
-import { Notify } from 'quasar';
-import {
-    cancelUploads,
-    generateTemporaryCredentials,
-} from 'src/services/mutations/file';
-import ENV from '../environment';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FlatMissionDto, MissionDto } from '@api/types/mission/mission.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
 import {
     AbortMultipartUploadCommand,
     CompleteMultipartUploadCommand,
@@ -11,16 +8,19 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
+import { QueryClient } from '@tanstack/vue-query';
+import { AxiosError } from 'axios';
 import pLimit from 'p-limit';
-import { ref, Ref } from 'vue';
+import { Notify } from 'quasar';
+import SparkMD5 from 'spark-md5';
+import {
+    cancelUploads,
+    generateTemporaryCredentials,
+} from 'src/services/mutations/file';
 import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
-import { QueryClient } from '@tanstack/vue-query';
-import SparkMD5 from 'spark-md5';
-import { FlatMissionDto, MissionDto } from '@api/types/mission/mission.dto';
-import { AxiosError } from 'axios';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { ProjectDto } from '@api/types/project/base-project.dto';
+import { ref, Ref } from 'vue';
+import ENV from '../environment';
 
 const confirmDialog = (event: BeforeUnloadEvent): void => {
     event.preventDefault();
@@ -33,7 +33,7 @@ export const createFileAction = async (
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<Ref<FileWithTopicDto>[]>,
+    injectedFiles: Ref<FileWithTopicDto[]>,
 ): Promise<void> => {
     if (selectedMission === undefined) {
         Notify.create({
@@ -76,7 +76,7 @@ async function _createFileAction(
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<Ref<FileWithTopicDto>[]>,
+    injectedFiles: Ref<FileWithTopicDto[]>,
 ): Promise<void> {
     if (files.length === 0) {
         Notify.create({
@@ -209,6 +209,17 @@ async function _createFileAction(
             async (accessResp: any, index: number) => {
                 const file = validFiles[index];
 
+                if (file === undefined) {
+                    Notify.create({
+                        message: `Upload of File failed`,
+                        color: 'negative',
+                        spinner: false,
+                        timeout: 0,
+                        closeBtn: true,
+                    });
+                    return;
+                }
+
                 const accessCredentials = accessResp.accessCredentials;
                 if (accessCredentials === null) {
                     Notify.create({
@@ -239,6 +250,7 @@ async function _createFileAction(
                     missionUuid: selectedMission.uuid,
                 } as unknown as FileWithTopicDto;
                 const newFileUploadReference = ref(newFileUpload);
+                // @ts-ignore
                 injectedFiles.value.push(newFileUploadReference);
                 return limit(async () => {
                     try {
@@ -249,6 +261,17 @@ async function _createFileAction(
                             minioClient,
                             newFileUploadReference,
                         );
+
+                        if (md5Hash === undefined) {
+                            Notify.create({
+                                message: `Upload of File ${file.name} failed`,
+                                color: 'negative',
+                                spinner: false,
+                                timeout: 0,
+                                closeBtn: true,
+                            });
+                            return;
+                        }
 
                         return await confirmUpload(
                             accessResp.fileUUID,

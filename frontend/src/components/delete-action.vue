@@ -13,10 +13,10 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { deleteAction } from 'src/services/mutations/action';
+import { ref } from 'vue';
 
 import { ActionDto } from '@api/types/actions/action.dto';
 

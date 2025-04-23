@@ -5,10 +5,10 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
-import CreateFileDialog from '../../dialogs/create-file-dialog.vue';
-import { inject } from 'vue';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { useQuasar } from 'quasar';
+import CreateFileDialog from 'src/dialogs/create-file-dialog.vue';
+import { inject } from 'vue';
 
 const $q = useQuasar();
 const properties = defineProps<{

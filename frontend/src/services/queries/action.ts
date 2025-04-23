@@ -1,6 +1,6 @@
-import axios from 'src/api/axios';
-import { AxiosResponse } from 'axios';
 import { ActionDto, ActionsDto } from '@api/types/actions/action.dto';
+import { AxiosResponse } from 'axios';
+import axios from 'src/api/axios';
 
 export const getActions = async (
     projectUUID: string,
@@ -12,8 +12,8 @@ export const getActions = async (
     search: string,
 ): Promise<ActionsDto> => {
     const parameters: Record<string, string | number | boolean> = {
-        project_uuid: projectUUID,
-        ...(missionUUID === '' ? {} : { mission_uuid: missionUUID }),
+        projectUuid: projectUUID,
+        ...(missionUUID === '' ? {} : { missionUuid: missionUUID }),
         take,
         skip,
         sortBy,

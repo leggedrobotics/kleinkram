@@ -18,14 +18,14 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
-import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
-import { computed } from 'vue';
 import {
     FlatMissionDto,
     MissionWithFilesDto,
 } from '@api/types/mission/mission.dto';
-import DeleteMissionDialog from '../../dialogs/delete-mission-dialog.vue';
+import { useQuasar } from 'quasar';
+import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
+import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { computed } from 'vue';
 
 const $q = useQuasar();
 const { mission } = defineProps<{

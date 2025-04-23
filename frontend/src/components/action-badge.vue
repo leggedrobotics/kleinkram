@@ -17,9 +17,9 @@
     </q-badge>
 </template>
 <script setup lang="ts">
+import { ArtifactState } from '@common/enum';
 import { getActionColor } from 'src/services/generic';
 import { computed } from 'vue';
-import { ArtifactState } from '@common/enum';
 
 import { ActionDto } from '@api/types/actions/action.dto';
 

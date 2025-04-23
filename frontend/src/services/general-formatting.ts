@@ -14,5 +14,5 @@ export function formatGenericNumber(
         value /= step;
         unitIndex++;
     }
-    return value.toFixed(precision) + units[unitIndex];
+    return `${value.toFixed(precision)} ${units[unitIndex]}`;
 }

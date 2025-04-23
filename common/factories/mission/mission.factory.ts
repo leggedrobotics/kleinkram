@@ -1,6 +1,6 @@
 import { define } from 'typeorm-seeding';
-import Project from '../../entities/project/project.entity';
 import Mission from '../../entities/mission/mission.entity';
+import Project from '../../entities/project/project.entity';
 import User from '../../entities/user/user.entity';
 import { extendedFaker } from '../../faker-extended';
 

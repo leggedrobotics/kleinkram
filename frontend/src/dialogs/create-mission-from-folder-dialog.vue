@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef" title="New Mission">
-        <template #title> Upload Folder </template>
+        <template #title> Upload Folder</template>
 
         <template #tabs>
             <q-tabs
@@ -108,35 +108,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, Ref, watch } from 'vue';
-import BaseDialog from './base-dialog.vue';
-import { Notify, QInput, useDialogPluginComponent } from 'quasar';
-import { useQueryClient } from '@tanstack/vue-query';
-import { createMission } from 'src/services/mutations/mission';
-import { createFileAction } from '../services/file-service';
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
-import { useProjectQuery } from '../hooks/query-hooks';
-import SelectMissionTags from '@components/select-mission-tags.vue';
+import { useQueryClient } from '@tanstack/vue-query';
+import SelectMissionTags from 'components/select-mission-tags.vue';
+import { Notify, QInput, useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { useProjectQuery } from 'src/hooks/query-hooks';
+import { createFileAction } from 'src/services/file-service';
+import { createMission } from 'src/services/mutations/mission';
+import { computed, ref, Ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const tab_selection = ref('meta_data');
 
 const properties = defineProps<{
-    project_uuid: string | undefined;
+    projectUuid: string | undefined;
     uploads: Ref<FileUploadDto[]>;
 }>();
 
 const HTMLinput = ref();
-const project_uuid = ref(properties.project_uuid);
+const projectUuid = ref(properties.projectUuid);
 const newMission: Ref<FlatMissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 const files = ref<File[]>([]);
 
-const { data: project, refetch } = useProjectQuery(project_uuid);
+const { data: project, refetch } = useProjectQuery(projectUuid);
 
-// we load the new project if the project_uuid changes
-watch(project_uuid, () => refetch());
+// we load the new project if the projectUuid changes
+watch(projectUuid, () => refetch());
 
 const missionName = ref('');
 const isInErrorState = ref(false);
@@ -158,7 +158,8 @@ const missionCreated = computed(() => {
 const handle = (a: any): void => {
     files.value = a.target.files;
     if (files.value.length > 0) {
-        missionName.value = files.value[0].webkitRelativePath.split('/')[0];
+        missionName.value =
+            files.value[0]?.webkitRelativePath.split('/')[0] ?? '';
     }
 };
 
@@ -178,16 +179,16 @@ const submitNewMission = async () => {
     ).catch((error: unknown) => {
         tab_selection.value = 'meta_data';
         isInErrorState.value = true;
-        // @ts-ignore
-        errorMessage.value = (
-            error as {
-                response?: { data?: { message?: string } };
-            }
-        ).response?.data?.message;
+        errorMessage.value =
+            (
+                error as {
+                    response?: { data?: { message?: string } };
+                }
+            ).response?.data?.message ?? '';
     });
 
     // exit if the request failed
-    if (!resp) return;
+    if (resp === undefined) return;
     newMission.value = resp;
     // @ts-ignore
     newMission.value.project = project.value;

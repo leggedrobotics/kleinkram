@@ -27,13 +27,13 @@
 </template>
 
 <script setup lang="ts">
-import { Notify } from 'quasar';
-import { computed, Ref, ref } from 'vue';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { deleteAccessGroup } from 'src/services/mutations/access';
-import { getUser } from 'src/services/auth';
-import { AccessGroupType, UserRole } from '@common/enum';
 import { AccessGroupDto, CurrentAPIUserDto } from '@api/types/user.dto';
+import { AccessGroupType, UserRole } from '@common/enum';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { Notify } from 'quasar';
+import { getUser } from 'src/services/auth';
+import { deleteAccessGroup } from 'src/services/mutations/access';
+import { computed, Ref, ref } from 'vue';
 
 const { accessGroup } = defineProps<{ accessGroup: AccessGroupDto }>();
 

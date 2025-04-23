@@ -5,7 +5,7 @@
         <template #content>
             <AddProjectToAccessGroupDialog
                 ref="addProjectReference"
-                :access_group_uuid="access_group_uuid"
+                :access-group-uuid="accessGroupUuid"
             />
         </template>
 
@@ -21,9 +21,9 @@
     >
 </template>
 <script setup lang="ts">
+import AddProjectToAccessGroupDialog from 'components/add-project-access-group.vue';
 import { useDialogPluginComponent } from 'quasar';
-import AddProjectToAccessGroupDialog from '@components/add-project-access-group.vue';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -32,8 +32,8 @@ const addProjectReference = ref<
     InstanceType<typeof AddProjectToAccessGroupDialog> | undefined
 >(undefined);
 
-const { access_group_uuid } = defineProps<{
-    access_group_uuid: string;
+const { accessGroupUuid } = defineProps<{
+    accessGroupUuid: string;
 }>();
 
 const addProjectToAccessGroupAction = (): void => {

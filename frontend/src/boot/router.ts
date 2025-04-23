@@ -1,10 +1,10 @@
-import { boot } from 'quasar/wrappers';
-import { Router } from 'vue-router';
-import { isAuthenticated } from 'src/services/auth';
+import { defineBoot } from '#q-app/wrappers';
 import ROUTES, { PUBLIC_ROUTES } from 'src/router/routes';
+import { isAuthenticated } from 'src/services/auth';
+import { Router } from 'vue-router';
 
 let routerInstance: Router;
-export default boot(({ router }) => {
+export default defineBoot(({ router }) => {
     routerInstance = router;
 
     routerInstance.afterEach(async (to) => {

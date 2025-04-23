@@ -9,12 +9,12 @@ import {
     OneToOne,
     Unique,
 } from 'typeorm';
-import BaseEntity from '../base-entity.entity';
-import Topic from '../topic/topic.entity';
-import Mission from '../mission/mission.entity';
-import User from '../user/user.entity';
 import { FileOrigin, FileState, FileType } from '../../frontend_shared/enum';
+import BaseEntity from '../base-entity.entity';
 import CategoryEntity from '../category/category.entity';
+import Mission from '../mission/mission.entity';
+import Topic from '../topic/topic.entity';
+import User from '../user/user.entity';
 
 @Entity()
 @Unique('unique_file_name_per_mission', ['filename', 'mission'])

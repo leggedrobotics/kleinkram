@@ -14,12 +14,12 @@
 </template>
 
 <script setup lang="ts">
-import { Notify, useQuasar } from 'quasar';
-import { canCreateProject, usePermissionsQuery } from '../../hooks/query-hooks';
-import { computed, unref } from 'vue';
-import CreateAccessGroupDialog from '../../dialogs/create-access-group-dialog.vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { Notify, useQuasar } from 'quasar';
+import CreateAccessGroupDialog from 'src/dialogs/create-access-group-dialog.vue';
+import { canCreateProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { createAccessGroup } from 'src/services/mutations/access';
+import { computed, unref } from 'vue';
 
 const { data: permissions } = usePermissionsQuery();
 const canCreate = computed(() => canCreateProject(permissions.value));

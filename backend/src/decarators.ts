@@ -1,8 +1,8 @@
 import { applyDecorators, SetMetadata } from '@nestjs/common';
 import {
+    ApiResponseCommonMetadata,
     ApiOkResponse as SwaggerApiOkResponse,
     ApiResponse as SwaggerApiResponse,
-    ApiResponseCommonMetadata,
 } from '@nestjs/swagger';
 
 export const OutputDto = (

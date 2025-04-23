@@ -5,11 +5,11 @@ import {
     ExecutionContext,
     InternalServerErrorException,
 } from '@nestjs/common';
-import { IsUUID, validateOrReject } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
-import { StringValidate, UUIDValidate } from './validation-types';
-import { metadataApplier } from './metadata-applier';
 import { ApiProperty } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
+import { IsUUID, validateOrReject } from 'class-validator';
+import { metadataApplier } from './metadata-applier';
+import { StringValidate, UUIDValidate } from './validation-types';
 
 export function ApiUUIDProperty(description = 'UUID'): PropertyDecorator {
     return applyDecorators(

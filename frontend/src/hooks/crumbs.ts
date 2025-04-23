@@ -1,7 +1,7 @@
+import ROUTES from 'src/router/routes';
+import { PageBreadCrumb } from 'src/router/routes-utilities';
 import { computed, ComputedRef } from 'vue';
 import { useRoute } from 'vue-router';
-import ROUTES from 'src/router/routes';
-import { PageBreadCrumb } from '../router/routes-utilities';
 
 /**
  * Returns the breadcrumbs for the current route.

@@ -1,7 +1,7 @@
-import axios from 'src/api/axios';
 import { CategoryDto } from '@api/types/category.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { TemporaryFileAccessesDto } from '@api/types/file/access.dto';
+import { FileWithTopicDto } from '@api/types/file/file.dto';
+import axios from 'src/api/axios';
 
 // define type for generateTemporaryCredentials 'files' return
 export type GenerateTemporaryCredentialsResponse = {
@@ -17,7 +17,7 @@ export type GenerateTemporaryCredentialsResponse = {
 export const updateFile = async ({ file }: { file: FileWithTopicDto }) => {
     const response = await axios.put(`/file/${file.uuid}`, {
         uuid: file.uuid,
-        mission_uuid: file.missionUUID,
+        missionUuid: file.missionUUID,
         filename: file.filename,
         date: file.date,
         categories: file.categories.map(

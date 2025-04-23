@@ -29,16 +29,16 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { Notify, useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { ref, watch } from 'vue';
-import { updateTagTypes } from 'src/services/mutations/project';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
-import CreateTagTypeDialogOpener from '@components/button-wrapper/dialog-opener-create-tag-type.vue';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import ConfigureMetadata from '@components/configure-metadata.vue';
-import { useProjectQuery } from '../hooks/query-hooks';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import CreateTagTypeDialogOpener from 'components/button-wrapper/dialog-opener-create-tag-type.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import ConfigureMetadata from 'components/configure-metadata.vue';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { useProjectQuery } from 'src/hooks/query-hooks';
+import { updateTagTypes } from 'src/services/mutations/project';
+import { ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

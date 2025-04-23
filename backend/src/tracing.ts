@@ -1,17 +1,17 @@
-import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
+import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
+import { NodeSDK } from '@opentelemetry/sdk-node';
 import {
     BatchSpanProcessor,
     ParentBasedSampler,
     TraceIdRatioBasedSampler,
 } from '@opentelemetry/sdk-trace-base';
-import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import logger from './logger';
 
 const exporter = new OTLPTraceExporter({

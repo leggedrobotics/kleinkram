@@ -1,8 +1,8 @@
-import pluginVue from 'eslint-plugin-vue';
 import vueTsEslintConfig from '@vue/eslint-config-typescript';
 import progress from 'eslint-plugin-file-progress';
-import tseslint from 'typescript-eslint';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
+import pluginVue from 'eslint-plugin-vue';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
     progress.configs.recommended,
@@ -68,6 +68,7 @@ export default tseslint.config(
             '@typescript-eslint/no-extraneous-class': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
             'unicorn/no-null': 'warn',
+            'unicorn/filename-case': 'error',
 
             // used as we have disabled prettier for the local dev setup
             'vue/html-indent': 'off',
@@ -82,6 +83,8 @@ export default tseslint.config(
             '@typescript-eslint/await-thenable': 'off',
             '@typescript-eslint/no-unnecessary-type-arguments': 'off',
             'vue/multi-word-component-names': 'off',
+            'unicorn/no-array-method-this-argument': 'warn',
+            '@typescript-eslint/restrict-template-expressions': 'off',
             complexity: 'off',
         },
     },
@@ -99,7 +102,8 @@ export default tseslint.config(
             '**/*.cjs',
             '**/*.mjs',
             '**/environment.d.ts',
-            '**/backend/tests/**',
+            '**/backend/dist/**',
+            'frontend/.quasar/**',
         ],
     },
 );

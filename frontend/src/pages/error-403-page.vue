@@ -37,5 +37,5 @@
 <script setup lang="ts">
 const urlParameters = new URLSearchParams(globalThis.location.search);
 const message = urlParameters.get('message');
-const projectUuid = urlParameters.get('project_uuid');
+const projectUuid = urlParameters.get('projectUuid');
 </script>

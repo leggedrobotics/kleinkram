@@ -1,18 +1,18 @@
-import tracer from './tracing';
-import { NestFactory, Reflector } from '@nestjs/core';
-import { AppModule } from './app.module';
-import cookieParser from 'cookie-parser';
 import environment from '@common/environment';
-import { AuthFlowExceptionRedirectFilter } from './routing/filters/auth-flow-exception';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
+import { AppModule } from './app.module';
+import { AuthFlowExceptionRedirectFilter } from './routing/filters/auth-flow-exception';
+import tracer from './tracing';
 
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import logger, { NestLoggerWrapper } from './logger';
-import { AddVersionInterceptor } from './routing/interceptors/version-injector';
-import * as fs from 'node:fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as fs from 'node:fs';
+import logger, { NestLoggerWrapper } from './logger';
 import { GlobalErrorFilter } from './routing/filters/global-error-filter';
 import { GlobalResponseValidationInterceptor } from './routing/interceptors/output-validation';
+import { AddVersionInterceptor } from './routing/interceptors/version-injector';
 
 function saveEndpointsAsJson(app: INestApplication, filename: string): void {
     const server = app.getHttpServer();
@@ -85,6 +85,7 @@ async function bootstrap(): Promise<void> {
         .setVersion('1.0')
         .build();
 
+    logger.debug('Creating Swagger document');
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document, {
         jsonDocumentUrl: 'swagger/json',
@@ -103,5 +104,11 @@ async function bootstrap(): Promise<void> {
 // eslint-disable-next-line unicorn/prefer-top-level-await
 bootstrap().catch((error: unknown) => {
     logger.error('Failed to start application');
-    logger.error(error);
+
+    // print stack trace
+    if (error instanceof Error) {
+        logger.error(error.stack);
+    } else {
+        logger.error(error);
+    }
 });

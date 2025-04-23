@@ -1,6 +1,6 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsUUID } from 'class-validator';
 import { IsSkip } from '../../validation/skip-validation';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class SubmitActionMulti {
     @IsString({ each: true })
@@ -14,12 +14,12 @@ export class ActionQuery {
     @ApiProperty()
     @IsOptional()
     @IsUUID()
-    mission_uuid?: string;
+    missionUuid?: string;
 
     @ApiProperty()
     @IsOptional()
     @IsUUID()
-    project_uuid!: string;
+    projectUuid!: string;
 
     @ApiProperty()
     @IsOptional()

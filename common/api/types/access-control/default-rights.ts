@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { IsNumber, ValidateNested } from 'class-validator';
-import { Paginated } from '../pagination';
 import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
-import { Type } from 'class-transformer';
+import { Paginated } from '../pagination';
 import { DefaultRightDto } from './default-right.dto';
 
 export class DefaultRights implements Paginated<DefaultRightDto> {
@@ -12,7 +12,7 @@ export class DefaultRights implements Paginated<DefaultRightDto> {
     count!: number;
 
     @ApiProperty({
-        type: [DefaultRightDto],
+        type: () => [DefaultRightDto],
         description: 'List of default rights',
     })
     @ValidateNested()

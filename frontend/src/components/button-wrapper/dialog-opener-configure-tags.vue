@@ -16,16 +16,16 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { canModifyProject, usePermissionsQuery } from '../../hooks/query-hooks';
+import ModifyProjectTagsDialog from 'src/dialogs/modify-project-tags-dialog.vue';
+import { canModifyProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
-import ModifyProjectTagsDialog from '../../dialogs/modify-project-tags-dialog.vue';
 
 const $q = useQuasar();
-const { project_uuid } = defineProps<{ project_uuid: string }>();
+const { projectUuid } = defineProps<{ projectUuid: string }>();
 
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
-    canModifyProject(project_uuid, permissions.value),
+    canModifyProject(projectUuid, permissions.value),
 );
 
 const clicked = (): void => {
@@ -36,7 +36,7 @@ const clicked = (): void => {
     $q.dialog({
         component: ModifyProjectTagsDialog,
         componentProps: {
-            projectUUID: project_uuid,
+            projectUUID: projectUuid,
         },
     });
 };

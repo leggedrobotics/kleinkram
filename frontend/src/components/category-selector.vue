@@ -3,12 +3,13 @@
         v-if="selected"
         v-model="selected"
         multiple
-        clearable
-        dense
         option-label="name"
         option-value="uuid"
         :options="categories"
         placeholder="Select Categories"
+        clearable
+        dense
+        outlined
         use-input
         input-debounce="300"
         @clear="clear"
@@ -49,14 +50,14 @@
     </q-select>
 </template>
 <script setup lang="ts">
+import { CategoryDto } from '@api/types/category.dto';
+import { useCategories } from 'src/hooks/query-hooks';
 import { hashUUIDtoColor } from 'src/services/generic';
 import { computed, ref, Ref } from 'vue';
-import { CategoryDto } from '@api/types/category.dto';
-import { useCategories } from '../hooks/query-hooks';
 
 const properties = defineProps<{
     selected: CategoryDto[];
-    project_uuid: string;
+    projectUuid: string;
 }>();
 
 const emit = defineEmits(['update:selected']);
@@ -73,10 +74,7 @@ const clear = () => {
     selected.value = [];
 };
 
-const { data: _categories } = useCategories(
-    properties.project_uuid,
-    filter.value,
-);
+const { data: _categories } = useCategories(properties.projectUuid, filter);
 
 const categories: Ref<CategoryDto[]> = computed(() =>
     _categories.value ? _categories.value.data || [] : [],

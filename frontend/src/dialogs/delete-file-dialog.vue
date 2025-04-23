@@ -21,11 +21,11 @@
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import DeleteFile from '@components/delete-file.vue';
+import DeleteFile from 'components/delete-file.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteFileReference = ref<InstanceType<typeof DeleteFile> | undefined>(

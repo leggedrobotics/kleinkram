@@ -12,12 +12,12 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
-import { deleteFile } from 'src/services/mutations/file';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { useRoute, useRouter } from 'vue-router';
 import ROUTES from 'src/router/routes';
+import { deleteFile } from 'src/services/mutations/file';
+import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 
@@ -50,8 +50,8 @@ async function deleteFileAction(): Promise<void> {
                     await router.push({
                         name: ROUTES.FILES.routeName,
                         params: {
-                            project_uuid: route.params.project_uuid,
-                            mission_uuid: route.params.mission_uuid,
+                            projectUuid: route.params.projectUuid,
+                            missionUuid: route.params.missionUuid,
                         },
                     });
                 }

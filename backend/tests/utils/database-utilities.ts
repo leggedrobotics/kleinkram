@@ -1,21 +1,24 @@
-import { DataSource } from 'typeorm';
-import process from 'node:process';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Account from '@common/entities/auth/account.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
+import User from '@common/entities/user/user.entity';
+import { Providers, UserRole } from '@common/frontend_shared/enum';
+import jwt from 'jsonwebtoken';
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import process from 'node:process';
+import { DataSource } from 'typeorm';
 import {
     createAccessGroups,
     createNewUser,
 } from '../../src/services/auth.service';
-import User from '@common/entities/user/user.entity';
-import Account from '@common/entities/auth/account.entity';
-import { Providers, UserRole } from '@common/frontend_shared/enum';
-import GroupMembership from '@common/entities/auth/group-membership.entity';
 
-const dbPort = process.env['DB_PORT'];
+const databasePort = process.env['DB_PORT'];
 
-export const db = new DataSource({
+export const database = new DataSource({
     type: 'postgres',
     host: 'localhost',
-    port: parseInt(dbPort ?? '5432', 10),
+    port: Number.parseInt(databasePort ?? '5432', 10),
     ssl: process.env['DB_SSL'] === 'true',
     username: process.env['DB_USER'] ?? '',
     password: process.env['DB_PASSWORD'] ?? '',
@@ -29,7 +32,7 @@ export const db = new DataSource({
 
 export const clearAllData = async () => {
     try {
-        const entities = db.entityMetadatas;
+        const entities = database.entityMetadatas;
 
         // filter out the tables that should not be cleared (e.g. views)
         const tablesToClear = entities
@@ -40,31 +43,28 @@ export const clearAllData = async () => {
             .map((entity) => `"${entity.tableName}"`)
             .join(', ');
 
-        await db.query(`TRUNCATE ${tablesToClear} CASCADE;`);
+        await database.query(`TRUNCATE ${tablesToClear} CASCADE;`);
     } catch (error: any) {
         throw new Error(`ERROR: Cleaning test database: ${error.toString()}`);
     }
 };
 
-export const mockDbUser = async (
+export const mockDatabaseUser = async (
     email: string,
     username = 'Test User',
     role: UserRole = UserRole.USER,
 ): Promise<string> => {
     // read config from access_config.json
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const fs = require('fs');
+
     const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
-    const accessGroupRepository = db.getRepository(AccessGroup);
-    const groupMembershipRepository = db.getRepository(GroupMembership);
+    const accessGroupRepository = database.getRepository(AccessGroup);
+    const groupMembershipRepository = database.getRepository(GroupMembership);
     await createAccessGroups(accessGroupRepository, config);
 
-    const userRepository = db.getRepository(User);
-    const accountRepository = db.getRepository(Account);
+    const userRepository = database.getRepository(User);
+    const accountRepository = database.getRepository(Account);
 
     // hash the email to create a unique oauthID
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const crypto = require('crypto');
     const hash = crypto.createHash('sha256');
     hash.update(email);
     const oauthID = hash.digest('hex');
@@ -93,18 +93,24 @@ export const mockDbUser = async (
         await userRepository.save(user);
     }
 
-    return (await userRepository.findOneOrFail({ where: { email: email } }))
-        .uuid;
+    const user = await userRepository.findOneOrFail({
+        where: { email: email },
+    });
+    return user.uuid;
 };
 
 export const getJwtToken = (user: User): string => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const jwt = require('jsonwebtoken');
-    return jwt.sign({ uuid: user.uuid }, process.env['JWT_SECRET']);
+    const jwtSecret = process.env['JWT_SECRET'];
+    if (!jwtSecret) {
+        throw new Error(
+            'JWT_SECRET is not defined in the environment variables.',
+        );
+    }
+    return jwt.sign({ uuid: user.uuid }, jwtSecret);
 };
 
-export const getUserFromDb = async (uuid: string) => {
-    const userRepository = db.getRepository(User);
+export const getUserFromDatabase = async (uuid: string) => {
+    const userRepository = database.getRepository(User);
     return await userRepository.findOneOrFail({
         where: { uuid: uuid },
     });

@@ -21,18 +21,18 @@
 </template>
 
 <script setup lang="ts">
-import BaseDialog from './base-dialog.vue';
+import ConfigureAccessRights from 'components/configure-access-rights/configure-access-rights.vue';
 import { useDialogPluginComponent } from 'quasar';
-import { unref, watch } from 'vue';
-import ConfigureAccessRights from '@components/configure-access-rights/configure-access-rights.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { useUpdateAccessRightsMutation } from 'src/hooks/mutation-hooks';
 import {
     useMinimalAccessRightsForNewProject,
     useProjectAccessRights,
-} from '../hooks/query-hooks';
-import { useUpdateAccessRightsMutation } from '../hooks/mutation-hooks';
-import { useEditablePaginatedResponse } from '../hooks/utility-hooks';
+} from 'src/hooks/query-hooks';
+import { useEditablePaginatedResponse } from 'src/hooks/utility-hooks';
+import { unref, watch } from 'vue';
 
-const { project_uuid: projectUuid } = defineProps<{ project_uuid: string }>();
+const { projectUuid: projectUuid } = defineProps<{ projectUuid: string }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

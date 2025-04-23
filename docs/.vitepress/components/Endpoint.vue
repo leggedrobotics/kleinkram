@@ -3,8 +3,8 @@
         <div style="margin-bottom: 16px; margin-top: 8px">
             <span>{{ getHttpMethod(spec).toUpperCase() }}</span>
             <span style="font-weight: 700; margin-left: 10px">{{
-                endpoint
-            }}</span>
+                    endpoint
+                }}</span>
         </div>
         <p v-if="methodSpec?.summary">
             {{ methodSpec.summary }}
@@ -17,35 +17,43 @@
             <h4 style="margin-bottom: 12px">Parameters</h4>
             <table>
                 <thead>
-                    <tr>
-                        <th class="param-col-1">Name</th>
-                        <th class="param-col-2">In</th>
-                        <th class="param-col-3">Type</th>
-                        <th class="param-col-4">Description</th>
-                    </tr>
+                <tr>
+                    <th class="param-col-1">Name</th>
+                    <th class="param-col-2">In</th>
+                    <th class="param-col-3">Type</th>
+                    <th class="param-col-4">Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="parameter in params" :key="parameter.name">
-                        <td class="param-col-1">{{ parameter.name }}</td>
-                        <td class="param-col-2">
-                            <Paramtype :paramtype="parameter.in" />
-                        </td>
-                        <td class="param-col-3">
-                            <Paramdatatype
-                                :datatype="
-                                    parameter.schema?.format ||
+                <tr v-for="parameter in params" :key="parameter.name">
+                    <td class="param-col-1">{{ parameter.name }}</td>
+                    <td class="param-col-2">
+                        <Paramtype :paramtype="parameter.in" />
+                    </td>
+                    <td class="param-col-3">
+
+                        <Paramdatatype
+                            v-if="parameter.schema?.items?.type !== undefined"
+                            :datatype="parameter.schema?.items?.type + '[]'"
+                            :required="parameter.required"
+                        />
+
+                        <Paramdatatype
+                            v-else
+                            :datatype="
+                                    parameter.schema?.format ??
                                     parameter.schema.type
                                 "
-                                :required="parameter.required"
-                            />
-                        </td>
-                        <td class="param-col-4">
-                            {{
-                                parameter.description ||
-                                'No description available'
-                            }}
-                        </td>
-                    </tr>
+                            :required="parameter.required"
+                        />
+                    </td>
+                    <td class="param-col-4">
+                        {{
+                            parameter.description ||
+                            'No description available'
+                        }}
+                    </td>
+                </tr>
                 </tbody>
             </table>
         </div>
@@ -77,39 +85,66 @@
             <h4 style="margin-bottom: 12px; margin-top: 16px">Responses</h4>
             <table>
                 <thead>
-                    <tr>
-                        <th class="res-col-1">Status Code</th>
-                        <th class="res-col-2">Type</th>
-                        <th class="res-col-3">Description</th>
-                    </tr>
+                <tr>
+                    <th class="res-col-1">Status Code</th>
+                    <th class="res-col-2">Type</th>
+                    <th class="res-col-3">Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="response in responses" :key="response.code">
-                        <td class="res-col-1">{{ response.code }}</td>
-                        <td class="res-col-2">{{ response.type || 'N/A' }}</td>
-                        <td class="res-col-3">
-                            {{
-                                response.description ||
-                                'No description available'
-                            }}
-                        </td>
-                    </tr>
+                <tr v-for="response in responses" :key="response.code">
+                    <td class="res-col-1">{{ response.code }}</td>
+                    <td class="res-col-2">{{ response.type || 'N/A' }}</td>
+                    <td class="res-col-3">
+                        {{
+                            response.description ||
+                            'No description available'
+                        }}
+                    </td>
+                </tr>
                 </tbody>
             </table>
+
+            <template v-if="params.length > 0">
+            <h4>Request Parameters</h4>
+
+            <div
+                :class="{ collapsed }"
+                @click="toggleCollapse"
+            >
+                <div
+                    style="
+                        background-color: white;
+                        padding: 12px;
+                        border: 1px solid #ddd;
+                        margin-top: 2px;
+                        font-size: 10px;
+                        line-height: 12px;
+                    "
+                >
+                    <vue-json-pretty
+                        :showDoubleQuotes="false"
+                        :deep="2"
+                        :data="resolveSchemaRefs(params)"
+                    />
+                </div>
+            </div>
+            </template>
 
             <h4
                 style="margin-bottom: 12px; margin-top: 16px"
                 v-if="responses.map((r) => r.type).filter(Boolean).length"
             >
-                Types
+                Response
             </h4>
 
             <div
                 :class="{ collapsed }"
                 @click="toggleCollapse"
-                v-for="response in responses"
+                v-for="(response, index) in responses"
                 :key="response.code"
             >
+                <br v-if="index !== 0" />
                 <span>{{ response.type }}</span>
                 <div
                     style="
@@ -129,6 +164,8 @@
                     />
                 </div>
             </div>
+
+
         </div>
     </div>
 </template>
@@ -254,7 +291,7 @@ const responses = computed(() => {
                             const splitRef =
                                 response.content[
                                     'application/json'
-                                ].schema?.items['$ref'].split('/');
+                                    ].schema?.items['$ref'].split('/');
                             return {
                                 ...res,
                                 type: `${splitRef[splitRef.length - 1]}[]`,

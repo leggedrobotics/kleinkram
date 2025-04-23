@@ -6,7 +6,7 @@
             <button-group>
                 <div style="width: 200px">
                     <q-btn-dropdown
-                        :label="prefilter.label"
+                        :label="prefilter?.label"
                         class="q-uploader--bordered full-width full-height"
                         flat
                         auto-close
@@ -109,7 +109,7 @@
 
                                 <q-item v-ripple clickable disabled>
                                     <q-tooltip
-                                        v-if="prefilter.value === 'personal'"
+                                        v-if="prefilter?.value === 'personal'"
                                     >
                                         You can't edit personal access groups
                                     </q-tooltip>
@@ -131,21 +131,21 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 
+import { formatDate } from 'src/services/date-formating';
 import { computed, Ref, ref, watch } from 'vue';
-import { formatDate } from '../services/date-formating';
 
+import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
+import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
+import { AccessGroupDto } from '@api/types/user.dto';
+import { AccessGroupType } from '@common/enum';
+import DeleteAccessGroup from 'components/button-wrapper/delete-access-group.vue';
+import CreateAccessGroupDialogOpener from 'components/button-wrapper/dialog-opener-create-access-group.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import TitleSection from 'components/title-section.vue';
+import { QTable } from 'quasar';
+import ROUTES from 'src/router/routes';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { useRouter } from 'vue-router';
-import ROUTES from 'src/router/routes';
-import { QTable } from 'quasar';
-import { AccessGroupType } from '@common/enum';
-import { AccessGroupDto } from '@api/types/user.dto';
-import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import CreateAccessGroupDialogOpener from '@components/button-wrapper/dialog-opener-create-access-group.vue';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
-import DeleteAccessGroup from '@components/button-wrapper/delete-access-group.vue';
-import TitleSection from '@components/title-section.vue';
 
 const $router = useRouter();
 const prefilterOptions = [
@@ -172,7 +172,7 @@ const filterOptions: Ref<{
 watch(
     () => prefilter.value,
     (newValue) => {
-        switch (newValue.value) {
+        switch (newValue?.value) {
             case 'all': {
                 filterOptions.value.type = AccessGroupType.CUSTOM;
                 filterOptions.value.creator = false;
@@ -222,14 +222,7 @@ const { data: foundAccessGroups, refetch } = useQuery<AccessGroupsDto>({
         ),
 });
 
-const refetchAccessGroup: (
-    event_: Event,
-    go?: (options?: {
-        to?: any;
-        replace?: boolean | undefined;
-        returnRouterError?: boolean | undefined;
-    }) => Promise<void>,
-) => Promise<void> = async () => {
+const refetchAccessGroup: (event_: Event) => Promise<void> = async () => {
     await refetch();
 };
 

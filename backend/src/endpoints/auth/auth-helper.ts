@@ -1,12 +1,12 @@
-import { Brackets, SelectQueryBuilder } from 'typeorm';
-import Project from '@common/entities/project/project.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
-import Mission from '@common/entities/mission/mission.entity';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
-import { v4 as uuidv4 } from 'uuid';
 import File from '@common/entities/file/file.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import Project from '@common/entities/project/project.entity';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
+import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+import { Brackets, SelectQueryBuilder } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 export const projectAccessUUIDQuery = (
     query: SelectQueryBuilder<any>,

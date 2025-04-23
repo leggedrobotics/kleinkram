@@ -1,5 +1,34 @@
+import {
+    ActionTemplateDto,
+    ActionTemplatesDto,
+} from '@common/api/types/actions/action-template.dto';
+import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
+import {
+    CreateTemplateDto,
+    UpdateTemplateDto,
+} from '@common/api/types/create-template.dto';
+import { DeleteFileResponseDto } from '@common/api/types/file/delete-file-response.dto';
+import {
+    ActionSubmitResponseDto,
+    SubmitActionDto,
+} from '@common/api/types/submit-action-response.dto';
+import {
+    ActionQuery,
+    SubmitActionMulti,
+} from '@common/api/types/submit-action.dto';
+import { IsSkip } from '@common/validation/skip-validation';
+import { IsTake } from '@common/validation/take-validation';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import { ActionService } from '../../services/action.service';
+import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
+import {
+    QueryOptionalString,
+    QuerySkip,
+    QueryUUID,
+} from '../../validation/query-decorators';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreate,
     CanCreateAction,
@@ -9,35 +38,6 @@ import {
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
-import {
-    QueryOptionalString,
-    QuerySkip,
-    QueryUUID,
-} from '../../validation/query-decorators';
-import {
-    CreateTemplateDto,
-    UpdateTemplateDto,
-} from '@common/api/types/create-template.dto';
-import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import { ApiBody, ApiOperation } from '@nestjs/swagger';
-import { ApiOkResponse, OutputDto } from '../../decarators';
-import {
-    ActionSubmitResponseDto,
-    SubmitActionDto,
-} from '@common/api/types/submit-action-response.dto';
-import { IsTake } from '@common/validation/take-validation';
-import { IsSkip } from '@common/validation/skip-validation';
-import {
-    ActionTemplateDto,
-    ActionTemplatesDto,
-} from '@common/api/types/actions/action-template.dto';
-import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
-import { AddUser, AuthHeader } from '../auth/parameter-decorator';
-import {
-    ActionQuery,
-    SubmitActionMulti,
-} from '@common/api/types/submit-action.dto';
-import { DeleteFileResponseDto } from '@common/api/types/file/delete-file-response.dto';
 
 export class RunningActionsQuery {
     @IsSkip()
@@ -135,12 +135,12 @@ export class ActionController {
         @AddUser() auth: AuthHeader,
         // TODO: bring back filter options
     ): Promise<ActionsDto> {
-        let missionUuid = dto.mission_uuid;
+        let missionUuid = dto.missionUuid;
         if (auth.apikey) {
             missionUuid = auth.apikey.mission.uuid;
         }
         return this.actionService.listActions(
-            dto.project_uuid,
+            dto.projectUuid,
             missionUuid,
             auth.user.uuid,
             Number.parseInt((dto.skip ?? 0).toString()),

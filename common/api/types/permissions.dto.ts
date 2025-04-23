@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AccessGroupRights, UserRole } from '../../frontend_shared/enum';
-import { IsEnum, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsEnum, IsUUID, ValidateNested } from 'class-validator';
+import { AccessGroupRights, UserRole } from '../../frontend_shared/enum';
 
 export class ProjectPermissions {
     @ApiProperty()
@@ -33,7 +33,7 @@ export class PermissionsDto {
     defaultPermission!: AccessGroupRights;
 
     @ApiProperty({
-        type: [ProjectPermissions],
+        type: () => [ProjectPermissions],
         description: 'List of projects and their access rights',
     })
     @ValidateNested()
@@ -41,7 +41,7 @@ export class PermissionsDto {
     projects!: ProjectPermissions[];
 
     @ApiProperty({
-        type: [MissionPermissions],
+        type: () => [MissionPermissions],
         description: 'List of projects and their access rights',
     })
     @ValidateNested()

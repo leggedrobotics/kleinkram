@@ -21,20 +21,20 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
-import { createCategory } from 'src/services/mutations/categories';
-import { Notify, QNotifyCreateOptions } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { Notify, QNotifyCreateOptions } from 'quasar';
+import { createCategory } from 'src/services/mutations/categories';
+import { ref } from 'vue';
 
 const properties = defineProps<{
-    project_uuid: string;
+    projectUuid: string;
 }>();
 const queryClient = useQueryClient();
 
 const newCategory = ref('');
 const { mutate } = useMutation({
     mutationFn: (category: string) =>
-        createCategory(category, properties.project_uuid),
+        createCategory(category, properties.projectUuid),
     onSuccess: async () => {
         await queryClient.invalidateQueries({
             predicate: (query) => query.queryKey[0] === 'categories',

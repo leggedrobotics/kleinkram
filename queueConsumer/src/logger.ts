@@ -1,8 +1,8 @@
+import { Injectable, LoggerService } from '@nestjs/common';
+import { context, trace } from '@opentelemetry/api';
+import { TransformableInfo } from 'logform';
 import winston, { format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
-import { Injectable, LoggerService } from '@nestjs/common';
-import { TransformableInfo } from 'logform';
-import { context, trace } from '@opentelemetry/api';
 
 export const ACTION_CONTAINER_LABEL = 'action_container';
 export const QUEUE_CONSUMER_LABEL = 'queue-consumer';

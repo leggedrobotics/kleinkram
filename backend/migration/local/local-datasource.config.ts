@@ -1,6 +1,6 @@
-import { DataSourceOptions } from 'typeorm';
 import dotenv from 'dotenv';
 import * as process from 'node:process';
+import { DataSourceOptions } from 'typeorm';
 
 dotenv.config({ path: './migration/.env' });
 

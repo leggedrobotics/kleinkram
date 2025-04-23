@@ -1,8 +1,8 @@
 import axios, { AxiosRequestConfig, RawAxiosResponseHeaders } from 'axios';
-import ENV from '../environment';
-import { ref } from 'vue';
 import { parseISO } from 'date-fns';
+import { ref } from 'vue';
 import BUILD_INFO from '../build';
+import ENV from '../environment';
 
 const isoDateRegex =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?(?:[-+]\d{2}:?\d{2}|Z)?$/;

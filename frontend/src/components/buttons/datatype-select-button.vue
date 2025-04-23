@@ -33,9 +33,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { icon } from 'src/services/generic';
 import { DataType } from '@common/enum';
+import { icon } from 'src/services/generic';
+import { ref, watch } from 'vue';
 
 // Define the props and emits for the component
 const { modelValue } = defineProps<{

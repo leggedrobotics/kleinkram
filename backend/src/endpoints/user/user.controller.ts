@@ -1,21 +1,21 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { UserService } from '../../services/user.service';
-import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
-import {
-    QuerySkip,
-    QueryString,
-    QueryTake,
-} from '../../validation/query-decorators';
-import { ApiOperation } from '@nestjs/swagger';
+import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
+import { PermissionsDto } from '@common/api/types/permissions.dto';
 import {
     CurrentAPIUserDto,
     UserDto,
     UsersDto,
 } from '@common/api/types/user.dto';
-import { PermissionsDto } from '@common/api/types/permissions.dto';
-import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse, OutputDto } from '../../decarators';
+import { UserService } from '../../services/user.service';
+import {
+    QuerySkip,
+    QueryString,
+    QueryTake,
+} from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
+import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
 
 @Controller('user')
 export class UserController {

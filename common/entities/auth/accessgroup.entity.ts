@@ -6,12 +6,12 @@ import {
     OneToMany,
     Unique,
 } from 'typeorm';
+import { AccessGroupType } from '../../frontend_shared/enum';
 import BaseEntity from '../base-entity.entity';
 import User from '../user/user.entity';
-import ProjectAccess from './project-access.entity';
-import MissionAccess from './mission-access.entity';
 import GroupMembership from './group-membership.entity';
-import { AccessGroupType } from '../../frontend_shared/enum';
+import MissionAccess from './mission-access.entity';
+import ProjectAccess from './project-access.entity';
 
 @Unique('unique_access_group_name', ['name'])
 @Entity()

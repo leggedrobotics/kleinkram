@@ -1,5 +1,3 @@
-import { DefineComponent } from 'vue';
-
 /**
  * Represents a single breadcrumb in the application.
  * The `to` field is optional, and if it is not defined,
@@ -22,8 +20,10 @@ export const routeWithLayout = (component: {
     name: string;
     path: string;
     breadcrumbs?: PageBreadCrumb[];
-    component: () => Promise<typeof import('*.vue')> | DefineComponent;
-    layout: () => Promise<typeof import('*.vue')> | DefineComponent;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    component: () => any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    layout: () => any;
 }) => {
     return {
         name: `${component.name}Layout`,

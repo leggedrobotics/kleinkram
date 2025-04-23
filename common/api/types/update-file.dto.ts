@@ -9,7 +9,7 @@ export class UpdateFile {
 
     @IsNoValidUUID() @IsValidFileName() @IsString() filename!: string;
 
-    @IsOptional() @IsUUID() mission_uuid?: string;
+    @IsOptional() @IsUUID() missionUuid?: string;
     @IsDate() date!: Date;
     @IsOptional() @IsUUID('all', { each: true }) categories!: string[];
 }

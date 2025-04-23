@@ -68,6 +68,32 @@
                 </div>
             </q-td>
         </template>
+
+        <template #no-data>
+            <div
+                class="flex flex-center"
+                style="justify-content: center; margin: auto"
+            >
+                <div
+                    class="q-pa-md flex flex-center column q-gutter-md"
+                    style="min-height: 200px"
+                >
+                    <span class="text-subtitle1"> No Mission Found </span>
+
+                    <create-mission-dialog-opener :project-uuid="projectUuid">
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            class="button-border"
+                            label="Create Mission"
+                            icon="sym_o_add"
+                        />
+                    </create-mission-dialog-opener>
+                </div>
+            </div>
+        </template>
+
         <template #body-cell-missionaction="props">
             <q-td :props="props">
                 <q-btn
@@ -122,23 +148,24 @@
 </template>
 
 <script setup lang="ts">
-import { QTable } from 'quasar';
-import { computed, ref, watch } from 'vue';
-import { missionsOfProject } from 'src/services/queries/mission';
-import { TableRequest } from '../../services/query-handler';
-import { useQuery } from '@tanstack/vue-query';
-import ROUTES from 'src/router/routes';
-import { useRouter } from 'vue-router';
-import { useHandler, useProjectQuery } from '../../hooks/query-hooks';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import { missionColumns } from './explorer-page-table-columns';
 import { TagDto } from '@api/types/tags/tags.dto';
+import { useQuery } from '@tanstack/vue-query';
+import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
+import { QTable } from 'quasar';
+import { useHandler, useProjectQuery } from 'src/hooks/query-hooks';
+import ROUTES from 'src/router/routes';
+import { missionsOfProject } from 'src/services/queries/mission';
+import { TableRequest } from 'src/services/query-handler';
+import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
-import { useProjectUUID } from '../../hooks/router-hooks';
-import MoveMissionDialogOpener from '@components/button-wrapper/move-mission-dialog-pener.vue';
-import MissionMetadataOpener from '@components/button-wrapper/mission-metadata-opener.vue';
-import EditMissionDialogOpener from '@components/button-wrapper/edit-mission-dialog-opener.vue';
-import DeleteMissionDialogOpener from '@components/button-wrapper/delete-mission-dialog-opener.vue';
+import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
+import CreateMissionDialogOpener from 'components/button-wrapper/dilaog-opener-create-mission.vue';
+import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
+import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
+import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
+import { useProjectUUID } from 'src/hooks/router-hooks';
 
 const $emit = defineEmits(['update:selected']);
 
@@ -213,8 +240,8 @@ const onRowClick = async (_: Event, row: any) => {
     await $router.push({
         name: ROUTES.FILES.routeName,
         params: {
-            project_uuid: projectUuid.value,
-            mission_uuid: row.uuid as string,
+            projectUuid: projectUuid.value,
+            missionUuid: row.uuid as string,
         },
     });
 };

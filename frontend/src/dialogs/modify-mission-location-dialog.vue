@@ -57,12 +57,12 @@
     </q-dialog>
 </template>
 <script setup lang="ts">
-import { useQueryClient } from '@tanstack/vue-query';
-import { computed, ref } from 'vue';
-import { Notify, useDialogPluginComponent } from 'quasar';
-import { moveMission } from 'src/services/mutations/mission';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import { useFilteredProjects } from '../hooks/query-hooks';
+import { useQueryClient } from '@tanstack/vue-query';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import { useFilteredProjects } from 'src/hooks/query-hooks';
+import { moveMission } from 'src/services/mutations/mission';
+import { computed, ref } from 'vue';
 
 import { ProjectDto } from '@api/types/project/base-project.dto';
 

@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import Action from './action.entity';
 import User from '../user/user.entity';
+import Action from './action.entity';
 
 import { AccessGroupRights } from '../../frontend_shared/enum';
 

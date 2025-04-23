@@ -1,9 +1,9 @@
+import env from '@common/environment';
+import { CookieNames } from '@common/frontend_shared/enum';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy } from 'passport-jwt';
 import { Request } from 'express';
-import { CookieNames } from '@common/frontend_shared/enum';
-import env from '@common/environment';
+import { Strategy } from 'passport-jwt';
 import { UserService } from '../../services/user.service';
 
 export class InvalidJwtTokenException extends Error {

@@ -2,8 +2,8 @@
     <router-view />
 </template>
 <script setup lang="ts">
-import { provide, Ref, ref } from 'vue';
 import { FileUploadDto } from '@api/types/upload.dto';
+import { provide, Ref, ref } from 'vue';
 
 const uploads: Ref<Ref<FileUploadDto>[]> = ref([]);
 // Provide the globalState object

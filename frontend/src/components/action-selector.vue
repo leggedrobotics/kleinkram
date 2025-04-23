@@ -43,7 +43,7 @@
                     () => {
                         if (!searchEnabled) return;
                         searchEnabled = false;
-                        model = null;
+                        model = undefined;
                         updateSelectedTemplate(
                             JSON.parse(JSON.stringify(props.opt)),
                         );
@@ -151,11 +151,11 @@
     </q-list>
 </template>
 <script setup lang="ts">
+import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import { QSelect } from 'quasar';
 import { computed, Ref, ref } from 'vue';
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 
-const DEFAULT_ACTION_TEMPLATE: ActionTemplateDto | undefined = undefined;
+const newActionTemplate = ref<ActionTemplateDto | undefined>(undefined);
 
 //gets passed as input
 const { actionTemplates } = defineProps<{
@@ -170,8 +170,11 @@ const filteredActionTemplates: Ref<ActionTemplateDto[] | []> = ref([]);
 filteredActionTemplates.value = actionTemplates ? [...actionTemplates] : [];
 //removing newTemplate Option if Name in search field exactly matches existing template
 const options = computed(() => {
-    // @ts-ignore
-    const suggestedName: string = newActionTemplate.value?.name;
+    if (actionTemplates === undefined) {
+        throw new Error('actionTemplates undefined in options');
+    }
+
+    const suggestedName: string = newActionTemplate.value?.name ?? '';
     const filteredNames: string[] = filteredActionTemplates.value.map(
         (x) => x.name,
     );
@@ -180,17 +183,11 @@ const options = computed(() => {
         : [newActionTemplate.value, ...filteredActionTemplates.value];
 });
 const searchEnabled = ref(false);
-const model = ref(null);
-const newActionTemplate = ref(DEFAULT_ACTION_TEMPLATE);
+const model = ref(undefined);
 
 function filterActionTemplates(value: string) {
     if (!actionTemplates) {
         throw new Error('actionTemplates undefined in filterActionTemplates');
-        if (!actionTemplates) {
-            throw new Error(
-                'actionTemplates.value undefined in filterActionTemplates',
-            );
-        }
     }
     filteredActionTemplates.value =
         actionTemplates.filter((temporary) => {
@@ -203,8 +200,8 @@ function updateSelectedTemplate(selTempl: ActionTemplateDto) {
 }
 
 function updateCreateTemplateName(newName: string) {
+    // @ts-ignore
     newActionTemplate.value = {
-        // @ts-ignore
         ...newActionTemplate.value,
         name: newName,
     };

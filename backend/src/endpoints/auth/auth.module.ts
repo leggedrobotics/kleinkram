@@ -1,30 +1,30 @@
 import { Global, Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { AuthService } from '../../services/auth.service';
-import { GoogleStrategy } from './google.strategy';
-import { AuthController } from './auth.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthService } from '../../services/auth.service';
+import { AuthController } from './auth.controller';
+import { GoogleStrategy } from './google.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
 
-import Account from '@common/entities/auth/account.entity';
-import Project from '@common/entities/project/project.entity';
-import Mission from '@common/entities/mission/mission.entity';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import env from '@common/environment';
-import Tag from '@common/entities/tag/tag.entity';
-import ProjectAccess from '@common/entities/auth/project-access.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
-import MissionAccess from '@common/entities/auth/mission-access.entity';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
-import { AccessService } from '../../services/access.service';
-import { AccessController } from './access.controller';
-import FileEntity from '@common/entities/file/file.entity';
+import Account from '@common/entities/auth/account.entity';
 import GroupMembership from '@common/entities/auth/group-membership.entity';
+import MissionAccess from '@common/entities/auth/mission-access.entity';
+import ProjectAccess from '@common/entities/auth/project-access.entity';
+import FileEntity from '@common/entities/file/file.entity';
+import Mission from '@common/entities/mission/mission.entity';
+import Project from '@common/entities/project/project.entity';
+import Tag from '@common/entities/tag/tag.entity';
+import env from '@common/environment';
+import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+import { AccessService } from '../../services/access.service';
 import { ProjectGuardService } from '../../services/project-guard.service';
-import { MissionGuardService } from './mission-guard.service';
+import { AccessController } from './access.controller';
 import { AuthGuardService } from './auth-guard.service';
+import { MissionGuardService } from './mission-guard.service';
 
 @Global()
 @Module({

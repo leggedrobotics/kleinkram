@@ -1,6 +1,23 @@
+import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
+import {
+    ProjectAccessDto,
+    ProjectAccessListDto,
+} from '@common/api/types/access-control/project-access.dto';
+import { ProjectWithAccessRightsDto } from '@common/api/types/project/project-access.dto';
+import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
+import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
+import ProjectAccess from '@common/entities/auth/project-access.entity';
+import Project from '@common/entities/project/project.entity';
+import User from '@common/entities/user/user.entity';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '@common/frontend_shared/enum';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import User from '@common/entities/user/user.entity';
 import {
     EntityManager,
     FindOptionsWhere,
@@ -9,30 +26,13 @@ import {
     Not,
     Repository,
 } from 'typeorm';
+import { AuthHeader } from '../endpoints/auth/parameter-decorator';
+import logger from '../logger';
 import {
     groupMembershipEntityToDto,
     projectAccessEntityToDto,
     userEntityToDto,
 } from '../serialization';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import {
-    AccessGroupRights,
-    AccessGroupType,
-    UserRole,
-} from '@common/frontend_shared/enum';
-import Project from '@common/entities/project/project.entity';
-import ProjectAccess from '@common/entities/auth/project-access.entity';
-import GroupMembership from '@common/entities/auth/group-membership.entity';
-import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
-import logger from '../logger';
-import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
-import {
-    ProjectAccessDto,
-    ProjectAccessListDto,
-} from '@common/api/types/access-control/project-access.dto';
-import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
-import { ProjectWithAccessRightsDto } from '@common/api/types/project/project-access.dto';
 
 @Injectable()
 export class AccessService {

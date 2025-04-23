@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { IsArray, IsNumber, IsString, ValidateNested } from 'class-validator';
-import { Paginated } from './pagination';
 import { IsSkip } from '../../validation/skip-validation';
 import { IsTake } from '../../validation/take-validation';
-import { Type } from 'class-transformer';
+import { Paginated } from './pagination';
 
 export class TopicDto {
     @ApiProperty()
@@ -25,7 +25,7 @@ export class TopicDto {
 
 export class TopicsDto implements Paginated<TopicDto> {
     @ApiProperty({
-        type: [TopicDto],
+        type: () => [TopicDto],
         description: 'List of topics',
     })
     @ValidateNested()
@@ -51,7 +51,7 @@ export class TopicNamesDto implements Paginated<string> {
     count!: number;
 
     @ApiProperty({
-        type: [String],
+        type: () => [String],
         description: 'List of topic names',
     })
     @IsArray()

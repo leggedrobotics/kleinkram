@@ -1,9 +1,9 @@
-import { Ref, unref } from 'vue';
 import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { isAxiosError } from 'axios';
 import { Notify } from 'quasar';
-import { updateProjectAccessRights } from '../services/mutations/access';
+import { updateProjectAccessRights } from 'src/services/mutations/access';
+import { Ref, unref } from 'vue';
 
 export const useUpdateAccessRightsMutation = (
     projectUuid: string,

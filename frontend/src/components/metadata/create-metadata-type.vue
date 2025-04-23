@@ -23,12 +23,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useQueryClient } from '@tanstack/vue-query';
-import { Notify } from 'quasar';
-import { createTagType } from '../../services/mutations/tag';
 import { DataType } from '@common/enum';
-import DataTypeDropdown from '@components/metadata/data-type-dropdown.vue';
+import { useQueryClient } from '@tanstack/vue-query';
+import DataTypeDropdown from 'components/metadata/data-type-dropdown.vue';
+import { Notify } from 'quasar';
+import { createTagType } from 'src/services/mutations/tag';
+import { ref } from 'vue';
 
 const tagName = ref('');
 const selectedDataType = ref<DataType | undefined>(undefined);

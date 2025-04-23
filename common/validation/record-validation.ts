@@ -1,6 +1,4 @@
-import { ValidationOptions } from 'class-validator';
-import { ValidateBy } from 'class-validator';
-import { buildMessage } from 'class-validator';
+import { buildMessage, ValidateBy, ValidationOptions } from 'class-validator';
 
 export function isRecordStringString(value: unknown): boolean {
     if (typeof value !== 'object' || value === null) {

@@ -1,9 +1,9 @@
 import { define } from 'typeorm-seeding';
-import User from '../../entities/user/user.entity';
-import { UserRole } from '../../frontend_shared/enum';
-import { extendedFaker } from '../../faker-extended';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
 import GroupMembership from '../../entities/auth/group-membership.entity';
+import User from '../../entities/user/user.entity';
+import { extendedFaker } from '../../faker-extended';
+import { UserRole } from '../../frontend_shared/enum';
 
 export interface UserContext {
     firstName: string;

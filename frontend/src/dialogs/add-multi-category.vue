@@ -23,12 +23,12 @@
                     <label for="categoryName">Select Categories</label>
                     <category-selector
                         :selected="selected"
-                        :project_uuid="projectUuid"
+                        :project-uuid="projectUuid"
                         @update:selected="updateSelected"
                     />
                 </q-tab-panel>
                 <q-tab-panel name="create" style="min-height: 180px">
-                    <CategoryCreator :project_uuid="projectUuid" />
+                    <CategoryCreator :project-uuid="projectUuid" />
                 </q-tab-panel>
             </q-tab-panels>
         </template>
@@ -43,16 +43,16 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { Notify, useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
-import { Ref, ref } from 'vue';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { addManyCategories } from 'src/services/mutations/categories';
 import { CategoryDto } from '@api/types/category.dto';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { addManyCategories } from 'src/services/mutations/categories';
+import { Ref, ref } from 'vue';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import CategorySelector from '@components/category-selector.vue';
-import CategoryCreator from '@components/category-creator.vue';
+import CategoryCreator from 'components/category-creator.vue';
+import CategorySelector from 'components/category-selector.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

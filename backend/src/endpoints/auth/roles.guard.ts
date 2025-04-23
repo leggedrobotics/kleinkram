@@ -1,3 +1,9 @@
+import Apikey from '@common/entities/auth/apikey.entity';
+import {
+    AccessGroupRights,
+    ActionState,
+    UserRole,
+} from '@common/frontend_shared/enum';
 import {
     BadRequestException,
     CanActivate,
@@ -8,25 +14,19 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import {
-    AccessGroupRights,
-    ActionState,
-    UserRole,
-} from '@common/frontend_shared/enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import Apikey from '@common/entities/auth/apikey.entity';
 
 import Queue from '@common/entities/queue/queue.entity';
 
 import ActionTemplate from '@common/entities/action/action-template.entity';
 import Action from '@common/entities/action/action.entity';
-import { ProjectGuardService } from '../../services/project-guard.service';
 import { FileGuardService } from '../../services/file-guard.service';
-import { MissionGuardService } from './mission-guard.service';
+import { ProjectGuardService } from '../../services/project-guard.service';
+import { UserService } from '../../services/user.service';
 import { ActionGuardService } from './action-guard.service';
 import { AuthGuardService } from './auth-guard.service';
-import { UserService } from '../../services/user.service';
+import { MissionGuardService } from './mission-guard.service';
 
 @Injectable()
 export class PublicGuard implements CanActivate {

@@ -1,8 +1,8 @@
+import { faker } from '@faker-js/faker';
 import { define } from 'typeorm-seeding';
 import AccessGroup from '../../entities/auth/accessgroup.entity';
-import { faker } from '@faker-js/faker';
-import Project from '../../entities/project/project.entity';
 import ProjectAccess from '../../entities/auth/project-access.entity';
+import Project from '../../entities/project/project.entity';
 
 import { AccessGroupRights } from '../../frontend_shared/enum';
 

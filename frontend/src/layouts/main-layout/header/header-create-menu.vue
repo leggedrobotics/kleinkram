@@ -50,9 +50,9 @@
 </template>
 
 <script setup lang="ts">
-import CreateProjectDialogOpener from '@components/button-wrapper/dialog-opener-create-project.vue';
-import CreateMissionDialogOpener from '@components/button-wrapper/dilaog-opener-create-mission.vue';
+import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
+import CreateProjectDialogOpener from 'components/button-wrapper/dialog-opener-create-project.vue';
+import CreateTagTypeDialogOpener from 'components/button-wrapper/dialog-opener-create-tag-type.vue';
+import CreateMissionDialogOpener from 'components/button-wrapper/dilaog-opener-create-mission.vue';
 import HeaderCreateNewButton from './header-create-button.vue';
-import CreateFileDialogOpener from '@components/button-wrapper/dialog-opener-create-file.vue';
-import CreateTagTypeDialogOpener from '@components/button-wrapper/dialog-opener-create-tag-type.vue';
 </script>

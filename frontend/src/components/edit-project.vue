@@ -68,15 +68,15 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useQueryClient } from '@tanstack/vue-query';
-import { computed, Ref, ref, watch } from 'vue';
-import { Notify, QInput } from 'quasar';
-import { updateProject } from 'src/services/mutations/project';
-import { useProjectQuery } from '../hooks/query-hooks';
 import { ProjectWithRequiredTags } from '@api/types/project/project-with-required-tags';
+import { useQueryClient } from '@tanstack/vue-query';
+import { Notify, QInput } from 'quasar';
+import { useProjectQuery } from 'src/hooks/query-hooks';
+import { updateProject } from 'src/services/mutations/project';
+import { computed, Ref, ref, watch } from 'vue';
 
-const { project_uuid } = defineProps<{
-    project_uuid: string;
+const { projectUuid } = defineProps<{
+    projectUuid: string;
 }>();
 const queryClient = useQueryClient();
 
@@ -87,7 +87,7 @@ const hasValidInput = ref(false);
 
 const invalidProjectNames: Ref<string[]> = ref([]);
 
-const { data: project } = useProjectQuery(computed(() => project_uuid));
+const { data: project } = useProjectQuery(computed(() => projectUuid));
 
 watch(
     () => project.value,

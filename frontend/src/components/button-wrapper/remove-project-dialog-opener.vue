@@ -17,12 +17,12 @@
 </template>
 
 <script setup lang="ts">
-import { Notify } from 'quasar';
-import { computed } from 'vue';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { removeAccessGroupFromProject } from 'src/services/mutations/access';
-import { canDeleteProject, usePermissionsQuery } from '../../hooks/query-hooks';
 import { AccessGroupDto } from '@api/types/user.dto';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { Notify } from 'quasar';
+import { canDeleteProject, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { removeAccessGroupFromProject } from 'src/services/mutations/access';
+import { computed } from 'vue';
 
 const { accessGroup, projectUUID } = defineProps<{
     accessGroup: AccessGroupDto;

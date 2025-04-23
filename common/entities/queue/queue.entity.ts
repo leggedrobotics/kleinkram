@@ -1,8 +1,8 @@
-import BaseEntity from '../base-entity.entity';
+import { Column, Entity, ManyToOne } from 'typeorm';
 import { FileLocation, QueueState } from '../../frontend_shared/enum';
+import BaseEntity from '../base-entity.entity';
 import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
-import { Column, Entity, ManyToOne } from 'typeorm';
 
 @Entity()
 export default class QueueEntity extends BaseEntity {

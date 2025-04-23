@@ -1,7 +1,7 @@
-import { IsArray, IsString, IsOptional, IsUUID } from 'class-validator';
-import { SortablePaginatedQueryDto } from '../pagination';
-import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
+import { SortablePaginatedQueryDto } from '../pagination';
 
 export class ProjectQueryDto extends SortablePaginatedQueryDto {
     @IsOptional()

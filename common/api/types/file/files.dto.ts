@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { FileDto } from './file.dto';
-import { Paginated } from '../pagination';
-import { IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsTake } from '../../../validation/take-validation';
+import { IsNumber, ValidateNested } from 'class-validator';
 import { IsSkip } from '../../../validation/skip-validation';
+import { IsTake } from '../../../validation/take-validation';
+import { Paginated } from '../pagination';
+import { FileDto } from './file.dto';
 
 export class FilesDto implements Paginated<FileDto> {
     @ApiProperty()
@@ -12,7 +12,7 @@ export class FilesDto implements Paginated<FileDto> {
     count!: number;
 
     @ApiProperty({
-        type: [FileDto],
+        type: () => [FileDto],
         description: 'List of files',
     })
     @ValidateNested()

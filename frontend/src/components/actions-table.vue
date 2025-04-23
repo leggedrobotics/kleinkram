@@ -84,18 +84,18 @@
 </template>
 
 <script setup lang="ts">
-import { QTable } from 'quasar';
-import { computed, ref, Ref, watch } from 'vue';
-import { formatDate } from '../services/date-formating';
-import { useRouter } from 'vue-router';
-import ROUTES from 'src/router/routes';
-import { QueryHandler, TableRequest } from '../services/query-handler';
-import { getActionColor } from 'src/services/generic';
-import { ActionState } from '@common/enum';
-import { useActions } from '../hooks/query-hooks';
-import ActionBadge from './action-badge.vue';
-import DeleteActionDialogOpener from './button-wrapper/delete-action-dialog-opener.vue';
 import { ActionDto } from '@api/types/actions/action.dto';
+import { ActionState } from '@common/enum';
+import ActionBadge from 'components/action-badge.vue';
+import { QTable } from 'quasar';
+import { useActions } from 'src/hooks/query-hooks';
+import ROUTES from 'src/router/routes';
+import { formatDate } from 'src/services/date-formating';
+import { getActionColor } from 'src/services/generic';
+import { QueryHandler, TableRequest } from 'src/services/query-handler';
+import { computed, ref, Ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import DeleteActionDialogOpener from './button-wrapper/delete-action-dialog-opener.vue';
 
 const router = useRouter();
 

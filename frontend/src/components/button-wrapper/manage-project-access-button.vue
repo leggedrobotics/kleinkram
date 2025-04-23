@@ -15,18 +15,18 @@
 </template>
 
 <script setup lang="ts">
-import AccessRightsDialog from '../../dialogs/modify-access-rights-dialog.vue';
 import { useQuasar } from 'quasar';
-import { canModifyProject, usePermissionsQuery } from '../../hooks/query-hooks';
+import AccessRightsDialog from 'src/dialogs/modify-access-rights-dialog.vue';
+import { canModifyProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-const { project_uuid } = defineProps<{
-    project_uuid: string;
+const { projectUuid } = defineProps<{
+    projectUuid: string;
 }>();
 
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
-    canModifyProject(project_uuid, permissions.value),
+    canModifyProject(projectUuid, permissions.value),
 );
 
 const $q = useQuasar();
@@ -39,7 +39,7 @@ const manageProjectAccess = () => {
         title: 'Manage Access',
         component: AccessRightsDialog,
         componentProps: {
-            project_uuid: project_uuid,
+            projectUuid: projectUuid,
         },
     });
 };

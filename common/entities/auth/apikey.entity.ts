@@ -1,8 +1,8 @@
 import { Column, Entity, Generated, ManyToOne, OneToOne } from 'typeorm';
-import BaseEntity from '../base-entity.entity';
 import { AccessGroupRights, KeyTypes } from '../../frontend_shared/enum';
-import Mission from '../mission/mission.entity';
 import Action from '../action/action.entity';
+import BaseEntity from '../base-entity.entity';
+import Mission from '../mission/mission.entity';
 import User from '../user/user.entity';
 
 @Entity()

@@ -15,13 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
-import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
-import { computed } from 'vue';
-import MoveMission from '../../dialogs/modify-mission-location-dialog.vue';
-import { useRouter } from 'vue-router';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import { useMissionUUID } from '../../hooks/router-hooks';
+import { useQuasar } from 'quasar';
+import MoveMission from 'src/dialogs/modify-mission-location-dialog.vue';
+import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { useMissionUUID } from 'src/hooks/router-hooks';
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const $q = useQuasar();
 const { mission } = defineProps<{
@@ -47,7 +47,7 @@ const moveMission = (): void => {
             $router
                 .push({
                     params: {
-                        project_uuid: newProjectUUID,
+                        projectUuid: newProjectUUID,
                     },
                 })
                 .catch((error: unknown) => {

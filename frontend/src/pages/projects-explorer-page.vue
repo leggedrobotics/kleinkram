@@ -10,10 +10,10 @@
     </div>
 </template>
 <script setup lang="ts">
+import ExplorerPageProjectTable from 'components/explorer-page/explorer-page-project-table.vue';
+import ProjectListFilterOptions from 'components/explorer-page/project-list-filter-options.vue';
+import TitleSection from 'components/title-section.vue';
 import { ref } from 'vue';
-import ExplorerPageProjectTable from '@components/explorer-page/explorer-page-project-table.vue';
-import TitleSection from '@components/title-section.vue';
-import ProjectListFilterOptions from '@components/explorer-page/project-list-filter-options.vue';
 
 const myProjects = ref(false);
 </script>

@@ -1,5 +1,5 @@
-import { IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum } from 'class-validator';
 import { ApiUUIDProperty } from '../../../backend/src/validation/body-decorators';
 import { AccessGroupRights } from '../../frontend_shared/enum';
 

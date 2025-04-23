@@ -1,6 +1,6 @@
+import Topic from '@common/entities/topic/topic.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import Topic from '@common/entities/topic/topic.entity';
 import { TopicService } from '../../services/topic.service';
 import { TopicController } from './topic.controller';
 

@@ -29,6 +29,31 @@
             <q-inner-loading showing color="primary" />
         </template>
 
+        <template #no-data>
+            <div
+                class="flex flex-center"
+                style="justify-content: center; margin: auto"
+            >
+                <div
+                    class="q-pa-md flex flex-center column q-gutter-md"
+                    style="min-height: 200px"
+                >
+                    <span class="text-subtitle1"> No Projects Found </span>
+
+                    <dialog-opener-create-project>
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            class="button-border"
+                            label="Create Project"
+                            icon="sym_o_add"
+                        />
+                    </dialog-opener-create-project>
+                </div>
+            </div>
+        </template>
+
         <template #body-cell-project-action="props">
             <Suspense>
                 <q-td :props="props">
@@ -54,7 +79,7 @@
                                     </q-item-section>
                                 </q-item>
                                 <EditProjectDialogOpener
-                                    :project_uuid="props.row.uuid"
+                                    :project-uuid="props.row.uuid"
                                 >
                                     <q-item v-ripple clickable>
                                         <q-item-section>
@@ -63,7 +88,7 @@
                                     </q-item>
                                 </EditProjectDialogOpener>
                                 <ConfigureTagsDialogOpener
-                                    :project_uuid="props.row.uuid"
+                                    :project-uuid="props.row.uuid"
                                 >
                                     <q-item v-ripple clickable>
                                         <q-item-section>
@@ -85,8 +110,8 @@
                                     </q-item>
                                 </change-project-rights-dialog-opener>
                                 <DeleteProjectDialogOpener
-                                    :project_uuid="props.row.uuid"
-                                    :has_missions="props.row.missionCount > 0"
+                                    :project-uuid="props.row.uuid"
+                                    :has-missions="props.row.missionCount > 0"
                                 >
                                     <q-item v-ripple clickable>
                                         <q-item-section>Delete</q-item-section>
@@ -102,21 +127,22 @@
 </template>
 
 <script setup lang="ts">
+import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
+import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
+import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
+import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
+import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
+import { explorerPageTableColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { QTable } from 'quasar';
-import { computed, ref, watch } from 'vue';
-import { TableRequest } from '../../services/query-handler';
-import ROUTES from 'src/router/routes';
-import { useRouter } from 'vue-router';
-import { explorerPageTableColumns } from './explorer-page-table-columns';
 import {
     useFilteredProjects,
     useHandler,
     useUser,
-} from '../../hooks/query-hooks';
-import DeleteProjectDialogOpener from '../button-wrapper/delete-project-dialog-opener.vue';
-import ConfigureTagsDialogOpener from '../button-wrapper/dialog-opener-configure-tags.vue';
-import EditProjectDialogOpener from '../button-wrapper/edit-project-dialog-opener.vue';
-import ChangeProjectRightsDialogOpener from '../button-wrapper/dialog-opener-change-project-rights.vue';
+} from 'src/hooks/query-hooks';
+import ROUTES from 'src/router/routes';
+import { TableRequest } from 'src/services/query-handler';
+import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 const urlHandler = useHandler();
 
@@ -188,7 +214,7 @@ const onRowClick = async (_: Event, row: any): Promise<void> => {
     await $router.push({
         name: ROUTES.MISSIONS.routeName,
         params: {
-            project_uuid: row.uuid,
+            projectUuid: row.uuid,
         },
     });
 };

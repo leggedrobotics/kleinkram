@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Paginated } from '../pagination';
-import { IsSkip } from '../../../validation/skip-validation';
-import { IsTake } from '../../../validation/take-validation';
+import { Type } from 'class-transformer';
 import {
     IsDate,
     IsNumber,
@@ -9,7 +7,9 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsSkip } from '../../../validation/skip-validation';
+import { IsTake } from '../../../validation/take-validation';
+import { Paginated } from '../pagination';
 
 export class ResentProjectDto {
     @ApiProperty()
@@ -37,7 +37,7 @@ export class ResentProjectsDto implements Paginated<ResentProjectDto> {
     @ApiProperty({
         name: 'data',
         description: 'List of resent projects',
-        type: ResentProjectDto,
+        type: () => ResentProjectDto,
     })
     @ValidateNested()
     @Type(() => ResentProjectDto)

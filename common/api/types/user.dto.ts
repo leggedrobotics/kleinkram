@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AccessGroupType, UserRole } from '../../frontend_shared/enum';
+import { Type } from 'class-transformer';
 import {
     IsBoolean,
     IsDate,
@@ -13,7 +13,7 @@ import {
     ValidateNested,
     ValidationOptions,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { AccessGroupType, UserRole } from '../../frontend_shared/enum';
 import { ProjectWithAccessRightsDto } from './project/project-access.dto';
 
 const IsNotUndefined = (validationOptions?: ValidationOptions) => {
@@ -129,8 +129,9 @@ export class GroupMembershipDto {
     canEditGroup!: boolean;
 
     @ApiProperty({
-        type: [AccessGroupDto, null],
+        type: () => AccessGroupDto,
         description: 'Access Group',
+        nullable: true,
     })
     @IsNotUndefined()
     @IsOptional()
@@ -141,7 +142,7 @@ export class GroupMembershipDto {
 
 export class CurrentAPIUserDto extends UserDto {
     @ApiProperty({
-        type: [GroupMembershipDto],
+        type: () => [GroupMembershipDto],
         description: 'List of group memberships',
     })
     @ValidateNested({ each: true })
@@ -159,7 +160,7 @@ export class CurrentAPIUserDto extends UserDto {
 
 export class UsersDto {
     @ApiProperty({
-        type: [UserDto],
+        type: () => [UserDto],
         description: 'List of users',
     })
     users!: UserDto[];

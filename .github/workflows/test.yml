@@ -8,15 +8,24 @@ on:
 
 jobs:
     test_API:
-        runs-on: ubuntu-latest
+        runs-on: [self-hosted, linux]
+
+        # Add permissions to allow the action to write PR comments
+        permissions:
+            contents: read # Allows reading the repository contents
+            checks: write # Allows reporting check status
+            pull-requests: write # Allows adding comments to PRs
 
         steps:
             - uses: actions/checkout@v4
 
             - name: Use Node.js
-              uses: actions/setup-node@v4.3.0
+              uses: actions/setup-node@v4.4.0
               with:
                   node-version: '22'
+
+            - name: Install yarn
+              run: npm install -g yarn
 
             - name: install dependencies
               run: yarn install --immutable
@@ -31,11 +40,39 @@ jobs:
                   SECONDS=0
                   TIMEOUT=60
                   while [ ! -f ./.endpoints/__generated__endpoints.json ]; do
-                      if [ $SECONDS -ge $TIMEOUT ]; then
-                          echo "Timeout reached: __generated__endpoints.json not found"
-                          exit 1
-                      fi
-                      sleep 1
-                      echo "waiting for endpoints"
+                    if [ $SECONDS -ge $TIMEOUT ]; then
+                        echo "Timeout reached: __generated__endpoints.json not found"
+                        docker compose -f ../docker-compose.testing.yml down
+                        exit 1
+                    fi
+                    sleep 1
+                    echo "waiting for endpoints"
                   done
-                  yarn test
+                  echo "Endpoints found. Running tests..."
+                  # Modify test command to output JSON and ensure the step continues even on failure
+                  # The || true allows the next step (reporting) to run even if tests fail.
+                  # The reporting action will correctly mark the check as failed based on the JSON.
+                  yarn test --ci --reporters=default --reporters=jest-junit || true
+                  echo "Tests finished. Proceeding to reporting."
+                  # Optionally stop the docker stack here if not needed for reporting
+                  # docker compose -f ../docker-compose.testing.yml down
+
+            - name: Publish Test Results
+              uses: EnricoMi/publish-unit-test-result-action@v2
+              if: always()
+              with:
+                  files: backend/junit.xml
+                  check_name: 'Jest Test Results'
+
+            # Uninstall yarn when you're done
+            - name: Clean up
+              if: always()
+              run: npm uninstall -g yarn
+
+            - name: Stop Docker stack
+              if: always()
+              run: docker compose -f docker-compose.testing.yml down
+
+            - name: Delete Docker volumes
+              if: always()
+              run: docker volume prune -f

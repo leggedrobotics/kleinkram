@@ -1,27 +1,45 @@
 on:
     push:
         branches: ['dev']
+    pull_request:
+        branches:
+            - dev
 
 jobs:
     eslint:
-        runs-on: ubuntu-latest
+        runs-on: [self-hosted, linux]
 
         steps:
             - uses: actions/checkout@v4
+
             - name: Use Node.js
-              uses: actions/setup-node@v4.3.0
+              uses: actions/setup-node@v4
               with:
                   node-version: '22'
 
-            - name: Install prettier
-              run: yarn add prettier
+            - name: Generate Build Info
+              run: bash create_build_info.sh
+              working-directory: frontend
 
-            - name: Run prettier
-              run: yarn prettier:check
+            - name: Install yarn
+              run: npm install -g yarn
 
             # for eslint we may need to install the dependencies
             - name: Install dependencies
               run: yarn install --immutable
 
-            - name: Run ESLint (with info to run `yarn eslint-full` to reproduce locally)
-              run: yarn eslint-full:check || echo "Run 'yarn eslint-full' to reproduce locally"
+            - name: Prepare Quasar
+              run: yarn quasar prepare
+              working-directory: frontend
+
+            - name: Run ESLint
+              run: |
+                  if ! yarn eslint-full:check; then
+                      echo "ESLint check failed. Run 'yarn eslint-full' locally to reproduce."
+                      exit 1 # Explicitly fail the step
+                  fi
+
+            # Uninstall when you're done
+            - name: Clean up
+              if: always()
+              run: npm uninstall -g yarn

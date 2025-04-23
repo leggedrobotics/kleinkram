@@ -1,13 +1,13 @@
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Account from '@common/entities/auth/account.entity';
+import ProjectAccess from '@common/entities/auth/project-access.entity';
+import Project from '@common/entities/project/project.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AccessService } from '../../services/access.service';
 import { ProjectService } from '../../services/project.service';
 import { OldProjectController, ProjectController } from './project.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import Project from '@common/entities/project/project.entity';
-import Account from '@common/entities/auth/account.entity';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
-import TagType from '@common/entities/tagType/tag-type.entity';
-import ProjectAccess from '@common/entities/auth/project-access.entity';
-import { AccessService } from '../../services/access.service';
 
 @Module({
     imports: [

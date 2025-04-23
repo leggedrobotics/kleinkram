@@ -1,11 +1,11 @@
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import GroupMembership from '@common/entities/auth/group-membership.entity';
+import User from '@common/entities/user/user.entity';
+import { UserRole } from '@common/frontend_shared/enum';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import { Repository } from 'typeorm';
-import { UserRole } from '@common/frontend_shared/enum';
-import User from '@common/entities/user/user.entity';
 import logger from '../../logger';
-import GroupMembership from '@common/entities/auth/group-membership.entity';
 
 @Injectable()
 export class AuthGuardService {

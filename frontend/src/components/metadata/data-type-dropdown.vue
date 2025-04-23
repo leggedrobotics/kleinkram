@@ -48,9 +48,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { DataType } from '@common/enum';
-import { icon } from '../../services/generic';
+import { icon } from 'src/services/generic';
+import { computed } from 'vue';
 
 const properties = defineProps<{
     modelValue: DataType | undefined;
@@ -70,6 +70,6 @@ const error = computed(() => properties.error ?? false);
 const errorMessage = computed(() => properties.errorMessage ?? '');
 
 const dataTypeOptions = Object.keys(DataType).filter(
-    (value) => value !== DataType.ANY,
+    (value) => (value as DataType) !== DataType.ANY,
 );
 </script>

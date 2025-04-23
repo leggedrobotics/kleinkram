@@ -1,15 +1,22 @@
 import ActionTemplate from '@common/entities/action/action-template.entity';
-import TagType from '@common/entities/tagType/tag-type.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import Project from '@common/entities/project/project.entity';
-import Topic from '@common/entities/topic/topic.entity';
-import Tag from '@common/entities/tag/tag.entity';
+import Action from '@common/entities/action/action.entity';
 import GroupMembership from '@common/entities/auth/group-membership.entity';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
-import Action from '@common/entities/action/action.entity';
+import FileEntity from '@common/entities/file/file.entity';
 import Mission from '@common/entities/mission/mission.entity';
+import Project from '@common/entities/project/project.entity';
+import Tag from '@common/entities/tag/tag.entity';
+import TagType from '@common/entities/tagType/tag-type.entity';
+import Topic from '@common/entities/topic/topic.entity';
 import User from '@common/entities/user/user.entity';
 
+import { ActionWorkerDto } from '@common/api/types/action-workers.dto';
+import { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
+import { ActionDto } from '@common/api/types/actions/action.dto';
+import { AuditLogDto } from '@common/api/types/actions/audit-log.dto';
+import { DockerImageDto } from '@common/api/types/actions/docker-image.dto';
+import { LogsDto } from '@common/api/types/actions/logs.dto';
+import { FileDto, FileWithTopicDto } from '@common/api/types/file/file.dto';
 import {
     FlatMissionDto,
     MinimumMissionDto,
@@ -17,19 +24,12 @@ import {
     MissionWithCreatorDto,
     MissionWithFilesDto,
 } from '@common/api/types/mission/mission.dto';
-import { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
-import { ActionDto } from '@common/api/types/actions/action.dto';
-import { DockerImageDto } from '@common/api/types/actions/docker-image.dto';
-import { AuditLogDto } from '@common/api/types/actions/audit-log.dto';
-import { ActionWorkerDto } from '@common/api/types/action-workers.dto';
-import { LogsDto } from '@common/api/types/actions/logs.dto';
-import { TagDto, TagTypeDto } from '@common/api/types/tags/tags.dto';
 import { ProjectDto } from '@common/api/types/project/base-project.dto';
 import { ProjectWithMissionCountDto } from '@common/api/types/project/project-with-mission-count.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { GroupMembershipDto, UserDto } from '@common/api/types/user.dto';
-import { FileDto, FileWithTopicDto } from '@common/api/types/file/file.dto';
+import { TagDto, TagTypeDto } from '@common/api/types/tags/tags.dto';
 import { TopicDto } from '@common/api/types/topic.dto';
+import { GroupMembershipDto, UserDto } from '@common/api/types/user.dto';
 
 export const missionEntityToDto = (mission: Mission): MissionDto => {
     if (!mission.project) {
@@ -177,6 +177,7 @@ export const fileEntityToDto = (file: FileEntity): FileDto => {
         type: file.type,
         size: file.size ?? 0,
         hash: file.hash ?? '',
+        relatedFileUuid: file.relatedFile?.uuid,
         creator: userEntityToDto(file.creator),
         mission: missionEntityToDto(file.mission),
         categories:
@@ -190,12 +191,14 @@ export const fileEntityToDto = (file: FileEntity): FileDto => {
 export const fileEntityToDtoWithTopic = (
     file: FileEntity,
 ): FileWithTopicDto => {
-    if (!file.topics) {
-        throw new Error('File topics are not set');
-    }
+    // extract topics from file or relatedFile
+    let topics = file.topics;
+    if (topics?.length === 0) topics = file.relatedFile?.topics ?? [];
+
+    if (!topics) throw new Error('File topics are not set');
     return {
         ...(fileEntityToDto(file) as FileWithTopicDto),
-        topics: file.topics.map((element) => topicEntityToDto(element)),
+        topics: topics.map((element) => topicEntityToDto(element)),
     };
 };
 

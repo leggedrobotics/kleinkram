@@ -1,5 +1,6 @@
-import logger from '../logger';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import Action, { SubmittedAction } from '@common/entities/action/action.entity';
+import Worker from '@common/entities/worker/worker.entity';
+import { ActionState, ArtifactState } from '@common/frontend_shared/enum';
 import {
     InjectQueue,
     OnQueueActive,
@@ -8,17 +9,16 @@ import {
     Process,
     Processor,
 } from '@nestjs/bull';
-import { Job, Queue } from 'bull';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ActionState, ArtifactState } from '@common/frontend_shared/enum';
-import Action, { SubmittedAction } from '@common/entities/action/action.entity';
-import { ActionManagerService } from './services/action-manager.service';
-import { HardwareDependencyError } from './helper/hardware-dependency-error';
-import Worker from '@common/entities/worker/worker.entity';
-import { createWorker, getDiskSpace } from './helper/hardware-detect';
-import os from 'node:os';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Job, Queue } from 'bull';
+import os from 'node:os';
+import { Repository } from 'typeorm';
+import logger from '../logger';
+import { HardwareDependencyError } from './helper/hardware-dependency-error';
+import { createWorker, getDiskSpace } from './helper/hardware-detect';
+import { ActionManagerService } from './services/action-manager.service';
 
 /**
  * The ActionQueueProcessor class is responsible for processing

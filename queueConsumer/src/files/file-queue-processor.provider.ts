@@ -7,21 +7,12 @@ import {
     Processor,
 } from '@nestjs/bull';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Job, Queue } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Job, Queue } from 'bull';
 import { IsNull, Like, Repository } from 'typeorm';
 
-import { convertToMcap, mcapMetaInfo } from './helper/converter';
-import {
-    downloadDriveFile,
-    getMetadata,
-    listFiles,
-} from './helper/drive-helper';
-import { downloadMinioFile, uploadLocalFile } from './helper/minio-helper';
-import logger from '../logger';
-import { traceWrapper, tracing } from '../tracing';
-import QueueEntity from '@common/entities/queue/queue.entity';
 import FileEntity from '@common/entities/file/file.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
 import Topic from '@common/entities/topic/topic.entity';
 import env from '@common/environment';
 import {
@@ -31,10 +22,19 @@ import {
     FileType,
     QueueState,
 } from '@common/frontend_shared/enum';
+import { addTagsToMinioObject } from '@common/minio-helper';
 import { drive_v3 } from 'googleapis';
 import fs from 'node:fs';
+import logger from '../logger';
+import { traceWrapper, tracing } from '../tracing';
+import { convertToMcap, mcapMetaInfo } from './helper/converter';
+import {
+    downloadDriveFile,
+    getMetadata,
+    listFiles,
+} from './helper/drive-helper';
 import { calculateFileHash } from './helper/hash-helper';
-import { addTagsToMinioObject } from '@common/minio-helper';
+import { downloadMinioFile, uploadLocalFile } from './helper/minio-helper';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports,unicorn/prefer-module
 const fsPromises = require('node:fs').promises;
@@ -148,7 +148,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
     @Process({ concurrency: 1, name: 'extractHashFromMinio' })
     async extractHashFromMinio(job: ExtractHashJob) {
         if (job.data.file_uuid === undefined) {
-            throw new Error(`File UUID is undefined for job ${job.id}`);
+            throw new Error(
+                `File UUID is undefined for job ${job.id.toString()}`,
+            );
         }
 
         const file = await this.fileRepository.findOneOrFail({
@@ -219,9 +221,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 : env.MINIO_MCAP_BUCKET_NAME,
             queue.identifier,
             {
-                mission_uuid: queue.mission.uuid,
+                missionUuid: queue.mission.uuid,
 
-                project_uuid: queue.mission.project.uuid,
+                projectUuid: queue.mission.project.uuid,
                 filename: queue.display_name,
             },
         );
@@ -291,7 +293,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         const mcapFilename = originalFileName.replace('.bag', '.mcap');
 
         // exit if autoConvert is disabled
-        if (!queue.mission.project.autoConvert) {
+        if (!queue.mission.project.autoConvert && sourceIsBag) {
             logger.debug(
                 `AutoConvert is disabled, skipping conversion for ${originalFileName}`,
             );
@@ -364,9 +366,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     env.MINIO_MCAP_BUCKET_NAME,
                     _mcapFileEntity.uuid,
                     {
-                        mission_uuid: __queue.mission.uuid,
+                        missionUuid: __queue.mission.uuid,
                         // @ts-ignore
-                        project_uuid: __queue.mission.project.uuid,
+                        projectUuid: __queue.mission.project.uuid,
                         filename: _mcapFileEntity.filename,
                     },
                 );
@@ -681,8 +683,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 env.MINIO_MCAP_BUCKET_NAME,
                 mcapFileEntity.uuid,
                 {
-                    mission_uuid: queueEntity.mission.uuid,
-                    project_uuid: queueEntity.mission.project.uuid,
+                    missionUuid: queueEntity.mission.uuid,
+                    projectUuid: queueEntity.mission.project.uuid,
                     filename: mcapFileEntity.filename,
                 },
             );

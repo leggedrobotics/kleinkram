@@ -75,12 +75,12 @@
     </div>
 </template>
 <script setup lang="ts">
+import { ActionDto } from '@api/types/actions/action.dto';
+import { ActionState } from '@common/enum';
+import ActionBadge from 'components/action-badge.vue';
+import { useRunningActions } from 'src/hooks/query-hooks';
 import { getActionColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
-import { ActionState } from '@common/enum';
-import { useRunningActions } from '../hooks/query-hooks';
-import { ActionDto } from '@api/types/actions/action.dto';
-import ActionBadge from './action-badge.vue';
 
 const router = useRouter();
 

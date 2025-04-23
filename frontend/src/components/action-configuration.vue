@@ -27,7 +27,7 @@
                 files.
             </span>
 
-            <!-- Select a project and mission, on which the anylsis will be performed -->
+            <!-- Select a project and mission, on which the analysis will be performed -->
             <q-form
                 class="flex column"
                 style="margin-top: 24px"
@@ -39,7 +39,7 @@
                         <label>Select Action</label>
                         <ActionSelector
                             ref="myElement"
-                            v-model="selectedTemplate"
+                            v-model="selectedTemplate as ActionTemplateDto"
                             :action-templates="actionTemplates"
                         />
                     </div>
@@ -246,32 +246,32 @@
 <script setup lang="ts">
 import { computed, Ref, ref, watch } from 'vue';
 
+import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import {
+    FlatMissionDto,
+    MissionWithFilesDto,
+} from '@api/types/mission/mission.dto';
+import { ProjectDto } from '@api/types/project/base-project.dto';
+import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
+import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
+import { AccessGroupRights } from '@common/enum';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import ActionSelector from 'components/action-selector.vue';
 import { Notify } from 'quasar';
+import {
+    useFilteredProjects,
+    useHandler,
+    useManyMissions,
+    useMissionsOfProjectMinimal,
+} from 'src/hooks/query-hooks';
+import { accessGroupRightsMap } from 'src/services/generic';
 import {
     createActionTemplate,
     createAnalysis,
     createMultipleAnalysis,
     createNewActionTemplateVersion,
 } from 'src/services/mutations/action';
-import {
-    useFilteredProjects,
-    useHandler,
-    useManyMissions,
-    useMissionsOfProjectMinimal,
-} from '../hooks/query-hooks';
 import { listActionTemplates } from 'src/services/queries/action';
-import { accessGroupRightsMap } from 'src/services/generic';
-import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import ActionSelector from '@components/action-selector.vue';
-import { AccessGroupRights } from '@common/enum';
-import {
-    FlatMissionDto,
-    MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
-import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
-import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const isNameSelected: Ref<boolean> = ref<boolean>(false);
 
@@ -321,13 +321,13 @@ const _open = ref(false);
 const emits = defineEmits(['close']);
 
 const properties = defineProps<{
-    mission_uuids?: string[];
+    missionUuids?: string[];
     open: boolean;
 }>();
 
 const addedMissions = ref<string[]>([]);
 const allMissionUUIDs = computed(() => {
-    return [...(properties.mission_uuids || []), ...addedMissions.value];
+    return [...(properties.missionUuids || []), ...addedMissions.value];
 });
 const editingTemplate: Ref = ref({
     imageName: '',
@@ -344,7 +344,7 @@ const editingTemplate: Ref = ref({
 // Fetch missions based on props ----------------------------------------------
 
 const hasMissionUUIDs = computed(
-    () => !!properties.mission_uuids && properties.mission_uuids.length > 0,
+    () => !!properties.missionUuids && properties.missionUuids.length > 0,
 );
 const { data: selectedMissions } = useManyMissions(
     // @ts-ignore
@@ -681,8 +681,8 @@ const projectSelected = (a: ProjectDto) => {
     handler.value.setProjectUUID(a.uuid);
 };
 
-function canRemoveMission(mission_uuid: string) {
-    return addedMissions.value.includes(mission_uuid);
+function canRemoveMission(missionUuid: string) {
+    return addedMissions.value.includes(missionUuid);
 }
 
 function removeMission(uuid: string) {
@@ -706,7 +706,11 @@ watch(
 );
 
 const options = Object.keys(accessGroupRightsMap)
-    .filter((key) => Number.parseInt(key) !== AccessGroupRights._ADMIN)
+    .filter(
+        (key) =>
+            (Number.parseInt(key) as AccessGroupRights) !==
+            AccessGroupRights._ADMIN,
+    )
     .map((key) => ({
         label:
             accessGroupRightsMap[

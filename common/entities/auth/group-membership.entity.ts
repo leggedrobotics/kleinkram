@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, Unique } from 'typeorm';
 import BaseEntity from '../base-entity.entity';
-import AccessGroup from './accessgroup.entity';
 import User from '../user/user.entity';
+import AccessGroup from './accessgroup.entity';
 
 @Unique('no_duplicated_user_in_access_group', ['accessGroup', 'user'])
 @Entity()

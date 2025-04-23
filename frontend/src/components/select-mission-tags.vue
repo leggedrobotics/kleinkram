@@ -142,11 +142,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref, watch } from 'vue';
-import { DataType } from '@common/enum';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { useAllTags, useProjectQuery } from '../hooks/query-hooks';
-import { icon } from '../services/generic';
+import { DataType } from '@common/enum';
+import { useAllTags, useProjectQuery } from 'src/hooks/query-hooks';
+import { icon } from 'src/services/generic';
+import { computed, Ref, ref, watch } from 'vue';
 
 const properties = defineProps<{
     tagValues: Record<string, string>;
@@ -185,7 +185,7 @@ watch(
             for (const tagTypeUUID of Object.keys(localTagValues.value)) {
                 if (
                     !newProject.requiredTags
-                        ?.map((_tagTypeUUID: TagTypeDto) => _tagTypeUUID.uuid)
+                        .map((_tagTypeUUID: TagTypeDto) => _tagTypeUUID.uuid)
                         .includes(tagTypeUUID)
                 ) {
                     const newTag: TagTypeDto | undefined = newTagTypes.find(

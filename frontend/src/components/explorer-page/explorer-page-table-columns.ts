@@ -1,10 +1,10 @@
-import { formatDate } from '../../services/date-formating';
-import { formatSize } from '../../services/general-formatting';
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FlatMissionDto } from '@api/types/mission/mission.dto';
+import { formatDate } from 'src/services/date-formating';
+import { formatSize } from 'src/services/general-formatting';
 
-import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ProjectWithAccessRightsDto } from '@api/types/project/project-access.dto';
+import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 
 export interface ProjectColumnType {
     name: string;

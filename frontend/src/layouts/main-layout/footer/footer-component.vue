@@ -19,9 +19,9 @@
 </template>
 
 <script setup lang="ts">
-import FooterStatusPageLink from './footer-status-page-link.vue';
 import FooterBuildInfo from './footer-build-info.vue';
 import FooterSeparator from './footer-separator.vue';
+import FooterStatusPageLink from './footer-status-page-link.vue';
 
 const year = new Date().getFullYear();
 </script>

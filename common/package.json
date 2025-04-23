@@ -1,14 +1,14 @@
 {
     "name": "kleinkram-common",
-    "version": "0.44.1",
+    "version": "0.45.0",
     "license": "MIT",
     "scripts": {
         "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config",
         "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed"
     },
     "dependencies": {
-        "@faker-js/faker": "^9.6.0",
-        "@nestjs/swagger": "^11.1.1",
+        "@faker-js/faker": "^9.7.0",
+        "@nestjs/swagger": "^11.1.4",
         "bull": "^4.16.4",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.1",
@@ -19,7 +19,7 @@
         "typeorm-seeding": "^1.6.1"
     },
     "devDependencies": {
-        "@types/node": "^22.13.14",
+        "@types/node": "^22.14.1",
         "typescript": "^5.8.3"
     }
 }

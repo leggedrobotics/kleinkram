@@ -11,10 +11,9 @@
 </template>
 
 <script setup lang="ts">
-import VChart from 'vue-echarts';
 import { computed } from 'vue';
+import VChart from 'vue-echarts';
 
-import { use } from 'echarts/core';
 import { BarChart, PieChart } from 'echarts/charts';
 import {
     GraphicComponent,
@@ -22,12 +21,13 @@ import {
     TitleComponent,
     TooltipComponent,
 } from 'echarts/components';
+import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
+import { useStorageOverview } from 'src/hooks/query-hooks';
 import {
     formatGenericNumber,
     formatSize,
-} from '../../services/general-formatting';
-import { useStorageOverview } from '../../hooks/query-hooks';
+} from 'src/services/general-formatting';
 
 use([
     TitleComponent,

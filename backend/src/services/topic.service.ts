@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
 import Topic from '@common/entities/topic/topic.entity';
-import { Repository } from 'typeorm';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
-import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import { topicEntityToDto } from '../serialization';
 

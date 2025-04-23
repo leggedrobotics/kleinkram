@@ -1,22 +1,22 @@
+import { CategoriesDto } from '@common/api/types/category.dto';
 import { Controller, Get, Post } from '@nestjs/common';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import { CategoryService } from '../../services/category.service';
-import {
-    QueryOptionalString,
-    QueryUUID,
-} from '../../validation/query-decorators';
-import {
-    CanCreateInProjectByBody,
-    CanReadProject,
-    CanWriteMissionByBody,
-} from '../auth/roles.decorator';
 import {
     BodyString,
     BodyUUID,
     BodyUUIDArray,
 } from '../../validation/body-decorators';
-import { ApiOkResponse, OutputDto } from '../../decarators';
-import { CategoriesDto } from '@common/api/types/category.dto';
+import {
+    QueryOptionalString,
+    QueryUUID,
+} from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
+import {
+    CanCreateInProjectByBody,
+    CanReadProject,
+    CanWriteMissionByBody,
+} from '../auth/roles.decorator';
 
 @Controller('category')
 export class CategoryController {

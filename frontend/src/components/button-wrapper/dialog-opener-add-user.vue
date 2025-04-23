@@ -8,12 +8,12 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
-import { computed, reactive } from 'vue';
-import AddUserToAccessGroupDialog from '../../dialogs/add-user-access-group-dialog.vue';
-import { UserRole } from '@common/enum';
 import { AccessGroupDto } from '@api/types/user.dto';
-import { useUser } from '../../hooks/query-hooks';
+import { UserRole } from '@common/enum';
+import { useQuasar } from 'quasar';
+import AddUserToAccessGroupDialog from 'src/dialogs/add-user-access-group-dialog.vue';
+import { useUser } from 'src/hooks/query-hooks';
+import { computed, reactive } from 'vue';
 
 const $q = useQuasar();
 const { accessGroup } = defineProps<{ accessGroup: AccessGroupDto }>();

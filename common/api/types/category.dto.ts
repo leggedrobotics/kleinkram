@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Paginated } from './pagination';
-import { IsNumber, IsString, ValidateNested } from 'class-validator';
-import { IsTake } from '../../validation/take-validation';
-import { IsSkip } from '../../validation/skip-validation';
 import { Type } from 'class-transformer';
+import { IsNumber, IsString, ValidateNested } from 'class-validator';
+import { IsSkip } from '../../validation/skip-validation';
+import { IsTake } from '../../validation/take-validation';
+import { Paginated } from './pagination';
 
 export class CategoryDto {
     @ApiProperty()
@@ -21,7 +21,7 @@ export class CategoriesDto implements Paginated<CategoryDto> {
     count!: number;
 
     @ApiProperty({
-        type: [CategoryDto],
+        type: () => [CategoryDto],
         description: 'List of categories',
     })
     @ValidateNested()

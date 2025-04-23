@@ -1,15 +1,13 @@
-import Docker from 'dockerode';
-import Dockerode from 'dockerode';
-import { tracing } from '../../tracing';
-import logger from '../../logger';
 import { ContainerLog } from '@common/entities/action/action.entity';
+import environment from '@common/environment';
 import { Injectable } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import process from 'node:process';
-import Env from '@common/environment';
-import env from '@common/environment';
-import { createDriveFolder } from '../helper/drive-helper';
+import Dockerode from 'dockerode';
 import fs from 'node:fs';
+import process from 'node:process';
+import { inspect } from 'node:util';
+import { Observable } from 'rxjs';
+import logger from '../../logger';
+import { tracing } from '../../tracing';
 import {
     CapDrop,
     LogConfig,
@@ -17,7 +15,7 @@ import {
     PidsLimit,
     SecurityOpt,
 } from '../helper/container-configs';
-import { inspect } from 'node:util';
+import { createDriveFolder } from '../helper/drive-helper';
 
 export interface ContainerLimits {
     /**
@@ -62,7 +60,7 @@ export const dockerDaemonErrorHandler = (error: unknown): void => {
 };
 
 const artifactUploaderImage =
-    env.ARTIFACTS_UPLOADER_IMAGE ||
+    environment.ARTIFACTS_UPLOADER_IMAGE ||
     'rslethz/grandtour-datasets:artifact-uploader-latest';
 
 /**
@@ -72,12 +70,12 @@ const artifactUploaderImage =
  */
 @Injectable()
 export class DockerDaemon {
-    readonly docker: Docker;
+    readonly docker: Dockerode;
 
     static readonly CONTAINER_PREFIX = 'kleinkram-user-action-';
 
     constructor() {
-        this.docker = new Docker({ socketPath: '/var/run/docker.sock' });
+        this.docker = new Dockerode({ socketPath: '/var/run/docker.sock' });
     }
 
     /**
@@ -496,7 +494,7 @@ export class DockerDaemon {
         }
         const repoDigests = details.RepoDigests;
         const googleKey = fs.readFileSync(
-            Env.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE,
+            environment.GOOGLE_ARTIFACT_UPLOADER_KEY_FILE,
             'utf8',
         );
 
@@ -537,7 +535,7 @@ export class DockerDaemon {
             },
         };
 
-        const container: Docker.Container = await this.docker
+        const container: Dockerode.Container = await this.docker
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
         if (!container) {

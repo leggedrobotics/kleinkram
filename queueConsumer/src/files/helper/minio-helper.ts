@@ -1,9 +1,9 @@
-import { Client } from 'minio';
 import env from '@common/environment';
+import { Client } from 'minio';
+import * as crypto from 'node:crypto';
+import fs from 'node:fs';
 import logger from '../../logger';
 import { traceWrapper } from '../../tracing';
-import fs from 'node:fs';
-import * as crypto from 'node:crypto';
 
 const minio: Client = new Client({
     endPoint: 'minio',

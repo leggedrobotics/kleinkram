@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
     ArrayNotEmpty,
     IsArray,
@@ -6,7 +7,6 @@ import {
     IsString,
     IsUUID,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { IsNoValidUUID, IsValidName } from './property-decorator';
 
 export class UUIDValidate {

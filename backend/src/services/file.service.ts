@@ -1,29 +1,9 @@
-import {
-    BadRequestException,
-    ConflictException,
-    Injectable,
-    NotFoundException,
-    OnModuleInit,
-} from '@nestjs/common';
-import jwt from 'jsonwebtoken';
-import { InjectRepository } from '@nestjs/typeorm';
-import { fileEntityToDtoWithTopic } from '../serialization';
 import { SortOrder } from '@common/api/types/pagination';
-import {
-    DataSource,
-    FindOptionsSelect,
-    FindOptionsWhere,
-    ILike,
-    In,
-    MoreThan,
-    Repository,
-} from 'typeorm';
-import { fileEntityToDto } from '../serialization';
-import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from '@common/api/types/update-file.dto';
-import env from '@common/environment';
+import FileEntity from '@common/entities/file/file.entity';
 import Mission from '@common/entities/mission/mission.entity';
 import Project from '@common/entities/project/project.entity';
+import env from '@common/environment';
 import {
     DataType,
     FileLocation,
@@ -34,20 +14,45 @@ import {
     UserRole,
 } from '@common/frontend_shared/enum';
 import {
-    addSort,
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
+    OnModuleInit,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import jwt from 'jsonwebtoken';
+import {
+    DataSource,
+    FindOptionsSelect,
+    FindOptionsWhere,
+    ILike,
+    In,
+    MoreThan,
+    Repository,
+} from 'typeorm';
+import { fileEntityToDto, fileEntityToDtoWithTopic } from '../serialization';
+import {
     addFileFilters,
     addMissionFilters,
     addProjectFilters,
+    addSort,
 } from './utilities';
 
-import User from '@common/entities/user/user.entity';
-import logger from '../logger';
+import {
+    FileExistsResponseDto,
+    TemporaryFileAccessDto,
+    TemporaryFileAccessesDto,
+} from '@common/api/types/file/access.dto';
+import { FileWithTopicDto } from '@common/api/types/file/file.dto';
+import { FilesDto } from '@common/api/types/file/files.dto';
+import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
+import { redis } from '@common/consts';
+import Category from '@common/entities/category/category.entity';
+import QueueEntity from '@common/entities/queue/queue.entity';
 import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
-import axios from 'axios';
-import QueueEntity from '@common/entities/queue/queue.entity';
-import Queue from 'bull';
-import { redis } from '@common/consts';
+import User from '@common/entities/user/user.entity';
 import {
     addTagsToMinioObject,
     deleteFileMinio,
@@ -57,23 +62,17 @@ import {
     getInfoFromMinio,
     internalMinio,
 } from '@common/minio-helper';
-import Category from '@common/entities/category/category.entity';
-import { parseMinioMetrics } from '../endpoints/file/utilities';
-import Credentials from 'minio/dist/main/Credentials';
+import axios from 'axios';
+import Queue from 'bull';
 import { BucketItem } from 'minio';
+import Credentials from 'minio/dist/main/Credentials';
 import { TaggingOpts } from 'minio/dist/main/internal/type';
-import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { FilesDto } from '@common/api/types/file/files.dto';
-import { FileWithTopicDto } from '@common/api/types/file/file.dto';
 import {
     addAccessConstraints,
     addAccessConstraintsToFileQuery,
 } from '../endpoints/auth/auth-helper';
-import {
-    FileExistsResponseDto,
-    TemporaryFileAccessDto,
-    TemporaryFileAccessesDto,
-} from '@common/api/types/file/access.dto';
+import { parseMinioMetrics } from '../endpoints/file/utilities';
+import logger from '../logger';
 
 // Type guard function to check if the error has a 'code' property
 function isErrorWithCode(error: unknown): error is { code: string } {
@@ -347,7 +346,7 @@ export class FileService implements OnModuleInit {
                             return subquery;
                         },
                         subqueryname,
-                        `mission.uuid = ${subqueryname}.mission_uuid`,
+                        `mission.uuid = ${subqueryname}.missionUuid`,
                     );
 
                     // query.andWhere('mission.uuid IN ' + subqueryname);
@@ -393,6 +392,8 @@ export class FileService implements OnModuleInit {
                 'topics',
                 'mission.project',
                 'creator',
+                'relatedFile',
+                'relatedFile.topics',
                 'categories',
             ],
         });
@@ -428,9 +429,9 @@ export class FileService implements OnModuleInit {
         databaseFile.filename = file.filename;
         databaseFile.date = file.date;
 
-        if (file.mission_uuid) {
+        if (file.missionUuid) {
             const newMission = await this.missionRepository.findOneOrFail({
-                where: { uuid: file.mission_uuid },
+                where: { uuid: file.missionUuid },
                 relations: ['project'],
             });
 
@@ -480,8 +481,8 @@ export class FileService implements OnModuleInit {
             databaseFile.uuid,
             {
                 // @ts-expect-error
-                project_uuid: databaseFile.mission.project.uuid,
-                mission_uuid: databaseFile.mission.uuid,
+                projectUuid: databaseFile.mission.project.uuid,
+                missionUuid: databaseFile.mission.uuid,
                 filename: databaseFile.filename,
             },
         );
@@ -636,11 +637,18 @@ export class FileService implements OnModuleInit {
                         relations: ['mission', 'mission.project'],
                     });
                     const bucket = getBucketFromFileType(file.type);
+
+                    if (newFile.mission?.project?.uuid === undefined) {
+                        logger.error(
+                            `Error moving file ${uuid} to mission ${missionUUID}}. Project uuid is undefined.`,
+                        );
+                        return;
+                    }
+
                     await addTagsToMinioObject(bucket, file.uuid, {
                         filename: file.filename,
-                        mission_uuid: missionUUID,
-                        // @ts-expect-error
-                        project_uuid: newFile.mission.project.uuid,
+                        missionUuid: missionUUID,
+                        projectUuid: newFile.mission.project.uuid,
                     });
                 } catch (error) {
                     logger.error(
@@ -968,9 +976,9 @@ export class FileService implements OnModuleInit {
                     throw new Error('Project not found!');
 
                 await addTagsToMinioObject(bucked, file.name, {
-                    project_uuid: fileEntity.mission.project.uuid,
+                    projectUuid: fileEntity.mission.project.uuid,
 
-                    mission_uuid: fileEntity.mission.uuid,
+                    missionUuid: fileEntity.mission.uuid,
                     filename: fileEntity.filename,
                 });
             }),
