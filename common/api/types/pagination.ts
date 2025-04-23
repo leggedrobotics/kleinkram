@@ -4,6 +4,7 @@ import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 const MAX_TAKE = 10_000;
 const DEFAULT_TAKE = 100;
+const DEFAULT_SKIP = 0;
 
 export enum SortOrder {
     ASC = 'asc',
@@ -16,7 +17,7 @@ export class PaginatedQueryDto {
     @Min(0)
     @Type(() => Number)
     @ApiProperty({ required: false, default: 0 })
-    skip = 0;
+    skip: number = DEFAULT_TAKE;
 
     @IsOptional()
     @IsInt()
@@ -33,7 +34,6 @@ export class SortablePaginatedQueryDto extends PaginatedQueryDto {
     @ApiProperty({ required: false })
     sortBy?: string;
 
-    // @ts-ignore
     @Transform(({ value }) => SortOrder[value.toUpperCase()])
     @IsEnum(SortOrder)
     @ApiProperty({ required: false })
