@@ -12,7 +12,7 @@ COPY ./common/yarn.lock ./common/
 
 COPY ./frontend/package.json ./frontend/
 COPY ./frontend/yarn.lock ./frontend/
-COPY ./common/frontend_shared ./frontend/common/frontend_shared
+COPY ./common/frontend_shared ./common/frontend_shared
 
 COPY ./.git/HEAD /app/frontend/.git/HEAD
 COPY ./.git/refs/heads/ /app/frontend/.git/refs/heads/
