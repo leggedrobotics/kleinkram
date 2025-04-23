@@ -151,21 +151,21 @@
 import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
-import { TableRequest } from '@services/query-handler';
+import { TableRequest } from 'src/services/query-handler';
 import { useQuery } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
-import { useHandler, useProjectQuery } from '@hooks/query-hooks';
+import { useHandler, useProjectQuery } from 'src/hooks/query-hooks';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import { missionColumns } from './explorer-page-table-columns';
+import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { TagDto } from '@api/types/tags/tags.dto';
 
-import { useProjectUUID } from '@hooks/router-hooks';
-import MoveMissionDialogOpener from '@components/button-wrapper/move-mission-dialog-pener.vue';
-import MissionMetadataOpener from '@components/button-wrapper/mission-metadata-opener.vue';
-import EditMissionDialogOpener from '@components/button-wrapper/edit-mission-dialog-opener.vue';
-import DeleteMissionDialogOpener from '@components/button-wrapper/delete-mission-dialog-opener.vue';
-import CreateMissionDialogOpener from '@components/button-wrapper/dilaog-opener-create-mission.vue';
+import { useProjectUUID } from 'src/hooks/router-hooks';
+import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
+import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
+import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
+import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
+import CreateMissionDialogOpener from 'components/button-wrapper/dilaog-opener-create-mission.vue';
 
 const $emit = defineEmits(['update:selected']);
 

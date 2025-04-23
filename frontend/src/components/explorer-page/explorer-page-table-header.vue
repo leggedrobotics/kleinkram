@@ -19,8 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { QueryHandler } from '@services/query-handler';
-import HelpMessage from '@components/help-message.vue';
+import { QueryHandler } from 'src/services/query-handler';
+import HelpMessage from 'components/help-message.vue';
 defineProps({
     urlHandler: {
         type: QueryHandler,

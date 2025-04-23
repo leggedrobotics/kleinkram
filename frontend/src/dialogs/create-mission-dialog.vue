@@ -143,7 +143,7 @@
 
 <script setup lang="ts">
 import { computed, ref, Ref } from 'vue';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { filteredProjects } from 'src/services/queries/project';
@@ -152,12 +152,12 @@ import {
     canCreateMission,
     usePermissionsQuery,
     useProjectQuery,
-} from '../hooks/query-hooks';
+} from 'src/hooks/query-hooks';
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
-import SelectMissionTags from '@components/select-mission-tags.vue';
+import SelectMissionTags from 'components/select-mission-tags.vue';
 import { ProjectsDto } from '@api/types/project/projects.dto';
-import CreateFile from '@components/create-file.vue';
+import CreateFile from 'components/create-file.vue';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const MIN_MISSION_NAME_LENGTH = 3;

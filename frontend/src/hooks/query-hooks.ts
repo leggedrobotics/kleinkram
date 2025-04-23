@@ -15,7 +15,7 @@ import {
     getProjectDefaultAccess,
 } from 'src/services/queries/project';
 import { useRouter } from 'vue-router';
-import { QueryURLHandler } from '../services/query-handler';
+import { QueryURLHandler } from 'src/services/query-handler';
 import {
     fetchFile,
     filesOfMission,
@@ -41,25 +41,25 @@ import {
     UserRole,
 } from '@common/enum';
 import { StorageOverviewDto } from '@api/types/storage-overview.dto';
-import { allWorkers } from '../services/queries/worker';
+import { allWorkers } from 'src/services/queries/worker';
 import { ActionWorkersDto } from '@api/types/action-workers.dto';
 import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
-import { getFilteredTagTypes, getTagTypes } from '../services/queries/tag';
+import { getFilteredTagTypes, getTagTypes } from 'src/services/queries/tag';
 import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@api/types/mission/mission.dto';
 import { FileQueueEntriesDto } from '@api/types/file/file-queue-entry.dto';
-import { getQueueForFile } from '../services/queries/queue';
+import { getQueueForFile } from 'src/services/queries/queue';
 import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
-import { getActions, getRunningActions } from '../services/queries/action';
+import { getActions, getRunningActions } from 'src/services/queries/action';
 import { CategoriesDto } from '@api/types/category.dto';
-import { getCategories } from '../services/queries/categories';
+import { getCategories } from 'src/services/queries/categories';
 import {
     getAccessGroup,
     getProjectAccess,
     searchAccessGroups,
-} from '../services/queries/access';
+} from 'src/services/queries/access';
 import { FileDto, FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
@@ -518,12 +518,12 @@ export const useQueueForFile = (
         queryKey: ['queue', file],
         queryFn: () =>
             getQueueForFile(
-                file?.value?.filename ?? '',
-                file?.value?.mission.uuid ?? '',
+                file?.value.filename ?? '',
+                file?.value.mission.uuid ?? '',
             ),
         enabled: () =>
-            !(file?.value?.filename === undefined) &&
-            !(file?.value?.mission.uuid === undefined),
+            !(file?.value.filename === undefined) &&
+            !(file.value.mission.uuid === undefined),
         refetchInterval: 1000,
     });
 

@@ -638,7 +638,7 @@ export class FileService implements OnModuleInit {
                     });
                     const bucket = getBucketFromFileType(file.type);
 
-                    if (newFile?.mission?.project?.uuid === undefined) {
+                    if (newFile.mission?.project?.uuid === undefined) {
                         logger.error(
                             `Error moving file ${uuid} to mission ${missionUUID}}. Project uuid is undefined.`,
                         );

@@ -128,7 +128,8 @@ export default tseslint.config(
             '@typescript-eslint/no-extraneous-class': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
             'unicorn/no-null': 'warn',
-            '@typescript-eslint/restrict-template-expressions': 'warn',
+            '@typescript-eslint/restrict-template-expressions': 'off',
+            'unicorn/filename-case': 'error',
         },
     },
     {

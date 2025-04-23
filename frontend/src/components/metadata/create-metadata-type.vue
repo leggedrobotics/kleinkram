@@ -26,9 +26,9 @@
 import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { createTagType } from '@services/mutations/tag';
+import { createTagType } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
-import DataTypeDropdown from '@components/metadata/data-type-dropdown.vue';
+import DataTypeDropdown from 'components/metadata/data-type-dropdown.vue';
 
 const tagName = ref('');
 const selectedDataType = ref<DataType | undefined>(undefined);

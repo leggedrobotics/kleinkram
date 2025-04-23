@@ -276,22 +276,22 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import { computed, ComputedRef, ref, watch } from 'vue';
 import { Notify, QTable, useQuasar } from 'quasar';
-import AddProjectToAccessGroupDialog from '../dialogs/add-project-access-group-dialog.vue';
+import AddProjectToAccessGroupDialog from 'src/dialogs/add-project-access-group-dialog.vue';
 import {
     removeUserFromAccessGroup,
     setAccessGroupExpiry,
 } from 'src/services/mutations/access';
 import ROUTES from 'src/router/routes';
-import SetAccessGroupExpirationDialog from '../dialogs/modify-membership-expiration-date-dialog.vue';
+import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expiration-date-dialog.vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import { GroupMembershipDto } from '@api/types/user.dto';
-import { useAccessGroup, useUser } from '../hooks/query-hooks';
-import ChangeProjectRightsDialogOpener from '@components/button-wrapper/dialog-opener-change-project-rights.vue';
-import TitleSection from '@components/title-section.vue';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import RemoveProjectDialogOpener from '@components/button-wrapper/remove-project-dialog-opener.vue';
-import { projectAccessColumns } from '@components/explorer-page/explorer-page-table-columns';
-import DialogOpenerAddUser from '@components/button-wrapper/dialog-opener-add-user.vue';
+import { useAccessGroup, useUser } from 'src/hooks/query-hooks';
+import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
+import TitleSection from 'components/title-section.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import RemoveProjectDialogOpener from 'components/button-wrapper/remove-project-dialog-opener.vue';
+import { projectAccessColumns } from 'components/explorer-page/explorer-page-table-columns';
+import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';
 
 const $q = useQuasar();
 const router = useRouter();

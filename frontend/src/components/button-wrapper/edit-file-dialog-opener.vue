@@ -16,11 +16,11 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { canModifyMission, usePermissionsQuery } from '@hooks/query-hooks';
+import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import NewEditFile from '../edit-file.vue';
+import NewEditFile from 'components/edit-file.vue';
 
 const $q = useQuasar();
 const { file } = defineProps<{ file: FileWithTopicDto }>();

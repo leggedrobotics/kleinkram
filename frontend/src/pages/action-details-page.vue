@@ -366,14 +366,14 @@ import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { actionDetails } from 'src/services/queries/action';
 import { computed, ref } from 'vue';
-import { formatDate } from '../services/date-formating';
+import { formatDate } from 'src/services/date-formating';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { ArtifactState } from '@common/enum';
-import ROUTES from '../router/routes';
+import ROUTES from 'src/router/routes';
 import { ActionDto } from '@api/types/actions/action.dto';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import TitleSection from '@components/title-section.vue';
-import ActionBadge from '@components/action-badge.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import TitleSection from 'components/title-section.vue';
+import ActionBadge from 'components/action-badge.vue';
 
 const tab = ref('info');
 

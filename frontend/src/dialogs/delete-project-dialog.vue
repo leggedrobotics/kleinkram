@@ -23,10 +23,10 @@
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { computed, ref } from 'vue';
-import { useProjectQuery } from '../hooks/query-hooks';
-import DeleteProject from '@components/delete-project.vue';
+import { useProjectQuery } from 'src/hooks/query-hooks';
+import DeleteProject from 'components/delete-project.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteProject = ref<InstanceType<typeof DeleteProject> | undefined>(

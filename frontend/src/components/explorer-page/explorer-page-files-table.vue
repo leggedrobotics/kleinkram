@@ -195,7 +195,7 @@ import { QTable } from 'quasar';
 import { computed, unref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
-import { QueryHandler, TableRequest } from '@services/query-handler';
+import { QueryHandler, TableRequest } from 'src/services/query-handler';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import {
     _downloadFile,
@@ -205,16 +205,16 @@ import {
     hashUUIDtoColor,
 } from 'src/services/generic';
 import { useRouter } from 'vue-router';
-import { fileColumns } from './explorer-page-table-columns';
+import { fileColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
-import { useMissionUUID, useProjectUUID } from '@hooks/router-hooks';
-import DeleteFileDialogOpener from '../button-wrapper/delete-file-dialog-opener.vue';
-import EditFileDialogOpener from '../button-wrapper/edit-file-dialog-opener.vue';
-import MoveFileDialogOpener from '../button-wrapper/move-file-dialog-opener.vue';
-import { useMission, useMissionsOfProjectMinimal } from '@hooks/query-hooks';
-import CreateFileDialogOpener from '@components/button-wrapper/dialog-opener-create-file.vue';
+import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
+import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
+import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
+import MoveFileDialogOpener from 'components/button-wrapper/move-file-dialog-opener.vue';
+import { useMission, useMissionsOfProjectMinimal } from 'src/hooks/query-hooks';
+import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 
 const selected = defineModel('selected', { required: true, type: Array });
 

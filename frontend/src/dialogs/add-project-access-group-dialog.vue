@@ -22,8 +22,8 @@
 </template>
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
-import AddProjectToAccessGroupDialog from '@components/add-project-access-group.vue';
-import BaseDialog from './base-dialog.vue';
+import AddProjectToAccessGroupDialog from 'components/add-project-access-group.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();

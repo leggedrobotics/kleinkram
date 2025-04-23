@@ -73,9 +73,9 @@
 </template>
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { logout } from '../../../services/auth';
-import ROUTES from '../../../router/routes';
-import { useUser } from '../../../hooks/query-hooks';
+import { logout } from 'src/services/auth';
+import ROUTES from 'src/router/routes';
+import { useUser } from 'src/hooks/query-hooks';
 import { UserRole } from '@common/enum';
 
 const $router = useRouter();

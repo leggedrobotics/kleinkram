@@ -15,8 +15,8 @@
 </template>
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import DeleteFileDialog from '../../dialogs/delete-file-dialog.vue';
-import { canDeleteMission, usePermissionsQuery } from '@hooks/query-hooks';
+import DeleteFileDialog from 'src/dialogs/delete-file-dialog.vue';
+import { canDeleteMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';

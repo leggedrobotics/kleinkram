@@ -52,9 +52,9 @@ import { useDialogPluginComponent } from 'quasar';
 import { computed, ref } from 'vue';
 import { DataType } from '@common/enum';
 import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { useAllTags } from '../hooks/query-hooks';
-import MetadataFilterInput from '@components/metadata-filter-input.vue';
-import MetadataTypeTable from '@components/metadata-type-table.vue';
+import { useAllTags } from 'src/hooks/query-hooks';
+import MetadataFilterInput from 'components/metadata-filter-input.vue';
+import MetadataTypeTable from 'components/metadata-type-table.vue';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 

@@ -14,8 +14,8 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import { computed, inject } from 'vue';
-import { canCreateMission, usePermissionsQuery } from '../hooks/query-hooks';
-import NewMissionByFolderDialog from '../dialogs/create-mission-from-folder-dialog.vue';
+import { canCreateMission, usePermissionsQuery } from 'src/hooks/query-hooks';
+import NewMissionByFolderDialog from 'src/dialogs/create-mission-from-folder-dialog.vue';
 
 const { projectUuid } = defineProps<{ projectUuid?: string | undefined }>();
 

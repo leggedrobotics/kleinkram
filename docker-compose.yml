@@ -125,7 +125,7 @@ services:
                       - dist/
                 - action: sync
                   path: ./common/frontend_shared
-                  target: /app/frontend/frontend_shared
+                  target: /app/common/frontend_shared
 
         depends_on:
             - api-server

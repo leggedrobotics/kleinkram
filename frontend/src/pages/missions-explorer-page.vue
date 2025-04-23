@@ -244,25 +244,25 @@ import {
     registerNoPermissionErrorHandler,
     useHandler,
     useProjectQuery,
-} from '../hooks/query-hooks';
+} from 'src/hooks/query-hooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import { computed, ref, Ref } from 'vue';
 import { useQuasar } from 'quasar';
-import DeleteMissionDialog from '../dialogs/delete-mission-dialog.vue';
+import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import KleinDownloadMissions from '@components/cli-links/klein-download-missions.vue';
-import ButtonGroupOverlay from '@components/buttons/button-group-overlay.vue';
-import CreateMissionDialogOpener from '@components/button-wrapper/dilaog-opener-create-mission.vue';
-import UploadMissionFolder from '@components/upload-mission-folder.vue';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import ActionConfiguration from '@components/action-configuration.vue';
-import EditProjectDialogOpener from '@components/button-wrapper/edit-project-dialog-opener.vue';
-import DeleteProjectDialogOpener from '@components/button-wrapper/delete-project-dialog-opener.vue';
-import ConfigureTagsDialogOpener from '@components/button-wrapper/dialog-opener-configure-tags.vue';
-import TitleSection from '@components/title-section.vue';
-import { useProjectUUID } from '../hooks/router-hooks';
-import ChangeProjectRightsDialogOpener from '@components/button-wrapper/dialog-opener-change-project-rights.vue';
-import ExplorerPageMissionTable from '@components/explorer-page/explorer-page-mission-table.vue';
+import KleinDownloadMissions from 'components/cli-links/klein-download-missions.vue';
+import ButtonGroupOverlay from 'components/buttons/button-group-overlay.vue';
+import CreateMissionDialogOpener from 'components/button-wrapper/dilaog-opener-create-mission.vue';
+import UploadMissionFolder from 'components/upload-mission-folder.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import ActionConfiguration from 'components/action-configuration.vue';
+import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
+import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
+import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
+import TitleSection from 'components/title-section.vue';
+import { useProjectUUID } from 'src/hooks/router-hooks';
+import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
+import ExplorerPageMissionTable from 'components/explorer-page/explorer-page-mission-table.vue';
 
 const queryClient = useQueryClient();
 const handler = useHandler();

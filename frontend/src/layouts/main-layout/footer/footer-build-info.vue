@@ -47,6 +47,6 @@
 <script setup lang="ts">
 // @ts-ignore (build.ts is only available at runtime)
 import BUILD_INFO from 'src/build';
-import { kleinkramVersion } from '@api/axios';
+import { kleinkramVersion } from 'src/api/axios';
 import FooterSeparator from './footer-separator.vue';
 </script>

@@ -44,15 +44,15 @@
 </template>
 <script setup lang="ts">
 import { Notify, useDialogPluginComponent } from 'quasar';
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { Ref, ref } from 'vue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addManyCategories } from 'src/services/mutations/categories';
 import { CategoryDto } from '@api/types/category.dto';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import CategorySelector from '@components/category-selector.vue';
-import CategoryCreator from '@components/category-creator.vue';
+import CategorySelector from 'components/category-selector.vue';
+import CategoryCreator from 'components/category-creator.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

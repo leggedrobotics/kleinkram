@@ -346,17 +346,17 @@ import { computed, Ref, ref, watch } from 'vue';
 import { QTable, useQuasar } from 'quasar';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 
-import { dateMask, formatDate, parseDate } from '../services/date-formating';
+import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import ROUTES from 'src/router/routes';
-import { formatSize } from '../services/general-formatting';
+import { formatSize } from 'src/services/general-formatting';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { fetchOverview } from 'src/services/queries/file';
-import TagFilter from '../dialogs/tag-filter.vue';
+import TagFilter from 'src/dialogs/tag-filter.vue';
 import {
     useFilteredProjects,
     useHandler,
     useMissionsOfProjectMinimal,
-} from '../hooks/query-hooks';
+} from 'src/hooks/query-hooks';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
@@ -364,9 +364,9 @@ import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
-import DeleteFileDialogOpener from '@components/button-wrapper/delete-file-dialog-opener.vue';
-import TitleSection from '@components/title-section.vue';
-import EditFileDialogOpener from '@components/button-wrapper/edit-file-dialog-opener.vue';
+import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
+import TitleSection from 'components/title-section.vue';
+import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 
 const $router = useRouter();
 

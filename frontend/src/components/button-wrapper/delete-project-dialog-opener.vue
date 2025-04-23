@@ -20,9 +20,9 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { canDeleteProject, usePermissionsQuery } from '@hooks/query-hooks';
+import { canDeleteProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
-import DeleteProjectDialog from '../../dialogs/delete-project-dialog.vue';
+import DeleteProjectDialog from 'src/dialogs/delete-project-dialog.vue';
 
 const { projectUuid, hasMissions } = defineProps<{
     projectUuid: string;

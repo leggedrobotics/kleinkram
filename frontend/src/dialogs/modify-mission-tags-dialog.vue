@@ -20,14 +20,14 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref, Ref, watch } from 'vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { updateMissionTags } from 'src/services/mutations/mission';
 import { DataType } from '@common/enum';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import SelectMissionTags from '@components/select-mission-tags.vue';
+import SelectMissionTags from 'components/select-mission-tags.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

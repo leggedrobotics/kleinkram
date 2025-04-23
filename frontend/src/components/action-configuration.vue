@@ -259,12 +259,12 @@ import {
     useHandler,
     useManyMissions,
     useMissionsOfProjectMinimal,
-} from '../hooks/query-hooks';
+} from 'src/hooks/query-hooks';
 import { listActionTemplates } from 'src/services/queries/action';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import ActionSelector from '@components/action-selector.vue';
+import ActionSelector from 'components/action-selector.vue';
 import { AccessGroupRights } from '@common/enum';
 import {
     FlatMissionDto,

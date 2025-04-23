@@ -27,11 +27,11 @@
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useQuasar } from 'quasar';
-import AddTagDialog from '../dialogs/add-tag-dialog.vue';
+import AddTagDialog from 'src/dialogs/add-tag-dialog.vue';
 import { removeTag } from 'src/services/mutations/tag';
 import { DataType } from '@common/enum';
 import { TagDto } from '@api/types/tags/tags.dto';
-import { useMission } from '../hooks/query-hooks';
+import { useMission } from 'src/hooks/query-hooks';
 
 const queryClient = useQueryClient();
 const $q = useQuasar();

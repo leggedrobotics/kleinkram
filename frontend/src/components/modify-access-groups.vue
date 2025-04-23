@@ -83,7 +83,7 @@ import { computed, Ref, ref } from 'vue';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { QTable } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
-import { useSearchAccessGroup, useUserSearch } from '../hooks/query-hooks';
+import { useSearchAccessGroup, useUserSearch } from 'src/hooks/query-hooks';
 
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 

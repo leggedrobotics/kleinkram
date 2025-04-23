@@ -141,12 +141,12 @@
 </template>
 
 <script setup lang="ts">
-import ROUTES from '../../../router/routes';
+import ROUTES from 'src/router/routes';
 import { useQueryClient } from '@tanstack/vue-query';
-import { useIsUploading, useUser } from '../../../hooks/query-hooks';
+import { useIsUploading, useUser } from 'src/hooks/query-hooks';
 import { computed, inject, ref, watch } from 'vue';
 import HeaderProfileMenu from './header-profile-menu.vue';
-import DocumentationIcon from '@components/documentation-icon.vue';
+import DocumentationIcon from 'components/documentation-icon.vue';
 import HeaderCreateMenu from './header-create-menu.vue';
 
 const isUploading = useIsUploading();

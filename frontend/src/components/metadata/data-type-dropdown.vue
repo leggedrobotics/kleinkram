@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { DataType } from '@common/enum';
-import { icon } from '@services/generic';
+import { icon } from 'src/services/generic';
 
 const properties = defineProps<{
     modelValue: DataType | undefined;

@@ -27,7 +27,7 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import BaseDialog from './base-dialog.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import { ref } from 'vue';
 import { updateMissionName } from 'src/services/mutations/mission';

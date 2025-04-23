@@ -54,7 +54,7 @@ import { addAccessGroupToProject } from 'src/services/mutations/access';
 import { Notify } from 'quasar';
 import { AccessGroupRights } from '@common/enum';
 import { UserDto } from '@api/types/user.dto';
-import { useFilteredProjects } from '../hooks/query-hooks';
+import { useFilteredProjects } from 'src/hooks/query-hooks';
 
 const properties = defineProps<{
     accessGroupUuid: string;

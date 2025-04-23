@@ -57,7 +57,7 @@ import { icon } from 'src/services/generic';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { addUserToAccessGroup } from 'src/services/mutations/access';
 import { Notify } from 'quasar';
-import { useUserSearch } from '../hooks/query-hooks';
+import { useUserSearch } from 'src/hooks/query-hooks';
 import { UserDto } from '@api/types/user.dto';
 
 const properties = defineProps<{

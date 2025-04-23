@@ -117,16 +117,16 @@ import {
     canLaunchInMission,
     useHandler,
     usePermissionsQuery,
-} from '../hooks/query-hooks';
+} from 'src/hooks/query-hooks';
 import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
-import TitleSection from '@components/title-section.vue';
-import ActionConfiguration from '@components/action-configuration.vue';
-import ButtonGroup from '@components/buttons/button-group.vue';
-import ActionsTable from '@components/actions-table.vue';
-import BullQueue from '@components/bull-queue.vue';
+import TitleSection from 'components/title-section.vue';
+import ActionConfiguration from 'components/action-configuration.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
+import ActionsTable from 'components/actions-table.vue';
+import BullQueue from 'components/bull-queue.vue';
 import { UserRole } from '@common/enum';
 
 const createAction = ref(false);

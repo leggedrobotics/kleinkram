@@ -53,7 +53,7 @@
 import { computed } from 'vue';
 import { GroupMembershipDto } from '@api/types/user.dto';
 import { AccessGroupType } from '@common/enum';
-import { useUser } from '@hooks/query-hooks';
+import { useUser } from 'src/hooks/query-hooks';
 
 const { data: user } = useUser();
 

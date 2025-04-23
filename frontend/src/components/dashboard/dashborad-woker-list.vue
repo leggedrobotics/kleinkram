@@ -158,7 +158,7 @@
 
 <script setup lang="ts">
 import { computed, ComputedRef, ref, watch } from 'vue';
-import { useWorkers } from '@hooks/query-hooks';
+import { useWorkers } from 'src/hooks/query-hooks';
 import { ActionWorkerDto } from '@api/types/action-workers.dto';
 
 const { data: _workers } = useWorkers();
