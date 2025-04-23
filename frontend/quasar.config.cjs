@@ -42,8 +42,9 @@ module.exports = configure(function (/* ctx */) {
             // remember to also add the paths to the tsconfig.json file
             // and to the Dockerfiles
             alias: {
-                '@common': path.resolve(__dirname, 'common/frontend_shared'),
-                '@components': path.resolve(__dirname, 'src/components'),
+                '@common/*': path.resolve(__dirname, '../common/frontend_shared/*'),
+                '@components/*': path.resolve(__dirname, 'src/components/*'),
+                '@api/types/*': path.resolve(__dirname, '../common/api/types/*'),
             },
 
             strict: true,
