@@ -522,8 +522,8 @@ export const useQueueForFile = (
                 file?.value.mission.uuid ?? '',
             ),
         enabled: () =>
-            !(file?.value.filename === undefined) &&
-            !(file.value.mission.uuid === undefined),
+            !(file?.value?.filename === undefined) &&
+            !(file?.value?.mission.uuid === undefined),
         refetchInterval: 1000,
     });
 

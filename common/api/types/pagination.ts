@@ -17,7 +17,7 @@ export class PaginatedQueryDto {
     @Min(0)
     @Type(() => Number)
     @ApiProperty({ required: false, default: 0 })
-    skip: number = DEFAULT_TAKE;
+    skip: number = DEFAULT_SKIP;
 
     @IsOptional()
     @IsInt()
