@@ -11,7 +11,7 @@
 const { configure } = require('quasar/wrappers');
 const path = require('path');
 
-module.exports = configure(function (/* ctx */) {
+module.exports = configure(function(/* ctx */) {
     return {
         // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
         // preFetch: true,
@@ -37,21 +37,21 @@ module.exports = configure(function (/* ctx */) {
             // 'material-symbols-outlined',
         ],
 
-        // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
         build: {
-            // remember to also add the paths to the tsconfig.json file
-            // and to the Dockerfiles
             alias: {
                 '@common/*': path.resolve(__dirname, '../common/frontend_shared/*'),
-                '@components/*': path.resolve(__dirname, 'src/components/*'),
+                '@*': path.resolve(__dirname, 'src/*'),
                 '@api/types/*': path.resolve(__dirname, '../common/api/types/*'),
             },
 
-            strict: true,
-            vueShim: true,
-            extendTsConfig(tsConfig) {
-                tsConfig.compilerOptions.baseUrl = '.';
+            typescript: {
+                strict: true,
+                vueShim: true,
+                extendTsConfig(tsConfig) {
+                    tsConfig.compilerOptions.experimentalDecorators = true;
+                },
             },
+
 
             vueRouterMode: 'history', // available values: 'hash', 'history'
             // vueRouterBase,

@@ -82,6 +82,7 @@ export default tseslint.config(
             '@typescript-eslint/await-thenable': 'off',
             '@typescript-eslint/no-unnecessary-type-arguments': 'off',
             'vue/multi-word-component-names': 'off',
+            '@typescript-eslint/restrict-template-expressions': 'off',
             complexity: 'off',
         },
     },
@@ -100,6 +101,7 @@ export default tseslint.config(
             '**/*.mjs',
             '**/environment.d.ts',
             '**/backend/dist/**',
+            'frontend/.quasar/**',
         ],
     },
 );

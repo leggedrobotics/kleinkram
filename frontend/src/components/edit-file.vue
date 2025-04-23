@@ -207,7 +207,8 @@ watch(
                     missions.value.length !== undefined &&
                     missions.value.length > 0 &&
                     editableFile.mission.project.uuid !==
-                        selected_project.value?.uuid
+                        selected_project.value?.uuid &&
+                    missions.value[0] !== undefined
                 ) {
                     editableFile.mission = missions.value[0];
                 }

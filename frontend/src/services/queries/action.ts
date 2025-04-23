@@ -12,8 +12,8 @@ export const getActions = async (
     search: string,
 ): Promise<ActionsDto> => {
     const parameters: Record<string, string | number | boolean> = {
-        project_uuid: projectUUID,
-        ...(missionUUID === '' ? {} : { mission_uuid: missionUUID }),
+        projectUuid: projectUUID,
+        ...(missionUUID === '' ? {} : { missionUuid: missionUUID }),
         take,
         skip,
         sortBy,

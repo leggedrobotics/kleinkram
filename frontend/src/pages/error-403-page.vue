@@ -13,7 +13,7 @@
                 </div>
 
                 <div v-if="projectUuid" class="text-grey-8 text-h6 q-mt-lg">
-                    Project UUID:<br>
+                    Project UUID:<br />
                     {{ projectUuid }}
                 </div>
             </q-card-section>
@@ -37,5 +37,5 @@
 <script setup lang="ts">
 const urlParameters = new URLSearchParams(globalThis.location.search);
 const message = urlParameters.get('message');
-const projectUuid = urlParameters.get('project_uuid');
+const projectUuid = urlParameters.get('projectUuid');
 </script>

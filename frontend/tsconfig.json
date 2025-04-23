@@ -1,22 +1,3 @@
 {
     "extends": "./.quasar/tsconfig.json",
-    "strict": true,
-    "compilerOptions": {
-        "skipLibCheck": true,
-        "experimentalDecorators": true,
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "Node",
-        "strict": true,
-        "jsx": "preserve",
-        "esModuleInterop": true,
-        "types": ["vite/client"]
-    },
-    "include": [
-        "src/**/*.ts",
-        "src/**/*.d.ts",
-        "src/**/*.tsx",
-        "src/**/*.vue",
-        "src/shims-vue.d.ts"
-    ]
 }

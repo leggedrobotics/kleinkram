@@ -60,7 +60,7 @@ import {
     getProjectAccess,
     searchAccessGroups,
 } from '../services/queries/access';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FileDto, FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
@@ -245,6 +245,7 @@ export const useMission = (
         missionUuid = ref(missionUuid);
     }
 
+    // @ts-ignore
     return useQuery<MissionWithFilesDto>({
         queryKey: ['mission', missionUuid],
         queryFn: () => getMission(missionUuid.value ?? ''),
@@ -473,15 +474,15 @@ export const useAllTags = (): UseQueryReturnType<TagTypeDto[], Error> => {
 export const useActions = (
     projectUuid: Ref<string> | string,
     missionUuid: Ref<string | undefined> | string | undefined = undefined,
-    take: number,
-    skip: number,
-    sortBy: string,
-    descending: boolean,
-    search: string | undefined = undefined,
+    take: Ref<number>,
+    skip: Ref<number>,
+    sortBy: Ref<string>,
+    descending: Ref<boolean>,
+    search: Ref<string> | undefined = undefined,
     queryKey: string,
 ): UseQueryReturnType<ActionsDto | undefined, Error> => {
     if (missionUuid === undefined) missionUuid = '';
-    if (search === undefined) search = '';
+    if (search === undefined) search = computed(() => '');
 
     return useQuery<ActionsDto>({
         queryKey: computed(() => [
@@ -503,7 +504,7 @@ export const useActions = (
                 unref(skip),
                 unref(sortBy),
                 unref(descending),
-                unref(search),
+                unref(search) ?? '',
             ),
         staleTime: 0,
         refetchInterval: 4000,
@@ -511,19 +512,18 @@ export const useActions = (
 };
 
 export const useQueueForFile = (
-    file: Ref<FilesDto> | undefined,
-    missionUUID: string | undefined,
+    file: Ref<FileDto> | undefined,
 ): UseQueryReturnType<FileQueueEntriesDto | undefined, Error> =>
     useQuery<FileQueueEntriesDto>({
         queryKey: ['queue', file],
         queryFn: () =>
             getQueueForFile(
-                file.value?.filename ?? '',
-                file.value?.mission.uuid ?? '',
+                file?.value?.filename ?? '',
+                file?.value?.mission.uuid ?? '',
             ),
         enabled: () =>
-            !(file.value?.filename === undefined) &&
-            !(file.value?.mission.uuid === undefined),
+            !(file?.value?.filename === undefined) &&
+            !(file?.value?.mission.uuid === undefined),
         refetchInterval: 1000,
     });
 

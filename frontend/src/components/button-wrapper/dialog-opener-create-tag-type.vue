@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { canCreateProject, usePermissionsQuery } from '../../hooks/query-hooks';
+import { canCreateProject, usePermissionsQuery } from '@hooks/query-hooks';
 import { computed } from 'vue';
 import CreateTagTypeDialog from '../../dialogs/create-tag-type-dialog.vue';
 

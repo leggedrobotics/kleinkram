@@ -17,7 +17,7 @@ export type GenerateTemporaryCredentialsResponse = {
 export const updateFile = async ({ file }: { file: FileWithTopicDto }) => {
     const response = await axios.put(`/file/${file.uuid}`, {
         uuid: file.uuid,
-        mission_uuid: file.missionUUID,
+        missionUuid: file.missionUUID,
         filename: file.filename,
         date: file.date,
         categories: file.categories.map(

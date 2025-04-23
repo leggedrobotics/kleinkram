@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { fileEntityToDtoWithTopic } from '../serialization';
+import { fileEntityToDto, fileEntityToDtoWithTopic } from '../serialization';
 import { SortOrder } from '@common/api/types/pagination';
 import {
     DataSource,
@@ -18,7 +18,6 @@ import {
     MoreThan,
     Repository,
 } from 'typeorm';
-import { fileEntityToDto } from '../serialization';
 import FileEntity from '@common/entities/file/file.entity';
 import { UpdateFile } from '@common/api/types/update-file.dto';
 import env from '@common/environment';
@@ -34,10 +33,10 @@ import {
     UserRole,
 } from '@common/frontend_shared/enum';
 import {
-    addSort,
     addFileFilters,
     addMissionFilters,
     addProjectFilters,
+    addSort,
 } from './utilities';
 
 import User from '@common/entities/user/user.entity';
@@ -347,7 +346,7 @@ export class FileService implements OnModuleInit {
                             return subquery;
                         },
                         subqueryname,
-                        `mission.uuid = ${subqueryname}.mission_uuid`,
+                        `mission.uuid = ${subqueryname}.missionUuid`,
                     );
 
                     // query.andWhere('mission.uuid IN ' + subqueryname);
@@ -430,9 +429,9 @@ export class FileService implements OnModuleInit {
         databaseFile.filename = file.filename;
         databaseFile.date = file.date;
 
-        if (file.mission_uuid) {
+        if (file.missionUuid) {
             const newMission = await this.missionRepository.findOneOrFail({
-                where: { uuid: file.mission_uuid },
+                where: { uuid: file.missionUuid },
                 relations: ['project'],
             });
 
@@ -482,8 +481,8 @@ export class FileService implements OnModuleInit {
             databaseFile.uuid,
             {
                 // @ts-expect-error
-                project_uuid: databaseFile.mission.project.uuid,
-                mission_uuid: databaseFile.mission.uuid,
+                projectUuid: databaseFile.mission.project.uuid,
+                missionUuid: databaseFile.mission.uuid,
                 filename: databaseFile.filename,
             },
         );
@@ -638,11 +637,18 @@ export class FileService implements OnModuleInit {
                         relations: ['mission', 'mission.project'],
                     });
                     const bucket = getBucketFromFileType(file.type);
+
+                    if (newFile?.mission?.project?.uuid === undefined) {
+                        logger.error(
+                            `Error moving file ${uuid} to mission ${missionUUID}}. Project uuid is undefined.`,
+                        );
+                        return;
+                    }
+
                     await addTagsToMinioObject(bucket, file.uuid, {
                         filename: file.filename,
-                        mission_uuid: missionUUID,
-                        // @ts-expect-error
-                        project_uuid: newFile.mission.project.uuid,
+                        missionUuid: missionUUID,
+                        projectUuid: newFile.mission.project.uuid,
                     });
                 } catch (error) {
                     logger.error(
@@ -970,9 +976,9 @@ export class FileService implements OnModuleInit {
                     throw new Error('Project not found!');
 
                 await addTagsToMinioObject(bucked, file.name, {
-                    project_uuid: fileEntity.mission.project.uuid,
+                    projectUuid: fileEntity.mission.project.uuid,
 
-                    mission_uuid: fileEntity.mission.uuid,
+                    missionUuid: fileEntity.mission.uuid,
                     filename: fileEntity.filename,
                 });
             }),

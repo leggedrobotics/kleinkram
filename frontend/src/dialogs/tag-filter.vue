@@ -70,7 +70,7 @@ const convertedTagValues = computed(() => {
     for (const key of Object.keys(tagValues.value)) {
         const tagType = tagLookup.value[key];
 
-        switch (tagType.datatype) {
+        switch (tagType?.datatype) {
             case DataType.BOOLEAN: {
                 if (tagValues.value[key].value === undefined) {
                     break;

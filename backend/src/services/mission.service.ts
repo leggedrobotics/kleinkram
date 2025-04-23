@@ -287,9 +287,10 @@ export class MissionService {
         const { raw, entities } = await query.getRawAndEntities();
 
         // this is necessary as raw and entities at not of the same length / order
+        // eslint-disable-next-line unicorn/no-array-reduce
         const rawLookup = raw.reduce(
             (lookup: Record<string, any>, rawEntry: any) => {
-                lookup[rawEntry.mission_uuid] = rawEntry;
+                lookup[rawEntry.missionUuid] = rawEntry;
                 return lookup;
             },
             {},
@@ -343,8 +344,8 @@ export class MissionService {
                     file.uuid,
                     {
                         filename: file.filename,
-                        mission_uuid: missionUUID,
-                        project_uuid: projectUUID,
+                        missionUuid: missionUUID,
+                        projectUuid: projectUUID,
                     },
                 ),
             ),

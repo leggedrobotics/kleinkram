@@ -23,11 +23,8 @@ import {
     TooltipComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import {
-    formatGenericNumber,
-    formatSize,
-} from '../../services/general-formatting';
-import { useStorageOverview } from '../../hooks/query-hooks';
+import { formatGenericNumber, formatSize } from '@services/general-formatting';
+import { useStorageOverview } from '@hooks/query-hooks';
 
 use([
     TitleComponent,

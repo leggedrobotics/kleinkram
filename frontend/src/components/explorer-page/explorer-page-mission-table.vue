@@ -80,7 +80,7 @@
                 >
                     <span class="text-subtitle1"> No Mission Found </span>
 
-                    <create-mission-dialog-opener :project_uuid="projectUuid">
+                    <create-mission-dialog-opener :project-uuid="projectUuid">
                         <q-btn
                             flat
                             dense
@@ -151,16 +151,16 @@
 import { QTable } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { missionsOfProject } from 'src/services/queries/mission';
-import { TableRequest } from '../../services/query-handler';
+import { TableRequest } from '@services/query-handler';
 import { useQuery } from '@tanstack/vue-query';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
-import { useHandler, useProjectQuery } from '../../hooks/query-hooks';
+import { useHandler, useProjectQuery } from '@hooks/query-hooks';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import { missionColumns } from './explorer-page-table-columns';
 import { TagDto } from '@api/types/tags/tags.dto';
 
-import { useProjectUUID } from '../../hooks/router-hooks';
+import { useProjectUUID } from '@hooks/router-hooks';
 import MoveMissionDialogOpener from '@components/button-wrapper/move-mission-dialog-pener.vue';
 import MissionMetadataOpener from '@components/button-wrapper/mission-metadata-opener.vue';
 import EditMissionDialogOpener from '@components/button-wrapper/edit-mission-dialog-opener.vue';
@@ -240,8 +240,8 @@ const onRowClick = async (_: Event, row: any) => {
     await $router.push({
         name: ROUTES.FILES.routeName,
         params: {
-            project_uuid: projectUuid.value,
-            mission_uuid: row.uuid as string,
+            projectUuid: projectUuid.value,
+            missionUuid: row.uuid as string,
         },
     });
 };

@@ -279,16 +279,16 @@ export class ActionService {
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('action.template', 'template')
             .leftJoinAndSelect('action.createdBy', 'createdBy')
-            .andWhere('project.uuid = :project_uuid', {
-                project_uuid: projectUuid,
+            .andWhere('project.uuid = :projectUuid', {
+                projectUuid: projectUuid,
             })
             .skip(skip)
             .take(take)
             .orderBy(`action.${sortBy}`, sortDirection);
 
         if (missionUuid) {
-            baseQuery.andWhere('mission.uuid = :mission_uuid', {
-                mission_uuid: missionUuid,
+            baseQuery.andWhere('mission.uuid = :missionUuid', {
+                missionUuid: missionUuid,
             });
         }
         if (search) {

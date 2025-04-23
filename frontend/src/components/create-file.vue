@@ -81,7 +81,7 @@
             </template>
         </q-file>
 
-        <br>
+        <br />
 
         <label>Import File from Google Drive</label>
 
@@ -101,10 +101,10 @@ import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 
-import { createFileAction, driveUpload } from '../services/file-service';
+import { createFileAction, driveUpload } from '@services/file-service';
 import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
-import { useFilteredProjects } from '../hooks/query-hooks';
+import { useFilteredProjects } from '@hooks/query-hooks';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 
 const emit = defineEmits(['update:ready']);
@@ -143,7 +143,7 @@ watch(
 );
 
 const properties = defineProps<{
-    mission?: FlatMissionDto;
+    mission: FlatMissionDto | undefined;
     uploads: Ref<FileUploadDto[]>;
 }>();
 

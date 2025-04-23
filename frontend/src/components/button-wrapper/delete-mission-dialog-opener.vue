@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { canModifyMission, usePermissionsQuery } from '../../hooks/query-hooks';
+import { canModifyMission, usePermissionsQuery } from '@hooks/query-hooks';
 import { computed } from 'vue';
 import {
     FlatMissionDto,

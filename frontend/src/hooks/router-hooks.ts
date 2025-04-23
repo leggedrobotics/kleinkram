@@ -11,7 +11,7 @@ import { useRoute } from 'vue-router';
 export const useProjectUUID = (): ComputedRef<undefined | string> => {
     const route = useRoute();
     return computed(() => {
-        return (route.params.project_uuid ?? undefined) as string | undefined;
+        return (route.params.projectUuid ?? undefined) as string | undefined;
     });
 };
 /**
@@ -23,7 +23,7 @@ export const useProjectUUID = (): ComputedRef<undefined | string> => {
 export const useMissionUUID = (): ComputedRef<undefined | string> => {
     const route = useRoute();
     return computed(() => {
-        return (route.params.mission_uuid ?? undefined) as string | undefined;
+        return (route.params.missionUuid ?? undefined) as string | undefined;
     });
 };
 /**

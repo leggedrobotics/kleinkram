@@ -337,8 +337,8 @@ async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
                     name: ROUTES.FILE.routeName,
                     params: {
                         file_uuid: file.uuid,
-                        mission_uuid: row.mission.uuid,
-                        project_uuid: row.mission.project.uuid,
+                        missionUuid: row.mission.uuid,
+                        projectUuid: row.mission.project.uuid,
                     },
                 });
             },

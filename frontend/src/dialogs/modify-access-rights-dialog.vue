@@ -32,7 +32,7 @@ import {
 import { useUpdateAccessRightsMutation } from '../hooks/mutation-hooks';
 import { useEditablePaginatedResponse } from '../hooks/utility-hooks';
 
-const { project_uuid: projectUuid } = defineProps<{ project_uuid: string }>();
+const { projectUuid: projectUuid } = defineProps<{ projectUuid: string }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 

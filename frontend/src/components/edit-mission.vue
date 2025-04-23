@@ -37,7 +37,7 @@ const queryClient = useQueryClient();
 const $q = useQuasar();
 
 const properties = defineProps<{
-    mission_uuid: string;
+    missionUuid: string;
 }>();
 
 const icons = {
@@ -48,7 +48,7 @@ const icons = {
     [DataType.LOCATION]: 'sym_o_place',
 };
 
-const { data } = useMission(properties.mission_uuid);
+const { data } = useMission(properties.missionUuid);
 
 await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
     // @ts-ignore
@@ -77,7 +77,7 @@ const { mutate: removeTagCallback } = useMutation({
             .filter(
                 (query) =>
                     query.queryKey[0] === 'mission' &&
-                    query.queryKey[1] === properties.mission_uuid,
+                    query.queryKey[1] === properties.missionUuid,
             );
         for (const query of filtered) {
             await queryClient.invalidateQueries({
@@ -94,7 +94,7 @@ function openAddTag() {
     $q.dialog({
         component: AddTagDialog,
         componentProps: {
-            missionUuid: properties.mission_uuid,
+            missionUuid: properties.missionUuid,
         },
         persistent: true,
     });

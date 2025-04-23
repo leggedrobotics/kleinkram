@@ -239,12 +239,12 @@
     </q-table>
 </template>
 <script setup lang="ts">
-import { getAccessRightDescription } from '../../services/generic';
+import { getAccessRightDescription } from '@services/generic';
 import { QSelect, QTable } from 'quasar';
 import { computed, ref } from 'vue';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
-import { accessGroupRightsList } from '../../enums/access-group-rights-list';
-import { useSearchAccessGroup } from '../../hooks/query-hooks';
+import { accessGroupRightsList } from '@enums/access-group-rights-list';
+import { useSearchAccessGroup } from '@hooks/query-hooks';
 import { AccessGroupDto } from '@api/types/user.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
 

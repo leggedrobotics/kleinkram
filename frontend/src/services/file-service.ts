@@ -33,7 +33,7 @@ export const createFileAction = async (
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<Ref<FileWithTopicDto>[]>,
+    injectedFiles: Ref<FileWithTopicDto[]>,
 ): Promise<void> => {
     if (selectedMission === undefined) {
         Notify.create({
@@ -76,7 +76,7 @@ async function _createFileAction(
     files: File[],
     queryClient: QueryClient,
     uploadingFiles: Ref<Record<string, Record<string, string>>>,
-    injectedFiles: Ref<Ref<FileWithTopicDto>[]>,
+    injectedFiles: Ref<FileWithTopicDto[]>,
 ): Promise<void> {
     if (files.length === 0) {
         Notify.create({
@@ -209,6 +209,17 @@ async function _createFileAction(
             async (accessResp: any, index: number) => {
                 const file = validFiles[index];
 
+                if (file === undefined) {
+                    Notify.create({
+                        message: `Upload of File failed`,
+                        color: 'negative',
+                        spinner: false,
+                        timeout: 0,
+                        closeBtn: true,
+                    });
+                    return;
+                }
+
                 const accessCredentials = accessResp.accessCredentials;
                 if (accessCredentials === null) {
                     Notify.create({
@@ -239,6 +250,7 @@ async function _createFileAction(
                     missionUuid: selectedMission.uuid,
                 } as unknown as FileWithTopicDto;
                 const newFileUploadReference = ref(newFileUpload);
+                // @ts-ignore
                 injectedFiles.value.push(newFileUploadReference);
                 return limit(async () => {
                     try {
@@ -249,6 +261,17 @@ async function _createFileAction(
                             minioClient,
                             newFileUploadReference,
                         );
+
+                        if (md5Hash === undefined) {
+                            Notify.create({
+                                message: `Upload of File ${file.name} failed`,
+                                color: 'negative',
+                                spinner: false,
+                                timeout: 0,
+                                closeBtn: true,
+                            });
+                            return;
+                        }
 
                         return await confirmUpload(
                             accessResp.fileUUID,

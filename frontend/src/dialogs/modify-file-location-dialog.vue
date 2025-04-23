@@ -1,7 +1,7 @@
 <template>
     <base-dialog ref="dialogRef">
         <template #title>
-            Move File{{ files.length === 1 ? ' ' + files[0].filename : 's' }}
+            Move File{{ files.length === 1 ? ' ' + files[0]?.filename : 's' }}
         </template>
 
         <template #content>

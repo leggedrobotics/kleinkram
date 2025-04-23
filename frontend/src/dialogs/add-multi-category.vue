@@ -23,12 +23,12 @@
                     <label for="categoryName">Select Categories</label>
                     <category-selector
                         :selected="selected"
-                        :project_uuid="projectUuid"
+                        :project-uuid="projectUuid"
                         @update:selected="updateSelected"
                     />
                 </q-tab-panel>
                 <q-tab-panel name="create" style="min-height: 180px">
-                    <CategoryCreator :project_uuid="projectUuid" />
+                    <CategoryCreator :project-uuid="projectUuid" />
                 </q-tab-panel>
             </q-tab-panels>
         </template>

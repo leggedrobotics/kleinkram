@@ -112,7 +112,7 @@ const foundAccessGroups = computed(() =>
 function addAccessGroupToProject(accessGroupUUID: string, name: string) {
     emit('addAccessGroupToProject', {
         accessGroupUUID,
-        rights: rights.value[accessGroupUUID].value,
+        rights: rights.value[accessGroupUUID]?.value,
         name,
     });
 }
@@ -120,7 +120,7 @@ function addAccessGroupToProject(accessGroupUUID: string, name: string) {
 function addUserToProject(userUUID: string, name: string) {
     emit('addUsersToProject', {
         userUUID,
-        rights: rights.value[userUUID].value,
+        rights: rights.value[userUUID]?.value,
         name,
     });
 }

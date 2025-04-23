@@ -298,6 +298,7 @@ import ButtonGroup from './buttons/button-group.vue';
 import EditFileButton from './buttons/edit-file-button.vue';
 import KleinDownloadFile from './cli-links/klein-download-file.vue';
 import TitleSection from './title-section.vue';
+import { FileDto } from '@api/types/file/file.dto';
 
 const $router = useRouter();
 
@@ -310,7 +311,10 @@ const fileUuid = useFileUUID();
 const { isLoading, data: file, error, isLoadingError } = useFile(fileUuid);
 registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
 
-const { data: queues } = useQueueForFile(file);
+// TODO: fix this type cast; this should be unnecessary...
+const { data: queues } = useQueueForFile(
+    file as unknown as Ref<FileDto> | undefined,
+);
 
 const displayTopics = computed(() => {
     if (file.value === undefined) {
@@ -349,8 +353,8 @@ async function redirectToMcap(): Promise<void> {
         await $router.push({
             name: ROUTES.FILE.routeName,
             params: {
-                project_uuid: file.value.mission.project.uuid,
-                mission_uuid: file.value.mission.uuid,
+                projectUuid: file.value.mission.project.uuid,
+                missionUuid: file.value.mission.uuid,
                 file_uuid: file.value.relatedFileUuid,
             },
         });

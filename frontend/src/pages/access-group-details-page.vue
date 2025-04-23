@@ -321,14 +321,7 @@ const pagination2 = ref({
 const queryClient = useQueryClient();
 const user = useUser();
 
-const refetchOnClick: (
-    event_: Event,
-    go?: (options?: {
-        to?: any;
-        replace?: boolean | undefined;
-        returnRouterError?: boolean | undefined;
-    }) => Promise<any>,
-) => void = () => refetch;
+const refetchOnClick: (event_: Event) => void = () => refetch;
 
 const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
 
@@ -382,7 +375,7 @@ const openAddProject = (): void => {
     $q.dialog({
         component: AddProjectToAccessGroupDialog,
         componentProps: {
-            access_group_uuid: uuid.value,
+            accessGroupUuid: uuid.value,
         },
     });
 };
@@ -518,7 +511,7 @@ const rowClick = async (_uuid: string): Promise<void> => {
     await router.push({
         name: ROUTES.MISSIONS.routeName,
         params: {
-            project_uuid: _uuid,
+            projectUuid: _uuid,
         },
     });
 };

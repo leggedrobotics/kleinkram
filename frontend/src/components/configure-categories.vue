@@ -1,10 +1,10 @@
 <template>
     <CategorySelector
         :selected="selected"
-        :project_uuid="file.mission?.project?.uuid"
+        :project-uuid="file.mission?.project?.uuid"
         @update:selected="updateSelected"
     />
-    <CategoryCreator :project_uuid="file.mission?.project?.uuid" />
+    <CategoryCreator :project-uuid="file.mission?.project?.uuid" />
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue';

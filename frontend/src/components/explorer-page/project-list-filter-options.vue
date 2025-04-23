@@ -1,7 +1,10 @@
 <template>
     <div class="flex justify-between items-center">
         <button-group>
-            <my-projects-selector v-model="myProjects" />
+            <my-projects-selector
+                v-if="myProjects !== undefined"
+                v-model="myProjects"
+            />
         </button-group>
 
         <button-group>
@@ -43,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { useHandler } from '../../hooks/query-hooks';
+import { useHandler } from '@hooks/query-hooks';
 import { useQueryClient } from '@tanstack/vue-query';
 import { ref, watch } from 'vue';
 import DialogOpenerCreateProject from '@components/button-wrapper/dialog-opener-create-project.vue';
@@ -61,7 +64,7 @@ async function resetCache(): Promise<void> {
 }
 
 watch([myProjects, search], () => {
-    handler.value.setSearch({ name: search.value });
+    handler.value.setSearch({ name: search.value ?? '' });
     // TODO: fix that we need a timeout here!!!
     setTimeout(() => {
         resetCache().catch(() => ({}));

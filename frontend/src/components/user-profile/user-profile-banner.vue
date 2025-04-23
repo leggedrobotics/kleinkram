@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
-import { useUser } from '../../hooks/query-hooks';
+import { useUser } from '@hooks/query-hooks';
 
 const { data: user } = useUser();
 </script>

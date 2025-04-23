@@ -63,7 +63,7 @@
 <script setup lang="ts">
 import 'vue-json-pretty/lib/styles.css';
 import { ref } from 'vue';
-import { useHandler, useUser } from '../../hooks/query-hooks';
+import { useHandler, useUser } from '@hooks/query-hooks';
 import { UserRole } from '@common/enum';
 import ExplorerPageProjectTable from '../explorer-page/explorer-page-project-table.vue';
 import AdminSettings from './admin-settings.vue';

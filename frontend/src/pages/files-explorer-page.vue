@@ -144,7 +144,7 @@
             <Suspense>
                 <ExplorerPageTableHeader
                     v-if="handler"
-                    :url_handler="handler"
+                    :url-handler="handler"
                 />
 
                 <template #fallback>
@@ -206,7 +206,7 @@
                 <CategorySelector
                     v-if="projectUuid"
                     :selected="selectedCategories"
-                    :project_uuid="projectUuid"
+                    :project-uuid="projectUuid"
                     @update:selected="updateSelected"
                 />
                 <q-btn-dropdown
@@ -224,7 +224,7 @@
                         >
                             <q-item-section class="items-baseline">
                                 <q-toggle
-                                    :model-value="fileTypeFilter[index].value"
+                                    :model-value="fileTypeFilter[index]?.value"
                                     :label="option.name"
                                     @click="() => onFileTypeClicked(index)"
                                 />
@@ -256,7 +256,9 @@
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
 
-                <create-file-dialog-opener :mission="mission">
+                <create-file-dialog-opener
+                    :mission="mission as MissionWithFilesDto"
+                >
                     <q-btn
                         flat
                         style="height: 100%"
@@ -386,6 +388,7 @@ import MoveMissionDialogOpener from '@components/button-wrapper/move-mission-dia
 import ExplorerPageTableHeader from '@components/explorer-page/explorer-page-table-header.vue';
 import OpenMultiFileMoveDialog from '@components/buttons/open-multi-file-move-dialog-button.vue';
 import OpenMultCategoryAdd from '@components/buttons/open-mult-category-add-dialog-button.vue';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -417,8 +420,10 @@ const selectedFileTypes = computed(() => {
 const fileHealthOptions = ['Healthy', 'Uploading', 'Unhealthy'];
 
 const selectedFileHealth = computed<string, string | undefined>({
+    // @ts-ignore
     get: () => handler.value.searchParams.health,
     set: (value: string | undefined) => {
+        // @ts-ignore
         handler.value.setSearch({ health: value ?? '', name: search.value });
     },
 });
@@ -427,12 +432,12 @@ const selectedFiles: Ref<FileWithTopicDto[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
     () => {
-        if (fileTypeFilter.value[0].value && fileTypeFilter.value[1].value) {
+        if (fileTypeFilter.value[0]?.value && fileTypeFilter.value[1]?.value) {
             handler.value.setFileType(FileType.ALL);
             return;
         }
         handler.value.setFileType(
-            fileTypeFilter.value[0].value ? FileType.BAG : FileType.MCAP,
+            fileTypeFilter.value[0]?.value ? FileType.BAG : FileType.MCAP,
         );
     },
     { deep: true },
@@ -440,8 +445,10 @@ watch(
 
 const onFileTypeClicked = (index: number): void => {
     const updatedFileTypeFilter = [...fileTypeFilter.value]; // Only trigger a single mutation
-    updatedFileTypeFilter[index].value = !updatedFileTypeFilter[index].value;
-    if (!updatedFileTypeFilter[0].value && !updatedFileTypeFilter[1].value) {
+    // @ts-ignore
+    updatedFileTypeFilter[index].value = !updatedFileTypeFilter[index]?.value;
+    if (!updatedFileTypeFilter[0]?.value && !updatedFileTypeFilter[1]?.value) {
+        // @ts-ignore
         updatedFileTypeFilter[1 - index].value = true;
     }
     fileTypeFilter.value = updatedFileTypeFilter;
@@ -649,13 +656,14 @@ const onActionsClick = async (): Promise<void> => {
     await $router.push({
         name: ROUTES.ACTION.routeName,
         query: {
-            project_uuid: projectUuid.value ?? '',
-            mission_uuid: missionUuid.value ?? '',
+            projectUuid: projectUuid.value ?? '',
+            missionUuid: missionUuid.value ?? '',
         },
     });
 };
 
 const clearSelectedFileState = (): void => {
+    // @ts-ignore
     selectedFileHealth.value = undefined;
 };
 </script>

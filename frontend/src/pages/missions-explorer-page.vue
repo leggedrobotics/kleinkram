@@ -10,7 +10,7 @@
             <button-group>
                 <ConfigureTagsDialogOpener
                     v-if="projectUuid"
-                    :project_uuid="projectUuid"
+                    :project-uuid="projectUuid"
                 >
                     <q-btn
                         class="button-border"
@@ -53,7 +53,7 @@
                             </change-project-rights-dialog-opener>
 
                             <edit-project-dialog-opener
-                                :project_uuid="projectUuid"
+                                :project-uuid="projectUuid"
                             >
                                 <q-item v-close-popup clickable>
                                     <q-item-section avatar>
@@ -67,8 +67,8 @@
                                 </q-item>
                             </edit-project-dialog-opener>
                             <DeleteProjectDialogOpener
-                                :project_uuid="projectUuid ?? ''"
-                                :has_missions="(project?.missionCount ?? 0) > 0"
+                                :project-uuid="projectUuid ?? ''"
+                                :has-missions="(project?.missionCount ?? 0) > 0"
                             >
                                 <q-item
                                     v-ripple
@@ -92,7 +92,7 @@
     </title-section>
     <ActionConfiguration
         :open="createAction"
-        :mission_uuids="selectedMissionUuids"
+        :mission-uuids="selectedMissionUuids"
         @close="onClose"
     />
     <div>
@@ -126,7 +126,7 @@
                 >
                     <q-tooltip> Refetch the Data</q-tooltip>
                 </q-btn>
-                <UploadMissionFolder :project_uuid="projectUuid">
+                <UploadMissionFolder :project-uuid="projectUuid">
                     <q-btn
                         flat
                         style="height: 100%"
@@ -135,7 +135,7 @@
                         icon="sym_o_drive_folder_upload"
                     />
                 </UploadMissionFolder>
-                <create-mission-dialog-opener :project_uuid="projectUuid">
+                <create-mission-dialog-opener :project-uuid="projectUuid">
                     <q-btn
                         flat
                         style="height: 100%"
@@ -184,7 +184,7 @@
                         :disable="
                             selectedMissions.length !== 1 ||
                             (selectedMissions.length === 1 &&
-                                selectedMissions[0]?.filesCount > 0)
+                                (selectedMissions[0]?.filesCount ?? 0) > 0)
                         "
                         @click="deleteMission"
                     >
@@ -196,7 +196,7 @@
                         <q-tooltip
                             v-if="
                                 selectedMissions.length === 1 &&
-                                selectedMissions[0]?.filesCount > 0
+                                (selectedMissions[0]?.filesCount ?? 0) > 0
                             "
                         >
                             You cannot delete missions with files
@@ -279,6 +279,14 @@ const onClose = (): void => {
 
 const deleteMission = (): void => {
     const mission = selectedMissions.value[0];
+
+    if (mission === undefined) {
+        $q.notify({
+            type: 'negative',
+            message: 'Please select a mission to delete',
+        });
+        return;
+    }
 
     $q.dialog({
         title: 'Delete Mission',

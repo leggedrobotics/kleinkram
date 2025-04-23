@@ -5,7 +5,7 @@
         <template #content>
             <AddProjectToAccessGroupDialog
                 ref="addProjectReference"
-                :access_group_uuid="access_group_uuid"
+                :access-group-uuid="accessGroupUuid"
             />
         </template>
 
@@ -32,8 +32,8 @@ const addProjectReference = ref<
     InstanceType<typeof AddProjectToAccessGroupDialog> | undefined
 >(undefined);
 
-const { access_group_uuid } = defineProps<{
-    access_group_uuid: string;
+const { accessGroupUuid } = defineProps<{
+    accessGroupUuid: string;
 }>();
 
 const addProjectToAccessGroupAction = (): void => {

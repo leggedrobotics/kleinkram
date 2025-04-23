@@ -33,18 +33,14 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useCrumbs } from '../../../hooks/crumbs';
-import { PageBreadCrumb } from '../../../router/routes-utilities';
-import {
-    useFile,
-    useMission,
-    useProjectQuery,
-} from '../../../hooks/query-hooks';
+import { useCrumbs } from '@hooks/crumbs';
+import { PageBreadCrumb } from '@router/routes-utilities';
+import { useFile, useMission, useProjectQuery } from '@hooks/query-hooks';
 import {
     useFileUUID,
     useMissionUUID,
     useProjectUUID,
-} from '../../../hooks/router-hooks';
+} from '@hooks/router-hooks';
 
 const crumbs = useCrumbs();
 
@@ -60,15 +56,15 @@ const resolvedCrumbs = computed(() => {
     let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
-                ?.replace(':project_uuid', projectUuid.value ?? 'undefined')
-                .replace(':mission_uuid', missionUuid.value ?? 'undefined')
+                ?.replace(':projectUuid', projectUuid.value ?? 'undefined')
+                .replace(':missionUuid', missionUuid.value ?? 'undefined')
                 .replace(':file_uuid', fileUuid.value ?? ''),
             displayName: crumb.displayName
                 .replace(':project_name', project.value?.name ?? '')
                 .replace(':mission_name', mission.value?.name ?? '')
                 .replace(':file_name', file.value?.filename ?? ''),
             name: crumb.name,
-        };
+        } as PageBreadCrumb;
     });
 
     // remove crumbs with undefined values in to
@@ -81,7 +77,8 @@ const resolvedCrumbs = computed(() => {
             : _crumbs.slice(0, firstUndefinedIndex);
 
     // remove link of crumb if it is the only crumb
-    if (_crumbs.length === 1) {
+    if (_crumbs !== undefined && _crumbs.length === 1) {
+        // @ts-ignore
         _crumbs[0].to = undefined;
     }
 

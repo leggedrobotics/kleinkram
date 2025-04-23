@@ -76,7 +76,6 @@ export default tseslint.config(
                     allowRegExp: false,
                 },
             ],
-            '@typescript-eslint/restrict-template-expressions': 'error',
             '@typescript-eslint/strict-boolean-expressions': [
                 'warn',
                 {
@@ -123,10 +122,13 @@ export default tseslint.config(
             'vue/require-name-property': 'error',
             'vue/require-prop-types': 'error',
             'vue/require-default-prop': 'error',
+            'vue/prop-name-casing': 'error',
+            'vue/attribute-hyphenation': 'error',
             'vue/require-explicit-emits': 'error',
             '@typescript-eslint/no-extraneous-class': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
             'unicorn/no-null': 'warn',
+            '@typescript-eslint/restrict-template-expressions': 'warn',
         },
     },
     {
@@ -144,6 +146,7 @@ export default tseslint.config(
             '**/*.mjs',
             '**/environment.d.ts',
             '**/backend/tests/**',
+            'frontend/.quasar/**',
         ],
     },
 );

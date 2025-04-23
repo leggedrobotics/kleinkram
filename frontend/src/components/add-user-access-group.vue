@@ -61,7 +61,7 @@ import { useUserSearch } from '../hooks/query-hooks';
 import { UserDto } from '@api/types/user.dto';
 
 const properties = defineProps<{
-    access_group_uuid: string;
+    accessGroupUuid: string;
 }>();
 const queryClient = useQueryClient();
 
@@ -76,7 +76,7 @@ const { mutate } = useMutation({
             selected.value.map(async (user) => {
                 return addUserToAccessGroup(
                     user.uuid,
-                    properties.access_group_uuid,
+                    properties.accessGroupUuid,
                 );
             }),
         );
@@ -88,7 +88,7 @@ const { mutate } = useMutation({
             position: 'bottom',
         });
         await queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', properties.access_group_uuid],
+            queryKey: ['AccessGroup', properties.accessGroupUuid],
         });
     },
     onError: () => {

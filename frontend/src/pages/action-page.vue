@@ -127,6 +127,7 @@ import ActionConfiguration from '@components/action-configuration.vue';
 import ButtonGroup from '@components/buttons/button-group.vue';
 import ActionsTable from '@components/actions-table.vue';
 import BullQueue from '@components/bull-queue.vue';
+import { UserRole } from '@common/enum';
 
 const createAction = ref(false);
 
@@ -138,9 +139,7 @@ const dropdownNewFileMission = ref(false);
 const handler = useHandler();
 
 const showBullQueue = computed(
-    // TODO: change to `UserRole.Admin` and fix build
-
-    () => permissions.value?.role === 'ADMIN',
+    () => permissions.value?.role === UserRole.ADMIN,
 );
 
 const { data: permissions } = usePermissionsQuery();
@@ -196,6 +195,7 @@ watch(selectedProject, async () => {
 const search = computed({
     get: () => handler.value.searchParams.name,
     set: (value) => {
+        // @ts-ignore
         handler.value.setSearch({ name: value });
     },
 });

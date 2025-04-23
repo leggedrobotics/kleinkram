@@ -3,7 +3,7 @@
         <template #title> Add Metadata</template>
 
         <template #content>
-            <AddTag :mission-uuid="mission_uuid" />
+            <AddTag :mission-uuid="missionUuid" />
         </template>
 
         <template #actions>
@@ -25,8 +25,8 @@ import BaseDialog from './base-dialog.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const { mission_uuid } = defineProps<{
-    mission_uuid: string;
+const { missionUuid } = defineProps<{
+    missionUuid: string;
 }>();
 </script>
 

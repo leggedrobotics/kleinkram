@@ -12,7 +12,7 @@
 </template>
 <script setup lang="ts">
 const { link, text } = defineProps<{
-    link?: string;
+    link: string;
     text?: string;
 }>();
 </script>

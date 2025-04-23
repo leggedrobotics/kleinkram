@@ -145,7 +145,7 @@
                     >
                         <q-item-section class="items-center">
                             <q-toggle
-                                :model-value="fileTypeFilter[index].value"
+                                :model-value="fileTypeFilter[index]?.value"
                                 :label="option.name"
                                 @click="() => onFileTypeClicked(index)"
                             />
@@ -291,11 +291,11 @@
                 <link
                     rel="stylesheet"
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-                >
+                />
                 <link
                     rel="stylesheet"
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
-                >
+                />
             </q-td>
         </template>
         <template #body-cell-action="props">
@@ -649,15 +649,17 @@ const onRowClick = async (_: any, row: any) => {
         name: ROUTES.FILE.routeName,
         params: {
             file_uuid: row.uuid,
-            mission_uuid: row.mission.uuid,
-            project_uuid: row.mission.project.uuid,
+            missionUuid: row.mission.uuid,
+            projectUuid: row.mission.project.uuid,
         },
     });
 };
 
 function onFileTypeClicked(index: number) {
-    fileTypeFilter.value[index].value = !fileTypeFilter.value[index].value;
-    if (!fileTypeFilter.value[0].value && !fileTypeFilter.value[1].value) {
+    // @ts-ignore
+    fileTypeFilter.value[index].value = !fileTypeFilter.value[index]?.value;
+    if (!fileTypeFilter.value[0]?.value && !fileTypeFilter.value[1]?.value) {
+        // @ts-ignore
         fileTypeFilter.value[1 - index].value = true;
     }
 }

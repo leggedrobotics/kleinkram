@@ -33,11 +33,11 @@ const deleteProject = ref<InstanceType<typeof DeleteProject> | undefined>(
     undefined,
 );
 
-const { project_uuid } = defineProps<{
-    project_uuid: string;
+const { projectUuid } = defineProps<{
+    projectUuid: string;
 }>();
 
-const { data: project } = useProjectQuery(computed(() => project_uuid));
+const { data: project } = useProjectQuery(computed(() => projectUuid));
 
 const deleteProjectAction = (): void => {
     if (deleteProject.value === undefined) return;

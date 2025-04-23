@@ -17,7 +17,7 @@
 <script setup lang="ts">
 import CreateProjectDialog from '../../dialogs/create-project-dialog.vue';
 import { useQuasar } from 'quasar';
-import { canCreateProject, usePermissionsQuery } from '../../hooks/query-hooks';
+import { canCreateProject, usePermissionsQuery } from '@hooks/query-hooks';
 import { computed } from 'vue';
 
 const { data: permissions } = usePermissionsQuery();

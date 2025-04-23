@@ -66,7 +66,10 @@
                 >
                     <span class="text-subtitle1"> No Files Found </span>
 
-                    <create-file-dialog-opener :mission="mission_data">
+                    <CreateFileDialogOpener
+                        v-if="missionData !== undefined"
+                        :mission="missionData"
+                    >
                         <q-btn
                             flat
                             dense
@@ -75,7 +78,7 @@
                             label="Upload File"
                             icon="sym_o_add"
                         />
-                    </create-file-dialog-opener>
+                    </CreateFileDialogOpener>
                 </div>
             </div>
         </template>
@@ -192,7 +195,7 @@ import { QTable } from 'quasar';
 import { computed, unref, watch } from 'vue';
 import { filesOfMission } from 'src/services/queries/file';
 import ROUTES from 'src/router/routes';
-import { QueryHandler, TableRequest } from '../../services/query-handler';
+import { QueryHandler, TableRequest } from '@services/query-handler';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import {
     _downloadFile,
@@ -206,14 +209,11 @@ import { fileColumns } from './explorer-page-table-columns';
 import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
-import { useMissionUUID, useProjectUUID } from '../../hooks/router-hooks';
+import { useMissionUUID, useProjectUUID } from '@hooks/router-hooks';
 import DeleteFileDialogOpener from '../button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from '../button-wrapper/edit-file-dialog-opener.vue';
 import MoveFileDialogOpener from '../button-wrapper/move-file-dialog-opener.vue';
-import {
-    useMission,
-    useMissionsOfProjectMinimal,
-} from '../../hooks/query-hooks';
+import { useMission, useMissionsOfProjectMinimal } from '@hooks/query-hooks';
 import CreateFileDialogOpener from '@components/button-wrapper/dialog-opener-create-file.vue';
 
 const selected = defineModel('selected', { required: true, type: Array });
@@ -221,16 +221,16 @@ const selected = defineModel('selected', { required: true, type: Array });
 const $emit = defineEmits(['update:selected']);
 const $router = useRouter();
 
-const project_uuid = useProjectUUID();
-const mission_uuid = useMissionUUID();
-const { data: mission_data } = useMission(mission_uuid);
+const projectUuid = useProjectUUID();
+const missionUuid = useMissionUUID();
+const { data: missionData } = useMission(missionUuid);
 
 // TODO: this does not work across pages
-const { data: missions } = useMissionsOfProjectMinimal(project_uuid, 100, 0);
+const { data: missions } = useMissionsOfProjectMinimal(projectUuid, 100, 0);
 
 const nextMissionUuid = computed(() => {
     const indexOfMission = unref(missions)?.data.findIndex(
-        (mission) => mission.uuid === mission_uuid.value,
+        (mission) => mission.uuid === missionUuid.value,
     );
     if (indexOfMission === undefined || indexOfMission === -1) {
         return '';
@@ -241,7 +241,7 @@ const nextMissionUuid = computed(() => {
 
 const previousMissionUuid = computed(() => {
     const indexOfMission = unref(missions)?.data.findIndex(
-        (mission) => mission.uuid === mission_uuid.value,
+        (mission) => mission.uuid === missionUuid.value,
     );
     if (indexOfMission === undefined || indexOfMission === -1) {
         return '';
@@ -277,7 +277,7 @@ const pagination = computed(() => {
 
 const queryKey = computed(() => [
     'files',
-    mission_uuid.value,
+    missionUuid.value,
     properties.urlHandler.queryKey,
     properties.urlHandler.fileType,
     properties.urlHandler.categories,
@@ -290,7 +290,7 @@ const {
     queryKey: queryKey,
     queryFn: () =>
         filesOfMission(
-            mission_uuid.value ?? '',
+            missionUuid.value ?? '',
             properties.urlHandler.take,
             properties.urlHandler.skip,
             properties.urlHandler.fileType,
@@ -324,8 +324,8 @@ const onRowClick = async (_: Event, row: any): Promise<void> => {
         // @ts-ignore
         name: ROUTES.FILE.routeName,
         params: {
-            project_uuid: project_uuid.value,
-            mission_uuid: mission_uuid.value,
+            projectUuid: projectUuid.value,
+            missionUuid: missionUuid.value,
             file_uuid: row.uuid,
         },
     });

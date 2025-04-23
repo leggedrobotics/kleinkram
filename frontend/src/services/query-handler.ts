@@ -38,11 +38,11 @@ export class QueryHandler {
         this.take = take;
         this.sortBy = sortBy;
         this.descending = descending;
-        this.projectUuid = projectUuid;
-        this.missionUuid = missionUuid;
+        this.projectUuid = projectUuid ?? '';
+        this.missionUuid = missionUuid ?? '';
         this.searchParams = searchParameters ?? DEFAULT_SEARCH;
-        // @ts-ignore TODO: fix this type errro
-        this.fileType = fileType !== null || FileType.ALL;
+        // @ts-ignore
+        this.fileType = fileType !== undefined ?? FileType.ALL;
         this.categories = categories ?? [];
         this.rowsNumber = 0;
     }
@@ -83,14 +83,14 @@ export class QueryHandler {
     }
 
     setProjectUUID(projectUuid: string | undefined): void {
-        this.projectUuid = projectUuid;
-        this.missionUuid = undefined;
+        this.projectUuid = projectUuid ?? '';
+        this.missionUuid = '';
         this.searchParams = DEFAULT_SEARCH;
         this.resetPagination();
     }
 
     setMissionUUID(missionUuid: string | undefined): void {
-        this.missionUuid = missionUuid;
+        this.missionUuid = missionUuid ?? '';
         this.searchParams = DEFAULT_SEARCH;
         this.resetPagination();
     }
@@ -208,70 +208,70 @@ export class QueryURLHandler extends QueryHandler {
      * Setters that update the URL
      * ---------------------------------------------
      */
-    setPage(page: number): void {
+    override setPage(page: number): void {
         super.setPage(page);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    setTake(take: number): void {
+    override setTake(take: number): void {
         super.setTake(take);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    setSort(sortBy: string): void {
+    override setSort(sortBy: string): void {
         super.setSort(sortBy);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    setDescending(descending: boolean): void {
+    override setDescending(descending: boolean): void {
         super.setDescending(descending);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    setProjectUUID(projectUuid: string | undefined): void {
+    override setProjectUUID(projectUuid: string | undefined): void {
         super.setProjectUUID(projectUuid);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    setMissionUUID(missionUuid: string | undefined): void {
+    override setMissionUUID(missionUuid: string | undefined): void {
         super.setMissionUUID(missionUuid);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    setSearch(searchParameters: Record<string, string>): void {
+    override setSearch(searchParameters: Record<string, string>): void {
         super.setSearch(searchParameters);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    setFileType(fileType: FileType): void {
+    override setFileType(fileType: FileType): void {
         super.setFileType(fileType);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    setCategories(categories: string[]): void {
+    override setCategories(categories: string[]): void {
         super.setCategories(categories);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
     }
 
-    addCategory(category: string): void {
+    override addCategory(category: string): void {
         if (!this.categories.includes(category)) {
             super.addCategory(category);
             this.writeURL().catch((error: unknown) => {
@@ -298,12 +298,12 @@ export class QueryURLHandler extends QueryHandler {
         this.descending = route.query.descending
             ? route.query.descending === 'true'
             : DEFAULT_SORT.descending;
-        this.projectUuid = route.query.project_uuid
-            ? (route.query.project_uuid as string)
-            : undefined;
-        this.missionUuid = route.query.mission_uuid
-            ? (route.query.mission_uuid as string)
-            : undefined;
+        this.projectUuid = route.query.projectUuid
+            ? (route.query.projectUuid as string)
+            : '';
+        this.missionUuid = route.query.missionUuid
+            ? (route.query.missionUuid as string)
+            : '';
 
         const searchParameters = {} as Record<string, string>;
         if (route.query.name)
@@ -345,7 +345,7 @@ export class QueryURLHandler extends QueryHandler {
                     ? undefined
                     : this.descending.toString(),
 
-            project_uuid: this.projectUuid ?? undefined,
+            projectUuid: this.projectUuid ?? undefined,
 
             missionUuid: this.missionUuid ?? undefined,
             ...this.searchParams,

@@ -5,7 +5,7 @@
         <template #content>
             <AddUserToAccessGroup
                 ref="addUserReference"
-                :access_group_uuid="accessGroupUuid"
+                :access-group-uuid="accessGroupUuid"
             />
         </template>
 

@@ -24,7 +24,7 @@ import {
     getPermissionForProject,
     usePermissionsQuery,
     useUser,
-} from '../../hooks/query-hooks';
+} from '@hooks/query-hooks';
 import { computed } from 'vue';
 import DeleteActionDialog from '../../dialogs/delete-action-dialog.vue';
 import { ActionState } from '@common/enum';

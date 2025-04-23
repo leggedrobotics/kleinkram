@@ -61,7 +61,7 @@ const deleteMissionAction = async (): Promise<void> => {
                     await router.push({
                         name: ROUTES.MISSIONS.routeName,
                         params: {
-                            project_uuid: route.params.project_uuid,
+                            projectUuid: route.params.projectUuid,
                         },
                     });
                 }

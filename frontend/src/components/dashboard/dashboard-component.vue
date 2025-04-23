@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { useUser } from '../../hooks/query-hooks';
+import { useUser } from '@hooks/query-hooks';
 import DashboardWorkerLists from '@components/dashboard/dashborad-woker-list.vue';
 import TitleSection from '@components/title-section.vue';
 import DashboardRecentProjects from '@components/dashboard/dashboard-recent-projects.vue';

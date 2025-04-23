@@ -6,7 +6,7 @@
             <button-group>
                 <div style="width: 200px">
                     <q-btn-dropdown
-                        :label="prefilter.label"
+                        :label="prefilter?.label"
                         class="q-uploader--bordered full-width full-height"
                         flat
                         auto-close
@@ -109,7 +109,7 @@
 
                                 <q-item v-ripple clickable disabled>
                                     <q-tooltip
-                                        v-if="prefilter.value === 'personal'"
+                                        v-if="prefilter?.value === 'personal'"
                                     >
                                         You can't edit personal access groups
                                     </q-tooltip>
@@ -172,7 +172,7 @@ const filterOptions: Ref<{
 watch(
     () => prefilter.value,
     (newValue) => {
-        switch (newValue.value) {
+        switch (newValue?.value) {
             case 'all': {
                 filterOptions.value.type = AccessGroupType.CUSTOM;
                 filterOptions.value.creator = false;
@@ -222,14 +222,7 @@ const { data: foundAccessGroups, refetch } = useQuery<AccessGroupsDto>({
         ),
 });
 
-const refetchAccessGroup: (
-    event_: Event,
-    go?: (options?: {
-        to?: any;
-        replace?: boolean | undefined;
-        returnRouterError?: boolean | undefined;
-    }) => Promise<void>,
-) => Promise<void> = async () => {
+const refetchAccessGroup: (event_: Event) => Promise<void> = async () => {
     await refetch();
 };
 

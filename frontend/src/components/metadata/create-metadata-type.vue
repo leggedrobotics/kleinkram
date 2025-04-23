@@ -13,7 +13,7 @@
         @update:model-value="handleTagNameUpdate"
     />
 
-    <br>
+    <br />
     <label>Metadata Type</label>
     <DataTypeDropdown
         v-model="selectedDataType"
@@ -26,7 +26,7 @@
 import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { createTagType } from '../../services/mutations/tag';
+import { createTagType } from '@services/mutations/tag';
 import { DataType } from '@common/enum';
 import DataTypeDropdown from '@components/metadata/data-type-dropdown.vue';
 

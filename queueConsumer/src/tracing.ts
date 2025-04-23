@@ -136,6 +136,7 @@ export const traceWrapper =
  *
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function tracing<A extends unknown[], C>(
     traceName = '',
 ):

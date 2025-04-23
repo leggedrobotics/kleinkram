@@ -14,7 +14,7 @@
 </template>
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { canDeleteMission, usePermissionsQuery } from '../../hooks/query-hooks';
+import { canDeleteMission, usePermissionsQuery } from '@hooks/query-hooks';
 import { computed } from 'vue';
 import MoveFiles from '../../dialogs/modify-file-location-dialog.vue';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';

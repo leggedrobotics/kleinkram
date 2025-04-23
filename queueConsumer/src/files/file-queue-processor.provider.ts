@@ -148,7 +148,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
     @Process({ concurrency: 1, name: 'extractHashFromMinio' })
     async extractHashFromMinio(job: ExtractHashJob) {
         if (job.data.file_uuid === undefined) {
-            throw new Error(`File UUID is undefined for job ${job.id}`);
+            throw new Error(
+                `File UUID is undefined for job ${job.id.toString()}`,
+            );
         }
 
         const file = await this.fileRepository.findOneOrFail({
@@ -219,9 +221,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 : env.MINIO_MCAP_BUCKET_NAME,
             queue.identifier,
             {
-                mission_uuid: queue.mission.uuid,
+                missionUuid: queue.mission.uuid,
 
-                project_uuid: queue.mission.project.uuid,
+                projectUuid: queue.mission.project.uuid,
                 filename: queue.display_name,
             },
         );
@@ -364,9 +366,9 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                     env.MINIO_MCAP_BUCKET_NAME,
                     _mcapFileEntity.uuid,
                     {
-                        mission_uuid: __queue.mission.uuid,
+                        missionUuid: __queue.mission.uuid,
                         // @ts-ignore
-                        project_uuid: __queue.mission.project.uuid,
+                        projectUuid: __queue.mission.project.uuid,
                         filename: _mcapFileEntity.filename,
                     },
                 );
@@ -681,8 +683,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 env.MINIO_MCAP_BUCKET_NAME,
                 mcapFileEntity.uuid,
                 {
-                    mission_uuid: queueEntity.mission.uuid,
-                    project_uuid: queueEntity.mission.project.uuid,
+                    missionUuid: queueEntity.mission.uuid,
+                    projectUuid: queueEntity.mission.project.uuid,
                     filename: mcapFileEntity.filename,
                 },
             );

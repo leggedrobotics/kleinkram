@@ -396,5 +396,5 @@ export function hashUUIDtoColor(uuid: string): string {
     );
 
     const colorIndex = hash % colorPalette.length;
-    return colorPalette[colorIndex];
+    return colorPalette[colorIndex] ?? 'grey';
 }
