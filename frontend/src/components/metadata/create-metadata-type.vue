@@ -13,7 +13,7 @@
         @update:model-value="handleTagNameUpdate"
     />
 
-    <br />
+    <br>
     <label>Metadata Type</label>
     <DataTypeDropdown
         v-model="selectedDataType"

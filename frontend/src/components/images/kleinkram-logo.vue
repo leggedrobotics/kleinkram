@@ -1,6 +1,6 @@
 <template>
     <div class="flex row justify-center cursor-pointer q-my-auto q-pa-none">
-        <img src="/logoRSL.png" style="height: 28px" alt="RSL Logo" />
+        <img src="/logoRSL.png" style="height: 28px" alt="RSL Logo">
         <div
             v-show="$q.screen.gt.sm"
             class="flex column justify-center"
@@ -16,9 +16,7 @@
             >
                 Kleinkram
             </span>
-            <span style="font-size: 10px; line-height: 12px"
-                >by Robotic Systems Lab</span
-            >
+            <span style="font-size: 10px; line-height: 12px">by Robotic Systems Lab</span>
         </div>
     </div>
 </template>

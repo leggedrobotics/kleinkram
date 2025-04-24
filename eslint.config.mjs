@@ -60,6 +60,7 @@ export default tseslint.config(
             'no-useless-escape': 'warn',
             'vue/no-v-text-v-html-on-component': 'warn',
             'vue/v-on-handler-style': 'error',
+            'vue/attribute-hyphenation': 'error',
             'vue/component-definition-name-casing': 'error',
             'vue/require-name-property': 'error',
             'vue/require-prop-types': 'error',
