@@ -54,7 +54,7 @@
         "cookie-parser": "^1.4.6",
         "date-fns": "^4.1.0",
         "form-data": "^4.0.2",
-        "googleapis": "^146.0.0",
+        "googleapis": "^148.0.0",
         "jsonwebtoken": "^9.0.2",
         "minio": "8.0.5",
         "multer": "^1.4.5-lts.1",
