@@ -4110,10 +4110,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==
 
-typeorm@^0.3.22:
-  version "0.3.22"
-  resolved "https://registry.yarnpkg.com/typeorm/-/typeorm-0.3.22.tgz#74b56af4a495b6c8eda887dc9aa4670782b991ff"
-  integrity sha512-P/Tsz3UpJ9+K0oryC0twK5PO27zejLYYwMsE8SISfZc1lVHX+ajigiOyWsKbuXpEFMjD9z7UjLzY3+ElVOMMDA==
+typeorm@^0.3.23:
+  version "0.3.23"
+  resolved "https://registry.yarnpkg.com/typeorm/-/typeorm-0.3.23.tgz#62693a5a6b9d12f7de88e442900ab4dde11e1f41"
+  integrity sha512-CJUZWW7O5zZG0TA7bRpntJx97AvvQwsoSa1UgYlzTOtmkwODrqIyxP9wtzHpBssEKie5chnLiCVyxKNeYo65wQ==
   dependencies:
     "@sqltools/formatter" "^1.2.5"
     ansis "^3.17.0"

@@ -40,7 +40,7 @@
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
         "systeminformation": "^5.23.5",
-        "typeorm": "^0.3.22",
+        "typeorm": "^0.3.23",
         "util": "^0.12.5",
         "winston": "3.17.0",
         "winston-loki": "^6.1.3"
