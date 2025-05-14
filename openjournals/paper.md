@@ -62,33 +62,35 @@ To provide structure and facilitate organisation and retrieval, Kleinkram requir
 Kleinkram's system architecture is modular, comprising several interacting building blocks. These blocks are conceptually grouped into a client-side library and container-based services running on a server infrastructure.
 
 
-*Python Client Library and CLI*
-Provides programmatic access to Kleinkram's functionalities, enabling efficient data transfer operations (upload, download) directly from Python scripts or the command line. This allows seamless integration into robotic workflows and automated data pipelines running on robots or workstations, removing the need for manual browser interaction or network file system mounts for data transfer.
-
-The CLI is built using the `typer` library, sharing a core Python codebase with the client library.
-*Web interface*
-Serves as the primary graphical user interface for users to interact with Kleinkram. It allows for the browsing, managing, and structuring of files and their metadata.
-
-It is implemented as a single-page application using the Vue3 framework and the Quasar component library.
+- **Python Client Library and CLI**
+    Provides programmatic access to Kleinkram's functionalities, enabling efficient data transfer operations (upload, download) directly from Python scripts or the command line. This allows seamless integration into robotic workflows and automated data pipelines running on robots or workstations, removing the need for manual browser interaction or network file system mounts for data transfer.
+    
+    The CLI is built using the `typer` library, sharing a core Python codebase with the client library.
 
 
-*Backend API*
-Acts as the central communication layer between the client applications (web UI and Python client/CLI) and the data storage and processing components. It handles authentication, data indexing, metadata management, and schedules background tasks.
+- **Web interface**
+    Serves as the primary graphical user interface for users to interact with Kleinkram. It allows for the browsing, managing, and structuring of files and their metadata.
 
-The backend is implemented using the NestJS framework and utilises a PostgreSQL database for storing all metadata related to projects, missions, files, users, and actions.
-
-
-Data Store
-The raw robotic data files (rosbags, MCAPs) are stored on an S3-compatible object storage backend. This provides scalability and flexibility. Users can easily deploy and manage their own storage using self-hosted solutions like MinIO, or utilise public cloud S3 services. Kleinkram interacts with the data store via the S3 API.
+    It is implemented as a single-page application using the Vue3 framework and the Quasar component library.
 
 
-Action Runner
-This component enables the execution of customisable data processing and analysis tasks directly on the data stored within Kleinkram. Users can define "Actions" (e.g., validate data integrity, extract sensor metadata, generate preview visualisations, convert formats, run benchmarking scripts).
+- **Backend API**
+    Acts as the central communication layer between the client applications (web UI and Python client/CLI) and the data storage and processing components. It handles authentication, data indexing, metadata management, and schedules background tasks.
 
-These actions are packaged as Docker containers. The action runner orchestrates the execution of these containers, providing them access to the necessary data from the data store using the client library or CLI.
+    The backend is implemented using the NestJS framework and utilises a PostgreSQL database for storing all metadata related to projects, missions, files, users, and actions.
 
 
-Observability
-(Optional) Monitoring and logging system performance, resource usage, and task execution status are crucial for managing a scalable data system. Integration with observability tools, such as the Grafana Stack (Loki for logs, Prometheus for metrics, Tempo for traces, Grafana for dashboards), can provide insights into the system's health and the progress of the data processing task.
+- **Data Store**
+    The raw robotic data files (rosbags, MCAPs) are stored on an S3-compatible object storage backend. This provides scalability and flexibility. Users can easily deploy and manage their own storage using self-hosted solutions like MinIO, or utilise public cloud S3 services. Kleinkram interacts with the data store via the S3 API.
+
+
+- **Action Runner**
+    This component enables the execution of customisable data processing and analysis tasks directly on the data stored within Kleinkram. Users can define "Actions" (e.g., validate data integrity, extract sensor metadata, generate preview visualisations, convert formats, run benchmarking scripts).
+
+    These actions are packaged as Docker containers. The action runner orchestrates the execution of these containers, providing them access to the necessary data from the data store using the client library or CLI.
+
+
+- **Observability**
+    (Optional) Monitoring and logging system performance, resource usage, and task execution status are crucial for managing a scalable data system. Integration with observability tools, such as the Grafana Stack (Loki for logs, Prometheus for metrics, Tempo for traces, Grafana for dashboards), can provide insights into the system's health and the progress of the data processing task.
 
 # Acknowledgements
