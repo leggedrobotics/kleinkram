@@ -19,10 +19,6 @@ authors:
     corresponding: true
     equal-contrib: false
     affiliation: "1"
-  - name: Marvin Lichtsteiner
-    affiliation: "1"
-  - name: Lars Leuthold
-    affiliation: "1"
   - name: Jonas Frey
     orcid: 0000-0002-7401-2173
     corresponding: true
@@ -53,7 +49,7 @@ Kleinkram empowers researchers to streamline data management and accelerate robo
 
 # Statement of need
 
-To render robotic data usfeull for research, it is essential to store, organize, and index the data in a way that makes
+To render robotic data useful for research, it is essential to store, organize, and index the data in a way that makes
 it easily searchable and shareable.
 While large corporations have developed internal tools or rely on closed-source third-party providers, no openly
 available, ready-to-use, and easy-to-deploy solution exists for the robotics research community. Additionally, features
@@ -140,26 +136,26 @@ Kleinkram's system architecture is modular and comprises several interacting mic
 # Usecase
 
 Kleinkram has been used internally at the Robotic Systems Lab at ETH Zurich over the past year. During this time, it has
-stored over 20 TB of data collected from a variety of robotic systems, effectively replacing the lab’s previous reliance
-on Google Drive for data storage. The largest project supported by Kleinkram was the **GrandTour dataset** [ref], in
-which our legged robot **ANYmal** [ref], equipped with **Boxi** [ref], a multi-sensor payload, was deployed across
-various locations in Switzerland.
+stored over 20 TB of data collected from various robotic systems, effectively replacing the lab’s previous reliance on
+Google Drive for data storage. The largest project supported by Kleinkram was the **GrandTour dataset** [ref], in which
+our legged robot **ANYmal** [ref], equipped with **Boxi** [ref], a multi-sensor payload, was deployed across various
+locations in Switzerland.
 
 Following each data collection mission, raw data — recorded in the form of ROSbags and MCAP files — was uploaded
-directly to Kleinkram via its command-line interface (CLI). The intuitive Docker-based integration allowed us to easily
-define and execute data verification tests. These included, for example, checks to ensure that all sensor streams were
-recorded at the expected frequencies and correct timesynchronization was established during the distributed recordings,
-as well as common sense checking for validity of data (e.g. images are not black or the IMUs measure the gravity
-vector).
+directly to Kleinkram via its command-line interface (CLI). The intuitive Docker-based action integration allowed us to
+easily define and execute data verification tests. These included, for example, checks to ensure that all sensor streams
+were recorded at the expected frequencies and correct timesynchronization was established during the distributed
+recordings, as well as common sense checking for validity of data (e.g. images are not black or the IMUs measure the
+gravity vector).
 
 Beyond data verification, Kleinkram enabled us to run full SLAM pipelines retrospectively, automatically producing
 standard Absolute and Relative Trajectory Error (ATE/RTE) metrics. This compute integration was critical for
 development, benchmarking, and evaluation.
 
 Equally important was Kleinkram’s user-friendly CLI, which provided quick access to summary statistics such as dataset
-counts, durations, and other key metrics — many of which were directly used in associated publications. Thanks to fast
-networking within the ETH infrastructure, users could pull datasets on demand to their local machines and delete them
-afterward, enabling an efficient and lightweight workflow.
+counts, durations, and other key metrics — many of which were directly used in associated publications. Given that for
+our use case, data has to be mainly accessed within the ETH network infrastructure, datasets can be pulled on demand and
+deleted afterwards, fully utilizing the fast on-premise interconnect infrastructure without relying on external servers.
 
 Throughout the project, Kleinkram also enforced metadata submission during upload. Users were required to include a YAML
 file describing the mission, which captured essential information such as the robot operator, specific hardware
@@ -168,7 +164,15 @@ structured metadata was essential for organizing and retrieving data at scale.
 
 # Acknowledgements
 
-[To be completed - Acknowledge funding sources, collaborators, etc.]
+This work was primarily supported by the Open Research Data Grant at ETH Zurich.
+Jonas Frey is supported by the Max Planck ETH Center for Learning Systems.
+This work was supported and partially funded by Leica Geosystems, which is part of Hexagon. In addition, this work was
+supported by the National Centre of Competence in Research Robotics (NCCR Robotics), the ETH RobotX research grant
+funded through the ETH Zurich Foundation, the European Union's Horizon 2020 research and innovation program under grant
+agreement No 101016970, No 101070405, and No 101070596, and an ETH Zurich Research Grant No. 21-1 ETH-27.
+
+Our sincere appreciation goes to William Talbot and Turcan Tuna for the internal testing of Kleinkram, Noel Kampus for
+the initial design of the web interface, and Lars Leuthold and Marvin Lichtsteiner for their contributions.
 
 # References
 
