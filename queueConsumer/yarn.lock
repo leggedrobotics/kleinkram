@@ -1940,6 +1940,11 @@ decode-uri-component@^0.2.2:
   resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.2.tgz#e69dbe25d37941171dd540e024c444cd5188e1e9"
   integrity sha512-FqUYQ+8o158GyGTrMFJms9qh3CqTKvAqgqsTnkLI8sKu0028orqBhxNMFkFen0zGyg6epACD32pjVk58ngIErQ==
 
+dedent@^1.6.0:
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/dedent/-/dedent-1.6.0.tgz#79d52d6389b1ffa67d2bcef59ba51847a9d503b2"
+  integrity sha512-F1Z+5UCFpmQUzJa11agbyPVMbpgT/qA3/SKyJ1jyBgm7dUcUEa8v9JwDkerSQXfakBwFljIxhOJqGkjUwZ9FSA==
+
 deepmerge@^4.2.2:
   version "4.3.1"
   resolved "https://registry.yarnpkg.com/deepmerge/-/deepmerge-4.3.1.tgz#44b5f2147cd3b00d4b56137685966f26fd25dd4a"
@@ -4110,10 +4115,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==
 
-typeorm@^0.3.22:
-  version "0.3.22"
-  resolved "https://registry.yarnpkg.com/typeorm/-/typeorm-0.3.22.tgz#74b56af4a495b6c8eda887dc9aa4670782b991ff"
-  integrity sha512-P/Tsz3UpJ9+K0oryC0twK5PO27zejLYYwMsE8SISfZc1lVHX+ajigiOyWsKbuXpEFMjD9z7UjLzY3+ElVOMMDA==
+typeorm@^0.3.24:
+  version "0.3.24"
+  resolved "https://registry.yarnpkg.com/typeorm/-/typeorm-0.3.24.tgz#e05ab51d60036d2beb35f942783c37f2af02b4ef"
+  integrity sha512-4IrHG7A0tY8l5gEGXfW56VOMfUVWEkWlH/h5wmcyZ+V8oCiLj7iTPp0lEjMEZVrxEkGSdP9ErgTKHKXQApl/oA==
   dependencies:
     "@sqltools/formatter" "^1.2.5"
     ansis "^3.17.0"
@@ -4121,6 +4126,7 @@ typeorm@^0.3.22:
     buffer "^6.0.3"
     dayjs "^1.11.13"
     debug "^4.4.0"
+    dedent "^1.6.0"
     dotenv "^16.4.7"
     glob "^10.4.5"
     sha.js "^2.4.11"
