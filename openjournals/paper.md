@@ -4,7 +4,6 @@ tags:
   - Python
   - robotics
   - data management
-  - multi-modal
 authors:
   - name: Cyrill Püntener
     orcid: 0009-0000-5231-9310
@@ -12,6 +11,7 @@ authors:
     equal-contrib: true
     affiliation: "1"
   - name: Johann Schwabe
+    orcid: 0009-0000-4490-0658
     corresponding: true
     equal-contrib: true
     affiliation: "1"
@@ -33,7 +33,7 @@ affiliations:
     index: 1
   - name: Max Planck Institute for Intelligent Systems, Tübingen, Germany
     index: 2
-date: 14 May 2025
+date: 16 June 2025
 bibliography: paper.bib
 ---
 
@@ -50,11 +50,10 @@ Kleinkram empowers researchers to streamline data management and accelerate robo
 # Statement of need
 
 To render robotic data useful for research, it is essential to store, organize, and index the data in a way that makes
-it easily searchable and shareable.
-While large corporations have developed internal tools or rely on closed-source third-party providers, no openly
-available, ready-to-use, and easy-to-deploy solution exists for the robotics research community. Additionally, features
-such as data verification and the ability to perform tailored compute jobs on newly generated datasets are highly
-desirable, as they facilitate benchmarking, reproducibility and algorithmic development.
+it easily searchable and shareable. While large corporations have developed internal tools or rely on closed-source
+third-party providers, no openly available, ready-to-use, and easy-to-deploy solution exists for the robotics research
+community. Additionally, features such as data verification and the ability to perform tailored compute jobs on newly
+generated datasets are highly desirable, as they facilitate benchmarking, reproducibility and algorithmic development.
 
 To address these challenges, we introduce **Kleinkram**, an on-premise cloud solution designed for scalable and
 efficient data management. Unlike traditional cloud storage, Kleinkram natively integrates compute capabilities,
@@ -65,10 +64,10 @@ accessibility, while a command-line interface (CLI) enables seamless integration
 systems. Kleinkram supports widely adopted standards, building on ROS1 and ROS2 message definitions, and offers native
 compatibility with ROSbag and MCAP data formats.
 
-# Data Structure and Usage
+# Data Structure
 
 Kleinkram is designed around the typical data generation process in mobile robotics, assuming data is collected and
-stored primarily in ROS1/ROS2-compatible rosbag or MCAP file formats.
+stored primarily in ROS1/ROS2-compatible ROSbag or MCAP file formats.
 
 Once data recording for an experiment is complete, these files can be efficiently uploaded and ingested into the
 Kleinkram system for centralised storage, indexing, and subsequent post-processing. It is important to note that the
@@ -80,7 +79,7 @@ strict three-layer hierarchy: Projects, Missions, and Files. Each layer maintain
 layer below it. While users have flexibility in how they map their specific activities to this structure, the intended
 model is that a Project represents a distinct research project, which requires data storage. A Mission corresponds to a
 single, self-contained experiment or data collection run conducted within that project, and it contains all the
-individual data Files (like rosbag or MCAP files) recorded during that specific deployment. This structured approach
+individual data Files (like ROSbag or MCAP files) recorded during that specific deployment. This structured approach
 aids in navigating, managing, and understanding large volumes of experimental data.
 
 # System Architecture
@@ -90,18 +89,16 @@ Kleinkram's system architecture is modular and comprises several interacting mic
 - **Python Client Library and CLI**
   Provides programmatic access to Kleinkram's functionalities, enabling efficient data transfer operations (upload,
   download) directly from Python scripts or the command line. This allows seamless integration into robotic workflows
-  and automated data pipelines running on robots or workstations, removing the need for manual browser interaction or
-  network file system mounts for data transfer.
+  and automated data pipelines running on robots or workstations, removing the need for manual browser interaction for
+  data transfer.
 
   The CLI is built using the typer library, sharing a core Python codebase with the client library.
-
 
 - **Web interface**
   Serves as the primary graphical user interface for users to interact with Kleinkram. It allows for the browsing,
   managing, and structuring of files and their metadata.
 
   It is implemented as a single-page application using the Vue3 framework and the Quasar component library.
-
 
 - **Backend API**
   Acts as the central communication layer between the client applications (web UI and Python client/CLI) and the data
@@ -111,12 +108,10 @@ Kleinkram's system architecture is modular and comprises several interacting mic
   The backend is implemented using the NestJS framework and utilises a PostgreSQL database for storing all metadata
   related to projects, missions, files, users, and actions.
 
-
 - **Data Store**
-  The raw robotic data files (rosbags, MCAPs) are stored on an S3-compatible object storage backend. This provides
+  The raw robotic data files (ROSbags, MCAPs) are stored on an S3-compatible object storage backend. This provides
   scalability and flexibility. Users can easily deploy and manage their own storage using self-hosted solutions like
   MinIO, or utilise public cloud S3 services. Kleinkram interacts with the data store via the S3 API.
-
 
 - **Action Runner**
   This component enables the execution of customisable data processing and analysis tasks directly on the data stored
@@ -125,7 +120,6 @@ Kleinkram's system architecture is modular and comprises several interacting mic
 
   These actions are packaged as Docker containers. The action runner orchestrates the execution of these containers,
   providing them access to the necessary data from the data store using the client library or CLI.
-
 
 - **Observability**
   (Optional) Monitoring and logging system performance, resource usage, and task execution status are crucial for
@@ -137,9 +131,9 @@ Kleinkram's system architecture is modular and comprises several interacting mic
 
 Kleinkram has been used internally at the Robotic Systems Lab at ETH Zurich over the past year. During this time, it has
 stored over 20 TB of data collected from various robotic systems, effectively replacing the lab’s previous reliance on
-Google Drive for data storage. The largest project supported by Kleinkram was the **GrandTour dataset** [ref], in which
-our legged robot **ANYmal** [ref], equipped with **Boxi** [ref], a multi-sensor payload, was deployed across various
-locations in Switzerland.
+Google Drive for data storage. The largest project supported by Kleinkram was the **GrandTour dataset** [@frey25boxi],
+in which our legged robot **ANYmal** [@hutter16anymal], equipped with **Boxi** [@frey25boxi], a multi-sensor payload,
+was deployed across various locations in Switzerland.
 
 Following each data collection mission, raw data — recorded in the form of ROSbags and MCAP files — was uploaded
 directly to Kleinkram via its command-line interface (CLI). The intuitive Docker-based action integration allowed us to
@@ -166,14 +160,14 @@ structured metadata was essential for organizing and retrieving data at scale.
 
 This work was primarily supported by the Open Research Data Grant at ETH Zurich.
 Jonas Frey is supported by the Max Planck ETH Center for Learning Systems.
+
 This work was supported and partially funded by Leica Geosystems, which is part of Hexagon. In addition, this work was
 supported by the National Centre of Competence in Research Robotics (NCCR Robotics), the ETH RobotX research grant
 funded through the ETH Zurich Foundation, the European Union's Horizon 2020 research and innovation program under grant
 agreement No 101016970, No 101070405, and No 101070596, and an ETH Zurich Research Grant No. 21-1 ETH-27.
 
-Our sincere appreciation goes to William Talbot and Turcan Tuna for the internal testing of Kleinkram, Noel Kampus for
-the initial design of the web interface, and Lars Leuthold and Marvin Lichtsteiner for their contributions.
+We extend our sincere appreciation to Noel Kampus for the initial design of the web interface, to Lars Leuthold and
+Marvin Lichtsteiner for their valuable contributions, and to William Talbot and Turcan Tuna for their efforts in the
+internal testing of Kleinkram.
 
 # References
-
-[To be completed - List cited literature here]
