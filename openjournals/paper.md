@@ -67,14 +67,12 @@ compatibility with ROSbag and MCAP data formats.
 # Data Structure
 
 Kleinkram is designed around the typical data generation process in mobile robotics, assuming data is collected and
-stored primarily in ROS1/ROS2-compatible ROSbag or MCAP file formats.
+stored primarily in ROS1/ROS2-compatible ROSbag or MCAP file formats. Once data recording for an experiment is complete,
+these files can be efficiently uploaded and ingested into the Kleinkram system for centralized storage, indexing, and
+subsequent post-processing. It is important to note that the current version of Kleinkram focuses on post-recording and
+data management. It does not support real-time data streaming or processing on the fly.
 
-Once data recording for an experiment is complete, these files can be efficiently uploaded and ingested into the
-Kleinkram system for centralised storage, indexing, and subsequent post-processing. It is important to note that the
-current version of Kleinkram focuses on post-recording and data management. It does not support real-time data streaming
-or processing on the fly.
-
-To provide structure and facilitate organisation and retrieval, Kleinkram requires data to be organised according to a
+To provide structure and facilitate organization and retrieval, Kleinkram requires data to be organized according to a
 strict three-layer hierarchy: Projects, Missions, and Files. Each layer maintains a one-to-many relationship with the
 layer below it. While users have flexibility in how they map their specific activities to this structure, the intended
 model is that a Project represents a distinct research project, which requires data storage. A Mission corresponds to a
@@ -84,7 +82,7 @@ aids in navigating, managing, and understanding large volumes of experimental da
 
 # System Architecture
 
-Kleinkram's system architecture is modular and comprises several interacting microservices.
+Kleinkram's system architecture is modular, comprising several interacting microservices.
 
 - **Python Client Library and CLI**
   Provides programmatic access to Kleinkram's functionalities, enabling efficient data transfer operations (upload,
@@ -96,7 +94,7 @@ Kleinkram's system architecture is modular and comprises several interacting mic
 
 - **Web interface**
   Serves as the primary graphical user interface for users to interact with Kleinkram. It allows for the browsing,
-  managing, and structuring of files and their metadata.
+  managing and structuring files and their metadata.
 
   It is implemented as a single-page application using the Vue3 framework and the Quasar component library.
 
@@ -124,7 +122,7 @@ Kleinkram's system architecture is modular and comprises several interacting mic
 - **Observability**
   (Optional) Monitoring and logging system performance, resource usage, and task execution status are crucial for
   managing a scalable data system. Integration with observability tools, such as the Grafana Stack (Loki for logs,
-  Prometheus for metrics, Tempo for traces, Grafana for dashboards), can provide insights into the system's health and
+  Prometheus for metrics, Tempo for traces, Grafana for dashboards) can provide insights into the system's health and
   the progress of the data processing task.
 
 # Usecase
@@ -137,8 +135,8 @@ was deployed across various locations in Switzerland.
 
 Following each data collection mission, raw data — recorded in the form of ROSbags and MCAP files — was uploaded
 directly to Kleinkram via its command-line interface (CLI). The intuitive Docker-based action integration allowed us to
-easily define and execute data verification tests. These included, for example, checks to ensure that all sensor streams
-were recorded at the expected frequencies and correct timesynchronization was established during the distributed
+easily define and execute data verification tests. These include, for example, checks to ensure that all sensor streams
+were recorded at the expected frequencies and correct time synchronization was established during the distributed
 recordings, as well as common sense checking for validity of data (e.g. images are not black or the IMUs measure the
 gravity vector).
 
@@ -148,7 +146,7 @@ development, benchmarking, and evaluation.
 
 Equally important was Kleinkram’s user-friendly CLI, which provided quick access to summary statistics such as dataset
 counts, durations, and other key metrics — many of which were directly used in associated publications. Given that for
-our use case, data has to be mainly accessed within the ETH network infrastructure, datasets can be pulled on demand and
+our use case, data has to be mainly accessed within the ETH network infrastructure; datasets can be pulled on demand and
 deleted afterwards, fully utilizing the fast on-premise interconnect infrastructure without relying on external servers.
 
 Throughout the project, Kleinkram also enforced metadata submission during upload. Users were required to include a YAML
