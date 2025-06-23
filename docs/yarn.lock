@@ -2093,10 +2093,10 @@ vscode-uri@~3.0.8:
   resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-3.0.8.tgz#1770938d3e72588659a172d0fd4642780083ff9f"
   integrity sha512-AyFQ0EVmsOZOlAnxoFOGOq1SQDWAB7C6aqMGS23svWAllfOaxbuFvcT8D1i8z3Gyn8fraVeZNNmN6e9bxxXkKw==
 
-vue-json-pretty@^2.4.0:
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/vue-json-pretty/-/vue-json-pretty-2.4.0.tgz#6c5a00ef9c2eb3d24466b861ec5a085c84367e4e"
-  integrity sha512-e9bP41DYYIc2tWaB6KuwqFJq5odZ8/GkE6vHQuGcbPn37kGk4a3n1RNw3ZYeDrl66NWXgTlOfS+M6NKkowmkWw==
+vue-json-pretty@^2.5.0:
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/vue-json-pretty/-/vue-json-pretty-2.5.0.tgz#cb31d9a3f1fb385a209609dbb1cbb7aeaf891fa9"
+  integrity sha512-nZA6qXYaiMaE2J0HkKtkrLcPJoN03SDSBdZWEPiRwoOVySWOfoZCyadhBwBN6wAHTga+c/R49ExGWoKFXnu37A==
 
 vue@^3.5.13:
   version "3.5.13"
