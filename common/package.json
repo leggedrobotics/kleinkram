@@ -13,7 +13,7 @@
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.1",
         "minio": "8.0.5",
-        "pg": "^8.15.6",
+        "pg": "^8.16.3",
         "ts-node": "^10.9.2",
         "typeorm": "^0.4.0-alpha.1",
         "typeorm-seeding": "^1.6.1"
