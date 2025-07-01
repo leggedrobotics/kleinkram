@@ -10,7 +10,7 @@
         autofocus
     />
 
-    <br>
+    <br />
     <label>Metadata</label>
     <q-btn-dropdown
         v-model="ddrOpen"

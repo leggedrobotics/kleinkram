@@ -37,7 +37,7 @@
                     <img
                         src="/logoRSL.png"
                         style="height: 28px; margin-bottom: 48px"
-                    >
+                    />
 
                     <h1
                         style="

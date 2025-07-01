@@ -258,11 +258,14 @@ export const useMission = (
 };
 
 export const useManyMissions = (
-    missionUuids: ModelRef<any[]>,
+    missionUuid: ComputedRef<(string | any[])[]>,
+    allMissionUUIDs: ComputedRef<any[]>,
+    hasMissionUUIDs: ComputedRef<boolean>,
 ): UseQueryReturnType<MissionsDto | undefined, Error> => {
     return useQuery<MissionsDto>({
-        queryKey: ['missions', missionUuids],
-        queryFn: () => getMissions(missionUuids.value),
+        queryKey: missionUuid,
+        queryFn: () => getMissions(allMissionUUIDs.value),
+        enabled: hasMissionUUIDs,
     });
 };
 

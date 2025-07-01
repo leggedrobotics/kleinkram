@@ -83,7 +83,8 @@
                             "
                             >{{
                                 singleWorker.reachable ? 'Online' : 'Offline'
-                            }}</span>
+                            }}</span
+                        >
                     </div>
                     <div
                         v-if="extendedWorkers[singleWorker.uuid]"
@@ -103,11 +104,15 @@
                             </div>
                             <div class="q-mt-md col-3">
                                 <q-icon name="sym_o_hub" size="20px" />
-                                <span class="worker-name">{{ singleWorker.cpuCores }} Cores</span>
+                                <span class="worker-name"
+                                    >{{ singleWorker.cpuCores }} Cores</span
+                                >
                             </div>
                             <div class="q-mt-md col-3">
                                 <q-icon name="sym_o_memory" size="20px" />
-                                <span class="worker-name">{{ singleWorker.cpuMemory }}GB</span>
+                                <span class="worker-name"
+                                    >{{ singleWorker.cpuMemory }}GB</span
+                                >
                             </div>
                             <div
                                 v-if="
@@ -137,7 +142,9 @@
                                         name="sym_o_hard_disk"
                                         size="20px"
                                     />
-                                    <span class="worker-name">{{ singleWorker.storage }} GB</span>
+                                    <span class="worker-name"
+                                        >{{ singleWorker.storage }} GB</span
+                                    >
                                 </div>
                             </div>
                         </div>
