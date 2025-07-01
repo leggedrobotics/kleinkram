@@ -90,7 +90,7 @@
             </button-group>
         </template>
     </title-section>
-    <ActionConfiguration
+    <ActionConfigurationDrawer
         :open="createAction"
         :mission-uuids="selectedMissionUuids"
         @close="onClose"
@@ -242,7 +242,7 @@
 <script setup lang="ts">
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { useQueryClient } from '@tanstack/vue-query';
-import ActionConfiguration from 'components/action-configuration.vue';
+import ActionConfigurationDrawer from 'components/action-submission/action-configuration-drawer.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';

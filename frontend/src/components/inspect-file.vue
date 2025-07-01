@@ -258,7 +258,7 @@
                     <b>{{ formatDate(queue.updatedAt) }}:</b>
                     {{ getSimpleFileStateName(queue.state) }}
 
-                    <br />
+                    <br>
                     &nbsp; » {{ getDetailedFileState(queue.state) }}
                 </div>
 

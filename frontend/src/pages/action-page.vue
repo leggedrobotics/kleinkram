@@ -1,7 +1,11 @@
 <template>
     <title-section title="Mission Analysis" />
 
-    <ActionConfiguration :open="createAction" @close="closeHandler" />
+    <ActionConfigurationDrawer
+        :open="createAction"
+        :mission-uuids="[]"
+        @close="closeHandler"
+    />
 
     <div class="q-my-lg">
         <div class="flex justify-between items-center">
@@ -82,7 +86,7 @@
                 <q-btn
                     flat
                     class="bg-button-secondary text-on-color"
-                    label="Create Action"
+                    label="Submit Action"
                     :disable="!canCreate"
                     icon="sym_o_add"
                     @click="createActionEvent"
@@ -123,7 +127,7 @@ import { filteredProjects } from 'src/services/queries/project';
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import { UserRole } from '@common/enum';
-import ActionConfiguration from 'components/action-configuration.vue';
+import ActionConfigurationDrawer from 'components/action-submission/action-configuration-drawer.vue';
 import ActionsTable from 'components/actions-table.vue';
 import BullQueue from 'components/bull-queue.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';

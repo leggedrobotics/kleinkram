@@ -13,7 +13,7 @@
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.726.1",
-        "@tanstack/vue-query": "^5.74.5",
+        "@tanstack/vue-query": "^5.81.5",
         "axios": "^1.8.4",
         "date-fns": "^4.1.0",
         "echarts": "^5.5.1",
@@ -25,17 +25,17 @@
         "vue": "^3.5.11",
         "vue-echarts": "^7.0.3",
         "vue-json-pretty": "^2.4.0",
-        "vue-router": "^4.4.5"
+        "vue-router": "^4.5.1"
     },
     "devDependencies": {
         "@quasar/app-vite": "^2.0.0",
-        "@types/node": "^22.14.1",
+        "@types/node": "^24.0.7",
         "@types/spark-md5": "^3.0.5",
         "autoprefixer": "^10.4.21",
         "jiti": "^2.4.2",
-        "tsx": "^4.19.3",
+        "tsx": "^4.20.3",
         "typescript": "^5.8.3",
-        "vue-tsc": "^2.2.8"
+        "vue-tsc": "^2.2.10"
     },
     "engines": {
         "node": "^21 || ^20 || ^18 || ^16 || ^22",
