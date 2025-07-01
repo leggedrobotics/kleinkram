@@ -20,12 +20,16 @@ hero:
           link: http://github.com/leggedrobotics/kleinkram
 
 features:
+    - title: Get Started
+      icon: 🚀
+      details: Get Started by visiting datasets.leggedrobotics.com.
+      link: https://datasets.leggedrobotics.com/
     - title: Write Custom Actions?
       icon: 📝
       details: Custom actions can be used for data processing, click here for more information.
       link: /usage/actions/getting-started.md
     - title: How to Use the CLI?
-      icon: 🚀
+      icon: 💻
       details: We offer a python CLI to interact with the application, click here for more information.
       link: /usage/python/getting-started.md
     - title: Want to Contribute?

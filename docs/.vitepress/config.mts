@@ -9,13 +9,13 @@ export default withMermaid({
 
 
     mermaidPlugin: {
-        class: "mermaid",
+        class: 'mermaid',
     },
     head: [
         [
             'link',
-            { rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined' }
-        ]
+            { rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined' },
+        ],
     ],
     ignoreDeadLinks: true,
     themeConfig: {
@@ -298,7 +298,7 @@ export default withMermaid({
         },
 
         footer: {
-            message: 'Released under the MIT License.',
+            message: 'Released under the MIT License.<br /><a href="https://datasets.leggedrobotics.com/">datasets.leggedrobotics.com</a>',
             copyright: 'Copyright © 2024-present Robotic Systems Lab',
         },
     },

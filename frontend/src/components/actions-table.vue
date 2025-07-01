@@ -40,6 +40,20 @@
             </q-td>
         </template>
 
+        <template #no-data>
+            <div
+                class="flex flex-center"
+                style="justify-content: center; margin: auto"
+            >
+                <div
+                    class="q-pa-md flex flex-center column q-gutter-md"
+                    style="min-height: 200px"
+                >
+                    <span class="text-subtitle1"> No Actions Found </span>
+                </div>
+            </div>
+        </template>
+
         <template #body-cell-Details="props">
             <q-td :props="props">
                 <q-btn

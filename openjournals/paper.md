@@ -1,38 +1,38 @@
 ---
 title: 'Kleinkram: Open Robotic Data Management'
 tags:
-  - Python
-  - robotics
-  - data management
+    - Python
+    - robotics
+    - data management
 authors:
-  - name: Cyrill Püntener
-    orcid: 0009-0000-5231-9310
-    corresponding: true
-    equal-contrib: true
-    affiliation: "1"
-  - name: Johann Schwabe
-    orcid: 0009-0000-4490-0658
-    corresponding: true
-    equal-contrib: true
-    affiliation: "1"
-  - name: Dominique Garmier
-    corresponding: true
-    equal-contrib: false
-    affiliation: "1"
-  - name: Jonas Frey
-    orcid: 0000-0002-7401-2173
-    corresponding: true
-    equal-contrib: false
-    affiliation: "1, 2"
-  - name: Marco Hutter
-    orcid: 0000-0002-4285-4990
-    equal-contrib: false
-    affiliation: 1
+    - name: Cyrill Püntener
+      orcid: 0009-0000-5231-9310
+      corresponding: true
+      equal-contrib: true
+      affiliation: '1'
+    - name: Johann Schwabe
+      orcid: 0009-0000-4490-0658
+      corresponding: true
+      equal-contrib: true
+      affiliation: '1'
+    - name: Dominique Garmier
+      corresponding: true
+      equal-contrib: false
+      affiliation: '1'
+    - name: Jonas Frey
+      orcid: 0000-0002-7401-2173
+      corresponding: true
+      equal-contrib: false
+      affiliation: '1, 2'
+    - name: Marco Hutter
+      orcid: 0000-0002-4285-4990
+      equal-contrib: false
+      affiliation: 1
 affiliations:
-  - name: Robotic Systems Lab, ETH Zurich, Switzerland
-    index: 1
-  - name: Max Planck Institute for Intelligent Systems, Tübingen, Germany
-    index: 2
+    - name: Robotic Systems Lab, ETH Zurich, Switzerland
+      index: 1
+    - name: Max Planck Institute for Intelligent Systems, Tübingen, Germany
+      index: 2
 date: 16 June 2025
 bibliography: paper.bib
 ---
@@ -90,21 +90,21 @@ Kleinkram's system architecture is modular, comprising several interacting micro
   and automated data pipelines running on robots or workstations, removing the need for manual browser interaction for
   data transfer.
 
-  The CLI is built using the typer library, sharing a core Python codebase with the client library.
+    The CLI is built using the typer library, sharing a core Python codebase with the client library.
 
 - **Web interface**
   Serves as the primary graphical user interface for users to interact with Kleinkram. It allows for the browsing,
   managing and structuring files and their metadata.
 
-  It is implemented as a single-page application using the Vue3 framework and the Quasar component library.
+    It is implemented as a single-page application using the Vue3 framework and the Quasar component library.
 
 - **Backend API**
   Acts as the central communication layer between the client applications (web UI and Python client/CLI) and the data
   storage and processing components. It handles authentication, data indexing, metadata management, and schedules
   background tasks.
 
-  The backend is implemented using the NestJS framework and utilises a PostgreSQL database for storing all metadata
-  related to projects, missions, files, users, and actions.
+    The backend is implemented using the NestJS framework and utilises a PostgreSQL database for storing all metadata
+    related to projects, missions, files, users, and actions.
 
 - **Data Store**
   The raw robotic data files (ROSbags, MCAPs) are stored on an S3-compatible object storage backend. This provides
@@ -116,8 +116,8 @@ Kleinkram's system architecture is modular, comprising several interacting micro
   within Kleinkram. Users can define "Actions" (e.g., validate data integrity, extract sensor metadata, generate preview
   visualisations, convert formats, run benchmarking scripts).
 
-  These actions are packaged as Docker containers. The action runner orchestrates the execution of these containers,
-  providing them access to the necessary data from the data store using the client library or CLI.
+    These actions are packaged as Docker containers. The action runner orchestrates the execution of these containers,
+    providing them access to the necessary data from the data store using the client library or CLI.
 
 - **Observability**
   (Optional) Monitoring and logging system performance, resource usage, and task execution status are crucial for

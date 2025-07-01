@@ -1,12 +1,9 @@
-import { clearAllData, database } from '../../utils/database-utilities';
-
-import { HeaderCreator } from '../../utils/api-calls';
-
-import { AccessGroupRights } from '../../../../common/frontend_shared/enum';
-
+import AccessGroup from '@common/entities/auth/accessgroup.entity';
+import Project from '@common/entities/project/project.entity';
 import User from '@common/entities/user/user.entity';
-import AccessGroup from '../../../../common/entities/auth/accessgroup.entity';
-import Project from '../../../../common/entities/project/project.entity';
+import { AccessGroupRights } from '@common/frontend_shared/enum';
+import { HeaderCreator } from '../../utils/api-calls';
+import { clearAllData, database } from '../../utils/database-utilities';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
 /**
