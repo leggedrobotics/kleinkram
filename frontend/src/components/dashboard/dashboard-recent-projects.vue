@@ -46,6 +46,11 @@
                                 padding-top: 0;
                                 padding-bottom: 0;
                                 height: 50%;
+                                text-overflow: ellipsis;
+                                word-wrap: break-word;
+                                overflow: hidden;
+                                max-height: 10.6em;
+                                line-height: 1.8em;
                             "
                         >
                             {{ project.description }}
