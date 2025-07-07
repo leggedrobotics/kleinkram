@@ -18,7 +18,7 @@
         "typeorm": "typeorm-ts-node-commonjs"
     },
     "dependencies": {
-        "@aws-sdk/client-sts": "3.726.1",
+        "@aws-sdk/client-sts": "3.840.0",
         "@google-cloud/local-auth": "^3.0.1",
         "@nestjs/common": "^10.4.7",
         "@nestjs/config": "^4.0.2",
