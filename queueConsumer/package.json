@@ -9,7 +9,7 @@
         "build": "nest build"
     },
     "dependencies": {
-        "@mcap/core": "^2.1.5",
+        "@mcap/core": "^2.1.7",
         "@mcap/nodejs": "^1.0.2",
         "@mcap/support": "^1.0.2",
         "@nestjs/bull": "^11.0.2",
