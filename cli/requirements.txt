@@ -6,4 +6,4 @@ pyyaml
 rich
 tqdm
 typer
-click==8.1.8
+click
