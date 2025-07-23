@@ -78,8 +78,7 @@ const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
     if (error.response?.status !== 401) throw error as Error;
 
     // throw if the original request has already been retried
-    if (originalRequest.isRetryWithRefreshedToken === true)
-        throw error as Error;
+    if (originalRequest.isRetryWithRefreshedToken) throw error as Error;
 
     // we set the _retry property to true to avoid an infinite loop,
     // and we refresh the access token
