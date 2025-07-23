@@ -1,7 +1,7 @@
 ARG MODE="production"
 
 # Build Stage
-FROM node:18.14-alpine3.17 AS builder
+FROM node:24-alpine AS builder
 ARG MODE
 
 WORKDIR /app

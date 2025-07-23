@@ -1,7 +1,10 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 
-export const getEndpoints = (): object => {
+export const getEndpoints = (): {
+    url: string,
+    method: string
+}[] => {
     // load endpoints from __generated__endpoints.json
     assert.ok(
         fs.existsSync('.endpoints/__generated__endpoints.json'),

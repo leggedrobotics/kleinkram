@@ -12,4 +12,6 @@ jobs:
         runs-on: [self-hosted, linux]
         steps:
             - uses: actions/checkout@v4
+            - name: Install python3-venv
+              run: sudo apt update && sudo apt install -y python3.10-venv
             - uses: psf/black@stable

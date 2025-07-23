@@ -298,6 +298,7 @@ export class QueueService implements OnModuleInit {
                     display_name: Like(`${filename}%`),
                     mission: { uuid: missionUUID },
                 },
+                order: { createdAt: 'DESC' },
                 relations: ['creator', 'mission', 'mission.project'],
             })
             .then((fileQueueEntries) =>
