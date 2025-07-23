@@ -407,10 +407,10 @@
     khroma "^2.0.0"
     non-layered-tidy-tree-layout "^2.0.2"
 
-"@mermaid-js/parser@^0.6.1":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@mermaid-js/parser/-/parser-0.6.1.tgz#0bdaadb48d220df798915315eae130867b8f6d6a"
-  integrity sha512-lCQNpV8R4lgsGcjX5667UiuDLk2micCtjtxR1YKbBXvN5w2v+FeLYoHrTSSrjwXdMcDYvE4ZBPvKT31dfeSmmA==
+"@mermaid-js/parser@^0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@mermaid-js/parser/-/parser-0.6.2.tgz#6d505a33acb52ddeb592c596b14f9d92a30396a9"
+  integrity sha512-+PO02uGF6L6Cs0Bw8RpGhikVvMWEysfAyl27qTlroUB8jSWr1lL0Sf6zi78ZxlSnmgSY2AMMKVgghnN9jTtwkQ==
   dependencies:
     langium "3.3.1"
 
@@ -1555,10 +1555,10 @@ is-what@^4.1.8:
   resolved "https://registry.yarnpkg.com/is-what/-/is-what-4.1.16.tgz#1ad860a19da8b4895ad5495da3182ce2acdd7a6f"
   integrity sha512-ZhMwEosbFJkA0YhFnNDgTM4ZxDRsS6HqTo7qsZM08fehyRYIYa0yHu5R6mgo1n/8MgaPBXiPimPD77baVFYg+A==
 
-katex@^0.16.9:
-  version "0.16.21"
-  resolved "https://registry.yarnpkg.com/katex/-/katex-0.16.21.tgz#8f63c659e931b210139691f2cc7bb35166b792a3"
-  integrity sha512-XvqR7FgOHtWupfMiigNzmh+MgUVmDGU2kXZm899ZkPfcuoPuFxyHmXsgATDpFZDAXCI8tvinaVcDo8PIIJSo4A==
+katex@^0.16.22:
+  version "0.16.22"
+  resolved "https://registry.yarnpkg.com/katex/-/katex-0.16.22.tgz#d2b3d66464b1e6d69e6463b28a86ced5a02c5ccd"
+  integrity sha512-XCHRdUw4lf3SKBaJe4EvgqIuWwkPSo9XoeO8GjQW94Bp7TWv9hNhzZjZ+OH9yf1UmLygb7DIT5GSFQiyt16zYg==
   dependencies:
     commander "^8.3.0"
 
@@ -1618,10 +1618,10 @@ mark.js@8.11.1:
   resolved "https://registry.yarnpkg.com/mark.js/-/mark.js-8.11.1.tgz#180f1f9ebef8b0e638e4166ad52db879beb2ffc5"
   integrity sha512-1I+1qpDt4idfgLQG+BNWmrqku+7/2bi5nLf4YwF8y8zXvmfiTBY3PV3ZibfrjBueCByROpuBjLLFCajqkgYoLQ==
 
-marked@^15.0.7:
-  version "15.0.7"
-  resolved "https://registry.yarnpkg.com/marked/-/marked-15.0.7.tgz#f67d7e34d202ce087e6b879107b5efb04e743314"
-  integrity sha512-dgLIeKGLx5FwziAnsk4ONoGwHwGPJzselimvlVskE9XLN4Orv9u2VA3GWw/lYUqjfA0rUT/6fqKwfZJapP9BEg==
+marked@^16.0.0:
+  version "16.1.1"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-16.1.1.tgz#a7839dcf19fa5e349cad12c561f231320690acd4"
+  integrity sha512-ij/2lXfCRT71L6u0M29tJPhP0bM5shLL3u5BePhFwPELj2blMJ6GDtD7PfJhRLhJ/c2UwrK17ySVcDzy2YHjHQ==
 
 mdast-util-to-hast@^13.0.0:
   version "13.2.0"
@@ -1638,14 +1638,14 @@ mdast-util-to-hast@^13.0.0:
     unist-util-visit "^5.0.0"
     vfile "^6.0.0"
 
-mermaid@^11.8.1:
-  version "11.8.1"
-  resolved "https://registry.yarnpkg.com/mermaid/-/mermaid-11.8.1.tgz#73e4431a12fd5dae575d6cf55e1dc5b6098a9c6c"
-  integrity sha512-VSXJLqP1Sqw5sGr273mhvpPRhXwE6NlmMSqBZQw+yZJoAJkOIPPn/uT3teeCBx60Fkt5zEI3FrH2eVT0jXRDzw==
+mermaid@^11.9.0:
+  version "11.9.0"
+  resolved "https://registry.yarnpkg.com/mermaid/-/mermaid-11.9.0.tgz#fdc055d0f2a7f2afc13a78cb3e3c9b1374614e2e"
+  integrity sha512-YdPXn9slEwO0omQfQIsW6vS84weVQftIyyTGAZCwM//MGhPzL1+l6vO6bkf0wnP4tHigH1alZ5Ooy3HXI2gOag==
   dependencies:
     "@braintree/sanitize-url" "^7.0.4"
     "@iconify/utils" "^2.1.33"
-    "@mermaid-js/parser" "^0.6.1"
+    "@mermaid-js/parser" "^0.6.2"
     "@types/d3" "^7.4.3"
     cytoscape "^3.29.3"
     cytoscape-cose-bilkent "^4.1.0"
@@ -1655,10 +1655,10 @@ mermaid@^11.8.1:
     dagre-d3-es "7.0.11"
     dayjs "^1.11.13"
     dompurify "^3.2.5"
-    katex "^0.16.9"
+    katex "^0.16.22"
     khroma "^2.1.0"
     lodash-es "^4.17.21"
-    marked "^15.0.7"
+    marked "^16.0.0"
     roughjs "^4.6.6"
     stylis "^4.3.6"
     ts-dedent "^2.2.0"
