@@ -302,24 +302,30 @@ export const QueryBoolean = (
         async (data: string, context: ExecutionContext) => {
             const request = context.switchToHttp().getRequest();
             const value = request.query[data];
-            const object = plainToInstance(BooleanValidate, { value });
-            await validateOrReject(object).catch(() => {
-                throw new BadRequestException(
-                    `Parameter ${data} is not a valid Boolean`,
-                );
-            });
 
-            // convert type to boolean
-            if (typeof value === 'boolean') return value;
+            // Handle string "true" or "false" conversion first
+            let booleanValue: boolean | undefined;
             if (typeof value === 'string') {
-                if (value.toLowerCase() === 'true') return true;
-                else if (value.toLowerCase() === 'false') return false;
+                if (value.toLowerCase() === 'true') {
+                    booleanValue = true;
+                } else if (value.toLowerCase() === 'false') {
+                    booleanValue = false;
+                }
+            } else if (typeof value === 'boolean') {
+                booleanValue = value;
             }
 
-            throw new BadRequestException(
-                `Parameter ${data} is not a valid Boolean`,
-            );
+            // If it's not a recognizable boolean string or an actual boolean,
+            // throw an error or attempt validation with the original value
+            if (booleanValue === undefined) {
+                throw new BadRequestException(
+                    `Parameter ${data} is not a valid Boolean. Received: "${value}"`,
+                );
+            }
+
+            return booleanValue;
         },
+        // Ensure metadataApplier is correctly imported or defined
         metadataApplier(
             parameterName,
             parameterDescription,
