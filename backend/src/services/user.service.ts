@@ -126,6 +126,9 @@ export class UserService implements OnModuleInit {
             };
         }
 
+        // trim search string to avoid leading/trailing spaces or tabs
+        search = search.trim();
+
         // Use query builder to perform a search on both 'name' and 'email' fields
         const [users, count] = await this.userRepository
             .createQueryBuilder('user')
