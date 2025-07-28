@@ -299,7 +299,7 @@ export const QueryBoolean = (
     parameterDescription: string,
 ) =>
     createParamDecorator(
-        async (data: string, context: ExecutionContext) => {
+        (data: string, context: ExecutionContext) => {
             const request = context.switchToHttp().getRequest();
             const value = request.query[data];
 
