@@ -33,7 +33,7 @@
         "@types/multer": "^2.0.0",
         "bull": "^4.16.4",
         "dockerode": "^4.0.6",
-        "googleapis": "^150.0.1",
+        "googleapis": "^154.1.0",
         "minio": "^8.0.5",
         "pg": "^8.16.3",
         "redlock": "^5.0.0-beta.2",
