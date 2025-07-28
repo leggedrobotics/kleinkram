@@ -134,12 +134,24 @@ export class UserService implements OnModuleInit {
                 email: `%${search}%`,
             })
             .andWhere('user.hidden = :hidden', { hidden: false })
+            .addSelect('user.email')
             .skip(skip)
             .take(take)
             .getManyAndCount();
 
+        const usersDto = users as UserDto[];
+
+        // return the email only if it is an exact match
+        // otherwise set it to null
+        for (const user of usersDto) {
+            user.email =
+                user.email?.toLowerCase() === search.toLowerCase()
+                    ? user.email
+                    : null;
+        }
+
         return {
-            users: users as UserDto[],
+            users: usersDto,
             count,
         };
     }
