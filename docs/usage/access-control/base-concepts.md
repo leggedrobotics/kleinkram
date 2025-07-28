@@ -38,6 +38,11 @@ within the group. A single access group can be associated with multiple projects
 assigned for each project. If a user belongs to multiple access groups with varying access levels, the highest level of
 access is applied.
 
+### Editing Access Groups
+The access group can be edited by the creator or any other users with the <CanEdit/> permission on the access group.
+Currently, there is no way to add additional editors to an access group (the creator is always an editor). This must be
+done manually within the database.
+
 ## Affiliation Groups
 
 Users may be added to an affiliation group based on their email domain, e.g. uses signing in with

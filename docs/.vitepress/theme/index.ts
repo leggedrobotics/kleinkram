@@ -2,6 +2,7 @@
 import DefaultTheme from 'vitepress/theme';
 import Module from '../components/Module.vue';
 import Create from '../components/AccessWrites/Create.vue';
+import CanEdit from '../components/AccessWrites/CanEdit.vue';
 import Modify from '../components/AccessWrites/Modify.vue';
 import Delete from '../components/AccessWrites/Delete.vue';
 import Any from '../components/AccessWrites/Any.vue';
@@ -18,6 +19,7 @@ export default {
         app.component('Delete', Delete);
         app.component('Any', Any);
         app.component('Creator', Creator);
+        app.component('CanEdit', CanEdit);
     },
     extends: DefaultTheme,
 };
