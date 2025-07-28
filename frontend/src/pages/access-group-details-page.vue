@@ -484,6 +484,15 @@ const userCols = [
         style: 'width: 10%',
     },
     {
+        name: 'email',
+        required: false,
+        label: 'Email',
+        align: 'left',
+        field: (row: GroupMembershipDto): string => row.user.email ?? 'N/A',
+        format: (value: string): string => value,
+        style: 'width: 20%; color: #666',
+    },
+    {
         name: 'expiration',
         required: true,
         label: 'Expiration',

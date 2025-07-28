@@ -50,8 +50,24 @@ export class AccessService {
         private readonly entityManager: EntityManager,
     ) {}
 
-    async getAccessGroup(uuid: string): Promise<AccessGroupDto> {
-        const rawAccessGroup = await this.accessGroupRepository
+    async getAccessGroup(
+        uuid: string,
+        userUuid: string,
+    ): Promise<AccessGroupDto> {
+        // check if the user can edit the access group (memberships[].canEditGroup)
+        const includeEmail =
+            (await this.groupMembershipRepository
+                .createQueryBuilder('groupMembership')
+                .leftJoinAndSelect('groupMembership.user', 'user')
+                .leftJoinAndSelect('groupMembership.accessGroup', 'accessGroup')
+                .where('accessGroup.uuid = :uuid', { uuid })
+                .andWhere('groupMembership.user.uuid = :userUuid', {
+                    userUuid,
+                })
+                .andWhere('groupMembership.canEditGroup = true')
+                .getCount()) > 0;
+
+        let accessGroupQuery = this.accessGroupRepository
             .createQueryBuilder('accessGroup')
             .withDeleted()
             .leftJoinAndSelect('accessGroup.memberships', 'memberships')
@@ -62,8 +78,13 @@ export class AccessService {
             )
             .leftJoinAndSelect('project_accesses.project', 'project')
             .leftJoinAndSelect('accessGroup.creator', 'creator')
-            .where('accessGroup.uuid = :uuid', { uuid })
-            .getOneOrFail();
+            .where('accessGroup.uuid = :uuid', { uuid });
+
+        // we need to explicitly select the email field
+        if (includeEmail)
+            accessGroupQuery = accessGroupQuery.addSelect('user.email');
+
+        const rawAccessGroup = await accessGroupQuery.getOneOrFail();
 
         return {
             createdAt: rawAccessGroup.createdAt,
@@ -72,8 +93,9 @@ export class AccessService {
                 : null,
             hidden: rawAccessGroup.hidden,
             memberships:
-                rawAccessGroup.memberships?.map(groupMembershipEntityToDto) ??
-                [],
+                rawAccessGroup.memberships?.map((membership) =>
+                    groupMembershipEntityToDto(membership, includeEmail),
+                ) ?? [],
             name: rawAccessGroup.name,
             type: rawAccessGroup.type,
             updatedAt: rawAccessGroup.updatedAt,
@@ -346,8 +368,8 @@ export class AccessService {
                         ? userEntityToDto(accessGroup.creator)
                         : null,
                     memberships:
-                        accessGroup.memberships?.map(
-                            groupMembershipEntityToDto,
+                        accessGroup.memberships?.map((membership) =>
+                            groupMembershipEntityToDto(membership),
                         ) ?? [],
                     createdAt: accessGroup.createdAt,
                     updatedAt: accessGroup.updatedAt,

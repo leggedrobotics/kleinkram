@@ -316,6 +316,7 @@ export class QueueService implements OnModuleInit {
                                 uuid: queue.creator.uuid,
                                 name: queue.creator.name,
                                 avatarUrl: queue.creator.avatarUrl ?? '',
+                                email: null,
                             },
                             createdAt: queue.createdAt,
                             display_name: queue.display_name,
