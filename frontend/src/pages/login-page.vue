@@ -57,7 +57,16 @@
                         outline
                         size="md"
                         label="Login with Google"
-                        @click="login"
+                        @click="loginWithGoogle"
+                    />
+
+                    <q-btn
+                        class="button-border full-width q-mt-md"
+                        flat
+                        outline
+                        size="md"
+                        label="Login with GitHub"
+                        @click="loginWithGitHub"
                     />
                 </div>
             </div>
@@ -95,6 +104,9 @@ const { data: me, error } = useQuery({
     staleTime: 100,
     refetchInterval: 5000,
 });
+
+const loginWithGoogle = (): void => login('google');
+const loginWithGitHub = (): void => login('github');
 
 watch(
     [me, error],

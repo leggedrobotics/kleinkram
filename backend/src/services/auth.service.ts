@@ -43,6 +43,35 @@ export class AuthService implements OnModuleInit {
         await createAccessGroups(this.accessGroupRepository, this.config);
     }
 
+    async validateAndCreateUserByGitHub(profile: any): Promise<User> {
+        const { id, emails, displayName, photos } = profile;
+        const email = emails[0].value;
+
+        const account = await this.accountRepository.findOne({
+            where: { oauthID: id, provider: Providers.GITHUB },
+            relations: ['user'],
+        });
+
+        if (account !== null && account.user === undefined) {
+            logger.error('Account exists but has no linked user!');
+            throw new AuthFlowException(
+                'Account exists but has no linked user!',
+            );
+        }
+
+        if (account?.user !== undefined) {
+            return account.user;
+        }
+
+        return this.create(
+            id,
+            Providers.GITHUB,
+            email,
+            displayName,
+            photos[0].value,
+        );
+    }
+
     async validateAndCreateUserByGoogle(profile: any): Promise<User> {
         const { id, emails, displayName, photos } = profile;
         const email = emails[0].value;

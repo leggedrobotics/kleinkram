@@ -5,6 +5,8 @@ import { getEndpoints } from '../utils/endpoints';
 const UNAUTHENTICATED_ENDPOINTS: string[] = [
     '/auth/google',
     '/auth/google/callback',
+    '/auth/github',
+    '/auth/github/callback',
     '/auth/logout',
     '/metrics',
     '/swagger',

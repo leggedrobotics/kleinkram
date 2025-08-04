@@ -127,10 +127,13 @@ def base_handler(exc: Exception) -> int:
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def login(
+    oAuthProvider: str = typer.Argument(
+        "google", help="OAuth provider to use for login (e.g., 'google', 'github')"
+    ),
     key: Optional[str] = typer.Option(None, help="CLI key"),
     headless: bool = typer.Option(False),
 ) -> None:
-    login_flow(key=key, headless=headless)
+    login_flow(oAuthProvider=oAuthProvider, key=key, headless=headless)
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)

@@ -51,6 +51,6 @@ export function logout() {
     });
 }
 
-export const login = (): void => {
-    globalThis.location.href = `${ENV.ENDPOINT}/auth/google`;
+export const login = (provider: string): void => {
+    globalThis.location.href = `${ENV.ENDPOINT}/auth/${provider}`;
 };

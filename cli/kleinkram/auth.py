@@ -13,7 +13,7 @@ from kleinkram.config import get_config
 from kleinkram.config import save_config
 
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
-OAUTH_SLUG = "/auth/google?state=cli"
+OAUTH_SLUG = "/auth/"
 
 
 def _has_browser() -> bool:
@@ -80,7 +80,7 @@ def _browser_auth(*, url: str) -> None:
     print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
 
 
-def login_flow(*, key: Optional[str] = None, headless: bool = False) -> None:
+def login_flow(*, oAuthProvider: str, key: Optional[str] = None, headless: bool = False) -> None:
     config = get_config()
     # use cli key login
     if key is not None:
@@ -88,7 +88,7 @@ def login_flow(*, key: Optional[str] = None, headless: bool = False) -> None:
         save_config(config)
         return
 
-    oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}"
+    oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state=cli"
     if not headless and _has_browser():
         _browser_auth(url=oauth_url)
     else:
