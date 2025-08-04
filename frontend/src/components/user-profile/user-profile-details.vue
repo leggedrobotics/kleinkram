@@ -55,6 +55,18 @@
                         >
                             {{ group.accessGroup?.name }}
                         </q-chip>
+
+                        <span
+                            v-if="
+                                !user.memberships.some(
+                                    (g) =>
+                                        g.accessGroup?.type ===
+                                        AccessGroupType.CUSTOM,
+                                )
+                            "
+                        >
+                            <q-chip> None </q-chip>
+                        </span>
                     </td>
                 </tr>
             </tbody>
