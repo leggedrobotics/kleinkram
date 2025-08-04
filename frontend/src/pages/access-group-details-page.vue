@@ -8,16 +8,7 @@
                 dense
                 class="text-grey"
             >
-                <q-tab
-                    name="members"
-                    label="Members"
-                    :disable="personal"
-                    style="color: #222"
-                >
-                    <q-tooltip v-if="personal">
-                        Personal Access groups have only the trivial member
-                    </q-tooltip>
-                </q-tab>
+                <q-tab name="members" label="Members" style="color: #222" />
                 <q-tab name="projects" label="Projects" style="color: #222" />
             </q-tabs>
         </template>
@@ -482,6 +473,15 @@ const userCols = [
         field: (row: GroupMembershipDto): string => row.user.name,
         format: (value: string): string => value,
         style: 'width: 10%',
+    },
+    {
+        name: 'email',
+        required: false,
+        label: 'Email',
+        align: 'left',
+        field: (row: GroupMembershipDto): string => row.user.email ?? 'N/A',
+        format: (value: string): string => value,
+        style: 'width: 20%; color: #666',
     },
     {
         name: 'expiration',

@@ -222,6 +222,7 @@ export const projectAccessEntityToDto = (projectAccess: ProjectAccess) => {
 
 export const groupMembershipEntityToDto = (
     groupMembership: GroupMembership,
+    includeEmail = false,
 ): GroupMembershipDto => {
     if (groupMembership.user === undefined) {
         throw new Error('Member can never be undefined');
@@ -234,7 +235,7 @@ export const groupMembershipEntityToDto = (
         createdAt: groupMembership.createdAt,
         updatedAt: groupMembership.updatedAt,
         expirationDate: groupMembership.expirationDate ?? null,
-        user: userEntityToDto(groupMembership.user),
+        user: userEntityToDto(groupMembership.user, includeEmail),
     };
 };
 
@@ -332,10 +333,11 @@ export const tagEntityToDto = (tag: Tag): TagDto => {
     };
 };
 
-export const userEntityToDto = (user: User): UserDto => {
+export const userEntityToDto = (user: User, includeEmail = false): UserDto => {
     return {
         uuid: user.uuid,
         name: user.name,
         avatarUrl: user.avatarUrl ?? null,
+        email: includeEmail && user.email ? user.email : null,
     };
 };

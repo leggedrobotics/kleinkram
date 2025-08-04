@@ -49,6 +49,17 @@ export class UserDto {
     @IsOptional()
     @IsString()
     avatarUrl!: string | null;
+
+    @ApiProperty({
+        description:
+            'Email address of the user. Set to null if not available or not accessible.',
+        nullable: true,
+        required: false,
+    })
+    @IsNotUndefined()
+    @IsOptional()
+    @IsEmail()
+    email!: string | null;
 }
 
 export class AccessGroupDto {
@@ -148,10 +159,6 @@ export class CurrentAPIUserDto extends UserDto {
     @ValidateNested({ each: true })
     @Type(() => GroupMembershipDto)
     memberships!: GroupMembershipDto[];
-
-    @ApiProperty()
-    @IsEmail()
-    email!: string;
 
     @ApiProperty()
     @IsEnum(UserRole)

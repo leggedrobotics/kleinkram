@@ -1,17 +1,7 @@
-import {
-    ArgumentsHost,
-    Catch,
-    ExceptionFilter,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import { Response } from 'express';
+import { AuthFlowException } from 'src/types/auth-flow-exception';
 import logger from '../../logger';
-
-export class AuthFlowException extends UnauthorizedException {
-    constructor(message: string) {
-        super(encodeURIComponent(message));
-    }
-}
 
 @Catch(AuthFlowException)
 export class AuthFlowExceptionRedirectFilter implements ExceptionFilter {

@@ -1,3 +1,4 @@
+import User from '@common/entities/user/user.entity';
 import env from '@common/environment';
 import { CookieNames } from '@common/frontend_shared/enum';
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
@@ -18,6 +19,13 @@ export class AuthController {
         private userService: UserService,
     ) {}
 
+    @Get('github')
+    @UseGuards(AuthGuard('github'))
+    async githubAuth(): Promise<void> {
+        // Initiates the GitHub OAuth flow
+        // OAuth is handled by the AuthGuard
+    }
+
     @Get('google')
     @UseGuards(AuthGuard('google'))
     async googleAuth(): Promise<void> {
@@ -25,19 +33,35 @@ export class AuthController {
         // OAuth is handled by the AuthGuard
     }
 
+    @Get('github/callback')
+    @UseGuards(AuthGuard('github'))
+    @OutputDto(null) // TODO: type API response
+    githubAuthRedirect(@Req() request, @Res() response: Response): void {
+        this.handleAuthRedirect(request, response);
+    }
+
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     @OutputDto(null) // TODO: type API response
     googleAuthRedirect(@Req() request, @Res() response: Response): void {
+        this.handleAuthRedirect(request, response);
+    }
+
+    private handleAuthRedirect(
+        @Req() request: Request,
+        @Res() response: Response,
+    ): void {
         const user = request.user;
-        const token = this.authService.login(user);
-        const state = request.query.state;
+        const token = this.authService.login(user as User);
+        const state = request.query['state'];
+
         if (state === 'cli') {
             response.redirect(
                 `http://localhost:8000/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
             );
             return;
         }
+
         if (state === 'cli-no-redirect') {
             const authToken = token[CookieNames.AUTH_TOKEN];
             const refreshToken = token[CookieNames.REFRESH_TOKEN];
@@ -70,7 +94,7 @@ export class AuthController {
                 function copyToClipboard(elementId) {
                     var copyText = document.getElementById(elementId);
                     var textArea = document.createElement('textarea');
-                    textArea.value = copyText.textContent; // use textContent since innerText may include extra padding in some cases
+                    textArea.value = copyText.textContent;
                     document.body.appendChild(textArea);
                     textArea.select();
                     document.execCommand('Copy');
@@ -79,9 +103,10 @@ export class AuthController {
             </script>
         </body>
         </html>
-    `);
+            `);
             return;
         }
+
         response.cookie(CookieNames.AUTH_TOKEN, token[CookieNames.AUTH_TOKEN], {
             httpOnly: false,
             secure: env.DEV,

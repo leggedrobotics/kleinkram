@@ -148,6 +148,14 @@ export default {
         return asString(process.env['GOOGLE_CLIENT_SECRET']);
     },
 
+    get GITHUB_CLIENT_ID(): string {
+        return asString(process.env['GITHUB_CLIENT_ID']);
+    },
+
+    get GITHUB_CLIENT_SECRET(): string {
+        return asString(process.env['GITHUB_CLIENT_SECRET']);
+    },
+
     get JWT_SECRET(): string {
         return asString(process.env['JWT_SECRET']);
     },

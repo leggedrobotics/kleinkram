@@ -105,6 +105,7 @@ export enum FileType {
 
 export enum Providers {
     GOOGLE = 'google',
+    GITHUB = 'github',
 }
 
 export enum DataType {

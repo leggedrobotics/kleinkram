@@ -126,6 +126,9 @@ export class UserService implements OnModuleInit {
             };
         }
 
+        // trim search string to avoid leading/trailing spaces or tabs
+        search = search.trim();
+
         // Use query builder to perform a search on both 'name' and 'email' fields
         const [users, count] = await this.userRepository
             .createQueryBuilder('user')
@@ -134,12 +137,24 @@ export class UserService implements OnModuleInit {
                 email: `%${search}%`,
             })
             .andWhere('user.hidden = :hidden', { hidden: false })
+            .addSelect('user.email')
             .skip(skip)
             .take(take)
             .getManyAndCount();
 
+        const usersDto = users as UserDto[];
+
+        // return the email only if it is an exact match
+        // otherwise set it to null
+        for (const user of usersDto) {
+            user.email =
+                user.email?.toLowerCase() === search.toLowerCase()
+                    ? user.email
+                    : null;
+        }
+
         return {
-            users: users as UserDto[],
+            users: usersDto,
             count,
         };
     }

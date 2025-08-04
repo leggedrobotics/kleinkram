@@ -13,9 +13,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtPayload } from 'jsonwebtoken';
+import { AuthFlowException } from 'src/types/auth-flow-exception';
 import { Repository } from 'typeorm';
 import logger from '../logger';
-import { AuthFlowException } from '../routing/filters/auth-flow-exception';
 import { AccessGroupConfig } from '../types/access-group-config';
 
 @Injectable()
@@ -41,6 +41,35 @@ export class AuthService implements OnModuleInit {
 
     async onModuleInit(): Promise<void> {
         await createAccessGroups(this.accessGroupRepository, this.config);
+    }
+
+    async validateAndCreateUserByGitHub(profile: any): Promise<User> {
+        const { id, emails, displayName, photos } = profile;
+        const email = emails[0].value;
+
+        const account = await this.accountRepository.findOne({
+            where: { oauthID: id, provider: Providers.GITHUB },
+            relations: ['user'],
+        });
+
+        if (account !== null && account.user === undefined) {
+            logger.error('Account exists but has no linked user!');
+            throw new AuthFlowException(
+                'Account exists but has no linked user!',
+            );
+        }
+
+        if (account?.user !== undefined) {
+            return account.user;
+        }
+
+        return this.create(
+            id,
+            Providers.GITHUB,
+            email,
+            displayName,
+            photos[0].value,
+        );
     }
 
     async validateAndCreateUserByGoogle(profile: any): Promise<User> {
@@ -250,7 +279,7 @@ export const createNewUser = async (
     // assert that we don't have a user with the same email but a different provider
     if (!!existingUser && existingUser.account) {
         throw new AuthFlowException(
-            'User already exists and has a linked account!',
+            'User already exists and has a linked account! Please use a different OAuth provider.',
         );
     }
 

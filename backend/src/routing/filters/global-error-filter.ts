@@ -1,3 +1,4 @@
+import env from '@common/environment';
 import {
     ArgumentsHost,
     BadRequestException,
@@ -9,6 +10,7 @@ import {
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { Response } from 'express';
 import { appVersion } from 'src/app-version';
+import { AuthFlowException } from 'src/types/auth-flow-exception';
 import logger from '../../logger';
 
 /**
@@ -28,7 +30,6 @@ export class GlobalErrorFilter implements ExceptionFilter {
         //////////////////////////////
         // Errors that don't get logged
         //////////////////////////////
-
         if (exception.name === 'InvalidJwtTokenException') {
             response.status(401).json({
                 statusCode: 401,
@@ -48,6 +49,40 @@ export class GlobalErrorFilter implements ExceptionFilter {
             return;
         }
 
+        if (exception instanceof AuthFlowException) {
+            // If the exception is an AuthFlowException, redirect to the frontend login page
+            const authFlowException: AuthFlowException = exception;
+
+            logger.debug(
+                `Redirecting to login with error: ${authFlowException.message}`,
+            );
+
+            response
+                .status(302)
+                .redirect(
+                    `${env.FRONTEND_URL}/login?error_state=auth_flow_failed&error_msg=${encodeURIComponent(
+                        authFlowException.message,
+                    )}`,
+                );
+            return;
+        }
+
+        if (
+            exception.name === 'TokenError' ||
+            exception.message === 'Failed to obtain access token'
+        ) {
+            // redirect to frontend login page
+            response
+                .status(302)
+                .redirect(
+                    `${env.FRONTEND_URL}/login?error_state=auth_flow_failed&error_msg=${encodeURIComponent(
+                        'Failed to obtain access token. Please try again.',
+                    )}`,
+                );
+
+            return;
+        }
+
         //////////////////////////////
         // Errors that get logged
         //////////////////////////////
@@ -56,6 +91,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
         logger.error(
             `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion} on endpoint ${request.url} with method ${request.method}`,
         );
+        logger.error(exception.message);
         logger.error(exception);
         logger.error(exception.stack);
 

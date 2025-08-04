@@ -57,9 +57,10 @@ export class AccessController {
     })
     async getAccessGroup(
         @QueryUUID('uuid', 'AccessGroup UUID') uuid: string,
+        @AddUser() user: AuthHeader,
     ): Promise<AccessGroupDto> {
         return await this.accessService
-            .getAccessGroup(uuid)
+            .getAccessGroup(uuid, user.user.uuid)
             .catch((error: unknown) => {
                 if (error instanceof EntityNotFoundError) {
                     throw new NotFoundException('AccessGroup not found');

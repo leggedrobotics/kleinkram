@@ -532,48 +532,56 @@ export class ProjectService {
         if (creator.memberships === undefined)
             throw new Error('User has no memberships');
 
-        const defaultRights: (DefaultRightDto | null)[] = await Promise.all(
-            creator.memberships
-                .map((membership) => membership.accessGroup)
-                .map(async (right) => {
-                    if (right === undefined) return null;
+        const defaultRights: (DefaultRightDto | undefined)[] =
+            await Promise.all(
+                creator.memberships
+                    .map((membership) => membership.accessGroup)
+                    .map(async (right) => {
+                        if (right === undefined) return;
 
-                    const name = right.name;
-                    let memberCount = 1;
-                    let _rights = AccessGroupRights.WRITE;
+                        const name = right.name;
+                        let memberCount = 1;
+                        let _rights: AccessGroupRights | undefined =
+                            AccessGroupRights.WRITE;
 
-                    switch (right.type) {
-                        case AccessGroupType.AFFILIATION: {
-                            // @ts-ignore
-                            _rights = this.config.access_groups.find(
-                                (group) => group.uuid === right.uuid,
-                            ).rights;
-                            memberCount = await this.userService.getMemberCount(
-                                right.uuid,
-                            );
-                            break;
-                        }
-                        case AccessGroupType.PRIMARY: {
-                            _rights = AccessGroupRights.DELETE;
-                            break;
-                        }
-                        case AccessGroupType.CUSTOM: {
-                            return null;
-                        }
-                    }
+                        switch (right.type) {
+                            case AccessGroupType.AFFILIATION: {
+                                _rights =
+                                    this.config.access_groups.find(
+                                        (group) => group.uuid === right.uuid,
+                                    )?.rights ?? undefined;
 
-                    return {
-                        name,
-                        uuid: right.uuid,
-                        memberCount,
-                        rights: _rights,
-                        type: right.type,
-                    } as DefaultRightDto;
-                }),
-        );
+                                // Catch the case where there are no default rights
+                                // defined for the affiliation group
+                                if (_rights === undefined) return;
+
+                                memberCount =
+                                    await this.userService.getMemberCount(
+                                        right.uuid,
+                                    );
+                                break;
+                            }
+                            case AccessGroupType.PRIMARY: {
+                                _rights = AccessGroupRights.DELETE;
+                                break;
+                            }
+                            case AccessGroupType.CUSTOM: {
+                                return;
+                            }
+                        }
+
+                        return {
+                            name,
+                            uuid: right.uuid,
+                            memberCount,
+                            rights: _rights,
+                            type: right.type,
+                        } as DefaultRightDto;
+                    }),
+            );
 
         const defaultRightsFiltered = defaultRights.filter(
-            (right) => right !== null,
+            (right) => right !== undefined,
         );
 
         return {

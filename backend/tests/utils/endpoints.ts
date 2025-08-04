@@ -2,8 +2,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 
 export const getEndpoints = (): {
-    url: string,
-    method: string
+    url: string;
+    method: string;
 }[] => {
     // load endpoints from __generated__endpoints.json
     assert.ok(

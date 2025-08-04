@@ -3,19 +3,19 @@ import { Providers } from '@common/frontend_shared/enum';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
-import { Strategy, VerifyCallback } from 'passport-google-oauth20';
+import { Strategy, VerifyCallback } from 'passport-github2';
+import { AuthFlowException } from 'src/types/auth-flow-exception';
 import logger from '../../logger';
 import { AuthService } from '../../services/auth.service';
-import { AuthFlowException } from '../../types/auth-flow-exception';
 
 @Injectable()
-export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
     constructor(private authService: AuthService) {
         super({
-            clientID: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
-            callbackURL: `${env.ENDPOINT}/auth/google/callback`,
-            scope: ['email', 'profile'],
+            clientID: env.GITHUB_CLIENT_ID,
+            clientSecret: env.GITHUB_CLIENT_SECRET,
+            callbackURL: `${env.ENDPOINT}/auth/github/callback`,
+            scope: ['user:email', 'user:profile'],
         });
     }
 
@@ -32,15 +32,15 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     ): Promise<any> {
         const { provider } = profile;
 
-        // currently only google is supported
-        if (provider !== Providers.GOOGLE) {
-            logger.error('Invalid provider, expected google but got', provider);
+        // currently only github is supported
+        if (provider !== Providers.GITHUB) {
+            logger.error('Invalid provider, expected github but got', provider);
             callback(new AuthFlowException('Invalid provider!'));
             return;
         }
 
         const user =
-            await this.authService.validateAndCreateUserByGoogle(profile);
+            await this.authService.validateAndCreateUserByGitHub(profile);
 
         if (user) {
             logger.debug(`Login successful for ${user.uuid}`);

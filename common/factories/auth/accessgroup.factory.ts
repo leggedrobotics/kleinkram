@@ -24,6 +24,13 @@ define(AccessGroup, (_, context: AccessGroupFactoryContext) => {
         accessGroup.name = context.user.name;
         accessGroup.type = AccessGroupType.PRIMARY;
         accessGroup.creator = context.user;
+
+        accessGroup.memberships = [
+            {
+                user: context.user,
+                canEditGroup: false,
+            } as GroupMembership,
+        ];
     } else {
         console.assert(
             context.allUsers.length > 0,

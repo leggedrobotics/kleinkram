@@ -49,14 +49,10 @@ export default class CreateUsers implements Seeder {
         );
 
         // Generate Users...
-        const adminMails = [
-            'cyrillp@leggedrobotics.com',
-            'johannsch@leggedrobotics.com',
-            'noelk@leggedrobotics.com',
-        ];
+        const adminMails = ['cyrillp@leggedrobotics.com'];
 
         // generate admin users
-        // and add them to the default group
+        // and add them to the affiliation group
         const adminUsers = await Promise.all(
             adminMails.map((mail) =>
                 factory(User)({
@@ -76,7 +72,7 @@ export default class CreateUsers implements Seeder {
         const allUsers = [...adminUsers, ...users];
 
         // create personal access groups
-        const personalAccessGroups = await Promise.all(
+        await Promise.all(
             allUsers.map((user) =>
                 factory(AccessGroup)({
                     user: user,
@@ -91,11 +87,9 @@ export default class CreateUsers implements Seeder {
             isPersonal: false,
         } as AccessGroupFactoryContext).createMany(this.ACCESS_GROUP_COUNT);
 
-        const allAccessGroups = [...personalAccessGroups, ...groups];
-
         // Generate Projects, Missions, Files, and Topics...
         const projects = await factory(Project)({
-            allAccessGroups: allAccessGroups,
+            allAccessGroups: groups,
             allUsers: allUsers,
             tagTypes,
         } as ProjectContext).createMany(this.PROJECT_COUNT);
@@ -103,7 +97,7 @@ export default class CreateUsers implements Seeder {
         // set access rights for projects
         await factory(ProjectAccess)({
             projects: projects,
-            accessGroups: allAccessGroups,
+            accessGroups: groups,
         }).createMany(this.GROUP_ACCESS_COUNT);
 
         for (const project of projects) {
