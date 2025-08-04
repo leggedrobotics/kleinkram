@@ -161,10 +161,6 @@ export class CurrentAPIUserDto extends UserDto {
     memberships!: GroupMembershipDto[];
 
     @ApiProperty()
-    @IsEmail()
-    email!: string;
-
-    @ApiProperty()
     @IsEnum(UserRole)
     role!: UserRole;
 }

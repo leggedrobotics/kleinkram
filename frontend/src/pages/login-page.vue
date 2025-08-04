@@ -105,8 +105,12 @@ const { data: me, error } = useQuery({
     refetchInterval: 5000,
 });
 
-const loginWithGoogle = (): void => login('google');
-const loginWithGitHub = (): void => login('github');
+const loginWithGoogle = (): void => {
+    login('google');
+};
+const loginWithGitHub = (): void => {
+    login('github');
+};
 
 watch(
     [me, error],

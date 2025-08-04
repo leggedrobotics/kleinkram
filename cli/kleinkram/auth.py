@@ -80,7 +80,9 @@ def _browser_auth(*, url: str) -> None:
     print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
 
 
-def login_flow(*, oAuthProvider: str, key: Optional[str] = None, headless: bool = False) -> None:
+def login_flow(
+    *, oAuthProvider: str, key: Optional[str] = None, headless: bool = False
+) -> None:
     config = get_config()
     # use cli key login
     if key is not None:

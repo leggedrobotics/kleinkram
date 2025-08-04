@@ -135,7 +135,6 @@ export const traceWrapper =
  * based on https://stackoverflow.com/questions/76342240/methoddecorator-classdecorator-types-have-no-intersection-why-is-it-still-a-u
  *
  */
-
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function tracing<A extends unknown[], C>(
     traceName = '',
