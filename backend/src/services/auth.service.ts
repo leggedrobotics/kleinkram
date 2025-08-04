@@ -279,7 +279,7 @@ export const createNewUser = async (
     // assert that we don't have a user with the same email but a different provider
     if (!!existingUser && existingUser.account) {
         throw new AuthFlowException(
-            'User already exists and has a linked account! Please use a different oAuth provider.',
+            'User already exists and has a linked account! Please use a different OAuth provider.',
         );
     }
 
