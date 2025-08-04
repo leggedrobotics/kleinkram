@@ -13,9 +13,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtPayload } from 'jsonwebtoken';
+import { AuthFlowException } from 'src/types/auth-flow-exception';
 import { Repository } from 'typeorm';
 import logger from '../logger';
-import { AuthFlowException } from '../routing/filters/auth-flow-exception';
 import { AccessGroupConfig } from '../types/access-group-config';
 
 @Injectable()
@@ -279,7 +279,7 @@ export const createNewUser = async (
     // assert that we don't have a user with the same email but a different provider
     if (!!existingUser && existingUser.account) {
         throw new AuthFlowException(
-            'User already exists and has a linked account!',
+            'User already exists and has a linked account! Please use a different oAuth provider.',
         );
     }
 

@@ -4,8 +4,8 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
 import { Strategy, VerifyCallback } from 'passport-github2';
+import { AuthFlowException } from 'src/types/auth-flow-exception';
 import logger from '../../logger';
-import { AuthFlowException } from '../../routing/filters/auth-flow-exception';
 import { AuthService } from '../../services/auth.service';
 
 @Injectable()
@@ -39,16 +39,8 @@ export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
             return;
         }
 
-        const user = await this.authService
-            .validateAndCreateUserByGitHub(profile)
-            .catch((error: unknown) => {
-                logger.error(
-                    'Error while validating and creating user by github',
-                    error,
-                );
-                callback(error);
-                return;
-            });
+        const user =
+            await this.authService.validateAndCreateUserByGitHub(profile);
 
         if (user) {
             logger.debug(`Login successful for ${user.uuid}`);

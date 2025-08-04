@@ -68,6 +68,12 @@
                         label="Login with GitHub"
                         @click="loginWithGitHub"
                     />
+
+                    <div v-if="$route.query.error_msg" class="q-mt-lg">
+                        <span class="text-negative">{{
+                            $route.query.error_msg
+                        }}</span>
+                    </div>
                 </div>
             </div>
             <div style="border-left: 1px solid #e0e0e0" />

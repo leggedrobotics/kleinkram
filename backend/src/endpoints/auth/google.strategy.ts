@@ -5,8 +5,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import logger from '../../logger';
-import { AuthFlowException } from '../../routing/filters/auth-flow-exception';
 import { AuthService } from '../../services/auth.service';
+import { AuthFlowException } from '../../types/auth-flow-exception';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -39,16 +39,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             return;
         }
 
-        const user = await this.authService
-            .validateAndCreateUserByGoogle(profile)
-            .catch((error: unknown) => {
-                logger.error(
-                    'Error while validating and creating user by google',
-                    error,
-                );
-                callback(error);
-                return;
-            });
+        const user =
+            await this.authService.validateAndCreateUserByGoogle(profile);
 
         if (user) {
             logger.debug(`Login successful for ${user.uuid}`);
