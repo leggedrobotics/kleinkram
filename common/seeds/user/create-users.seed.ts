@@ -49,11 +49,7 @@ export default class CreateUsers implements Seeder {
         );
 
         // Generate Users...
-        const adminMails = [
-            'cyrillp@leggedrobotics.com',
-            'johannsch@leggedrobotics.com',
-            'noelk@leggedrobotics.com',
-        ];
+        const adminMails = ['cyrillp@leggedrobotics.com'];
 
         // generate admin users
         // and add them to the default group
