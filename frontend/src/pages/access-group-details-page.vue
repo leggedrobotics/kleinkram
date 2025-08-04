@@ -8,16 +8,7 @@
                 dense
                 class="text-grey"
             >
-                <q-tab
-                    name="members"
-                    label="Members"
-                    :disable="personal"
-                    style="color: #222"
-                >
-                    <q-tooltip v-if="personal">
-                        Personal Access groups have only the trivial member
-                    </q-tooltip>
-                </q-tab>
+                <q-tab name="members" label="Members" style="color: #222" />
                 <q-tab name="projects" label="Projects" style="color: #222" />
             </q-tabs>
         </template>
