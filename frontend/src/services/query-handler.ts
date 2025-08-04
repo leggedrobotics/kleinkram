@@ -41,8 +41,7 @@ export class QueryHandler {
         this.projectUuid = projectUuid ?? '';
         this.missionUuid = missionUuid ?? '';
         this.searchParams = searchParameters ?? DEFAULT_SEARCH;
-        // @ts-ignore
-        this.fileType = fileType !== undefined ?? FileType.ALL;
+        this.fileType = fileType === undefined ? FileType.ALL : fileType;
         this.categories = categories ?? [];
         this.rowsNumber = 0;
     }
