@@ -40,6 +40,23 @@
                         <q-chip>{{ primaryGroup?.name || 'None' }}</q-chip>
                     </td>
                 </tr>
+
+                <tr>
+                    <td class="q-table__cell first-column">Custom Groups:</td>
+                    <td class="q-table__cell">
+                        <q-chip
+                            v-for="group in user.memberships.filter(
+                                (g: GroupMembershipDto) =>
+                                    g.accessGroup?.type ===
+                                    AccessGroupType.CUSTOM,
+                            )"
+                            :key="group.accessGroup?.uuid ?? group.uuid"
+                            class="q-mr-sm"
+                        >
+                            {{ group.accessGroup?.name }}
+                        </q-chip>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -76,7 +93,7 @@ const primaryGroup = computed(
 
 <style>
 .q-table-container {
-    max-width: 500px; /* Adjust this value to make the table narrower or wider */
+    max-width: 100%;
     border: 1px solid #e0e0e0;
     border-bottom: none;
 }
