@@ -127,12 +127,23 @@ def base_handler(exc: Exception) -> int:
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def login(
-    oAuthProvider: str = typer.Argument(
-        "google", help="OAuth provider to use for login (e.g., 'google', 'github')"
+    oAuthProvider: str = typer.Option(
+        "google",
+        "--oauth-provider",
+        "-p",
+        help="OAuth provider to use for login. Supported providers: google, github.",
+        show_default=True,
     ),
     key: Optional[str] = typer.Option(None, help="CLI key"),
     headless: bool = typer.Option(False),
 ) -> None:
+
+    # validate oAuthProvider
+    if oAuthProvider not in ["google", "github"]:
+        raise typer.BadParameter(
+            f"Unsupported OAuth provider '{oAuthProvider}'. Supported providers: google, github."
+        )
+
     login_flow(oAuthProvider=oAuthProvider, key=key, headless=headless)
 
 
