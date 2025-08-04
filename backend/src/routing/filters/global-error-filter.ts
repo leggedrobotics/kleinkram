@@ -49,7 +49,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
             return;
         }
 
-        if (exception instanceof HttpException && AuthFlowException) {
+        if (exception instanceof AuthFlowException) {
             // If the exception is an AuthFlowException, redirect to the frontend login page
             const authFlowException: AuthFlowException =
                 exception as AuthFlowException;
