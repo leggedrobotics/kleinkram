@@ -67,15 +67,15 @@
                                 </q-item>
                             </edit-project-dialog-opener>
                             <q-item
-                                    v-ripple
-                                    clickable
-                                    @click="copyDataToClipboard(projectUuid)"
-                                >
-                                    <q-item-section avatar>
-                                        <q-icon name="sym_o_fingerprint" />
-                                    </q-item-section>
-                                    <q-item-section> Copy UUID</q-item-section>
-                                </q-item>
+                                v-ripple
+                                clickable
+                                @click="copyProjectUuidToClipboard"
+                            >
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_fingerprint" />
+                                </q-item-section>
+                                <q-item-section> Copy UUID</q-item-section>
+                            </q-item>
                             <DeleteProjectDialogOpener
                                 :project-uuid="projectUuid ?? ''"
                                 :has-missions="(project?.missionCount ?? 0) > 0"
@@ -336,7 +336,7 @@ function openMultiActions(): void {
     createAction.value = true;
 }
 
-const copyDataToClipboard = async (data: string): Promise<void> => {
-    await copyToClipboard(data);
+const copyProjectUuidToClipboard = async (): Promise<void> => {
+    await copyToClipboard(projectUuid.value ?? '');
 };
 </script>
