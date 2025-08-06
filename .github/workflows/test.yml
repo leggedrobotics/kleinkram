@@ -2,6 +2,7 @@ name: Test The Application
 
 on:
     pull_request:
+        types: [ opened, synchronize, reopened, edited ]
         branches:
             - main
             - dev
