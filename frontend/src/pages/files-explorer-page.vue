@@ -110,6 +110,17 @@
                                 </q-item>
                             </EditMissionDialogOpener>
 
+                            <q-item
+                                v-ripple
+                                clickable
+                                @click="copyDataToClipboard(missionUuid ?? '')"
+                            >
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_fingerprint" />
+                                </q-item-section>
+                                <q-item-section> Copy UUID</q-item-section>
+                            </q-item>
+
                             <delete-mission-dialog-opener
                                 v-if="mission"
                                 :mission="mission"
@@ -356,7 +367,7 @@ import { CategoryDto } from '@api/types/category.dto';
 import { TagDto } from '@api/types/tags/tags.dto';
 import { DataType, FileType } from '@common/enum';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { Notify, useQuasar } from 'quasar';
+import { copyToClipboard, Notify, useQuasar } from 'quasar';
 import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
 import {
     registerNoPermissionErrorHandler,
@@ -665,5 +676,9 @@ const onActionsClick = async (): Promise<void> => {
 const clearSelectedFileState = (): void => {
     // @ts-ignore
     selectedFileHealth.value = undefined;
+};
+
+const copyDataToClipboard = async (data: string): Promise<void> => {
+    await copyToClipboard(data);
 };
 </script>
