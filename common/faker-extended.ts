@@ -235,7 +235,8 @@ extendedFaker.mission = {
         const month = faker.date.future().getMonth();
         const day = faker.date.future().getDay();
 
-        return `${mission} ${year}-${month}-${day}`
+        const uniqueSuffix = extendedFaker.string.alpha({ length: 8 });
+        return `${mission} ${year}-${month}-${day}_${uniqueSuffix}`
             .replaceAll(' ', '_')
             .toLowerCase();
     },
@@ -287,7 +288,10 @@ extendedFaker.project = {
 
         // Combine prefix and suffix to create a project name
 
-        return `${prefix}${suffix} ${date}`.replaceAll(' ', '_').toLowerCase();
+        const uniqueSuffix = extendedFaker.string.alpha({ length: 8 });
+        return `${prefix}${suffix} ${date} ${uniqueSuffix}`
+            .replaceAll(' ', '_')
+            .toLowerCase();
     },
 };
 
