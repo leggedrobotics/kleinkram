@@ -2,9 +2,9 @@ name: check-version-number
 
 on:
     pull_request:
-        branches:
+      types: [ opened, synchronize, reopened, edited ]
+      branches:
             - main
-            - dev
 
 jobs:
     check-version-number:

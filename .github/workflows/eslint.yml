@@ -2,6 +2,7 @@ on:
     push:
         branches: ['dev']
     pull_request:
+        types: [ opened, synchronize, reopened, edited ]
         branches:
             - dev
 

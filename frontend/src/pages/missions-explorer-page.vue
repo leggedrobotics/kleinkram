@@ -66,6 +66,16 @@
                                     </q-item-section>
                                 </q-item>
                             </edit-project-dialog-opener>
+                            <q-item
+                                v-ripple
+                                clickable
+                                @click="copyProjectUuidToClipboard"
+                            >
+                                <q-item-section avatar>
+                                    <q-icon name="sym_o_fingerprint" />
+                                </q-item-section>
+                                <q-item-section> Copy UUID</q-item-section>
+                            </q-item>
                             <DeleteProjectDialogOpener
                                 :project-uuid="projectUuid ?? ''"
                                 :has-missions="(project?.missionCount ?? 0) > 0"
@@ -254,7 +264,7 @@ import KleinDownloadMissions from 'components/cli-links/klein-download-missions.
 import ExplorerPageMissionTable from 'components/explorer-page/explorer-page-mission-table.vue';
 import TitleSection from 'components/title-section.vue';
 import UploadMissionFolder from 'components/upload-mission-folder.vue';
-import { useQuasar } from 'quasar';
+import { copyToClipboard, useQuasar } from 'quasar';
 import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
 import {
     registerNoPermissionErrorHandler,
@@ -325,4 +335,8 @@ function deselect(): void {
 function openMultiActions(): void {
     createAction.value = true;
 }
+
+const copyProjectUuidToClipboard = async (): Promise<void> => {
+    await copyToClipboard(projectUuid.value ?? '');
+};
 </script>
