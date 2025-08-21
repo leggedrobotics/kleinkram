@@ -40,14 +40,17 @@ def authorize():
     """OAuth2 Authorization Endpoint - User selects an account"""
     client_id = request.args.get("client_id")
     redirect_uri = request.args.get("redirect_uri")
+    state = request.args.get("state") # Get the state parameter
 
-    return render_template("login.html", users=FAKE_USERS, redirect_uri=redirect_uri)
+    # Pass the state parameter to the template
+    return render_template("login.html", users=FAKE_USERS, redirect_uri=redirect_uri, state=state)
 
 @app.route("/login", methods=["POST"])
 def login():
     """Handles login and redirects to the given redirect_uri with a fake code"""
     user_id = request.form.get("user_id")
     redirect_uri = request.form.get("redirect_uri")
+    state = request.form.get("state") # Get the state parameter from the form
 
     user = next((u for u in FAKE_USERS if u["id"] == user_id), None)
     if not user:
@@ -55,7 +58,13 @@ def login():
 
     fake_auth_code = f"fake-auth-code-{user['id']}"
     print(f"Generated fake auth code: {fake_auth_code} for user: {user['email']}")
-    return redirect(f"{redirect_uri}?code={fake_auth_code}")
+
+    # Append the state parameter to the redirect URL if it exists
+    redirect_url = f"{redirect_uri}?code={fake_auth_code}"
+    if state:
+        redirect_url += f"&state={state}"
+
+    return redirect(redirect_url)
 
 @app.route("/oauth/token", methods=["POST"])
 def token():

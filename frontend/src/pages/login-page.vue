@@ -62,25 +62,23 @@
                         />
                     </template>
 
-                    <template v-if="!useFakeOauth">
-                        <q-btn
-                            class="button-border full-width"
-                            flat
-                            outline
-                            size="md"
-                            label="Login with Google"
-                            @click="loginWithGoogle"
-                        />
+                    <q-btn
+                        class="button-border full-width"
+                        flat
+                        outline
+                        size="md"
+                        label="Login with Google"
+                        @click="loginWithGoogle"
+                    />
 
-                        <q-btn
-                            class="button-border full-width q-mt-md"
-                            flat
-                            outline
-                            size="md"
-                            label="Login with GitHub"
-                            @click="loginWithGitHub"
-                        />
-                    </template>
+                    <q-btn
+                        class="button-border full-width q-mt-md"
+                        flat
+                        outline
+                        size="md"
+                        label="Login with GitHub"
+                        @click="loginWithGitHub"
+                    />
 
                     <div v-if="$route.query.error_msg" class="q-mt-lg">
                         <span class="text-negative">{{
