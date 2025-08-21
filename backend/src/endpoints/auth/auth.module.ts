@@ -24,6 +24,7 @@ import { AccessService } from '../../services/access.service';
 import { ProjectGuardService } from '../../services/project-guard.service';
 import { AccessController } from './access.controller';
 import { AuthGuardService } from './auth-guard.service';
+import { FakeOauthStrategy } from './fake-oauth.strategy';
 import { GitHubStrategy } from './github.strategy';
 import { MissionGuardService } from './mission-guard.service';
 
@@ -56,6 +57,7 @@ import { MissionGuardService } from './mission-guard.service';
         AccessService,
         GoogleStrategy,
         GitHubStrategy,
+        FakeOauthStrategy,
         ProjectGuardService,
         MissionGuardService,
         AuthGuardService,

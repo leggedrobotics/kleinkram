@@ -21,7 +21,7 @@ export default class CreateUsers implements Seeder {
     private ACCESS_GROUP_COUNT = 20;
     private PROJECT_COUNT = 10;
     private GROUP_ACCESS_COUNT = 2;
-    private SEED_ADMINS = false;
+    private SEED_ADMINS = true;
     private TAG_TYPE_COUNT = 10;
 
     public async run(factory: Factory, conn: Connection): Promise<void> {
@@ -49,7 +49,7 @@ export default class CreateUsers implements Seeder {
         );
 
         // Generate Users...
-        const adminMails = ['cyrillp@leggedrobotics.com'];
+        const adminMails = ['admin@kleinkram.leggedrobotics.com'];
 
         // generate admin users
         // and add them to the affiliation group

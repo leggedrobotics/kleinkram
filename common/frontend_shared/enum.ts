@@ -106,6 +106,7 @@ export enum FileType {
 export enum Providers {
     GOOGLE = 'google',
     GITHUB = 'github',
+    FakeOAuth = 'fake-oauth', // for local dev only
 }
 
 export enum DataType {

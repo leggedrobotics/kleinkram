@@ -51,23 +51,36 @@
                         Login to Kleinkram
                     </h1>
 
-                    <q-btn
-                        class="button-border full-width"
-                        flat
-                        outline
-                        size="md"
-                        label="Login with Google"
-                        @click="loginWithGoogle"
-                    />
+                    <template v-if="useFakeOauth">
+                        <q-btn
+                            class="button-border full-width"
+                            flat
+                            outline
+                            size="md"
+                            label="Dev Login (Fake OAuth)"
+                            @click="loginWithFakeOAuth"
+                        />
+                    </template>
 
-                    <q-btn
-                        class="button-border full-width q-mt-md"
-                        flat
-                        outline
-                        size="md"
-                        label="Login with GitHub"
-                        @click="loginWithGitHub"
-                    />
+                    <template v-if="!useFakeOauth">
+                        <q-btn
+                            class="button-border full-width"
+                            flat
+                            outline
+                            size="md"
+                            label="Login with Google"
+                            @click="loginWithGoogle"
+                        />
+
+                        <q-btn
+                            class="button-border full-width q-mt-md"
+                            flat
+                            outline
+                            size="md"
+                            label="Login with GitHub"
+                            @click="loginWithGitHub"
+                        />
+                    </template>
 
                     <div v-if="$route.query.error_msg" class="q-mt-lg">
                         <span class="text-negative">{{
@@ -104,6 +117,9 @@ import { useRouter } from 'vue-router';
 
 const $router = useRouter();
 
+const useFakeOauth =
+    import.meta.env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT === 'true';
+
 const { data: me, error } = useQuery({
     queryKey: ['me'],
     queryFn: getMe,
@@ -116,6 +132,10 @@ const loginWithGoogle = (): void => {
 };
 const loginWithGitHub = (): void => {
     login('github');
+};
+
+const loginWithFakeOAuth = (): void => {
+    login('fake-oauth');
 };
 
 watch(
