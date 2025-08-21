@@ -497,10 +497,10 @@
   dependencies:
     tslib "^2.5.0"
 
-"@mcap/support@^1.0.2":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@mcap/support/-/support-1.0.3.tgz#33eb8f941c857ee165a365c7f1697d6a2f0dca7d"
-  integrity sha512-NPNu4VXtNpoqZjFxA+W5AdjuN7bSTO7hKuzMhn+4OzShNHgCAWT/wVjLdGFoheror2CCUZyFGm2Hq55oibPlTw==
+"@mcap/support@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@mcap/support/-/support-1.0.4.tgz#87372e6dc19c335ea9e37588f2a345b26c890f01"
+  integrity sha512-aSPa1u85rMNz50gtOawH1HYuuRSjNQf5/daS7GScE7Gq2rHqxmFoYar/DjHA4OQJ3ci7Vt28PVeTLDGeNW2zgw==
   dependencies:
     "@foxglove/wasm-bz2" "^0.1.1"
     "@foxglove/wasm-lz4" "^1.0.2"
