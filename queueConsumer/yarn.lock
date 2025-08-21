@@ -316,10 +316,10 @@
     "@inquirer/search" "^3.0.9"
     "@inquirer/select" "^4.0.9"
 
-"@inquirer/prompts@7.7.1":
-  version "7.7.1"
-  resolved "https://registry.yarnpkg.com/@inquirer/prompts/-/prompts-7.7.1.tgz#e735651b28c6d6a4f6e90b950d3fbd0ad26d20e8"
-  integrity sha512-XDxPrEWeWUBy8scAXzXuFY45r/q49R0g72bUzgQXZ1DY/xEFX+ESDMkTQolcb5jRBzaNJX2W8XQl6krMNDTjaA==
+"@inquirer/prompts@7.8.0":
+  version "7.8.0"
+  resolved "https://registry.yarnpkg.com/@inquirer/prompts/-/prompts-7.8.0.tgz#0bac9315e3ecd09ae21d1598b1c0df39a8b4a720"
+  integrity sha512-JHwGbQ6wjf1dxxnalDYpZwZxUEosT+6CPGD9Zh4sm9WXdtUp9XODCQD3NjSTmu+0OAyxWXNOqf0spjIymJa2Tw==
   dependencies:
     "@inquirer/checkbox" "^4.2.0"
     "@inquirer/confirm" "^5.1.14"
@@ -329,7 +329,7 @@
     "@inquirer/number" "^3.0.17"
     "@inquirer/password" "^4.0.17"
     "@inquirer/rawlist" "^4.1.5"
-    "@inquirer/search" "^3.0.17"
+    "@inquirer/search" "^3.1.0"
     "@inquirer/select" "^4.3.1"
 
 "@inquirer/rawlist@^4.0.9":
@@ -350,16 +350,6 @@
     "@inquirer/type" "^3.0.8"
     yoctocolors-cjs "^2.1.2"
 
-"@inquirer/search@^3.0.17":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@inquirer/search/-/search-3.1.0.tgz#22f1373938eef7b98c3c30f604aac8fbe9baf27a"
-  integrity sha512-PMk1+O/WBcYJDq2H7foV0aAZSmDdkzZB9Mw2v/DmONRJopwA/128cS9M/TXWLKKdEQKZnKwBzqu2G4x/2Nqx8Q==
-  dependencies:
-    "@inquirer/core" "^10.1.15"
-    "@inquirer/figures" "^1.0.13"
-    "@inquirer/type" "^3.0.8"
-    yoctocolors-cjs "^2.1.2"
-
 "@inquirer/search@^3.0.9":
   version "3.0.12"
   resolved "https://registry.yarnpkg.com/@inquirer/search/-/search-3.0.12.tgz#e86f91ea598ccb39caf9a17762b839a9b950e16d"
@@ -368,6 +358,16 @@
     "@inquirer/core" "^10.1.10"
     "@inquirer/figures" "^1.0.11"
     "@inquirer/type" "^3.0.6"
+    yoctocolors-cjs "^2.1.2"
+
+"@inquirer/search@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@inquirer/search/-/search-3.1.0.tgz#22f1373938eef7b98c3c30f604aac8fbe9baf27a"
+  integrity sha512-PMk1+O/WBcYJDq2H7foV0aAZSmDdkzZB9Mw2v/DmONRJopwA/128cS9M/TXWLKKdEQKZnKwBzqu2G4x/2Nqx8Q==
+  dependencies:
+    "@inquirer/core" "^10.1.15"
+    "@inquirer/figures" "^1.0.13"
+    "@inquirer/type" "^3.0.8"
     yoctocolors-cjs "^2.1.2"
 
 "@inquirer/select@^4.0.9":
@@ -618,15 +618,15 @@
     "@nestjs/bull-shared" "^11.0.3"
     tslib "2.8.1"
 
-"@nestjs/cli@^11.0.8":
-  version "11.0.8"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-11.0.8.tgz#098ccc9496fc2d24034a23395b2bcfe932d4433d"
-  integrity sha512-5AUtj+WE0yh0i8srKBYta/fl/Ji2xPP1R33U1RAtdQbwctj85zocfE2ioVWtGux1kN4FV+c8CPJayI9/phSHyA==
+"@nestjs/cli@^11.0.10":
+  version "11.0.10"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-11.0.10.tgz#c5c3cb4c47d08fd8faead7bf0ddd3f82bec7ccee"
+  integrity sha512-4waDT0yGWANg0pKz4E47+nUrqIJv/UqrZ5wLPkCqc7oMGRMWKAaw1NDZ9rKsaqhqvxb2LfI5+uXOWr4yi94DOQ==
   dependencies:
     "@angular-devkit/core" "19.2.15"
     "@angular-devkit/schematics" "19.2.15"
     "@angular-devkit/schematics-cli" "19.2.15"
-    "@inquirer/prompts" "7.7.1"
+    "@inquirer/prompts" "7.8.0"
     "@nestjs/schematics" "^11.0.1"
     ansis "4.1.0"
     chokidar "4.0.3"
