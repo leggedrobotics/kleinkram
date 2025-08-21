@@ -49,6 +49,6 @@
         "@nestjs/cli": "^11.0.10",
         "@types/dockerode": "^3.3.38",
         "@types/node": "24.3.0",
-        "typescript": "5.8.3"
+        "typescript": "5.9.2"
     }
 }
