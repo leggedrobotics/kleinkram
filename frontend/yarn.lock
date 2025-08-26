@@ -3336,10 +3336,10 @@ qs@6.13.0:
   dependencies:
     side-channel "^1.0.6"
 
-quasar@^2.18.1:
-  version "2.18.1"
-  resolved "https://registry.yarnpkg.com/quasar/-/quasar-2.18.1.tgz#3e9c68ef1db72cbbb188f2f943ac03662e712162"
-  integrity sha512-db/P64Mzpt1uXJ0MapaG+IYJQ9hHDb5KtTCoszwC78DR7sA+Uoj7nBW2EytwYykIExEmqavOvKrdasTvqhkgEg==
+quasar@^2.18.2:
+  version "2.18.2"
+  resolved "https://registry.yarnpkg.com/quasar/-/quasar-2.18.2.tgz#3bcf2e53371ec10bffc81b319b320e620e3953b7"
+  integrity sha512-SeSAamH4vgYH9alLTdVL2o1fTTwz7VZnS2+gvIwt6qsH3ndrn/tQW64sWE78VSvrHlWINYbXESVF/cvWEuTYxg==
 
 randombytes@^2.1.0:
   version "2.1.0"
