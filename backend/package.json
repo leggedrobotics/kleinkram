@@ -42,7 +42,7 @@
         "@opentelemetry/sdk-node": "^0.203.0",
         "@opentelemetry/sdk-trace-base": "^2.0.0",
         "@swc/core": "^1.13.3",
-        "@swc/jest": "^0.2.38",
+        "@swc/jest": "^0.2.39",
         "@willsoto/nestjs-prometheus": "^6.0.1",
         "aws4": "^1.13.2",
         "axios": "^1.10.0",
