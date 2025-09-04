@@ -21,25 +21,20 @@ To enable code completion and linting in your IDE, you may also need a NodeJS, y
 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:leggedrobotics/kleinkram.git
+cd kleinkram
 ```
 
-2. Navigate to the project directory
-
-```bash
-cd <project-directory>
-```
-
-3. Run the following command to start the development server
+2. Run the following command to start the development server
 
 ```bash
 docker compose up --build
 ```
 
-4. You can now open the projects frontend at [http://localhost:8003](http://localhost:8003).
+3. You can now open the projects frontend at [http://localhost:8003](http://localhost:8003).
 
 ::: info
-The `--build` flag is used to build the project before starting the development server.
+The `--build` flag is used to re-build the docker images before starting the development server. See [official docker docs](https://docs.docker.com/reference/cli/docker/compose/up/#options).
 :::
 
 ::: tip
@@ -55,29 +50,27 @@ In principle the setup works similar to running the project locally, however, th
 ### Setting Up the Development Environment
 
 1. Clone the repository
-2. Navigate to the project directory
-3. Run the following command to start the development server
+2. Run the following command to start the development server
 
-```bash
-docker compose up --build --watch
-```
+   ```bash
+   docker compose up --build --watch
+   ```
 
 ::: tip
-
 - the `--build` flag is used to build the project before starting the development server.
 - the `--watch` flag is optional and is used to watch for changes in the codebase.
-  :::
+:::
 
-4. You can now open the projects:
+3. You can now open the projects:
     - frontend at [http://localhost:8003](http://localhost:8003).
     - minio console at [http://localhost:9001](http://localhost:9001).
     - documentation at [http://localhost:4000](http://localhost:4000).
 
-5. In order to enable code completion and linting in your IDE, you may need to install additional tools.
+4. In order to enable code completion and linting in your IDE, you may need to install additional tools.
     - For JavaScript/TypeScript, you may need to install NodeJS and yarn.
     - For Python, you may need to install python and pip.
 
-6. You can now install the dependencies for the frontend and the backend by running the following command in the
+5. You can now install the dependencies for the frontend and the backend by running the following command in the
    top-level directory of the project:
 
     ```bash
@@ -88,6 +81,17 @@ docker compose up --build --watch
 The application continues to run in the Docker container, the above command installs the dependencies on your local
 machine. This is necessary for code completion and linting in your IDE.
 :::
+
+6. For installing the cli, you can use the following command:
+
+   ```bash
+   cd kleinkram/cli
+   
+   virtualenv -ppython3.8 .venv
+   source .venv/bin/activate
+   pip install -e . -r requirements.txt
+   ```
+
 
 ### Enable Database Seeding
 
