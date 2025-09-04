@@ -20,7 +20,7 @@
         "jwt-decode": "^4.0.0",
         "p-limit": "^6.1.0",
         "postcss": "^8.5.3",
-        "quasar": "^2.18.1",
+        "quasar": "^2.18.2",
         "spark-md5": "^3.0.2",
         "vue": "^3.5.20",
         "vue-echarts": "^7.0.3",
