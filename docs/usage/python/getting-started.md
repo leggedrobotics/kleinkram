@@ -1,6 +1,8 @@
 # Getting Started with the Kleinkram CLI and Python Package
 
-The `kleinkram` CLI allows you to interact with kleinkram from the command line. This guide will help you get started with the CLI. The CLI does not yet support all functionalities so for some use cases you will still need to use the web interface.
+The `kleinkram` CLI allows you to interact with kleinkram from the command line. This guide will help you get started
+with the CLI. The CLI does not yet support all functionalities so for some use cases you will still need to use the web
+interface.
 
 ## Installation and Prerequisites
 
@@ -46,12 +48,28 @@ klein login --headless
 
 :::
 
+::: details Choose another OAuth Provider
+By default the CLI uses Google as OAuth provider. If you want to use another provider you can use:
+
+```
+klein login --oauth-provider <provider>
+```
+
+where `<provider>` is one of `google`, `github`, or `fake-oauth`. Where the `fake-oauth` provider is only available on
+development instances of kleinkram.
+
+```
+
+:::
+
 ::: details Authentication inside Actions
 When running the CLI inside a kleinkram action, the action will expose an environment variable
 `APIKEY` which can be used to authenticate the CLI. In this case you need to use the following command:
 
 ```
+
 klein login --key $APIKEY
+
 ```
 
 :::
