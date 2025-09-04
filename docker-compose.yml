@@ -287,6 +287,13 @@ services:
         networks:
             - private-network
 
+    fake-oauth:
+        build: dev-oauth
+        ports:
+            - '8004:5000'
+        networks:
+            - private-network
+            - public-network
 volumes:
     db_data:
     minio_data:

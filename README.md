@@ -25,16 +25,10 @@ git clone git@github.com:leggedrobotics/kleinkram.git
 cd kleinkram
 ```
 
-Install `yarn` dependencies:
-
-```bash
-yarn
-```
-
 Now you can run Kleinkram using `docker compose`
 
 ```bash
-docker compose up
+docker compose up --build
 ```
 
 This will launch the frontend under `http://localhost:8003`,

@@ -22,7 +22,8 @@ define(FileEntity, (_, context: Partial<FileContext> = {}) => {
     const file = new FileEntity();
     file.date = extendedFaker.date.recent();
     file.type = extendedFaker.ros.fileType();
-    file.filename = extendedFaker.ros.fileName(file.type);
+    const uniqueSuffix = extendedFaker.string.alpha({ length: 8 });
+    file.filename = `${extendedFaker.ros.fileName(file.type)}_${uniqueSuffix}`;
     file.mission = context.mission;
     file.size = extendedFaker.number.int({ min: 0, max: 2e12 }); // 0 bytes to 2 TB
     file.creator = context.user;

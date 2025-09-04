@@ -186,4 +186,8 @@ export default {
     get DOCS_URL(): string {
         return asString(process.env['DOCS_URL']);
     },
+
+    get VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT(): boolean {
+        return asBoolean(process.env['VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT']);
+    },
 };

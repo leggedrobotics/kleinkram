@@ -51,6 +51,17 @@
                         Login to Kleinkram
                     </h1>
 
+                    <template v-if="useFakeOauth">
+                        <q-btn
+                            class="button-border full-width"
+                            flat
+                            outline
+                            size="md"
+                            label="Dev Login (Fake OAuth)"
+                            @click="loginWithFakeOAuth"
+                        />
+                    </template>
+
                     <q-btn
                         class="button-border full-width"
                         flat
@@ -104,6 +115,9 @@ import { useRouter } from 'vue-router';
 
 const $router = useRouter();
 
+const useFakeOauth =
+    import.meta.env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT === 'true';
+
 const { data: me, error } = useQuery({
     queryKey: ['me'],
     queryFn: getMe,
@@ -116,6 +130,10 @@ const loginWithGoogle = (): void => {
 };
 const loginWithGitHub = (): void => {
     login('github');
+};
+
+const loginWithFakeOAuth = (): void => {
+    login('fake-oauth');
 };
 
 watch(

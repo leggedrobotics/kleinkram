@@ -2,9 +2,9 @@ name: check-version-number
 
 on:
     pull_request:
-        branches:
+      types: [ opened, synchronize, reopened, edited ]
+      branches:
             - main
-            - dev
 
 jobs:
     check-version-number:
@@ -13,7 +13,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - uses: actions/setup-node@v4.4.0
               with:

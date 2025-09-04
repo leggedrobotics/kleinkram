@@ -94,4 +94,10 @@ export default {
     get DEV(): boolean {
         return asBoolean(process.env.DEV);
     },
+
+    get USE_FAKE_OAUTH_FOR_DEVELOPMENT(): boolean {
+        return asBoolean(
+            import.meta.env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT || 'false',
+        );
+    },
 };

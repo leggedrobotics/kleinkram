@@ -1,7 +1,15 @@
 import User from '@common/entities/user/user.entity';
 import env from '@common/environment';
-import { CookieNames } from '@common/frontend_shared/enum';
-import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { CookieNames, Providers } from '@common/frontend_shared/enum';
+import {
+    Controller,
+    Get,
+    MethodNotAllowedException,
+    Post,
+    Req,
+    Res,
+    UseGuards,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
@@ -26,6 +34,13 @@ export class AuthController {
         // OAuth is handled by the AuthGuard
     }
 
+    @Get('fake-oauth')
+    @UseGuards(AuthGuard(Providers.FakeOAuth))
+    async fakeOAuth(): Promise<void> {
+        // Initiates the GitHub OAuth flow
+        // OAuth is handled by the AuthGuard
+    }
+
     @Get('google')
     @UseGuards(AuthGuard('google'))
     async googleAuth(): Promise<void> {
@@ -44,6 +59,15 @@ export class AuthController {
     @UseGuards(AuthGuard('google'))
     @OutputDto(null) // TODO: type API response
     googleAuthRedirect(@Req() request, @Res() response: Response): void {
+        this.handleAuthRedirect(request, response);
+    }
+
+    @Get('fake-oauth/callback')
+    @UseGuards(AuthGuard(Providers.FakeOAuth))
+    @OutputDto(null) // TODO: type API response
+    fakeOAuthAuthRedirect(@Req() request, @Res() response: Response): void {
+        if (!env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT)
+            throw new MethodNotAllowedException();
         this.handleAuthRedirect(request, response);
     }
 
