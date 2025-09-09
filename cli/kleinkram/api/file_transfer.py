@@ -626,6 +626,7 @@ def download_files(
                 )
                 total_downloaded_bytes += downloaded_bytes
                 pbar.update()
+                pbar.refresh()
 
         end = monotonic()
         elapsed_time = end - start
