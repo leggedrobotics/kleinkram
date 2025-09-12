@@ -233,7 +233,7 @@ def file_info_table(file: File) -> Table:
 
 
 def mission_info_table(
-    mission: Mission, print_metadata: bool = False
+    mission: Mission, print_metadata: bool = True
 ) -> Tuple[Table, ...]:
     table = Table("k", "v", title=f"mission info: {mission.name}", show_header=False)
 

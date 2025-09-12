@@ -7,12 +7,13 @@ from typing import Dict
 from typing import Literal
 from typing import NewType
 from typing import Tuple
+from typing import List
 from uuid import UUID
 
 import dateutil.parser
 
 from kleinkram.errors import ParsingError
-from kleinkram.models import File
+from kleinkram.models import File, MetadataValue
 from kleinkram.models import FileState
 from kleinkram.models import Mission
 from kleinkram.models import Project
@@ -51,6 +52,7 @@ class MissionObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
+    TAGS = "tags"
 
 
 class ProjectObjectKeys(str, Enum):
@@ -82,6 +84,17 @@ def _parse_file_state(state: str) -> FileState:
     except ValueError as e:
         raise ParsingError(f"error parsing file state: {state}") from e
 
+def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
+    result = {}
+    try:
+        for tag in tags:
+            entry = {tag.get("name"): MetadataValue(tag.get("valueAsString"), tag.get("datatype"))}
+            result.update(entry)
+        return result
+    except ValueError as e:
+        raise ParsingError(f"error parsing metadata: {e}") from e
+
+
 
 def _parse_project(project_object: ProjectObject) -> Project:
     try:
@@ -107,7 +120,7 @@ def _parse_mission(mission: MissionObject) -> Mission:
         name = mission[MissionObjectKeys.NAME]
         created_at = _parse_datetime(mission[MissionObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(mission[MissionObjectKeys.UPDATED_AT])
-        metadata = {}  # TODO: this crap is really bad to parse
+        metadata = _parse_metadata(mission[MissionObjectKeys.TAGS])
 
         project_id, project_name = _get_nested_info(mission, PROJECT)
 
