@@ -297,8 +297,7 @@ def _get_metadata_type_id_by_name(
         return None
 
     resp.raise_for_status()
-
-    data = resp.json()[0]
+    data = resp.json()["data"][0]
     return UUID(data["uuid"], version=4)
 
 
