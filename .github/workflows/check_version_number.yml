@@ -2,8 +2,8 @@ name: check-version-number
 
 on:
     pull_request:
-      types: [ opened, synchronize, reopened, edited ]
-      branches:
+        types: [opened, synchronize, reopened, edited]
+        branches:
             - main
 
 jobs:
@@ -15,9 +15,10 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v5
 
-            - uses: actions/setup-node@v4.4.0
+            - uses: actions/setup-node@v5
               with:
                   node-version: '22'
+                  package-manager-cache: false
 
             - name: Validate Version Number by calling grunt validateVersions
               run: |

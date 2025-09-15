@@ -1,6 +1,6 @@
 {
     "name": "kleinkram-common",
-    "version": "0.50.0",
+    "version": "0.50.1",
     "license": "MIT",
     "scripts": {
         "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config",
@@ -19,7 +19,7 @@
         "typeorm-seeding": "^1.6.1"
     },
     "devDependencies": {
-        "@types/node": "^24.3.0",
+        "@types/node": "^24.3.1",
         "typescript": "^5.9.2"
     }
 }
