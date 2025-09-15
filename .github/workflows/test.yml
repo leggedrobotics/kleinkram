@@ -2,7 +2,7 @@ name: Test The Application
 
 on:
     pull_request:
-        types: [ opened, synchronize, reopened, edited ]
+        types: [opened, synchronize, reopened, edited]
         branches:
             - main
             - dev
@@ -24,6 +24,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: '22'
+                  package-manager-cache: false
 
             - name: Install yarn
               run: npm install -g yarn

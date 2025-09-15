@@ -2,7 +2,7 @@ on:
     push:
         branches: ['dev']
     pull_request:
-        types: [ opened, synchronize, reopened, edited ]
+        types: [opened, synchronize, reopened, edited]
         branches:
             - dev
 
@@ -17,6 +17,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: '22'
+                  package-manager-cache: false
 
             - name: Generate Build Info
               run: bash create_build_info.sh
