@@ -4062,10 +4062,10 @@ symbol-observable@4.0.0:
   resolved "https://registry.yarnpkg.com/symbol-observable/-/symbol-observable-4.0.0.tgz#5b425f192279e87f2f9b937ac8540d1984b39205"
   integrity sha512-b19dMThMV4HVFynSAM1++gBHAbk2Tc/osgLIBZMKsyqh34jb2e8Os7T6ZW/Bt3pJFdBTd2JwAnAAEQV7rSNvcQ==
 
-systeminformation@^5.27.8:
-  version "5.27.8"
-  resolved "https://registry.yarnpkg.com/systeminformation/-/systeminformation-5.27.8.tgz#f13d180104a0df2e7222c5d4aa85aea147428de5"
-  integrity sha512-d3Z0gaQO1MlUxzDUKsmXz5y4TOBCMZ8IyijzaYOykV3AcNOTQ7mT+tpndUOXYNSxzLK3la8G32xiUFvZ0/s6PA==
+systeminformation@^5.27.9:
+  version "5.27.9"
+  resolved "https://registry.yarnpkg.com/systeminformation/-/systeminformation-5.27.9.tgz#4144c34e359a81c79923c0aa6ebc74bd2610ed4c"
+  integrity sha512-g2PsfwJtUOwTki9Dbpq11GqGGk9XWczBf3iDuXm9lEa4akZxSXjAnZyE7oJhlS+vxjlmexThtYRxvxrOSb8erQ==
 
 tapable@^2.1.1, tapable@^2.2.0, tapable@^2.2.1:
   version "2.2.1"
