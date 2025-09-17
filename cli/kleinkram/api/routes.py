@@ -10,6 +10,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from uuid import UUID
+from pydoc import locate
 
 import httpx
 
@@ -43,7 +44,7 @@ from kleinkram.errors import ProjectNotFound
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import is_valid_uuid4, normalize_type_name
 
 __all__ = [
     "_get_api_version",
@@ -288,9 +289,25 @@ def _create_project(
     return UUID(resp.json()["uuid"], version=4)
 
 
+def _validate_tag_value(
+    tag_value, tag_datatype
+) -> None:
+    if tag_datatype == "NUMBER":
+        try:
+            float(tag_value)
+        except:
+            raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
+    elif tag_datatype == "BOOLEAN":
+        if tag_value.lower() not in {"true", "false"}:
+            raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')")
+    else:
+        pass # any string is fine
+    #TODO: add check for LOCATION tag datatype
+
+
 def _get_metadata_type_id_by_name(
     client: AuthenticatedClient, tag_name: str
-) -> Optional[UUID]:
+) -> Tuple[Optional[UUID], str]:
     resp = client.get(TAG_TYPE_BY_NAME, params={"name": tag_name, "take": 1})
 
     if resp.status_code in (403, 404):
@@ -298,7 +315,7 @@ def _get_metadata_type_id_by_name(
 
     resp.raise_for_status()
     data = resp.json()["data"][0]
-    return UUID(data["uuid"], version=4)
+    return UUID(data["uuid"], version=4), data["datatype"]
 
 
 def _get_tags_map(
@@ -308,9 +325,10 @@ def _get_tags_map(
     # why are we using metadata type ids as keys???
     ret = {}
     for key, val in metadata.items():
-        metadata_type_id = _get_metadata_type_id_by_name(client, key)
+        metadata_type_id, tag_datatype = _get_metadata_type_id_by_name(client, key)
         if metadata_type_id is None:
             raise InvalidMissionMetadata(f"metadata field: {key} does not exist")
+        _validate_tag_value(val, tag_datatype)
         ret[metadata_type_id] = val
     return ret
 
