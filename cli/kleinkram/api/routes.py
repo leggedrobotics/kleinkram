@@ -44,7 +44,7 @@ from kleinkram.errors import ProjectNotFound
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.utils import is_valid_uuid4, normalize_type_name
+from kleinkram.utils import is_valid_uuid4
 
 __all__ = [
     "_get_api_version",
