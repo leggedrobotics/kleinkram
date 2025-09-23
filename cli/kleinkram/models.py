@@ -41,6 +41,7 @@ class Project:
     description: str
     created_at: datetime
     updated_at: datetime
+    required_tags: str
 
 
 @dataclass(frozen=True)

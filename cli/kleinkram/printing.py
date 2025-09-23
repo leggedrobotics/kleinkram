@@ -269,6 +269,7 @@ def project_info_table(project: Project) -> Table:
     table.add_row("description", project.description)
     table.add_row("created", str(project.created_at))
     table.add_row("updated", str(project.updated_at))
+    table.add_row("required tags", project.required_tags)
 
     return table
 

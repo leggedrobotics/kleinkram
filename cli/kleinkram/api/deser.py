@@ -61,6 +61,7 @@ class ProjectObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
+    REQUIRED_TAGS = "requiredTags"
 
 
 def _get_nested_info(data, key: Literal["mission", "project"]) -> Tuple[UUID, str]:
@@ -94,6 +95,9 @@ def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
     except ValueError as e:
         raise ParsingError(f"error parsing metadata: {e}") from e
 
+def _parse_required_tags(tags: List[Dict]) -> str:
+    tag_names = list(_parse_metadata(tags).keys())
+    return ", ".join(tag_names)
 
 
 def _parse_project(project_object: ProjectObject) -> Project:
@@ -103,6 +107,7 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description = project_object[ProjectObjectKeys.DESCRIPTION]
         created_at = _parse_datetime(project_object[ProjectObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(project_object[ProjectObjectKeys.UPDATED_AT])
+        required_tags = _parse_required_tags(project_object[ProjectObjectKeys.REQUIRED_TAGS])
     except Exception as e:
         raise ParsingError(f"error parsing project: {project_object}") from e
     return Project(
@@ -111,6 +116,7 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description=description,
         created_at=created_at,
         updated_at=updated_at,
+        required_tags=required_tags,
     )
 
 
