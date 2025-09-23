@@ -10,7 +10,6 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from uuid import UUID
-from pydoc import locate
 
 import httpx
 
@@ -237,6 +236,7 @@ def _create_mission(
     *,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_tags: bool = False,
+    required_tags: Optional[List[str]] = None,
 ) -> UUID:
     """\
     creates a new mission with the given name and project_id
@@ -259,6 +259,11 @@ def _create_mission(
             "mission names must not be valid UUIDv4's"
         )
 
+    if required_tags and not set(required_tags).issubset(metadata.keys()):
+        raise InvalidMissionMetadata(
+            f"Mission tags `{required_tags}` are required but missing from metadata: {metadata}"
+        )
+
     # we need to translate tag keys to tag type ids
     tags = _get_tags_map(client, metadata)
 
@@ -268,7 +273,6 @@ def _create_mission(
         "tags": {str(k): v for k, v in tags.items()},
         "ignoreTags": ignore_missing_tags,
     }
-
     resp = client.post(CREATE_MISSION, json=payload)
     resp.raise_for_status()
 

@@ -95,9 +95,8 @@ def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
     except ValueError as e:
         raise ParsingError(f"error parsing metadata: {e}") from e
 
-def _parse_required_tags(tags: List[Dict]) -> str:
-    tag_names = list(_parse_metadata(tags).keys())
-    return ", ".join(tag_names)
+def _parse_required_tags(tags: List[Dict]) -> list[str]:
+    return list(_parse_metadata(tags).keys())
 
 
 def _parse_project(project_object: ProjectObject) -> Project:
