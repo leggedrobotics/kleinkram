@@ -13,7 +13,7 @@ import {
     MissionWithFilesDto,
 } from '@api/types/mission/mission.dto';
 import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
-import { ProjectWithRequiredTags } from '@api/types/project/project-with-required-tags';
+import { ProjectWithRequiredTagsDto } from '@api/types/project/project-with-required-tags.dto';
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import { StorageOverviewDto } from '@api/types/storage-overview.dto';
 import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
@@ -214,10 +214,10 @@ export const canDeleteProject = (
 
 export const useProjectQuery = (
     projectUuid: Ref<string | undefined> | string | undefined,
-): UseQueryReturnType<ProjectWithRequiredTags, Error> =>
-    useQuery<ProjectWithRequiredTags>({
+): UseQueryReturnType<ProjectWithRequiredTagsDto, Error> =>
+    useQuery<ProjectWithRequiredTagsDto>({
         queryKey: ['project', projectUuid],
-        queryFn: (): Promise<ProjectWithRequiredTags> => {
+        queryFn: (): Promise<ProjectWithRequiredTagsDto> => {
             return getProject(unref(projectUuid) ?? '');
         },
         enabled: () => unref(projectUuid) !== undefined,
