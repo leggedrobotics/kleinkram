@@ -34,7 +34,7 @@
         "bull": "^4.16.4",
         "dockerode": "^4.0.7",
         "googleapis": "^159.0.0",
-        "minio": "^8.0.5",
+        "minio": "^8.0.6",
         "pg": "^8.16.3",
         "redlock": "^5.0.0-beta.2",
         "reflect-metadata": "0.2.2",
