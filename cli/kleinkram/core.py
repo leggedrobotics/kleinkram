@@ -107,9 +107,11 @@ def upload(
 
     if create and mission is None:
         # check if project exists and get its id at the same time
-        project_id = kleinkram.api.routes.get_project(
+        project = kleinkram.api.routes.get_project(
             client, query=query.project_query
-        ).id
+        )
+        project_id = project.id
+        project_required_tags = project.required_tags
         mission_name = check_mission_query_is_creatable(query)
         kleinkram.api.routes._create_mission(
             client,
@@ -117,6 +119,7 @@ def upload(
             mission_name,
             metadata=metadata or {},
             ignore_missing_tags=ignore_missing_metadata,
+            required_tags=project_required_tags,
         )
         mission = kleinkram.api.routes.get_mission(client, query)
 

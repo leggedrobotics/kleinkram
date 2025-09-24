@@ -165,7 +165,9 @@ export class MissionService {
         let query = this.missionRepository
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator');
+            .leftJoinAndSelect('mission.creator', 'creator')
+            .leftJoinAndSelect('mission.tags', 'tag')
+            .leftJoinAndSelect('tag.tagType', 'tagType');
 
         query = addAccessConstraintsToMissionQuery(query, userUuid);
 

@@ -18,7 +18,7 @@ import { DefaultRightDto } from '@common/api/types/access-control/default-right.
 import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import { SortOrder } from '@common/api/types/pagination';
 import { ProjectDto } from '@common/api/types/project/base-project.dto';
-import { ProjectWithRequiredTags } from '@common/api/types/project/project-with-required-tags';
+import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
@@ -32,7 +32,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import {
-    projectEntityToDtoWithMissionCount,
+    projectEntityToDtoWithMissionCountAndTags,
     projectEntityToDtoWithRequiredTags,
 } from '../serialization';
 import { AccessGroupConfig } from '../types/access-group-config';
@@ -80,7 +80,8 @@ export class ProjectService {
     ): Promise<ProjectsDto> {
         let query = this.projectRepository
             .createQueryBuilder('project')
-            .leftJoinAndSelect('project.creator', 'creator');
+            .leftJoinAndSelect('project.creator', 'creator')
+            .leftJoinAndSelect('project.requiredTags', 'requiredTags');
 
         query = addAccessConstraintsToProjectQuery(query, userUuid);
 
@@ -103,7 +104,7 @@ export class ProjectService {
 
         return {
             data: projects.map((element) =>
-                projectEntityToDtoWithMissionCount(element),
+                projectEntityToDtoWithMissionCountAndTags(element),
             ),
             count,
             skip,
@@ -111,7 +112,7 @@ export class ProjectService {
         };
     }
 
-    async findOne(uuid: string): Promise<ProjectWithRequiredTags> {
+    async findOne(uuid: string): Promise<ProjectWithRequiredTagsDto> {
         const missionPromise = this.projectRepository
             .createQueryBuilder('project')
             .where('project.uuid = :uuid', { uuid })

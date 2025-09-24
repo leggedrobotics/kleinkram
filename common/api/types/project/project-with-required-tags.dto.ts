@@ -4,7 +4,7 @@ import { IsNumber, ValidateNested } from 'class-validator';
 import { TagTypeDto } from '../tags/tags.dto';
 import { ProjectWithCreator } from './project-with-creator.dto';
 
-export class ProjectWithRequiredTags extends ProjectWithCreator {
+export class ProjectWithRequiredTagsDto extends ProjectWithCreator {
     @ApiProperty({
         description: 'Number of missions',
     })

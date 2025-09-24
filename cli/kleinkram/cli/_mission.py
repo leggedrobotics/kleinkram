@@ -45,13 +45,16 @@ def create(
     metadata_dct = load_metadata(Path(metadata)) if metadata else {}  # noqa
 
     client = AuthenticatedClient()
-    project_id = get_project(client, project_query).id
+    project = get_project(client, project_query)
+    project_id = project.id
+    project_required_tags = project.required_tags
     mission_id = kleinkram.api.routes._create_mission(
         client,
         project_id,
         mission_name,
         metadata=metadata_dct,
         ignore_missing_tags=ignore_missing_tags,
+        required_tags=project_required_tags,
     )
 
     mission_parsed = get_mission(client, MissionQuery(ids=[mission_id]))
