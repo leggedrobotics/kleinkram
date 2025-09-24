@@ -572,19 +572,20 @@ def upload_files(
 
         avg_speed_bps = total_uploaded_bytes / elapsed_time if elapsed_time > 0 else 0
 
-        console.print(f"Upload took {elapsed_time:.2f} seconds")
-        console.print(f"Total uploaded: {format_bytes(total_uploaded_bytes)}")
-        console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
+        if verbose:
+            console.print(f"Upload took {elapsed_time:.2f} seconds")
+            console.print(f"Total uploaded: {format_bytes(total_uploaded_bytes)}")
+            console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
 
-        if failed_files > 0:
-            console.print(
-                f"\nUploaded {len(files) - failed_files - skipped_files} files, {skipped_files} skipped, {failed_files} uploads failed",
-                style="red",
-            )
-        else:
-            console.print(
-                f"\nUploaded {len(files) - skipped_files} files, {skipped_files} skipped"
-            )
+            if failed_files > 0:
+                console.print(
+                    f"\nUploaded {len(files) - failed_files - skipped_files} files, {skipped_files} skipped, {failed_files} uploads failed",
+                    style="red",
+                )
+            else:
+                console.print(
+                    f"\nUploaded {len(files) - skipped_files} files, {skipped_files} skipped"
+                )
 
 
 def download_files(
