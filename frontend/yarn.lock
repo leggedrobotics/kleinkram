@@ -3217,12 +3217,12 @@ os-tmpdir@~1.0.2:
   resolved "https://registry.yarnpkg.com/os-tmpdir/-/os-tmpdir-1.0.2.tgz#bbe67406c79aa85c5cfec766fe5734555dfa1274"
   integrity sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==
 
-p-limit@^6.1.0:
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/p-limit/-/p-limit-6.2.0.tgz#c254d22ba6aeef441a3564c5e6c2f2da59268a0f"
-  integrity sha512-kuUqqHNUqoIWp/c467RI4X6mmyuojY5jGutNU0wVTmEOOfcuwLqyMVoAi9MKi2Ak+5i9+nhmrK4ufZE8069kHA==
+p-limit@^7.1.1:
+  version "7.1.1"
+  resolved "https://registry.yarnpkg.com/p-limit/-/p-limit-7.1.1.tgz#1f349332b179e370ede603078d975048b9e904a2"
+  integrity sha512-i8PyM2JnsNChVSYWLr2BAjNoLi0BAYC+wecOnZnVV+YSNJkzP7cWmvI34dk0WArWfH9KwBHNoZI3P3MppImlIA==
   dependencies:
-    yocto-queue "^1.1.1"
+    yocto-queue "^1.2.1"
 
 package-json-from-dist@^1.0.0:
   version "1.0.1"
@@ -4228,10 +4228,10 @@ yargs@^17.5.1:
     y18n "^5.0.5"
     yargs-parser "^21.1.1"
 
-yocto-queue@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-1.1.1.tgz#fef65ce3ac9f8a32ceac5a634f74e17e5b232110"
-  integrity sha512-b4JR1PFR10y1mKjhHY9LaGo6tmrgjit7hxVIeAmyMw3jegXR4dhYqLaQF5zMXZxY7tLpMyJeLjr1C4rLmkVe8g==
+yocto-queue@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-1.2.1.tgz#36d7c4739f775b3cbc28e6136e21aa057adec418"
+  integrity sha512-AyeEbWOu/TAXdxlV9wmGcR0+yh2j3vYPGOECcIj2S7MkrLyC7ne+oye2BKTItt0ii2PHk4cDy+95+LshzbXnGg==
 
 yoctocolors-cjs@^2.1.2:
   version "2.1.2"
