@@ -33,7 +33,7 @@
         "@types/spark-md5": "^3.0.5",
         "autoprefixer": "^10.4.21",
         "jiti": "^2.5.1",
-        "tsx": "^4.20.5",
+        "tsx": "^4.20.6",
         "typescript": "^5.8.3",
         "vue-tsc": "^3.0.8"
     },
