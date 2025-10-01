@@ -375,7 +375,11 @@ def _get_metadata_type_id_by_name(
         return None
 
     resp.raise_for_status()
-    data = resp.json()["data"][0]
+    try:
+        data = resp.json()['data'][0]
+    except IndexError:
+        return None, None
+
     return UUID(data["uuid"], version=4), data["datatype"]
 
 
