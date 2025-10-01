@@ -27,10 +27,10 @@ import {
 import { ProjectDto } from '@common/api/types/project/base-project.dto';
 import { ProjectWithMissionCountDto } from '@common/api/types/project/project-with-mission-count.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
+import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
 import { TagDto, TagTypeDto } from '@common/api/types/tags/tags.dto';
 import { TopicDto } from '@common/api/types/topic.dto';
 import { GroupMembershipDto, UserDto } from '@common/api/types/user.dto';
-import {ProjectWithRequiredTagsDto} from "@common/api/types/project/project-with-required-tags.dto";
 
 export const missionEntityToDto = (mission: Mission): MissionDto => {
     if (!mission.project) {
@@ -297,7 +297,6 @@ export const projectEntityToDtoWithMissionCountAndTags = (
         requiredTags: project.requiredTags?.map(tagTypeEntityToDto) ?? [],
     };
 };
-
 
 export const projectEntityToDtoWithMissions = (
     project: Project,

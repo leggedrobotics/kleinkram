@@ -5,7 +5,7 @@ import { IsSkip } from '../../../validation/skip-validation';
 import { IsTake } from '../../../validation/take-validation';
 import { Paginated } from '../pagination';
 import { ProjectWithMissionCountDto } from './project-with-mission-count.dto';
-import {ProjectWithRequiredTagsDto} from "./project-with-required-tags.dto";
+import { ProjectWithRequiredTagsDto } from './project-with-required-tags.dto';
 
 export class ProjectsDto implements Paginated<ProjectWithMissionCountDto> {
     @ApiProperty({
