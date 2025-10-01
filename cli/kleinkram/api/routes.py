@@ -223,6 +223,28 @@ def _mission_name_is_available(
     return False
 
 
+def _validate_mission_name(
+        client: AuthenticatedClient, project_id: UUID, mission_name: str
+) -> None:
+    if not _mission_name_is_available(client, mission_name, project_id):
+        raise MissionExists(
+            f"Mission with name: `{mission_name}` already exists"
+            f" in project: {project_id}"
+        )
+
+    if is_valid_uuid4(mission_name):
+        raise ValueError(
+            f"Mission name: `{mission_name}` is a valid UUIDv4, "
+            "mission names must not be valid UUIDv4's"
+        )
+
+    if mission_name.endswith(" "):
+        raise ValueError(
+            "A mission name cannot end with a whitespace. "
+            f"The given mission name was \'{mission_name}\'"
+        )
+
+
 def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
     project_query = ProjectQuery(patterns=[project_name])
     try:
@@ -291,17 +313,7 @@ def _create_mission(
     if metadata is None:
         metadata = {}
 
-    if not _mission_name_is_available(client, mission_name, project_id):
-        raise MissionExists(
-            f"Mission with name: `{mission_name}` already exists"
-            f" in project: {project_id}"
-        )
-
-    if is_valid_uuid4(mission_name):
-        raise ValueError(
-            f"Mission name: `{mission_name}` is a valid UUIDv4, "
-            "mission names must not be valid UUIDv4's"
-        )
+    _validate_mission_name(client, project_id, mission_name)
 
     if required_tags and not set(required_tags).issubset(metadata.keys()):
         raise InvalidMissionMetadata(
@@ -317,9 +329,10 @@ def _create_mission(
         "tags": {str(k): v for k, v in tags.items()},
         "ignoreTags": ignore_missing_tags,
     }
+    print("posting payload")
     resp = client.post(CREATE_MISSION, json=payload)
     resp.raise_for_status()
-
+    print("validate creation")
     _validate_mission_created(client, str(project_id), mission_name)
 
     return UUID(resp.json()["uuid"], version=4)
