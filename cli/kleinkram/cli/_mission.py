@@ -124,9 +124,6 @@ def delete(
         False, "--confirm", "-y", "--yes", help="confirm deletion"
     ),
 ) -> None:
-    if not confirm:
-        typer.confirm(f"delete {project} {mission}", abort=True)
-
     project_ids, project_patterns = split_args([project] if project else [])
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
@@ -144,6 +141,12 @@ def delete(
 
     client = AuthenticatedClient()
     mission_parsed = get_mission(client, mission_query)
+    if not confirm:
+        if project:
+            typer.confirm(f"delete {project} {mission}", abort=True)
+        else:
+            typer.confirm(f"delete {mission_parsed.name} {mission}", abort=True)
+
     kleinkram.core.delete_mission(client=client, mission_id=mission_parsed.id)
 
 
