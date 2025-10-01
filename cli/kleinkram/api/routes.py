@@ -329,10 +329,8 @@ def _create_mission(
         "tags": {str(k): v for k, v in tags.items()},
         "ignoreTags": ignore_missing_tags,
     }
-    print("posting payload")
     resp = client.post(CREATE_MISSION, json=payload)
     resp.raise_for_status()
-    print("validate creation")
     _validate_mission_created(client, str(project_id), mission_name)
 
     return UUID(resp.json()["uuid"], version=4)

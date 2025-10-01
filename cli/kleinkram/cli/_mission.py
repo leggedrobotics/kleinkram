@@ -13,6 +13,7 @@ from kleinkram.api.query import ProjectQuery
 from kleinkram.api.routes import get_mission
 from kleinkram.api.routes import get_project
 from kleinkram.config import get_shared_state
+from kleinkram.errors import InvalidMissionQuery
 from kleinkram.printing import print_mission_info
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
@@ -135,6 +136,11 @@ def delete(
         patterns=mission_patterns,
         project_query=project_query,
     )
+    if mission_patterns and not (project_patterns or project_ids):
+        raise InvalidMissionQuery(
+            "Mission query does not uniquely determine mission. "
+            "When deleting by mission name, project name or id must be specified"
+        )
 
     client = AuthenticatedClient()
     mission_parsed = get_mission(client, mission_query)
