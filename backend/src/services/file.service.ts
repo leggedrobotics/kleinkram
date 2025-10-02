@@ -18,7 +18,7 @@ import {
     ConflictException,
     Injectable,
     NotFoundException,
-    OnModuleInit,
+    OnModuleInit, UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import jwt from 'jsonwebtoken';
@@ -519,9 +519,9 @@ export class FileService implements OnModuleInit {
 
         return await externalMinio.presignedUrl(
             'GET',
-            file.type === FileType.MCAP
-                ? env.MINIO_MCAP_BUCKET_NAME
-                : env.MINIO_BAG_BUCKET_NAME,
+            file.type === FileType.BAG
+                ? env.MINIO_BAG_BUCKET_NAME
+                : env.MINIO_MCAP_BUCKET_NAME,
             file.uuid, // we use the uuid as the filename in Minio
             expires ? 4 * 60 * 60 : 604_800, // 604800 seconds = 1 week
             {
@@ -792,15 +792,26 @@ export class FileService implements OnModuleInit {
 
                 logger.debug(`Creating temporary access for file: ${filename}`);
 
-                // verify that file has ending .bag or .mcap
-                if (!filename.endsWith('.bag') && !filename.endsWith('.mcap')) {
+                const fileExtensionToFileTypeMap: ReadonlyMap<string, FileType> = new Map([
+                    ['.bag', FileType.BAG],
+                    ['.mcap', FileType.MCAP],
+                    ['.yaml', FileType.YAML],
+                    ['.svo2', FileType.SVO2],
+                    ['.tum', FileType.TUM],
+                    ['.db3', FileType.DB3],
+                ]);
+
+                const supported_file_endings = [...fileExtensionToFileTypeMap.keys()];
+
+                if (!supported_file_endings.some((ending) => filename.endsWith(ending))) {
                     emptyCredentials.error = 'Invalid file ending';
                     return emptyCredentials;
                 }
 
-                const fileType: FileType = filename.endsWith('.bag')
-                    ? FileType.BAG
-                    : FileType.MCAP;
+                const matchingFileType = supported_file_endings.find(ending => filename.endsWith(ending));
+                if (matchingFileType === undefined) throw new UnsupportedMediaTypeException();
+                const fileType: FileType | undefined = fileExtensionToFileTypeMap.get(matchingFileType);
+                if (fileType === undefined) throw new UnsupportedMediaTypeException();
 
                 // check if file already exists
                 const existingFile = await this.fileRepository.exists({

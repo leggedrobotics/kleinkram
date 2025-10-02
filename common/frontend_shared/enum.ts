@@ -100,6 +100,10 @@ export enum CookieNames {
 export enum FileType {
     BAG = 'BAG',
     MCAP = 'MCAP',
+    YAML = 'YAML',
+    SVO2 = 'SVO2',
+    TUM = 'TUM',
+    DB3 = 'DB3',
     ALL = 'ALL',
 }
 
