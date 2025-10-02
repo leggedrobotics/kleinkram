@@ -18,7 +18,8 @@ import {
     ConflictException,
     Injectable,
     NotFoundException,
-    OnModuleInit, UnsupportedMediaTypeException,
+    OnModuleInit,
+    UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import jwt from 'jsonwebtoken';
@@ -792,7 +793,10 @@ export class FileService implements OnModuleInit {
 
                 logger.debug(`Creating temporary access for file: ${filename}`);
 
-                const fileExtensionToFileTypeMap: ReadonlyMap<string, FileType> = new Map([
+                const fileExtensionToFileTypeMap: ReadonlyMap<
+                    string,
+                    FileType
+                > = new Map([
                     ['.bag', FileType.BAG],
                     ['.mcap', FileType.MCAP],
                     ['.yaml', FileType.YAML],
@@ -801,17 +805,28 @@ export class FileService implements OnModuleInit {
                     ['.db3', FileType.DB3],
                 ]);
 
-                const supported_file_endings = [...fileExtensionToFileTypeMap.keys()];
+                const supported_file_endings = [
+                    ...fileExtensionToFileTypeMap.keys(),
+                ];
 
-                if (!supported_file_endings.some((ending) => filename.endsWith(ending))) {
+                if (
+                    !supported_file_endings.some((ending) =>
+                        filename.endsWith(ending),
+                    )
+                ) {
                     emptyCredentials.error = 'Invalid file ending';
                     return emptyCredentials;
                 }
 
-                const matchingFileType = supported_file_endings.find(ending => filename.endsWith(ending));
-                if (matchingFileType === undefined) throw new UnsupportedMediaTypeException();
-                const fileType: FileType | undefined = fileExtensionToFileTypeMap.get(matchingFileType);
-                if (fileType === undefined) throw new UnsupportedMediaTypeException();
+                const matchingFileType = supported_file_endings.find((ending) =>
+                    filename.endsWith(ending),
+                );
+                if (matchingFileType === undefined)
+                    throw new UnsupportedMediaTypeException();
+                const fileType: FileType | undefined =
+                    fileExtensionToFileTypeMap.get(matchingFileType);
+                if (fileType === undefined)
+                    throw new UnsupportedMediaTypeException();
 
                 // check if file already exists
                 const existingFile = await this.fileRepository.exists({
