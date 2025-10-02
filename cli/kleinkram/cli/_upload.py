@@ -45,8 +45,7 @@ def upload(
         help="fix filenames before upload, this does not change the filenames locally",
     ),
     experimental_datatypes: bool = typer.Option(
-       False,
-       help="allow experimental datatypes (yaml, svo2, db3, tum)"
+        False, help="allow experimental datatypes (yaml, svo2, db3, tum)"
     ),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
