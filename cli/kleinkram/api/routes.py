@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from enum import Enum
+from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import Generator
@@ -40,10 +42,11 @@ from kleinkram.errors import MissionExists
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import ProjectExists
 from kleinkram.errors import ProjectNotFound
+from kleinkram.errors import MissionValidationError
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import is_valid_uuid4, split_args
 
 __all__ = [
     "_get_api_version",
@@ -220,32 +223,9 @@ def _mission_name_is_available(
     return False
 
 
-def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
-    project_query = ProjectQuery(patterns=[project_name])
-    try:
-        _ = get_project(client, project_query)
-    except ProjectNotFound:
-        return True
-    return False
-
-
-def _create_mission(
-    client: AuthenticatedClient,
-    project_id: UUID,
-    mission_name: str,
-    *,
-    metadata: Optional[Dict[str, str]] = None,
-    ignore_missing_tags: bool = False,
-) -> UUID:
-    """\
-    creates a new mission with the given name and project_id
-
-    if check_exists is True, the function will return the existing mission_id,
-    otherwise if the mission already exists an error will be raised
-    """
-    if metadata is None:
-        metadata = {}
-
+def _validate_mission_name(
+        client: AuthenticatedClient, project_id: UUID, mission_name: str
+) -> None:
     if not _mission_name_is_available(client, mission_name, project_id):
         raise MissionExists(
             f"Mission with name: `{mission_name}` already exists"
@@ -258,6 +238,88 @@ def _create_mission(
             "mission names must not be valid UUIDv4's"
         )
 
+    if mission_name.endswith(" "):
+        raise ValueError(
+            "A mission name cannot end with a whitespace. "
+            f"The given mission name was \'{mission_name}\'"
+        )
+
+
+def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
+    project_query = ProjectQuery(patterns=[project_name])
+    try:
+        _ = get_project(client, project_query)
+    except ProjectNotFound:
+        return True
+    return False
+
+def _validate_mission_created(client: AuthenticatedClient, project_id: str, mission_name: str) -> None:
+    """
+    validate that a mission is successfully created
+    """
+    mission_ids, mission_patterns = split_args([mission_name])
+    project_ids, project_patterns = split_args([project_id])
+
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_query=project_query,
+    )
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mcap", delete=False) as tmp:
+            tmp.write(b"dummy content")
+            tmp_path = Path(tmp.name)
+
+        kleinkram.core.upload(
+            client=client,
+            query=mission_query,
+            file_paths=[tmp_path],
+            verbose=False,
+        )
+
+        file_query = FileQuery(
+            ids=[],
+            patterns=[tmp_path.name],
+            mission_query=mission_query,
+        )
+        file_parsed = get_file(client, file_query)
+
+        kleinkram.core.delete_files(client=client, file_ids=[file_parsed.id])
+
+    except Exception as e:
+        raise MissionValidationError(f"Mission validation failed: {e}")
+
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
+
+
+def _create_mission(
+    client: AuthenticatedClient,
+    project_id: UUID,
+    mission_name: str,
+    *,
+    metadata: Optional[Dict[str, str]] = None,
+    ignore_missing_tags: bool = False,
+    required_tags: Optional[List[str]] = None,
+) -> UUID:
+    """\
+    creates a new mission with the given name and project_id
+
+    if check_exists is True, the function will return the existing mission_id,
+    otherwise if the mission already exists an error will be raised
+    """
+    if metadata is None:
+        metadata = {}
+
+    _validate_mission_name(client, project_id, mission_name)
+
+    if required_tags and not set(required_tags).issubset(metadata.keys()):
+        raise InvalidMissionMetadata(
+            f"Mission tags `{required_tags}` are required but missing from metadata: {metadata}"
+        )
+
     # we need to translate tag keys to tag type ids
     tags = _get_tags_map(client, metadata)
 
@@ -267,9 +329,9 @@ def _create_mission(
         "tags": {str(k): v for k, v in tags.items()},
         "ignoreTags": ignore_missing_tags,
     }
-
     resp = client.post(CREATE_MISSION, json=payload)
     resp.raise_for_status()
+    _validate_mission_created(client, str(project_id), mission_name)
 
     return UUID(resp.json()["uuid"], version=4)
 
@@ -288,18 +350,37 @@ def _create_project(
     return UUID(resp.json()["uuid"], version=4)
 
 
+def _validate_tag_value(
+    tag_value, tag_datatype
+) -> None:
+    if tag_datatype == "NUMBER":
+        try:
+            float(tag_value)
+        except:
+            raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
+    elif tag_datatype == "BOOLEAN":
+        if tag_value.lower() not in {"true", "false"}:
+            raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')")
+    else:
+        pass # any string is fine
+    #TODO: add check for LOCATION tag datatype
+
+
 def _get_metadata_type_id_by_name(
     client: AuthenticatedClient, tag_name: str
-) -> Optional[UUID]:
+) -> Tuple[Optional[UUID], str]:
     resp = client.get(TAG_TYPE_BY_NAME, params={"name": tag_name, "take": 1})
 
     if resp.status_code in (403, 404):
         return None
 
     resp.raise_for_status()
+    try:
+        data = resp.json()['data'][0]
+    except IndexError:
+        return None, None
 
-    data = resp.json()[0]
-    return UUID(data["uuid"], version=4)
+    return UUID(data["uuid"], version=4), data["datatype"]
 
 
 def _get_tags_map(
@@ -309,9 +390,10 @@ def _get_tags_map(
     # why are we using metadata type ids as keys???
     ret = {}
     for key, val in metadata.items():
-        metadata_type_id = _get_metadata_type_id_by_name(client, key)
+        metadata_type_id, tag_datatype = _get_metadata_type_id_by_name(client, key)
         if metadata_type_id is None:
             raise InvalidMissionMetadata(f"metadata field: {key} does not exist")
+        _validate_tag_value(val, tag_datatype)
         ret[metadata_type_id] = val
     return ret
 

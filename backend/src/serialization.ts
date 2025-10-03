@@ -27,6 +27,7 @@ import {
 import { ProjectDto } from '@common/api/types/project/base-project.dto';
 import { ProjectWithMissionCountDto } from '@common/api/types/project/project-with-mission-count.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
+import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
 import { TagDto, TagTypeDto } from '@common/api/types/tags/tags.dto';
 import { TopicDto } from '@common/api/types/topic.dto';
 import { GroupMembershipDto, UserDto } from '@common/api/types/user.dto';
@@ -279,6 +280,21 @@ export const projectEntityToDtoWithRequiredTags = (
         requiredTags: project.requiredTags.map((element) =>
             tagTypeEntityToDto(element),
         ),
+    };
+};
+
+export const projectEntityToDtoWithMissionCountAndTags = (
+    project: Project,
+): ProjectWithRequiredTagsDto => {
+    if (project.creator === undefined) {
+        throw new Error('Creator can never be undefined');
+    }
+
+    return {
+        ...(projectEntityToDto(project) as ProjectWithRequiredTagsDto),
+        creator: userEntityToDto(project.creator),
+        missionCount: project.missionCount ?? 0,
+        requiredTags: project.requiredTags?.map(tagTypeEntityToDto) ?? [],
     };
 };
 
