@@ -40,13 +40,14 @@ from kleinkram.errors import InvalidMissionQuery
 from kleinkram.errors import InvalidProjectQuery
 from kleinkram.errors import MissionExists
 from kleinkram.errors import MissionNotFound
+from kleinkram.errors import MissionValidationError
 from kleinkram.errors import ProjectExists
 from kleinkram.errors import ProjectNotFound
-from kleinkram.errors import MissionValidationError
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.utils import is_valid_uuid4, split_args
+from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import split_args
 
 __all__ = [
     "_get_api_version",
@@ -224,7 +225,7 @@ def _mission_name_is_available(
 
 
 def _validate_mission_name(
-        client: AuthenticatedClient, project_id: UUID, mission_name: str
+    client: AuthenticatedClient, project_id: UUID, mission_name: str
 ) -> None:
     if not _mission_name_is_available(client, mission_name, project_id):
         raise MissionExists(
@@ -241,7 +242,7 @@ def _validate_mission_name(
     if mission_name.endswith(" "):
         raise ValueError(
             "A mission name cannot end with a whitespace. "
-            f"The given mission name was \'{mission_name}\'"
+            f"The given mission name was '{mission_name}'"
         )
 
 
@@ -253,7 +254,10 @@ def _project_name_is_available(client: AuthenticatedClient, project_name: str) -
         return True
     return False
 
-def _validate_mission_created(client: AuthenticatedClient, project_id: str, mission_name: str) -> None:
+
+def _validate_mission_created(
+    client: AuthenticatedClient, project_id: str, mission_name: str
+) -> None:
     """
     validate that a mission is successfully created
     """
@@ -350,20 +354,20 @@ def _create_project(
     return UUID(resp.json()["uuid"], version=4)
 
 
-def _validate_tag_value(
-    tag_value, tag_datatype
-) -> None:
+def _validate_tag_value(tag_value, tag_datatype) -> None:
     if tag_datatype == "NUMBER":
         try:
             float(tag_value)
-        except:
+        except ValueError:
             raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
     elif tag_datatype == "BOOLEAN":
         if tag_value.lower() not in {"true", "false"}:
-            raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')")
+            raise InvalidMissionMetadata(
+                f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')"
+            )
     else:
-        pass # any string is fine
-    #TODO: add check for LOCATION tag datatype
+        pass  # any string is fine
+    # TODO: add check for LOCATION tag datatype
 
 
 def _get_metadata_type_id_by_name(
@@ -376,7 +380,7 @@ def _get_metadata_type_id_by_name(
 
     resp.raise_for_status()
     try:
-        data = resp.json()['data'][0]
+        data = resp.json()["data"][0]
     except IndexError:
         return None, None
 

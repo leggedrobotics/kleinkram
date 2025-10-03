@@ -4,17 +4,18 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Literal
 from typing import NewType
 from typing import Tuple
-from typing import List
 from uuid import UUID
 
 import dateutil.parser
 
 from kleinkram.errors import ParsingError
-from kleinkram.models import File, MetadataValue
+from kleinkram.models import File
 from kleinkram.models import FileState
+from kleinkram.models import MetadataValue
 from kleinkram.models import Mission
 from kleinkram.models import Project
 
@@ -85,15 +86,21 @@ def _parse_file_state(state: str) -> FileState:
     except ValueError as e:
         raise ParsingError(f"error parsing file state: {state}") from e
 
+
 def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
     result = {}
     try:
         for tag in tags:
-            entry = {tag.get("name"): MetadataValue(tag.get("valueAsString"), tag.get("datatype"))}
+            entry = {
+                tag.get("name"): MetadataValue(
+                    tag.get("valueAsString"), tag.get("datatype")
+                )
+            }
             result.update(entry)
         return result
     except ValueError as e:
         raise ParsingError(f"error parsing metadata: {e}") from e
+
 
 def _parse_required_tags(tags: List[Dict]) -> list[str]:
     return list(_parse_metadata(tags).keys())
@@ -106,7 +113,9 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description = project_object[ProjectObjectKeys.DESCRIPTION]
         created_at = _parse_datetime(project_object[ProjectObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(project_object[ProjectObjectKeys.UPDATED_AT])
-        required_tags = _parse_required_tags(project_object[ProjectObjectKeys.REQUIRED_TAGS])
+        required_tags = _parse_required_tags(
+            project_object[ProjectObjectKeys.REQUIRED_TAGS]
+        )
     except Exception as e:
         raise ParsingError(f"error parsing project: {project_object}") from e
     return Project(
