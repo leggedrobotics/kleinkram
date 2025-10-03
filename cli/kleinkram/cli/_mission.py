@@ -136,7 +136,7 @@ def delete(
     if mission_patterns and not (project_patterns or project_ids):
         raise InvalidMissionQuery(
             "Mission query does not uniquely determine mission. "
-            "When deleting by mission name, project name or id must be specified"
+            "Project name or id must be specified when deleting by mission name"
         )
 
     client = AuthenticatedClient()
