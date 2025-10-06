@@ -42,7 +42,7 @@
         "systeminformation": "^5.27.10",
         "typeorm": "^0.3.27",
         "util": "^0.12.5",
-        "winston": "3.17.0",
+        "winston": "3.18.3",
         "winston-loki": "^6.1.3"
     },
     "devDependencies": {
