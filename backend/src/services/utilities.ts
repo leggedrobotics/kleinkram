@@ -222,7 +222,7 @@ export const addProjectFilters = (
     projectRepository: Repository<Project>,
     projectIds: string[],
     projectPatterns: string[],
-    exactMatch: boolean = false,
+    exactMatch = false,
 ): SelectQueryBuilder<any> => {
     if (projectIds.length > 0 || projectPatterns.length > 0) {
         const projectLikePatterns = projectPatterns.map((element) =>

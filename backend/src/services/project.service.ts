@@ -77,7 +77,7 @@ export class ProjectService {
         take: number,
         creatorUuid: string | undefined,
         userUuid: string,
-        exactMatch: boolean = false,
+        exactMatch = false,
     ): Promise<ProjectsDto> {
         let query = this.projectRepository
             .createQueryBuilder('project')
