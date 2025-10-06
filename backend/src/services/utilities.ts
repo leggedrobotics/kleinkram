@@ -67,7 +67,7 @@ export const getFilteredProjectIdSubQuery = (
 
     if (projectPatterns.length > 0) {
         query.orWhere(
-            'LOWER(project.name) LIKE ANY(ARRAY[:...projectPatterns])',
+            'LOWER(project.name) = ANY(ARRAY[:...projectPatterns])',
             {
                 projectPatterns: projectPatterns.map(
                     (pattern) => `%${pattern.toLowerCase()}%`,
