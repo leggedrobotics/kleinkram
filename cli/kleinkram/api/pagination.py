@@ -17,6 +17,7 @@ DataPage = Dict[str, Any]
 PAGE_SIZE = 128
 SKIP = "skip"
 TAKE = "take"
+EXACT_MATCH = "exactMatch"
 
 
 def paginated_request(
@@ -25,6 +26,7 @@ def paginated_request(
     params: Optional[Mapping[str, Any]] = None,
     max_entries: Optional[int] = None,
     page_size: int = PAGE_SIZE,
+    exact_match: bool = False,
 ) -> Generator[DataPage, None, None]:
     total_entries_count = 0
 
@@ -32,6 +34,7 @@ def paginated_request(
 
     params[TAKE] = page_size
     params[SKIP] = 0
+    params[EXACT_MATCH] = str(exact_match).lower()  # pass string rather than bool
 
     while True:
         resp = client.get(endpoint, params=params)

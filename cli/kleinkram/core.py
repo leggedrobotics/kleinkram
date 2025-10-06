@@ -282,7 +282,9 @@ def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
 
 def delete_project(*, client: AuthenticatedClient, project_id: UUID) -> None:
     pquery = ProjectQuery(ids=[project_id])
-    _ = kleinkram.api.routes.get_project(client, pquery)  # check if project exists
+    _ = kleinkram.api.routes.get_project(
+        client, pquery, exact_match=True
+    )  # check if project exists
 
     # delete all missions and files
     missions = list(

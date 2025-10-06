@@ -163,15 +163,22 @@ def get_projects(
     client: AuthenticatedClient,
     project_query: ProjectQuery,
     max_entries: Optional[int] = None,
+    exact_match: bool = False,
 ) -> Generator[Project, None, None]:
     params = _project_query_to_params(project_query)
     response_stream = paginated_request(
-        client, PROJECT_ENDPOINT, params=params, max_entries=max_entries
+        client,
+        PROJECT_ENDPOINT,
+        params=params,
+        max_entries=max_entries,
+        exact_match=exact_match,
     )
     yield from map(lambda p: _parse_project(ProjectObject(p)), response_stream)
 
 
-def get_project(client: AuthenticatedClient, query: ProjectQuery) -> Project:
+def get_project(
+    client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False
+) -> Project:
     """\
     get a unique project by specifying a project spec
     """
@@ -180,7 +187,7 @@ def get_project(client: AuthenticatedClient, query: ProjectQuery) -> Project:
             f"Project query does not uniquely determine project: {query}"
         )
     try:
-        return next(get_projects(client, query))
+        return next(get_projects(client, query, exact_match=exact_match))
     except StopIteration:
         raise ProjectNotFound(f"Project not found: {query}")
 
