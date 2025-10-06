@@ -54,7 +54,7 @@
         "form-data": "^4.0.4",
         "googleapis": "^148.0.0",
         "jsonwebtoken": "^9.0.2",
-        "minio": "8.0.5",
+        "minio": "8.0.6",
         "multer": "^2.0.2",
         "passport": "^0.7.0",
         "passport-github2": "^0.1.12",
