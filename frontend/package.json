@@ -29,7 +29,7 @@
     },
     "devDependencies": {
         "@quasar/app-vite": "^2.4.0",
-        "@types/node": "^24.5.2",
+        "@types/node": "^24.7.0",
         "@types/spark-md5": "^3.0.5",
         "autoprefixer": "^10.4.21",
         "jiti": "^2.5.1",
