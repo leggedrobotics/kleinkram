@@ -304,11 +304,11 @@ export class DockerDaemon {
     @tracing()
     private async getImage(dockerImage: string) {
         // assert that we only run rslethz images
-        if (!dockerImage.startsWith('rslethz/')) {
-            throw new Error(
-                'Only images from the rslethz organization are allowed',
-            );
-        }
+        //if (!dockerImage.startsWith('rslethz/')) {
+        //    throw new Error(
+        //        'Only images from the rslethz organization are allowed',
+        //    );
+        //}
 
         // check if docker socket is available
         if (!this.docker || !(await this.docker.ping())) {

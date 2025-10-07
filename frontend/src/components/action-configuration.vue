@@ -515,16 +515,16 @@ async function submitAnalysis() {
         });
         return;
     }
-    if (!editingTemplate.value.imageName.startsWith('rslethz/')) {
-        Notify.create({
-            group: false,
-            message: 'The image name must start with "rslethz/"',
-            color: 'negative',
-            position: 'bottom',
-            timeout: 2000,
-        });
-        return;
-    }
+    //if (!editingTemplate.value.imageName.startsWith('rslethz/')) {
+    //    Notify.create({
+    //        group: false,
+    //        message: 'The image name must start with "rslethz/"',
+    //        color: 'negative',
+    //        position: 'bottom',
+    //        timeout: 2000,
+    //    });
+    //    return;
+    //}
 
     // post: the input should be valid now
     let template = editingTemplate.value;
