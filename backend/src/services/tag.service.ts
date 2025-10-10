@@ -291,7 +291,11 @@ export class TagService {
         if (name !== '') {
             where.name = ILike(`%${name}%`);
         }
-        if (type !== undefined && type !== DataType.ANY) {
+        if (
+            type !== undefined &&
+            type !== DataType.ANY &&
+            (type as any) !== ''
+        ) {
             where.datatype = type;
         }
         const [tags, count] = await this.tagTypeRepository.findAndCount({

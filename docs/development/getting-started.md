@@ -11,6 +11,7 @@ system:
 - [Git](https://git-scm.com/downloads) (for cloning the repository)
 - [Docker](https://docs.docker.com/get-docker/) (for running the project)
 - [Docker Compose](https://docs.docker.com/compose/install/) (for running the project)
+- Chrome or Firefox Browser (Safari might cause issues while developing locally)
 
 ::: info Additional Tools
 To enable code completion and linting in your IDE, you may also need a NodeJS, yarn, and python installation.
@@ -52,19 +53,25 @@ In principle the setup works similar to running the project locally, however, th
 1. Clone the repository
 2. Run the following command to start the development server
 
-   ```bash
-   docker compose up --build --watch
-   ```
+    ```bash
+    docker compose up --build --watch
+    ```
 
 ::: tip
+
 - the `--build` flag is used to build the project before starting the development server.
 - the `--watch` flag is optional and is used to watch for changes in the codebase.
-:::
+  :::
 
 3. You can now open the projects:
     - frontend at [http://localhost:8003](http://localhost:8003).
     - minio console at [http://localhost:9001](http://localhost:9001).
     - documentation at [http://localhost:4000](http://localhost:4000).
+
+    ::: warning
+    There are some known issues with Safari while developing locally. Please use Chrome or Firefox instead.
+    The production build does support Safari.
+    :::
 
 4. In order to enable code completion and linting in your IDE, you may need to install additional tools.
     - For JavaScript/TypeScript, you may need to install NodeJS and yarn.
@@ -84,14 +91,13 @@ machine. This is necessary for code completion and linting in your IDE.
 
 6. For installing the cli, you can use the following command:
 
-   ```bash
-   cd kleinkram/cli
-   
-   virtualenv -ppython3.8 .venv
-   source .venv/bin/activate
-   pip install -e . -r requirements.txt
-   ```
+    ```bash
+    cd kleinkram/cli
 
+    virtualenv -ppython3.8 .venv
+    source .venv/bin/activate
+    pip install -e . -r requirements.txt
+    ```
 
 ### Enable Database Seeding
 

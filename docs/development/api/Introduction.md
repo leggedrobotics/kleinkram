@@ -25,7 +25,7 @@ same version as the backend is running.
 
 The latter allows us to display depreciation warnings for outdated client packages.
 
-Example: 
+Example:
 
 ```bash
 curl 'http://localhost:3000/user/me' \
@@ -33,6 +33,5 @@ curl 'http://localhost:3000/user/me' \
   -H 'Kleinkram-Client-Version: 0.50.0' \
   -b 'authtoken=...; refreshtoken=...'
 ```
-
 
 :::

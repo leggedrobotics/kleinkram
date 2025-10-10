@@ -8,7 +8,7 @@ import { CreateProject } from '@common/api/types/create-project.dto';
 import { ProjectDto } from '@common/api/types/project/base-project.dto';
 import { DeleteProjectResponseDto } from '@common/api/types/project/delete-project-response.dto';
 import { ProjectQueryDto } from '@common/api/types/project/project-query.dto';
-import { ProjectWithRequiredTags } from '@common/api/types/project/project-with-required-tags';
+import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
 import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
 import { RemoveTagTypeDto } from '@common/api/types/remove-tag-type.dto';
@@ -64,11 +64,11 @@ export class ProjectController {
     @CanReadProject()
     @ApiOkResponse({
         description: 'Returns the project',
-        type: ProjectWithRequiredTags,
+        type: ProjectWithRequiredTagsDto,
     })
     async getProjectById(
         @ParameterUID('uuid') uuid: string,
-    ): Promise<ProjectWithRequiredTags> {
+    ): Promise<ProjectWithRequiredTagsDto> {
         return this.projectService.findOne(uuid);
     }
 
@@ -107,6 +107,9 @@ export class ProjectController {
         @Query() query: ProjectQueryDto,
         @AddUser() user: AuthHeader,
     ): Promise<ProjectsDto> {
+        // Convert string 'true'/'false' to boolean
+        const exactMatch = query.exactMatch === 'true';
+
         return await this.projectService.findMany(
             query.projectUuids ?? [],
             query.projectPatterns ?? [],
@@ -116,6 +119,7 @@ export class ProjectController {
             query.take,
             query.creatorUuid,
             user.user.uuid,
+            exactMatch,
         );
     }
 

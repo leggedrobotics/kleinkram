@@ -15,6 +15,10 @@
 # ignore bag and mcap files
 **/*.mcap
 **/*.bag
+**/*.db3
+**/*.tum
+**/*.svo2
+**/*.yaml
 
 # ignore build info file
 frontend/src/build.ts

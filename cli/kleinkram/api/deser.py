@@ -4,6 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Literal
 from typing import NewType
 from typing import Tuple
@@ -14,6 +15,7 @@ import dateutil.parser
 from kleinkram.errors import ParsingError
 from kleinkram.models import File
 from kleinkram.models import FileState
+from kleinkram.models import MetadataValue
 from kleinkram.models import Mission
 from kleinkram.models import Project
 
@@ -51,6 +53,7 @@ class MissionObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
+    TAGS = "tags"
 
 
 class ProjectObjectKeys(str, Enum):
@@ -59,6 +62,7 @@ class ProjectObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
+    REQUIRED_TAGS = "requiredTags"
 
 
 def _get_nested_info(data, key: Literal["mission", "project"]) -> Tuple[UUID, str]:
@@ -83,6 +87,25 @@ def _parse_file_state(state: str) -> FileState:
         raise ParsingError(f"error parsing file state: {state}") from e
 
 
+def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
+    result = {}
+    try:
+        for tag in tags:
+            entry = {
+                tag.get("name"): MetadataValue(
+                    tag.get("valueAsString"), tag.get("datatype")
+                )
+            }
+            result.update(entry)
+        return result
+    except ValueError as e:
+        raise ParsingError(f"error parsing metadata: {e}") from e
+
+
+def _parse_required_tags(tags: List[Dict]) -> list[str]:
+    return list(_parse_metadata(tags).keys())
+
+
 def _parse_project(project_object: ProjectObject) -> Project:
     try:
         id_ = UUID(project_object[ProjectObjectKeys.UUID], version=4)
@@ -90,6 +113,9 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description = project_object[ProjectObjectKeys.DESCRIPTION]
         created_at = _parse_datetime(project_object[ProjectObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(project_object[ProjectObjectKeys.UPDATED_AT])
+        required_tags = _parse_required_tags(
+            project_object[ProjectObjectKeys.REQUIRED_TAGS]
+        )
     except Exception as e:
         raise ParsingError(f"error parsing project: {project_object}") from e
     return Project(
@@ -98,6 +124,7 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description=description,
         created_at=created_at,
         updated_at=updated_at,
+        required_tags=required_tags,
     )
 
 
@@ -107,7 +134,7 @@ def _parse_mission(mission: MissionObject) -> Mission:
         name = mission[MissionObjectKeys.NAME]
         created_at = _parse_datetime(mission[MissionObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(mission[MissionObjectKeys.UPDATED_AT])
-        metadata = {}  # TODO: this crap is really bad to parse
+        metadata = _parse_metadata(mission[MissionObjectKeys.TAGS])
 
         project_id, project_name = _get_nested_info(mission, PROJECT)
 

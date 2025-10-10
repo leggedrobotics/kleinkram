@@ -13,6 +13,7 @@ from kleinkram.api.query import ProjectQuery
 from kleinkram.api.routes import get_mission
 from kleinkram.api.routes import get_project
 from kleinkram.config import get_shared_state
+from kleinkram.errors import InvalidMissionQuery
 from kleinkram.printing import print_mission_info
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
@@ -45,13 +46,16 @@ def create(
     metadata_dct = load_metadata(Path(metadata)) if metadata else {}  # noqa
 
     client = AuthenticatedClient()
-    project_id = get_project(client, project_query).id
+    project = get_project(client, project_query)
+    project_id = project.id
+    project_required_tags = project.required_tags
     mission_id = kleinkram.api.routes._create_mission(
         client,
         project_id,
         mission_name,
         metadata=metadata_dct,
         ignore_missing_tags=ignore_missing_tags,
+        required_tags=project_required_tags,
     )
 
     mission_parsed = get_mission(client, MissionQuery(ids=[mission_id]))
@@ -120,9 +124,6 @@ def delete(
         False, "--confirm", "-y", "--yes", help="confirm deletion"
     ),
 ) -> None:
-    if not confirm:
-        typer.confirm(f"delete {project} {mission}", abort=True)
-
     project_ids, project_patterns = split_args([project] if project else [])
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
@@ -132,9 +133,20 @@ def delete(
         patterns=mission_patterns,
         project_query=project_query,
     )
+    if mission_patterns and not (project_patterns or project_ids):
+        raise InvalidMissionQuery(
+            "Mission query does not uniquely determine mission. "
+            "Project name or id must be specified when deleting by mission name"
+        )
 
     client = AuthenticatedClient()
     mission_parsed = get_mission(client, mission_query)
+    if not confirm:
+        if project:
+            typer.confirm(f"delete {project} {mission}", abort=True)
+        else:
+            typer.confirm(f"delete {mission_parsed.name} {mission}", abort=True)
+
     kleinkram.core.delete_mission(client=client, mission_id=mission_parsed.id)
 
 

@@ -13,6 +13,7 @@ from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.config import get_shared_state
 from kleinkram.errors import FileNameNotSupported
+from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import MissionNotFound
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
@@ -44,6 +45,9 @@ def upload(
         False,
         help="fix filenames before upload, this does not change the filenames locally",
     ),
+    experimental_datatypes: bool = typer.Option(
+        False, help="allow experimental datatypes (yaml, svo2, db3, tum)"
+    ),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
     # get filepaths
@@ -61,6 +65,17 @@ def upload(
 
     if not fix_filenames:
         for file in file_paths:
+
+            # check for experimental datatypes and throw an exception if not allowed
+            EXPERIMENTAL_DATATYPES = {".yaml", ".svo2", ".db3", ".tum"}
+
+            if not experimental_datatypes:
+                if file.suffix.lower() in EXPERIMENTAL_DATATYPES:
+                    raise DatatypeNotSupported(
+                        f"Datatype '{file.suffix}' for file {file} is not supported without the "
+                        f"`--experimental-datatypes` flag. "
+                    )
+
             if not kleinkram.utils.check_filename_is_sanatized(file.stem):
                 raise FileNameNotSupported(
                     f"Only `{''.join(kleinkram.utils.INTERNAL_ALLOWED_CHARS)}` are "
