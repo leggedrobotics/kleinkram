@@ -90,7 +90,7 @@ def delete(
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
     client = AuthenticatedClient()
-    project_id = get_project(client=client, query=project_query).id
+    project_id = get_project(client=client, query=project_query, exact_match=True).id
     kleinkram.core.delete_project(client=client, project_id=project_id)
 
 

@@ -107,6 +107,9 @@ export class ProjectController {
         @Query() query: ProjectQueryDto,
         @AddUser() user: AuthHeader,
     ): Promise<ProjectsDto> {
+        // Convert string 'true'/'false' to boolean
+        const exactMatch = query.exactMatch === 'true';
+
         return await this.projectService.findMany(
             query.projectUuids ?? [],
             query.projectPatterns ?? [],
@@ -116,6 +119,7 @@ export class ProjectController {
             query.take,
             query.creatorUuid,
             user.user.uuid,
+            exactMatch,
         );
     }
 

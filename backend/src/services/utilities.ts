@@ -54,6 +54,7 @@ export const getFilteredProjectIdSubQuery = (
     projectRepository: Repository<Project>,
     projectIds: string[],
     projectPatterns: string[],
+    exactMatch: boolean,
 ): SelectQueryBuilder<{ uuid: string }> => {
     const query = projectRepository
         .createQueryBuilder('project')
@@ -66,14 +67,15 @@ export const getFilteredProjectIdSubQuery = (
     }
 
     if (projectPatterns.length > 0) {
-        query.orWhere(
-            'LOWER(project.name) LIKE ANY(ARRAY[:...projectPatterns])',
-            {
-                projectPatterns: projectPatterns.map(
-                    (pattern) => `%${pattern.toLowerCase()}%`,
-                ),
-            },
-        );
+        const whereStatement = exactMatch
+            ? 'LOWER(project.name) = ANY(ARRAY[:...projectPatterns])'
+            : 'LOWER(project.name) LIKE ANY(ARRAY[:...projectPatterns])';
+
+        query.orWhere(whereStatement, {
+            projectPatterns: projectPatterns.map(
+                (pattern) => `%${pattern.toLowerCase()}%`,
+            ),
+        });
     }
 
     return query;
@@ -220,6 +222,7 @@ export const addProjectFilters = (
     projectRepository: Repository<Project>,
     projectIds: string[],
     projectPatterns: string[],
+    exactMatch = false,
 ): SelectQueryBuilder<any> => {
     if (projectIds.length > 0 || projectPatterns.length > 0) {
         const projectLikePatterns = projectPatterns.map((element) =>
@@ -230,6 +233,7 @@ export const addProjectFilters = (
             projectRepository,
             projectIds,
             projectLikePatterns,
+            exactMatch,
         );
 
         query

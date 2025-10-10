@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import { SortablePaginatedQueryDto } from '../pagination';
 
 export class ProjectQueryDto extends SortablePaginatedQueryDto {
@@ -22,4 +22,10 @@ export class ProjectQueryDto extends SortablePaginatedQueryDto {
     @IsUUID('4')
     @ApiProperty({ required: false })
     creatorUuid?: string;
+
+    @IsOptional()
+    @IsString()
+    @IsIn(['true', 'false'])
+    @ApiProperty({ required: false, default: 'false', enum: ['true', 'false'] })
+    exactMatch?: string;
 }
