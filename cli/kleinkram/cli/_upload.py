@@ -13,6 +13,7 @@ from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.config import get_shared_state
 from kleinkram.errors import FileNameNotSupported
+from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import MissionNotFound
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
@@ -70,8 +71,7 @@ def upload(
 
             if not experimental_datatypes:
                 if file.suffix.lower() in EXPERIMENTAL_DATATYPES:
-                    # NOTE: Assuming a 'DatatypeNotSupported' exception exists/is defined
-                    raise FileNameNotSupported(
+                    raise DatatypeNotSupported(
                         f"Datatype '{file.suffix}' for file {file} is not supported without the "
                         f"`--experimental-datatypes` flag. "
                     )
