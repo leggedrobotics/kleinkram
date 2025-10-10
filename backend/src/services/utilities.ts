@@ -202,6 +202,26 @@ export const addMissionCount = (
     return query;
 };
 
+export const addFileStats = (
+  query: SelectQueryBuilder<Mission>,
+): SelectQueryBuilder<Mission> => {
+    query
+        .addSelect((subQuery) => {
+            return subQuery
+            .select('COUNT(file.uuid)', 'count')
+            .from('file_entity', 'file')
+            .where('file."missionUuid" = mission.uuid');
+        }, 'fileCount')
+        .addSelect((subQuery) => {
+            return subQuery
+            .select('COALESCE(SUM(file.size), 0)', 'sum')
+            .from('file_entity', 'file')
+            .where('file."missionUuid" = mission.uuid');
+        }, 'fileSize');
+
+    return query;
+};
+
 export const addProjectCreatorFilter = (
     query: SelectQueryBuilder<any>,
     creatorUuid: string | undefined,
