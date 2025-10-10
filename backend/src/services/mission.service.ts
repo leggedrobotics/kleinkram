@@ -32,7 +32,12 @@ import {
 } from '../serialization';
 import { TagService } from './tag.service';
 import { UserService } from './user.service';
-import { addMissionFilters, addProjectFilters, addSort, addFileStats } from './utilities';
+import {
+    addFileStats,
+    addMissionFilters,
+    addProjectFilters,
+    addSort,
+} from './utilities';
 
 import { SortOrder } from '@common/api/types/pagination';
 
@@ -150,7 +155,7 @@ export class MissionService {
         return missionEntityToDtoWithFiles(mission);
     }
 
-        async findMany(
+    async findMany(
         projectUuids: string[],
         projectPatterns: string[],
         missionUuids: string[],
@@ -216,11 +221,16 @@ export class MissionService {
             .leftJoinAndSelect('mission.tags', 'tag')
             .leftJoinAndSelect('tag.tagType', 'tagType')
             .where('mission.uuid IN (:...missionIds)', {
-                missionIds: missionIds.map(m => m.mission_uuid),
+                missionIds: missionIds.map((m) => m.mission_uuid),
             });
 
         if (sortBy !== undefined) {
-            dataQuery = addSort(dataQuery, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+            dataQuery = addSort(
+                dataQuery,
+                FIND_MANY_SORT_KEYS,
+                sortBy,
+                sortOrder,
+            );
         }
 
         dataQuery = addFileStats(dataQuery);
@@ -230,19 +240,22 @@ export class MissionService {
         const rawResults = result.raw;
 
         // Create a map for quick lookup of file stats by mission UUID
-        const statsMap = new Map<string, { fileCount: number; fileSize: number }>();
-        rawResults.forEach((raw) => {
+        const statsMap = new Map<
+            string,
+            { fileCount: number; fileSize: number }
+        >();
+        for (const raw of rawResults) {
             const missionUuid = raw.mission_uuid;
             if (!statsMap.has(missionUuid)) {
                 statsMap.set(missionUuid, {
-                    fileCount: parseInt(raw.fileCount) || 0,
-                    fileSize: parseInt(raw.fileSize) || 0,
+                    fileCount: Number.parseInt(raw.fileCount) || 0,
+                    fileSize: Number.parseInt(raw.fileSize) || 0,
                 });
             }
-        });
+        }
 
         // Assign file stats to missions
-        missions.forEach((mission) => {
+        for (const mission of missions) {
             const stats = statsMap.get(mission.uuid);
             if (stats) {
                 mission.fileCount = stats.fileCount;
@@ -251,7 +264,7 @@ export class MissionService {
                 mission.fileCount = 0;
                 mission.size = 0;
             }
-        });
+        }
 
         return {
             data: missions.map((element) => missionEntityToFlatDto(element)),
@@ -270,7 +283,6 @@ export class MissionService {
         sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
     ): Promise<MinimumMissionsDto> {
-        console.log("in findMissionByProjectMinimal")
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
@@ -313,7 +325,6 @@ export class MissionService {
         sortDirection?: 'ASC' | 'DESC',
         sortBy?: string,
     ): Promise<MissionsDto> {
-        console.log("in findMissionByProject")
         const query = this.missionRepository
             .createQueryBuilder('mission')
             .addSelect('COUNT(files.uuid)::int', 'fileCount')
