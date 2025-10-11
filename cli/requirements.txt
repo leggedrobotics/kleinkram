@@ -7,3 +7,4 @@ rich
 tqdm
 typer
 click
+zstandard>=0.22.0

@@ -69,14 +69,27 @@ def upload(
             # check for experimental datatypes and throw an exception if not allowed
             EXPERIMENTAL_DATATYPES = {".yaml", ".svo2", ".db3", ".tum"}
 
+            # Check if file is compressed
+            file_suffix_lower = file.suffix.lower()
+            is_compressed = file_suffix_lower in kleinkram.utils.COMPRESSION_EXTENSIONS
+
+            # For compressed files, check the extension before compression
+            if is_compressed:
+                uncompressed_path = Path(file.stem)
+                check_suffix = uncompressed_path.suffix
+                check_stem = uncompressed_path.stem
+            else:
+                check_suffix = file.suffix
+                check_stem = file.stem
+
             if not experimental_datatypes:
-                if file.suffix.lower() in EXPERIMENTAL_DATATYPES:
+                if check_suffix.lower() in EXPERIMENTAL_DATATYPES:
                     raise DatatypeNotSupported(
-                        f"Datatype '{file.suffix}' for file {file} is not supported without the "
+                        f"Datatype '{check_suffix}' for file {file} is not supported without the "
                         f"`--experimental-datatypes` flag. "
                     )
 
-            if not kleinkram.utils.check_filename_is_sanatized(file.stem):
+            if not kleinkram.utils.check_filename_is_sanatized(check_stem):
                 raise FileNameNotSupported(
                     f"Only `{''.join(kleinkram.utils.INTERNAL_ALLOWED_CHARS)}` are "
                     f"allowed in filenames and at most 50 chars: {file}. "

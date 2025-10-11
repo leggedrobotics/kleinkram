@@ -28,6 +28,7 @@ from tqdm import tqdm
 import kleinkram.api.file_transfer
 import kleinkram.api.routes
 import kleinkram.errors
+import kleinkram.compression
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
@@ -94,6 +95,9 @@ def upload(
 
     create a mission if it does not exist if `create` is True
     in that case you can also specify `metadata` and `ignore_missing_metadata`
+
+    Supports zstd-compressed files (.zst/.zstd) - they will be automatically
+    decompressed before upload for optimal performance.
     """
     # check that file paths are for valid files and have valid suffixes
     check_file_paths(file_paths)
@@ -123,10 +127,21 @@ def upload(
 
     assert mission is not None, "unreachable"
 
-    filename_map = get_filename_map(file_paths)
-    kleinkram.api.file_transfer.upload_files(
-        client, filename_map, mission.id, verbose=verbose
+    # Decompress compressed files if needed
+    path_mapping, temp_dir = kleinkram.compression.decompress_files(
+        list(file_paths), verbose=verbose
     )
+
+    try:
+        # Use decompressed paths for upload
+        decompressed_paths = [path_mapping[p] for p in file_paths]
+        filename_map = get_filename_map(decompressed_paths)
+        kleinkram.api.file_transfer.upload_files(
+            client, filename_map, mission.id, verbose=verbose
+        )
+    finally:
+        # Clean up temp directory
+        kleinkram.compression.cleanup_temp_dir(temp_dir)
 
 
 def verify(

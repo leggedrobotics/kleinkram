@@ -29,6 +29,7 @@ from kleinkram.types import PathLike
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml"]
+COMPRESSION_EXTENSIONS = [".zst", ".zstd"]  # Only zstd for optimal performance
 
 
 def file_paths_from_files(
@@ -85,15 +86,36 @@ def check_file_path(file: Path) -> None:
         raise FileNotFoundError(f"{file} is a directory and not a file")
     if not file.exists():
         raise FileNotFoundError(f"{file} does not exist")
-    if file.suffix not in SUPPORT_FILE_TYPES:
-        raise FileTypeNotSupported(
-            f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}"
-        )
-    if not check_filename_is_sanatized(file.stem):
-        raise FileNameNotSupported(
-            f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are "
-            f"allowed in filenames and at most 50chars: {file}"
-        )
+
+    # Check if file is compressed (has compression extension)
+    file_suffix = file.suffix.lower()
+    if file_suffix in COMPRESSION_EXTENSIONS:
+        # For compressed files, check the extension before compression
+        # e.g., for "data.mcap.zst", check if ".mcap" is supported
+        stem_path = Path(file.stem)  # Remove compression extension
+        base_suffix = stem_path.suffix
+        if base_suffix not in SUPPORT_FILE_TYPES:
+            raise FileTypeNotSupported(
+                f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported "
+                f"(found {base_suffix} in compressed file {file})"
+            )
+        # Check filename without compression extension
+        if not check_filename_is_sanatized(stem_path.stem):
+            raise FileNameNotSupported(
+                f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are "
+                f"allowed in filenames and at most 50chars: {file}"
+            )
+    else:
+        # Regular uncompressed file
+        if file_suffix not in SUPPORT_FILE_TYPES:
+            raise FileTypeNotSupported(
+                f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}"
+            )
+        if not check_filename_is_sanatized(file.stem):
+            raise FileNameNotSupported(
+                f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are "
+                f"allowed in filenames and at most 50chars: {file}"
+            )
 
 
 def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
@@ -145,17 +167,35 @@ def get_filename(path: Path) -> str:
     - replace all disallowed characters with "_"
     - trim to 40 chars + 10 hashed chars
         - the 10 hashed chars are deterministic given the original filename
-    """
+    - strips compression extension (.zst) for internal storage
 
+    Examples:
+        get_filename(Path("data.mcap.zst")) -> "data.mcap"
+        get_filename(Path("data.mcap")) -> "data.mcap"
+        get_filename(Path("my_bag.bag.zst")) -> "my_bag.bag"
+    """
+    # Check if file has compression extension
+    file_suffix = path.suffix.lower()
+    if file_suffix in COMPRESSION_EXTENSIONS:
+        # Remove compression extension - use stem which strips last extension
+        # then get suffix of that to get the actual file type
+        uncompressed_path = Path(path.stem)
+        stem = uncompressed_path.stem
+        suffix = uncompressed_path.suffix
+    else:
+        stem = path.stem
+        suffix = path.suffix
+
+    # Sanitize stem
     stem = "".join(
-        char if char in INTERNAL_ALLOWED_CHARS else "_" for char in path.stem
+        char if char in INTERNAL_ALLOWED_CHARS else "_" for char in stem
     )
 
     if len(stem) > 50:
         hash = md5(path.name.encode()).hexdigest()
         stem = f"{stem[:40]}{hash[:10]}"
 
-    return f"{stem}{path.suffix}"
+    return f"{stem}{suffix}"
 
 
 def get_filename_map(file_paths: Sequence[Path]) -> Dict[str, Path]:
