@@ -39,7 +39,7 @@
         "redlock": "^5.0.0-beta.2",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
-        "systeminformation": "^5.27.10",
+        "systeminformation": "^5.27.11",
         "typeorm": "^0.3.27",
         "util": "^0.12.5",
         "winston": "3.18.3",
