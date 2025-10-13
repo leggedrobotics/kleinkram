@@ -100,11 +100,16 @@ export class ActionService {
         data: CreateTemplateDto,
         auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
-        //if (!data.dockerImage.startsWith('rslethz/')) {
-        //    throw new ConflictException(
-        //        'Only images from the rslethz namespace are allowed',
-        //    );
-        //}
+        const dockerhub_namespace = process.env['VITE_DOCKER_HUB_NAMESPACE'];
+        // assert that we only run images from a specified namespace
+        if (
+            dockerhub_namespace !== undefined &&
+            !data.dockerImage.startsWith(dockerhub_namespace)
+        ) {
+            throw new ConflictException(
+                `Only images from the ${dockerhub_namespace} namespace are allowed`,
+            );
+        }
         const exists = await this.actionTemplateRepository.exists({
             where: {
                 name: data.name,
