@@ -32,7 +32,12 @@ import {
 } from '../serialization';
 import { TagService } from './tag.service';
 import { UserService } from './user.service';
-import { addMissionFilters, addProjectFilters, addSort } from './utilities';
+import {
+    addFileStats,
+    addMissionFilters,
+    addProjectFilters,
+    addSort,
+} from './utilities';
 
 import { SortOrder } from '@common/api/types/pagination';
 
@@ -162,24 +167,25 @@ export class MissionService {
         take: number,
         userUuid: string,
     ): Promise<MissionsDto> {
-        let query = this.missionRepository
+        let idQuery = this.missionRepository
             .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoinAndSelect('mission.tags', 'tag')
-            .leftJoinAndSelect('tag.tagType', 'tagType');
+            .select('mission.uuid')
+            .leftJoin('mission.project', 'project')
+            .leftJoin('mission.creator', 'creator')
+            .leftJoin('mission.tags', 'tag')
+            .leftJoin('tag.tagType', 'tagType');
 
-        query = addAccessConstraintsToMissionQuery(query, userUuid);
+        idQuery = addAccessConstraintsToMissionQuery(idQuery, userUuid);
 
-        query = addProjectFilters(
-            query,
+        idQuery = addProjectFilters(
+            idQuery,
             this.projectRepository,
             projectUuids,
             projectPatterns,
         );
 
-        query = addMissionFilters(
-            query,
+        idQuery = addMissionFilters(
+            idQuery,
             this.missionRepository,
             missionUuids,
             missionPatterns,
@@ -187,11 +193,78 @@ export class MissionService {
         );
 
         if (sortBy !== undefined) {
-            query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+            idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
         }
 
-        query.take(take).skip(skip);
-        const [missions, count] = await query.getManyAndCount();
+        // Get distinct mission UUIDs
+        idQuery.groupBy('mission.uuid');
+
+        // Get count before pagination
+        const count = await idQuery.getCount();
+        idQuery.take(take).skip(skip);
+
+        const missionIds = await idQuery.getRawMany();
+
+        if (missionIds.length === 0) {
+            return {
+                data: [],
+                count,
+                skip,
+                take,
+            };
+        }
+
+        let dataQuery = this.missionRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('mission.creator', 'creator')
+            .leftJoinAndSelect('mission.tags', 'tag')
+            .leftJoinAndSelect('tag.tagType', 'tagType')
+            .where('mission.uuid IN (:...missionIds)', {
+                missionIds: missionIds.map((m) => m.mission_uuid),
+            });
+
+        if (sortBy !== undefined) {
+            dataQuery = addSort(
+                dataQuery,
+                FIND_MANY_SORT_KEYS,
+                sortBy,
+                sortOrder,
+            );
+        }
+
+        dataQuery = addFileStats(dataQuery);
+
+        const result = await dataQuery.getRawAndEntities();
+        const missions = result.entities;
+        const rawResults = result.raw;
+
+        // Create a map for quick lookup of file stats by mission UUID
+        const statsMap = new Map<
+            string,
+            { fileCount: number; fileSize: number }
+        >();
+        for (const raw of rawResults) {
+            const missionUuid = raw.mission_uuid;
+            if (!statsMap.has(missionUuid)) {
+                statsMap.set(missionUuid, {
+                    fileCount: Number.parseInt(raw.fileCount) || 0,
+                    fileSize: Number.parseInt(raw.fileSize) || 0,
+                });
+            }
+        }
+
+        // Assign file stats to missions
+        for (const mission of missions) {
+            const stats = statsMap.get(mission.uuid);
+            if (stats) {
+                mission.fileCount = stats.fileCount;
+                mission.size = stats.fileSize;
+            } else {
+                mission.fileCount = 0;
+                mission.size = 0;
+            }
+        }
 
         return {
             data: missions.map((element) => missionEntityToFlatDto(element)),
