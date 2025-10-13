@@ -41,7 +41,7 @@
         "@opentelemetry/instrumentation-winston": "^0.51.0",
         "@opentelemetry/sdk-node": "^0.206.0",
         "@opentelemetry/sdk-trace-base": "^2.0.0",
-        "@swc/core": "^1.13.3",
+        "@swc/core": "^1.13.5",
         "@swc/jest": "^0.2.39",
         "@willsoto/nestjs-prometheus": "^6.0.1",
         "aws4": "^1.13.2",
