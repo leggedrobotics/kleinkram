@@ -62,12 +62,8 @@ export const missionEntityToDtoWithCreator = (
 export const missionEntityToFlatDto = (mission: Mission): FlatMissionDto => {
     return {
         ...missionEntityToDtoWithCreator(mission),
-        filesCount: mission.files?.length || 0,
-        size:
-            mission.files?.reduce(
-                (accumulator, file) => accumulator + (file.size ?? 0),
-                0,
-            ) || 0,
+        filesCount: mission.fileCount ?? 0,
+        size: mission.size ?? 0,
     };
 };
 
