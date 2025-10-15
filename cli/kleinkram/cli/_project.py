@@ -73,7 +73,7 @@ def update(
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
     client = AuthenticatedClient()
-    project_id = get_project(client=client, query=project_query).id
+    project_id = get_project(client=client, query=project_query, exact_match=True).id
     kleinkram.core.update_project(
         client=client, project_id=project_id, description=description, new_name=new_name
     )

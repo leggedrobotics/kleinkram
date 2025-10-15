@@ -257,7 +257,7 @@ def _validate_mission_name(
 def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
     project_query = ProjectQuery(patterns=[project_name])
     try:
-        _ = get_project(client, project_query)
+        _ = get_project(client, project_query, exact_match=True)
     except ProjectNotFound:
         return True
     return False
