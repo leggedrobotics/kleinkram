@@ -43,6 +43,7 @@ from kleinkram.errors import MissionNotFound
 from kleinkram.errors import MissionValidationError
 from kleinkram.errors import ProjectExists
 from kleinkram.errors import ProjectNotFound
+from kleinkram.errors import ProjectValidationError
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
@@ -350,15 +351,28 @@ def _create_mission(
 def _create_project(
     client: AuthenticatedClient, project_name: str, description: str
 ) -> UUID:
-    if not _project_name_is_available(client, project_name):
-        raise ProjectExists(f"Project with name: `{project_name}` already exists")
 
-    # TODO: check name and description are valid
+    _validate_project_name(client, project_name, description)
     payload = {"name": project_name, "description": description}
     resp = client.post(CREATE_PROJECT, json=payload)
     resp.raise_for_status()
 
     return UUID(resp.json()["uuid"], version=4)
+
+
+def _validate_project_name(
+    client: AuthenticatedClient, project_name: str, description: str
+) -> None:
+    if not _project_name_is_available(client, project_name):
+        raise ProjectExists(f"Project with name: `{project_name}` already exists")
+
+    if project_name.endswith(" "):
+        raise ProjectValidationError(
+            f"Project name must not end with a tailing whitespace: `{project_name}`"
+        )
+
+    if not description:
+        raise ProjectValidationError("Project description is required")
 
 
 def _validate_tag_value(tag_value, tag_datatype) -> None:

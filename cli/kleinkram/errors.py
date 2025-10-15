@@ -52,6 +52,9 @@ class InvalidMissionMetadata(Exception): ...
 class MissionValidationError(Exception): ...
 
 
+class ProjectValidationError(Exception): ...
+
+
 class NotAuthenticated(Exception):
     def __init__(self) -> None:
         super().__init__(LOGIN_MESSAGE)
