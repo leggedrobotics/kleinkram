@@ -515,10 +515,14 @@ async function submitAnalysis() {
         });
         return;
     }
-    if (!editingTemplate.value.imageName.startsWith('rslethz/')) {
+    const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
+    if (
+        dockerhubNamespace &&
+        !editingTemplate.value.imageName.startsWith(`${dockerhubNamespace}`)
+    ) {
         Notify.create({
             group: false,
-            message: 'The image name must start with "rslethz/"',
+            message: `The image name must start with "${dockerhubNamespace}/"`,
             color: 'negative',
             position: 'bottom',
             timeout: 2000,

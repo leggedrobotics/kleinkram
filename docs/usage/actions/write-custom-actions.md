@@ -69,15 +69,16 @@ The following environment variables are deprecated and will be removed in the fu
 
 ## Push Actions to Docker Hub
 
-Kleinkram actions must be pushed to Docker Hub under the rslethz/\*\*\* namespace. To publish your action:
+Kleinkram actions must be pushed to Docker Hub under a namespace defined by the `VITE_DOCKER_HUB_NAMESPACE` environment variable. 
+If this is left empty, actions are allowed to be pushed on any namespace. To publish your action:
 
 ```bash
 # login to docker hub
 docker login
 
 # build the image
-docker build -t rslethz/my-action .
+docker build -t <namespace>/my-action .
 
 # push the image
-docker push rslethz/my-action
+docker push <namespace>/my-action
 ```
