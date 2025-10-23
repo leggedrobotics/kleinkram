@@ -56,7 +56,7 @@ import TagType from '@common/entities/tagType/tag-type.entity';
 import User from '@common/entities/user/user.entity';
 import {
     addTagsToMinioObject,
-    deleteFileMinio,
+    deleteFileMinioFireAndForget,
     externalMinio,
     generateTemporaryCredential,
     getBucketFromFileType,
@@ -684,11 +684,7 @@ export class FileService implements OnModuleInit {
 
                 // delete the file from Minio
                 const bucket = getBucketFromFileType(file.type);
-                await deleteFileMinio(bucket, file.uuid).catch(() => {
-                    logger.error(
-                        `File ${file.uuid} not found in Minio, deleting from database only!`,
-                    );
-                });
+                void deleteFileMinioFireAndForget(bucket, file.uuid);
 
                 await transactionalEntityManager.remove(file);
             },
@@ -944,16 +940,11 @@ export class FileService implements OnModuleInit {
                     );
                 }
 
-                await Promise.all(
-                    files.map(async (file) => {
-                        const bucket = getBucketFromFileType(file.type);
-                        await deleteFileMinio(bucket, file.uuid).catch(() => {
-                            logger.error(
-                                `File ${file.uuid} not found in Minio, deleting from database only!`,
-                            );
-                        });
-                    }),
-                );
+                // call fire-and-forget deletion for each file (no Promise.all with voids)
+                for (const file of files) {
+                    const bucket = getBucketFromFileType(file.type);
+                    void deleteFileMinioFireAndForget(bucket, file.uuid);
+                }
 
                 await transactionalEntityManager.remove(files);
             },

@@ -69,6 +69,34 @@ export function getBucketFromFileType(fileType: FileType): string {
 export async function deleteFileMinio(bucketName: string, location: string) {
     return internalMinio.removeObject(bucketName, location);
 }
+export function deleteFileMinioFireAndForget(
+    bucketName: string,
+    location: string,
+): void {
+    // break execution context and don't await the promise
+    setImmediate(() => {
+        void internalMinio
+            .removeObject(bucketName, location)
+            .then(() => console.info('MinIO: removed', bucketName, location))
+            .catch((error: unknown) => {
+                if (error instanceof Error) {
+                    console.error(
+                        'MinIO removeObject failed (fire-and-forget):',
+                        error,
+                        bucketName,
+                        location,
+                    );
+                } else {
+                    console.error(
+                        'MinIO removeObject failed (fire-and-forget):',
+                        String(error),
+                        bucketName,
+                        location,
+                    );
+                }
+            });
+    });
+}
 
 export function basePolicy(resource: string) {
     return {
