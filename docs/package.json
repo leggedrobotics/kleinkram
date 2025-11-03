@@ -13,7 +13,7 @@
     "author": "Cyrill Püntener",
     "dependencies": {
         "vitepress": "^1.6.4",
-        "vue-json-pretty": "^2.5.0"
+        "vue-json-pretty": "^2.6.0"
     },
     "devDependencies": {
         "mermaid": "^11.12.0",
