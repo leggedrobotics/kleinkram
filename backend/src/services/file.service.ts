@@ -167,6 +167,9 @@ export class FileService implements OnModuleInit {
             .take(take)
             .skip(skip)
             .getManyAndCount();
+        if (files.length === 0) {
+            throw new Error('No files found.');
+        }
 
         return {
             data: files.map((element) => fileEntityToDto(element)),
