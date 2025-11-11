@@ -101,6 +101,7 @@ export enum FileType {
     BAG = 'BAG',
     MCAP = 'MCAP',
     YAML = 'YAML',
+    YML = 'YML',
     SVO2 = 'SVO2',
     TUM = 'TUM',
     DB3 = 'DB3',
