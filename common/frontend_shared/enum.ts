@@ -140,6 +140,12 @@ export enum FileState {
     FOUND = 'FOUND',
 }
 
+export enum HealthStatus {
+    HEALTHY = 'Healthy',
+    UNHEALTHY = 'Unhealthy',
+    UPLOADING = 'Uploading',
+}
+
 export enum AccessGroupRights {
     READ = 0,
     CREATE = 10,

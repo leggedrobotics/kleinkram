@@ -10,6 +10,7 @@ import {
     FileOrigin,
     FileState,
     FileType,
+    HealthStatus,
     QueueState,
     UserRole,
 } from '@common/frontend_shared/enum';
@@ -204,7 +205,7 @@ export class FileService implements OnModuleInit {
         skip: number,
         sort: string,
         sortOrder: 'ASC' | 'DESC',
-        health: string,
+        health: HealthStatus,
     ): Promise<FilesDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -264,7 +265,7 @@ export class FileService implements OnModuleInit {
                     });
                     break;
                 }
-                case 'Unhealthy': {
+                case HealthStatus.UNHEALTHY: {
                     idQuery.andWhere('file.state IN (:...unhealthyStates)', {
                         unhealthyStates: [
                             FileState.ERROR,

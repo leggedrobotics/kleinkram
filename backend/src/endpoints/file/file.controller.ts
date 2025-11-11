@@ -53,6 +53,7 @@ import {
 
 import { CancelFileUploadDto } from '@common/api/types/cancel-file-upload.dto';
 import { FileQueryDto } from '@common/api/types/file/file-query.dto';
+import { HealthStatus } from '@common/frontend_shared/enum';
 
 @Controller(['file', 'files']) // TODO: migrate to 'files'
 export class FileController {
@@ -127,7 +128,7 @@ export class FileController {
         @QueryTake('take') take: number,
         @QuerySortBy('sort') sort: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryOptionalString('health', 'File health') health: string,
+        @QueryOptionalString('health', 'File health') health: HealthStatus,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
         let _missionUUID = missionUUID;

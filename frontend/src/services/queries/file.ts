@@ -2,7 +2,7 @@ import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
 import { IsUploadingDto } from '@api/types/file/is-uploading.dto';
 import { StorageOverviewDto } from '@api/types/storage-overview.dto';
-import { FileType } from '@common/enum';
+import { FileType, HealthStatus } from '@common/enum';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
@@ -21,7 +21,7 @@ export const fetchFilteredFiles = async (
     skip?: number,
     sort?: string,
     desc?: boolean,
-    health?: 'Healthy' | 'Unhealthy' | 'Uploading',
+    health?: HealthStatus,
 ): Promise<FilesDto> => {
     try {
         const parameters: Record<string, string> = {};
@@ -34,7 +34,8 @@ export const fetchFilteredFiles = async (
         if (categories && categories.length > 0) {
             parameters.categories = categories.join(',');
         }
-        if (matchAllTopics !== undefined) parameters.matchAllTopics = matchAllTopics.toString();
+        if (matchAllTopics !== undefined)
+            parameters.matchAllTopics = matchAllTopics.toString();
         if (fileTypes !== undefined) parameters.fileTypes = fileTypes.join(',');
         if (tag) parameters.tags = JSON.stringify(tag);
         if (take) parameters.take = take.toString();
@@ -86,10 +87,9 @@ export const filesOfMission = async (
     categories?: string[],
     sort = 'filename',
     desc = false,
-    health?: 'Healthy' | 'Unhealthy' | 'Uploading',
+    health?: HealthStatus,
 ): Promise<FilesDto> => {
     const tag: Record<string, any> = {};
-
 
     return fetchFilteredFiles(
         filename || '',
