@@ -109,7 +109,7 @@ export class FileService implements OnModuleInit {
         private categoryRepository: Repository<Category>,
     ) {}
 
-    onModuleInit(): any {
+    onModuleInit(): void {
         this.fileCleanupQueue = new Queue('file-cleanup', {
             redis,
         });
@@ -234,21 +234,24 @@ export class FileService implements OnModuleInit {
             // If 'ALL' is not in the list and the list has content
             if (!hasAll && requestedTypes.length > 0) {
                 const validTypesLookup = new Map<string, string>();
-                for (const type of Object.values(FileType)
-                    .filter((_type) => _type !== FileType.ALL)) {
-                        validTypesLookup.set(type.toLowerCase(), type);
-                    }
+                for (const type of Object.values(FileType).filter(
+                    (_type) => _type !== FileType.ALL,
+                )) {
+                    validTypesLookup.set(type.toLowerCase(), type);
+                }
 
                 // 1. Map requested types (e.g., "mcap") to their valid, cased enum values (e.g., "MCAP").
                 // 2. Filter out any 'undefined' results (from invalid types like "garbage").
                 // 3. Use a Set to automatically remove duplicates (e.g., if user passed "mcap,MCAP").
-                const typesToFilter = [...new Set(
+                const typesToFilter = [
+                    ...new Set(
                         requestedTypes
                             .map((requestType) =>
                                 validTypesLookup.get(requestType.toLowerCase()),
                             )
                             .filter((type): type is string => !!type),
-                    )];
+                    ),
+                ];
 
                 // Check if we have any valid types left to filter by
                 if (typesToFilter.length > 0) {
@@ -446,7 +449,7 @@ export class FileService implements OnModuleInit {
      * @param uuid
      * @param file
      */
-    async update(uuid: string, file: UpdateFile) {
+    async update(uuid: string, file: UpdateFile): Promise<FileEntity | null> {
         logger.debug(`Updating file with uuid: ${uuid}`);
         logger.debug(`New file data: ${JSON.stringify(file)}`);
 
@@ -485,10 +488,9 @@ export class FileService implements OnModuleInit {
         }
 
         if (file.categories) {
-            const cats = await this.categoryRepository.find({
+            databaseFile.categories = await this.categoryRepository.find({
                 where: { uuid: In(file.categories) },
             });
-            databaseFile.categories = cats;
         }
 
         await this.dataSource
@@ -539,7 +541,7 @@ export class FileService implements OnModuleInit {
      * @param uuid The unique identifier of the file
      * @param expires Whether the download link should expire
      */
-    async generateDownload(uuid: string, expires: boolean) {
+    async generateDownload(uuid: string, expires: boolean): Promise<string> {
         // verify that an uuid is provided
         if (!uuid || uuid === '')
             throw new BadRequestException('UUID is required');
@@ -656,14 +658,14 @@ export class FileService implements OnModuleInit {
         };
     }
 
-    async findOneByName(missionUUID: string, name: string) {
+    async findOneByName(missionUUID: string, name: string): Promise<FileEntity | null> {
         return this.fileRepository.findOne({
             where: { mission: { uuid: missionUUID }, filename: name },
             relations: ['creator'],
         });
     }
 
-    async moveFiles(fileUUIDs: string[], missionUUID: string) {
+    async moveFiles(fileUUIDs: string[], missionUUID: string): Promise<void> {
         await Promise.all(
             fileUUIDs.map(async (uuid) => {
                 try {
@@ -769,7 +771,7 @@ export class FileService implements OnModuleInit {
             });
     }
 
-    async isUploading(userUUID: string) {
+    async isUploading(userUUID: string): Promise<boolean> {
         return this.fileRepository
             .findOne({
                 where: {
@@ -930,7 +932,7 @@ export class FileService implements OnModuleInit {
         };
     }
 
-    async cancelUpload(uuids: string[], missionUUID: string, userUUID: string) {
+    async cancelUpload(uuids: string[], missionUUID: string, userUUID: string): Promise<Queue.Job> {
         // Cleanup cannot be done synchronously as this takes too long; the request is sent on unload; delaying the onUnload is difficult and discouraged
         return this.fileCleanupQueue.add('cancelUpload', {
             uuids,
@@ -1012,7 +1014,7 @@ export class FileService implements OnModuleInit {
         };
     }
 
-    async renameTags(bucked: string) {
+    async renameTags(bucked: string): Promise<void> {
         const files = internalMinio.listObjects(bucked, '');
         const filesList = await files.toArray();
         await Promise.all(
@@ -1052,7 +1054,7 @@ export class FileService implements OnModuleInit {
         });
     }
 
-    async recomputeFileSizes() {
+    async recomputeFileSizes(): Promise<void> {
         const files = await this.fileRepository.find({
             where: {
                 state: In([FileState.OK, FileState.FOUND]),
