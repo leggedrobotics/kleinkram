@@ -131,28 +131,10 @@
     </div>
     <div class="row">
         <div class="col-2 q-pa-sm">
-            <q-btn-dropdown
-                clearable
-                dense
-                flat
-                class="full-width full-height button-border"
-                :label="'File Types: ' + selectedFileTypes"
-            >
-                <q-list style="width: 100%">
-                    <q-item
-                        v-for="(option, index) in fileTypeFilter"
-                        :key="index"
-                    >
-                        <q-item-section class="items-center">
-                            <q-toggle
-                                :model-value="fileTypeFilter[index]?.value"
-                                :label="option.name"
-                                @click="() => onFileTypeClicked(index)"
-                            />
-                        </q-item-section>
-                    </q-item>
-                </q-list>
-            </q-btn-dropdown>
+            <file-type-selector
+                ref="fileTypeSelectorReference"
+                v-model="fileTypeFilter"
+            />
         </div>
         <div class="col-2 q-pa-sm" style="margin: 0">
             <q-input
@@ -366,6 +348,9 @@ import { useRouter } from 'vue-router';
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
+import FileTypeSelector, {
+    FileTypeOption,
+} from 'components/file-type-selector.vue';
 import TitleSection from 'components/title-section.vue';
 
 const $router = useRouter();
@@ -385,10 +370,13 @@ const end = new Date();
 const startDates = ref(formatDate(start));
 const endDates = ref(formatDate(end));
 
-const fileTypeFilter = ref([
-    { name: 'Bag', value: false },
-    { name: 'MCAP', value: true },
-]);
+const fileTypeFilter = ref<FileTypeOption[] | undefined>(undefined);
+const fileTypeSelectorReference = ref<
+    | {
+          setAll?: (value: boolean) => void;
+      }
+    | undefined
+>(undefined);
 
 const selected_project = computed(() =>
     projects.value.find(
@@ -438,9 +426,8 @@ const startDate = computed(() => parseDate(startDates.value));
 const endDate = computed(() => parseDate(endDates.value));
 
 const selectedFileTypesFilter = computed(() => {
-    return fileTypeFilter.value
-        .filter((item) => item.value)
-        .map((item) => item.name);
+    const list = fileTypeFilter.value ?? [];
+    return list.filter((option) => option.value).map((option) => option.name);
 });
 
 const pagination = computed(() => {
@@ -489,13 +476,6 @@ const tagFilterQuery = computed(() => {
         query[key] = tagFilter.value[key] ?? '';
     }
     return query;
-});
-
-const selectedFileTypes = computed(() => {
-    return fileTypeFilter.value
-        .filter((item) => item.value)
-        .map((item) => item.name)
-        .join(' & ');
 });
 
 const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
@@ -655,15 +635,6 @@ const onRowClick = async (_: any, row: any) => {
     });
 };
 
-function onFileTypeClicked(index: number) {
-    // @ts-ignore
-    fileTypeFilter.value[index].value = !fileTypeFilter.value[index]?.value;
-    if (!fileTypeFilter.value[0]?.value && !fileTypeFilter.value[1]?.value) {
-        // @ts-ignore
-        fileTypeFilter.value[1 - index].value = true;
-    }
-}
-
 function resetStartDate() {
     startDates.value = formatDate(start);
 }
@@ -679,10 +650,18 @@ function resetFilter() {
     filter.value = '';
     selectedTopics.value = [];
     and_or.value = false;
-    fileTypeFilter.value = [
-        { name: 'Bag', value: false },
-        { name: 'MCAP', value: true },
-    ];
+    // On reset select all file types via component API if available
+    if (
+        fileTypeSelectorReference.value &&
+        typeof fileTypeSelectorReference.value.setAll === 'function'
+    ) {
+        fileTypeSelectorReference.value.setAll(true);
+    } else if (fileTypeFilter.value) {
+        fileTypeFilter.value = fileTypeFilter.value.map((it) => ({
+            ...it,
+            value: true,
+        }));
+    }
     tagFilter.value = {};
     resetStartDate();
     resetEndDate();
