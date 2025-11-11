@@ -874,6 +874,7 @@ export class FileService implements OnModuleInit {
                     ['.bag', FileType.BAG],
                     ['.mcap', FileType.MCAP],
                     ['.yaml', FileType.YAML],
+                    ['.yml', FileType.YML],
                     ['.svo2', FileType.SVO2],
                     ['.tum', FileType.TUM],
                     ['.db3', FileType.DB3],
