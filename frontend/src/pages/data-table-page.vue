@@ -178,14 +178,14 @@
                 style="min-width: 60px"
             >
                 <template #label>
-                    {{ and_or ? 'And' : 'Or' }}
+                    {{ matchAllTopics ? 'And' : 'Or' }}
                 </template>
                 <q-list>
                     <q-item
                         v-for="(item, index) in ['And', 'Or']"
                         :key="index"
                         clickable
-                        @click="() => (and_or = item === 'And')"
+                        @click="() => (matchAllTopics = item === 'And')"
                     >
                         <q-item-section>
                             {{ item }}
@@ -346,6 +346,7 @@ import { allTopicsNames } from 'src/services/queries/topic';
 import { useRouter } from 'vue-router';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
+import { FileType } from '@common/enum';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 import FileTypeSelector, {
@@ -417,7 +418,7 @@ const { data: allTopics } = useQuery<string[]>({
 const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 
-const and_or = ref(false);
+const matchAllTopics = ref(false);
 const tagFilter: Ref<Record<string, { name: string; value: string }>> = ref({});
 
 end.setHours(23, 59, 59, 999);
@@ -425,9 +426,11 @@ end.setHours(23, 59, 59, 999);
 const startDate = computed(() => parseDate(startDates.value));
 const endDate = computed(() => parseDate(endDates.value));
 
-const selectedFileTypesFilter = computed(() => {
+const selectedFileTypesFilter = computed<FileType[]>(() => {
     const list = fileTypeFilter.value ?? [];
-    return list.filter((option) => option.value).map((option) => option.name);
+    return list
+        .filter((option) => option.value)
+        .map((option) => option.name) as FileType[];
 });
 
 const pagination = computed(() => {
@@ -464,7 +467,7 @@ const queryKeyFiles = computed(() => [
     startDate,
     endDate,
     selectedTopics,
-    and_or,
+    matchAllTopics,
     tagFilter,
     selectedFileTypesFilter,
     handler.value.queryKey,
@@ -488,9 +491,10 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
                 handler.value.missionUuid,
                 startDate.value,
                 endDate.value,
-                selectedTopics.value || [],
-                and_or.value,
-                selectedFileTypesFilter.value as ('mcap' | 'bag')[],
+                selectedTopics.value ?? [],
+                [],
+                matchAllTopics.value,
+                selectedFileTypesFilter.value ?? ([] as FileType[]),
                 tagFilterQuery.value,
                 handler.value.take,
                 handler.value.skip,
@@ -649,7 +653,7 @@ function resetFilter() {
     handler.value.setSearch({ name: '' });
     filter.value = '';
     selectedTopics.value = [];
-    and_or.value = false;
+    matchAllTopics.value = false;
     // On reset select all file types via component API if available
     if (
         fileTypeSelectorReference.value &&
