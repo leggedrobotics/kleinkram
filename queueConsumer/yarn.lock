@@ -2636,10 +2636,10 @@ googleapis-common@^8.0.0:
     qs "^6.7.0"
     url-template "^2.0.8"
 
-googleapis@^164.1.0:
-  version "164.1.0"
-  resolved "https://registry.yarnpkg.com/googleapis/-/googleapis-164.1.0.tgz#21050b2e5a769de9359a375030fa99bca6dcf6d2"
-  integrity sha512-dIN768H8so9qGucFtjYPBZJ+OCEgDi/xYyvYQHniPL1ZCYvrRDBTmtbjVjKCPG1CuOhG4CKHZDXiFe6QZ2qBeQ==
+googleapis@^165.0.0:
+  version "165.0.0"
+  resolved "https://registry.yarnpkg.com/googleapis/-/googleapis-165.0.0.tgz#7e9ee403d86e3e971ba22db2471a97b6cf680ac8"
+  integrity sha512-uXA/Z779zTkW7NUNZqjJz6878inQyU1PIpxisZDezJaR7wfKPP3d/BNeGLDNbO2wnkMpZ6bmpeshWNRR/fjqmw==
   dependencies:
     google-auth-library "^10.2.0"
     googleapis-common "^8.0.0"
