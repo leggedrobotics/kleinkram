@@ -259,7 +259,7 @@ export class FileService implements OnModuleInit {
         if (health) {
             logger.debug(`Filtering files by health: ${health}`);
             switch (health) {
-                case 'Healthy': {
+                case HealthStatus.HEALTHY: {
                     idQuery.andWhere('file.state IN (:...healthyStates)', {
                         healthyStates: [FileState.OK, FileState.FOUND],
                     });
@@ -276,7 +276,7 @@ export class FileService implements OnModuleInit {
                     });
                     break;
                 }
-                case 'Uploading': {
+                case HealthStatus.UPLOADING: {
                     idQuery.andWhere('file.state = :uploadingState', {
                         uploadingState: FileState.UPLOADING,
                     });
