@@ -1,7 +1,11 @@
 import { CreateProject } from '@common/api/types/create-project.dto';
 import Project from '@common/entities/project/project.entity';
 import User from '@common/entities/user/user.entity';
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
 import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
@@ -23,6 +27,7 @@ import { ProjectsDto } from '@common/api/types/project/projects.dto';
 import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto';
 import AccessGroup from '@common/entities/auth/accessgroup.entity';
 import ProjectAccess from '@common/entities/auth/project-access.entity';
+import Mission from '@common/entities/mission/mission.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import {
     AccessGroupRights,
@@ -418,23 +423,34 @@ export class ProjectService {
     }
 
     async deleteProject(uuid: string): Promise<void> {
-        // count missions of project
-        const project = await this.projectRepository.findOneOrFail({
-            where: { uuid },
-            relations: ['missions'],
-        });
+        await this.dataSource.transaction(
+            async (transactionalEntityManager) => {
+                // Check if there are any missions with that project
+                const missionCount = await transactionalEntityManager.count(
+                    Mission,
+                    { where: { project: { uuid } } },
+                );
 
-        if (project.missions === undefined)
-            throw new Error('Project has no missions');
+                if (missionCount > 0) {
+                    throw new ConflictException(
+                        `Project has ${missionCount} missions. Please delete them first.`,
+                    );
+                }
 
-        const missionCount = project.missions.length;
-        if (missionCount > 0) {
-            throw new ConflictException(
-                `Project has ${missionCount.toString()} missions. Please delete them first.`,
-            );
-        }
+                // all categories will be deleted due to 'onDelete: CASCADE'.
+                const deleteResult = await transactionalEntityManager.delete(
+                    Project,
+                    { uuid },
+                );
 
-        await this.projectRepository.delete(uuid);
+                // If no rows were affected, the project UUID didn't exist.
+                if (deleteResult.affected === 0) {
+                    throw new NotFoundException(
+                        `Project with UUID ${uuid} not found.`,
+                    );
+                }
+            },
+        );
     }
 
     async createDefaultAccessGroups(
