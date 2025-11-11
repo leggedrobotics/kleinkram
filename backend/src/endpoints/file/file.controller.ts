@@ -110,7 +110,7 @@ export class FileController {
         topics: string,
         @QueryOptionalString(
             'fileTypes',
-            "Filetypes: 'bag' | 'mcap' | 'bag,mcap' ",
+            'File types to filter by (coma separated)',
         )
         fileTypes: string,
         @QueryBoolean(

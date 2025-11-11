@@ -223,15 +223,51 @@ export class FileService implements OnModuleInit {
         }
 
         if (fileTypes) {
-            const splitFileTypes = fileTypes.split(',');
-            if (splitFileTypes.length === 1) {
-                query.andWhere('file.type = :type', {
-                    type:
-                        splitFileTypes[0] === 'MCAP'
-                            ? FileType.MCAP
-                            : FileType.BAG,
-                });
+            const requestedTypes = fileTypes.split(',');
+
+            // Check for 'ALL' case-insensitively
+            const requestedTypesUpper = requestedTypes.map((t) =>
+                t.toUpperCase(),
+            );
+            const hasAll = requestedTypesUpper.includes(FileType.ALL);
+
+            // If 'ALL' is not in the list and the list has content
+            if (!hasAll && requestedTypes.length > 0) {
+                const validTypesLookup = new Map<string, string>();
+                for (const type of Object.values(FileType)
+                    .filter((_type) => _type !== FileType.ALL)) {
+                        validTypesLookup.set(type.toLowerCase(), type);
+                    }
+
+                // 1. Map requested types (e.g., "mcap") to their valid, cased enum values (e.g., "MCAP").
+                // 2. Filter out any 'undefined' results (from invalid types like "garbage").
+                // 3. Use a Set to automatically remove duplicates (e.g., if user passed "mcap,MCAP").
+                const typesToFilter = [...new Set(
+                        requestedTypes
+                            .map((requestType) =>
+                                validTypesLookup.get(requestType.toLowerCase()),
+                            )
+                            .filter((type): type is string => !!type),
+                    )];
+
+                // Check if we have any valid types left to filter by
+                if (typesToFilter.length > 0) {
+                    logger.debug(
+                        `Filtering files by types: ${typesToFilter.join(',')}`,
+                    );
+                    // Use the 'IN' operator with the correctly cased enum values
+                    query.andWhere('file.type IN (:...fileTypes)', {
+                        fileTypes: typesToFilter,
+                    });
+                } else {
+                    logger.warn(
+                        `No valid file types found in filter: ${fileTypes}`,
+                    );
+                    query.andWhere('1 = 0'); // Force query to return no results
+                }
             }
+            // If 'ALL' was requested (or the string was empty), we do nothing,
+            // which means no file type filter is applied.
         }
 
         if (projectUUID) {
