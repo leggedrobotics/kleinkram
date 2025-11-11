@@ -24,6 +24,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import jwt from 'jsonwebtoken';
 import {
+    Brackets,
     DataSource,
     FindOptionsSelect,
     FindOptionsWhere,
@@ -31,6 +32,7 @@ import {
     In,
     MoreThan,
     Repository,
+    SelectQueryBuilder,
 } from 'typeorm';
 import { fileEntityToDto, fileEntityToDtoWithTopic } from '../serialization';
 import {
@@ -51,7 +53,6 @@ import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { redis } from '@common/consts';
 import Category from '@common/entities/category/category.entity';
 import QueueEntity from '@common/entities/queue/queue.entity';
-import Tag from '@common/entities/tag/tag.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import User from '@common/entities/user/user.entity';
 import {
@@ -179,6 +180,17 @@ export class FileService implements OnModuleInit {
         };
     }
 
+    /**
+     * Finds and paginates files based on a comprehensive set of filters.
+     *
+     * This method uses a two-query approach to correctly handle pagination with
+     * complex joins and groupings (required for 'matchAll' topics and tags):
+     * 1. The first query applies all filters and retrieves *only* the UUIDs
+     * of the matching files for the requested page, along with the *total count*
+     * of all matching files (pre-pagination).
+     * 2. The second query fetches the full file entities (with relations) for
+     * the UUIDs retrieved in the first query.
+     */
     async findFiltered(
         fileName: string,
         projectUUID: string,
@@ -186,7 +198,7 @@ export class FileService implements OnModuleInit {
         startDate: Date | undefined,
         endDate: Date | undefined,
         topics: string,
-        andOr: boolean,
+        matchAllTopics: boolean,
         fileTypes: string,
         tags: Record<string, any>,
         userUUID: string,
@@ -198,208 +210,66 @@ export class FileService implements OnModuleInit {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
-        // Start building your query with basic filters
-        let query = this.fileRepository
-            .createQueryBuilder('file')
-            .select('file.uuid')
-            .leftJoin('file.mission', 'mission')
-            .leftJoin('file.topics', 'topic')
-            .leftJoin('mission.project', 'project')
-            .offset(skip)
-            .limit(take)
-            .orderBy(sort, sortOrder);
 
-        // ADMIN user have access to all files, all other users have access to files based on their access
+        // Start building the query to fetch *only* IDs
+        let idQuery = this.fileRepository
+            .createQueryBuilder('file')
+            .select('file.uuid') // Select only the UUID
+            .leftJoin('file.mission', 'mission')
+            .leftJoin('mission.project', 'project')
+            .leftJoin('file.topics', 'topic'); // Joined for filtering
+
+        // ADMIN users see all, others are constrained
         if (user.role !== UserRole.ADMIN) {
-            query = addAccessConstraints(query, userUUID);
+            idQuery = addAccessConstraints(idQuery, userUUID);
         }
 
-        // Apply filters for fileName, projectUUID, and date
+        // Apply simple filters
         if (fileName) {
             logger.debug(`Filtering files by filename: ${fileName}`);
-            query.andWhere('file.filename LIKE :fileName', {
+            idQuery.andWhere('file.filename LIKE :fileName', {
                 fileName: `%${fileName}%`,
             });
         }
 
-        if (fileTypes) {
-            const requestedTypes = fileTypes.split(',');
-
-            // Check for 'ALL' case-insensitively
-            const requestedTypesUpper = requestedTypes.map((t) =>
-                t.toUpperCase(),
-            );
-            const hasAll = requestedTypesUpper.includes(FileType.ALL);
-
-            // If 'ALL' is not in the list and the list has content
-            if (!hasAll && requestedTypes.length > 0) {
-                const validTypesLookup = new Map<string, string>();
-                for (const type of Object.values(FileType).filter(
-                    (_type) => _type !== FileType.ALL,
-                )) {
-                    validTypesLookup.set(type.toLowerCase(), type);
-                }
-
-                // 1. Map requested types (e.g., "mcap") to their valid, cased enum values (e.g., "MCAP").
-                // 2. Filter out any 'undefined' results (from invalid types like "garbage").
-                // 3. Use a Set to automatically remove duplicates (e.g., if user passed "mcap,MCAP").
-                const typesToFilter = [
-                    ...new Set(
-                        requestedTypes
-                            .map((requestType) =>
-                                validTypesLookup.get(requestType.toLowerCase()),
-                            )
-                            .filter((type): type is string => !!type),
-                    ),
-                ];
-
-                // Check if we have any valid types left to filter by
-                if (typesToFilter.length > 0) {
-                    logger.debug(
-                        `Filtering files by types: ${typesToFilter.join(',')}`,
-                    );
-                    // Use the 'IN' operator with the correctly cased enum values
-                    query.andWhere('file.type IN (:...fileTypes)', {
-                        fileTypes: typesToFilter,
-                    });
-                } else {
-                    logger.warn(
-                        `No valid file types found in filter: ${fileTypes}`,
-                    );
-                    query.andWhere('1 = 0'); // Force query to return no results
-                }
-            }
-            // If 'ALL' was requested (or the string was empty), we do nothing,
-            // which means no file type filter is applied.
-        }
-
         if (projectUUID) {
             logger.debug(`Filtering files by projectUUID: ${projectUUID}`);
-            query.andWhere('project.uuid = :projectUUID', { projectUUID });
+            idQuery.andWhere('project.uuid = :projectUUID', { projectUUID });
         }
 
         if (missionUUID) {
             logger.debug(`Filtering files by missionUUID: ${missionUUID}`);
-            query.andWhere('mission.uuid = :missionUUID', { missionUUID });
+            idQuery.andWhere('mission.uuid = :missionUUID', { missionUUID });
         }
 
         if (startDate && endDate) {
             logger.debug(
                 `Filtering files by date range: ${startDate.toString()} - ${endDate.toString()}`,
             );
-            query.andWhere('file.date BETWEEN :startDate AND :endDate', {
-                startDate: startDate,
-                endDate: endDate,
+            idQuery.andWhere('file.date BETWEEN :startDate AND :endDate', {
+                startDate,
+                endDate,
             });
         }
 
-        if (topics) {
-            const splitTopics = topics.split(',');
-            if (splitTopics && topics.length > 0 && splitTopics.length > 0) {
-                query.andWhere('topic.name IN (:...splitTopics)', {
-                    splitTopics,
-                });
-            }
+        // Apply complex filters via helper methods
+        this._applyFileTypeFilter(idQuery, fileTypes);
+        this._applyTopicFilter(idQuery, topics, matchAllTopics);
 
-            if (andOr) {
-                query.having('COUNT(file.uuid) = :topicCount', {
-                    topicCount: splitTopics.length,
-                });
-            }
+        // The tag filter is async, so it must be awaited
+        if (tags && Object.keys(tags).length > 0) {
+            await this._applyTagFilter(idQuery, tags);
         }
-        if (tags) {
-            query
-                .leftJoin('mission.tags', 'tag')
-                .leftJoin('tag.tagType', 'tagtype');
-            await Promise.all(
-                Object.keys(tags).map(async (key, index) => {
-                    const tagtype = await this.tagTypeRepository.findOneOrFail({
-                        where: { uuid: key },
-                    });
 
-                    const subqueryname = `tagsubquery${index.toString()}`;
-                    query.innerJoin(
-                        (qb) => {
-                            let subquery = qb
-                                .from(Tag, 'tag')
-                                .leftJoin('tag.tagType', 'tagtype')
-                                .select('mission.uuid')
-                                .leftJoin('tag.mission', 'mission')
-                                .andWhere(
-                                    `tagtype.uuid = :tagtype${index.toString()}`,
-                                    {
-                                        [`tagtype${index.toString()}`]: key,
-                                    },
-                                );
+        // Group by file.uuid to deduplicate results from joins
+        // and allow 'HAVING' clauses for topics and tags
+        idQuery.groupBy('file.uuid');
 
-                            switch (tagtype.datatype) {
-                                case DataType.BOOLEAN: {
-                                    subquery = subquery.andWhere(
-                                        `tag.BOOLEAN = :value${index.toString()}`,
-                                        {
-                                            [`value${index.toString()}`]:
-                                                tags[key],
-                                        },
-                                    );
-                                    break;
-                                }
-                                case DataType.DATE: {
-                                    subquery = subquery.andWhere(
-                                        `tag.DATE = :value${index.toString()}`,
-                                        {
-                                            [`value${index.toString()}`]:
-                                                tags[key],
-                                        },
-                                    );
-                                    break;
-                                }
-                                case DataType.LOCATION: {
-                                    subquery = subquery.andWhere(
-                                        `tag.LOCATION = :value${index.toString()}`,
-                                        {
-                                            [`value${index.toString()}`]:
-                                                tags[key],
-                                        },
-                                    );
-                                    break;
-                                }
-                                case DataType.NUMBER: {
-                                    subquery = subquery.andWhere(
-                                        `tag.NUMBER = :value${index.toString()}`,
-                                        {
-                                            [`value${index.toString()}`]:
-                                                tags[key],
-                                        },
-                                    );
-                                    break;
-                                }
-                                case DataType.STRING:
-                                case DataType.LINK: {
-                                    subquery = subquery.andWhere(
-                                        `tag.STRING = :value${index.toString()}`,
-                                        {
-                                            [`value${index.toString()}`]:
-                                                tags[key],
-                                        },
-                                    );
-                                    break;
-                                }
-                            }
+        idQuery.orderBy(sort, sortOrder).offset(skip).limit(take);
 
-                            return subquery;
-                        },
-                        subqueryname,
-                        `mission.uuid = ${subqueryname}.missionUuid`,
-                    );
+        const [fileIdObjects, count] = await idQuery.getManyAndCount();
 
-                    // query.andWhere('mission.uuid IN ' + subqueryname);
-                }),
-            );
-        }
-        query.groupBy('file.uuid');
-        // Execute the query
-        const [fileIds, count] = await query.getManyAndCount();
-        if (fileIds.length === 0) {
+        if (fileIdObjects.length === 0) {
             logger.silly('No files found');
             return {
                 count,
@@ -409,22 +279,226 @@ export class FileService implements OnModuleInit {
             };
         }
 
-        const fileIdsArray = fileIds.map((file) => file.uuid);
+        const fileIds = fileIdObjects.map((file) => file.uuid);
+
+        // It must re-apply joins (for selection) and sorting.
         const files = await this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
-            .where('file.uuid IN (:...fileIds)', { fileIds: fileIdsArray })
+            .where('file.uuid IN (:...fileIds)', { fileIds })
             .orderBy(sort, sortOrder)
             .getMany();
+
         return {
             count,
             data: files.map((element) => fileEntityToDto(element)),
             take,
             skip,
         };
+    }
+
+    /**
+     * Applies file type filtering to the query.
+     */
+    private _applyFileTypeFilter(
+        query: SelectQueryBuilder<FileEntity>,
+        fileTypes: string,
+    ): void {
+        if (!fileTypes) {
+            return;
+        }
+
+        const requestedTypes = fileTypes.split(',');
+        const requestedTypesUpper = requestedTypes.map((t) => t.toUpperCase());
+
+        // If 'ALL' is requested, do nothing (apply no filter)
+        if (requestedTypesUpper.includes(FileType.ALL)) {
+            return;
+        }
+
+        // Build a lookup map of valid enum values (e.g., "mcap" -> "MCAP")
+        const validTypesLookup = new Map<string, string>();
+        for (const type of Object.values(FileType).filter(
+            (_type) => _type !== FileType.ALL,
+        )) {
+            validTypesLookup.set(type.toLowerCase(), type);
+        }
+
+        // Map requested types to their valid, cased enum values and deduplicate
+        const typesToFilter = [
+            ...new Set(
+                requestedTypes
+                    .map((requestType) =>
+                        validTypesLookup.get(requestType.toLowerCase()),
+                    )
+                    .filter((type): type is string => !!type), // Filter out undefined
+            ),
+        ];
+
+        if (typesToFilter.length > 0) {
+            logger.debug(
+                `Filtering files by types: ${typesToFilter.join(',')}`,
+            );
+            query.andWhere('file.type IN (:...fileTypes)', {
+                fileTypes: typesToFilter,
+            });
+        } else {
+            // No valid types were provided (e.g., "garbage,foo")
+            logger.warn(`No valid file types found in filter: ${fileTypes}`);
+            query.andWhere('1 = 0'); // Force query to return no results
+        }
+    }
+
+    /**
+     * Applies topic filtering to the query.
+     */
+    private _applyTopicFilter(
+        query: SelectQueryBuilder<FileEntity>,
+        topics: string,
+        matchAllTopics: boolean,
+    ): void {
+        if (!topics) {
+            return;
+        }
+
+        const splitTopics = topics.split(',').filter((t) => t.length > 0);
+        if (splitTopics.length === 0) {
+            return;
+        }
+
+        // Filter files that have *at least one* of the topics
+        query.andWhere('topic.name IN (:...splitTopics)', {
+            splitTopics,
+        });
+
+        // If 'matchAllTopics' is true, add a HAVING clause
+        // to ensure the file has *all* requested topics.
+        if (matchAllTopics) {
+            query.having('COUNT(DISTINCT topic.name) = :topicCount', {
+                topicCount: splitTopics.length,
+            });
+        }
+    }
+
+    /**
+     * Applies tag filtering to the query.
+     * This is the most complex filter, requiring a 'relational division' query.
+     *
+     * We find files where the mission has tags that match ALL specified conditions.
+     * We do this by:
+     * 1. Joining mission tags and tag types.
+     * 2. Adding a WHERE clause: `(condition 1) OR (condition 2) OR ...`
+     * 3. Adding a HAVING clause: `COUNT(DISTINCT matched_tag_types) = total_conditions`
+     */
+    private async _applyTagFilter(
+        query: SelectQueryBuilder<FileEntity>,
+        tags: Record<string, any>,
+    ): Promise<void> {
+        const tagTypeUUIDs = Object.keys(tags);
+        if (tagTypeUUIDs.length === 0) {
+            return;
+        }
+
+        const tagTypes = await this.tagTypeRepository.find({
+            where: { uuid: In(tagTypeUUIDs) },
+        });
+        const tagTypeMap = new Map(tagTypes.map((t) => [t.uuid, t]));
+
+        // Add the necessary joins for tag filtering
+        query
+            .leftJoin('mission.tags', 'tag')
+            .leftJoin('tag.tagType', 'tagtype');
+
+        const tagWhereClauses: string[] = [];
+        const tagParameters = {};
+        let validTagCount = 0;
+
+        for (const uuid of tagTypeUUIDs) {
+            const tagtype = tagTypeMap.get(uuid);
+            if (!tagtype) {
+                logger.warn(`Invalid tag type UUID in filter: ${uuid}`);
+                continue;
+            }
+
+            const value = tags[uuid];
+            const [column, processedValue] = this._getTagColumnAndValue(
+                tagtype.datatype,
+                value,
+            );
+
+            if (!column) {
+                logger.warn(`Unknown data type for tag type ${uuid}`);
+                continue;
+            }
+
+            // Create unique parameter names for this condition
+            const uuidParameter = `tagtype${validTagCount}`;
+            const valueParameter = `tagval${validTagCount}`;
+
+            // Build the clause: (tagtype.uuid = :uuid AND tag.VALUE_COLUMN = :value)
+            tagWhereClauses.push(
+                `(tagtype.uuid = :${uuidParameter} AND tag.${column} = :${valueParameter})`,
+            );
+            tagParameters[uuidParameter] = uuid;
+            tagParameters[valueParameter] = processedValue;
+
+            validTagCount++;
+        }
+
+        if (validTagCount === 0) {
+            // All provided tag filters were invalid
+            query.andWhere('1 = 0'); // Return no results
+            return;
+        }
+
+        query.andWhere(
+            new Brackets((qb) => {
+                for (const clause of tagWhereClauses) qb.orWhere(clause);
+            }),
+            tagParameters,
+        );
+
+        query.having('COUNT(DISTINCT tagtype.uuid) = :tagCount', {
+            tagCount: validTagCount,
+        });
+    }
+
+    /**
+     * Helper to get the correct database column name based on
+     * the tag's DataType.
+     *
+     * We store tag values in different columns based on their type in
+     * order to support complex queries and indexing.
+     *
+     */
+    private _getTagColumnAndValue<T>(
+        dataType: DataType,
+        value: T,
+    ): [string | null, T | undefined] {
+        switch (dataType) {
+            case DataType.BOOLEAN: {
+                return ['BOOLEAN', value];
+            }
+            case DataType.DATE: {
+                return ['DATE', value];
+            }
+            case DataType.LOCATION: {
+                return ['LOCATION', value];
+            }
+            case DataType.NUMBER: {
+                return ['NUMBER', value];
+            }
+            case DataType.STRING:
+            case DataType.LINK: {
+                return ['STRING', value];
+            }
+            default: {
+                return [null, undefined];
+            }
+        }
     }
 
     async findOne(uuid: string): Promise<FileWithTopicDto> {
@@ -658,7 +732,10 @@ export class FileService implements OnModuleInit {
         };
     }
 
-    async findOneByName(missionUUID: string, name: string): Promise<FileEntity | null> {
+    async findOneByName(
+        missionUUID: string,
+        name: string,
+    ): Promise<FileEntity | null> {
         return this.fileRepository.findOne({
             where: { mission: { uuid: missionUUID }, filename: name },
             relations: ['creator'],
@@ -932,7 +1009,11 @@ export class FileService implements OnModuleInit {
         };
     }
 
-    async cancelUpload(uuids: string[], missionUUID: string, userUUID: string): Promise<Queue.Job> {
+    async cancelUpload(
+        uuids: string[],
+        missionUUID: string,
+        userUUID: string,
+    ): Promise<Queue.Job> {
         // Cleanup cannot be done synchronously as this takes too long; the request is sent on unload; delaying the onUnload is difficult and discouraged
         return this.fileCleanupQueue.add('cancelUpload', {
             uuids,
