@@ -1,5 +1,5 @@
 <template>
-    <title-section title="Mission Analysis" />
+    <title-section title="Kleinkram Actions" />
 
     <ActionConfiguration :open="createAction" @close="closeHandler" />
 
