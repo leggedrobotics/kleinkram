@@ -343,7 +343,16 @@ async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
                 });
             },
         );
+        return;
     }
+
+    await $router.push({
+        name: ROUTES.FILES.routeName,
+        params: {
+            missionUuid: row.mission.uuid,
+            projectUuid: row.mission.project.uuid,
+        },
+    });
 }
 
 function canDelete(row: FileQueueEntryDto): boolean {
