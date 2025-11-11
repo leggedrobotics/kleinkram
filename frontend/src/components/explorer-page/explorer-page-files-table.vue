@@ -279,10 +279,9 @@ const queryKey = computed(() => [
     'files',
     missionUuid.value,
     properties.urlHandler.queryKey,
-    properties.urlHandler.fileType,
+    properties.urlHandler.fileTypes,
     properties.urlHandler.categories,
 ]);
-
 const {
     data: rawData,
     isLoading,
@@ -293,7 +292,7 @@ const {
             missionUuid.value ?? '',
             properties.urlHandler.take,
             properties.urlHandler.skip,
-            properties.urlHandler.fileType,
+            properties.urlHandler.fileTypes,
             properties.urlHandler.searchParams.name,
             properties.urlHandler.categories,
             properties.urlHandler.sortBy,

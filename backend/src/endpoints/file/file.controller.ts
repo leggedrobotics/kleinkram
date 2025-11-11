@@ -10,7 +10,6 @@ import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto'
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { UpdateFile } from '@common/api/types/update-file.dto';
 import env from '@common/environment';
-import { FileType } from '@common/frontend_shared/enum';
 import {
     Body,
     Controller,
@@ -30,7 +29,6 @@ import {
     QueryOptionalDate,
     QueryOptionalRecord,
     QueryOptionalString,
-    QueryOptionalStringArray,
     QueryOptionalUUID,
     QuerySkip,
     QuerySortBy,
@@ -113,17 +111,23 @@ export class FileController {
             'File types to filter by (coma separated)',
         )
         fileTypes: string,
+        @QueryOptionalString(
+            'categories',
+            'Categories to filter by (coma separated)',
+        )
+        categories: string,
         @QueryBoolean(
-            'andOr',
+            'matchAllTopics',
             'Returned File needs all specified topics (true) or any specified topics (false)',
         )
-        andOr: boolean,
+        matchAllTopics: boolean,
         @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
         tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sort') sort: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @QueryOptionalString('health', 'File health') health: string,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
         let _missionUUID = missionUUID;
@@ -137,7 +141,8 @@ export class FileController {
             startDate,
             endDate,
             topics,
-            andOr,
+            categories,
+            matchAllTopics,
             fileTypes,
             tags, // todo check if this is correct
             auth.user.uuid,
@@ -145,6 +150,7 @@ export class FileController {
             Number.parseInt(String(skip)), // TODO: fix
             sort,
             sortDirection,
+            health,
         );
     }
 
@@ -174,41 +180,6 @@ export class FileController {
         @QueryUUID('uuid', 'File UUID') uuid: string,
     ): Promise<FileWithTopicDto> {
         return this.fileService.findOne(uuid);
-    }
-
-    @Get('ofMission')
-    @CanReadMission()
-    @ApiOkResponse({
-        description: 'Files of a Mission',
-        type: FilesDto,
-    })
-    async getFilesOfMission(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QueryOptionalString('filename', 'Filename filter') filename: string,
-        @QueryOptionalString('fileType', 'Filetype filter') fileType: string,
-        @QueryOptionalStringArray(
-            'categories',
-            'Categories to filter by (logical OR)',
-        )
-        categories: string[],
-        @QuerySortBy('sort') sort: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryOptionalString('health', 'File health') health: string,
-    ): Promise<FilesDto> {
-        return this.fileService.findByMission(
-            uuid,
-            Number.parseInt(String(take)), // TODO: fix
-            Number.parseInt(String(skip)), // TODO: fix
-            filename,
-            // TODO: fix the following, it's ugly
-            fileType === '' ? FileType.ALL : (fileType as FileType),
-            categories,
-            sort,
-            sortDirection,
-            health,
-        );
     }
 
     @Put(':uuid')

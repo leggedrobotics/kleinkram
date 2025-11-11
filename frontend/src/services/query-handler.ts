@@ -5,7 +5,7 @@ import { RouteLocationNormalizedLoaded, Router } from 'vue-router';
 const DEFAULT_SORT = { sortBy: 'name', descending: false };
 const DEFAULT_PAGINATION = { page: 1, rowsPerPage: 20 };
 const DEFAULT_SEARCH = {};
-const DEFAULT_FILE_TYPE = FileType.ALL;
+const DEFAULT_FILE_TYPES: FileType[] = Object.values(FileType);
 
 /**
  * Class passed around to handle the query state
@@ -19,9 +19,10 @@ export class QueryHandler {
     missionUuid?: string;
     projectUuid?: string;
     searchParams: Record<string, string>;
-    fileType?: FileType;
     rowsNumber: number;
     categories: string[];
+
+    fileTypes: FileType[];
 
     constructor(
         page: number = DEFAULT_PAGINATION.page,
@@ -31,7 +32,7 @@ export class QueryHandler {
         projectUuid?: string,
         missionUuid?: string,
         searchParameters?: Record<string, string>,
-        fileType?: FileType,
+        fileTypes?: FileType[],
         categories?: string[],
     ) {
         this.page = page;
@@ -41,9 +42,10 @@ export class QueryHandler {
         this.projectUuid = projectUuid ?? '';
         this.missionUuid = missionUuid ?? '';
         this.searchParams = searchParameters ?? DEFAULT_SEARCH;
-        this.fileType = fileType === undefined ? FileType.ALL : fileType;
         this.categories = categories ?? [];
         this.rowsNumber = 0;
+
+        this.fileTypes = fileTypes ?? [...DEFAULT_FILE_TYPES];
     }
 
     get skip(): number {
@@ -105,8 +107,8 @@ export class QueryHandler {
         }
     }
 
-    setFileType(fileType: FileType): void {
-        this.fileType = fileType;
+    setFileTypes(fileTypes: FileType[]): void {
+        this.fileTypes = fileTypes;
         this.resetPagination();
     }
 
@@ -126,11 +128,11 @@ export class QueryHandler {
         this.page = DEFAULT_PAGINATION.page;
     }
 
-    get isListingMissions() {
+    get isListingMissions(): boolean {
         return !!this.projectUuid && !this.missionUuid;
     }
 
-    get isListingFiles() {
+    get isListingFiles(): boolean {
         return !!this.missionUuid;
     }
 
@@ -139,13 +141,23 @@ export class QueryHandler {
      * Part of each query key
      * ---------------------------------------------
      */
-    get queryKey() {
+    get queryKey(): {
+        searchParams: Record<string, string>;
+        skip: number;
+        take: number;
+        sortBy: string;
+        descending: boolean;
+        fileTypes: FileType[];
+        categories: string[];
+    } {
         return {
             searchParams: this.searchParams,
             skip: this.skip,
             take: this.take,
             sortBy: this.sortBy,
             descending: this.descending,
+            fileTypes: this.fileTypes,
+            categories: this.categories,
         };
     }
 }
@@ -166,7 +178,7 @@ export class QueryURLHandler extends QueryHandler {
         projectUuid?: string,
         missionUuid?: string,
         searchParameters?: typeof DEFAULT_SEARCH,
-        fileType?: FileType,
+        fileTypes?: FileType[],
         categories?: string[],
     ) {
         super(
@@ -177,7 +189,7 @@ export class QueryURLHandler extends QueryHandler {
             projectUuid,
             missionUuid,
             searchParameters,
-            fileType,
+            fileTypes,
             categories,
         );
         if (router) {
@@ -256,8 +268,9 @@ export class QueryURLHandler extends QueryHandler {
         });
     }
 
-    override setFileType(fileType: FileType): void {
-        super.setFileType(fileType);
+    // Renamed and updated to call the new super method
+    override setFileTypes(fileTypes: FileType[]): void {
+        super.setFileTypes(fileTypes);
         this.writeURL().catch((error: unknown) => {
             console.error(error);
         });
@@ -310,14 +323,19 @@ export class QueryURLHandler extends QueryHandler {
         if (route.query.health)
             searchParameters.health = route.query.health as string;
         this.searchParams = searchParameters ?? DEFAULT_SEARCH;
-        this.fileType = route.query.file_type
-            ? (route.query.file_type as FileType)
-            : DEFAULT_FILE_TYPE;
-        if (route.query.categories) {
-            this.categories = Array.isArray(route.query.categories)
-                ? (route.query.categories as string[])
-                : [route.query.categories];
-        }
+
+        const queryFileTypes = route.query.file_type as string | undefined;
+        this.fileTypes =
+            queryFileTypes && queryFileTypes.length > 0
+                ? (queryFileTypes.split(',') as FileType[])
+                : [...DEFAULT_FILE_TYPES];
+
+        const queryCategories = route.query.categories;
+        this.categories = queryCategories
+            ? ((Array.isArray(queryCategories)
+                  ? queryCategories
+                  : [queryCategories]) as string[])
+            : [];
     }
 
     /**
@@ -326,6 +344,13 @@ export class QueryURLHandler extends QueryHandler {
     async writeURL(): Promise<void> {
         if (!this.router) return;
         this.internalUpdate = true;
+
+        // Logic to determine if fileTypes is in its default state
+        const allFileTypesCount = Object.values(FileType).length;
+        const isDefaultFileTypes =
+            !this.fileTypes ||
+            this.fileTypes.length === 0 ||
+            this.fileTypes.length === allFileTypesCount;
 
         // Only write non default values to the URL
         const newQuery = {
@@ -349,10 +374,11 @@ export class QueryURLHandler extends QueryHandler {
             missionUuid: this.missionUuid ?? undefined,
             ...this.searchParams,
 
-            file_type:
-                !(this.fileType === null) && this.fileType !== FileType.ALL
-                    ? (this.fileType ?? undefined)
-                    : undefined,
+            // Join the array into a single comma-separated string
+            file_type: isDefaultFileTypes
+                ? undefined
+                : this.fileTypes.join(','),
+
             categories:
                 this.categories.length > 0 ? this.categories : undefined,
         };
@@ -360,9 +386,18 @@ export class QueryURLHandler extends QueryHandler {
         // check if any query was set before writing to the URL
         const queries = this.router.currentRoute.value.query;
         const hasQueries = Object.keys(queries).length > 0;
+
+        // Filter out undefined values from newQuery before pushing/replacing
+        const finalQuery: Record<string, any> = {};
+        for (const [key, value] of Object.entries(newQuery)) {
+            if (value !== undefined) {
+                finalQuery[key] = value;
+            }
+        }
+
         await (hasQueries
-            ? this.router.push({ query: newQuery })
-            : this.router.replace({ query: newQuery }));
+            ? this.router.push({ query: finalQuery })
+            : this.router.replace({ query: finalQuery }));
 
         this.internalUpdate = false;
     }

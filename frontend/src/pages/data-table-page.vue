@@ -341,7 +341,7 @@ import ROUTES from 'src/router/routes';
 import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
-import { fetchOverview } from 'src/services/queries/file';
+import { fetchFilteredFiles } from 'src/services/queries/file';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { useRouter } from 'vue-router';
 
@@ -482,7 +482,7 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
     useQuery<FilesDto>({
         queryKey: queryKeyFiles,
         queryFn: () =>
-            fetchOverview(
+            fetchFilteredFiles(
                 filter.value,
                 handler.value.projectUuid,
                 handler.value.missionUuid,

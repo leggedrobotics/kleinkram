@@ -26,9 +26,6 @@ import jwt from 'jsonwebtoken';
 import {
     Brackets,
     DataSource,
-    FindOptionsSelect,
-    FindOptionsWhere,
-    ILike,
     In,
     MoreThan,
     Repository,
@@ -198,6 +195,7 @@ export class FileService implements OnModuleInit {
         startDate: Date | undefined,
         endDate: Date | undefined,
         topics: string,
+        categories: string,
         matchAllTopics: boolean,
         fileTypes: string,
         tags: Record<string, any>,
@@ -206,6 +204,7 @@ export class FileService implements OnModuleInit {
         skip: number,
         sort: string,
         sortOrder: 'ASC' | 'DESC',
+        health: string,
     ): Promise<FilesDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -256,6 +255,45 @@ export class FileService implements OnModuleInit {
         this._applyFileTypeFilter(idQuery, fileTypes);
         this._applyTopicFilter(idQuery, topics, matchAllTopics);
 
+        if (health) {
+            logger.debug(`Filtering files by health: ${health}`);
+            switch (health) {
+                case 'Healthy': {
+                    idQuery.andWhere('file.state IN (:...healthyStates)', {
+                        healthyStates: [FileState.OK, FileState.FOUND],
+                    });
+                    break;
+                }
+                case 'Unhealthy': {
+                    idQuery.andWhere('file.state IN (:...unhealthyStates)', {
+                        unhealthyStates: [
+                            FileState.ERROR,
+                            FileState.CONVERSION_ERROR,
+                            FileState.LOST,
+                            FileState.CORRUPTED,
+                        ],
+                    });
+                    break;
+                }
+                case 'Uploading': {
+                    idQuery.andWhere('file.state = :uploadingState', {
+                        uploadingState: FileState.UPLOADING,
+                    });
+                    break;
+                }
+            }
+        }
+
+        const categoryUUIDs = categories ? categories.split(',') : [];
+        if (categoryUUIDs.length > 0) {
+            logger.debug(`Filtering files by categories: ${categories}`);
+            idQuery
+                .innerJoin('file.categories', 'category')
+                .andWhere('category.uuid IN (:...categoryUUIDs)', {
+                    categoryUUIDs,
+                });
+        }
+
         // The tag filter is async, so it must be awaited
         if (tags && Object.keys(tags).length > 0) {
             await this._applyTagFilter(idQuery, tags);
@@ -288,6 +326,7 @@ export class FileService implements OnModuleInit {
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
+            .leftJoinAndSelect('file.categories', 'category')
             .where('file.uuid IN (:...fileIds)', { fileIds })
             .orderBy(sort, sortOrder)
             .getMany();
@@ -646,90 +685,6 @@ export class FileService implements OnModuleInit {
                 'response-content-disposition': `attachment; filename ="${file.filename}"`,
             },
         );
-    }
-
-    async findByMission(
-        missionUUID: string,
-        take: number,
-        skip: number,
-        filename?: string,
-        fileType?: FileType,
-        categories?: string[],
-        sort?: string,
-        sortDirection?: 'ASC' | 'DESC',
-        health?: string,
-    ): Promise<FilesDto> {
-        const where: FindOptionsWhere<FileEntity> = {
-            mission: { uuid: missionUUID },
-        };
-        if (filename) {
-            where.filename = ILike(`%${filename}%`);
-        }
-        if (fileType !== undefined && fileType !== FileType.ALL) {
-            where.type = fileType;
-        }
-        if (categories && categories.length > 0) {
-            where.categories = { uuid: In(categories) };
-        }
-        switch (health) {
-            case 'Healthy': {
-                where.state = In([FileState.OK, FileState.FOUND]);
-                break;
-            }
-            case 'Unhealthy': {
-                where.state = In([
-                    FileState.ERROR,
-                    FileState.CONVERSION_ERROR,
-                    FileState.LOST,
-                    FileState.CORRUPTED,
-                ]);
-                break;
-            }
-            case 'Uploading': {
-                where.state = FileState.UPLOADING;
-            }
-        }
-        const select = [
-            'uuid',
-            sort?.toString() ?? 'name',
-        ] as FindOptionsSelect<FileEntity>;
-
-        const [filesUuids, count] = await this.fileRepository.findAndCount({
-            select,
-            where,
-            take,
-            skip,
-            order: { [sort ?? 'name']: sortDirection },
-        });
-        if (filesUuids.length === 0) {
-            return {
-                count,
-                data: [],
-                take,
-                skip,
-            };
-        }
-        const secondWhere = {
-            uuid: In(filesUuids.map((file) => file.uuid)),
-        };
-
-        const files = await this.fileRepository.find({
-            where: secondWhere,
-            relations: [
-                'mission',
-                'mission.project',
-                'categories',
-                'mission.creator',
-                'creator',
-            ],
-            order: { [sort ?? 'name']: sortDirection },
-        });
-        return {
-            count,
-            data: files.map((element) => fileEntityToDto(element)),
-            take,
-            skip,
-        };
     }
 
     async findOneByName(

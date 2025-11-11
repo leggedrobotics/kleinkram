@@ -23,6 +23,7 @@
 </template>
 
 <script setup lang="ts">
+import { FileType } from '@common/enum';
 import { computed, ref, watch } from 'vue';
 
 export interface FileTypeOption {
@@ -41,14 +42,12 @@ const emit =
 
 const open = ref(false);
 
-const DEFAULT_OPTIONS: FileTypeOption[] = [
-    { name: 'Bag', value: false },
-    { name: 'MCAP', value: true },
-    { name: 'db3', value: false },
-    { name: 'tum', value: false },
-    { name: 'svo2', value: false },
-    { name: 'yaml', value: false },
-];
+const DEFAULT_OPTIONS: FileTypeOption[] = Object.values(FileType)
+    .filter((fileType) => fileType !== FileType.ALL)
+    .map((fileType) => ({
+        name: fileType,
+        value: true,
+    }));
 
 // Internal copy to avoid mutating prop directly
 const internalValue = ref<FileTypeOption[]>(

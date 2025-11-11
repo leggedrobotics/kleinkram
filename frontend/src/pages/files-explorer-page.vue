@@ -417,13 +417,17 @@ const selectedFileHealth = computed<string, string | undefined>({
 const selectedFiles: Ref<FileWithTopicDto[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
-    (v) => {
-        if (!v) return;
-        if (v[0]?.value && v[1]?.value) {
-            handler.value.setFileType(FileType.ALL);
+    (options) => {
+        if (!options) {
+            handler.value.setFileTypes([]);
             return;
         }
-        handler.value.setFileType(v[0]?.value ? FileType.BAG : FileType.MCAP);
+
+        const selectedTypes = options
+            .filter((option) => option.value)
+            .map((option) => option.name as FileType);
+
+        handler.value.setFileTypes(selectedTypes);
     },
     { deep: true },
 );
