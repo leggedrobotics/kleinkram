@@ -1,8 +1,5 @@
 <template>
-    <div
-        class="projects-container dashboard-card"
-        style="grid-column: span 2; background-color: white; display: grid"
-    >
+    <div class="projects-container dashboard-card">
         <!-- Static Row with Title and Arrows -->
         <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Running Actions</span>
@@ -58,19 +55,18 @@
                 </template>
             </q-table>
         </div>
-        <div v-else style="height: 85%">
-            <q-card flat class="full-height">
-                <q-card-section class="q-pa-md full-height">
-                    <q-item>
-                        <q-item-section>
-                            <q-item-label>
-                                <q-icon name="sym_o_info" />
-                                No running actions
-                            </q-item-label>
-                        </q-item-section>
-                    </q-item>
-                </q-card-section>
-            </q-card>
+
+        <!-- Empty State (Styled like RecentProjects) -->
+        <div v-else class="empty-state-wrapper">
+            <div class="empty-state-content">
+                <q-icon name="sym_o_info" size="lg" color="grey-6" />
+                <span class="text-h6 text-grey-7 q-mt-md"
+                    >No running actions</span
+                >
+                <span class="text-body1 text-grey-6 q-mt-sm"
+                    >Your running actions will appear here.</span
+                >
+            </div>
         </div>
     </div>
 </template>
@@ -137,7 +133,7 @@ const toActions = async (): Promise<void> => {
 
 <style scoped>
 .projects-container {
-    grid-column: 1 / 3;
+    grid-column: span 2; /* Changed for consistency */
     background-color: white;
     display: grid;
     grid-template-rows: 50px 2px auto;
@@ -162,9 +158,28 @@ const toActions = async (): Promise<void> => {
     margin-top: 0;
     padding-top: 0;
     scrollbar-width: none;
+    flex-grow: 1; /* Ensure it can grow if content is sparse */
 }
 
 .scroll-button {
     z-index: 1;
+}
+
+.empty-state-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+    padding: 16px;
+    flex-grow: 1;
+}
+
+.empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 </style>

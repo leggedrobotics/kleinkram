@@ -3,7 +3,7 @@
         <!-- Static Row with Title and Arrows -->
         <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Recently used projects</span>
-            <div class="arrow-buttons">
+            <div v-if="projects.length > 0" class="arrow-buttons">
                 <q-btn
                     :disable="!canScrollLeft"
                     flat
@@ -24,7 +24,12 @@
         <q-separator />
 
         <!-- Scrollable Card Section -->
-        <div ref="cardWrapper" class="card-wrapper" @scroll="checkScroll">
+        <div
+            v-if="projects.length > 0"
+            ref="cardWrapper"
+            class="card-wrapper"
+            @scroll="checkScroll"
+        >
             <template v-for="project in projects" :key="project.uuid">
                 <div class="card">
                     <q-card
@@ -63,6 +68,19 @@
 
                 <q-separator vertical />
             </template>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="empty-state-wrapper">
+            <div class="empty-state-content">
+                <q-icon name="sym_o_folder" size="lg" color="grey-6" />
+                <span class="text-h6 text-grey-7 q-mt-md">
+                    No recent projects
+                </span>
+                <span class="text-body1 text-grey-6 q-mt-sm">
+                    Your recently used projects will appear here.
+                </span>
+            </div>
         </div>
     </div>
 </template>
@@ -165,6 +183,7 @@ await nextTick(() => {
     margin-top: 0;
     padding-top: 0;
     scrollbar-width: none;
+    flex-grow: 1; /* Ensure it can grow if content is sparse */
 }
 
 .card {
@@ -178,5 +197,23 @@ await nextTick(() => {
 
 .scroll-button {
     z-index: 1;
+}
+
+.empty-state-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+    padding: 16px;
+    flex-grow: 1;
+}
+
+.empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 </style>
