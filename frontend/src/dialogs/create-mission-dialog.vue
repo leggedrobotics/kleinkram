@@ -45,11 +45,7 @@
                         "
                         class="text-grey"
                     >
-                        <q-icon
-                            name="sym_o_info"
-                            size="sm"
-                            class="q-mr-sm"
-                        />
+                        <q-icon name="sym_o_info" size="sm" class="q-mr-sm" />
                         You do not have permission to create missions, or no
                         projects exist yet.
                     </div>
@@ -139,7 +135,8 @@
                 flat
                 label="Next"
                 :disable="
-                    !project || missionName.length < MIN_MISSION_NAME_LENGTH ||
+                    !project ||
+                    missionName.length < MIN_MISSION_NAME_LENGTH ||
                     missionName.length > MAX_MISSION_NAME_LENGTH
                 "
                 class="bg-button-primary"
@@ -163,7 +160,6 @@
         </template>
     </base-dialog>
 </template>
-
 
 <script setup lang="ts">
 import { FlatMissionDto } from '@api/types/mission/mission.dto';

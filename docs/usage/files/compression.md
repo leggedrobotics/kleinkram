@@ -28,6 +28,7 @@ ros2 bag record --storage mcap --storage-preset-profile fastwrite \
 ```
 
 **What this does:**
+
 - Writes uncompressed data for speed
 - Minimal CPU usage during recording
 - No CRC calculation (faster writes)
@@ -74,6 +75,7 @@ mcap compress input.mcap --compression zstd
 ```
 
 **Pros:**
+
 - Best compression ratios (3-5x savings)
 - Good decompression speed
 - Industry standard
@@ -87,6 +89,7 @@ mcap compress input.mcap --compression lz4
 ```
 
 **Pros:**
+
 - Faster decompression (~2x faster than zstd)
 - Still good compression (2-3x savings)
 
@@ -97,29 +100,38 @@ mcap compress input.mcap --compression lz4
 ROS 2 provides several preset profiles for different scenarios:
 
 ### `fastwrite` (Recording)
+
 Best for on-robot recording:
+
 ```bash
 ros2 bag record --storage mcap --storage-preset-profile fastwrite <topics>
 ```
+
 - No compression
 - No CRC
 - No message index
 - Minimal CPU/memory usage
 
 ### `zstd_small` (Balanced)
+
 Good balance of speed and compression:
+
 ```bash
 ros2 bag record --storage mcap --storage-preset-profile zstd_small <topics>
 ```
+
 - Zstd compression (lowest ratio)
 - No CRC calculation
 - Good throughput
 
 ### `zstd_fast` (Maximum Compression)
+
 Best compression, slower writes:
+
 ```bash
 ros2 bag record --storage mcap --storage-preset-profile zstd_fast <topics>
 ```
+
 - Zstd compression (highest ratio)
 - 4MB chunks
 - Maximum storage savings
@@ -154,6 +166,7 @@ gzip data.mcap           # Creates data.mcap.gz
 ```
 
 **Why this is problematic:**
+
 - Cannot read specific topics without full decompression
 - Actions must decompress entire file (slow, lots of disk I/O)
 - Not the standard practice in the community
@@ -165,15 +178,15 @@ When you upload a chunk-compressed MCAP:
 
 1. **Upload**: File uploaded directly to storage (already compressed)
 2. **Topic Extraction**: Kleinkram's queue consumer:
-   - Downloads the file
-   - MCAP library automatically decompresses chunks as needed
-   - Extracts topic metadata (names, types, message counts, frequencies)
-   - Stores metadata in database
+    - Downloads the file
+    - MCAP library automatically decompresses chunks as needed
+    - Extracts topic metadata (names, types, message counts, frequencies)
+    - Stores metadata in database
 3. **Storage**: Compressed MCAP stored as-is
 4. **Actions**: Your action containers:
-   - Download compressed MCAP
-   - MCAP libraries handle decompression transparently
-   - Can efficiently read specific topics (random access works!)
+    - Download compressed MCAP
+    - MCAP libraries handle decompression transparently
+    - Can efficiently read specific topics (random access works!)
 
 ## Verifying Compression
 
@@ -189,6 +202,7 @@ mcap info data.mcap
 ```
 
 Example output:
+
 ```
 library:
 profile:
@@ -204,11 +218,11 @@ chunk count: 42
 
 Example with a 10 GB dataset:
 
-| Method | File Size | Upload Time | Storage Cost | Action Access |
-|--------|-----------|-------------|--------------|---------------|
-| Uncompressed | 10 GB | Slow | High (1x) | Fast ✅ |
-| Chunk Compressed (zstd) | 2 GB | Fast | Low (5x savings) | Fast ✅ |
-| File-level .zst | 2 GB | Fast | Low (5x savings) | Slow ❌ |
+| Method                  | File Size | Upload Time | Storage Cost     | Action Access |
+| ----------------------- | --------- | ----------- | ---------------- | ------------- |
+| Uncompressed            | 10 GB     | Slow        | High (1x)        | Fast ✅       |
+| Chunk Compressed (zstd) | 2 GB      | Fast        | Low (5x savings) | Fast ✅       |
+| File-level .zst         | 2 GB      | Fast        | Low (5x savings) | Slow ❌       |
 
 ## FAQs
 
