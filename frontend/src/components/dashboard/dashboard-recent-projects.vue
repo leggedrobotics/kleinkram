@@ -73,7 +73,7 @@
         <!-- Empty State -->
         <div v-else class="empty-state-wrapper">
             <div class="empty-state-content">
-                <q-icon name="sym_o_folder" size="lg" color="grey-6" />
+                <q-icon name="sym_o_box" size="lg" color="grey-6" />
                 <span class="text-h6 text-grey-7 q-mt-md">
                     No recent projects
                 </span>
