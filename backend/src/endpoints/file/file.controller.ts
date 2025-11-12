@@ -53,6 +53,7 @@ import {
 
 import { CancelFileUploadDto } from '@common/api/types/cancel-file-upload.dto';
 import { FileQueryDto } from '@common/api/types/file/file-query.dto';
+import FileEntity from '@common/entities/file/file.entity';
 import { HealthStatus } from '@common/frontend_shared/enum';
 
 @Controller(['file', 'files']) // TODO: migrate to 'files'
@@ -65,7 +66,10 @@ export class FileController {
         description: 'Many Files',
         type: FilesDto,
     })
-    async getMany(@Query() query: FileQueryDto, @AddUser() auth: AuthHeader) {
+    async getMany(
+        @Query() query: FileQueryDto,
+        @AddUser() auth: AuthHeader,
+    ): Promise<FilesDto> {
         return await this.fileService.findMany(
             query.projectUuids ?? [],
             query.projectPatterns ?? [],
@@ -165,7 +169,7 @@ export class FileController {
             'Whether the download link should stay valid for on week (false) or 4h (true)',
         )
         expires: boolean,
-    ) {
+    ): Promise<string> {
         logger.debug(`download ${uuid}: expires=${expires.toString()}`);
         return this.fileService.generateDownload(uuid, expires);
     }
@@ -186,7 +190,10 @@ export class FileController {
     @Put(':uuid')
     @CanWriteFile()
     @OutputDto(null) // TODO: type API response
-    async update(@ParameterUID('uuid') uuid: string, @Body() dto: UpdateFile) {
+    async update(
+        @ParameterUID('uuid') uuid: string,
+        @Body() dto: UpdateFile,
+    ): Promise<FileEntity | null> {
         return this.fileService.update(uuid, dto);
     }
 
@@ -197,7 +204,7 @@ export class FileController {
         @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
         fileUUIDs: string[],
         @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
-    ) {
+    ): Promise<void> {
         return this.fileService.moveFiles(fileUUIDs, missionUUID);
     }
 
@@ -207,7 +214,7 @@ export class FileController {
     async getOneFileByName(
         @QueryUUID('uuid', 'Mission UUID to search in') uuid: string,
         @QueryString('filename', 'Filename searched for') name: string,
-    ) {
+    ): Promise<FileEntity | null> {
         return this.fileService.findOneByName(uuid, name);
     }
 
@@ -300,7 +307,7 @@ export class FileController {
     @ApiOkResponse({
         description: 'Resetting Minio tags completed',
     })
-    async resetMinioTags() {
+    async resetMinioTags(): Promise<void> {
         logger.debug('Resetting Minio tags');
         await this.fileService.renameTags(env.MINIO_BAG_BUCKET_NAME);
         await this.fileService.renameTags(env.MINIO_MCAP_BUCKET_NAME);
@@ -312,7 +319,7 @@ export class FileController {
     @ApiOkResponse({
         description: 'Recomputing file sizes completed',
     })
-    async recomputeFileSizes() {
+    async recomputeFileSizes(): Promise<void> {
         logger.debug('Recomputing file sizes');
         await this.fileService.recomputeFileSizes();
         logger.debug('Recomputing file sizes done');
