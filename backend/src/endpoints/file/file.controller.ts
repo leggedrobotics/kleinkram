@@ -10,7 +10,6 @@ import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto'
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { UpdateFile } from '@common/api/types/update-file.dto';
 import env from '@common/environment';
-import { FileType } from '@common/frontend_shared/enum';
 import {
     Body,
     Controller,
@@ -30,7 +29,6 @@ import {
     QueryOptionalDate,
     QueryOptionalRecord,
     QueryOptionalString,
-    QueryOptionalStringArray,
     QueryOptionalUUID,
     QuerySkip,
     QuerySortBy,
@@ -55,6 +53,8 @@ import {
 
 import { CancelFileUploadDto } from '@common/api/types/cancel-file-upload.dto';
 import { FileQueryDto } from '@common/api/types/file/file-query.dto';
+import FileEntity from '@common/entities/file/file.entity';
+import { HealthStatus } from '@common/frontend_shared/enum';
 
 @Controller(['file', 'files']) // TODO: migrate to 'files'
 export class FileController {
@@ -66,7 +66,10 @@ export class FileController {
         description: 'Many Files',
         type: FilesDto,
     })
-    async getMany(@Query() query: FileQueryDto, @AddUser() auth: AuthHeader) {
+    async getMany(
+        @Query() query: FileQueryDto,
+        @AddUser() auth: AuthHeader,
+    ): Promise<FilesDto> {
         return await this.fileService.findMany(
             query.projectUuids ?? [],
             query.projectPatterns ?? [],
@@ -110,20 +113,26 @@ export class FileController {
         topics: string,
         @QueryOptionalString(
             'fileTypes',
-            "Filetypes: 'bag' | 'mcap' | 'bag,mcap' ",
+            'File types to filter by (coma separated)',
         )
         fileTypes: string,
+        @QueryOptionalString(
+            'categories',
+            'Categories to filter by (coma separated)',
+        )
+        categories: string,
         @QueryBoolean(
-            'andOr',
+            'matchAllTopics',
             'Returned File needs all specified topics (true) or any specified topics (false)',
         )
-        andOr: boolean,
+        matchAllTopics: boolean,
         @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
         tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
         @QuerySortBy('sort') sort: string,
         @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
+        @QueryOptionalString('health', 'File health') health: HealthStatus,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
         let _missionUUID = missionUUID;
@@ -137,7 +146,8 @@ export class FileController {
             startDate,
             endDate,
             topics,
-            andOr,
+            categories,
+            matchAllTopics,
             fileTypes,
             tags, // todo check if this is correct
             auth.user.uuid,
@@ -145,6 +155,7 @@ export class FileController {
             Number.parseInt(String(skip)), // TODO: fix
             sort,
             sortDirection,
+            health,
         );
     }
 
@@ -158,7 +169,7 @@ export class FileController {
             'Whether the download link should stay valid for on week (false) or 4h (true)',
         )
         expires: boolean,
-    ) {
+    ): Promise<string> {
         logger.debug(`download ${uuid}: expires=${expires.toString()}`);
         return this.fileService.generateDownload(uuid, expires);
     }
@@ -176,45 +187,13 @@ export class FileController {
         return this.fileService.findOne(uuid);
     }
 
-    @Get('ofMission')
-    @CanReadMission()
-    @ApiOkResponse({
-        description: 'Files of a Mission',
-        type: FilesDto,
-    })
-    async getFilesOfMission(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QueryOptionalString('filename', 'Filename filter') filename: string,
-        @QueryOptionalString('fileType', 'Filetype filter') fileType: string,
-        @QueryOptionalStringArray(
-            'categories',
-            'Categories to filter by (logical OR)',
-        )
-        categories: string[],
-        @QuerySortBy('sort') sort: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryOptionalString('health', 'File health') health: string,
-    ): Promise<FilesDto> {
-        return this.fileService.findByMission(
-            uuid,
-            Number.parseInt(String(take)), // TODO: fix
-            Number.parseInt(String(skip)), // TODO: fix
-            filename,
-            // TODO: fix the following, it's ugly
-            fileType === '' ? FileType.ALL : (fileType as FileType),
-            categories,
-            sort,
-            sortDirection,
-            health,
-        );
-    }
-
     @Put(':uuid')
     @CanWriteFile()
     @OutputDto(null) // TODO: type API response
-    async update(@ParameterUID('uuid') uuid: string, @Body() dto: UpdateFile) {
+    async update(
+        @ParameterUID('uuid') uuid: string,
+        @Body() dto: UpdateFile,
+    ): Promise<FileEntity | null> {
         return this.fileService.update(uuid, dto);
     }
 
@@ -225,7 +204,7 @@ export class FileController {
         @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
         fileUUIDs: string[],
         @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
-    ) {
+    ): Promise<void> {
         return this.fileService.moveFiles(fileUUIDs, missionUUID);
     }
 
@@ -235,7 +214,7 @@ export class FileController {
     async getOneFileByName(
         @QueryUUID('uuid', 'Mission UUID to search in') uuid: string,
         @QueryString('filename', 'Filename searched for') name: string,
-    ) {
+    ): Promise<FileEntity | null> {
         return this.fileService.findOneByName(uuid, name);
     }
 
@@ -328,10 +307,9 @@ export class FileController {
     @ApiOkResponse({
         description: 'Resetting Minio tags completed',
     })
-    async resetMinioTags() {
+    async resetMinioTags(): Promise<void> {
         logger.debug('Resetting Minio tags');
-        await this.fileService.renameTags(env.MINIO_BAG_BUCKET_NAME);
-        await this.fileService.renameTags(env.MINIO_MCAP_BUCKET_NAME);
+        await this.fileService.renameTags(env.MINIO_DATA_BUCKET_NAME);
         logger.debug('Resetting Minio tags done');
     }
 
@@ -340,7 +318,7 @@ export class FileController {
     @ApiOkResponse({
         description: 'Recomputing file sizes completed',
     })
-    async recomputeFileSizes() {
+    async recomputeFileSizes(): Promise<void> {
         logger.debug('Recomputing file sizes');
         await this.fileService.recomputeFileSizes();
         logger.debug('Recomputing file sizes done');

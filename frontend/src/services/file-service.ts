@@ -8,6 +8,7 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
+import { FileType } from '@common/enum';
 import { QueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
 import pLimit from 'p-limit';
@@ -67,8 +68,30 @@ export const createFileAction = async (
     });
 };
 
-const isBagOrMCAPFilter = (filename: string): boolean =>
-    filename.endsWith('.bag') || filename.endsWith('.mcap');
+const VALID_EXTENSIONS = Object.values(FileType)
+    .filter((type) => type !== FileType.ALL)
+    .map((type) => `.${type.toLowerCase()}`);
+
+const VALID_EXTENSION_SET = new Set(VALID_EXTENSIONS);
+
+const isValidFileTypeFilter = (filename: string): boolean => {
+    const lastDotIndex = filename.lastIndexOf('.');
+    // Check for no extension or hidden files (e.g., .gitignore)
+    if (lastDotIndex <= 0) {
+        return false;
+    }
+    const extension = filename.slice(Math.max(0, lastDotIndex)).toLowerCase();
+    return VALID_EXTENSION_SET.has(extension);
+};
+
+const invalidFileTypeMessage = `Invalid file type. Only ${VALID_EXTENSIONS.join(
+    ', ',
+)} files are allowed.`;
+
+const hasValidFileSize = (file: File): boolean => {
+    const maxSizeInBytes = 50 * 1024 * 1024 * 1024;
+    return file.size <= maxSizeInBytes && file.size > 0;
+};
 
 async function _createFileAction(
     selectedMission: FlatMissionDto,
@@ -94,8 +117,9 @@ async function _createFileAction(
 
     const validFiles = files.filter(
         (file) =>
-            isBagOrMCAPFilter(file.name) &&
+            isValidFileTypeFilter(file.name) &&
             isValidNameFilter(file.name) &&
+            hasValidFileSize(file) &&
             file.name.length <= 50,
     );
 
@@ -104,30 +128,52 @@ async function _createFileAction(
     ////////////////////////////////////////////////////////////////////////////
     const invalidFiles = files.filter(
         (file) =>
-            !isBagOrMCAPFilter(file.name) ||
+            !isValidFileTypeFilter(file.name) ||
             !isValidNameFilter(file.name) ||
+            !hasValidFileSize(file) ||
             file.name.length > 50,
     );
 
     if (invalidFiles.length > 0) {
-        let message = `Upload of following Files failed: `;
-        const invalidFileTypeMessage = `Invalid file type. Only .bag and .mcap files are allowed.`;
         const invalidFileNameMessage = `Invalid filename. Only alphanumeric characters, underscores, hyphens, dots, spaces, brackets, and umlauts are allowed.`;
         const invalidFileNameLengthMessage = `File name is too long. Maximum length is 50 characters.`;
-        for (const file of invalidFiles) {
+
+        const errorMessages: string[] = invalidFiles.map((file) => {
+            const errors: string[] = [];
+
+            // Check errors in order of precedence
             if (file.name.length > 50) {
-                message += `${file.name}: ${invalidFileNameLengthMessage}`;
+                errors.push(invalidFileNameLengthMessage);
             }
-            if (!isBagOrMCAPFilter(file.name)) {
-                message += `${file.name}: ${invalidFileTypeMessage}`;
+            if (!isValidFileTypeFilter(file.name)) {
+                errors.push(invalidFileTypeMessage);
             }
             if (!isValidNameFilter(file.name)) {
-                message += `${file.name}: ${invalidFileNameMessage}`;
+                errors.push(invalidFileNameMessage);
             }
-        }
+
+            if (!hasValidFileSize(file)) {
+                const fileSize = file.size;
+
+                if (fileSize === 0) {
+                    errors.push(
+                        `File is empty. Please select a file larger than 0 bytes.`,
+                    );
+                } else {
+                    errors.push(
+                        `File is too large. Maximum size 50 GB for bigger files, please use the CLI tool.`,
+                    );
+                }
+            }
+
+            return `<b>${file.name}</b>: ${errors.join('; ')}`;
+        });
+
         Notify.create({
             group: false,
-            message,
+            caption: `Upload of ${invalidFiles.length} file(s) failed:`,
+            message: errorMessages.join('<br>'),
+            html: true,
             color: 'negative',
             spinner: false,
             position: 'bottom',

@@ -17,7 +17,7 @@
                 <create-project-dialog-opener>
                     <q-item clickable>
                         <q-item-section avatar>
-                            <q-icon name="sym_o_tactic" />
+                            <q-icon name="sym_o_box" />
                         </q-item-section>
                         <q-item-section>
                             <q-item-label>Create Project</q-item-label>

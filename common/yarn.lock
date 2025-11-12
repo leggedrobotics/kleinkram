@@ -16,10 +16,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@faker-js/faker@^10.0.0":
-  version "10.0.0"
-  resolved "https://registry.yarnpkg.com/@faker-js/faker/-/faker-10.0.0.tgz#df11f0ba2b2d7243574e34364948d6a25163c6f4"
-  integrity sha512-UollFEUkVXutsaP+Vndjxar40Gs5JL2HeLcl8xO1QAjJgOdhc3OmBFWyEylS+RddWaaBiAzH+5/17PLQJwDiLw==
+"@faker-js/faker@^10.1.0":
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/@faker-js/faker/-/faker-10.1.0.tgz#eb72869d01ccbff41a77aa7ac851ce1ac9371129"
+  integrity sha512-C3mrr3b5dRVlKPJdfrAXS8+dq+rq8Qm5SNRazca0JKgw1HQERFmrVb0towvMmw5uu8hHKNiQasMaR/tydf3Zsg==
 
 "@ioredis/commands@^1.1.1":
   version "1.2.0"
@@ -84,17 +84,17 @@
   resolved "https://registry.yarnpkg.com/@nestjs/mapped-types/-/mapped-types-2.1.0.tgz#b9b536b7c3571567aa1d0223db8baa1a51505a19"
   integrity sha512-W+n+rM69XsFdwORF11UqJahn4J3xi4g/ZEOlJNL6KoW5ygWSmBB2p0S2BZ4FQeS/NDH72e6xIcu35SfJnE8bXw==
 
-"@nestjs/swagger@^11.2.0":
-  version "11.2.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.2.0.tgz#a1b10620a9f90c78edf897a9386dc4f3e014387e"
-  integrity sha512-5wolt8GmpNcrQv34tIPUtPoV1EeFbCetm40Ij3+M0FNNnf2RJ3FyWfuQvI8SBlcJyfaounYVTKzKHreFXsUyOg==
+"@nestjs/swagger@^11.2.1":
+  version "11.2.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.2.1.tgz#590047ed74e4c8417f0b0f0260d04eea9a1d7daf"
+  integrity sha512-1MS7xf0pzc1mofG53xrrtrurnziafPUHkqzRm4YUVPA/egeiMaSerQBD/feiAeQ2BnX0WiLsTX4HQFO0icvOjQ==
   dependencies:
     "@microsoft/tsdoc" "0.15.1"
     "@nestjs/mapped-types" "2.1.0"
     js-yaml "4.1.0"
     lodash "4.17.21"
-    path-to-regexp "8.2.0"
-    swagger-ui-dist "5.21.0"
+    path-to-regexp "8.3.0"
+    swagger-ui-dist "5.29.4"
 
 "@scarf/scarf@=1.4.0":
   version "1.4.0"
@@ -126,12 +126,12 @@
   resolved "https://registry.yarnpkg.com/@tsconfig/node16/-/node16-1.0.4.tgz#0b92dcc0cc1c81f6f306a381f28e31b1a56536e9"
   integrity sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==
 
-"@types/node@^24.7.1":
-  version "24.7.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.7.1.tgz#3f0b17eddcd965c9e337af22459b04bafbf96e5e"
-  integrity sha512-CmyhGZanP88uuC5GpWU9q+fI61j2SkhO3UGMUdfYRE6Bcy0ccyzn1Rqj9YAB/ZY4kOXmNf0ocah5GtphmLMP6Q==
+"@types/node@^24.10.0":
+  version "24.10.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.10.0.tgz#6b79086b0dfc54e775a34ba8114dcc4e0221f31f"
+  integrity sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==
   dependencies:
-    undici-types "~7.14.0"
+    undici-types "~7.16.0"
 
 "@types/validator@^13.11.8":
   version "13.12.2"
@@ -1018,10 +1018,10 @@ path-is-absolute@^1.0.0:
   resolved "https://registry.yarnpkg.com/path-is-absolute/-/path-is-absolute-1.0.1.tgz#174b9268735534ffbc7ace6bf53a5a9e1b5c5f5f"
   integrity sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==
 
-path-to-regexp@8.2.0:
-  version "8.2.0"
-  resolved "https://registry.yarnpkg.com/path-to-regexp/-/path-to-regexp-8.2.0.tgz#73990cc29e57a3ff2a0d914095156df5db79e8b4"
-  integrity sha512-TdrF7fW9Rphjq4RjrW0Kp2AW0Ahwu9sRGTkS6bvDi0SCwZlEZYmcfDbEsTz8RVk0EHIS/Vd1bv3JhG+1xZuAyQ==
+path-to-regexp@8.3.0:
+  version "8.3.0"
+  resolved "https://registry.yarnpkg.com/path-to-regexp/-/path-to-regexp-8.3.0.tgz#aa818a6981f99321003a08987d3cec9c3474cd1f"
+  integrity sha512-7jdwVIRtsP8MYpdXSwOS0YdD0Du+qOoF/AEPIt88PcCFrZCzx41oxku1jD88hZBwbNUIEfpqvuhjFaMAqMTWnA==
 
 pg-cloudflare@^1.2.7:
   version "1.2.7"
@@ -1298,10 +1298,10 @@ supports-color@^7.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-swagger-ui-dist@5.21.0:
-  version "5.21.0"
-  resolved "https://registry.yarnpkg.com/swagger-ui-dist/-/swagger-ui-dist-5.21.0.tgz#aed230fe6e294c9470217e67697d601e3bb8eb9d"
-  integrity sha512-E0K3AB6HvQd8yQNSMR7eE5bk+323AUxjtCz/4ZNKiahOlPhPJxqn3UPIGs00cyY/dhrTDJ61L7C/a8u6zhGrZg==
+swagger-ui-dist@5.29.4:
+  version "5.29.4"
+  resolved "https://registry.yarnpkg.com/swagger-ui-dist/-/swagger-ui-dist-5.29.4.tgz#ba86ff7e18b6b23eecfc32a81220f032d748b468"
+  integrity sha512-gJFDz/gyLOCQtWwAgqs6Rk78z9ONnqTnlW11gimG9nLap8drKa3AJBKpzIQMIjl5PD2Ix+Tn+mc/tfoT2tgsng==
   dependencies:
     "@scarf/scarf" "=1.4.0"
 
@@ -1390,10 +1390,10 @@ typescript@^5.9.3:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.9.3.tgz#5b4f59e15310ab17a216f5d6cf53ee476ede670f"
   integrity sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==
 
-undici-types@~7.14.0:
-  version "7.14.0"
-  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.14.0.tgz#4c037b32ca4d7d62fae042174604341588bc0840"
-  integrity sha512-QQiYxHuyZ9gQUIrmPo3IA+hUl4KYk8uSA7cHrcKd/l3p1OTpZcM0Tbp9x7FAtXdAYhlasd60ncPpgu6ihG6TOA==
+undici-types@~7.16.0:
+  version "7.16.0"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.16.0.tgz#ffccdff36aea4884cbfce9a750a0580224f58a46"
+  integrity sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==
 
 util-deprecate@^1.0.1:
   version "1.0.2"

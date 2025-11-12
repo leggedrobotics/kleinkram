@@ -69,7 +69,7 @@
             v-model="files"
             outlined
             multiple
-            accept=".bag, .mcap"
+            :accept="acceptedFileTypes"
             style="min-width: 300px"
         >
             <template #prepend>
@@ -104,6 +104,7 @@ import { missionsOfProjectMinimal } from 'src/services/queries/mission';
 import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';
 import { FileUploadDto } from '@api/types/upload.dto';
+import { FileType } from '@common/enum';
 import { useFilteredProjects } from 'src/hooks/query-hooks';
 import { createFileAction, driveUpload } from 'src/services/file-service';
 
@@ -116,6 +117,13 @@ const dropdownNewFileProject = ref(false);
 const dropdownNewFileMission = ref(false);
 const files = ref<File[]>([]);
 const { data: filteredProjects } = useFilteredProjects(500, 0, 'name', true);
+
+const acceptedFileTypes = computed(() => {
+    return Object.values(FileType)
+        .filter((type) => type !== FileType.ALL) // Ignore 'ALL'
+        .map((type) => `.${type.toLowerCase()}`) // Convert to .bag format
+        .join(',');
+});
 
 const data = computed(() => {
     if (filteredProjects.value !== undefined) {

@@ -188,10 +188,7 @@ export class WriteProjectGuard extends BaseGuard {
 
 @Injectable()
 export class DeleteProjectGuard extends BaseGuard {
-    constructor(
-        private projectGuardService: ProjectGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private projectGuardService: ProjectGuardService) {
         super();
     }
 

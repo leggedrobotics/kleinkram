@@ -54,6 +54,8 @@ class MissionObjectKeys(str, Enum):
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
     TAGS = "tags"
+    FILESIZE = "size"
+    FILECOUNT = "filesCount"
 
 
 class ProjectObjectKeys(str, Enum):
@@ -135,6 +137,8 @@ def _parse_mission(mission: MissionObject) -> Mission:
         created_at = _parse_datetime(mission[MissionObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(mission[MissionObjectKeys.UPDATED_AT])
         metadata = _parse_metadata(mission[MissionObjectKeys.TAGS])
+        file_count = mission[MissionObjectKeys.FILECOUNT]
+        filesize = mission[MissionObjectKeys.FILESIZE]
 
         project_id, project_name = _get_nested_info(mission, PROJECT)
 
@@ -146,6 +150,8 @@ def _parse_mission(mission: MissionObject) -> Mission:
             metadata=metadata,
             project_id=project_id,
             project_name=project_name,
+            number_of_files=file_count,
+            size=filesize,
         )
     except Exception as e:
         raise ParsingError(f"error parsing mission: {mission}") from e

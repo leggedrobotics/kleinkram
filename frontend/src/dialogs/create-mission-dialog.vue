@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef" title="New Mission">
-        <template #title> New Mission</template>
+        <template #title> New Mission </template>
 
         <template #tabs>
             <q-tabs
@@ -25,7 +25,7 @@
                             : '')
                     "
                     style="color: #222"
-                    :disable="missionCreated"
+                    :disable="!project || missionCreated"
                 />
                 <q-tab
                     name="upload"
@@ -36,64 +36,83 @@
             </q-tabs>
         </template>
         <template #content>
-            <q-tab-panels v-if="project" v-model="tab_selection">
+            <q-tab-panels v-model="tab_selection">
                 <q-tab-panel name="meta_data" style="min-height: 280px">
-                    <label for="projectDescription">Project*</label>
-                    <q-btn-dropdown
-                        v-model="ddr_open"
-                        :disable="!!projectUuid"
-                        :label="project?.name || 'Project'"
-                        class="q-uploader--bordered full-width full-height q-mb-lg"
-                        flat
-                        clearable
-                        required
+                    <div
+                        v-if="
+                            !projectsWithCreateWrite ||
+                            projectsWithCreateWrite.length === 0
+                        "
+                        class="text-grey"
                     >
-                        <q-list>
-                            <q-item
-                                v-for="_project in projectsWithCreateWrite"
-                                :key="_project.uuid"
-                                clickable
-                                @click="() => onClick(_project)"
-                            >
-                                <q-item-section>
-                                    <q-item-label>
-                                        {{ _project.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
+                        <q-icon name="sym_o_info" size="sm" class="q-mr-sm" />
+                        You do not have permission to create missions, or no
+                        projects exist yet.
+                    </div>
+                    <div v-else>
+                        <label for="projectDescription">Project*</label>
+                        <q-btn-dropdown
+                            v-model="ddr_open"
+                            :disable="!!_project_uuid"
+                            :label="project?.name || 'Select a Project'"
+                            class="q-uploader--bordered full-width full-height q-mb-lg"
+                            flat
+                            clearable
+                            required
+                        >
+                            <q-list>
+                                <q-item
+                                    v-for="_project in projectsWithCreateWrite"
+                                    :key="_project.uuid"
+                                    clickable
+                                    @click="() => onClick(_project)"
+                                >
+                                    <q-item-section>
+                                        <q-item-label>
+                                            {{ _project.name }}
+                                        </q-item-label>
+                                    </q-item-section>
+                                </q-item>
+                            </q-list>
+                        </q-btn-dropdown>
 
-                    <label for="missionName">Mission Name *</label>
-                    <q-input
-                        ref="missionNameInput"
-                        v-model="missionName"
-                        name="missionName"
-                        outlined
-                        required
-                        autofocus
-                        dense
-                        placeholder="Name...."
-                        style="padding-bottom: 30px"
-                        :error="!isValidMissionName"
-                        :rules="MISSION_NAME_INPUT_VALIDATION"
-                        :error-message="errorMessage"
-                        @change="onMissionNameChange"
-                    >
-                        <template #error>
-                            {{ errorMessage }}
+                        <template v-if="project">
+                            <label for="missionName">Mission Name *</label>
+                            <q-input
+                                ref="missionNameInput"
+                                v-model="missionName"
+                                name="missionName"
+                                outlined
+                                required
+                                autofocus
+                                dense
+                                placeholder="Name...."
+                                style="padding-bottom: 30px"
+                                :error="!isValidMissionName"
+                                :rules="MISSION_NAME_INPUT_VALIDATION"
+                                :error-message="errorMessage"
+                                @change="onMissionNameChange"
+                            >
+                                <template #error>
+                                    {{ errorMessage }}
+                                </template>
+                                <template v-if="missionName" #append>
+                                    <q-icon
+                                        name="sym_o_cancel"
+                                        class="cursor-pointer"
+                                        @click.stop.prevent="clearMissionName"
+                                    />
+                                </template>
+                            </q-input>
                         </template>
-                        <template v-if="missionName" #append>
-                            <q-icon
-                                name="sym_o_cancel"
-                                class="cursor-pointer"
-                                @click.stop.prevent="clearMissionName"
-                            />
-                        </template>
-                    </q-input>
+                        <div v-else class="text-grey">
+                            Please select a project to create a mission.
+                        </div>
+                    </div>
                 </q-tab-panel>
                 <q-tab-panel name="tags" style="min-height: 280px">
                     <SelectMissionTags
+                        v-if="project"
                         :tag-values="tagValues"
                         :project-uuid="project.uuid"
                         @update:tag-values="updateTagValue"
@@ -116,6 +135,7 @@
                 flat
                 label="Next"
                 :disable="
+                    !project ||
                     missionName.length < MIN_MISSION_NAME_LENGTH ||
                     missionName.length > MAX_MISSION_NAME_LENGTH
                 "
@@ -132,7 +152,7 @@
             />
             <q-btn
                 v-if="tab_selection === 'upload'"
-                flatŋ
+                flat
                 label="Upload & Exit"
                 class="bg-button-primary"
                 @click="uploadEventHandler"

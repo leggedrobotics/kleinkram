@@ -167,9 +167,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         const temporaryFileName = `/tmp/${file.uuid}.${file.filename.split('.').pop()}`;
 
         await downloadMinioFile(
-            file.type === FileType.BAG
-                ? env.MINIO_BAG_BUCKET_NAME
-                : env.MINIO_MCAP_BUCKET_NAME,
+            env.MINIO_DATA_BUCKET_NAME,
             file.uuid,
             temporaryFileName,
         );
@@ -217,8 +215,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         // set tag inside minio
         await addTagsToMinioObject(
             sourceIsBag
-                ? env.MINIO_BAG_BUCKET_NAME
-                : env.MINIO_MCAP_BUCKET_NAME,
+                ? env.MINIO_DATA_BUCKET_NAME
+                : env.MINIO_DATA_BUCKET_NAME,
             queue.identifier,
             {
                 missionUuid: queue.mission.uuid,
@@ -231,8 +229,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         const filehash = await traceWrapper(async () => {
             return await downloadMinioFile(
                 sourceIsBag
-                    ? env.MINIO_BAG_BUCKET_NAME
-                    : env.MINIO_MCAP_BUCKET_NAME,
+                    ? env.MINIO_DATA_BUCKET_NAME
+                    : env.MINIO_DATA_BUCKET_NAME,
                 queue.identifier,
                 temporaryFileName,
             );
@@ -348,7 +346,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
                 __queue.state = QueueState.UPLOADING;
                 await this.queueRepository.save(__queue);
                 await uploadLocalFile(
-                    env.MINIO_MCAP_BUCKET_NAME,
+                    env.MINIO_DATA_BUCKET_NAME,
                     _mcapFileEntity.uuid,
                     _mcapFileEntity.filename,
                     temporaryFileNameMcap,
@@ -363,7 +361,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
                 // set tag inside minio
                 await addTagsToMinioObject(
-                    env.MINIO_MCAP_BUCKET_NAME,
+                    env.MINIO_DATA_BUCKET_NAME,
                     _mcapFileEntity.uuid,
                     {
                         missionUuid: __queue.mission.uuid,
@@ -654,7 +652,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
             await this.queueRepository.save(queueEntity);
 
             await uploadLocalFile(
-                env.MINIO_MCAP_BUCKET_NAME,
+                env.MINIO_DATA_BUCKET_NAME,
                 mcapFileEntity.uuid,
                 mcapFileEntity.filename,
                 temporaryFileNameMcap,
@@ -680,7 +678,7 @@ export class FileQueueProcessorProvider implements OnModuleInit {
 
             // set tag inside minio
             await addTagsToMinioObject(
-                env.MINIO_MCAP_BUCKET_NAME,
+                env.MINIO_DATA_BUCKET_NAME,
                 mcapFileEntity.uuid,
                 {
                     missionUuid: queueEntity.mission.uuid,
@@ -701,8 +699,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         logger.debug(`Uploading file: ${originalFileName} to Minio`);
         await uploadLocalFile(
             sourceIsBag
-                ? env.MINIO_BAG_BUCKET_NAME
-                : env.MINIO_MCAP_BUCKET_NAME,
+                ? env.MINIO_DATA_BUCKET_NAME
+                : env.MINIO_DATA_BUCKET_NAME,
             savedFileEntity.uuid,
             savedFileEntity.filename,
             temporaryFileName,
@@ -714,8 +712,8 @@ export class FileQueueProcessorProvider implements OnModuleInit {
         // set tag inside minio
         await addTagsToMinioObject(
             sourceIsBag
-                ? env.MINIO_BAG_BUCKET_NAME
-                : env.MINIO_MCAP_BUCKET_NAME,
+                ? env.MINIO_DATA_BUCKET_NAME
+                : env.MINIO_DATA_BUCKET_NAME,
             savedFileEntity.uuid,
             {
                 missionUuid: queueEntity.mission.uuid,

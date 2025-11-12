@@ -7,7 +7,6 @@ import { ActionsDto } from '@api/types/actions/action.dto';
 import { CategoriesDto } from '@api/types/category.dto';
 import { FileQueueEntriesDto } from '@api/types/file/file-queue-entry.dto';
 import { FileDto, FileWithTopicDto } from '@api/types/file/file.dto';
-import { FilesDto } from '@api/types/file/files.dto';
 import {
     MissionsDto,
     MissionWithFilesDto,
@@ -26,7 +25,6 @@ import {
     AccessGroupRights,
     AccessGroupType,
     DataType,
-    FileType,
     UserRole,
 } from '@common/enum';
 import {
@@ -47,7 +45,6 @@ import { getActions, getRunningActions } from 'src/services/queries/action';
 import { getCategories } from 'src/services/queries/categories';
 import {
     fetchFile,
-    filesOfMission,
     getIsUploading,
     getStorage,
 } from 'src/services/queries/file';
@@ -569,19 +566,6 @@ export const useAccessGroup = (
         },
     });
 };
-
-export const useMcapFilesOfMission = (
-    uuid: string | undefined,
-    mcapName: string,
-): UseQueryReturnType<FilesDto | undefined, Error> =>
-    useQuery({
-        queryKey: computed(() => ['files', uuid, mcapName]),
-        queryFn: () =>
-            filesOfMission(uuid ?? '', 100, 0, FileType.MCAP, mcapName),
-        enabled() {
-            return uuid !== undefined;
-        },
-    });
 
 export const useRunningActions = (): UseQueryReturnType<
     ActionsDto | undefined,

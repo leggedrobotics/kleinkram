@@ -131,28 +131,10 @@
     </div>
     <div class="row">
         <div class="col-2 q-pa-sm">
-            <q-btn-dropdown
-                clearable
-                dense
-                flat
-                class="full-width full-height button-border"
-                :label="'File Types: ' + selectedFileTypes"
-            >
-                <q-list style="width: 100%">
-                    <q-item
-                        v-for="(option, index) in fileTypeFilter"
-                        :key="index"
-                    >
-                        <q-item-section class="items-center">
-                            <q-toggle
-                                :model-value="fileTypeFilter[index]?.value"
-                                :label="option.name"
-                                @click="() => onFileTypeClicked(index)"
-                            />
-                        </q-item-section>
-                    </q-item>
-                </q-list>
-            </q-btn-dropdown>
+            <file-type-selector
+                ref="fileTypeSelectorReference"
+                v-model="fileTypeFilter"
+            />
         </div>
         <div class="col-2 q-pa-sm" style="margin: 0">
             <q-input
@@ -196,14 +178,14 @@
                 style="min-width: 60px"
             >
                 <template #label>
-                    {{ and_or ? 'And' : 'Or' }}
+                    {{ matchAllTopics ? 'And' : 'Or' }}
                 </template>
                 <q-list>
                     <q-item
                         v-for="(item, index) in ['And', 'Or']"
                         :key="index"
                         clickable
-                        @click="() => (and_or = item === 'And')"
+                        @click="() => (matchAllTopics = item === 'And')"
                     >
                         <q-item-section>
                             {{ item }}
@@ -359,13 +341,17 @@ import ROUTES from 'src/router/routes';
 import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
-import { fetchOverview } from 'src/services/queries/file';
+import { fetchFilteredFiles } from 'src/services/queries/file';
 import { allTopicsNames } from 'src/services/queries/topic';
 import { useRouter } from 'vue-router';
 
 import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
+import { FileType } from '@common/enum';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
+import FileTypeSelector, {
+    FileTypeOption,
+} from 'components/file-type-selector.vue';
 import TitleSection from 'components/title-section.vue';
 
 const $router = useRouter();
@@ -385,10 +371,13 @@ const end = new Date();
 const startDates = ref(formatDate(start));
 const endDates = ref(formatDate(end));
 
-const fileTypeFilter = ref([
-    { name: 'Bag', value: false },
-    { name: 'MCAP', value: true },
-]);
+const fileTypeFilter = ref<FileTypeOption[] | undefined>(undefined);
+const fileTypeSelectorReference = ref<
+    | {
+          setAll?: (value: boolean) => void;
+      }
+    | undefined
+>(undefined);
 
 const selected_project = computed(() =>
     projects.value.find(
@@ -429,7 +418,7 @@ const { data: allTopics } = useQuery<string[]>({
 const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 
-const and_or = ref(false);
+const matchAllTopics = ref(false);
 const tagFilter: Ref<Record<string, { name: string; value: string }>> = ref({});
 
 end.setHours(23, 59, 59, 999);
@@ -437,10 +426,11 @@ end.setHours(23, 59, 59, 999);
 const startDate = computed(() => parseDate(startDates.value));
 const endDate = computed(() => parseDate(endDates.value));
 
-const selectedFileTypesFilter = computed(() => {
-    return fileTypeFilter.value
-        .filter((item) => item.value)
-        .map((item) => item.name);
+const selectedFileTypesFilter = computed<FileType[]>(() => {
+    const list = fileTypeFilter.value ?? [];
+    return list
+        .filter((option) => option.value)
+        .map((option) => option.name) as FileType[];
 });
 
 const pagination = computed(() => {
@@ -477,7 +467,7 @@ const queryKeyFiles = computed(() => [
     startDate,
     endDate,
     selectedTopics,
-    and_or,
+    matchAllTopics,
     tagFilter,
     selectedFileTypesFilter,
     handler.value.queryKey,
@@ -491,26 +481,20 @@ const tagFilterQuery = computed(() => {
     return query;
 });
 
-const selectedFileTypes = computed(() => {
-    return fileTypeFilter.value
-        .filter((item) => item.value)
-        .map((item) => item.name)
-        .join(' & ');
-});
-
 const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
     useQuery<FilesDto>({
         queryKey: queryKeyFiles,
         queryFn: () =>
-            fetchOverview(
+            fetchFilteredFiles(
                 filter.value,
                 handler.value.projectUuid,
                 handler.value.missionUuid,
                 startDate.value,
                 endDate.value,
-                selectedTopics.value || [],
-                and_or.value,
-                selectedFileTypesFilter.value as ('mcap' | 'bag')[],
+                selectedTopics.value ?? [],
+                [],
+                matchAllTopics.value,
+                selectedFileTypesFilter.value ?? ([] as FileType[]),
                 tagFilterQuery.value,
                 handler.value.take,
                 handler.value.skip,
@@ -655,15 +639,6 @@ const onRowClick = async (_: any, row: any) => {
     });
 };
 
-function onFileTypeClicked(index: number) {
-    // @ts-ignore
-    fileTypeFilter.value[index].value = !fileTypeFilter.value[index]?.value;
-    if (!fileTypeFilter.value[0]?.value && !fileTypeFilter.value[1]?.value) {
-        // @ts-ignore
-        fileTypeFilter.value[1 - index].value = true;
-    }
-}
-
 function resetStartDate() {
     startDates.value = formatDate(start);
 }
@@ -678,11 +653,19 @@ function resetFilter() {
     handler.value.setSearch({ name: '' });
     filter.value = '';
     selectedTopics.value = [];
-    and_or.value = false;
-    fileTypeFilter.value = [
-        { name: 'Bag', value: false },
-        { name: 'MCAP', value: true },
-    ];
+    matchAllTopics.value = false;
+    // On reset select all file types via component API if available
+    if (
+        fileTypeSelectorReference.value &&
+        typeof fileTypeSelectorReference.value.setAll === 'function'
+    ) {
+        fileTypeSelectorReference.value.setAll(true);
+    } else if (fileTypeFilter.value) {
+        fileTypeFilter.value = fileTypeFilter.value.map((it) => ({
+            ...it,
+            value: true,
+        }));
+    }
     tagFilter.value = {};
     resetStartDate();
     resetEndDate();

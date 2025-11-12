@@ -1,5 +1,5 @@
 <template>
-    <title-section :title="`Good Morning, ${user?.name}`" />
+    <title-section :title="`${greeting}, ${user?.name}`" />
 
     <div class="q-mt-lg q-mb-lg dashboard-grid">
         <DashboardRecentProjects />
@@ -16,8 +16,21 @@ import DashboardWorkerLists from 'components/dashboard/dashborad-woker-list.vue'
 import RunningActions from 'components/running-actions.vue';
 import TitleSection from 'components/title-section.vue';
 import { useUser } from 'src/hooks/query-hooks';
+import { computed } from 'vue';
 
 const { data: user } = useUser();
+
+const greeting = computed(() => {
+    const currentHour = new Date().getHours();
+
+    if (currentHour < 12) {
+        return 'Good Morning';
+    } else if (currentHour < 18) {
+        return 'Good Afternoon';
+    } else {
+        return 'Good Evening';
+    }
+});
 </script>
 
 <style scoped>
@@ -41,11 +54,5 @@ const { data: user } = useUser();
         grid-template-columns: repeat(4, minmax(0, 1fr));
         grid-template-rows: repeat(2, 350px);
     }
-}
-
-/* used in the child components */
-.dashboard-card {
-    border-radius: 3px;
-    border: solid 1.5px #e0e0e0;
 }
 </style>

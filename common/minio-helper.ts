@@ -26,7 +26,7 @@ export const internalMinio: Client = new Client({
 });
 
 export async function getInfoFromMinio(fileType: FileType, location: string) {
-    const bucketName = getBucketFromFileType(fileType);
+    const bucketName = environment.MINIO_DATA_BUCKET_NAME;
     try {
         return await internalMinio.statObject(bucketName, location);
     } catch (error: any) {
@@ -45,22 +45,6 @@ export async function addTagsToMinioObject(
     await internalMinio.setObjectTagging(bucketName, objectName, tags, {
         versionId: 'null',
     });
-}
-
-/**
- * Get the bucket name from the file type
- *
- * @param fileType - The file type to get the bucket name for
- *
- */
-export function getBucketFromFileType(fileType: FileType): string {
-    if (!Object.values(FileType).includes(fileType)) {
-        throw new Error('Invalid file type');
-    }
-
-    return fileType === FileType.BAG
-        ? environment.MINIO_BAG_BUCKET_NAME
-        : environment.MINIO_MCAP_BUCKET_NAME;
 }
 
 /**

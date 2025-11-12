@@ -10,7 +10,9 @@ export default class Category extends BaseEntity {
     @Column()
     name!: string;
 
-    @ManyToOne(() => Project, (project) => project.categories)
+    @ManyToOne(() => Project, (project) => project.categories, {
+        onDelete: 'CASCADE',
+    })
     project?: Project;
 
     @ManyToMany(() => FileEntity, (file) => file.categories)

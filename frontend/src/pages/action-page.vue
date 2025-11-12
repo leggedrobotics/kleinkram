@@ -1,5 +1,5 @@
 <template>
-    <title-section title="Mission Analysis" />
+    <title-section title="Kleinkram Actions" />
 
     <ActionConfiguration :open="createAction" @close="closeHandler" />
 
@@ -96,14 +96,23 @@
     </div>
 
     <div>
-        <template v-if="selectedProject">
+        <template v-if="selectedProject && selectedMission">
             <ActionsTable :handler="handler" />
         </template>
-        <template v-else>
-            <div class="text">Please select a project and a mission to...</div>
-        </template>
-    </div>
 
+        <!-- Empty State -->
+        <div v-else class="empty-state-wrapper">
+            <div class="empty-state-content">
+                <q-icon name="sym_o_analytics" size="lg" color="grey-6" />
+                <span class="text-h6 text-grey-7 q-mt-md">
+                    No running actions
+                </span>
+                <span class="text-body1 text-grey-6 q-mt-sm">
+                    Your running actions will appear here.
+                </span>
+            </div>
+        </div>
+    </div>
     <BullQueue v-if="showBullQueue" />
 </template>
 
@@ -224,3 +233,24 @@ const closeHandler = (): void => {
     createAction.value = false;
 };
 </script>
+
+<style scoped lang="scss">
+.empty-state-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    border: 1px dashed #e0e0e0;
+    border-radius: 4px;
+    background-color: #fafafa;
+    margin-top: 16px;
+}
+
+.empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px;
+}
+</style>

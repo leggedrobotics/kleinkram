@@ -4,19 +4,27 @@
         <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Recently used projects</span>
             <div class="arrow-buttons">
+                <template v-if="projects.length > 0">
+                    <q-btn
+                        :disable="!canScrollLeft"
+                        flat
+                        icon="sym_o_arrow_back"
+                        class="scroll-button"
+                        @click="scrollLeft"
+                    />
+                    <q-btn
+                        :disable="!canScrollRight"
+                        flat
+                        icon="sym_o_arrow_forward"
+                        class="scroll-button"
+                        @click="scrollRight"
+                    />
+                </template>
                 <q-btn
-                    :disable="!canScrollLeft"
                     flat
-                    icon="sym_o_arrow_back"
+                    icon="sym_o_arrow_outward"
                     class="scroll-button"
-                    @click="scrollLeft"
-                />
-                <q-btn
-                    :disable="!canScrollRight"
-                    flat
-                    icon="sym_o_arrow_forward"
-                    class="scroll-button"
-                    @click="scrollRight"
+                    @click="toProjects"
                 />
             </div>
         </q-card>
@@ -24,7 +32,12 @@
         <q-separator />
 
         <!-- Scrollable Card Section -->
-        <div ref="cardWrapper" class="card-wrapper" @scroll="checkScroll">
+        <div
+            v-if="projects.length > 0"
+            ref="cardWrapper"
+            class="card-wrapper"
+            @scroll="checkScroll"
+        >
             <template v-for="project in projects" :key="project.uuid">
                 <div class="card">
                     <q-card
@@ -64,6 +77,19 @@
                 <q-separator vertical />
             </template>
         </div>
+
+        <!-- Empty State -->
+        <div v-else class="empty-state-wrapper">
+            <div class="empty-state-content">
+                <q-icon name="sym_o_box" size="lg" color="grey-6" />
+                <span class="text-h6 text-grey-7 q-mt-md">
+                    No recent projects
+                </span>
+                <span class="text-body1 text-grey-6 q-mt-sm">
+                    Your recently used projects will appear here.
+                </span>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -84,6 +110,10 @@ const { data } = useQuery<ResentProjectsDto | undefined>({
     queryKey: ['projects', 5],
     queryFn: () => recentProjects(5),
 });
+
+const toProjects = async (): Promise<void> => {
+    await router.push('projects');
+};
 
 const projects: ComputedRef<ResentProjectDto[]> = computed(() =>
     data.value ? data.value.data : [],
@@ -165,6 +195,7 @@ await nextTick(() => {
     margin-top: 0;
     padding-top: 0;
     scrollbar-width: none;
+    flex-grow: 1; /* Ensure it can grow if content is sparse */
 }
 
 .card {
@@ -178,5 +209,23 @@ await nextTick(() => {
 
 .scroll-button {
     z-index: 1;
+}
+
+.empty-state-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+    padding: 16px;
+    flex-grow: 1;
+}
+
+.empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 </style>

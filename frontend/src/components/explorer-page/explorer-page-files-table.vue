@@ -194,6 +194,7 @@
 import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
+import { HealthStatus } from '@common/enum';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
@@ -279,10 +280,9 @@ const queryKey = computed(() => [
     'files',
     missionUuid.value,
     properties.urlHandler.queryKey,
-    properties.urlHandler.fileType,
+    properties.urlHandler.fileTypes,
     properties.urlHandler.categories,
 ]);
-
 const {
     data: rawData,
     isLoading,
@@ -293,15 +293,12 @@ const {
             missionUuid.value ?? '',
             properties.urlHandler.take,
             properties.urlHandler.skip,
-            properties.urlHandler.fileType,
+            properties.urlHandler.fileTypes,
             properties.urlHandler.searchParams.name,
             properties.urlHandler.categories,
             properties.urlHandler.sortBy,
             properties.urlHandler.descending,
-            properties.urlHandler.searchParams.health as
-                | 'Healthy'
-                | 'Unhealthy'
-                | 'Uploading',
+            properties.urlHandler.searchParams.health as HealthStatus,
         ),
 });
 const data = computed(() => (rawData.value ? rawData.value.data : []));

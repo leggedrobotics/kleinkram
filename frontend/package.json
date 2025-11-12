@@ -1,6 +1,6 @@
 {
     "name": "kleinkram-frontend",
-    "version": "0.51.0",
+    "version": "0.52.0",
     "description": "Data storage of ROS bags",
     "productName": "Kleinkram",
     "author": "Johann Schwabe <johann@schwabe.dev>",
@@ -13,29 +13,29 @@
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.726.1",
-        "@tanstack/vue-query": "^5.90.2",
-        "axios": "^1.12.2",
+        "@tanstack/vue-query": "^5.90.5",
+        "axios": "^1.13.2",
         "date-fns": "^4.1.0",
         "echarts": "^5.5.1",
         "jwt-decode": "^4.0.0",
-        "p-limit": "^7.1.1",
+        "p-limit": "^7.2.0",
         "postcss": "^8.5.6",
         "quasar": "^2.18.5",
         "spark-md5": "^3.0.2",
-        "vue": "^3.5.21",
+        "vue": "^3.5.24",
         "vue-echarts": "^7.0.3",
-        "vue-json-pretty": "^2.5.0",
-        "vue-router": "^4.5.1"
+        "vue-json-pretty": "^2.6.0",
+        "vue-router": "^4.6.3"
     },
     "devDependencies": {
         "@quasar/app-vite": "^2.4.0",
-        "@types/node": "^24.7.0",
+        "@types/node": "^24.10.0",
         "@types/spark-md5": "^3.0.5",
         "autoprefixer": "^10.4.21",
         "jiti": "^2.6.1",
         "tsx": "^4.20.6",
         "typescript": "^5.9.3",
-        "vue-tsc": "^3.0.8"
+        "vue-tsc": "^3.1.1"
     },
     "engines": {
         "node": "^22 || ^24",

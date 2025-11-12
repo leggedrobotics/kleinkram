@@ -120,11 +120,8 @@ export default {
         return asString(process.env['MINIO_SECRET_KEY']);
     },
 
-    get MINIO_MCAP_BUCKET_NAME(): string {
-        return asString(process.env['MINIO_MCAP_BUCKET_NAME']);
-    },
-    get MINIO_BAG_BUCKET_NAME(): string {
-        return asString(process.env['MINIO_BAG_BUCKET_NAME']);
+    get MINIO_DATA_BUCKET_NAME(): string {
+        return asString(process.env['MINIO_DATA_BUCKET_NAME']);
     },
     get MINIO_DB_BUCKET_NAME(): string {
         return asString(process.env['MINIO_DB_BUCKET_NAME']);
@@ -189,5 +186,13 @@ export default {
 
     get VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT(): boolean {
         return asBoolean(process.env['VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT']);
+    },
+
+    /**
+     * @returns Docker Hub namespace for image validation (optional)
+     * @example rslethz/
+     */
+    get DOCKER_HUB_NAMESPACE(): string {
+        return process.env['VITE_DOCKER_HUB_NAMESPACE'] ?? '';
     },
 };

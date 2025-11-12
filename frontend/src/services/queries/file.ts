@@ -2,24 +2,26 @@ import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
 import { IsUploadingDto } from '@api/types/file/is-uploading.dto';
 import { StorageOverviewDto } from '@api/types/storage-overview.dto';
-import { FileType } from '@common/enum';
+import { FileType, HealthStatus } from '@common/enum';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
-export const fetchOverview = async (
+export const fetchFilteredFiles = async (
     filename: string,
     projectUUID?: string,
     missionUUID?: string,
     startDate?: Date,
     endDate?: Date,
     topics?: string[],
-    andOr?: boolean,
-    fileTypes?: ('mcap' | 'bag')[],
+    categories?: string[],
+    matchAllTopics?: boolean,
+    fileTypes?: FileType[],
     tag?: Record<string, any>,
     take?: number,
     skip?: number,
     sort?: string,
     desc?: boolean,
+    health?: HealthStatus,
 ): Promise<FilesDto> => {
     try {
         const parameters: Record<string, string> = {};
@@ -29,7 +31,11 @@ export const fetchOverview = async (
         if (startDate) parameters.startDate = startDate.toISOString();
         if (endDate) parameters.endDate = endDate.toISOString();
         if (topics && topics.length > 0) parameters.topics = topics.join(',');
-        if (andOr !== undefined) parameters.andOr = andOr.toString();
+        if (categories && categories.length > 0) {
+            parameters.categories = categories.join(',');
+        }
+        if (matchAllTopics !== undefined)
+            parameters.matchAllTopics = matchAllTopics.toString();
         if (fileTypes !== undefined) parameters.fileTypes = fileTypes.join(',');
         if (tag) parameters.tags = JSON.stringify(tag);
         if (take) parameters.take = take.toString();
@@ -37,6 +43,8 @@ export const fetchOverview = async (
         if (sort) parameters.sort = sort;
         if (desc !== undefined)
             parameters.sortDirection = desc ? 'DESC' : 'ASC';
+        if (health) parameters.health = health;
+
         const queryParameters = new URLSearchParams(parameters).toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
             `/file/filtered?${queryParameters}`,
@@ -74,42 +82,32 @@ export const filesOfMission = async (
     missionUUID: string,
     take: number,
     skip: number,
-    fileType?: FileType,
+    fileTypes?: FileType[],
     filename?: string,
     categories?: string[],
     sort = 'filename',
     desc = false,
-    health?: 'Healthy' | 'Unhealthy' | 'Uploading',
+    health?: HealthStatus,
 ): Promise<FilesDto> => {
-    const parameters: Record<string, string | number | boolean | string[]> = {
-        uuid: missionUUID,
+    const tag: Record<string, any> = {};
+
+    return fetchFilteredFiles(
+        filename || '',
+        undefined,
+        missionUUID,
+        undefined,
+        undefined,
+        undefined,
+        categories,
+        true,
+        fileTypes,
+        Object.keys(tag).length > 0 ? tag : undefined,
         take,
         skip,
         sort,
-        desc: desc ? 'DESC' : 'ASC',
-    };
-
-    if (fileType && fileType !== FileType.ALL) {
-        parameters.fileType = fileType;
-    }
-
-    if (filename) {
-        parameters.filename = filename;
-    }
-
-    if (health) {
-        parameters.health = health;
-    }
-
-    if (categories && categories.length > 0) {
-        parameters.categories = JSON.stringify(categories);
-    }
-
-    const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
-        'file/ofMission',
-        { params: parameters },
+        desc,
+        health,
     );
-    return response.data;
 };
 
 export const findOneByNameAndMission = async (
@@ -138,7 +136,7 @@ export const getIsUploading = async (): Promise<boolean> => {
     return response.data.isUploading;
 };
 
-export const existsFile = async (uuid: string) => {
+export const existsFile = async (uuid: string): Promise<any> => {
     try {
         const response = await axios.get('/file/exists', {
             params: { uuid },

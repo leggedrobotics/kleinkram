@@ -174,6 +174,7 @@ const ROUTES = {
         component: () => import('pages/access-group-details-page.vue'),
         layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
+
     HOME: routeWithLayout({
         name: 'HomePage',
         path: '/',

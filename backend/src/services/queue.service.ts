@@ -39,11 +39,8 @@ import { StopJobResponseDto } from '@common/api/types/queue/stop-job-response.dt
 import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
 import { redis } from '@common/consts';
 import User from '@common/entities/user/user.entity';
-import {
-    getBucketFromFileType,
-    getInfoFromMinio,
-    internalMinio,
-} from '@common/minio-helper';
+import env from '@common/environment';
+import { getInfoFromMinio, internalMinio } from '@common/minio-helper';
 import { addActionQueue } from '@common/scheduling-logic';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
@@ -372,7 +369,7 @@ export class QueueService implements OnModuleInit {
         if (!file) {
             return {};
         }
-        const minioBucket = getBucketFromFileType(file.type);
+        const minioBucket = env.MINIO_DATA_BUCKET_NAME;
         try {
             await internalMinio.removeObject(minioBucket, file.uuid);
         } catch (error: any) {
@@ -389,7 +386,7 @@ export class QueueService implements OnModuleInit {
             if (mcap) {
                 try {
                     await internalMinio.removeObject(
-                        getBucketFromFileType(mcap.type),
+                        env.MINIO_DATA_BUCKET_NAME,
                         mcap.uuid,
                     );
                 } catch (error: any) {

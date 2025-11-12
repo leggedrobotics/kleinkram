@@ -76,8 +76,7 @@ services:
         # initialize buckets (see https://github.com/minio/minio/issues/4769#issuecomment-331033735)
         # and add service worker access key after startup of the minio server
         command: >
-            -c "mkdir -p /data/${MINIO_BAG_BUCKET_NAME} &&
-            mkdir -p /data/${MINIO_MCAP_BUCKET_NAME} && 
+            -c "mkdir -p /data/${MINIO_DATA_BUCKET_NAME} &&
             mkdir -p /data/${MINIO_DB_BUCKET_NAME} &&
             /usr/bin/minio server --console-address ':9001' /data & 
             sleep 10 &&

@@ -101,6 +101,7 @@ export enum FileType {
     BAG = 'BAG',
     MCAP = 'MCAP',
     YAML = 'YAML',
+    YML = 'YML',
     SVO2 = 'SVO2',
     TUM = 'TUM',
     DB3 = 'DB3',
@@ -138,6 +139,12 @@ export enum FileState {
     CONVERSION_ERROR = 'CONVERSION_ERROR',
     LOST = 'LOST',
     FOUND = 'FOUND',
+}
+
+export enum HealthStatus {
+    HEALTHY = 'Healthy',
+    UNHEALTHY = 'Unhealthy',
+    UPLOADING = 'Uploading',
 }
 
 export enum AccessGroupRights {

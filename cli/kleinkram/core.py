@@ -22,6 +22,7 @@ from typing import Optional
 from typing import Sequence
 from uuid import UUID
 
+import httpx
 from rich.console import Console
 from tqdm import tqdm
 
@@ -33,6 +34,7 @@ from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.api.query import check_mission_query_is_creatable
+from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
@@ -67,7 +69,12 @@ def download(
         raise ValueError(f"Destination {base_dir.absolute()} is not a directory")
 
     # retrive files and get the destination paths
-    files = list(kleinkram.api.routes.get_files(client, file_query=query))
+    try:
+        files = list(kleinkram.api.routes.get_files(client, file_query=query))
+    except httpx.HTTPStatusError:
+        raise InvalidFileQuery(
+            f"Files not found. Maybe you forgot to specify mission or project flags: {query}"
+        )
     paths = file_paths_from_files(files, dest=base_dir, allow_nested=nested)
 
     if verbose:
@@ -107,7 +114,9 @@ def upload(
 
     if create and mission is None:
         # check if project exists and get its id at the same time
-        project = kleinkram.api.routes.get_project(client, query=query.project_query)
+        project = kleinkram.api.routes.get_project(
+            client, query=query.project_query, exact_match=True
+        )
         project_id = project.id
         project_required_tags = project.required_tags
         mission_name = check_mission_query_is_creatable(query)

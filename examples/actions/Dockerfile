@@ -1,7 +1,7 @@
 FROM python:latest
 
 # install kleinkram as CLI
-RUN pip install kleinkram --pre --force-reinstall
+RUN pip install kleinkram --pre --force-reinstall && pip install "httpx==0.26.0"
 
 # copy entrypoint and make it executable
 COPY ./entrypoint.sh /entrypoint.sh

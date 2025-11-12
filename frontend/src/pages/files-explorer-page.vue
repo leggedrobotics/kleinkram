@@ -220,29 +220,9 @@
                     :project-uuid="projectUuid"
                     @update:selected="updateSelected"
                 />
-                <q-btn-dropdown
-                    clearable
-                    dense
-                    class="button-border"
-                    flat
-                    style="min-width: 220px"
-                    :label="'File Types: ' + selectedFileTypes"
-                >
-                    <q-list style="width: 100%">
-                        <q-item
-                            v-for="(option, index) in fileTypeFilter"
-                            :key="index"
-                        >
-                            <q-item-section class="items-baseline">
-                                <q-toggle
-                                    :model-value="fileTypeFilter[index]?.value"
-                                    :label="option.name"
-                                    @click="() => onFileTypeClicked(index)"
-                                />
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-btn-dropdown>
+                <div class="button-border" style="min-width: 220px">
+                    <file-type-selector v-model="fileTypeFilter" />
+                </div>
                 <q-input
                     v-model="search"
                     debounce="300"
@@ -365,7 +345,7 @@
 <script setup lang="ts">
 import { CategoryDto } from '@api/types/category.dto';
 import { TagDto } from '@api/types/tags/tags.dto';
-import { DataType, FileType } from '@common/enum';
+import { DataType, FileType, HealthStatus } from '@common/enum';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { copyToClipboard, Notify, useQuasar } from 'quasar';
 import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
@@ -397,6 +377,9 @@ import KleinDownloadFiles from 'components/cli-links/klein-download-files.vue';
 import KleinDownloadMission from 'components/cli-links/klein-download-mission.vue';
 import ExplorerPageFilesTable from 'components/explorer-page/explorer-page-files-table.vue';
 import ExplorerPageTableHeader from 'components/explorer-page/explorer-page-table-header.vue';
+import FileTypeSelector, {
+    FileTypeOption,
+} from 'components/file-type-selector.vue';
 import TitleSection from 'components/title-section.vue';
 import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
@@ -418,17 +401,13 @@ const search = computed({
         });
     },
 });
-const fileTypeFilter = ref([
-    { name: 'Bag', value: true },
-    { name: 'MCAP', value: true },
-]);
-const selectedFileTypes = computed(() => {
-    return fileTypeFilter.value
-        .filter((item) => item.value)
-        .map((item) => item.name)
-        .join(' & ');
-});
-const fileHealthOptions = ['Healthy', 'Uploading', 'Unhealthy'];
+
+const fileTypeFilter = ref<FileTypeOption[] | undefined>(undefined);
+const fileHealthOptions = [
+    HealthStatus.HEALTHY,
+    HealthStatus.UPLOADING,
+    HealthStatus.UPLOADING,
+];
 
 const selectedFileHealth = computed<string, string | undefined>({
     // @ts-ignore
@@ -442,28 +421,20 @@ const selectedFileHealth = computed<string, string | undefined>({
 const selectedFiles: Ref<FileWithTopicDto[]> = ref([]);
 watch(
     () => fileTypeFilter.value,
-    () => {
-        if (fileTypeFilter.value[0]?.value && fileTypeFilter.value[1]?.value) {
-            handler.value.setFileType(FileType.ALL);
+    (options) => {
+        if (!options) {
+            handler.value.setFileTypes([]);
             return;
         }
-        handler.value.setFileType(
-            fileTypeFilter.value[0]?.value ? FileType.BAG : FileType.MCAP,
-        );
+
+        const selectedTypes = options
+            .filter((option) => option.value)
+            .map((option) => option.name as FileType);
+
+        handler.value.setFileTypes(selectedTypes);
     },
     { deep: true },
 );
-
-const onFileTypeClicked = (index: number): void => {
-    const updatedFileTypeFilter = [...fileTypeFilter.value]; // Only trigger a single mutation
-    // @ts-ignore
-    updatedFileTypeFilter[index].value = !updatedFileTypeFilter[index]?.value;
-    if (!updatedFileTypeFilter[0]?.value && !updatedFileTypeFilter[1]?.value) {
-        // @ts-ignore
-        updatedFileTypeFilter[1 - index].value = true;
-    }
-    fileTypeFilter.value = updatedFileTypeFilter;
-};
 
 const {
     data: mission,
@@ -629,15 +600,15 @@ const updateSelected = (value: CategoryDto[]): void => {
     selectedCategories.value = value;
 };
 
-const fileHealthColor = (health: string): string => {
+const fileHealthColor = (health: HealthStatus): string => {
     switch (health) {
-        case 'Healthy': {
+        case HealthStatus.HEALTHY: {
             return 'positive';
         }
-        case 'Uploading': {
+        case HealthStatus.UPLOADING: {
             return 'warning';
         }
-        case 'Unhealthy': {
+        case HealthStatus.UNHEALTHY: {
             return 'negative';
         }
         default: {
@@ -646,15 +617,15 @@ const fileHealthColor = (health: string): string => {
     }
 };
 
-const fileHealthTextColor = (health: string): string => {
+const fileHealthTextColor = (health: HealthStatus): string => {
     switch (health) {
-        case 'Healthy': {
+        case HealthStatus.HEALTHY: {
             return 'white';
         }
-        case 'Uploading': {
+        case HealthStatus.UPLOADING: {
             return 'black';
         }
-        case 'Unhealthy': {
+        case HealthStatus.UNHEALTHY: {
             return 'white';
         }
         default: {

@@ -40,4 +40,7 @@ export default class Mission extends BaseEntity {
 
     @OneToMany(() => Tag, (tag) => tag.mission)
     tags?: Tag[];
+
+    fileCount?: number;
+    size?: number;
 }

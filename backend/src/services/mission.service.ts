@@ -10,11 +10,7 @@ import Project from '@common/entities/project/project.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
-import {
-    addTagsToMinioObject,
-    externalMinio,
-    getBucketFromFileType,
-} from '@common/minio-helper';
+import { addTagsToMinioObject, externalMinio } from '@common/minio-helper';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
@@ -32,9 +28,15 @@ import {
 } from '../serialization';
 import { TagService } from './tag.service';
 import { UserService } from './user.service';
-import { addMissionFilters, addProjectFilters, addSort } from './utilities';
+import {
+    addFileStats,
+    addMissionFilters,
+    addProjectFilters,
+    addSort,
+} from './utilities';
 
 import { SortOrder } from '@common/api/types/pagination';
+import env from '@common/environment';
 
 const FIND_MANY_SORT_KEYS = {
     missionName: 'mission.name',
@@ -162,24 +164,25 @@ export class MissionService {
         take: number,
         userUuid: string,
     ): Promise<MissionsDto> {
-        let query = this.missionRepository
+        let idQuery = this.missionRepository
             .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoinAndSelect('mission.tags', 'tag')
-            .leftJoinAndSelect('tag.tagType', 'tagType');
+            .select('mission.uuid')
+            .leftJoin('mission.project', 'project')
+            .leftJoin('mission.creator', 'creator')
+            .leftJoin('mission.tags', 'tag')
+            .leftJoin('tag.tagType', 'tagType');
 
-        query = addAccessConstraintsToMissionQuery(query, userUuid);
+        idQuery = addAccessConstraintsToMissionQuery(idQuery, userUuid);
 
-        query = addProjectFilters(
-            query,
+        idQuery = addProjectFilters(
+            idQuery,
             this.projectRepository,
             projectUuids,
             projectPatterns,
         );
 
-        query = addMissionFilters(
-            query,
+        idQuery = addMissionFilters(
+            idQuery,
             this.missionRepository,
             missionUuids,
             missionPatterns,
@@ -187,11 +190,78 @@ export class MissionService {
         );
 
         if (sortBy !== undefined) {
-            query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+            idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
         }
 
-        query.take(take).skip(skip);
-        const [missions, count] = await query.getManyAndCount();
+        // Get distinct mission UUIDs
+        idQuery.groupBy('mission.uuid');
+
+        // Get count before pagination
+        const count = await idQuery.getCount();
+        idQuery.take(take).skip(skip);
+
+        const missionIds = await idQuery.getRawMany();
+
+        if (missionIds.length === 0) {
+            return {
+                data: [],
+                count,
+                skip,
+                take,
+            };
+        }
+
+        let dataQuery = this.missionRepository
+            .createQueryBuilder('mission')
+            .leftJoinAndSelect('mission.project', 'project')
+            .leftJoinAndSelect('mission.creator', 'creator')
+            .leftJoinAndSelect('mission.tags', 'tag')
+            .leftJoinAndSelect('tag.tagType', 'tagType')
+            .where('mission.uuid IN (:...missionIds)', {
+                missionIds: missionIds.map((m) => m.mission_uuid),
+            });
+
+        if (sortBy !== undefined) {
+            dataQuery = addSort(
+                dataQuery,
+                FIND_MANY_SORT_KEYS,
+                sortBy,
+                sortOrder,
+            );
+        }
+
+        dataQuery = addFileStats(dataQuery);
+
+        const result = await dataQuery.getRawAndEntities();
+        const missions = result.entities;
+        const rawResults = result.raw;
+
+        // Create a map for quick lookup of file stats by mission UUID
+        const statsMap = new Map<
+            string,
+            { fileCount: number; fileSize: number }
+        >();
+        for (const raw of rawResults) {
+            const missionUuid = raw.mission_uuid;
+            if (!statsMap.has(missionUuid)) {
+                statsMap.set(missionUuid, {
+                    fileCount: Number.parseInt(raw.fileCount) || 0,
+                    fileSize: Number.parseInt(raw.fileSize) || 0,
+                });
+            }
+        }
+
+        // Assign file stats to missions
+        for (const mission of missions) {
+            const stats = statsMap.get(mission.uuid);
+            if (stats) {
+                mission.fileCount = stats.fileCount;
+                mission.size = stats.fileSize;
+            } else {
+                mission.fileCount = 0;
+                mission.size = 0;
+            }
+        }
 
         return {
             data: missions.map((element) => missionEntityToFlatDto(element)),
@@ -341,15 +411,11 @@ export class MissionService {
 
         await Promise.all(
             mission.files.map(async (file) =>
-                addTagsToMinioObject(
-                    getBucketFromFileType(file.type),
-                    file.uuid,
-                    {
-                        filename: file.filename,
-                        missionUuid: missionUUID,
-                        projectUuid: projectUUID,
-                    },
-                ),
+                addTagsToMinioObject(env.MINIO_DATA_BUCKET_NAME, file.uuid, {
+                    filename: file.filename,
+                    missionUuid: missionUUID,
+                    projectUuid: projectUUID,
+                }),
             ),
         );
     }
@@ -414,7 +480,7 @@ export class MissionService {
                 filename: f.filename,
                 link: await externalMinio.presignedUrl(
                     'GET',
-                    getBucketFromFileType(f.type),
+                    env.MINIO_DATA_BUCKET_NAME,
                     f.uuid,
                     4 * 60 * 60,
                     {

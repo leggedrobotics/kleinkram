@@ -303,10 +303,14 @@ export class DockerDaemon {
 
     @tracing()
     private async getImage(dockerImage: string) {
-        // assert that we only run rslethz images
-        if (!dockerImage.startsWith('rslethz/')) {
+        const dockerhub_namespace = process.env['VITE_DOCKER_HUB_NAMESPACE'];
+        // assert that we only run images from a specified namespace
+        if (
+            dockerhub_namespace !== undefined &&
+            !dockerImage.startsWith(dockerhub_namespace)
+        ) {
             throw new Error(
-                'Only images from the rslethz organization are allowed',
+                `Only images from the ${dockerhub_namespace} namespace are allowed`,
             );
         }
 
