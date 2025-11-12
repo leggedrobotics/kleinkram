@@ -99,44 +99,19 @@
         <template v-if="selectedProject && selectedMission">
             <ActionsTable :handler="handler" />
         </template>
-        <template v-else>
-            <q-card flat bordered class="q-pa-lg q-mt-lg">
-                <q-card-section class="text-center">
-                    <q-icon name="sym_o_analytics" size="64px" color="grey-6" />
 
-                    <div class="text-h6 q-mt-md">
-                        <span v-if="!selectedProject"> Kleinkram Actions </span>
-                        <span v-else> Select a Mission </span>
-                    </div>
-
-                    <p class="text-body1 text-grey-8 q-mt-sm">
-                        <span v-if="!selectedProject">
-                            Please select a <strong>Project</strong> from the
-                            dropdown above to begin.
-                        </span>
-                        <span v-else-if="!selectedMission">
-                            Please select a <strong>Mission</strong> to view its
-                            actions or create a new one.
-                        </span>
-                    </p>
-                </q-card-section>
-
-                <q-separator class="q-my-md" />
-
-                <!-- link to the documentation for a guide to create a custom action -->
-                <q-card-section class="text-center">
-                    <q-btn
-                        flat
-                        color="primary"
-                        label="Learn how to create custom actions"
-                        href="https://docs.datasets.dev.leggedrobotics.com/usage/actions/getting-started.html"
-                        target="_blank"
-                        rel="noopener"
-                        icon="sym_o_open_in_new"
-                    />
-                </q-card-section>
-            </q-card>
-        </template>
+        <!-- Empty State -->
+        <div v-else class="empty-state-wrapper">
+            <div class="empty-state-content">
+                <q-icon name="sym_o_analytics" size="lg" color="grey-6" />
+                <span class="text-h6 text-grey-7 q-mt-md">
+                    No running actions
+                </span>
+                <span class="text-body1 text-grey-6 q-mt-sm">
+                    Your running actions will appear here.
+                </span>
+            </div>
+        </div>
     </div>
     <BullQueue v-if="showBullQueue" />
 </template>
@@ -258,3 +233,24 @@ const closeHandler = (): void => {
     createAction.value = false;
 };
 </script>
+
+<style scoped lang="scss">
+.empty-state-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    border: 1px dashed #e0e0e0;
+    border-radius: 4px;
+    background-color: #fafafa;
+    margin-top: 16px;
+}
+
+.empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px;
+}
+</style>
