@@ -3,20 +3,28 @@
         <!-- Static Row with Title and Arrows -->
         <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Recently used projects</span>
-            <div v-if="projects.length > 0" class="arrow-buttons">
+            <div class="arrow-buttons">
+                <template v-if="projects.length > 0">
+                    <q-btn
+                        :disable="!canScrollLeft"
+                        flat
+                        icon="sym_o_arrow_back"
+                        class="scroll-button"
+                        @click="scrollLeft"
+                    />
+                    <q-btn
+                        :disable="!canScrollRight"
+                        flat
+                        icon="sym_o_arrow_forward"
+                        class="scroll-button"
+                        @click="scrollRight"
+                    />
+                </template>
                 <q-btn
-                    :disable="!canScrollLeft"
                     flat
-                    icon="sym_o_arrow_back"
+                    icon="sym_o_arrow_outward"
                     class="scroll-button"
-                    @click="scrollLeft"
-                />
-                <q-btn
-                    :disable="!canScrollRight"
-                    flat
-                    icon="sym_o_arrow_forward"
-                    class="scroll-button"
-                    @click="scrollRight"
+                    @click="toProjects"
                 />
             </div>
         </q-card>
@@ -102,6 +110,10 @@ const { data } = useQuery<ResentProjectsDto | undefined>({
     queryKey: ['projects', 5],
     queryFn: () => recentProjects(5),
 });
+
+const toProjects = async (): Promise<void> => {
+    await router.push('projects');
+};
 
 const projects: ComputedRef<ResentProjectDto[]> = computed(() =>
     data.value ? data.value.data : [],
