@@ -58,7 +58,6 @@ import {
     deleteFileMinio,
     externalMinio,
     generateTemporaryCredential,
-    getBucketFromFileType,
     getInfoFromMinio,
     internalMinio,
 } from '@common/minio-helper';
@@ -633,7 +632,7 @@ export class FileService implements OnModuleInit {
                 throw error;
             });
         await addTagsToMinioObject(
-            getBucketFromFileType(databaseFile.type),
+            env.MINIO_DATA_BUCKET_NAME,
             databaseFile.uuid,
             {
                 // @ts-expect-error
@@ -675,9 +674,7 @@ export class FileService implements OnModuleInit {
 
         return await externalMinio.presignedUrl(
             'GET',
-            file.type === FileType.BAG
-                ? env.MINIO_BAG_BUCKET_NAME
-                : env.MINIO_MCAP_BUCKET_NAME,
+            env.MINIO_DATA_BUCKET_NAME,
             file.uuid, // we use the uuid as the filename in Minio
             expires ? 4 * 60 * 60 : 604_800, // 604800 seconds = 1 week
             {
@@ -711,7 +708,7 @@ export class FileService implements OnModuleInit {
                         where: { uuid },
                         relations: ['mission', 'mission.project'],
                     });
-                    const bucket = getBucketFromFileType(file.type);
+                    const bucket = env.MINIO_DATA_BUCKET_NAME;
 
                     if (newFile.mission?.project?.uuid === undefined) {
                         logger.error(
@@ -757,7 +754,7 @@ export class FileService implements OnModuleInit {
                 );
 
                 // delete the file from Minio
-                const bucket = getBucketFromFileType(file.type);
+                const bucket = env.MINIO_DATA_BUCKET_NAME;
                 await deleteFileMinio(bucket, file.uuid).catch(() => {
                     logger.error(
                         `File ${file.uuid} not found in Minio, deleting from database only!`,
@@ -945,12 +942,12 @@ export class FileService implements OnModuleInit {
                 );
 
                 return {
-                    bucket: getBucketFromFileType(fileType),
+                    bucket: env.MINIO_DATA_BUCKET_NAME,
                     fileUUID: file.uuid,
                     fileName: filename,
                     accessCredentials: await generateTemporaryCredential(
                         file.uuid,
-                        getBucketFromFileType(fileType),
+                        env.MINIO_DATA_BUCKET_NAME,
                     ),
                     queueUUID: queueEntity.uuid,
                 };
@@ -1025,7 +1022,7 @@ export class FileService implements OnModuleInit {
 
                 await Promise.all(
                     files.map(async (file) => {
-                        const bucket = getBucketFromFileType(file.type);
+                        const bucket = env.MINIO_DATA_BUCKET_NAME;
                         await deleteFileMinio(bucket, file.uuid).catch(() => {
                             logger.error(
                                 `File ${file.uuid} not found in Minio, deleting from database only!`,

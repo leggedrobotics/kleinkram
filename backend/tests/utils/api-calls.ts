@@ -145,7 +145,7 @@ export async function uploadFile(
     const fileresponseponse = json[0];
 
     expect(fileresponseponse).toBeDefined();
-    expect(fileresponseponse.bucket).toBe('bags');
+    expect(fileresponseponse.bucket).toBe('data');
     expect(fileresponseponse.fileUUID).toBeDefined();
 
     // open file from fixturesponse

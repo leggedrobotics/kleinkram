@@ -309,8 +309,7 @@ export class FileController {
     })
     async resetMinioTags(): Promise<void> {
         logger.debug('Resetting Minio tags');
-        await this.fileService.renameTags(env.MINIO_BAG_BUCKET_NAME);
-        await this.fileService.renameTags(env.MINIO_MCAP_BUCKET_NAME);
+        await this.fileService.renameTags(env.MINIO_DATA_BUCKET_NAME);
         logger.debug('Resetting Minio tags done');
     }
 

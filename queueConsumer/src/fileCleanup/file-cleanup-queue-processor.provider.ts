@@ -13,7 +13,7 @@ import {
     QueueState,
     UserRole,
 } from '@common/frontend_shared/enum';
-import { getBucketFromFileType, internalMinio } from '@common/minio-helper';
+import { internalMinio } from '@common/minio-helper';
 import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
@@ -145,9 +145,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     }
 
                     const datastream = await internalMinio.getObject(
-                        file.type === FileType.BAG
-                            ? env.MINIO_BAG_BUCKET_NAME
-                            : env.MINIO_MCAP_BUCKET_NAME,
+                        env.MINIO_DATA_BUCKET_NAME,
                         `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
                     );
                     await new Promise((resolve, reject) => {
@@ -268,8 +266,8 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         const csvString = [header, ...csv].join('\n');
         await internalMinio.putObject(
             fileType === FileType.BAG
-                ? env.MINIO_BAG_BUCKET_NAME
-                : env.MINIO_MCAP_BUCKET_NAME,
+                ? env.MINIO_DATA_BUCKET_NAME
+                : env.MINIO_DATA_BUCKET_NAME,
             'file_names.csv',
             csvString,
         );
@@ -298,7 +296,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 await Promise.all(
                     files.map(async (file) => {
                         const exists = await this.doesFileExist(
-                            getBucketFromFileType(file.type),
+                            env.MINIO_DATA_BUCKET_NAME,
                             file.uuid,
                         );
                         if (!exists) {
@@ -329,7 +327,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 await Promise.all(
                     lostFiles.map(async (file) => {
                         const exists = await this.doesFileExist(
-                            getBucketFromFileType(file.type),
+                            env.MINIO_DATA_BUCKET_NAME,
                             file.uuid,
                         );
                         if (exists) {
@@ -352,7 +350,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
     }
 
     async missingInDB(fileType: FileType) {
-        const bucket = getBucketFromFileType(fileType);
+        const bucket = env.MINIO_DATA_BUCKET_NAME;
         const minioObjects = internalMinio.listObjects(bucket, ''); // ObjectStream
 
         const minioObjectNamesSet = new Set<string>(

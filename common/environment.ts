@@ -120,11 +120,8 @@ export default {
         return asString(process.env['MINIO_SECRET_KEY']);
     },
 
-    get MINIO_MCAP_BUCKET_NAME(): string {
-        return asString(process.env['MINIO_MCAP_BUCKET_NAME']);
-    },
-    get MINIO_BAG_BUCKET_NAME(): string {
-        return asString(process.env['MINIO_BAG_BUCKET_NAME']);
+    get MINIO_DATA_BUCKET_NAME(): string {
+        return asString(process.env['MINIO_DATA_BUCKET_NAME']);
     },
     get MINIO_DB_BUCKET_NAME(): string {
         return asString(process.env['MINIO_DB_BUCKET_NAME']);

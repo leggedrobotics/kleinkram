@@ -10,11 +10,7 @@ import Project from '@common/entities/project/project.entity';
 import TagType from '@common/entities/tagType/tag-type.entity';
 import User from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
-import {
-    addTagsToMinioObject,
-    externalMinio,
-    getBucketFromFileType,
-} from '@common/minio-helper';
+import { addTagsToMinioObject, externalMinio } from '@common/minio-helper';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
@@ -40,6 +36,7 @@ import {
 } from './utilities';
 
 import { SortOrder } from '@common/api/types/pagination';
+import env from '@common/environment';
 
 const FIND_MANY_SORT_KEYS = {
     missionName: 'mission.name',
@@ -414,15 +411,11 @@ export class MissionService {
 
         await Promise.all(
             mission.files.map(async (file) =>
-                addTagsToMinioObject(
-                    getBucketFromFileType(file.type),
-                    file.uuid,
-                    {
-                        filename: file.filename,
-                        missionUuid: missionUUID,
-                        projectUuid: projectUUID,
-                    },
-                ),
+                addTagsToMinioObject(env.MINIO_DATA_BUCKET_NAME, file.uuid, {
+                    filename: file.filename,
+                    missionUuid: missionUUID,
+                    projectUuid: projectUUID,
+                }),
             ),
         );
     }
@@ -487,7 +480,7 @@ export class MissionService {
                 filename: f.filename,
                 link: await externalMinio.presignedUrl(
                     'GET',
-                    getBucketFromFileType(f.type),
+                    env.MINIO_DATA_BUCKET_NAME,
                     f.uuid,
                     4 * 60 * 60,
                     {
