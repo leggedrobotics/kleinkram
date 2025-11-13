@@ -3,7 +3,7 @@
         <div style="padding: 24px 0; gap: 24px; padding-bottom: 10px">
             <div class="row justify-between items-center q-gutter-y-md">
                 <div class="col-12 col-md">
-                    <h1 class="text-h3 q-ma-none ellipsis">
+                    <h1 class="text-h5 text-md-h3 q-ma-none ellipsis">
                         {{ title ?? '' }}
                         <q-tooltip v-if="title">
                             {{ title }}

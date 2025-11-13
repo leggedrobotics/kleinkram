@@ -1,5 +1,5 @@
 <template>
-    <title-section :title="`File: ${file?.filename || 'Loading...'}`">
+    <title-section :title="`File: ${file?.filename ?? 'Loading...'}`">
         <template #buttons>
             <div class="column row-md items-end q-gutter-sm">
                 <button-group class="col-auto">
