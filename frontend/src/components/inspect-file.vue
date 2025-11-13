@@ -1,8 +1,8 @@
 <template>
     <title-section :title="`File: ${file?.filename || 'Loading...'}`">
         <template #buttons>
-            <div style="width: 340px">
-                <button-group>
+            <div class="column row-md items-end q-gutter-sm">
+                <button-group class="col-auto">
                     <edit-file-button v-if="file" :file="file" />
 
                     <q-btn
@@ -82,7 +82,8 @@
                         </q-menu>
                     </q-btn>
                 </button-group>
-                <div class="flex row">
+
+                <div class="col-auto">
                     <KleinDownloadFile v-if="file" :file="file" />
                 </div>
             </div>
