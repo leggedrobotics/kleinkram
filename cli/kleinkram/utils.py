@@ -28,11 +28,12 @@ from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
-SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml"]
+SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml"]
+EXPERIMENTAL_FILE_TYPES = []
 
 
 def file_paths_from_files(
-    files: Sequence[File], *, dest: Path, allow_nested: bool = False
+        files: Sequence[File], *, dest: Path, allow_nested: bool = False
 ) -> Dict[Path, File]:
     """\
     determines the destinations for a sequence of `File` objects,
@@ -229,7 +230,7 @@ def format_bytes(size_bytes: int | float, speed: bool = False) -> str:
     power = math.floor(math.log(size_bytes, 1000))
     unit_index = min(power, len(units) - 1)
 
-    value = size_bytes / (1000**unit_index)
+    value = size_bytes / (1000 ** unit_index)
 
     unit_suffix = "/s" if speed else ""
     return f"{value:.2f} {units[unit_index]}{unit_suffix}"

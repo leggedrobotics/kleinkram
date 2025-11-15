@@ -9,12 +9,11 @@ import typer
 from kleinkram.config import get_shared_state
 from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import FileNameNotSupported
-from kleinkram.utils import check_filename_is_sanatized
-
-# --- Constants ---
-STANDARD_DATATYPES = {".bag", ".mcap"}
-EXPERIMENTAL_DATATYPES = {".yaml", ".svo2", ".db3", ".tum"}
-ALL_POSSIBLE_DATATYPES = STANDARD_DATATYPES | EXPERIMENTAL_DATATYPES
+from kleinkram.utils import (
+    check_filename_is_sanatized,
+    EXPERIMENTAL_FILE_TYPES,
+    SUPPORT_FILE_TYPES,
+)
 
 
 @dataclass
@@ -67,8 +66,8 @@ class FileValidator:
             raise IsADirectoryError(f"{file} is a directory")
 
         file_suffix = file.suffix.lower()
-        is_experimental = file_suffix in EXPERIMENTAL_DATATYPES
-        is_standard = file_suffix in STANDARD_DATATYPES
+        is_experimental = file_suffix in EXPERIMENTAL_FILE_TYPES
+        is_standard = file_suffix in SUPPORT_FILE_TYPES
 
         # 2. Check if the datatype is known at all
         if not is_standard and not is_experimental:

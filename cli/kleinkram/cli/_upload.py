@@ -63,29 +63,29 @@ def _handle_no_files_to_upload(original_count: int, uploaded_count: int) -> None
 
 @upload_typer.callback()
 def upload(
-        files: List[str] = typer.Argument(help="files to upload"),
-        project: Optional[str] = typer.Option(
-            None, "--project", "-p", help="project id or name"
-        ),
-        mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
-        create: bool = typer.Option(False, help="create mission if it does not exist"),
-        metadata: Optional[str] = typer.Option(
-            None, help="path to metadata file (json or yaml)"
-        ),
-        fix_filenames: bool = typer.Option(
-            False,
-            help="fix filenames before upload, this does not change the filenames locally",
-        ),
-        skip: bool = typer.Option(
-            False,
-            "--skip",
-            "-s",
-            help="skip unsupported file types, badly named files, or directories instead of erroring",
-        ),
-        experimental_datatypes: bool = typer.Option(
-            False, help="allow experimental datatypes (yaml, svo2, db3, tum)"
-        ),
-        ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
+    files: List[str] = typer.Argument(help="files to upload"),
+    project: Optional[str] = typer.Option(
+        None, "--project", "-p", help="project id or name"
+    ),
+    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
+    create: bool = typer.Option(False, help="create mission if it does not exist"),
+    metadata: Optional[str] = typer.Option(
+        None, help="path to metadata file (json or yaml)"
+    ),
+    fix_filenames: bool = typer.Option(
+        False,
+        help="fix filenames before upload, this does not change the filenames locally",
+    ),
+    skip: bool = typer.Option(
+        False,
+        "--skip",
+        "-s",
+        help="skip unsupported file types, badly named files, or directories instead of erroring",
+    ),
+    experimental_datatypes: bool = typer.Option(
+        False, help="allow experimental datatypes (yaml, svo2, db3, tum)"
+    ),
+    ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
     original_file_paths = [Path(file) for file in files]
     mission_query = _build_mission_query(mission, project)
