@@ -71,7 +71,7 @@ import {
     addAccessConstraintsToFileQuery,
 } from '../endpoints/auth/auth-helper';
 import { parseMinioMetrics } from '../endpoints/file/utilities';
-import logger from '../logger';
+import logger from '../logger'; // Type guard function to check if the error has a 'code' property
 
 // Type guard function to check if the error has a 'code' property
 function isErrorWithCode(error: unknown): error is { code: string } {
@@ -165,9 +165,6 @@ export class FileService implements OnModuleInit {
             .take(take)
             .skip(skip)
             .getManyAndCount();
-        if (files.length === 0) {
-            throw new Error('No files found.');
-        }
 
         return {
             data: files.map((element) => fileEntityToDto(element)),
