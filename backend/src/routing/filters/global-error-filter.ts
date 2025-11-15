@@ -11,6 +11,7 @@ import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { Response } from 'express';
 import { appVersion } from 'src/app-version';
 import { AuthFlowException } from 'src/types/auth-flow-exception';
+import { EntityNotFoundError } from 'typeorm';
 import logger from '../../logger';
 
 /**
@@ -108,6 +109,14 @@ export class GlobalErrorFilter implements ExceptionFilter {
             response.status(400).json({
                 statusCode: 400,
                 message: exception.getResponse(),
+            });
+            return;
+        }
+
+        if (exception instanceof EntityNotFoundError) {
+            response.status(400).json({
+                statusCode: 400,
+                message: 'Bad Request',
             });
             return;
         }
