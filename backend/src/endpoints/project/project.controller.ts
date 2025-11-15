@@ -18,6 +18,7 @@ import {
     Controller,
     Delete,
     Get,
+    ParseArrayPipe,
     Post,
     Put,
     Query,
@@ -188,7 +189,8 @@ export class ProjectController {
     })
     async updateProjectAccess(
         @ParameterUID('uuid') uuid: string,
-        @Body() body: ProjectAccessDto[],
+        @Body(new ParseArrayPipe({ items: ProjectAccessDto }))
+        body: ProjectAccessDto[],
         @AddUser() auth: AuthHeader,
     ): Promise<ProjectAccessListDto> {
         return this.accessService.updateProjectAccess(uuid, body, auth);
