@@ -11,9 +11,8 @@ import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.cli._file_validator import FileValidator, _report_skipped_files
 from kleinkram.config import get_shared_state
-from kleinkram.errors import FileNameNotSupported
-from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import MissionNotFound
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
@@ -28,6 +27,38 @@ upload_typer = typer.Typer(
     invoke_without_command=True,
     help=HELP,
 )
+
+
+def _build_mission_query(mission: str, project: Optional[str]) -> MissionQuery:
+    """Constructs the MissionQuery object from CLI args."""
+    mission_ids, mission_patterns = split_args([mission])
+    project_ids, project_patterns = split_args([project] if project else [])
+
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    return MissionQuery(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_query=project_query,
+    )
+
+
+def _handle_no_files_to_upload(original_count: int, uploaded_count: int) -> None:
+    """Checks if any files are left to upload and exits if not."""
+    if uploaded_count > 0:
+        return
+
+    if original_count > 0:
+        typer.echo(
+            typer.style(
+                "All paths were skipped. No files to upload.", fg=typer.colors.RED
+            ),
+            err=True,
+        )
+    else:
+        typer.echo(
+            typer.style("No files provided to upload.", fg=typer.colors.RED), err=True
+        )
+    raise typer.Exit(code=1)
 
 
 @upload_typer.callback()
@@ -45,54 +76,51 @@ def upload(
         False,
         help="fix filenames before upload, this does not change the filenames locally",
     ),
+    skip: bool = typer.Option(
+        False,
+        "--skip",
+        "-s",
+        help="skip unsupported file types, badly named files, or directories instead of erroring",
+    ),
     experimental_datatypes: bool = typer.Option(
         False, help="allow experimental datatypes (yaml, svo2, db3, tum)"
     ),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
-    # get filepaths
-    file_paths = [Path(file) for file in files]
+    original_file_paths = [Path(file) for file in files]
+    mission_query = _build_mission_query(mission, project)
 
-    mission_ids, mission_patterns = split_args([mission])
-    project_ids, project_patterns = split_args([project] if project else [])
-
-    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
-    mission_query = MissionQuery(
-        ids=mission_ids,
-        patterns=mission_patterns,
-        project_query=project_query,
+    validator = FileValidator(
+        skip=skip,
+        experimental_datatypes=experimental_datatypes,
     )
 
-    if not fix_filenames:
-        for file in file_paths:
+    # This function will raise an error if skip=False and a file is invalid
+    files_to_upload = validator.filter_files(original_file_paths)
 
-            # check for experimental datatypes and throw an exception if not allowed
-            EXPERIMENTAL_DATATYPES = {".yaml", ".svo2", ".db3", ".tum"}
+    _report_skipped_files(validator.skipped_files)
 
-            if not experimental_datatypes:
-                if file.suffix.lower() in EXPERIMENTAL_DATATYPES:
-                    raise DatatypeNotSupported(
-                        f"Datatype '{file.suffix}' for file {file} is not supported without the "
-                        f"`--experimental-datatypes` flag. "
-                    )
-
-            if not kleinkram.utils.check_filename_is_sanatized(file.stem):
-                raise FileNameNotSupported(
-                    f"Only `{''.join(kleinkram.utils.INTERNAL_ALLOWED_CHARS)}` are "
-                    f"allowed in filenames and at most 50 chars: {file}. "
-                    f"Consider using `--fix-filenames`"
-                )
+    _handle_no_files_to_upload(
+        original_count=len(original_file_paths), uploaded_count=len(files_to_upload)
+    )
 
     try:
         kleinkram.core.upload(
             client=AuthenticatedClient(),
             query=mission_query,
-            file_paths=file_paths,
+            file_paths=files_to_upload,
             create=create,
             metadata=load_metadata(Path(metadata)) if metadata else None,
             ignore_missing_metadata=ignore_missing_tags,
             verbose=get_shared_state().verbose,
         )
+        typer.echo(
+            typer.style(
+                f"\nSuccessfully uploaded {len(files_to_upload)} file(s).",
+                fg=typer.colors.GREEN,
+            )
+        )
+
     except MissionNotFound:
         if create:
             raise  # dont change the error message

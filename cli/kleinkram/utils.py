@@ -28,7 +28,8 @@ from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
-SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml"]
+SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml"]
+EXPERIMENTAL_FILE_TYPES = []
 
 
 def file_paths_from_files(

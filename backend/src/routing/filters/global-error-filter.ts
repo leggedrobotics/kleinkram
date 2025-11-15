@@ -11,6 +11,7 @@ import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { Response } from 'express';
 import { appVersion } from 'src/app-version';
 import { AuthFlowException } from 'src/types/auth-flow-exception';
+import { EntityNotFoundError } from 'typeorm';
 import logger from '../../logger';
 
 /**
@@ -83,18 +84,6 @@ export class GlobalErrorFilter implements ExceptionFilter {
             return;
         }
 
-        //////////////////////////////
-        // Errors that get logged
-        //////////////////////////////
-
-        const request: Request = host.switchToHttp().getRequest();
-        logger.error(
-            `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion} on endpoint ${request.url} with method ${request.method}`,
-        );
-        logger.error(exception.message);
-        logger.error(exception);
-        logger.error(exception.stack);
-
         if (exception instanceof BadRequestException) {
             const resp: any = exception.getResponse();
 
@@ -108,6 +97,26 @@ export class GlobalErrorFilter implements ExceptionFilter {
             response.status(400).json({
                 statusCode: 400,
                 message: exception.getResponse(),
+            });
+            return;
+        }
+
+        //////////////////////////////
+        // Errors that get logged
+        //////////////////////////////
+
+        const request: Request = host.switchToHttp().getRequest();
+        logger.error(
+            `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion} on endpoint ${request.url} with method ${request.method}`,
+        );
+        logger.error(exception.message);
+        logger.error(exception);
+        logger.error(exception.stack);
+
+        if (exception instanceof EntityNotFoundError) {
+            response.status(400).json({
+                statusCode: 400,
+                message: 'Bad Request',
             });
             return;
         }

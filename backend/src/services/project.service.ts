@@ -2,6 +2,7 @@ import { CreateProject } from '@common/api/types/create-project.dto';
 import Project from '@common/entities/project/project.entity';
 import User from '@common/entities/user/user.entity';
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     NotFoundException,
@@ -340,7 +341,7 @@ export class ProjectService {
         }
 
         const transactedProject = await this.dataSource.transaction(
-            async (manager) => {
+            async (manager: EntityManager): Promise<Project> => {
                 const savedProject = await manager.save(Project, newProject);
                 await this.createDefaultAccessGroups(
                     manager,
@@ -350,15 +351,22 @@ export class ProjectService {
                 );
 
                 if (project.accessGroups) {
-                    await this.createSpecifiedAccessGroups(
-                        manager,
-                        deduplicatedAccessGroups,
-                        savedProject,
-                    );
+                    try {
+                        await this.createSpecifiedAccessGroups(
+                            manager,
+                            deduplicatedAccessGroups,
+                            savedProject,
+                        );
+                    } catch {
+                        throw new BadRequestException(
+                            'Failed to set permissions. One or more user/group UUIDs may be invalid.',
+                        );
+                    }
                 }
                 return savedProject;
             },
         );
+
         return (await this.projectRepository.findOneOrFail({
             where: { uuid: transactedProject.uuid },
         })) as unknown as ProjectDto;

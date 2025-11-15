@@ -1,6 +1,6 @@
 <template>
-    <div class="row">
-        <div class="col-6 q-py-md q-pr-md">
+    <div class="row items-center">
+        <div class="col-5 q-py-md q-pr-md">
             <q-input v-model="startDate" filled hint="File Processing since: ">
                 <template #prepend>
                     <q-icon name="sym_o_event" class="cursor-pointer">
@@ -49,7 +49,7 @@
                 </template>
             </q-input>
         </div>
-        <div class="col-6 q-py-md">
+        <div class="col-5 q-py-md q-pr-md">
             <q-select
                 v-model="fileStateFilter"
                 multiple
@@ -86,6 +86,19 @@
                     />
                 </template>
             </q-select>
+        </div>
+        <div class="col-2 q-py-md">
+            <q-btn
+                flat
+                dense
+                padding="6px"
+                color="icon-secondary"
+                class="button-border"
+                icon="sym_o_loop"
+                @click="refresh"
+            >
+                <q-tooltip> Refresh Data </q-tooltip>
+            </q-btn>
         </div>
     </div>
 
@@ -325,6 +338,13 @@ const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
         removeFile(queueEntry);
     });
 };
+
+// Refresh function to invalidate the query
+async function refresh(): Promise<void> {
+    await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'queue',
+    });
+}
 
 async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
     const isFile =

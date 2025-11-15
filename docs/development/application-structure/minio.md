@@ -7,6 +7,7 @@ files are directly uploaded to & downloaded from Minio.
 In minio are two buckets:
 
 - `data` containing all mission files (e.g. `.bag`, `.mcap`, etc.)
+- `artifacts` containing kleinkram action artifacts
 - `dbdump` contains database dumps (of postgres).
 
 ## File Storage Structure
@@ -27,6 +28,10 @@ creation, while object metadata cannot.
 
 Database dumps are stored inside the `dbdump` bucket. We create a DB dump every other hour. The file name is the
 timestamp of the dump creation in the format `backup-<milliseconds-since-epoch>.sql` (e.g. `backup-1726488000009.sql`).
+
+### Kleinkram Artifacts Bucket
+
+Kleinkram action artifacts are stored inside the `artifacts` bucket. The file name is the action UUID.
 
 ## Accessing the Minio Console
 

@@ -128,7 +128,7 @@ def base_handler(exc: Exception) -> int:
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def login(
     oAuthProvider: str = typer.Option(
-        "google",
+        "auto",
         "--oauth-provider",
         "-p",
         help="OAuth provider to use for login. Supported providers: google, github, fake-oauth.",
@@ -137,6 +137,14 @@ def login(
     key: Optional[str] = typer.Option(None, help="CLI key"),
     headless: bool = typer.Option(False),
 ) -> None:
+
+    # logic to resolve the "auto" default
+    if oAuthProvider == "auto":
+        config = get_config()
+        if config.selected_endpoint == "local":
+            oAuthProvider = "fake-oauth"
+        else:
+            oAuthProvider = "google"
 
     # validate oAuthProvider
     if oAuthProvider not in ["google", "github", "fake-oauth"]:

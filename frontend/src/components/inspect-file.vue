@@ -1,8 +1,8 @@
 <template>
-    <title-section :title="`File: ${file?.filename || 'Loading...'}`">
+    <title-section :title="`File: ${file?.filename ?? 'Loading...'}`">
         <template #buttons>
-            <div style="width: 340px">
-                <button-group>
+            <div class="column row-md items-end q-gutter-sm">
+                <button-group class="col-auto">
                     <edit-file-button v-if="file" :file="file" />
 
                     <q-btn
@@ -82,7 +82,8 @@
                         </q-menu>
                     </q-btn>
                 </button-group>
-                <div class="flex row">
+
+                <div class="col-auto">
                     <KleinDownloadFile v-if="file" :file="file" />
                 </div>
             </div>
@@ -90,31 +91,32 @@
 
         <template #subtitle>
             <div class="q-gutter-md q-mt-xs">
-                <div class="row items-start">
-                    <div class="col-2">
+                <div class="row items-start q-gutter-y-sm">
+                    <div class="col-12 col-md-2">
                         <div class="text-placeholder">Project</div>
                         <div
-                            class="text-caption text-primary"
+                            class="text-caption text-primary ellipsis"
                             style="font-size: 16px"
                         >
                             {{ file?.mission.project.name }}
+                            <q-tooltip>
+                                {{ file?.mission.project.name }}</q-tooltip
+                            >
                         </div>
                     </div>
-                    <div class="col-2">
+
+                    <div class="col-12 col-md-2">
                         <div class="text-placeholder">Mission</div>
                         <div
-                            class="text-caption text-primary"
-                            style="
-                                font-size: 16px;
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                            "
+                            class="text-caption text-primary ellipsis"
+                            style="font-size: 16px"
                         >
                             {{ file?.mission.name }}
                             <q-tooltip> {{ file?.mission.name }}</q-tooltip>
                         </div>
                     </div>
-                    <div class="col-3">
+
+                    <div class="col-12 col-md-3">
                         <div v-if="file?.date">
                             <div class="text-placeholder">Start Date</div>
                             <div
@@ -125,20 +127,22 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-2">
+
+                    <div class="col-12 col-md-2">
                         <div v-if="file?.creator">
                             <div class="text-placeholder">Creator</div>
                             <div
-                                class="text-caption text-primary"
+                                class="text-caption text-primary ellipsis"
                                 style="font-size: 16px"
                             >
                                 {{ file?.creator.name }}
+                                <q-tooltip> {{ file?.creator.name }}</q-tooltip>
                             </div>
                         </div>
                     </div>
-                    <div class="col-1">
-                        <div class="text-placeholder">File State</div>
 
+                    <div class="col-12 col-md-1">
+                        <div class="text-placeholder">File State</div>
                         <q-icon
                             :name="getIcon(file?.state ?? FileState.OK)"
                             :color="
@@ -151,7 +155,8 @@
                             </q-tooltip>
                         </q-icon>
                     </div>
-                    <div class="col-1">
+
+                    <div class="col-12 col-md-1">
                         <div class="text-placeholder">Size</div>
                         <div
                             class="text-caption text-primary"
@@ -161,6 +166,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="row items-start">
                     <q-chip
                         v-for="cat in file?.categories"
