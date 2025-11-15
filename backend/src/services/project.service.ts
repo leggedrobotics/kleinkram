@@ -8,14 +8,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-    DataSource,
-    EntityManager,
-    EntityNotFoundError,
-    ILike,
-    Not,
-    Repository,
-} from 'typeorm';
+import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
 import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
 import { UserService } from './user.service';
 
