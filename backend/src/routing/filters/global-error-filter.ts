@@ -84,18 +84,6 @@ export class GlobalErrorFilter implements ExceptionFilter {
             return;
         }
 
-        //////////////////////////////
-        // Errors that get logged
-        //////////////////////////////
-
-        const request: Request = host.switchToHttp().getRequest();
-        logger.error(
-            `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion} on endpoint ${request.url} with method ${request.method}`,
-        );
-        logger.error(exception.message);
-        logger.error(exception);
-        logger.error(exception.stack);
-
         if (exception instanceof BadRequestException) {
             const resp: any = exception.getResponse();
 
@@ -112,6 +100,18 @@ export class GlobalErrorFilter implements ExceptionFilter {
             });
             return;
         }
+
+        //////////////////////////////
+        // Errors that get logged
+        //////////////////////////////
+
+        const request: Request = host.switchToHttp().getRequest();
+        logger.error(
+            `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion} on endpoint ${request.url} with method ${request.method}`,
+        );
+        logger.error(exception.message);
+        logger.error(exception);
+        logger.error(exception.stack);
 
         if (exception instanceof EntityNotFoundError) {
             response.status(400).json({

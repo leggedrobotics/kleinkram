@@ -2,12 +2,20 @@ import { CreateProject } from '@common/api/types/create-project.dto';
 import Project from '@common/entities/project/project.entity';
 import User from '@common/entities/user/user.entity';
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
+import {
+    DataSource,
+    EntityManager,
+    EntityNotFoundError,
+    ILike,
+    Not,
+    Repository,
+} from 'typeorm';
 import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
 import { UserService } from './user.service';
 
@@ -340,7 +348,7 @@ export class ProjectService {
         }
 
         const transactedProject = await this.dataSource.transaction(
-            async (manager) => {
+            async (manager: EntityManager): Promise<Project> => {
                 const savedProject = await manager.save(Project, newProject);
                 await this.createDefaultAccessGroups(
                     manager,
@@ -350,15 +358,22 @@ export class ProjectService {
                 );
 
                 if (project.accessGroups) {
-                    await this.createSpecifiedAccessGroups(
-                        manager,
-                        deduplicatedAccessGroups,
-                        savedProject,
-                    );
+                    try {
+                        await this.createSpecifiedAccessGroups(
+                            manager,
+                            deduplicatedAccessGroups,
+                            savedProject,
+                        );
+                    } catch {
+                        throw new BadRequestException(
+                            'Failed to set permissions. One or more user/group UUIDs may be invalid.',
+                        );
+                    }
                 }
                 return savedProject;
             },
         );
+
         return (await this.projectRepository.findOneOrFail({
             where: { uuid: transactedProject.uuid },
         })) as unknown as ProjectDto;
