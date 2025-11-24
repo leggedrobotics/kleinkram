@@ -904,10 +904,10 @@
     "@opentelemetry/instrumentation" "^0.208.0"
     "@opentelemetry/semantic-conventions" "^1.30.0"
 
-"@opentelemetry/instrumentation-pg@^0.61.0":
-  version "0.61.0"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/instrumentation-pg/-/instrumentation-pg-0.61.0.tgz#c755d00dba640e229fe50f817423dcf3376957ab"
-  integrity sha512-UeV7KeTnRSM7ECHa3YscoklhUtTQPs6V6qYpG283AB7xpnPGCUCUfECFT9jFg6/iZOQTt3FHkB1wGTJCNZEvPw==
+"@opentelemetry/instrumentation-pg@^0.61.1":
+  version "0.61.1"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/instrumentation-pg/-/instrumentation-pg-0.61.1.tgz#bce6628f7fef7ed9bcf1fcff99c475ff7f9f6db4"
+  integrity sha512-VKKts/XcOCa7IPBxVjL2B4UyG+YTNa4Dh1Xx2vqL0jOEQBJlNsv++I12BUw/8NRLEr2K/gOM5tpVU7QqhWA65A==
   dependencies:
     "@opentelemetry/core" "^2.0.0"
     "@opentelemetry/instrumentation" "^0.208.0"
