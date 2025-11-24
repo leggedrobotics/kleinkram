@@ -8,6 +8,7 @@ import { ParameterUuid } from '../../validation/parameter-decorators';
 @Controller('integrations/foxglove')
 export class FoxgloveController {
     // Whitelist for this specific controller
+    // see https://docs.foxglove.dev/docs/visualization/connecting/live-data#cross-origin-resource-sharing-cors-setup
     private readonly allowedOrigins = new Set([
         'https://app.foxglove.dev',
         'https://embed.foxglove.dev',
@@ -42,10 +43,7 @@ export class FoxgloveController {
         if (origin && this.allowedOrigins.has(origin)) {
             response.header('Access-Control-Allow-Origin', origin);
         } else {
-            response.header(
-                'Access-Control-Allow-Origin',
-                'https://app.foxglove.dev',
-            );
+            response.header('Access-Control-Allow-Origin', 'null');
         }
 
         response.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
