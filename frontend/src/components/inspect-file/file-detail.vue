@@ -6,6 +6,7 @@
         @copy-link="copyPublicLink"
         @copy-hash="copyHash"
         @copy-uuid="copyUuid"
+        @copy-foxglove="copyFoxgloveLink"
     />
 
     <div v-if="file" class="q-my-lg">
@@ -50,7 +51,7 @@
             </div>
         </div>
 
-        <FileHistory :events="events" />
+        <FileHistory v-if="events !== undefined" :events="events" />
 
         <div
             v-if="preview.readerError.value"
@@ -69,6 +70,7 @@
 <script setup lang="ts">
 import { FileState, FileType } from '@common/enum';
 import { copyToClipboard, Notify } from 'quasar';
+import { useRosmsgPreview } from 'src/composables/use-rosmsg-preview';
 import {
     registerNoPermissionErrorHandler,
     useFile,
@@ -76,12 +78,10 @@ import {
 } from 'src/hooks/query-hooks';
 import { useFileUUID } from 'src/hooks/router-hooks';
 import { _downloadFile } from 'src/services/generic';
-import { downloadFile } from 'src/services/queries/file';
+import { downloadFile, getFoxgloveLink } from 'src/services/queries/file';
 import { computed, ref, watch } from 'vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
-
-import { useRosmsgPreview } from '../../composables/use-rosmsg-preview';
 import FileTopicTable from './file-topic-table.vue';
 
 const fileUuid = useFileUUID();
@@ -142,6 +142,33 @@ const handleDownload = (): Promise<void> =>
     _downloadFile(file.value?.uuid ?? '', file.value?.filename ?? '');
 const copyHash = (): Promise<void> => copyToClipboard(file.value?.hash ?? '');
 const copyUuid = (): Promise<void> => copyToClipboard(file.value?.uuid ?? '');
+async function copyFoxgloveLink(): Promise<void> {
+    if (!file.value?.uuid) return;
+
+    try {
+        // 1. Fetch the signed proxy URL from the backend
+        const link = await getFoxgloveLink(file.value.uuid);
+
+        // 2. Copy to clipboard
+        await copyToClipboard(link);
+
+        // 3. Notify user
+        Notify.create({
+            message:
+                'Foxglove link copied! Paste this URL via "Open remote file" in Foxglove.',
+            color: 'positive',
+            icon: 'sym_o_check',
+            timeout: 4000,
+        });
+    } catch (foxgloveLinkError: unknown) {
+        console.error(foxgloveLinkError);
+        Notify.create({
+            message: 'Failed to generate Foxglove link',
+            color: 'negative',
+            icon: 'sym_o_warning',
+        });
+    }
+}
 async function copyPublicLink(): Promise<void> {
     if (!fileUuid.value) return;
     const link = await downloadFile(fileUuid.value, false);

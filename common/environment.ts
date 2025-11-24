@@ -164,6 +164,11 @@ export default {
     get FRONTEND_URL(): string {
         return asString(process.env['FRONTEND_URL']);
     },
+
+    get BACKEND_URL(): string {
+        return asString(process.env['BACKEND_URL']);
+    },
+
     get GOOGLE_KEY_FILE(): string {
         return asString(process.env['GOOGLE_KEY_FILE']);
     },

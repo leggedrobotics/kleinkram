@@ -1,6 +1,8 @@
+import { FileExistsResponseDto } from '@api/types/file/access.dto';
 import { FileEventsDto } from '@api/types/file/file-event.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
+import { FoxgloveLinkResponseDto } from '@api/types/file/foxglove-link-response.dto';
 import { IsUploadingDto } from '@api/types/file/is-uploading.dto';
 import { StorageOverviewDto } from '@api/types/storage-overview.dto';
 import { FileType, HealthStatus } from '@common/enum';
@@ -17,7 +19,7 @@ export const fetchFilteredFiles = async (
     categories?: string[],
     matchAllTopics?: boolean,
     fileTypes?: FileType[],
-    tag?: Record<string, any>,
+    tag?: Record<string, unknown>,
     take?: number,
     skip?: number,
     sort?: string,
@@ -95,7 +97,7 @@ export const filesOfMission = async (
     desc = false,
     health?: HealthStatus,
 ): Promise<FilesDto> => {
-    const tag: Record<string, any> = {};
+    const tag: Record<string, unknown> = {};
 
     return fetchFilteredFiles(
         filename || '',
@@ -142,11 +144,16 @@ export const getIsUploading = async (): Promise<boolean> => {
     return response.data.isUploading;
 };
 
-export const existsFile = async (uuid: string): Promise<any> => {
+export const existsFile = async (
+    uuid: string,
+): Promise<FileExistsResponseDto | false> => {
     try {
-        const response = await axios.get('/file/exists', {
-            params: { uuid },
-        });
+        const response = await axios.get<FileExistsResponseDto>(
+            '/file/exists',
+            {
+                params: { uuid },
+            },
+        );
         return response.data;
     } catch {
         return false;
@@ -161,3 +168,10 @@ export const getFileEvents = async (
     );
     return response.data;
 };
+
+export async function getFoxgloveLink(fileUuid: string): Promise<string> {
+    const response = await axios.get<FoxgloveLinkResponseDto>(
+        `files/${fileUuid}/foxglove-link`,
+    );
+    return response.data.url;
+}

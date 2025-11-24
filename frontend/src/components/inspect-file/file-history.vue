@@ -28,14 +28,14 @@
                             </span>
                         </q-item-label>
                         <q-item-label
-                            caption
                             v-if="event.details?.generatedFilename"
+                            caption
                         >
                             &rarr; {{ event.details.generatedFilename }}
                         </q-item-label>
                         <q-item-label
-                            caption
                             v-if="event.details?.sourceFilename"
+                            caption
                         >
                             &larr; {{ event.details.sourceFilename }}
                         </q-item-label>
@@ -58,10 +58,11 @@
 </template>
 
 <script setup lang="ts">
+import { FileEventsDto } from '@api/types/file/file-event.dto';
 import { FileEventType } from '@common/enum';
 import { formatDate } from 'src/services/date-formating';
 
-defineProps<{ events: any }>();
+defineProps<{ events: FileEventsDto }>();
 
 function formatEventType(type: FileEventType): string {
     const map: Record<string, string> = {
@@ -69,6 +70,7 @@ function formatEventType(type: FileEventType): string {
         [FileEventType.UPLOAD_STARTED]: 'Upload Started',
         [FileEventType.UPLOAD_COMPLETED]: 'Upload Completed',
         [FileEventType.DOWNLOADED]: 'Downloaded',
+        [FileEventType.FOXGLOVE_URL_GENERATED]: 'Foxglove URL Generated',
         [FileEventType.RENAMED]: 'Renamed',
         [FileEventType.MOVED]: 'Moved',
         [FileEventType.TOPICS_EXTRACTED]: 'Topics Extracted',
@@ -83,6 +85,8 @@ function getEventIcon(type: FileEventType): string {
     if (type.includes('COMPLETED') || type.includes('CREATED'))
         return 'sym_o_check_circle';
     if (type.includes('DOWNLOAD')) return 'sym_o_download';
+    if (type.includes(FileEventType.FOXGLOVE_URL_GENERATED))
+        return 'sym_o_dataset_linked';
     if (type.includes('UPLOAD')) return 'sym_o_upload';
     if (type.includes('DELETE')) return 'sym_o_delete';
     if (type === FileEventType.TOPICS_EXTRACTED) return 'sym_o_topic';
@@ -94,6 +98,7 @@ function getEventIcon(type: FileEventType): string {
 
 function getEventColor(type: string): string {
     if (type.includes('FAILED') || type.includes('ERROR')) return 'negative';
+    if (type.includes(FileEventType.FOXGLOVE_URL_GENERATED)) return 'secondary';
     if (type.includes('COMPLETED') || type.includes('CREATED'))
         return 'positive';
     if (type.includes('DELETE')) return 'grey-6';

@@ -54,12 +54,17 @@ import {
 import { CancelFileUploadDto } from '@common/api/types/cancel-file-upload.dto';
 import { FileEventsDto } from '@common/api/types/file/file-event.dto';
 import { FileQueryDto } from '@common/api/types/file/file-query.dto';
+import { FoxgloveLinkResponseDto } from '@common/api/types/file/foxglove-link-response.dto';
 import FileEntity from '@common/entities/file/file.entity';
 import { HealthStatus } from '@common/frontend_shared/enum';
+import { FoxgloveService } from '../../services/foxglove.service';
 
 @Controller(['file', 'files']) // TODO: migrate to 'files'
 export class FileController {
-    constructor(private readonly fileService: FileService) {}
+    constructor(
+        private readonly fileService: FileService,
+        private readonly foxgloveService: FoxgloveService,
+    ) {}
 
     @Get()
     @LoggedIn()
@@ -357,5 +362,22 @@ export class FileController {
         logger.debug('Triggering manual topic extraction for missing files');
         const count = await this.fileService.reextractMissingTopics();
         return { count };
+    }
+
+    @Get(':uuid/foxglove-link')
+    @CanReadFile()
+    @ApiOkResponse({
+        description: 'Generates a signed link for Foxglove Studio.',
+        type: FoxgloveLinkResponseDto,
+    })
+    async getFoxgloveLink(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() auth: AuthHeader,
+    ): Promise<{ url: string }> {
+        const url = await this.foxgloveService.generateFoxgloveUrl(
+            uuid,
+            auth.user,
+        );
+        return { url };
     }
 }

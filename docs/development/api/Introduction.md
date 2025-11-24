@@ -16,6 +16,7 @@ Available Modules are:
 - [`action`](action.md) - Handles the action related requests.
 - [`queue`](queue.md) - Handles the queue related requests.
 - [`category`](category.md) - Handles the category related requests.
+- [`integrations`](integrations.md) - Handles the integrations related requests.
 
 ::: warning
 

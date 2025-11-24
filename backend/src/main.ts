@@ -48,7 +48,11 @@ async function bootstrap(): Promise<void> {
         }),
     );
     app.enableCors({
-        origin: [environment.FRONTEND_URL, environment.DOCS_URL],
+        origin: [
+            environment.FRONTEND_URL,
+            environment.DOCS_URL,
+            'https://app.foxglove.dev',
+        ],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         preflightContinue: false,
         credentials: true,
