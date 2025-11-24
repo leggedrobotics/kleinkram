@@ -91,12 +91,14 @@ export class AppModule implements NestModule {
      * @param consumer
      */
     configure(consumer: MiddlewareConsumer): void {
-        // Apply APIKeyResolverMiddleware and AuditLoggerMiddleware to all routes
         consumer
-            .apply(
-                APIKeyResolverMiddleware,
-                AuditLoggerMiddleware,
-                VersionCheckerMiddlewareService,
+            .apply(APIKeyResolverMiddleware, AuditLoggerMiddleware)
+            .forRoutes('*');
+
+        consumer
+            .apply(VersionCheckerMiddlewareService)
+            .exclude(
+                '/auth/(.*)', // excludes auth endpoints
             )
             .forRoutes('*');
     }
