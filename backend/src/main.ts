@@ -51,7 +51,7 @@ async function bootstrap(): Promise<void> {
         origin: [
             environment.FRONTEND_URL,
             environment.DOCS_URL,
-            'https://app.foxglove.dev',
+            'https://app.foxglove.dev/',
         ],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         preflightContinue: false,

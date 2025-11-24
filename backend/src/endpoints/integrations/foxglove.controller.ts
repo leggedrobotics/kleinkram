@@ -32,7 +32,10 @@ export class FoxgloveController {
         );
 
         // Foxglove requires CORS headers on the redirect response
-        response.header('Access-Control-Allow-Origin', 'app.foxglove.dev');
+        response.header(
+            'Access-Control-Allow-Origin',
+            'https://app.foxglove.dev/',
+        );
         response.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
 
         // 302 Redirect to MinIO
