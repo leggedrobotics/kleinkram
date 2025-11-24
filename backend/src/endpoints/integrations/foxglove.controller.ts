@@ -1,12 +1,18 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Req, Res } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { OutputDto } from '../../decarators';
 import { FoxgloveService } from '../../services/foxglove.service';
 import { ParameterUuid } from '../../validation/parameter-decorators';
 
 @Controller('integrations/foxglove')
 export class FoxgloveController {
+    // Whitelist for this specific controller
+    private readonly allowedOrigins = new Set([
+        'https://app.foxglove.dev',
+        'https://embed.foxglove.dev',
+    ]);
+
     constructor(private readonly foxgloveService: FoxgloveService) {}
 
     @Get(':uuid/:filename')
@@ -23,6 +29,7 @@ export class FoxgloveController {
         @Query('signature') signature: string,
         @Query('u') userUuid: string,
         @Res() response: Response,
+        @Req() request: Request,
     ): Promise<void> {
         const resolvedFileUrl = await this.foxgloveService.resolveRedirectUrl(
             uuid,
@@ -31,14 +38,20 @@ export class FoxgloveController {
             userUuid,
         );
 
-        // Foxglove requires CORS headers on the redirect response
-        response.header(
-            'Access-Control-Allow-Origin',
-            'https://app.foxglove.dev/',
-        );
-        response.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+        const origin = request.headers.origin;
+        if (origin && this.allowedOrigins.has(origin)) {
+            response.header('Access-Control-Allow-Origin', origin);
+        } else {
+            response.header(
+                'Access-Control-Allow-Origin',
+                'https://app.foxglove.dev',
+            );
+        }
 
-        // 302 Redirect to MinIO
+        response.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+        response.header('Access-Control-Allow-Credentials', 'true');
+
+        // 302 Redirect to MinIO/S3
         response.redirect(resolvedFileUrl);
     }
 }
