@@ -26,7 +26,7 @@ DATA_FILES = [
 PROJECT_DESCRIPTION = "This is a test project"
 
 
-WAIT_BEOFORE_DELETION = 5
+WAIT_BEFORE_DELETION = 5
 
 
 @pytest.fixture(scope="session")
@@ -38,7 +38,7 @@ def project():
 
     yield project
 
-    time.sleep(WAIT_BEOFORE_DELETION)
+    time.sleep(WAIT_BEFORE_DELETION)
     delete_project(project.id)
 
 
