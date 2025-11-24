@@ -84,7 +84,7 @@
         "@types/jest": "^29.5.2",
         "@types/node": "^24.9.1",
         "@types/supertest": "^6.0.3",
-        "@types/passport-github": "^1.1.12",
+        "@types/passport-github": "^1.1.13",
         "@types/multer": "^2.0.0",
         "@types/passport-google-oauth20": "^2.0.16",
         "@typescript-eslint/eslint-plugin": "^8.32.1",
