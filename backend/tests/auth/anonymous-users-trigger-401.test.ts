@@ -13,6 +13,7 @@ const UNAUTHENTICATED_ENDPOINTS: string[] = [
     '/metrics',
     '/swagger',
     '/swagger/',
+    '/integrations/',
 ];
 
 /**
