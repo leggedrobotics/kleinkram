@@ -59,7 +59,7 @@ import FileEntity from '@common/entities/file/file.entity';
 import { HealthStatus } from '@common/frontend_shared/enum';
 import { FoxgloveService } from '../../services/foxglove.service';
 
-@Controller(['file', 'files']) // TODO: migrate to 'files'
+@Controller(['files'])
 export class FileController {
     constructor(
         private readonly fileService: FileService,

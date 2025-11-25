@@ -50,7 +50,7 @@ export const fetchFilteredFiles = async (
 
         const queryParameters = new URLSearchParams(parameters).toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
-            `/file/filtered?${queryParameters}`,
+            `/files/filtered?${queryParameters}`,
         );
         return response.data;
     } catch (error) {
@@ -62,7 +62,7 @@ export const fetchFilteredFiles = async (
 export const fetchFile = async (uuid: string): Promise<FileWithTopicDto> => {
     try {
         const response: AxiosResponse<FileWithTopicDto> =
-            await axios.get<FileWithTopicDto>('/file/one', {
+            await axios.get<FileWithTopicDto>('/files/one', {
                 params: { uuid },
             });
         return response.data;
@@ -76,7 +76,7 @@ export const downloadFile = async (
     expires: boolean,
     preview_only = false,
 ): Promise<string> => {
-    const response = await axios.get('file/download', {
+    const response = await axios.get('files/download', {
         params: {
             uuid,
             expires,
@@ -123,7 +123,7 @@ export const findOneByNameAndMission = async (
     missionUUID: string,
 ): Promise<FileWithTopicDto> => {
     const response: AxiosResponse<FileWithTopicDto> =
-        await axios.get<FileWithTopicDto>('file/oneByName', {
+        await axios.get<FileWithTopicDto>('files/oneByName', {
             params: {
                 filename,
                 uuid: missionUUID,
@@ -134,7 +134,7 @@ export const findOneByNameAndMission = async (
 
 export const getStorage = async (): Promise<StorageOverviewDto> => {
     const response: AxiosResponse<StorageOverviewDto> =
-        await axios.get<StorageOverviewDto>('file/storage');
+        await axios.get<StorageOverviewDto>('files/storage');
     return response.data;
 };
 
@@ -149,7 +149,7 @@ export const existsFile = async (
 ): Promise<FileExistsResponseDto | false> => {
     try {
         const response = await axios.get<FileExistsResponseDto>(
-            '/file/exists',
+            '/files/exists',
             {
                 params: { uuid },
             },

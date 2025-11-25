@@ -15,7 +15,7 @@ export type GenerateTemporaryCredentialsResponse = {
 }[];
 
 export const updateFile = async ({ file }: { file: FileWithTopicDto }) => {
-    const response = await axios.put(`/file/${file.uuid}`, {
+    const response = await axios.put(`/files/${file.uuid}`, {
         uuid: file.uuid,
         missionUuid: file.missionUUID,
         filename: file.filename,
@@ -28,7 +28,7 @@ export const updateFile = async ({ file }: { file: FileWithTopicDto }) => {
 };
 
 export const moveFiles = async (fileUUIDs: string[], missionUUID: string) => {
-    const response = await axios.post('/file/moveFiles', {
+    const response = await axios.post('/files/moveFiles', {
         fileUUIDs,
         missionUUID,
     });
@@ -36,7 +36,7 @@ export const moveFiles = async (fileUUIDs: string[], missionUUID: string) => {
 };
 
 export const deleteFile = async (file: FileWithTopicDto) => {
-    const response = await axios.delete(`/file/${file.uuid}`);
+    const response = await axios.delete(`/files/${file.uuid}`);
     return response.data;
 };
 
@@ -44,7 +44,7 @@ export const generateTemporaryCredentials = async (
     filenames: string[],
     missionUUID: string,
 ): Promise<TemporaryFileAccessesDto> => {
-    const response = await axios.post('/file/temporaryAccess', {
+    const response = await axios.post('/files/temporaryAccess', {
         filenames,
         missionUUID,
     });
@@ -55,7 +55,7 @@ export const cancelUploads = async (
     fileUuids: string[],
     missionUuid: string,
 ): Promise<void> => {
-    const response = await axios.post('/file/cancelUpload', {
+    const response = await axios.post('/files/cancelUpload', {
         uuids: fileUuids,
         missionUuid: missionUuid,
     });
@@ -63,7 +63,7 @@ export const cancelUploads = async (
 };
 
 export const deleteFiles = async (fileUUIDs: string[], missionUUID: string) => {
-    const response = await axios.post('/file/deleteMultiple', {
+    const response = await axios.post('/files/deleteMultiple', {
         uuids: fileUUIDs,
         missionUUID,
     });
