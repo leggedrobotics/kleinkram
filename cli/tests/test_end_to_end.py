@@ -69,7 +69,7 @@ def test_list_files(project, mission, api):
     assert run_cmd(f"{CLI} list files -p {project.name}") == 0
     assert run_cmd(f"{CLI} list files -p {project.name} -m {mission.name}") == 0
     assert run_cmd(f"{CLI} list files") == 0
-    assert run_cmd(f"{CLI} list files -p {mission.name}") == 0
+    assert run_cmd(f"{CLI} list files -p {project.name}") == 0
     assert run_cmd(f'{CLI} list files -p "*" -m "*" "*"') == 0
 
 
