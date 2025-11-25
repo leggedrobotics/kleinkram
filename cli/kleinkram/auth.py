@@ -91,7 +91,20 @@ def login_flow(
         return
 
     oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state=cli"
-    if not headless and _has_browser():
+
+    is_port_available = True
+    try:
+        server = HTTPServer(("", 8000), OAuthCallbackHandler)
+        server.server_close()
+    except OSError:
+        is_port_available = False
+
+    if not is_port_available:
+        print(
+            "Warning: Port 8000 is not available. Falling back to headless authentication.\n\n"
+        )
+
+    if not headless and _has_browser() and is_port_available:
         _browser_auth(url=oauth_url)
     else:
         _headless_auth(url=f"{oauth_url}-no-redirect")
