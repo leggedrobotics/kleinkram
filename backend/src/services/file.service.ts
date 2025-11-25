@@ -35,6 +35,7 @@ import {
     addMissionFilters,
     addProjectFilters,
     addSort,
+    convertGlobToLikePattern,
 } from './utilities';
 
 import {
@@ -60,6 +61,8 @@ import { BucketItem } from 'minio/dist/main/internal/type';
 import {
     addAccessConstraints,
     addAccessConstraintsToFileQuery,
+    addAccessConstraintsToMissionQuery,
+    addAccessConstraintsToProjectQuery,
 } from '../endpoints/auth/auth-helper';
 import logger from '../logger';
 
@@ -162,6 +165,168 @@ export class FileService implements OnModuleInit {
             take,
             skip,
         };
+    }
+
+    /**
+     * Checks if the user has access to the specified missions and projects.
+     *
+     * This method is NOT intended for fine-grained access control, but rather
+     * to produce nice error messages when a user tries to access resources they
+     * should not.
+     */
+    async checkResourceAccess(
+        projectUuids: string[],
+        missionUuids: string[],
+        userUuid: string,
+    ): Promise<void> {
+        // Verify Projects
+        if (projectUuids.length > 0) {
+            const uniqueProjectUuids = [...new Set(projectUuids)];
+
+            let query = this.projectRepository.createQueryBuilder('project');
+
+            // Filter by the specific requested IDs
+            query.where('project.uuid IN (:...uuids)', {
+                uuids: uniqueProjectUuids,
+            });
+
+            // Apply standard security constraints (Admins see all; Users see their own)
+            query = addAccessConstraintsToProjectQuery(query, userUuid);
+
+            // Fetch allowed IDs
+            const foundProjects = await query.select('project.uuid').getMany();
+            const foundUuids = new Set(foundProjects.map((p) => p.uuid));
+
+            // Calculate missing
+            const missing = uniqueProjectUuids.filter(
+                (id) => !foundUuids.has(id),
+            );
+
+            if (missing.length > 0) {
+                throw new NotFoundException(
+                    `The following Project UUIDs do not exist or you do not have access: ${missing.join(', ')}`,
+                );
+            }
+        }
+
+        // Verify Missions
+        if (missionUuids.length > 0) {
+            const uniqueMissionUuids = [...new Set(missionUuids)];
+
+            let query = this.missionRepository
+                .createQueryBuilder('mission')
+                .select('mission.uuid')
+                .leftJoin('mission.project', 'project');
+
+            // Filter by the specific requested IDs
+            query.where('mission.uuid IN (:...uuids)', {
+                uuids: uniqueMissionUuids,
+            });
+
+            // Apply standard security constraints
+            query = addAccessConstraintsToMissionQuery(query, userUuid);
+
+            // Fetch allowed IDs
+            const foundMissions = await query.select('mission.uuid').getMany();
+            const foundUuids = new Set(foundMissions.map((m) => m.uuid));
+
+            // Calculate missing
+            const missing = uniqueMissionUuids.filter(
+                (id) => !foundUuids.has(id),
+            );
+
+            if (missing.length > 0) {
+                throw new NotFoundException(
+                    `The following Mission UUIDs do not exist or you do not have access: ${missing.join(', ')}`,
+                );
+            }
+        }
+    }
+
+    /**
+     *
+     * Checks if the user has access to the specified missions and projects by name patterns.
+     * This method supports exact matches as well as wildcard patterns.
+     *
+     * This method is NOT intended for fine-grained access control, but rather
+     * to produce nice error messages when a user tries to access resources they
+     * should not.
+     *
+     */
+    async checkResourceAccessByName(
+        projectNamePatterns: string[],
+        missionNamePatterns: string[],
+        userUuid: string,
+        exactMatch = false,
+    ): Promise<void> {
+        logger.debug(
+            `Checking resource access by name for user ${userUuid}. Projects: ${projectNamePatterns}, Missions: ${missionNamePatterns}, Exact: ${exactMatch}`,
+        );
+
+        // We use addProjectFilters which supports exactMatch natively
+        if (projectNamePatterns && projectNamePatterns.length > 0) {
+            const missingPatterns: string[] = [];
+
+            for (const pattern of projectNamePatterns) {
+                let query =
+                    this.projectRepository.createQueryBuilder('project');
+
+                query = addAccessConstraintsToProjectQuery(query, userUuid);
+                query = addProjectFilters(
+                    query,
+                    this.projectRepository,
+                    [],
+                    [pattern],
+                    exactMatch,
+                );
+
+                const count = await query.getCount();
+                if (count === 0) {
+                    missingPatterns.push(pattern);
+                }
+            }
+
+            if (missingPatterns.length > 0) {
+                throw new NotFoundException(
+                    `The following Project patterns matched no accessible resources: ${missingPatterns.join(', ')}`,
+                );
+            }
+        }
+
+        if (missionNamePatterns && missionNamePatterns.length > 0) {
+            const missingPatterns: string[] = [];
+
+            for (const pattern of missionNamePatterns) {
+                let query = this.missionRepository
+                    .createQueryBuilder('mission')
+                    .leftJoin('mission.project', 'project');
+
+                query = addAccessConstraintsToMissionQuery(query, userUuid);
+
+                if (exactMatch) {
+                    query.andWhere('LOWER(mission.name) = LOWER(:pattern)', {
+                        pattern,
+                    });
+                } else {
+                    const likePattern = convertGlobToLikePattern(pattern);
+                    // Use standard wildcard match (case-insensitive)
+                    query.andWhere('LOWER(mission.name) LIKE :pattern', {
+                        pattern: `%${likePattern.toLowerCase()}%`,
+                    });
+                }
+
+                const count = await query.getCount();
+                if (count === 0) {
+                    missingPatterns.push(pattern);
+                }
+            }
+
+            if (missingPatterns.length > 0) {
+                throw new NotFoundException(
+                    `The following Mission patterns matched no accessible resources: ${missingPatterns.join(', ')}`,
+                );
+            }
+        }
     }
 
     /**

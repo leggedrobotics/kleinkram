@@ -76,6 +76,22 @@ export class FileController {
         @Query() query: FileQueryDto,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
+        // we pre-check the access to give a proper error message
+        // the actual findMany method will check access again per file
+        await this.fileService.checkResourceAccess(
+            query.projectUuids ?? [],
+            query.missionUuids ?? [],
+            auth.user.uuid,
+        );
+
+        // also check access by patterns
+        await this.fileService.checkResourceAccessByName(
+            query.projectPatterns ?? [],
+            query.missionPatterns ?? [],
+            auth.user.uuid,
+        );
+
+        // now fetch files, we only query files we have access to
         return await this.fileService.findMany(
             query.projectUuids ?? [],
             query.projectPatterns ?? [],
