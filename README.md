@@ -1,4 +1,4 @@
-# Kleinkram - A structured bag and mcap storage solution
+# Kleinkram - Open Robotic Data Management
 
 Kleinkram is a structured bag and mcap file storage solution for ROS1 and ROS2.
 It is designed to be a simple and efficient way to store and retrieve bag and mcap files.
