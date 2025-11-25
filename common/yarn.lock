@@ -142,10 +142,10 @@
   dependencies:
     cron "4.3.3"
 
-"@nestjs/swagger@^11.2.2":
-  version "11.2.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.2.2.tgz#3d5f4cb3464cee5f2e370c24a22a275a49ce9d55"
-  integrity sha512-i16GRaZ7vlTHIqk8C1UvV/WwQYbWwQymocTvU8mr6QIUBZ6fJc1uGEsw0Mu/JWC0kaV3nbsTj1hZbXrc5Ui4NA==
+"@nestjs/swagger@^11.2.3":
+  version "11.2.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.2.3.tgz#979fbc87fedee0b71d9af181cafe9dbe3e4bd976"
+  integrity sha512-a0xFfjeqk69uHIUpP8u0ryn4cKuHdra2Ug96L858i0N200Hxho+n3j+TlQXyOF4EstLSGjTfxI1Xb2E1lUxeNg==
   dependencies:
     "@microsoft/tsdoc" "0.16.0"
     "@nestjs/mapped-types" "2.1.0"

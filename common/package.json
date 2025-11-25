@@ -12,7 +12,7 @@
         "@nestjs/common": "^10.4.20",
         "@nestjs/core": "^11.1.9",
         "@nestjs/schedule": "^6.0.1",
-        "@nestjs/swagger": "^11.2.2",
+        "@nestjs/swagger": "^11.2.3",
         "@nestjs/typeorm": "^10.0.2",
         "@willsoto/nestjs-prometheus": "^6.0.2",
         "axios": "^1.13.2",
