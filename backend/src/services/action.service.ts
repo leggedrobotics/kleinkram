@@ -439,4 +439,17 @@ export class ActionService {
             return '';
         }
     }
+
+    /**
+     * Checks if an action template name is already in use.
+     */
+    async isNameAvailable(name: string): Promise<boolean> {
+        // We only check against searchable templates or all templates depending on requirement.
+        // Usually, names must be unique globally or per visibility.
+        // Based on createTemplate, unique violation happens on 'name'.
+        const count = await this.actionTemplateRepository.count({
+            where: { name },
+        });
+        return count === 0;
+    }
 }

@@ -3,6 +3,7 @@ import {
     ActionTemplatesDto,
 } from '@common/api/types/actions/action-template.dto';
 import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
+import { CheckNameResponseDto } from '@common/api/types/actions/check-name-response.dto';
 import {
     CreateTemplateDto,
     UpdateTemplateDto,
@@ -70,6 +71,22 @@ export class ActionController {
         @AddUser() user: AuthHeader,
     ): Promise<ActionSubmitResponseDto> {
         return this.actionService.submit(dto, user);
+    }
+
+    @Get('check-name')
+    @CanCreate()
+    @ApiOperation({
+        summary: 'Check if an action name is available',
+    })
+    @ApiOkResponse({
+        description: 'Availability status',
+        type: CheckNameResponseDto,
+    })
+    async checkNameAvailability(
+        @Query('name') name: string,
+    ): Promise<CheckNameResponseDto> {
+        const available = await this.actionService.isNameAvailable(name);
+        return { available };
     }
 
     @Delete(':uuid')
