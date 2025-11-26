@@ -130,6 +130,14 @@ export default tseslint.config(
             'unicorn/no-null': 'warn',
             '@typescript-eslint/restrict-template-expressions': 'off',
             'unicorn/filename-case': 'error',
+            'unicorn/prevent-abbreviations': [
+                'error',
+                {
+                    allowList: {
+                        props: true,
+                    },
+                },
+            ],
         },
     },
     {

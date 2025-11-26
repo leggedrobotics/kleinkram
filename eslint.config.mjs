@@ -86,6 +86,14 @@ export default tseslint.config(
             'unicorn/no-array-method-this-argument': 'warn',
             '@typescript-eslint/restrict-template-expressions': 'off',
             complexity: 'off',
+            'unicorn/prevent-abbreviations': [
+                'error',
+                {
+                    allowList: {
+                        props: true,
+                    },
+                },
+            ],
         },
     },
     {
