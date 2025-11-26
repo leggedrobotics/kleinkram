@@ -7,25 +7,20 @@ import {
 } from 'src/hooks/query-hooks';
 import { computed, ComputedRef, Ref } from 'vue';
 
-/**
- * A composable for managing scope selection (projects and missions).
- * Synchronizes with the global handler state to ensure consistent
- * selection across the application (the state handler uses the URL).
- *
- * * @returns An object containing:
- * - `projects`: A computed reference to the list of available projects.
- * - `selectedProject`: A computed reference to the currently selected project.
- * - `missions`: A computed reference to the list of missions for the selected project.
- * - `selectedMission`: A computed reference to the currently selected mission.
- * - `setProject`: A function to set the selected project by its UUID.
- *
- */
-export function useScopeSelection(): {
-    // State
+export function useScopeSelection(
+    localProjectUuid?: Ref<string | undefined>,
+    localMissionUuid?: Ref<string | undefined>,
+    customProjects?: Ref<ProjectWithRequiredTagsDto[] | undefined>,
+): {
+    // Data
     projects: ComputedRef<ProjectWithRequiredTagsDto[]>;
     missions: ComputedRef<FlatMissionDto[]>;
+
+    // Selection State
     selectedProjectUuid: ComputedRef<string | undefined>;
     selectedMissionUuid: ComputedRef<string | undefined>;
+    selectedProject: ComputedRef<ProjectWithRequiredTagsDto | undefined>;
+    selectedMission: ComputedRef<FlatMissionDto | undefined>;
 
     // Loading States
     isLoading: ComputedRef<boolean>;
@@ -43,50 +38,85 @@ export function useScopeSelection(): {
     setMission: (uuid: string | undefined) => void;
 } {
     const handler = useHandler();
+    const isLocalMode = !!localProjectUuid;
 
     const { data: projectsData, isLoading: isProjectsLoading } =
         useFilteredProjects(500, 0, 'name', false);
 
-    const projects = computed(() => projectsData.value?.data ?? []);
+    const projects = computed(() => {
+        if (customProjects?.value) return customProjects.value;
+        return projectsData.value?.data ?? [];
+    });
 
-    const projectUuid = computed(() => handler.value.projectUuid);
+    // If local ref exists, use it. Otherwise, read from Handler.
+    const selectedProjectUuid = computed(() =>
+        isLocalMode ? localProjectUuid.value : handler.value.projectUuid,
+    );
 
+    const selectedMissionUuid = computed(() =>
+        isLocalMode ? localMissionUuid?.value : handler.value.missionUuid,
+    );
+
+    const selectedProject = computed(() => {
+        return projects.value.find((p) => p.uuid === selectedProjectUuid.value);
+    });
+
+    const selectedMission = computed(() => {
+        return missions.value.find((m) => m.uuid === selectedMissionUuid.value);
+    });
+
+    // Missions (Reactive to whichever Project is selected) ---
     const { data: missionsData, isLoading: isMissionsLoading } =
         useMissionsOfProjectMinimal(
-            computed(() => projectUuid.value ?? ''),
+            computed(() => selectedProjectUuid.value ?? ''),
             500,
             0,
         );
 
     const missions = computed(() => missionsData.value?.data ?? []);
 
-    const setProject = (uuid: string | undefined): void => {
-        handler.value.setProjectUUID(uuid);
-        if (handler.value.missionUuid) {
-            handler.value.setMissionUUID(undefined);
+    const setProject = (uuid: string | undefined | null): void => {
+        const value = uuid ?? undefined;
+
+        if (isLocalMode && localProjectUuid) {
+            localProjectUuid.value = value;
+            if (localMissionUuid) localMissionUuid.value = undefined;
+        } else {
+            handler.value.setProjectUUID(value);
+            if (handler.value.missionUuid)
+                handler.value.setMissionUUID(undefined);
         }
     };
 
-    const setMission = (uuid: string | undefined): void => {
-        handler.value.setMissionUUID(uuid);
+    const setMission = (uuid: string | undefined | null): void => {
+        const value = uuid ?? undefined;
+        if (isLocalMode && localMissionUuid) {
+            localMissionUuid.value = value;
+        } else {
+            handler.value.setMissionUUID(value);
+        }
     };
 
     return {
-        // State
+        // Data
         projects,
         missions,
-        selectedProjectUuid: projectUuid,
-        selectedMissionUuid: computed(() => handler.value.missionUuid),
 
-        // Loading States (Crucial for UX)
+        // State (UUIDs)
+        selectedProjectUuid,
+        selectedMissionUuid,
+        selectedProject,
+        selectedMission,
+
+        // Actions
+        setProject,
+        setMission,
+
+        // Loading
         isLoading: computed(
             () => isProjectsLoading.value || isMissionsLoading.value,
         ),
         isProjectsLoading,
         isMissionsLoading,
-
-        // Actions
-        setProject,
-        setMission,
     };
 }

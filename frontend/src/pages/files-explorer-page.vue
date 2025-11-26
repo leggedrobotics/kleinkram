@@ -220,9 +220,14 @@
                     :project-uuid="projectUuid"
                     @update:selected="updateSelected"
                 />
+
                 <div class="button-border" style="min-width: 220px">
-                    <file-type-selector v-model="fileTypeFilter" />
+                    <file-type-selector
+                        v-model="fileTypeFilter"
+                        style="height: 36px"
+                    />
                 </div>
+
                 <q-input
                     v-model="search"
                     debounce="300"
@@ -320,6 +325,7 @@
                     v-if="handler"
                     v-model:selected="selectedFiles"
                     :url-handler="handler"
+                    @reset-filter="resetFilter"
                 />
 
                 <template #fallback>
@@ -406,15 +412,23 @@ const fileTypeFilter = ref<FileTypeOption[] | undefined>(undefined);
 const fileHealthOptions = [
     HealthStatus.HEALTHY,
     HealthStatus.UPLOADING,
-    HealthStatus.UPLOADING,
+    HealthStatus.UNHEALTHY,
 ];
 
-const selectedFileHealth = computed<string, string | undefined>({
-    // @ts-ignore
+const resetFilter = (): void => {
+    fileTypeFilter.value = undefined;
+    search.value = '';
+    selectedFileHealth.value = undefined;
+    selectedCategories.value = [];
+};
+
+const selectedFileHealth = computed<string | undefined, string | undefined>({
     get: () => handler.value.searchParams.health,
     set: (value: string | undefined) => {
-        // @ts-ignore
-        handler.value.setSearch({ health: value ?? '', name: search.value });
+        handler.value.setSearch({
+            health: value ?? '',
+            name: search.value ?? '',
+        });
     },
 });
 
@@ -525,7 +539,7 @@ const { mutate: _deleteFiles } = useMutation({
     },
 });
 
-async function refresh() {
+async function refresh(): Promise<void> {
     await queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === 'files',
     });
@@ -653,3 +667,9 @@ const copyMissionUuidToClipboard = async (): Promise<void> => {
     await copyToClipboard(missionUuid.value ?? '');
 };
 </script>
+
+<style scoped>
+.button-border:hover {
+    border-color: #8d8d8d;
+}
+</style>

@@ -1,239 +1,195 @@
 <template>
     <title-section title="Datatable" />
 
-    <div class="row">
-        <div class="col-4 flex">
-            <q-input
-                v-model="startDates"
-                filled
-                dense
-                outlined
-                clearable
-                placeholder="Select start date"
-                class="q-pa-sm"
-                style="width: 50%"
-                @clear="resetStartDate"
-            >
-                <template #prepend>
-                    <q-icon name="sym_o_event" class="cursor-pointer">
-                        <q-popup-proxy
-                            cover
-                            transition-show="scale"
-                            transition-hide="scale"
-                        >
-                            <q-date v-model="startDates" :mask="dateMask">
-                                <div class="row items-center justify-end">
-                                    <q-btn
-                                        v-close-popup
-                                        label="Close"
-                                        color="primary"
-                                        flat
-                                    />
-                                </div>
-                            </q-date>
-                        </q-popup-proxy>
-                    </q-icon>
-                </template>
-            </q-input>
-            <p class="flex flex-center" style="margin-bottom: 0; width: 0">-</p>
-            <q-input
-                v-model="endDates"
-                filled
-                dense
-                clearable
-                placeholder="Select start date"
-                class="q-pa-sm"
-                style="width: 50%"
-                @clear="resetEndDate"
-            >
-                <template #prepend>
-                    <q-icon name="sym_o_event" class="cursor-pointer">
-                        <q-popup-proxy
-                            cover
-                            transition-show="scale"
-                            transition-hide="scale"
-                        >
-                            <q-date v-model="endDates" :mask="dateMask">
-                                <div class="row items-center justify-end">
-                                    <q-btn
-                                        v-close-popup
-                                        label="Close"
-                                        color="primary"
-                                        flat
-                                    />
-                                </div>
-                            </q-date>
-                        </q-popup-proxy>
-                    </q-icon>
-                </template>
-            </q-input>
-        </div>
-        <div class="col-4 flex q-pa-sm">
-            <q-btn-dropdown
-                v-model="dd_open_projects"
-                :label="selected_project?.name || 'Filter by Project'"
-                dense
-                clearable
-                flat
-                class="full-width button-border"
-            >
-                <q-list>
-                    <q-item
-                        v-for="project in projects"
-                        :key="project.uuid"
-                        clickable
-                        @click="
-                            () => {
-                                handler.setProjectUUID(project.uuid);
-                                dd_open_projects = false;
-                            }
-                        "
-                    >
-                        <q-item-section>
-                            <q-item-label>{{ project.name }}</q-item-label>
-                        </q-item-section>
-                    </q-item>
-                </q-list>
-            </q-btn-dropdown>
-        </div>
-        <div class="col-4 flex q-pa-sm">
-            <q-tooltip v-if="!handler.projectUuid" self="bottom middle">
-                Please select a project first
-            </q-tooltip>
-            <q-btn-dropdown
-                v-model="dd_open_missions"
-                :label="selected_mission?.name || 'Filter by Mission'"
-                dense
-                clearable
-                flat
-                class="full-width button-border"
-                :disable="!handler.projectUuid"
-            >
-                <q-list>
-                    <q-item
-                        v-for="mission in missions"
-                        :key="mission.uuid"
-                        clickable
-                        @click="
-                            () => {
-                                handler.setMissionUUID(mission.uuid);
-                                dd_open_missions = false;
-                            }
-                        "
-                    >
-                        <q-item-section>
-                            <q-item-label>{{ mission.name }}</q-item-label>
-                        </q-item-section>
-                    </q-item>
-                </q-list>
-            </q-btn-dropdown>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-2 q-pa-sm">
-            <file-type-selector
-                ref="fileTypeSelectorReference"
-                v-model="fileTypeFilter"
-            />
-        </div>
-        <div class="col-2 q-pa-sm" style="margin: 0">
-            <q-input
-                v-model="filter"
-                outlined
-                dense
-                debounce="300"
-                clearable
-                placeholder="Filter by Filename"
-                class="full-width"
-            />
-        </div>
-
-        <div class="col-4 q-pa-sm" style="display: flex; align-items: center">
-            <q-select
-                v-model="selectedTopics"
-                label="Select Topics"
-                use-input
-                input-debounce="20"
-                outlined
-                dense
-                clearable
-                multiple
-                use-chips
-                :options="displayedTopics"
-                emit-value
-                map-options
-                class="full-width"
-                style="
-                    padding-right: 5px;
-                    max-height: 70px;
-                    overflow: scroll;
-                    scrollbar-width: none;
-                "
-                @filter="filterFunction"
-            />
-            <q-btn-dropdown
-                dense
-                flat
-                class="full-height button-border"
-                style="min-width: 60px"
-            >
-                <template #label>
-                    {{ matchAllTopics ? 'And' : 'Or' }}
-                </template>
-                <q-list>
-                    <q-item
-                        v-for="(item, index) in ['And', 'Or']"
-                        :key="index"
-                        clickable
-                        @click="() => (matchAllTopics = item === 'And')"
-                    >
-                        <q-item-section>
-                            {{ item }}
-                        </q-item-section>
-                    </q-item>
-                </q-list>
-            </q-btn-dropdown>
-        </div>
-
-        <div class="col-3 q-pa-sm">
-            <q-btn
-                v-if="tagFilter"
-                flat
-                text-color="black"
-                color="primary"
-                label="Tags"
-                icon="sym_o_sell"
-                class="full-width button-border full-height"
-                @click="openTagFilterDialog"
-            >
-                <q-chip
-                    v-for="value in Object.values(tagFilter)"
-                    :key="
-                        // @ts-ignore
-                        value?.name
-                    "
+    <div
+        class="q-pa-md bg-grey-1 rounded-borders q-mb-md border-grey-3"
+        style="border: 1px solid #e0e0e0"
+    >
+        <div class="row q-col-gutter-sm q-mb-sm">
+            <div class="col-12 col-sm-6 col-md-3">
+                <q-input
+                    v-model="startDates"
+                    filled
                     dense
+                    outlined
+                    bg-color="white"
+                    label="Start Date"
+                    @clear="resetStartDate"
                 >
-                    {{
-                        // @ts-ignore
-                        value?.name
-                    }}:
-                    {{
-                        // @ts-ignore
-                        value?.value
-                    }}
-                </q-chip>
-            </q-btn>
+                    <template #append>
+                        <q-icon name="sym_o_event" class="cursor-pointer">
+                            <q-popup-proxy
+                                cover
+                                transition-show="scale"
+                                transition-hide="scale"
+                            >
+                                <q-date v-model="startDates" :mask="dateMask">
+                                    <div class="row items-center justify-end">
+                                        <q-btn
+                                            v-close-popup
+                                            label="Close"
+                                            color="primary"
+                                            flat
+                                        />
+                                    </div>
+                                </q-date>
+                            </q-popup-proxy>
+                        </q-icon>
+                    </template>
+                </q-input>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-3">
+                <q-input
+                    v-model="endDates"
+                    filled
+                    dense
+                    outlined
+                    bg-color="white"
+                    label="End Date"
+                    @clear="resetEndDate"
+                >
+                    <template #append>
+                        <q-icon name="sym_o_event" class="cursor-pointer">
+                            <q-popup-proxy
+                                cover
+                                transition-show="scale"
+                                transition-hide="scale"
+                            >
+                                <q-date v-model="endDates" :mask="dateMask">
+                                    <div class="row items-center justify-end">
+                                        <q-btn
+                                            v-close-popup
+                                            label="Close"
+                                            color="primary"
+                                            flat
+                                        />
+                                    </div>
+                                </q-date>
+                            </q-popup-proxy>
+                        </q-icon>
+                    </template>
+                </q-input>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <ScopeSelector
+                    layout="row"
+                    :show-labels="true"
+                    class="full-width"
+                />
+                <q-tooltip v-if="!handler.projectUuid" self="bottom middle">
+                    Please select a project first
+                </q-tooltip>
+            </div>
         </div>
-        <div class="col-1 q-pa-sm">
-            <q-btn
-                flat
-                text-color="black"
-                label="Reset"
-                icon="sym_o_clear"
-                class="full-width button-border full-height"
-                @click="resetFilter"
-            />
+
+        <div class="row q-col-gutter-sm items-center">
+            <div class="col-12 col-sm-4 col-md-2">
+                <file-type-selector
+                    ref="fileTypeSelectorReference"
+                    v-model="fileTypeFilter"
+                />
+            </div>
+
+            <div class="col-12 col-sm-8 col-md-5">
+                <div class="row no-wrap q-col-gutter-xs">
+                    <div class="col-auto">
+                        <q-btn-dropdown
+                            unelevated
+                            outline
+                            color="grey-4"
+                            text-color="black"
+                            dense
+                            class="bg-white full-height"
+                            no-caps
+                        >
+                            <template #label>
+                                <span class="text-weight-regular">{{
+                                    matchAllTopics ? 'And' : 'Or'
+                                }}</span>
+                            </template>
+                            <q-list>
+                                <q-item clickable @click="useAndTopicFilter">
+                                    <q-item-section>And</q-item-section>
+                                </q-item>
+                                <q-item clickable @click="useOrTopicFilter">
+                                    <q-item-section>Or</q-item-section>
+                                </q-item>
+                            </q-list>
+                        </q-btn-dropdown>
+                    </div>
+                    <div class="col">
+                        <q-select
+                            v-model="selectedTopics"
+                            label="Filter by Topics"
+                            use-input
+                            input-debounce="20"
+                            outlined
+                            dense
+                            bg-color="white"
+                            multiple
+                            use-chips
+                            :options="displayedTopics"
+                            emit-value
+                            map-options
+                            class="full-width"
+                            @filter="filterFunction"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-8 col-md-3">
+                <q-input
+                    v-model="filter"
+                    outlined
+                    dense
+                    bg-color="white"
+                    debounce="300"
+                    clearable
+                    placeholder="Search Filename"
+                    class="full-width"
+                >
+                    <template #append>
+                        <q-icon name="sym_o_search" />
+                    </template>
+                </q-input>
+            </div>
+
+            <div class="col-12 col-sm-4 col-md-2 text-right">
+                <div class="row justify-end q-gutter-x-sm">
+                    <q-btn
+                        v-if="tagFilter"
+                        flat
+                        dense
+                        round
+                        icon="sym_o_sell"
+                        color="primary"
+                        @click="openTagFilterDialog"
+                    >
+                        <q-tooltip>Advanced Tag Filter</q-tooltip>
+                        <q-badge
+                            v-if="Object.values(tagFilter).length > 0"
+                            color="red"
+                            floating
+                        >
+                            {{ Object.values(tagFilter).length }}
+                        </q-badge>
+                    </q-btn>
+
+                    <q-btn
+                        unelevated
+                        color="grey-4"
+                        text-color="black"
+                        label="Reset"
+                        icon="sym_o_refresh"
+                        no-caps
+                        class="full-height"
+                        @click="resetFilter"
+                    />
+                </div>
+            </div>
         </div>
     </div>
 
@@ -270,14 +226,6 @@
                 >
                     <q-tooltip>{{ getTooltip(props.row.state) }}</q-tooltip>
                 </q-icon>
-                <link
-                    rel="stylesheet"
-                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-                />
-                <link
-                    rel="stylesheet"
-                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
-                />
             </q-td>
         </template>
         <template #body-cell-action="props">
@@ -323,109 +271,60 @@
         </template>
     </q-table>
 </template>
-<script setup lang="ts">
-import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
-import { QTable, useQuasar } from 'quasar';
-import { computed, Ref, ref, watch } from 'vue';
 
+<script setup lang="ts">
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
+import { FileType } from '@common/enum';
+import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
+import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
+import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
+import ScopeSelector from 'components/common/scope-selector.vue';
+import FileTypeSelector, {
+    FileTypeOption,
+} from 'components/file-type-selector.vue';
+import TitleSection from 'components/title-section.vue';
+import { QTable, useQuasar } from 'quasar';
 import TagFilter from 'src/dialogs/tag-filter.vue';
-import {
-    useFilteredProjects,
-    useHandler,
-    useMissionsOfProjectMinimal,
-} from 'src/hooks/query-hooks';
+import { useHandler } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
 import { allTopicsNames } from 'src/services/queries/topic';
+import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
-import { FileType } from '@common/enum';
-import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
-import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
-import FileTypeSelector, {
-    FileTypeOption,
-} from 'components/file-type-selector.vue';
-import TitleSection from 'components/title-section.vue';
-
 const $router = useRouter();
-
 const $q = useQuasar();
 const tableReference: Ref<QTable | undefined> = ref(undefined);
-
 const handler = useHandler();
 handler.value.sortBy = 'file.createdAt';
 handler.value.descending = true;
-
 const loading = ref(false);
 const filter = ref('');
-
 const start = new Date(0);
 const end = new Date();
 const startDates = ref(formatDate(start));
 const endDates = ref(formatDate(end));
-
 const fileTypeFilter = ref<FileTypeOption[] | undefined>(undefined);
 const fileTypeSelectorReference = ref<
-    | {
-          setAll?: (value: boolean) => void;
-      }
-    | undefined
+    { setAll?: (value: boolean) => void } | undefined
 >(undefined);
-
-const selected_project = computed(() =>
-    projects.value.find(
-        (project: ProjectWithMissionCountDto) =>
-            project.uuid === handler.value.projectUuid,
-    ),
-);
-
-const selected_mission = computed(() =>
-    missions.value.find(
-        (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
-    ),
-);
-
-const dd_open_projects = ref(false);
-const dd_open_missions = ref(false);
 const selected = ref([]);
-
-// Fetch projects
-const projectsReturn = useFilteredProjects(500, 0, 'name', false);
-const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value.data : [],
-);
-
-// Fetch missions
-const { data: _missions } = useMissionsOfProjectMinimal(
-    (handler.value.projectUuid && '') as string,
-    500,
-    0,
-);
-const missions = computed(() => (_missions.value ? _missions.value.data : []));
-
-// Fetch topics
 const { data: allTopics } = useQuery<string[]>({
     queryKey: ['topics'],
     queryFn: allTopicsNames,
 });
 const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
-
 const matchAllTopics = ref(false);
+
 const tagFilter: Ref<Record<string, { name: string; value: string }>> = ref({});
-
 end.setHours(23, 59, 59, 999);
-
 const startDate = computed(() => parseDate(startDates.value));
 const endDate = computed(() => parseDate(endDates.value));
-
 const selectedFileTypesFilter = computed<FileType[]>(() => {
     const list = fileTypeFilter.value ?? [];
     return list
@@ -452,7 +351,7 @@ function setPagination(update: {
         descending: boolean;
     };
     getCellValue: any;
-}) {
+}): void {
     handler.value.setPage(update.pagination.page);
     handler.value.setTake(update.pagination.rowsPerPage);
     handler.value.setSort(update.pagination.sortBy);
@@ -502,9 +401,9 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
                 handler.value.descending,
             ),
     });
+
 const data = computed(() => (_data.value ? _data.value.data : []));
 const total = computed(() => (_data.value ? _data.value.count : 0));
-
 watch(
     () => total.value,
     () => {
@@ -529,8 +428,8 @@ const columns = [
         required: true,
         label: 'Project',
         align: 'left',
-        field: (row: FileWithTopicDto) => row.mission.project.name,
-        format: (value: string) => value,
+        field: (row: FileWithTopicDto): string => row.mission.project.name,
+        format: (value: string): string => value,
         sortable: false,
         style: 'width:  10%; max-width:  10%; min-width: 10%;',
     },
@@ -539,8 +438,8 @@ const columns = [
         required: true,
         label: 'Mission',
         align: 'left',
-        field: (row: FileWithTopicDto) => row.mission.name,
-        format: (value: string) => value,
+        field: (row: FileWithTopicDto): string => row.mission.name,
+        format: (value: string): string => value,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
@@ -549,8 +448,8 @@ const columns = [
         required: true,
         label: 'File',
         align: 'left',
-        field: (row: FileWithTopicDto) => row.filename,
-        format: (value: string) => value,
+        field: (row: FileWithTopicDto): string => row.filename,
+        format: (value: string): string => value,
         sortable: true,
         style: 'width:  15%; max-width:  15%; min-width: 15%;',
     },
@@ -559,8 +458,8 @@ const columns = [
         required: true,
         label: 'Recoring Date',
         align: 'left',
-        field: (row: FileWithTopicDto) => row.date,
-        format: (value: string) => formatDate(new Date(value)),
+        field: (row: FileWithTopicDto): Date => row.date,
+        format: (value: string): string => formatDate(new Date(value)),
         sortable: true,
     },
     {
@@ -568,8 +467,8 @@ const columns = [
         required: true,
         label: 'Creation Date',
         align: 'left',
-        field: (row: FileWithTopicDto) => row.createdAt,
-        format: (value: string) => formatDate(new Date(value)),
+        field: (row: FileWithTopicDto): Date => row.createdAt,
+        format: (value: string): string => formatDate(new Date(value)),
         sortable: true,
     },
     {
@@ -577,8 +476,8 @@ const columns = [
         required: true,
         label: 'Creator',
         align: 'left',
-        field: (row: FileWithTopicDto) => row.creator.name,
-        format: (value: string) => value,
+        field: (row: FileWithTopicDto): string => row.creator.name,
+        format: (value: string): string => value,
         sortable: false,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
@@ -587,7 +486,7 @@ const columns = [
         required: true,
         label: 'Size',
         align: 'left',
-        field: (row: FileWithTopicDto) => row.size,
+        field: (row: FileWithTopicDto): number => row.size,
         format: formatSize,
         sortable: true,
     },
@@ -600,19 +499,17 @@ const columns = [
     },
 ];
 
-function openTagFilterDialog() {
+function openTagFilterDialog(): void {
     $q.dialog({
         title: 'Filter by Metadata',
         component: TagFilter,
-        componentProps: {
-            tagValues: tagFilter.value,
-        },
+        componentProps: { tagValues: tagFilter.value },
     }).onOk((_tagFilter) => {
         tagFilter.value = _tagFilter;
     });
 }
 
-function filterFunction(value: string, update: any) {
+function filterFunction(value: string, update: any): void {
     if (value === '') {
         update(() => {
             displayedTopics.value = allTopics.value;
@@ -627,8 +524,15 @@ function filterFunction(value: string, update: any) {
         );
     });
 }
+function useAndTopicFilter(): void {
+    matchAllTopics.value = true;
+}
 
-const onRowClick = async (_: any, row: any) => {
+function useOrTopicFilter(): void {
+    matchAllTopics.value = false;
+}
+
+const onRowClick = async (_: any, row: any): Promise<void> => {
     await $router.push({
         name: ROUTES.FILE.routeName,
         params: {
@@ -639,22 +543,21 @@ const onRowClick = async (_: any, row: any) => {
     });
 };
 
-function resetStartDate() {
+function resetStartDate(): void {
     startDates.value = formatDate(start);
 }
 
-function resetEndDate() {
+function resetEndDate(): void {
     endDates.value = formatDate(end);
 }
 
-function resetFilter() {
+function resetFilter(): void {
     handler.value.setProjectUUID(undefined);
     handler.value.setMissionUUID(undefined);
     handler.value.setSearch({ name: '' });
     filter.value = '';
     selectedTopics.value = [];
     matchAllTopics.value = false;
-    // On reset select all file types via component API if available
     if (
         fileTypeSelectorReference.value &&
         typeof fileTypeSelectorReference.value.setAll === 'function'
@@ -671,4 +574,3 @@ function resetFilter() {
     resetEndDate();
 }
 </script>
-<style scoped></style>

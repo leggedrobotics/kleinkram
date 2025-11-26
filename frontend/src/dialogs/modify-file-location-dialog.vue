@@ -6,73 +6,12 @@
 
         <template #content>
             <div class="q-mt-md">
-                <label for="project">Project</label>
-                <q-btn-dropdown
-                    v-model="dd_open"
-                    :label="selected.projectName || 'Project'"
-                    class="button-border full-width"
-                    name="project"
-                    flat
-                    dense
-                    clearable
-                    required
-                >
-                    <q-list>
-                        <q-item
-                            v-for="project in projects"
-                            :key="project.uuid"
-                            clickable
-                            @click="
-                                () => {
-                                    selected.projectUUID = project.uuid;
-                                    selected.projectName = project.name;
-                                    dd_open = false;
-                                    dd_open_2 = true;
-                                }
-                            "
-                        >
-                            <q-item-section>
-                                <q-item-label>
-                                    {{ project.name }}
-                                </q-item-label>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-btn-dropdown>
-            </div>
-            <div class="q-mt-md">
-                <label for="mission">Mission</label>
-                <q-btn-dropdown
-                    v-model="dd_open_2"
-                    :label="selected.missionName || 'Mission'"
-                    class="button-border full-width"
-                    name="mission"
-                    flat
-                    dense
-                    clearable
-                    required
-                >
-                    <q-list>
-                        <q-item
-                            v-for="mission in missions"
-                            :key="mission.uuid"
-                            clickable
-                            @click="
-                                () => {
-                                    selected.missionUUID = mission.uuid;
-                                    selected.missionName = mission.name;
-                                    dd_open_2 = false;
-                                }
-                            "
-                        >
-                            <q-item-section>
-                                <q-item-label>
-                                    {{ mission.name }}
-                                </q-item-label>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-btn-dropdown>
+                <ScopeSelector
+                    v-model:project-uuid="targetProjectUuid"
+                    v-model:mission-uuid="targetMissionUuid"
+                    layout="column"
+                    :required="true"
+                />
             </div>
         </template>
         <template #actions>
@@ -85,30 +24,29 @@
             <q-btn
                 label="Save"
                 class="bg-button-primary"
-                :disable="!selected.missionUUID"
+                :loading="isPending"
+                :disable="!targetMissionUuid || isPending"
                 @click="saveAction"
             />
         </template>
     </base-dialog>
 </template>
+
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import {
-    FlatMissionDto,
-    MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
 import { Notify, useDialogPluginComponent } from 'quasar';
-import BaseDialog from 'src/dialogs/base-dialog.vue';
-import {
-    useFilteredProjects,
-    useMissionsOfProjectMinimal,
-} from 'src/hooks/query-hooks';
-import { moveFiles } from 'src/services/mutations/file';
-import { computed, reactive, ref, watch } from 'vue';
+import { ref } from 'vue';
 
-const { mission, files } = defineProps<{
+// API Types
+import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+
+// Components & Services
+import ScopeSelector from 'components/common/scope-selector.vue';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { moveFiles } from 'src/services/mutations/file';
+
+const props = defineProps<{
     mission: MissionWithFilesDto;
     files: FileWithTopicDto[];
 }>();
@@ -117,56 +55,20 @@ defineEmits([...useDialogPluginComponent.emits]);
 const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 
-const dd_open = ref(false);
-const dd_open_2 = ref(false);
-const selected = reactive<{
-    projectName: string;
-    projectUUID: string;
-    missions: { missionName: string; missionUUID: string }[];
-    missionName: string;
-    missionUUID: string;
-}>({
-    projectName: mission.project.name || '',
-    projectUUID: mission.project.uuid || '',
-    missions: [],
-    missionName: mission.name,
-    missionUUID: mission.uuid,
-});
+// State: Initialize with the current location of the file(s)
+const targetProjectUuid = ref<string | undefined>(props.mission.project.uuid);
+const targetMissionUuid = ref<string | undefined>(props.mission.uuid);
 
-const projectsReturn = useFilteredProjects(500, 0, 'name', true, {});
-
-const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value.data : [],
-);
-
-const { data: _missions } = useMissionsOfProjectMinimal(
-    computed(() => selected.projectUUID),
-    100,
-    0,
-);
-const missions = computed(() => (_missions.value ? _missions.value.data : []));
-
-watch(
-    () => missions.value,
-    (newValue) => {
-        if (newValue) {
-            selected.missions = missions.value.map((m: FlatMissionDto) => ({
-                missionName: m.name,
-                missionUUID: m.uuid,
-            }));
+const { mutate: moveFilesMutation, isPending } = useMutation({
+    mutationFn: () => {
+        if (!targetMissionUuid.value) {
+            throw new Error('No mission selected');
         }
+        return moveFiles(
+            props.files.map((f) => f.uuid),
+            targetMissionUuid.value,
+        );
     },
-    {
-        immediate: false,
-    },
-);
-
-const { mutate: moveFilesMutation } = useMutation({
-    mutationFn: () =>
-        moveFiles(
-            files.map((f) => f.uuid),
-            selected.missionUUID,
-        ),
     onSuccess: async () => {
         Notify.create({
             group: false,
@@ -176,25 +78,24 @@ const { mutate: moveFilesMutation } = useMutation({
             position: 'bottom',
             timeout: 3000,
         });
+
         await queryClient.invalidateQueries({
             predicate: (query) =>
                 query.queryKey[0] === 'files' ||
                 query.queryKey[0] === 'missions',
         });
+
+        onDialogOK();
     },
     onError(error: unknown) {
-        console.log(error);
+        console.error(error);
+        const message =
+            (error as { response?: { data?: { message?: string } } })?.response
+                ?.data?.message || 'Unknown error occurred';
+
         Notify.create({
             group: false,
-            message: `Error moving file: ${
-                (
-                    error as {
-                        response: {
-                            data: { message: string };
-                        };
-                    }
-                ).response.data.message
-            }`,
+            message: `Error moving file: ${message}`,
             color: 'negative',
             spinner: false,
             position: 'bottom',
@@ -205,7 +106,6 @@ const { mutate: moveFilesMutation } = useMutation({
 
 const saveAction = (): void => {
     moveFilesMutation();
-    onDialogOK();
 };
 </script>
 

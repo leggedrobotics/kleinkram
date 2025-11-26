@@ -2,15 +2,16 @@
     <div :class="containerClass">
         <div :class="itemClass">
             <AppSelect
-                :model-value="effectiveProjectUuid"
+                :model-value="selectedProjectUuid"
                 :options="projects"
                 :label="showLabels ? 'Project' : undefined"
                 :required="required"
-                :readonly="!!fixedProjectUuid"
+                :disable="disabled || isProjectsLoading || !!fixedProjectUuid"
                 :loading="isProjectsLoading"
-                :disable="isProjectsLoading"
                 clearable
                 dense
+                outlined
+                bg-color="white"
                 option-label="name"
                 option-value="uuid"
                 placeholder="Select Project"
@@ -19,68 +20,78 @@
             />
         </div>
 
-        <div :class="itemClass">
+        <div v-if="showMission" :class="itemClass">
             <AppSelect
-                :model-value="effectiveMissionUuid"
+                :model-value="selectedMissionUuid"
                 :options="missions"
                 :label="showLabels ? 'Mission' : undefined"
                 :required="required"
-                :disable="!effectiveProjectUuid || isMissionsLoading"
+                :disable="disabled || !selectedProjectUuid || isMissionsLoading"
                 :loading="isMissionsLoading"
                 clearable
                 dense
+                outlined
+                bg-color="white"
                 option-label="name"
                 option-value="uuid"
                 placeholder="Select Mission"
                 :rules="missionRules"
                 @update:model-value="handleMissionChange"
-            >
-                <template #no-option>
-                    <q-item>
-                        <q-item-section class="text-grey text-italic">
-                            No missions found for this project
-                        </q-item-section>
-                    </q-item>
-                </template>
-            </AppSelect>
+            />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import { ProjectWithRequiredTagsDto } from '@api/types/project/project-with-required-tags.dto';
 import AppSelect from 'components/common/app-select.vue';
 import { ValidationRule } from 'quasar';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
-import { computed } from 'vue';
+import { computed, getCurrentInstance, toRef } from 'vue';
 
 const props = withDefaults(
     defineProps<{
         layout?: 'row' | 'column';
-        mode?: 'edit' | 'filter';
         showLabels?: boolean;
+        showMission?: boolean;
         required?: boolean;
+        disabled?: boolean;
         fixedProjectUuid?: string | undefined;
-        currentMissionUuid?: string | undefined;
+        projectUuid?: string | undefined;
+        missionUuid?: string | undefined;
+        customProjects?: ProjectWithRequiredTagsDto[] | undefined;
         customMissionRules?: ValidationRule[];
     }>(),
     {
         layout: 'column',
-        mode: 'edit',
         showLabels: true,
+        showMission: true,
         required: false,
-        customMissionRules: () => [],
+        disabled: false,
         fixedProjectUuid: undefined,
-        currentMissionUuid: undefined,
+        projectUuid: undefined,
+        missionUuid: undefined,
+        customProjects: undefined,
+        customMissionRules: () => [],
     },
 );
 
 const emit =
     defineEmits<
         (
-            event: 'project-selected' | 'mission-selected',
-            uuid: string | undefined,
+            event: 'update:projectUuid' | 'update:missionUuid',
+            value: string | undefined,
         ) => void
     >();
+
+const instance = getCurrentInstance();
+
+const isGlobalMode = computed(() => {
+    const vNodeProperties = instance?.vnode.props || {};
+    const hasProjectBinding = 'onUpdate:projectUuid' in vNodeProperties;
+    const hasFixedProject = !!props.fixedProjectUuid;
+    return !hasProjectBinding && !hasFixedProject;
+});
 
 const {
     projects,
@@ -91,42 +102,43 @@ const {
     setMission,
     isProjectsLoading,
     isMissionsLoading,
-} = useScopeSelection();
-
-const effectiveProjectUuid = computed(
-    () => props.fixedProjectUuid ?? selectedProjectUuid.value,
+} = useScopeSelection(
+    isGlobalMode.value
+        ? undefined
+        : computed({
+              get: () => props.projectUuid ?? props.fixedProjectUuid,
+              set: (value) => {
+                  emit('update:projectUuid', value);
+              },
+          }),
+    isGlobalMode.value
+        ? undefined
+        : computed({
+              get: () => props.missionUuid,
+              set: (value) => {
+                  emit('update:missionUuid', value);
+              },
+          }),
+    toRef(props, 'customProjects'),
 );
-const effectiveMissionUuid = computed(
-    () => props.currentMissionUuid ?? selectedMissionUuid.value,
-);
 
-const handleProjectChange = (uuid: string | null | undefined): void => {
-    const value = uuid ?? undefined;
-    if (!props.fixedProjectUuid) {
-        setProject(value);
-    }
-    emit('project-selected', value);
+const handleProjectChange = (value: string | null | undefined): void => {
+    setProject(value ?? undefined);
 };
 
-const handleMissionChange = (uuid: string | null | undefined): void => {
-    const value = uuid ?? undefined;
-    if (!props.currentMissionUuid) {
-        setMission(value);
-    }
-    emit('mission-selected', value);
+const handleMissionChange = (value: string | null | undefined): void => {
+    setMission(value ?? undefined);
 };
 
-// --- Layout ---
+// --- Layout & Rules ---
 const containerClass = computed(() =>
     props.layout === 'row'
         ? 'row q-col-gutter-sm items-start'
         : 'column q-gutter-y-md',
 );
-const itemClass = computed(() =>
-    props.layout === 'row' ? 'col-auto' : 'col-12',
-);
 
-// --- Validation ---
+const itemClass = computed(() => (props.layout === 'row' ? 'col' : 'col-12'));
+
 const projectRules = computed(() => {
     return props.required
         ? [

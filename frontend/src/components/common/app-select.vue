@@ -24,7 +24,11 @@
     </div>
 </template>
 
-<script setup lang="ts" generic="T, V = string">
+<script
+    setup
+    lang="ts"
+    generic="T, V extends string | number | object | boolean | null = string"
+>
 const model = defineModel<V | null | undefined>();
 
 defineOptions({ inheritAttrs: false });

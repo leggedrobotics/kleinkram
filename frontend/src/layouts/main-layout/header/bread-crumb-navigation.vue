@@ -6,12 +6,16 @@
             class="height-xl flex column justify-center q-px-lg"
             style="overflow-x: auto"
         >
-            <q-breadcrumbs gutter="md" class="flex-nowrap">
+            <q-breadcrumbs
+                gutter="xs"
+                class="flex-nowrap"
+                active-color="primary"
+            >
                 <template v-for="crumb in displayCrumbs" :key="crumb?.name">
                     <template v-if="crumb">
                         <q-breadcrumbs-el
                             v-if="isClickable(crumb)"
-                            class="text-link-primary ellipsis"
+                            class="breadcrumb-link text-link-primary ellipsis rounded-borders q-px-sm transition-fast"
                             :to="crumb.to"
                             :label="crumb.displayName"
                         >
@@ -24,14 +28,19 @@
                                     margin-top: 5px;
                                 "
                             />
-                            <q-tooltip v_if="crumb.displayName.length > 20">
+                            <q-tooltip
+                                v-if="crumb.displayName.length > 20"
+                                anchor="bottom middle"
+                                self="top middle"
+                                :offset="[10, 10]"
+                            >
                                 {{ crumb.displayName }}
                             </q-tooltip>
                         </q-breadcrumbs-el>
 
                         <q-breadcrumbs-el
                             v-else
-                            class="ellipsis"
+                            class="ellipsis q-px-sm"
                             :label="crumb.displayName"
                         >
                             <q-skeleton
@@ -43,7 +52,12 @@
                                     margin-top: 5px;
                                 "
                             />
-                            <q-tooltip v_if="crumb.displayName.length > 20">
+                            <q-tooltip
+                                v-if="crumb.displayName.length > 20"
+                                anchor="bottom middle"
+                                self="top middle"
+                                :offset="[10, 10]"
+                            >
                                 {{ crumb.displayName }}
                             </q-tooltip>
                         </q-breadcrumbs-el>
@@ -54,6 +68,7 @@
         <q-separator v-if="resolvedCrumbs?.length >= 1" />
     </div>
 </template>
+
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import { useCrumbs } from 'src/hooks/crumbs';
@@ -128,3 +143,13 @@ const isClickable = (crumb: PageBreadCrumb): boolean => {
     return crumb.to !== undefined;
 };
 </script>
+
+<style lang="scss" scoped>
+.breadcrumb-link {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: #e3f2fd;
+    }
+}
+</style>

@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Edit File</template>
+        <template #title> Edit File </template>
         <template #tabs>
             <q-tabs
                 v-model="tab"
@@ -35,69 +35,12 @@
                         required
                     />
                     <div class="q-mt-md">
-                        <label for="project">Project</label>
-                        <q-btn-dropdown
-                            v-model="dd_open"
-                            :label="selected_project?.name || 'Project'"
-                            class="button-border full-width"
-                            name="project"
-                            flat
-                            dense
-                            clearable
-                            required
-                        >
-                            <q-list>
-                                <q-item
-                                    v-for="project in projects"
-                                    :key="project.uuid"
-                                    clickable
-                                    @click="
-                                        // eslint-disable-next-line vue/v-on-handler-style
-                                        () => onClick(project)
-                                    "
-                                >
-                                    <q-item-section>
-                                        <q-item-label>
-                                            {{ project.name }}
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </q-list>
-                        </q-btn-dropdown>
-                    </div>
-                    <div class="q-mt-md">
-                        <label for="mission">Mission</label>
-                        <q-btn-dropdown
-                            v-model="dd_open_2"
-                            :label="editableFile?.mission.name || 'Mission'"
-                            class="button-border full-width"
-                            name="mission"
-                            flat
-                            dense
-                            clearable
-                            required
-                        >
-                            <q-list>
-                                <q-item
-                                    v-for="mission in missions"
-                                    :key="mission.uuid"
-                                    clickable
-                                    @click="
-                                        () => {
-                                            if (editableFile === null) return;
-                                            editableFile.mission = mission;
-                                            dd_open_2 = false;
-                                        }
-                                    "
-                                >
-                                    <q-item-section>
-                                        <q-item-label>
-                                            {{ mission.name }}
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </q-list>
-                        </q-btn-dropdown>
+                        <ScopeSelector
+                            v-model:project-uuid="projectUuid"
+                            v-model:mission-uuid="missionUuid"
+                            :required="true"
+                            layout="column"
+                        />
                     </div>
                 </q-tab-panel>
                 <q-tab-panel name="categories" style="min-height: 280px">
@@ -122,7 +65,7 @@
                 :disable="
                     !dateTime ||
                     !editableFile ||
-                    !editableFile.mission ||
+                    !missionUuid ||
                     !editableFile.filename
                 "
                 @click="_updateMission"
@@ -130,24 +73,23 @@
         </template>
     </base-dialog>
 </template>
+
 <script setup lang="ts">
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-
-import { Notify, useDialogPluginComponent } from 'quasar';
-import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { useFile, useMissionsOfProjectMinimal } from 'src/hooks/query-hooks';
-import { formatDate, parseDate } from 'src/services/date-formating';
-import { updateFile } from 'src/services/mutations/file';
-import { filteredProjects } from 'src/services/queries/project';
-import { computed, Reactive, reactive, ref, watch } from 'vue';
-
 import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { ProjectDto } from '@api/types/project/base-project.dto';
-import { ProjectWithCreator } from '@api/types/project/project-with-creator.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { isAxiosError } from 'axios';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import { formatDate, parseDate } from 'src/services/date-formating';
+import { updateFile } from 'src/services/mutations/file';
+import { ref, watch } from 'vue';
+
+// Components & Hooks
+import ScopeSelector from 'components/common/scope-selector.vue';
 import ConfigureCategories from 'components/configure-categories.vue';
+import { useScopeSelection } from 'src/composables/use-scope-selection';
+import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { useFile } from 'src/hooks/query-hooks';
 
 const { fileUuid } = defineProps<{ fileUuid: string }>();
 
@@ -156,69 +98,48 @@ const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 const tab = ref('name');
 
-const dd_open = ref(false);
-const dd_open_2 = ref(false);
-const selected_project = ref<ProjectDto | undefined>(undefined);
+// --- Data Fetching ---
 const { data: queryData } = useFile(fileUuid);
 
+// --- Local State ---
 const dateTime = ref('');
-// @ts-ignore
-const editableFile: Reactive<FileWithTopicDto> = reactive({});
-// Watch for changes in data.value and update dateTime accordingly
+const editableFile = ref<FileWithTopicDto | undefined>(undefined);
+
+// --- Scope Selection Logic ---
+const projectUuid = ref<string | undefined>(undefined);
+const missionUuid = ref<string | undefined>(undefined);
+
+const { selectedMission, selectedProject } = useScopeSelection(
+    projectUuid,
+    missionUuid,
+);
+
+// --- Synchronization ---
+
 watch(
-    () => queryData.value,
+    queryData,
     (newValue) => {
         if (!newValue) return;
 
-        selected_project.value = newValue.mission.project;
-
-        if (newValue !== null && newValue !== undefined) {
-            Object.assign(editableFile, newValue); // Update the reactive object
-            dateTime.value = formatDate(new Date(newValue.date));
-        }
+        // Initialize ScopeSelector
+        projectUuid.value = newValue.mission.project.uuid;
+        missionUuid.value = newValue.mission.uuid;
+        // eslint-disable-next-line unicorn/prefer-structured-clone
+        editableFile.value = JSON.parse(JSON.stringify(newValue));
+        dateTime.value = formatDate(new Date(newValue.date));
     },
-    { immediate: true }, // Trigger immediately on component mount
+    { immediate: true },
 );
 
-const projectsReturn = useQuery<ProjectsDto>({
-    queryKey: ['projects'],
-    queryFn: () => filteredProjects(500, 0, 'name'),
+watch(selectedMission, (newMission) => {
+    if (editableFile.value && newMission) {
+        editableFile.value.mission = {
+            ...newMission,
+            project:
+                selectedProject.value ?? editableFile.value.mission?.project,
+        };
+    }
 });
-const projects = computed(() =>
-    projectsReturn.data.value
-        ? projectsReturn.data.value.data
-        : ([] as ProjectWithCreator[]),
-);
-
-const { data: _missions, refetch } = useMissionsOfProjectMinimal(
-    selected_project.value?.uuid ?? '',
-    100,
-    0,
-);
-const missions = computed(() => (_missions.value ? _missions.value.data : []));
-
-watch(
-    () => selected_project.value,
-    async (newValue) => {
-        if (newValue) {
-            await refetch().then(() => {
-                if (
-                    editableFile &&
-                    missions.value.length !== undefined &&
-                    missions.value.length > 0 &&
-                    editableFile.mission.project.uuid !==
-                        selected_project.value?.uuid &&
-                    missions.value[0] !== undefined
-                ) {
-                    editableFile.mission = missions.value[0];
-                }
-            });
-        }
-    },
-    {
-        immediate: false,
-    },
-);
 
 const { mutate: updateFileMutation } = useMutation({
     mutationFn: (fileData: FileWithTopicDto) => updateFile({ file: fileData }),
@@ -249,70 +170,45 @@ const { mutate: updateFileMutation } = useMutation({
         );
     },
     onError(error: unknown) {
-        console.log(error);
+        console.error(error);
+        const message =
+            (isAxiosError(error)
+                ? error.response?.data?.message
+                : (error as Error).message) ?? 'Unknown error occurred';
 
-        // Use a type guard to check if the error is an AxiosError
-        if (isAxiosError(error)) {
-            const errorMessage: string =
-                error.response?.data?.message ?? 'Unknown error message';
-            Notify.create({
-                group: false,
-                message: `Error updating file: ${errorMessage}`,
-                color: 'negative',
-                spinner: false,
-                position: 'bottom',
-                timeout: 3000,
-            });
-        } else if (error instanceof Error) {
-            // If it's a generic Error, use the message property
-            Notify.create({
-                group: false,
-                message: `Error updating file: ${error.message}`,
-                color: 'negative',
-                spinner: false,
-                position: 'bottom',
-                timeout: 3000,
-            });
-        } else {
-            // Handle unexpected error structure
-            Notify.create({
-                group: false,
-                message: 'Error updating file: Unknown error occurred',
-                color: 'negative',
-                spinner: false,
-                position: 'bottom',
-                timeout: 3000,
-            });
-        }
+        Notify.create({
+            group: false,
+            message: `Error updating file: ${message}`,
+            color: 'negative',
+            spinner: false,
+            position: 'bottom',
+            timeout: 3000,
+        });
     },
 });
 
-function _updateMission() {
+function _updateMission(): void {
     const convertedDate = parseDate(dateTime.value);
+
     if (
-        editableFile &&
+        editableFile.value &&
         convertedDate &&
         !Number.isNaN(convertedDate.getTime())
     ) {
-        editableFile.date = convertedDate;
-        const noncircularMission = editableFile.mission;
-        // @ts-ignore
-        noncircularMission.project = undefined;
-        editableFile.mission = noncircularMission;
-        updateFileMutation(editableFile);
+        editableFile.value.date = convertedDate;
+
+        const noncircularMission = { ...editableFile.value.mission };
+        noncircularMission.project =
+            undefined as unknown as typeof noncircularMission.project;
+        editableFile.value.mission = noncircularMission;
+        updateFileMutation(editableFile.value);
         onDialogOK();
     }
 }
 
-const onClick = (project: ProjectDto) => {
-    selected_project.value = project;
-    dd_open.value = false;
-    dd_open_2.value = true;
-};
-
-const onSelectionUpdate = ($event: CategoryDto[]) => {
-    if (editableFile !== null) editableFile.categories = $event;
+const onSelectionUpdate = ($event: CategoryDto[]): void => {
+    if (editableFile.value) {
+        editableFile.value.categories = $event;
+    }
 };
 </script>
-
-<style scoped></style>

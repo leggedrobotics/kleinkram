@@ -8,6 +8,7 @@
                 v-model:ready="ready"
                 :mission="mission"
                 :uploads="uploads"
+                :disable-scope="!!mission"
             />
         </template>
 

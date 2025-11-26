@@ -56,29 +56,46 @@
         </template>
 
         <template #no-data>
-            <div
-                class="flex flex-center"
-                style="justify-content: center; margin: auto"
-            >
-                <div
-                    class="q-pa-md flex flex-center column q-gutter-md"
-                    style="min-height: 200px"
-                >
-                    <span class="text-subtitle1"> No Files Found </span>
+            <div class="full-width flex flex-center q-pa-xl text-grey">
+                <div v-if="hasActiveFilters" class="column items-center">
+                    <q-icon name="sym_o_search_off" size="3rem" />
+                    <span class="q-mt-sm text-subtitle1">
+                        No files found matching your filters
+                    </span>
+                    <q-btn
+                        flat
+                        dense
+                        no-caps
+                        padding="6px"
+                        label="Reset Filters"
+                        class="button-border text-black"
+                        icon="sym_o_clear"
+                        @click="resetFilters"
+                    />
+                </div>
 
-                    <CreateFileDialogOpener
-                        v-if="missionData !== undefined"
-                        :mission="missionData"
-                    >
-                        <q-btn
-                            flat
-                            dense
-                            padding="6px"
-                            class="button-border"
-                            label="Upload File"
-                            icon="sym_o_add"
-                        />
-                    </CreateFileDialogOpener>
+                <div v-else class="column items-center">
+                    <q-icon name="sym_o_folder_open" size="3rem" />
+                    <span class="q-mt-sm text-subtitle1">
+                        No files uploaded yet
+                    </span>
+
+                    <div class="q-mt-md">
+                        <CreateFileDialogOpener
+                            v-if="missionData !== undefined"
+                            :mission="missionData"
+                        >
+                            <q-btn
+                                flat
+                                dense
+                                padding="6px"
+                                class="button-border text-black"
+                                label="Upload File"
+                                icon="sym_o_upload"
+                                no-caps
+                            />
+                        </CreateFileDialogOpener>
+                    </div>
                 </div>
             </div>
         </template>
@@ -225,6 +242,22 @@ const $router = useRouter();
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
 const { data: missionData } = useMission(missionUuid);
+
+const hasActiveFilters = computed(() => {
+    const h = properties.urlHandler;
+    return (
+        (h.searchParams.name && h.searchParams.name.length > 0) ||
+        (h.searchParams.health && h.searchParams.health.length > 0) ||
+        (h.fileTypes && h.fileTypes.length > 0) ||
+        (h.categories && h.categories.length > 0)
+    );
+});
+
+function resetFilters() {
+    properties.urlHandler.setSearch({ name: '', health: '' });
+    properties.urlHandler.setFileTypes([]);
+    properties.urlHandler.setCategories([]);
+}
 
 // TODO: this does not work across pages
 const { data: missions } = useMissionsOfProjectMinimal(projectUuid, 100, 0);
