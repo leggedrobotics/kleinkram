@@ -81,8 +81,8 @@
 </template>
 
 <script setup lang="ts">
+import { AccessGroupDto } from '@api/types/access-control/access-group.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import { AccessGroupDto } from '@api/types/user.dto';
 import { AccessGroupRights, AccessGroupType } from '@common/enum';
 import AccessGroupAvatar from 'components/configure-access-rights/access-group-avatar.vue';
 import AccessRightsTable from 'components/configure-access-rights/access-rights-table.vue';

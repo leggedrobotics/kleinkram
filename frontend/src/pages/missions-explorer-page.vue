@@ -252,7 +252,7 @@
 <script setup lang="ts">
 import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { useQueryClient } from '@tanstack/vue-query';
-import ActionConfiguration from 'components/action-configuration.vue';
+import ActionConfiguration from 'components/actions/action-configuration.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';

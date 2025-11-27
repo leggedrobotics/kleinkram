@@ -14,7 +14,7 @@ import { FileDto } from '../file/file.dto';
 import { Paginated } from '../pagination';
 import { ProjectDto } from '../project/base-project.dto';
 import { TagDto } from '../tags/tags.dto';
-import { UserDto } from '../user.dto';
+import { UserDto } from '../user/user.dto';
 
 export class MinimumMissionDto {
     @ApiProperty()

@@ -10,7 +10,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { FileEventType } from '../../../frontend_shared/enum';
-import { UserDto } from '../user.dto';
+import { UserDto } from '../user/user.dto';
 
 export class FileEventDto {
     @IsUUID()

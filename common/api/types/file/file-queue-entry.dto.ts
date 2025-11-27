@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { FileLocation, QueueState } from '../../../frontend_shared/enum';
 import { MissionDto } from '../mission/mission.dto';
-import { UserDto } from '../user.dto';
+import { UserDto } from '../user/user.dto';
 
 export class FileQueueEntryDto {
     @ApiProperty()

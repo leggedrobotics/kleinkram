@@ -1,9 +1,9 @@
+import { AccessGroupDto } from '@api/types/access-control/access-group.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
 import { DefaultRights } from '@api/types/access-control/default-rights';
 import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
 import { ActionWorkersDto } from '@api/types/action-workers.dto';
-import { ActionsDto } from '@api/types/actions/action.dto';
 import { CategoriesDto } from '@api/types/category.dto';
 import { FileEventsDto } from '@api/types/file/file-event.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
@@ -16,11 +16,8 @@ import { ProjectWithRequiredTagsDto } from '@api/types/project/project-with-requ
 import { ProjectsDto } from '@api/types/project/projects.dto';
 import { StorageOverviewDto } from '@api/types/storage-overview.dto';
 import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
-import {
-    AccessGroupDto,
-    CurrentAPIUserDto,
-    UsersDto,
-} from '@api/types/user.dto';
+import { CurrentAPIUserDto } from '@api/types/user/current-api-user.dto';
+import { UsersDto } from '@api/types/user/users.dto';
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -41,7 +38,6 @@ import {
     getProjectAccess,
     searchAccessGroups,
 } from 'src/services/queries/access';
-import { getActions, getRunningActions } from 'src/services/queries/action';
 import { getCategories } from 'src/services/queries/categories';
 import {
     fetchFile,
@@ -468,46 +464,6 @@ export const useAllTags = (): UseQueryReturnType<TagTypeDto[], Error> => {
     });
 };
 
-export const useActions = (
-    projectUuid: Ref<string> | string,
-    missionUuid: Ref<string | undefined> | string | undefined = undefined,
-    take: Ref<number>,
-    skip: Ref<number>,
-    sortBy: Ref<string>,
-    descending: Ref<boolean>,
-    search: Ref<string> | undefined = undefined,
-    queryKey: string,
-): UseQueryReturnType<ActionsDto | undefined, Error> => {
-    if (missionUuid === undefined) missionUuid = '';
-    if (search === undefined) search = computed(() => '');
-
-    return useQuery<ActionsDto>({
-        queryKey: computed(() => [
-            'action_mission',
-            projectUuid,
-            missionUuid,
-            queryKey,
-            take,
-            skip,
-            sortBy,
-            descending,
-            search,
-        ]),
-        queryFn: () =>
-            getActions(
-                unref(projectUuid),
-                unref(missionUuid) ?? '',
-                unref(take),
-                unref(skip),
-                unref(sortBy),
-                unref(descending),
-                unref(search) ?? '',
-            ),
-        staleTime: 0,
-        refetchInterval: 4000,
-    });
-};
-
 export const useFileEvents = (
     fileUuid: Ref<string | undefined>,
 ): UseQueryReturnType<FileEventsDto | undefined, Error> =>
@@ -560,17 +516,6 @@ export const useAccessGroup = (
         },
     });
 };
-
-export const useRunningActions = (): UseQueryReturnType<
-    ActionsDto | undefined,
-    Error
-> =>
-    useQuery({
-        queryKey: ['actions'],
-        queryFn: () => getRunningActions(),
-        staleTime: 100,
-        refetchInterval: 5000,
-    });
 
 export const useSearchAccessGroup = (
     search: Ref<string> | string,

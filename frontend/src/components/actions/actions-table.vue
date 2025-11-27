@@ -6,7 +6,7 @@
         :columns="columns as any"
         :rows-per-page-options="[10, 20, 50, 100]"
         row-key="uuid"
-        :loading="loading"
+        :loading="isLoading"
         flat
         bordered
         binary-state-sort
@@ -102,37 +102,37 @@ import { ActionDto } from '@api/types/actions/action.dto';
 import { ActionState } from '@common/enum';
 import ActionBadge from 'components/action-badge.vue';
 import { QTable } from 'quasar';
-import { useActions } from 'src/hooks/query-hooks';
+import { useActionList } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
 import { getActionColor } from 'src/services/generic';
 import { QueryHandler, TableRequest } from 'src/services/query-handler';
 import { computed, ref, Ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import DeleteActionDialogOpener from './button-wrapper/delete-action-dialog-opener.vue';
+import DeleteActionDialogOpener from '../button-wrapper/delete-action-dialog-opener.vue';
 
 const router = useRouter();
 
-// list all props of the component
 const properties = defineProps<{
     handler: QueryHandler;
 }>();
+
 properties.handler.setSort('createdAt');
 properties.handler.setDescending(true);
 
-const { data: rawData, isLoading } = useActions(
-    computed(() => properties.handler.projectUuid ?? ''),
-    computed(() => properties.handler.missionUuid ?? ''),
-    computed(() => properties.handler.take ?? 100),
-    computed(() => properties.handler.skip ?? 0),
-    computed(() => properties.handler.sortBy ?? ''),
-    computed(() => properties.handler.descending ?? false),
-    computed(() => properties.handler.searchParams.name ?? ''),
-    JSON.stringify(properties.handler.queryKey),
-);
+const queryFilters = computed(() => ({
+    projectUuid: properties.handler.projectUuid || undefined,
+    missionUuid: properties.handler.missionUuid || undefined,
+    take: properties.handler.take ?? 100,
+    skip: properties.handler.skip ?? 0,
+    sort: properties.handler.sortBy || undefined,
+    order: properties.handler.descending ? 'DESC' : 'ASC',
+    search: properties.handler.searchParams.name || undefined,
+}));
+
+const { data: rawData, isLoading } = useActionList(queryFilters);
 
 const tableReference: Ref<QTable | undefined> = ref(undefined);
-const loading = ref(false);
 
 function setPagination(update: TableRequest) {
     properties.handler.setPage(update.pagination.page);
@@ -153,6 +153,7 @@ const pagination = computed(() => {
 
 const data = computed(() => (rawData.value ? rawData.value.data : []));
 const total = computed(() => (rawData.value ? rawData.value.count : 0));
+
 watch(
     () => total.value,
     () => {
@@ -163,6 +164,7 @@ watch(
     },
     { immediate: true },
 );
+
 const columns = [
     {
         name: 'state',
@@ -172,7 +174,6 @@ const columns = [
         sortable: true,
         style: 'width: 100px',
     },
-
     {
         name: 'image',
         label: 'Docker Image',
@@ -197,7 +198,6 @@ const columns = [
                 ? `${row.template.name} v${row.template.version}`
                 : 'N/A',
     },
-
     {
         name: 'state_cause',
         label: 'State Reason',
@@ -208,10 +208,8 @@ const columns = [
             'overflow:hidden;' +
             'whitespace:nowrap;' +
             'text-overflow: ellipsis',
-
         field: (row: ActionDto) => row.stateCause ?? '',
     },
-
     {
         name: 'updatedAt',
         label: 'Last Update',
@@ -254,7 +252,7 @@ const handleRowClick = async (_: Event, row: any): Promise<void> => {
 
 <style scoped>
 .truncate-cell {
-    max-width: 150px; /* Adjust as needed */
+    max-width: 150px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

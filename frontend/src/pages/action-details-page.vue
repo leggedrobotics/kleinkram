@@ -37,6 +37,8 @@
                         <span>No audit logs available</span>
                     </q-tooltip>
                 </q-tab>
+
+                <q-tab name="template" label="Template Snapshot" />
             </q-tabs>
         </template>
 
@@ -356,23 +358,25 @@
                 </div>
             </q-card>
         </q-tab-panel>
+
+        <q-tab-panel name="template">
+            <ActionDetailsTemplateTab :template="action.template" />
+        </q-tab-panel>
     </q-tab-panels>
 </template>
 
 <script setup lang="ts">
-import 'vue-json-pretty/lib/styles.css';
-
-import { ActionDto } from '@api/types/actions/action.dto';
 import { ArtifactState } from '@common/enum';
-import { useQuery } from '@tanstack/vue-query';
 import ActionBadge from 'components/action-badge.vue';
+import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import TitleSection from 'components/title-section.vue';
+import { useActionDetails } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
 import { accessGroupRightsMap } from 'src/services/generic';
-import { actionDetails } from 'src/services/queries/action';
 import { computed, ref } from 'vue';
+import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 
 const tab = ref('info');
@@ -380,11 +384,9 @@ const tab = ref('info');
 const $route = useRoute();
 const $router = useRouter();
 
-const { data: action } = useQuery<ActionDto>({
-    queryKey: ['missions_action', $route.params.id],
-    queryFn: () => actionDetails($route.params.id as string),
-    refetchInterval: 5000,
-});
+const { data: action } = useActionDetails(
+    computed(() => $route.params.id as string),
+);
 
 const artifactState = computed(() => {
     switch (action.value?.artifacts ?? ArtifactState.ERROR) {

@@ -10,10 +10,10 @@
 </template>
 
 <script setup lang="ts">
+import RunningActions from 'components/actions/running-actions.vue';
 import DashboardRecentProjects from 'components/dashboard/dashboard-recent-projects.vue';
 import DashboardStorageIndicator from 'components/dashboard/dashboard-storage-indicator.vue';
 import DashboardWorkerLists from 'components/dashboard/dashborad-woker-list.vue';
-import RunningActions from 'components/running-actions.vue';
 import TitleSection from 'components/title-section.vue';
 import { useUser } from 'src/hooks/query-hooks';
 import { computed } from 'vue';

@@ -1,25 +1,20 @@
+import { ActionWorkerDto } from '@common/api/types/action-workers.dto';
+import { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
+import { AuditLogDto } from '@common/api/types/actions/audit-log.dto';
+import { DockerImageDto } from '@common/api/types/actions/docker-image.dto';
+import { LogsDto } from '@common/api/types/actions/logs.dto';
+import { MissionDto } from '@common/api/types/mission/mission.dto';
+import { UserDto } from '@common/api/types/user/user.dto';
+import { ActionState, ArtifactState } from '@common/frontend_shared/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
     IsDate,
     IsEnum,
-    IsNumber,
     IsString,
     IsUUID,
     ValidateNested,
 } from 'class-validator';
-import { ActionState, ArtifactState } from '../../../frontend_shared/enum';
-import { ActionWorkerDto } from '../action-workers.dto';
-import { MissionDto } from '../mission/mission.dto';
-import { UserDto } from '../user.dto';
-import { AuditLogDto } from './audit-log.dto';
-import { DockerImageDto } from './docker-image.dto';
-import { LogsDto } from './logs.dto';
-
-import { IsSkip } from '../../../validation/skip-validation';
-import { IsTake } from '../../../validation/take-validation';
-import { Paginated } from '../pagination';
-import { ActionTemplateDto } from './action-template.dto';
 
 export class ActionDto {
     @ApiProperty()
@@ -84,26 +79,4 @@ export class ActionDto {
     @ValidateNested()
     @Type(() => ActionWorkerDto)
     worker!: ActionWorkerDto;
-}
-
-export class ActionsDto implements Paginated<ActionDto> {
-    @ApiProperty()
-    @IsNumber()
-    count!: number;
-
-    @ApiProperty({
-        type: () => [ActionDto],
-        description: 'List of actions',
-    })
-    @ValidateNested({ each: true })
-    @Type(() => ActionDto)
-    data!: ActionDto[];
-
-    @ApiProperty()
-    @IsSkip()
-    skip!: number;
-
-    @ApiProperty()
-    @IsTake()
-    take!: number;
 }

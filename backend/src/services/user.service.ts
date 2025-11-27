@@ -1,9 +1,7 @@
 import { PermissionsDto } from '@common/api/types/permissions.dto';
-import {
-    CurrentAPIUserDto,
-    UserDto,
-    UsersDto,
-} from '@common/api/types/user.dto';
+import { CurrentAPIUserDto } from '@common/api/types/user/current-api-user.dto';
+import { UserDto } from '@common/api/types/user/user.dto';
+import { UsersDto } from '@common/api/types/user/users.dto';
 import { systemUser } from '@common/consts';
 import ApikeyEntity from '@common/entities/auth/apikey.entity';
 import UserEntity from '@common/entities/user/user.entity';

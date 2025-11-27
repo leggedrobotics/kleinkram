@@ -31,7 +31,7 @@ import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
 import { ActionDto } from '@api/types/actions/action.dto';
-import DeleteAction from 'components/delete-action.vue';
+import DeleteAction from 'components/actions/delete-action.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteActionReference = ref<

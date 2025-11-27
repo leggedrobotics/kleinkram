@@ -19,6 +19,7 @@ import { MissionModule } from './endpoints/mission/mission.module';
 import { ProjectModule } from './endpoints/project/project.module';
 import { QueueModule } from './endpoints/queue/queue.module';
 import { TagModule } from './endpoints/tag/tag.module';
+import { TemplatesModule } from './endpoints/templates/templates.module';
 import { TopicModule } from './endpoints/topic/topic.module';
 import { UserModule } from './endpoints/user/user.module';
 import { WorkerModule } from './endpoints/worker/worker.module';
@@ -74,6 +75,7 @@ import { AccessGroupConfig } from './types/access-group-config';
         AuthModule,
         PassportModule,
         ActionModule,
+        TemplatesModule,
         TagModule,
         WorkerModule,
         CategoryModule,

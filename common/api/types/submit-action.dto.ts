@@ -1,3 +1,4 @@
+import { ActionState } from '@common/frontend_shared/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
 import { IsSkip } from '../../validation/skip-validation';
@@ -50,6 +51,11 @@ export class ActionQuery {
     @IsOptional()
     @IsBoolean()
     exactMatch?: boolean;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString({ each: true })
+    states?: ActionState[];
 }
 
 export class ActionDetailsQuery {

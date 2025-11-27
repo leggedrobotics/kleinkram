@@ -79,7 +79,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { GroupMembershipDto } from '@api/types/user.dto';
+import { GroupMembershipDto } from '@api/types/access-control/group-membership.dto';
 import { AccessGroupType } from '@common/enum';
 import { useUser } from 'src/hooks/query-hooks';
 import { computed } from 'vue';

@@ -1,18 +1,20 @@
+import { AccessGroupRights } from '@common/frontend_shared/enum';
 import {
-    IsBoolean,
     IsEnum,
     IsNotEmpty,
     IsNumber,
     IsOptional,
     IsString,
-    IsUUID,
 } from 'class-validator';
-import { AccessGroupRights } from '../../frontend_shared/enum';
 
 export class CreateTemplateDto {
     @IsString()
     @IsNotEmpty()
     name!: string;
+
+    @IsString()
+    @IsNotEmpty()
+    description!: string;
 
     @IsString()
     @IsOptional()
@@ -34,18 +36,10 @@ export class CreateTemplateDto {
     @IsNumber()
     maxRuntime!: number;
 
-    @IsBoolean()
-    searchable!: boolean;
-
     @IsString()
     @IsOptional()
     entrypoint?: string;
 
     @IsEnum(AccessGroupRights)
     accessRights!: AccessGroupRights;
-}
-
-export class UpdateTemplateDto extends CreateTemplateDto {
-    @IsUUID()
-    uuid!: string;
 }

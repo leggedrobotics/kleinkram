@@ -1,6 +1,5 @@
 <template>
     <div class="projects-container dashboard-card">
-        <!-- Static Row with Title and Arrows -->
         <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Running Actions</span>
             <div class="arrow-buttons">
@@ -15,7 +14,6 @@
 
         <q-separator />
 
-        <!-- Scrollable Card Section -->
         <div
             v-if="isFetched && actions && actions?.data?.length > 0"
             ref="cardWrapper"
@@ -56,25 +54,25 @@
             </q-table>
         </div>
 
-        <!-- Empty State (Styled like RecentProjects) -->
         <div v-else class="empty-state-wrapper">
             <div class="empty-state-content">
                 <q-icon name="sym_o_analytics" size="lg" color="grey-6" />
-                <span class="text-h6 text-grey-7 q-mt-md"
-                    >No running actions</span
-                >
-                <span class="text-body1 text-grey-6 q-mt-sm"
-                    >Your running actions will appear here.</span
-                >
+                <span class="text-h6 text-grey-7 q-mt-md">
+                    No running actions
+                </span>
+                <span class="text-body1 text-grey-6 q-mt-sm">
+                    Your running actions will appear here.
+                </span>
             </div>
         </div>
     </div>
 </template>
+
 <script setup lang="ts">
 import { ActionDto } from '@api/types/actions/action.dto';
 import { ActionState } from '@common/enum';
 import ActionBadge from 'components/action-badge.vue';
-import { useRunningActions } from 'src/hooks/query-hooks';
+import { useRunningActions } from 'src/composables/use-actions-queries';
 import { getActionColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 
@@ -91,7 +89,6 @@ const columns = [
         sortable: true,
         style: 'width: 100px',
     },
-
     {
         name: 'image',
         label: 'Docker Image',
@@ -116,7 +113,6 @@ const columns = [
                 ? 'N/A'
                 : `${row.template.name} v${row.template.version}`,
     },
-
     {
         name: 'user',
         label: 'Submitted By',
@@ -133,7 +129,7 @@ const toActions = async (): Promise<void> => {
 
 <style scoped>
 .projects-container {
-    grid-column: span 2; /* Changed for consistency */
+    grid-column: span 2;
     background-color: white;
     display: grid;
     grid-template-rows: 50px 2px auto;
@@ -152,13 +148,13 @@ const toActions = async (): Promise<void> => {
 
 .card-wrapper {
     display: flex;
-    gap: 3px; /* Spacing between cards */
-    overflow-x: auto; /* Enable horizontal scrolling */
+    gap: 3px;
+    overflow-x: auto;
     height: 100%;
     margin-top: 0;
     padding-top: 0;
     scrollbar-width: none;
-    flex-grow: 1; /* Ensure it can grow if content is sparse */
+    flex-grow: 1;
 }
 
 .scroll-button {

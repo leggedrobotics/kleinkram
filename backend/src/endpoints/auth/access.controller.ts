@@ -1,5 +1,7 @@
+import { AccessGroupDto } from '@common/api/types/access-control/access-group.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
 import { GetFilteredAccessGroupsDto } from '@common/api/types/access-control/get-filtered-access-groups.dto';
+import { GroupMembershipDto } from '@common/api/types/access-control/group-membership.dto';
 import { AddAccessGroupToProjectDto } from '@common/api/types/add-access-group-project.dto';
 import { AddUserToAccessGroupDto } from '@common/api/types/add-user-access-group.dto';
 import { AddUserToProjectDto } from '@common/api/types/add-user-project.dto';
@@ -7,7 +9,6 @@ import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto'
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
 import { RemoveAccessGroupFromProjectDto } from '@common/api/types/remove-access-group-project.dto';
 import { SetAccessGroupUserExpirationDto } from '@common/api/types/set-access-group-user-expiration.dto';
-import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
 import ProjectEntity from '@common/entities/project/project.entity';
 import {

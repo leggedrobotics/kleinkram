@@ -12,7 +12,7 @@ import { FileState, FileType } from '../../../frontend_shared/enum';
 import { CategoryDto } from '../category.dto';
 import { MissionDto } from '../mission/mission.dto';
 import { TopicDto } from '../topic.dto';
-import { UserDto } from '../user.dto';
+import { UserDto } from '../user/user.dto';
 
 export class FileDto {
     @ApiProperty()

@@ -1,6 +1,6 @@
+import { AccessGroupDto } from '@api/types/access-control/access-group.dto';
 import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
 import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
-import { AccessGroupDto } from '@api/types/user.dto';
 import { AccessGroupType } from '@common/enum';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';

@@ -1,9 +1,8 @@
+import ActionEntity from '@common/entities/action/action.entity';
+import BaseEntity from '@common/entities/base-entity.entity';
+import UserEntity from '@common/entities/user/user.entity';
+import { AccessGroupRights } from '@common/frontend_shared/enum';
 import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
-import BaseEntity from '../base-entity.entity';
-import UserEntity from '../user/user.entity';
-import ActionEntity from './action.entity';
-
-import { AccessGroupRights } from '../../frontend_shared/enum';
 
 @Entity({ name: 'action_template' })
 @Unique('unique_versioned_action_name', ['name', 'version'])
@@ -13,6 +12,9 @@ export default class ActionTemplateEntity extends BaseEntity {
 
     @Column()
     name!: string;
+
+    @Column({ default: '' })
+    description!: string;
 
     @ManyToOne(() => UserEntity, (user) => user.templates)
     creator!: UserEntity;
@@ -27,7 +29,7 @@ export default class ActionTemplateEntity extends BaseEntity {
     version!: number;
 
     @Column({ default: false })
-    searchable!: boolean;
+    isArchived!: boolean;
 
     @Column()
     cpuCores!: number;
@@ -46,4 +48,7 @@ export default class ActionTemplateEntity extends BaseEntity {
 
     @Column()
     accessRights!: AccessGroupRights;
+
+    // Add this (not a column, just for runtime data)
+    executionCount?: number;
 }

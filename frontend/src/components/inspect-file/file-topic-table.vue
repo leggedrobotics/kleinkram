@@ -25,8 +25,8 @@
             <template #body="props">
                 <q-tr
                     :props="props"
-                    @click="() => (props.expand = !props.expand)"
                     class="cursor-pointer hover:bg-grey-1"
+                    @click="() => (props.expand = !props.expand)"
                 >
                     <q-td
                         v-for="col in props.cols"

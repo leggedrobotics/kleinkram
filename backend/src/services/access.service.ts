@@ -1,11 +1,12 @@
+import { AccessGroupDto } from '@common/api/types/access-control/access-group.dto';
 import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
+import { GroupMembershipDto } from '@common/api/types/access-control/group-membership.dto';
 import {
     ProjectAccessDto,
     ProjectAccessListDto,
 } from '@common/api/types/access-control/project-access.dto';
 import { ProjectWithAccessRightsDto } from '@common/api/types/project/project-access.dto';
 import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
 import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
 import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
 import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
@@ -31,8 +32,8 @@ import logger from '../logger';
 import {
     groupMembershipEntityToDto,
     projectAccessEntityToDto,
-    userEntityToDto,
 } from '../serialization';
+import { userEntityToDto } from '../serialization/user';
 
 @Injectable()
 export class AccessService {

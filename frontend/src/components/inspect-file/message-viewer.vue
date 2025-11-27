@@ -3,9 +3,9 @@
         <div class="row justify-between items-center q-mb-sm">
             <div class="text-subtitle2 text-grey-8 flex items-center">
                 {{ topicName }}
-                <q-badge color="grey-4" text-color="black" class="q-ml-sm">{{
-                    messageType
-                }}</q-badge>
+                <q-badge color="grey-4" text-color="black" class="q-ml-sm">
+                    {{ messageType }}
+                </q-badge>
             </div>
 
             <q-badge

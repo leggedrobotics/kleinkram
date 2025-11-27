@@ -1,8 +1,8 @@
 import { S3Client } from '@aws-sdk/client-s3';
+import { CreateTemplateDto } from '@common/api/types/actions/create-template.dto';
 import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
 import { CreateMission } from '@common/api/types/create-mission.dto';
 import { CreateProject } from '@common/api/types/create-project.dto';
-import { CreateTemplateDto } from '@common/api/types/create-template.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
 import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';

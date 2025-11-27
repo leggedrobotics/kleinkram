@@ -1,10 +1,8 @@
 import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
 import { PermissionsDto } from '@common/api/types/permissions.dto';
-import {
-    CurrentAPIUserDto,
-    UserDto,
-    UsersDto,
-} from '@common/api/types/user.dto';
+import { CurrentAPIUserDto } from '@common/api/types/user/current-api-user.dto';
+import { UserDto } from '@common/api/types/user/user.dto';
+import { UsersDto } from '@common/api/types/user/users.dto';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { ApiOkResponse, OutputDto } from '../../decarators';

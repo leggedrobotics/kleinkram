@@ -1,17 +1,17 @@
+import { UserDto } from '@common/api/types/user/user.dto';
+import { AccessGroupRights } from '@common/frontend_shared/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+    IsBoolean,
     IsDate,
     IsEnum,
     IsNumber,
+    IsOptional,
     IsString,
     IsUUID,
     ValidateNested,
 } from 'class-validator';
-import { AccessGroupRights } from '../../../frontend_shared/enum';
-import { IsSkip } from '../../../validation/skip-validation';
-import { IsTake } from '../../../validation/take-validation';
-import { Paginated } from '../pagination';
 
 export class ActionTemplateDto {
     @ApiProperty()
@@ -25,6 +25,14 @@ export class ActionTemplateDto {
     @ApiProperty()
     @IsString()
     name!: string;
+
+    @ApiProperty()
+    @IsString()
+    description!: string;
+
+    @ApiProperty()
+    @IsBoolean()
+    archived!: boolean;
 
     @ApiProperty()
     @IsString()
@@ -61,26 +69,14 @@ export class ActionTemplateDto {
     @ApiProperty()
     @IsNumber()
     maxRuntime!: number;
-}
 
-export class ActionTemplatesDto implements Paginated<ActionTemplateDto> {
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => UserDto)
+    creator?: UserDto | undefined;
+
     @ApiProperty()
     @IsNumber()
-    count!: number;
-
-    @ApiProperty({
-        type: () => [ActionTemplateDto],
-        description: 'List of templates',
-    })
-    @ValidateNested({ each: true })
-    @Type(() => ActionTemplateDto)
-    data!: ActionTemplateDto[];
-
-    @ApiProperty()
-    @IsSkip()
-    skip!: number;
-
-    @ApiProperty()
-    @IsTake()
-    take!: number;
+    executionCount!: number;
 }

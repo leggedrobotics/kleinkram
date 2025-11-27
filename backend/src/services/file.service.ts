@@ -761,7 +761,6 @@ export class FileService implements OnModuleInit {
         if (!databaseFile.mission.project)
             throw new Error('Project not found!');
 
-        // [10x] Detect Rename
         const oldFilename = databaseFile.filename;
         const isRenamed = file.filename !== oldFilename;
 
@@ -991,8 +990,6 @@ export class FileService implements OnModuleInit {
 
         logger.debug(`Deleting file with uuid: ${uuid}`);
 
-        // [10x] Log Deletion Intent BEFORE strict deletion
-        // We need to fetch it first to have the metadata for the log
         const file = await this.fileRepository.findOne({
             where: { uuid },
             relations: ['mission'],

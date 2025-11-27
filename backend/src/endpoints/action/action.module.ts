@@ -12,7 +12,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActionService } from '../../services/action.service';
 import { ActionGuardService } from '../auth/action-guard.service';
 import { QueueModule } from '../queue/queue.module';
-import { ActionController } from './action.controller';
+import { ActionsController } from './action.controller';
 
 @Module({
     imports: [
@@ -31,6 +31,6 @@ import { ActionController } from './action.controller';
     ],
     providers: [ActionService, ActionGuardService],
     exports: [ActionService],
-    controllers: [ActionController],
+    controllers: [ActionsController],
 })
 export class ActionModule {}

@@ -1,5 +1,3 @@
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
 import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
 import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
 import FileEntity from '@common/entities/file/file.entity';
@@ -8,14 +6,8 @@ import MissionEntity from '@common/entities/mission/mission.entity';
 import ProjectEntity from '@common/entities/project/project.entity';
 import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
 import TopicEntity from '@common/entities/topic/topic.entity';
-import UserEntity from '@common/entities/user/user.entity';
 
-import { ActionWorkerDto } from '@common/api/types/action-workers.dto';
-import { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
-import { ActionDto } from '@common/api/types/actions/action.dto';
-import { AuditLogDto } from '@common/api/types/actions/audit-log.dto';
-import { DockerImageDto } from '@common/api/types/actions/docker-image.dto';
-import { LogsDto } from '@common/api/types/actions/logs.dto';
+import { GroupMembershipDto } from '@common/api/types/access-control/group-membership.dto';
 import { FileDto, FileWithTopicDto } from '@common/api/types/file/file.dto';
 import {
     FlatMissionDto,
@@ -29,11 +21,11 @@ import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-m
 import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
 import { TagDto, TagTypeDto } from '@common/api/types/tags/tags.dto';
 import { TopicDto } from '@common/api/types/topic.dto';
-import { GroupMembershipDto, UserDto } from '@common/api/types/user.dto';
 import {
     AccessGroupRights,
     AccessGroupType,
 } from '@common/frontend_shared/enum';
+import { userEntityToDto } from './user';
 
 export const missionEntityToDto = (mission: MissionEntity): MissionDto => {
     if (!mission.project) {
@@ -96,56 +88,6 @@ export const missionEntityToMinimumDto = (
     return {
         name: mission.name,
         uuid: mission.uuid,
-    };
-};
-
-export const actionTemplateEntityToDto = (
-    actionTemplate: ActionTemplateEntity,
-): ActionTemplateDto => {
-    return {
-        uuid: actionTemplate.uuid,
-        accessRights: actionTemplate.accessRights,
-        command: actionTemplate.command ?? '',
-        cpuCores: actionTemplate.cpuCores,
-        cpuMemory: actionTemplate.cpuMemory,
-        entrypoint: actionTemplate.entrypoint ?? '',
-        gpuMemory: actionTemplate.gpuMemory,
-        imageName: actionTemplate.image_name,
-        maxRuntime: actionTemplate.maxRuntime,
-        createdAt: actionTemplate.createdAt,
-        name: actionTemplate.name,
-        version: actionTemplate.version.toString(),
-    };
-};
-
-export const actionEntityToDto = (action: ActionEntity): ActionDto => {
-    if (action.creator === undefined) {
-        throw new Error('Action must have a creator');
-    }
-
-    if (action.mission === undefined) {
-        throw new Error('Action must have a mission');
-    }
-
-    if (action.template === undefined) {
-        throw new Error('Action must have a template');
-    }
-
-    return {
-        artifactUrl: action.artifact_path ?? '',
-        artifacts: action.artifacts,
-        auditLogs: (action.auditLogs as unknown as AuditLogDto[]) ?? [],
-        createdAt: action.createdAt,
-        creator: userEntityToDto(action.creator),
-        image: (action.image as DockerImageDto) ?? { repoDigests: [] },
-        logs: (action.logs as unknown as LogsDto[]) ?? [],
-        mission: missionEntityToDto(action.mission),
-        state: action.state,
-        stateCause: action.state_cause ?? '',
-        template: actionTemplateEntityToDto(action.template),
-        updatedAt: action.updatedAt,
-        uuid: action.uuid,
-        worker: action.worker as ActionWorkerDto,
     };
 };
 
@@ -340,17 +282,5 @@ export const tagEntityToDto = (tag: MetadataEntity): TagDto => {
         name: tag.tagType.name,
         updatedAt: tag.updatedAt,
         uuid: tag.uuid,
-    };
-};
-
-export const userEntityToDto = (
-    user: UserEntity,
-    includeEmail = false,
-): UserDto => {
-    return {
-        uuid: user.uuid,
-        name: user.name,
-        avatarUrl: user.avatarUrl ?? null,
-        email: includeEmail && user.email ? user.email : null,
     };
 };

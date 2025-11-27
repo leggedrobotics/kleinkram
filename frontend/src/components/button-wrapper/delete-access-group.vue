@@ -27,7 +27,8 @@
 </template>
 
 <script setup lang="ts">
-import { AccessGroupDto, CurrentAPIUserDto } from '@api/types/user.dto';
+import { AccessGroupDto } from '@api/types/access-control/access-group.dto';
+import { CurrentAPIUserDto } from '@api/types/user/current-api-user.dto';
 import { AccessGroupType, UserRole } from '@common/enum';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';

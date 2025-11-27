@@ -57,29 +57,11 @@
 
         <template #no-data>
             <div class="full-width flex flex-center q-pa-xl text-grey">
-                <div v-if="hasActiveFilters" class="column items-center">
-                    <q-icon name="sym_o_search_off" size="3rem" />
-                    <span class="q-mt-sm text-subtitle1">
-                        No files found matching your filters
-                    </span>
-                    <q-btn
-                        flat
-                        dense
-                        no-caps
-                        padding="6px"
-                        label="Reset Filters"
-                        class="button-border text-black"
-                        icon="sym_o_clear"
-                        @click="resetFilters"
-                    />
-                </div>
-
-                <div v-else class="column items-center">
+                <div v-if="isMissionEmpty" class="column items-center">
                     <q-icon name="sym_o_folder_open" size="3rem" />
                     <span class="q-mt-sm text-subtitle1">
                         No files uploaded yet
                     </span>
-
                     <div class="q-mt-md">
                         <CreateFileDialogOpener
                             v-if="missionData !== undefined"
@@ -96,6 +78,27 @@
                             />
                         </CreateFileDialogOpener>
                     </div>
+                </div>
+
+                <div v-else-if="hasActiveFilters" class="column items-center">
+                    <q-icon name="sym_o_search_off" size="3rem" />
+                    <span class="q-mt-sm text-subtitle1">
+                        No files found matching your filters
+                    </span>
+                    <q-btn
+                        flat
+                        dense
+                        no-caps
+                        padding="6px"
+                        label="Reset Filters"
+                        class="button-border text-black q-mt-md"
+                        icon="sym_o_clear"
+                        @click="resetFilters"
+                    />
+                </div>
+
+                <div v-else class="column items-center">
+                    <span class="text-subtitle1">No data available</span>
                 </div>
             </div>
         </template>
@@ -211,7 +214,7 @@
 import { CategoryDto } from '@api/types/category.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FilesDto } from '@api/types/file/files.dto';
-import { HealthStatus } from '@common/enum';
+import { FileType, HealthStatus } from '@common/enum';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
@@ -236,30 +239,39 @@ import { useRouter } from 'vue-router';
 
 const selected = defineModel('selected', { required: true, type: Array });
 
-const $emit = defineEmits(['update:selected']);
+const $emit = defineEmits(['update:selected', 'reset-filter']);
 const $router = useRouter();
 
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
 const { data: missionData } = useMission(missionUuid);
 
+const isMissionEmpty = computed(() => {
+    return missionData.value && missionData.value.files?.length === 0;
+});
+
 const hasActiveFilters = computed(() => {
     const h = properties.urlHandler;
+
+    const totalFileTypes = Object.values(FileType).filter(
+        (t) => t !== FileType.ALL,
+    ).length;
+
+    const isTypeFilterActive =
+        h.fileTypes && h.fileTypes.length < totalFileTypes;
+
     return (
         (h.searchParams.name && h.searchParams.name.length > 0) ||
         (h.searchParams.health && h.searchParams.health.length > 0) ||
-        (h.fileTypes && h.fileTypes.length > 0) ||
+        isTypeFilterActive ||
         (h.categories && h.categories.length > 0)
     );
 });
 
-function resetFilters() {
-    properties.urlHandler.setSearch({ name: '', health: '' });
-    properties.urlHandler.setFileTypes([]);
-    properties.urlHandler.setCategories([]);
+function resetFilters(): void {
+    $emit('reset-filter');
 }
 
-// TODO: this does not work across pages
 const { data: missions } = useMissionsOfProjectMinimal(projectUuid, 100, 0);
 
 const nextMissionUuid = computed(() => {
@@ -292,7 +304,7 @@ if (properties.urlHandler.sortBy === 'name') {
     properties.urlHandler.setSort('filename');
 }
 
-function setPagination(update: TableRequest) {
+function setPagination(update: TableRequest): void {
     properties.urlHandler.setPage(update.pagination.page);
     properties.urlHandler.setTake(update.pagination.rowsPerPage);
     properties.urlHandler.setSort(update.pagination.sortBy);
