@@ -10,9 +10,10 @@
             dense
             :type="type"
             :readonly="readonly"
+            :disable="disable"
             :placeholder="placeholder"
             :rules="rules"
-            :bg-color="readonly ? 'grey-2' : 'white'"
+            :bg-color="readonly || disable ? undefined : 'white'"
             :hint="hint"
             lazy-rules
         >
@@ -33,6 +34,7 @@ withDefaults(
         label?: string | undefined;
         required?: boolean;
         readonly?: boolean;
+        disable?: boolean;
         placeholder?: string | undefined;
         hint?: string | undefined;
         type?: 'text' | 'number' | 'textarea';
@@ -46,6 +48,7 @@ withDefaults(
         rules: () => [],
         required: false,
         readonly: false,
+        disable: false,
     },
 );
 </script>

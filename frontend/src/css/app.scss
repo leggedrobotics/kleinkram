@@ -192,3 +192,14 @@ label {
 .q-notification__actions {
     color: white;
 }
+
+// Unified disabled/readonly input style
+.q-field--readonly,
+.q-field--disabled {
+    .q-field__control:before {
+        border-style: dotted !important;
+    }
+    .q-field__control {
+        background-color: $layer-01 !important;
+    }
+}
