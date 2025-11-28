@@ -120,6 +120,7 @@ describe('Verify Action (Templates & Runs)', () => {
         // 4. Create Action Template (Using the new API endpoint)
         const templateDto: CreateTemplateDto = {
             name: 'test_action_template',
+            description: 'Test action template used in integration test',
             command: '',
             cpuCores: 2,
             cpuMemory: 2,
