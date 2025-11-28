@@ -388,14 +388,13 @@ watch(
             isCheckingName.value = false;
             nameCheckDirty.value = false;
 
+            // eslint-disable-next-line unicorn/prefer-ternary
             if (props.initialTemplate) {
-                // EDIT MODE
                 localTemplate.value = {
-                    ...JSON.parse(JSON.stringify(props.initialTemplate)),
+                    ...structuredClone(props.initialTemplate),
                     dockerImage: props.initialTemplate.imageName,
                 };
             } else {
-                // CREATE MODE
                 localTemplate.value = { ...defaultTemplate };
             }
 
@@ -404,9 +403,7 @@ watch(
                 localTemplate.value.gpuMemory = 6;
             }
 
-            nextTick(() => {
-                actionForm.value?.resetValidation();
-            });
+            nextTick(() => actionForm.value?.resetValidation());
         }
     },
 );
@@ -438,13 +435,13 @@ async function saveTemplate(): Promise<void> {
     isSaving.value = true;
     try {
         const basePayload = {
-            name: localTemplate.value.name!,
+            name: localTemplate.value.name ?? '',
             description: localTemplate.value.description ?? '',
             command: localTemplate.value.command ?? '',
-            dockerImage: localTemplate.value.dockerImage!,
-            cpuCores: localTemplate.value.cpuCores!,
-            cpuMemory: localTemplate.value.cpuMemory!,
-            maxRuntime: localTemplate.value.maxRuntime!,
+            dockerImage: localTemplate.value.dockerImage``,
+            cpuCores: localTemplate.value.cpuCores ?? 1,
+            cpuMemory: localTemplate.value.cpuMemory ?? 2,
+            maxRuntime: localTemplate.value.maxRuntime ?? 2,
             entrypoint: localTemplate.value.entrypoint ?? '',
             accessRights:
                 localTemplate.value.accessRights ?? AccessGroupRights.READ,

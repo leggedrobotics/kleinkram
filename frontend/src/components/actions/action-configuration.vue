@@ -517,18 +517,18 @@ async function submitAnalysis(): Promise<void> {
 const isModified = computed(() => {
     if (!selectedTemplate.value) return true;
     const t = selectedTemplate.value;
-    const e = editingTemplate.value;
+    const template = editingTemplate.value;
 
     return !(
-        e.name === t.name &&
-        e.imageName === t.imageName &&
-        e.command === t.command &&
-        e.gpuMemory === t.gpuMemory &&
-        e.cpuMemory === t.cpuMemory &&
-        e.cpuCores === t.cpuCores &&
-        e.maxRuntime === t.maxRuntime &&
-        e.entrypoint === t.entrypoint &&
-        e.accessRights === t.accessRights
+        template.name === t.name &&
+        template.imageName === t.imageName &&
+        template.command === t.command &&
+        template.gpuMemory === t.gpuMemory &&
+        template.cpuMemory === t.cpuMemory &&
+        template.cpuCores === t.cpuCores &&
+        template.maxRuntime === t.maxRuntime &&
+        template.entrypoint === t.entrypoint &&
+        template.accessRights === t.accessRights
     );
 });
 
