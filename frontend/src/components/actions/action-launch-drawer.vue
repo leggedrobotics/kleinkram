@@ -133,6 +133,8 @@ import InfoBanner from 'components/info-banner.vue';
 import { useSubmitAction } from 'src/composables/use-action-mutations';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
 import { useManyMissions } from 'src/hooks/query-hooks';
+import { useQueryClient } from '@tanstack/vue-query';
+import { actionKeys } from 'src/api/keys/action-keys';
 
 // --- Types ---
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
@@ -146,6 +148,7 @@ const props = defineProps<{
 const emits = defineEmits(['close', 'create-action']);
 
 // --- State ---
+const queryClient = useQueryClient();
 const _open = ref(false);
 const runtimeCommand = ref('');
 const addedMissions = ref<string[]>([]);
@@ -241,6 +244,10 @@ async function submitAnalysis(): Promise<void> {
         Notify.create({
             message: 'Action Launched Successfully',
             color: 'positive',
+        });
+
+        await queryClient.invalidateQueries({
+            queryKey: actionKeys.templates.all,
         });
 
         closeDrawer();

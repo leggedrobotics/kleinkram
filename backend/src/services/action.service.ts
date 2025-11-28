@@ -42,7 +42,7 @@ export class ActionService {
         private missionRepository: Repository<MissionEntity>,
         private readonly actionDispatcher: ActionDispatcherService,
         private readonly storageService: StorageService,
-    ) {}
+    ) { }
 
     async submit(
         data: SubmitActionDto,
@@ -116,7 +116,11 @@ export class ActionService {
             sortDirection &&
             ['ASC', 'DESC'].includes(sortDirection)
         ) {
-            qb.orderBy(`action.${sortBy}`, sortDirection as 'ASC' | 'DESC');
+            if (sortBy.includes('.')) {
+                qb.orderBy(sortBy, sortDirection as 'ASC' | 'DESC');
+            } else {
+                qb.orderBy(`action.${sortBy}`, sortDirection as 'ASC' | 'DESC');
+            }
         } else {
             // Default sort: newest first
             qb.orderBy('action.created_at', 'DESC');

@@ -396,7 +396,7 @@ watch(
             // eslint-disable-next-line unicorn/prefer-ternary
             if (props.initialTemplate) {
                 localTemplate.value = {
-                    ...structuredClone(props.initialTemplate),
+                    ...JSON.parse(JSON.stringify(props.initialTemplate)),
                     imageName: props.initialTemplate.imageName,
                 };
             } else {

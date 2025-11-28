@@ -8,7 +8,16 @@
                 align="left"
                 active-color="primary"
             >
-                <q-tab name="info" label="Details" style="color: #222" />
+                <q-tab
+                    name="template"
+                    label="Action Template"
+                    style="color: #222"
+                />
+                <q-tab
+                    name="info"
+                    label="Execution Details"
+                    style="color: #222"
+                />
                 <q-tab
                     name="logs"
                     label="Logs"
@@ -37,13 +46,18 @@
                         <span>No audit logs available</span>
                     </q-tooltip>
                 </q-tab>
-
-                <q-tab name="template" label="Template Snapshot" />
             </q-tabs>
         </template>
 
         <template #buttons>
             <button-group>
+                <q-btn
+                    class="button-border"
+                    flat
+                    icon="sym_o_arrow_back"
+                    label="Back to Actions"
+                    @click="$router.push({ name: ROUTES.ACTION.routeName })"
+                />
                 <q-btn
                     class="button-border"
                     flat
@@ -60,190 +74,7 @@
 
     <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
         <q-tab-panel name="info">
-            <div v-if="action" class="q-table-container">
-                <table class="q-table__table">
-                    <tbody>
-                        <tr>
-                            <td class="q-table__cell">Docker Image</td>
-                            <td class="q-table__cell">
-                                {{ action.template.imageName }}
-
-                                <span
-                                    v-if="action.image.repoDigests?.[0]"
-                                    style="color: #525252; font-size: 0.8em"
-                                >
-                                    <br />
-                                    {{ action.image.repoDigests?.[0] }}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Name</td>
-                            <td class="q-table__cell">
-                                {{ action?.template.name }}
-                                v{{ action?.template.version }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Created By</td>
-                            <td class="q-table__cell">
-                                {{ action?.creator?.name }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">State</td>
-                            <td class="q-table__cell">
-                                <ActionBadge v-if="action" :action="action" />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">State Reason</td>
-                            <td class="q-table__cell">
-                                {{ action?.stateCause }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Command</td>
-                            <td class="q-table__cell">
-                                {{ action?.template.command }}
-
-                                <span
-                                    v-if="!action?.template.command"
-                                    style="color: #525252; font-size: 0.8em"
-                                >
-                                    No command specified
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Entrypoint</td>
-                            <td class="q-table__cell">
-                                {{ action?.template.entrypoint }}
-
-                                <span
-                                    v-if="!action?.template.entrypoint"
-                                    style="color: #525252; font-size: 0.8em"
-                                >
-                                    No entrypoint specified
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Access Rights</td>
-                            <td class="q-table__cell">
-                                {{
-                                    accessGroupRightsMap[
-                                        action.template.accessRights
-                                    ]
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Submitted At:</td>
-                            <td class="q-table__cell">
-                                {{
-                                    action?.createdAt
-                                        ? formatDate(action?.createdAt)
-                                        : 'N/A'
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Last Updated At:</td>
-                            <td class="q-table__cell">
-                                {{
-                                    action?.updatedAt
-                                        ? formatDate(action?.updatedAt)
-                                        : 'N/A'
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Runner CPU Model:</td>
-                            <td class="q-table__cell">
-                                {{ action?.worker?.cpuModel || 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Runner Hostname:</td>
-                            <td class="q-table__cell">
-                                {{ action.worker.hostname || 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr v-if="action">
-                            <td class="q-table__cell">Runtime:</td>
-                            <td class="q-table__cell">
-                                {{
-                                    (action.updatedAt.getTime() -
-                                        action.createdAt.getTime()) /
-                                    1000
-                                }}
-                                seconds
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">
-                                Hardware Requirements:
-                            </td>
-                            <td class="q-table__cell">
-                                <div v-if="action.template">
-                                    Cores: {{ action.template.cpuCores }}<br />
-                                    RAM:
-                                    {{ action.template.cpuMemory }} GB<br />
-                                    min vRAM:
-                                    <template
-                                        v-if="action?.template.gpuMemory >= 0"
-                                    >
-                                        {{ action.template.gpuMemory }} GB
-                                    </template>
-                                    <template v-else>
-                                        no GPU requested
-                                    </template>
-                                    <br />
-                                </div>
-                                <div v-else>N/A</div>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="q-table__cell">Project / Mission:</td>
-                            <td class="q-table__cell">
-                                {{ action.mission?.project?.name }} /
-                                {{ action.mission?.name }}
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="q-table__cell">Artifact Files:</td>
-                            <td class="q-table__cell">
-                                <q-btn
-                                    v-if="
-                                        action.artifacts ===
-                                        ArtifactState.UPLOADED
-                                    "
-                                    label="Open"
-                                    flat
-                                    dense
-                                    padding="6px"
-                                    color="icon-secondary"
-                                    class="button-border"
-                                    icon="sym_o_link"
-                                    @click="openArtifact"
-                                />
-                                <div v-else>
-                                    {{ artifactState }}
-                                </div>
-                                <br />
-                                <span style="color: #525252; font-size: 0.8em">
-                                    Artifacts are only be stored for 3 months.
-                                    Please download them if you need them for
-                                    longer.
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <ActionDetailsExecutionTab v-if="action" :action="action" />
         </q-tab-panel>
 
         <q-tab-panel name="logs">
@@ -372,6 +203,7 @@
 import { ArtifactState } from '@common/enum';
 import ActionBadge from 'components/action-badge.vue';
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
+import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import TitleSection from 'components/title-section.vue';
 import { useActionDetails } from 'src/composables/use-actions-queries';
@@ -382,7 +214,7 @@ import { computed, ref } from 'vue';
 import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 
-const tab = ref('info');
+const tab = ref('template');
 
 const $route = useRoute();
 const $router = useRouter();
@@ -426,26 +258,5 @@ const openMission = async (): Promise<void> => {
 </script>
 
 <style>
-.q-table-container {
-    width: 100%;
-    border: 1px solid #e0e0e0;
-    border-bottom: none;
-}
-
-.q-table__table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.q-table__cell {
-    padding: 8px;
-    border-bottom: none; /* Remove border to match page background */
-    outline: black;
-    border-bottom: 1px solid #e0e0e0;
-    border-right: 1px solid #e0e0e0;
-}
-
-.q-table__cell:last-child {
-    border-right: none;
-}
+/* Styles removed as table is no longer used */
 </style>

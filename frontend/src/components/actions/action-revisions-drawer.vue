@@ -40,7 +40,7 @@
                                     name="sym_o_play_circle"
                                     class="q-mr-xs"
                                 />
-                                {{ ver.executionCount }} Runs
+                                {{ ver.executionCount }} Executions
                             </q-badge>
                         </div>
                     </template>
