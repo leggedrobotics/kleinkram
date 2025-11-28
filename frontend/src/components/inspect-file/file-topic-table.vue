@@ -5,7 +5,6 @@
             <app-search-bar
                 v-model="search"
                 placeholder="Search topics..."
-                class="bg-white"
             />
         </div>
 
