@@ -19,12 +19,9 @@
                     placeholder="Search Action Templates..."
                 >
                     <template #append-start>
-                        <div class="row items-center">
-                        </div>
+                        <div class="row items-center"></div>
                     </template>
                 </app-search-bar>
-
-
 
                 <app-create-button label="New Action" @click="handleCreate" />
             </ButtonGroup>
@@ -33,8 +30,6 @@
         <div v-if="isLoading" class="flex flex-center col-grow">
             <q-spinner color="primary" size="3em" />
         </div>
-
-
 
         <q-table
             v-else-if="filteredTemplates.length > 0"
@@ -193,10 +188,10 @@
 
 <script setup lang="ts">
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import AppSearchBar from 'components/common/app-search-bar.vue';
-import AppCreateButton from 'components/common/app-create-button.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
-import { Dialog, Notify, Platform } from 'quasar';
+import AppCreateButton from 'components/common/app-create-button.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
+import { Dialog, Notify } from 'quasar';
 import { useDeleteTemplate } from 'src/composables/use-action-mutations';
 import { useTemplateList } from 'src/composables/use-actions-queries';
 import DeleteActionTemplateDialog from 'src/dialogs/delete-action-template-dialog.vue';

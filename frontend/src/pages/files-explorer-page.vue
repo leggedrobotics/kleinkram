@@ -232,10 +232,11 @@
                     @update:selected="updateSelected"
                 />
 
-                <div class="button-border" style="min-width: 220px; height: 36px">
-                    <file-type-selector
-                        v-model="fileTypeFilter"
-                    />
+                <div
+                    class="button-border"
+                    style="min-width: 220px; height: 36px"
+                >
+                    <file-type-selector v-model="fileTypeFilter" />
                 </div>
 
                 <app-search-bar
@@ -361,9 +362,6 @@ import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
-import AppSearchBar from 'components/common/app-search-bar.vue';
-import AppRefreshButton from 'components/common/app-refresh-button.vue';
-import AppCreateButton from 'components/common/app-create-button.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
 import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
 import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
@@ -374,6 +372,9 @@ import OpenMultiFileMoveDialog from 'components/buttons/open-multi-file-move-dia
 import CategorySelector from 'components/category-selector.vue';
 import KleinDownloadFiles from 'components/cli-links/klein-download-files.vue';
 import KleinDownloadMission from 'components/cli-links/klein-download-mission.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import ExplorerPageFilesTable from 'components/explorer-page/explorer-page-files-table.vue';
 import ExplorerPageTableHeader from 'components/explorer-page/explorer-page-table-header.vue';
 import FileTypeSelector, {

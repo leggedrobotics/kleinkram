@@ -5,8 +5,8 @@
                 <q-banner class="bg-blue-1 text-blue-10 rounded-borders">
                     This execution ran using
                     <strong>
-                        {{ template.name }} (v {{ template.version }})
-                        </strong>.
+                        {{ template.name }} (v {{ template.version }}) </strong
+                    >.
                     <div class="text-caption q-mt-xs">
                         Defined by {{ template.creator?.name }} on
                         {{ formatDate(template.createdAt) }}

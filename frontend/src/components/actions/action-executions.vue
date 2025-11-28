@@ -29,8 +29,8 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query';
 import ActionsTable from 'components/actions/actions-table.vue';
-import AppSearchBar from 'components/common/app-search-bar.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import { actionKeys } from 'src/api/keys/action-keys';
 import { useHandler } from 'src/hooks/query-hooks';
 import { computed } from 'vue';

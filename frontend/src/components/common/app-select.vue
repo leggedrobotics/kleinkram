@@ -16,7 +16,10 @@
             :options="options"
             :option-label="optionLabel"
             :option-value="optionValue"
-            :bg-color="bgColor ?? ($attrs.readonly || $attrs.disable ? 'grey-2' : 'white')"
+            :bg-color="
+                bgColor ??
+                ($attrs.readonly || $attrs.disable ? 'grey-2' : 'white')
+            "
         >
             <template v-for="(_, slot) in $slots" #[slot]="scope">
                 <slot :name="slot" v-bind="scope || {}" />

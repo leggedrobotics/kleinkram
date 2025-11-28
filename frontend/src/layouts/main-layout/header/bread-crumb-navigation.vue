@@ -79,8 +79,8 @@ import {
     useProjectUUID,
 } from 'src/hooks/router-hooks';
 import { PageBreadCrumb } from 'src/router/routes-utilities';
-import { useRoute } from 'vue-router';
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 const $q = useQuasar();
 const crumbs = useCrumbs();

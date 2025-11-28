@@ -42,7 +42,7 @@ export class ActionService {
         private missionRepository: Repository<MissionEntity>,
         private readonly actionDispatcher: ActionDispatcherService,
         private readonly storageService: StorageService,
-    ) { }
+    ) {}
 
     async submit(
         data: SubmitActionDto,

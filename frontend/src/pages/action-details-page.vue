@@ -201,15 +201,13 @@
 
 <script setup lang="ts">
 import { ArtifactState } from '@common/enum';
-import ActionBadge from 'components/action-badge.vue';
-import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
+import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import TitleSection from 'components/title-section.vue';
 import { useActionDetails } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
-import { accessGroupRightsMap } from 'src/services/generic';
 import { computed, ref } from 'vue';
 import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
@@ -258,7 +256,7 @@ const openMission = async (): Promise<void> => {
 
 const navigateBackToActions = async (): Promise<void> => {
     const previousPath = window.history.state?.back as string | undefined;
-    
+
     // If we came from the actions list (any tab), go back to preserve filters/state
     if (previousPath?.includes('/actions')) {
         $router.back();

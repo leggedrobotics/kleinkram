@@ -25,7 +25,10 @@
                         class="q-mr-sm"
                     />
                     <app-refresh-button @click="refetchOnClick" />
-                    <app-create-button label="Add Project" @click="openAddProject" />
+                    <app-create-button
+                        label="Add Project"
+                        @click="openAddProject"
+                    />
                 </button-group>
             </div>
 
@@ -227,9 +230,9 @@ import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-use
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import RemoveProjectDialogOpener from 'components/button-wrapper/remove-project-dialog-opener.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
-import AppCreateButton from 'components/common/app-create-button.vue';
 import { projectAccessColumns } from 'components/explorer-page/explorer-page-table-columns';
 import TitleSection from 'components/title-section.vue';
 import { Notify, QTable, useQuasar } from 'quasar';

@@ -26,10 +26,10 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
-import AppSearchBar from 'components/common/app-search-bar.vue';
-import AppRefreshButton from 'components/common/app-refresh-button.vue';
-import AppCreateButton from 'components/common/app-create-button.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import MyProjectsSelector from 'components/explorer-page/my-projects-selector.vue';
 import { useHandler } from 'src/hooks/query-hooks';
 import { ref, watch } from 'vue';

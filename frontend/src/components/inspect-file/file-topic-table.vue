@@ -2,10 +2,7 @@
     <div class="file-topic-table">
         <div class="flex justify-between items-center q-mb-md">
             <h2 class="text-h4 q-my-none">Messages</h2>
-            <app-search-bar
-                v-model="search"
-                placeholder="Search topics..."
-            />
+            <app-search-bar v-model="search" placeholder="Search topics..." />
         </div>
 
         <q-table
@@ -77,11 +74,11 @@
 </template>
 
 <script setup lang="ts">
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import type { QTableColumn } from 'quasar';
 import { computed, ref } from 'vue';
 import { detectPreviewType, PreviewType } from '../../services/message-factory';
 import MessageViewer from './message-viewer.vue';
-import AppSearchBar from 'components/common/app-search-bar.vue';
 
 const properties = defineProps<{
     topics: any[];

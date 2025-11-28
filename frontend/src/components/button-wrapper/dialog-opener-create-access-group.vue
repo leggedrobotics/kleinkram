@@ -12,8 +12,8 @@
 
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { Notify, useQuasar } from 'quasar';
 import AppCreateButton from 'components/common/app-create-button.vue';
+import { Notify, useQuasar } from 'quasar';
 import CreateAccessGroupDialog from 'src/dialogs/create-access-group-dialog.vue';
 import { canCreateProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { createAccessGroup } from 'src/services/mutations/access';

@@ -1,7 +1,11 @@
 <template>
     <base-dialog ref="dialogRef">
         <template #title>
-            {{ isArchiving ? 'Archive Action Template' : 'Delete Action Template' }}
+            {{
+                isArchiving
+                    ? 'Archive Action Template'
+                    : 'Delete Action Template'
+            }}
         </template>
         <template #content>
             <DeleteActionTemplate
@@ -36,9 +40,9 @@ const props = defineProps<{
 }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteActionRef = ref<InstanceType<typeof DeleteActionTemplate> | undefined>(
-    undefined,
-);
+const deleteActionRef = ref<
+    InstanceType<typeof DeleteActionTemplate> | undefined
+>(undefined);
 
 const isArchiving = computed(() => (props.template?.executionCount ?? 0) > 0);
 

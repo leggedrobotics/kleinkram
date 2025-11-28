@@ -127,7 +127,10 @@ const queryFilters = computed(() => ({
     projectUuid: (route.query.projectUuid as string) || undefined,
     missionUuid: (route.query.missionUuid as string) || undefined,
     take: route.query.rowsPerPage ? Number(route.query.rowsPerPage) : 100,
-    skip: route.query.page ? (Number(route.query.page) - 1) * (route.query.rowsPerPage ? Number(route.query.rowsPerPage) : 100) : 0,
+    skip: route.query.page
+        ? (Number(route.query.page) - 1) *
+          (route.query.rowsPerPage ? Number(route.query.rowsPerPage) : 100)
+        : 0,
     sortBy: (route.query.sortBy as string) || undefined,
     sortDirection: route.query.descending === 'true' ? 'DESC' : 'ASC',
     search: undefined,

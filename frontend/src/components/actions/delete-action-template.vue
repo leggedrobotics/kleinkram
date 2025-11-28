@@ -1,8 +1,9 @@
 <template>
     <q-card-section class="q-pa-md">
         <p v-if="isArchiving">
-            This action template has <b>{{ template.executionCount }}</b> executions.
-            It cannot be deleted, but it will be <b>archived</b> instead.
+            This action template has
+            <b>{{ template.executionCount }}</b> executions. It cannot be
+            deleted, but it will be <b>archived</b> instead.
         </p>
         <p v-else>
             This action template has no executions and will be
