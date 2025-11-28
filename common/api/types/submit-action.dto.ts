@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ActionState } from '../../frontend_shared/enum';
 import { IsSkip } from '../../validation/skip-validation';
@@ -25,11 +26,13 @@ export class ActionQuery {
     @ApiProperty()
     @IsOptional()
     @IsSkip()
+    @Type(() => Number)
     skip?: number | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsSkip()
+    @Type(() => Number)
     take?: number | undefined;
 
     @ApiProperty()

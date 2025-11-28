@@ -37,6 +37,19 @@
         <template v-if="hasScope">
             <ActionsTable :handler="handler" />
         </template>
+        <div v-else class="flex flex-center q-pa-xl text-grey col-grow">
+            <div class="column items-center text-center">
+                <q-icon
+                    name="sym_o_filter_alt"
+                    size="4rem"
+                    class="q-mb-md text-grey-4"
+                />
+                <span class="text-h6 text-grey-6">No Scope Selected</span>
+                <span class="text-caption" style="max-width: 300px">
+                    Please select a Project and Mission to view executions.
+                </span>
+            </div>
+        </div>
     </div>
 </template>
 

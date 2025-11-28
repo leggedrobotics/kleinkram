@@ -41,15 +41,17 @@
         </template>
 
         <template #no-data>
-            <div
-                class="flex flex-center"
-                style="justify-content: center; margin: auto"
-            >
-                <div
-                    class="q-pa-md flex flex-center column q-gutter-md"
-                    style="min-height: 200px"
-                >
-                    <span class="text-subtitle1"> No Actions Found </span>
+            <div class="flex flex-center full-width q-pa-xl text-grey">
+                <div class="column items-center text-center">
+                    <q-icon
+                        name="sym_o_toc"
+                        size="4rem"
+                        class="q-mb-md text-grey-4"
+                    />
+                    <span class="text-h6 text-grey-6">No executions found</span>
+                    <span class="text-caption">
+                        There are no executions matching your criteria.
+                    </span>
                 </div>
             </div>
         </template>
@@ -123,10 +125,10 @@ properties.handler.setDescending(true);
 const queryFilters = computed(() => ({
     projectUuid: properties.handler.projectUuid || undefined,
     missionUuid: properties.handler.missionUuid || undefined,
-    take: properties.handler.take ?? 100,
-    skip: properties.handler.skip ?? 0,
-    sort: properties.handler.sortBy || undefined,
-    order: properties.handler.descending ? 'DESC' : 'ASC',
+    take: Number(properties.handler.take ?? 100),
+    skip: Number(properties.handler.skip ?? 0),
+    sortBy: properties.handler.sortBy || undefined,
+    sortDirection: properties.handler.descending ? 'DESC' : 'ASC',
     search: properties.handler.searchParams.name || undefined,
 }));
 

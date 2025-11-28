@@ -1,7 +1,18 @@
 <template>
     <div class="q-pa-md h-full column">
-        <div class="row q-col-gutter-md q-mb-lg items-center justify-between">
-            <div class="col-grow col-md-5">
+        <div class="flex justify-between items-center q-mb-lg">
+            <ButtonGroup>
+                <q-toggle
+                    v-model="showArchived"
+                    label="Show Archived"
+                    color="grey-7"
+                    left-label
+                    dense
+                    class="text-grey-7 q-px-sm"
+                />
+            </ButtonGroup>
+
+            <ButtonGroup>
                 <q-input
                     ref="searchInput"
                     v-model="searchTerm"
@@ -9,12 +20,7 @@
                     dense
                     placeholder="Search Action Templates..."
                     debounce="300"
-                    bg-color="white"
-                    class="shadow-1"
                 >
-                    <template #prepend>
-                        <q-icon name="sym_o_search" />
-                    </template>
                     <template #append>
                         <div class="row items-center">
                             <q-chip
@@ -25,12 +31,6 @@
                                 size="xs"
                                 class="q-px-sm gt-xs"
                             >
-                                <span
-                                    class="text-caption"
-                                    style="font-size: 10px"
-                                >
-                                    {{ isMac ? '⌘K' : 'Ctrl+K' }}
-                                </span>
                             </q-chip>
                             <q-icon
                                 v-if="searchTerm"
@@ -38,20 +38,10 @@
                                 class="cursor-pointer q-ml-sm"
                                 @click="clearSearch"
                             />
+                            <q-icon v-else name="sym_o_search" />
                         </div>
                     </template>
                 </q-input>
-            </div>
-
-            <div class="col-auto row items-center q-gutter-x-md">
-                <q-toggle
-                    v-model="showArchived"
-                    label="Show Archived"
-                    color="grey-7"
-                    left-label
-                    dense
-                    class="text-grey-7"
-                />
 
                 <q-separator vertical inset />
 
@@ -69,13 +59,14 @@
                 />
 
                 <q-btn
-                    color="primary"
+                    flat
+                    style="height: 100%"
+                    class="bg-button-secondary text-on-color"
                     icon="sym_o_add"
                     label="New Action"
-                    unelevated
                     @click="handleCreate"
                 />
-            </div>
+            </ButtonGroup>
         </div>
 
         <div v-if="isLoading" class="flex flex-center col-grow">
@@ -222,6 +213,7 @@
 <script setup lang="ts">
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import ActionCard from 'components/actions/action-card.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
 import { Dialog, Notify, Platform } from 'quasar';
 import { useDeleteTemplate } from 'src/composables/use-action-mutations';
 import { useTemplateList } from 'src/composables/use-actions-queries';
