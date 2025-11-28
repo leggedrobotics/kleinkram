@@ -20,34 +20,11 @@
                 >
                     <template #append-start>
                         <div class="row items-center">
-                            <q-chip
-                                dense
-                                square
-                                outline
-                                color="grey-5"
-                                size="xs"
-                                class="q-px-sm gt-xs"
-                            >
-                                {{ isMac ? '⌘K' : 'Ctrl+K' }}
-                            </q-chip>
                         </div>
                     </template>
                 </app-search-bar>
 
-                <q-separator vertical inset />
 
-                <q-btn-toggle
-                    v-model="viewMode"
-                    unelevated
-                    dense
-                    text-color="grey-6"
-                    toggle-text-color="primary"
-                    :options="[
-                        { icon: 'sym_o_grid_view', value: 'grid' },
-                        { icon: 'sym_o_view_list', value: 'list' },
-                    ]"
-                    class="border-grey"
-                />
 
                 <q-btn
                     flat
@@ -64,116 +41,128 @@
             <q-spinner color="primary" size="3em" />
         </div>
 
-        <div
-            v-else-if="viewMode === 'grid' && filteredTemplates.length > 0"
-            class="row q-col-gutter-md"
-        >
-            <div
-                v-for="template in filteredTemplates"
-                :key="template.uuid"
-                class="col-xs-12 col-sm-6 col-md-4 col-lg-3 flex"
-            >
-                <ActionCard
-                    :template="template"
-                    @run="() => handleSelect(template)"
-                    @edit="() => handleEdit(template)"
-                    @revisions="() => handleRevisions(template)"
-                    @delete="() => confirmDelete(template)"
-                />
-            </div>
-        </div>
 
-        <q-list
-            v-else-if="viewMode === 'list' && filteredTemplates.length > 0"
-            separator
+
+        <q-table
+            v-else-if="filteredTemplates.length > 0"
+            :rows="filteredTemplates"
+            :columns="columns"
+            row-key="uuid"
+            flat
             bordered
-            class="bg-white rounded-borders"
+            separator="none"
+            virtual-scroll
+            :pagination="{ rowsPerPage: 20 }"
+            class="bg-white"
         >
-            <q-item
-                v-for="template in filteredTemplates"
-                :key="template.uuid"
-                v-ripple
-                clickable
-                class="q-py-md"
-                @click="() => handleSelect(template)"
-            >
-                <q-item-section avatar>
-                    <q-avatar
-                        :color="template.archived ? 'grey-4' : 'grey-2'"
-                        :text-color="template.archived ? 'grey-7' : 'primary'"
-                        icon="sym_o_terminal"
-                    />
-                </q-item-section>
+            <template #body="props">
+                <q-tr
+                    :props="props"
+                    class="cursor-pointer"
+                    @click="() => handleSelect(props.row)"
+                >
+                    <q-td
+                        v-for="col in props.cols"
+                        :key="col.name"
+                        :props="props"
+                    >
+                        <div class="row items-center full-width">
+                            <q-avatar
+                                :color="
+                                    props.row.archived ? 'grey-4' : 'grey-2'
+                                "
+                                :text-color="
+                                    props.row.archived ? 'grey-7' : 'primary'
+                                "
+                                icon="sym_o_terminal"
+                                class="q-mr-md"
+                            />
 
-                <q-item-section>
-                    <q-item-label class="text-weight-bold">
-                        {{ template.name }}
-                        <q-badge
-                            v-if="template.archived"
-                            color="grey"
-                            label="Archived"
-                            class="q-ml-sm"
-                        />
-                    </q-item-label>
-                    <q-item-label caption>
-                        v{{ template.version }} •
-                        {{ template.creator?.name ?? 'System' }}
-                    </q-item-label>
-                </q-item-section>
+                            <div class="column">
+                                <div class="text-weight-bold">
+                                    {{ props.row.name }}
+                                    <q-badge
+                                        v-if="props.row.archived"
+                                        color="grey"
+                                        label="Archived"
+                                        class="q-ml-sm"
+                                    />
+                                </div>
+                                <div class="text-caption text-grey-7">
+                                    v{{ props.row.version }} •
+                                    {{ props.row.creator?.name ?? 'System' }}
+                                </div>
+                            </div>
 
-                <q-item-section side class="gt-xs">
-                    <div class="row q-gutter-x-md text-caption text-grey">
-                        <span>
-                            <q-icon name="sym_o_memory" />
-                            {{ template.cpuCores }} Core
-                        </span>
-                        <span>
-                            <q-icon name="sym_o_schedule" />
-                            {{ template.maxRuntime }}h
-                        </span>
-                    </div>
-                </q-item-section>
+                            <q-space />
 
-                <q-item-section side>
-                    <div class="row q-gutter-x-sm">
-                        <q-btn
-                            flat
-                            round
-                            dense
-                            icon="sym_o_history"
-                            color="grey-7"
-                            @click.stop="() => handleRevisions(template)"
-                        />
-                        <q-btn
-                            flat
-                            round
-                            dense
-                            icon="sym_o_edit"
-                            color="grey-7"
-                            :disable="template.archived"
-                            @click.stop="() => handleEdit(template)"
-                        />
-                        <q-btn
-                            flat
-                            round
-                            dense
-                            icon="sym_o_play_arrow"
-                            color="primary"
-                            :disable="template.archived"
-                            @click.stop="() => handleSelect(template)"
-                        />
-                        <q-btn
-                            flat
-                            round
-                            dense
-                            icon="sym_o_delete"
-                            color="negative"
-                            @click.stop="() => confirmDelete(template)"
-                        />
-                    </div>
-                </q-item-section>
-            </q-item>
-        </q-list>
+                            <div
+                                class="row q-gutter-x-md text-caption text-grey gt-xs q-mr-lg"
+                            >
+                                <span>
+                                    <q-icon name="sym_o_memory" />
+                                    {{ props.row.cpuCores }} Core
+                                </span>
+                                <span
+                                    v-if="props.row.gpuMemory > -1"
+                                    class="text-deep-purple"
+                                >
+                                    <q-icon name="sym_o_grid_view" />
+                                    GPU
+                                </span>
+                                <span>
+                                    <q-icon name="sym_o_play_circle" />
+                                    {{ props.row.executionCount }} Runs
+                                </span>
+                                <span>
+                                    <q-icon name="sym_o_schedule" />
+                                    {{ props.row.maxRuntime }}h
+                                </span>
+                            </div>
+
+                            <div class="row q-gutter-x-sm">
+                                <q-btn
+                                    flat
+                                    round
+                                    dense
+                                    icon="sym_o_history"
+                                    color="grey-7"
+                                    @click.stop="
+                                        () => handleRevisions(props.row)
+                                    "
+                                />
+                                <q-btn
+                                    flat
+                                    round
+                                    dense
+                                    icon="sym_o_edit"
+                                    color="grey-7"
+                                    :disable="props.row.archived"
+                                    @click.stop="() => handleEdit(props.row)"
+                                />
+                                <q-btn
+                                    flat
+                                    round
+                                    dense
+                                    icon="sym_o_play_arrow"
+                                    color="primary"
+                                    :disable="props.row.archived"
+                                    @click.stop="() => handleSelect(props.row)"
+                                />
+                                <q-btn
+                                    flat
+                                    round
+                                    dense
+                                    icon="sym_o_delete"
+                                    color="negative"
+                                    @click.stop="() => confirmDelete(props.row)"
+                                />
+                            </div>
+                        </div>
+                    </q-td>
+                </q-tr>
+            </template>
+        </q-table>
 
         <div v-else class="flex flex-center q-pa-xl text-grey col-grow">
             <div class="column items-center text-center">
@@ -203,7 +192,6 @@
 
 <script setup lang="ts">
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import ActionCard from 'components/actions/action-card.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import { Dialog, Notify, Platform } from 'quasar';
@@ -220,9 +208,17 @@ const emits = defineEmits<{
 const searchTerm = ref('');
 const showArchived = ref(false);
 const searchInput = ref<any | null>(null);
-const viewMode = ref<'grid' | 'list'>('grid');
 
-const isMac = computed(() => Platform.is.mac);
+import { QTableColumn } from 'quasar';
+
+const columns: QTableColumn[] = [
+    {
+        name: 'template',
+        label: 'Action Template',
+        field: 'name',
+        align: 'left',
+    },
+];
 
 // --- Keyboard Shortcuts ---
 const handleKeydown = (event: KeyboardEvent): void => {
