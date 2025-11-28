@@ -1,5 +1,5 @@
 <template>
-    <div :class="classObject" @click="openAddUser">
+    <div :class="classObject" style="height: 100%" @click="openAddUser">
         <slot />
         <q-tooltip v-if="!canModify">
             You don't have permission to modify this group.

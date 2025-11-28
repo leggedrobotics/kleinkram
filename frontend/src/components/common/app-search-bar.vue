@@ -6,6 +6,7 @@
         :placeholder="placeholder"
         dense
         outlined
+        hide-bottom-space
         class="app-search-bar"
     >
         <template #append>
@@ -53,3 +54,11 @@ defineExpose({
     focus,
 });
 </script>
+
+<style scoped>
+.app-search-bar :deep(.q-field__control),
+.app-search-bar :deep(.q-field__marginal) {
+    height: 36px;
+    min-height: 36px;
+}
+</style>

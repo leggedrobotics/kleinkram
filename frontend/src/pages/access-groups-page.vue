@@ -4,10 +4,11 @@
     <div class="q-my-lg">
         <div class="flex justify-between items-center">
             <button-group>
-                <div style="width: 200px">
+                <div style="width: 200px" class="self-stretch">
                     <q-btn-dropdown
                         :label="prefilter?.label"
-                        class="q-uploader--bordered full-width full-height"
+                        class="q-uploader--bordered full-width"
+                        style="height: 100%"
                         flat
                         auto-close
                     >

@@ -1,8 +1,7 @@
 <template>
     <q-btn
         flat
-        dense
-        padding="6px"
+        style="height: 36px; width: 36px"
         color="icon-secondary"
         class="button-border"
         icon="sym_o_loop"

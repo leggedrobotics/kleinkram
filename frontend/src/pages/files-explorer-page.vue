@@ -35,6 +35,7 @@
                 <q-btn
                     class="button-border"
                     flat
+                    style="height: 100%"
                     color="primary"
                     icon="sym_o_analytics"
                     label="Actions"
@@ -47,6 +48,7 @@
                     <q-btn
                         class="button-border"
                         flat
+                        style="height: 100%"
                         color="primary"
                         icon="sym_o_sell"
                         label="Edit Metadata"
@@ -55,7 +57,12 @@
                     </q-btn>
                 </MissionMetadataOpener>
 
-                <q-btn icon="sym_o_more_vert" class="button-border" flat>
+                <q-btn
+                    icon="sym_o_more_vert"
+                    class="button-border"
+                    flat
+                    style="height: 100%"
+                >
                     <q-tooltip> More Actions</q-tooltip>
 
                     <q-menu v-if="mission" auto-close style="width: 320px">
@@ -175,10 +182,12 @@
                 <q-select
                     v-model="selectedFileHealth"
                     :options="fileHealthOptions"
-                    style="min-width: 160px"
+                    style="min-width: 160px; height: 36px !important"
                     clearable
                     dense
                     outlined
+                    hide-bottom-space
+                    class="self-stretch"
                     label="File Health"
                     @clear="clearSelectedFileState"
                 >
@@ -218,13 +227,14 @@
                     v-if="projectUuid"
                     :selected="selectedCategories"
                     :project-uuid="projectUuid"
+                    class="self-stretch"
+                    style="height: 36px !important"
                     @update:selected="updateSelected"
                 />
 
-                <div class="button-border" style="min-width: 220px">
+                <div class="button-border" style="min-width: 220px; height: 36px">
                     <file-type-selector
                         v-model="fileTypeFilter"
-                        style="height: 36px"
                     />
                 </div>
 
@@ -238,10 +248,7 @@
                 <create-file-dialog-opener
                     :mission="mission as MissionWithFilesDto"
                 >
-                    <q-btn
-                        flat
-                        style="height: 100%"
-                        class="bg-button-secondary text-on-color"
+                    <app-create-button
                         label="Upload File"
                         icon="sym_o_upload"
                     />
@@ -356,6 +363,7 @@ import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
 import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
 import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
@@ -656,5 +664,13 @@ const copyMissionUuidToClipboard = async (): Promise<void> => {
 <style scoped>
 .button-border:hover {
     border-color: #8d8d8d;
+}
+
+:deep(.q-field__control),
+:deep(.q-field__marginal) {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 </style>

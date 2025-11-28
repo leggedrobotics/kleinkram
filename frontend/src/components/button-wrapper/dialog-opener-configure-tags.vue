@@ -5,6 +5,7 @@
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        style="height: 100%"
         @click="clicked"
     >
         <slot />

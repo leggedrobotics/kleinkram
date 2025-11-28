@@ -2,10 +2,11 @@
     <q-btn-dropdown
         v-model="open"
         :label="labelText"
-        dense
         no-caps
         flat
         :ripple="false"
+        style="height: 36px"
+        padding="0px"
         class="full-width no-hover-effect"
         content-class="bg-white text-black shadow-3 rounded-borders"
         menu-anchor="bottom left"

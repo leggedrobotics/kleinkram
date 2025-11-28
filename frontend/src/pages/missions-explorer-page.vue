@@ -15,6 +15,7 @@
                     <q-btn
                         class="button-border"
                         flat
+                        style="height: 100%"
                         color="primary"
                         icon="sym_o_sell"
                         label="Enforce Metadata"
@@ -26,6 +27,7 @@
                     icon="sym_o_more_vert"
                     class="button-border"
                     flat
+                    style="height: 100%"
                     color="primary"
                 >
                     <q-tooltip> More Actions</q-tooltip>
@@ -129,13 +131,7 @@
                     />
                 </UploadMissionFolder>
                 <create-mission-dialog-opener :project-uuid="projectUuid">
-                    <q-btn
-                        flat
-                        style="height: 100%"
-                        class="bg-button-secondary text-on-color"
-                        label="Create Mission"
-                        icon="sym_o_add"
-                    />
+                    <app-create-button label="Create Mission" />
                 </create-mission-dialog-opener>
             </button-group>
         </div>
@@ -239,6 +235,7 @@ import ActionConfiguration from 'components/actions/action-configuration.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
 import CreateMissionDialogOpener from 'components/button-wrapper/dilaog-opener-create-mission.vue';

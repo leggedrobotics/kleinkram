@@ -1,21 +1,19 @@
 <template>
-    <q-btn
-        flat
-        class="bg-button-secondary text-on-color"
+    <app-create-button
         label="Create Access Group"
-        icon="sym_o_add"
         :disable="!canCreate"
         @click="createAccessGroupDialog"
     >
         <q-tooltip v-if="!canCreate">
             You do not have permission to create a new Access Group
         </q-tooltip>
-    </q-btn>
+    </app-create-button>
 </template>
 
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useQuasar } from 'quasar';
+import AppCreateButton from 'components/common/app-create-button.vue';
 import CreateAccessGroupDialog from 'src/dialogs/create-access-group-dialog.vue';
 import { canCreateProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { createAccessGroup } from 'src/services/mutations/access';

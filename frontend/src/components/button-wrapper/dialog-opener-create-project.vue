@@ -5,6 +5,7 @@
             'cursor-pointer': !canCreate,
             'cursor-not-allowed': canCreate,
         }"
+        style="height: 100%"
         @click="createNewProject"
     >
         <slot />

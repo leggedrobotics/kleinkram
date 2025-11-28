@@ -26,14 +26,7 @@
 
 
 
-                <q-btn
-                    flat
-                    style="height: 100%"
-                    class="bg-button-secondary text-on-color"
-                    icon="sym_o_add"
-                    label="New Action"
-                    @click="handleCreate"
-                />
+                <app-create-button label="New Action" @click="handleCreate" />
             </ButtonGroup>
         </div>
 
@@ -193,6 +186,7 @@
 <script setup lang="ts">
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import AppSearchBar from 'components/common/app-search-bar.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import { Dialog, Notify, Platform } from 'quasar';
 import { useDeleteTemplate } from 'src/composables/use-action-mutations';

@@ -4,6 +4,7 @@
             <my-projects-selector
                 v-if="myProjects !== undefined"
                 v-model="myProjects"
+                class="self-stretch"
             />
         </button-group>
 
@@ -16,13 +17,7 @@
             <app-refresh-button @click="resetCache" />
 
             <dialog-opener-create-project>
-                <q-btn
-                    flat
-                    style="height: 100%"
-                    class="bg-button-secondary text-on-color"
-                    label="Create Project"
-                    icon="sym_o_add"
-                />
+                <app-create-button label="Create Project" />
             </dialog-opener-create-project>
         </button-group>
     </div>
@@ -33,6 +28,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import MyProjectsSelector from 'components/explorer-page/my-projects-selector.vue';
 import { useHandler } from 'src/hooks/query-hooks';

@@ -10,6 +10,7 @@
         clearable
         dense
         outlined
+        hide-bottom-space
         use-input
         input-debounce="300"
         @clear="clear"
@@ -85,4 +86,12 @@ const onInputChange = ($event: any) => {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+:deep(.q-field__control),
+:deep(.q-field__marginal) {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+</style>

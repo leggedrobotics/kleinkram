@@ -19,25 +19,13 @@
             <div class="flex justify-between items-center q-mb-lg">
                 <div />
                 <button-group>
-                    <q-input
+                    <app-search-bar
                         v-model="search"
-                        outlined
-                        dense
                         placeholder="Search"
-                        class="q-mr-sm full-height"
-                    >
-                        <template #append>
-                            <q-icon name="sym_o_search" />
-                        </template>
-                    </q-input>
-                    <app-refresh-button @click="refetchOnClick" />
-                    <q-btn
-                        flat
-                        class="bg-button-secondary text-on-color"
-                        label="Add Project"
-                        icon="sym_o_add"
-                        @click="openAddProject"
+                        class="q-mr-sm"
                     />
+                    <app-refresh-button @click="refetchOnClick" />
+                    <app-create-button label="Add Project" @click="openAddProject" />
                 </button-group>
             </div>
 
@@ -121,29 +109,18 @@
             <div class="flex justify-between items-center q-mb-lg">
                 <div />
                 <button-group>
-                    <q-input
+                    <app-search-bar
                         v-model="search"
-                        outlined
-                        dense
                         placeholder="Search"
-                        class="q-mr-sm full-height"
-                    >
-                        <template #append>
-                            <q-icon name="sym_o_search" />
-                        </template>
-                    </q-input>
+                        class="q-mr-sm"
+                    />
                     <app-refresh-button @click="refetchOnClick" />
 
                     <DialogOpenerAddUser
                         v-if="accessGroup"
                         :access-group="accessGroup"
                     >
-                        <q-btn
-                            flat
-                            class="bg-button-secondary text-on-color full-height"
-                            label="Add User"
-                            icon="sym_o_add"
-                        />
+                        <app-create-button label="Add User" />
                     </DialogOpenerAddUser>
                 </button-group>
             </div>
@@ -251,6 +228,8 @@ import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-op
 import RemoveProjectDialogOpener from 'components/button-wrapper/remove-project-dialog-opener.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
 import { projectAccessColumns } from 'components/explorer-page/explorer-page-table-columns';
 import TitleSection from 'components/title-section.vue';
 import { Notify, QTable, useQuasar } from 'quasar';

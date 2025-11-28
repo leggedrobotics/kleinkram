@@ -1,5 +1,5 @@
 <template>
-    <div @click="createNewTageType">
+    <div style="height: 100%" @click="createNewTageType">
         <slot />
     </div>
 </template>
