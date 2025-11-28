@@ -59,6 +59,11 @@ export class ActionQuery {
     @IsOptional()
     @IsString({ each: true })
     states?: ActionState[] | undefined;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    templateName?: string | undefined;
 }
 
 export class ActionDetailsQuery {

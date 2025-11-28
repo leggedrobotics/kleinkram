@@ -1,6 +1,6 @@
 <template>
     <div :class="containerClass">
-        <div :class="itemClass">
+        <div :class="itemClass" :style="itemStyle">
             <AppSelect
                 :model-value="selectedProjectUuid"
                 :options="projects"
@@ -14,13 +14,19 @@
                 bg-color="white"
                 option-label="name"
                 option-value="uuid"
-                :input-label="showLabels ? undefined : projectPlaceholder"
+                :input-label="
+                    showLabels
+                        ? undefined
+                        : selectedProjectUuid
+                          ? undefined
+                          : projectPlaceholder
+                "
                 :rules="projectRules"
                 @update:model-value="handleProjectChange"
             />
         </div>
 
-        <div v-if="showMission" :class="itemClass">
+        <div v-if="showMission" :class="itemClass" :style="itemStyle">
             <AppSelect
                 :model-value="selectedMissionUuid"
                 :options="missions"
@@ -34,7 +40,13 @@
                 bg-color="white"
                 option-label="name"
                 option-value="uuid"
-                :input-label="showLabels ? undefined : missionPlaceholder"
+                :input-label="
+                    showLabels
+                        ? undefined
+                        : selectedMissionUuid
+                          ? undefined
+                          : missionPlaceholder
+                "
                 :rules="missionRules"
                 @update:model-value="handleMissionChange"
             />
@@ -63,6 +75,7 @@ const props = withDefaults(
         customMissionRules?: ValidationRule[];
         projectPlaceholder?: string;
         missionPlaceholder?: string;
+        selectWidth?: string;
     }>(),
     {
         layout: 'column',
@@ -141,7 +154,16 @@ const containerClass = computed(() =>
         : 'column q-gutter-y-md',
 );
 
-const itemClass = computed(() => (props.layout === 'row' ? 'col' : 'col-12'));
+const itemClass = computed(() => {
+    if (props.layout === 'row') {
+        return props.selectWidth ? 'col-auto' : 'col';
+    }
+    return 'col-12';
+});
+
+const itemStyle = computed(() => {
+    return props.selectWidth ? { width: props.selectWidth } : {};
+});
 
 const projectRules = computed(() => {
     return props.required

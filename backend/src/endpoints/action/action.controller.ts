@@ -23,7 +23,7 @@ import {
 @ApiTags('Actions')
 @Controller('actions')
 export class ActionsController {
-    constructor(private readonly actionService: ActionService) {}
+    constructor(private readonly actionService: ActionService) { }
 
     @Post()
     @CanCreateAction()

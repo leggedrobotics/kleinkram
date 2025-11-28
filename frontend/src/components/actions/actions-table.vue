@@ -110,10 +110,11 @@ import { formatDate } from 'src/services/date-formating';
 import { getActionColor } from 'src/services/generic';
 import { QueryHandler, TableRequest } from 'src/services/query-handler';
 import { computed, ref, Ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import DeleteActionDialogOpener from '../button-wrapper/delete-action-dialog-opener.vue';
 
 const router = useRouter();
+const route = useRoute();
 
 const properties = defineProps<{
     handler: QueryHandler;
@@ -123,16 +124,17 @@ properties.handler.setSort('createdAt');
 properties.handler.setDescending(true);
 
 const queryFilters = computed(() => ({
-    projectUuid: properties.handler.projectUuid || undefined,
-    missionUuid: properties.handler.missionUuid || undefined,
+    projectUuid: (route.query.projectUuid as string) || undefined,
+    missionUuid: (route.query.missionUuid as string) || undefined,
     take: Number(properties.handler.take ?? 100),
     skip: Number(properties.handler.skip ?? 0),
     sortBy: properties.handler.sortBy || undefined,
     sortDirection: properties.handler.descending ? 'DESC' : 'ASC',
-    search: properties.handler.searchParams.name || undefined,
+    search: undefined,
+    templateName: (route.query.name as string) || undefined,
 }));
 
-const { data: rawData, isLoading } = useActionList(queryFilters.value);
+const { data: rawData, isLoading } = useActionList(queryFilters);
 
 const tableReference: Ref<QTable | undefined> = ref(undefined);
 
@@ -177,24 +179,24 @@ const columns = [
         style: 'width: 100px',
     },
     {
-        name: 'image',
+        name: 'template.image_name',
         label: 'Docker Image',
         align: 'left',
-        sortable: false,
+        sortable: true,
         field: (row: ActionDto) => row.template.imageName ?? 'N/A',
     },
     {
-        name: 'mission',
+        name: 'mission.name',
         label: 'Mission',
         align: 'left',
-        sortable: false,
+        sortable: true,
         field: (row: ActionDto) => row.mission.name || 'N/A',
     },
     {
-        name: 'name',
+        name: 'template.name',
         label: 'Action Name',
         align: 'left',
-        sortable: false,
+        sortable: true,
         field: (row: ActionDto) =>
             row.template.name
                 ? `${row.template.name} v${row.template.version}`
@@ -229,11 +231,11 @@ const columns = [
             row.createdAt ? formatDate(row.createdAt, true) : 'N/A',
     },
     {
-        name: 'user',
+        name: 'creator.name',
         label: 'Submitted By',
         align: 'left',
         field: (row: ActionDto) => row.creator.name ?? 'N/A',
-        sortable: false,
+        sortable: true,
     },
     {
         name: 'Details',

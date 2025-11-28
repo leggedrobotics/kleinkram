@@ -110,6 +110,12 @@ export class ActionService {
             qb.andWhere('action.state IN (:...states)', { states });
         }
 
+        if (query.templateName) {
+            qb.andWhere('template.name ILIKE :templateName', {
+                templateName: `%${query.templateName}%`,
+            });
+        }
+
         // Sorting
         if (
             sortBy &&
