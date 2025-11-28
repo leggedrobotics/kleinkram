@@ -5,7 +5,7 @@ import { ActionQuery } from '@api/types/submit-action.dto';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { actionKeys } from 'src/api/keys/action-keys';
 import { ActionService } from 'src/api/services/action.service';
-import { computed, MaybeRef, unref } from 'vue';
+import { computed, ComputedRef, MaybeRef, unref } from 'vue';
 
 export function useActionDetails(
     uuid: MaybeRef<string>,
@@ -19,10 +19,10 @@ export function useActionDetails(
 }
 
 export function useActionList(
-    filters: MaybeRef<ActionQuery>,
+    filters: MaybeRef<ActionQuery> | ComputedRef<ActionQuery>,
 ): UseQueryReturnType<ActionsDto, Error> {
     return useQuery({
-        queryKey: computed(() => actionKeys.list(filters)),
+        queryKey: computed(() => actionKeys.list(unref(filters))),
         queryFn: ({ queryKey }) => {
             const _filters = queryKey[2];
             return ActionService.getAll(_filters as ActionQuery);

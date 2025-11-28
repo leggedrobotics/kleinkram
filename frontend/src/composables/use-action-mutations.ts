@@ -87,8 +87,8 @@ export function useDeleteTemplate(): UseMutationReturnType<
 }
 
 export interface SubmitActionPayload {
-    missionUUID?: string;
-    missionUUIDs?: string[];
+    missionUUID?: string | undefined;
+    missionUUIDs?: string[] | undefined;
     templateUUID: string;
 }
 

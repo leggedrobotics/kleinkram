@@ -110,13 +110,15 @@ watch(
 
 // Sort Descending (Newest first)
 const sortedVersions = computed(() => {
-    return [...props.versions.data].sort((a, b) => b.version - a.version);
+    return [...props.versions.data].sort(
+        (a, b) => Number(b.version ?? 0) - Number(a.version ?? 0),
+    );
 });
 
 const currentVersion = computed(() => sortedVersions.value[0]?.version);
 const currentName = computed(() => sortedVersions.value[0]?.name);
 
-const formatDate = (dateString?: string): string => {
+const formatDate = (dateString?: string | Date): string => {
     if (!dateString) return 'Unknown Date';
     return new Date(dateString).toLocaleDateString();
 };

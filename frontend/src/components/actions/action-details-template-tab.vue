@@ -44,5 +44,5 @@
 <script setup lang="ts">
 // Props: template object passed from the parent ActionDto
 defineProps<{ template: any }>();
-const formatDate = (d) => new Date(d).toLocaleString();
+const formatDate = (d: string) => new Date(d).toLocaleString();
 </script>

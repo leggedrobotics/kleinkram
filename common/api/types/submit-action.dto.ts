@@ -15,47 +15,47 @@ export class ActionQuery {
     @ApiProperty()
     @IsOptional()
     @IsUUID()
-    missionUuid?: string;
+    missionUuid?: string | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsUUID()
-    projectUuid!: string;
+    projectUuid?: string | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsSkip()
-    skip?: number;
+    skip?: number | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsSkip()
-    take?: number;
+    take?: number | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsString()
-    sortBy?: string;
+    sortBy?: string | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsString()
-    sortDirection?: string;
+    sortDirection?: string | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsString()
-    search?: string;
+    search?: string | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsBoolean()
-    exactMatch?: boolean;
+    exactMatch?: boolean | undefined;
 
     @ApiProperty()
     @IsOptional()
     @IsString({ each: true })
-    states?: ActionState[];
+    states?: ActionState[] | undefined;
 }
 
 export class ActionDetailsQuery {

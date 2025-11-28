@@ -64,7 +64,7 @@
 
                 <div class="flex column q-gutter-y-md">
                     <AppInput
-                        :model-value="template?.imageName"
+                        :model-value="template?.imageName ?? null"
                         label="Docker Image"
                         readonly
                     >
@@ -139,7 +139,7 @@ import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 
 const props = defineProps<{
     open: boolean;
-    template?: ActionTemplateDto;
+    template?: ActionTemplateDto | undefined;
     missionUuids?: string[];
 }>();
 
@@ -154,7 +154,7 @@ const { mutateAsync: launchAction, isPending: isSubmitting } =
     useSubmitAction();
 
 // --- Logic Reuse (Composable) ---
-const { selectedProject, selectedMission, handler } = useScopeSelection();
+const { selectedProject, selectedMission, setMission } = useScopeSelection();
 
 // --- Computed Helpers ---
 const allMissionUUIDs = computed(() => [
@@ -164,7 +164,7 @@ const allMissionUUIDs = computed(() => [
 const hasMissionUUIDs = computed(() => allMissionUUIDs.value.length > 0);
 
 const { data: selectedMissionsData } = useManyMissions(
-    ['missions', allMissionUUIDs],
+    computed(() => ['missions', allMissionUUIDs.value]),
     allMissionUUIDs,
     hasMissionUUIDs,
 );
@@ -202,7 +202,7 @@ function handleMissionSelect(uuid: string): void {
             addedMissions.value.push(uuid);
         }
     } else {
-        handler.value.setMissionUUID(uuid);
+        setMission(uuid);
     }
 }
 

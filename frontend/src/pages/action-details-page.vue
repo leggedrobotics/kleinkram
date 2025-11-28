@@ -360,7 +360,10 @@
         </q-tab-panel>
 
         <q-tab-panel name="template">
-            <ActionDetailsTemplateTab :template="action.template" />
+            <ActionDetailsTemplateTab
+                v-if="action"
+                :template="action.template"
+            />
         </q-tab-panel>
     </q-tab-panels>
 </template>

@@ -283,7 +283,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
     open: boolean;
-    initialTemplate?: ActionTemplateDto;
+    initialTemplate?: ActionTemplateDto | undefined;
 }>();
 
 const emits = defineEmits(['close', 'saved']);
@@ -408,7 +408,7 @@ watch(
                 localTemplate.value.gpuMemory = 6;
             }
 
-            nextTick(() => actionForm.value?.resetValidation());
+            nextTick(() => actionForm.value?.resetValidation()).catch(console.log);
         }
     },
 );

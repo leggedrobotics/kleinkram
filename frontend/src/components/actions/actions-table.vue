@@ -130,7 +130,7 @@ const queryFilters = computed(() => ({
     search: properties.handler.searchParams.name || undefined,
 }));
 
-const { data: rawData, isLoading } = useActionList(queryFilters);
+const { data: rawData, isLoading } = useActionList(queryFilters.value);
 
 const tableReference: Ref<QTable | undefined> = ref(undefined);
 

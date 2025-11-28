@@ -80,9 +80,7 @@
                         <q-chip
                             v-for="chip_mission in selectedMissions?.data ?? []"
                             :key="chip_mission.uuid"
-                            :removable="
-                                () => canRemoveMission(chip_mission.uuid)
-                            "
+                            :removable="canRemoveMission(chip_mission.uuid)"
                             @remove="() => removeMission(chip_mission.uuid)"
                         >
                             {{ chip_mission.name }}
@@ -574,7 +572,7 @@ const projectSelected = (a: ProjectDto): void => {
     handler.value.setProjectUUID(a.uuid);
 };
 
-const canRemoveMission = (uuid: string): void =>
+const canRemoveMission = (uuid: string): boolean =>
     addedMissions.value.includes(uuid);
 
 const removeMission = (uuid: string): void => {

@@ -7,11 +7,11 @@
                     v-model.number="model.cpuMemory"
                     label="Memory (GB)"
                     type="number"
-                    :readonly="readonly"
+                    :readonly="readonly ?? false"
                     :required="!readonly"
                     :rules="[(val) => val != null || 'Memory is required']"
                 >
-                    <template v-if="readonly" #default>
+                    <template #append>
                         <q-tooltip>Requires new version to change</q-tooltip>
                     </template>
                 </AppInput>
@@ -21,12 +21,11 @@
                 <AppInput
                     v-model.number="model.cpuCores"
                     label="CPU Cores"
-                    type="number"
-                    :readonly="readonly"
+                    :readonly="readonly ?? false"
                     :required="!readonly"
                     :rules="[(val) => val != null || 'Cores is required']"
                 >
-                    <template v-if="readonly" #default>
+                    <template #append>
                         <q-tooltip>Requires new version to change</q-tooltip>
                     </template>
                 </AppInput>
@@ -36,15 +35,10 @@
                 <AppInput
                     v-model.number="model.maxRuntime"
                     label="Max Runtime (h)"
-                    type="number"
-                    :readonly="readonly"
+                    :readonly="readonly ?? false"
                     :required="!readonly"
                     :rules="[(val) => val != null || 'Runtime is required']"
-                >
-                    <template v-if="readonly" #default>
-                        <q-tooltip>Requires new version to change</q-tooltip>
-                    </template>
-                </AppInput>
+                />
             </div>
 
             <div v-if="!readonly" class="col-12 flex items-center q-mt-sm">
@@ -67,8 +61,7 @@
                     v-model.number="model.gpuMemory"
                     label="GPU Memory (GB)"
                     type="number"
-                    :readonly="readonly"
-                    :required="!readonly"
+                    :readonly="readonly ?? false"
                     :rules="[(val) => val > 0 || 'GPU Memory must be positive']"
                 />
             </div>

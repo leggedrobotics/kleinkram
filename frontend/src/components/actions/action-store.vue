@@ -272,7 +272,8 @@ const templates = computed(() => templatesResult.value?.data ?? []);
 const latestTemplates = computed(() => {
     const groups: Record<string, ActionTemplateDto> = {};
     for (const t of templates.value) {
-        if (!groups[t.name] || t.version > groups[t.name].version) {
+        const existing = groups[t.name];
+        if (!existing || t.version > existing.version) {
             groups[t.name] = t;
         }
     }

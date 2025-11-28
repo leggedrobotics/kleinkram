@@ -163,7 +163,7 @@ const { actionTemplates } = defineProps<{
 }>();
 
 //template that gets written
-const selectedTemplate = defineModel<ActionTemplateDto>();
+const selectedTemplate = defineModel<ActionTemplateDto | undefined>();
 
 //clone templates to filter
 const filteredActionTemplates: Ref<ActionTemplateDto[] | []> = ref([]);
