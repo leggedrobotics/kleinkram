@@ -13,9 +13,11 @@
         >
             <h3 class="text-h4 q-ma-none">
                 {{
-                    isEditing
-                        ? 'Edit Action Template'
-                        : 'Create Action Template'
+                    mode === 'restore'
+                        ? 'Restore Action Template Version'
+                        : isEditing
+                          ? 'Edit Action Template'
+                          : 'Create Action Template'
                 }}
             </h3>
             <q-btn
@@ -255,7 +257,11 @@
                         unelevated
                         class="bg-button-secondary text-on-color"
                         :label="
-                            isEditing ? 'Save New Version' : 'Create Template'
+                            mode === 'restore'
+                                ? 'Restore Version'
+                                : isEditing
+                                  ? 'Save New Version'
+                                  : 'Create Template'
                         "
                         type="submit"
                         :loading="isSaving"
@@ -283,6 +289,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
     open: boolean;
+    mode?: 'create' | 'edit' | 'restore';
     initialTemplate?: ActionTemplateDto | undefined;
 }>();
 

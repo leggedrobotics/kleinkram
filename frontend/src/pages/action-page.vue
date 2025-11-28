@@ -46,6 +46,7 @@
 
     <ActionDefinitionDrawer
         :open="isCreateOpen"
+        :mode="drawerMode"
         :initial-template="selectedTemplate"
         @saved="onTemplateSaved"
         @close="closeDrawers"
@@ -112,6 +113,7 @@ const activeTab = computed({
 });
 const isLaunchOpen = ref(false);
 const isCreateOpen = ref(false);
+const drawerMode = ref<'create' | 'edit' | 'restore'>('create');
 const selectedTemplate = ref<ActionTemplateDto | undefined>(undefined);
 
 const isHistoryOpen = ref(false);
@@ -150,12 +152,14 @@ const openHistoryDrawer = async (
 
 const onRestoreVersion = (oldVersion: ActionTemplateDto): void => {
     selectedTemplate.value = oldVersion;
+    drawerMode.value = 'restore';
     isHistoryOpen.value = false;
     isCreateOpen.value = true;
 };
 
 const openEditConfiguration = (template: ActionTemplateDto): void => {
     selectedTemplate.value = template;
+    drawerMode.value = 'edit';
     isCreateOpen.value = true;
 };
 
@@ -167,6 +171,7 @@ const openLaunchConfiguration = (template: ActionTemplateDto): void => {
 
 const openCreateConfiguration = (): void => {
     selectedTemplate.value = undefined;
+    drawerMode.value = 'create';
     isCreateOpen.value = true;
     isLaunchOpen.value = false;
 };
