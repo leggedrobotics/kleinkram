@@ -228,17 +228,10 @@
                     />
                 </div>
 
-                <q-input
+                <app-search-bar
                     v-model="search"
-                    debounce="300"
                     placeholder="Search by Filename"
-                    dense
-                    outlined
-                >
-                    <template #append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
+                />
 
                 <q-btn
                     flat
@@ -371,6 +364,7 @@ import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
 import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
 import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';

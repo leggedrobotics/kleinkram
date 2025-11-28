@@ -2,10 +2,9 @@
     <div>
         <div class="row" style="padding-top: 12px">
             <div class="col-10">
-                <q-input
+                <app-search-bar
                     v-model="search"
-                    label="Search User / Access Group"
-                    debounce="300"
+                    placeholder="Search User / Access Group"
                 />
             </div>
         </div>
@@ -80,6 +79,7 @@
 
 <script setup lang="ts">
 import { AccessGroupRights } from '@common/enum';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import { QTable } from 'quasar';
 import { useSearchAccessGroup, useUserSearch } from 'src/hooks/query-hooks';
 import { accessGroupRightsMap } from 'src/services/generic';

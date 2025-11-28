@@ -113,17 +113,10 @@
             <h2 class="text-h4 q-mb-xs">All Missions of {{ project?.name }}</h2>
 
             <button-group>
-                <q-input
+                <app-search-bar
                     v-model="search"
-                    debounce="300"
                     placeholder="Search by Mission Name"
-                    dense
-                    outlined
-                >
-                    <template #append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
+                />
 
                 <q-btn
                     flat
@@ -254,6 +247,7 @@ import { FlatMissionDto } from '@api/types/mission/mission.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import ActionConfiguration from 'components/actions/action-configuration.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
 import CreateMissionDialogOpener from 'components/button-wrapper/dilaog-opener-create-mission.vue';

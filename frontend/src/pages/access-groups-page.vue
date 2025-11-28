@@ -33,17 +33,10 @@
             </button-group>
 
             <button-group>
-                <q-input
+                <app-search-bar
                     v-model="filterOptions.search"
-                    dense
-                    outlined
                     placeholder="Search"
-                    debounce="200"
-                >
-                    <template #append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
+                />
 
                 <q-btn
                     flat
@@ -141,6 +134,7 @@ import { AccessGroupType } from '@common/enum';
 import DeleteAccessGroup from 'components/button-wrapper/delete-access-group.vue';
 import CreateAccessGroupDialogOpener from 'components/button-wrapper/dialog-opener-create-access-group.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable } from 'quasar';
 import ROUTES from 'src/router/routes';

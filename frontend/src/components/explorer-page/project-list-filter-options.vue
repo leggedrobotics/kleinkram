@@ -8,17 +8,10 @@
         </button-group>
 
         <button-group>
-            <q-input
+            <app-search-bar
                 v-model="search"
-                debounce="300"
                 placeholder="Search by Project Name"
-                dense
-                outlined
-            >
-                <template #append>
-                    <q-icon name="sym_o_search" />
-                </template>
-            </q-input>
+            />
 
             <q-btn
                 flat
@@ -48,6 +41,7 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import MyProjectsSelector from 'components/explorer-page/my-projects-selector.vue';
 import { useHandler } from 'src/hooks/query-hooks';

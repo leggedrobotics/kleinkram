@@ -13,15 +13,12 @@
             </ButtonGroup>
 
             <ButtonGroup>
-                <q-input
+                <app-search-bar
                     ref="searchInput"
                     v-model="searchTerm"
-                    outlined
-                    dense
                     placeholder="Search Action Templates..."
-                    debounce="300"
                 >
-                    <template #append>
+                    <template #append-start>
                         <div class="row items-center">
                             <q-chip
                                 dense
@@ -31,17 +28,11 @@
                                 size="xs"
                                 class="q-px-sm gt-xs"
                             >
+                                {{ isMac ? '⌘K' : 'Ctrl+K' }}
                             </q-chip>
-                            <q-icon
-                                v-if="searchTerm"
-                                name="sym_o_cancel"
-                                class="cursor-pointer q-ml-sm"
-                                @click="clearSearch"
-                            />
-                            <q-icon v-else name="sym_o_search" />
                         </div>
                     </template>
-                </q-input>
+                </app-search-bar>
 
                 <q-separator vertical inset />
 
@@ -213,6 +204,7 @@
 <script setup lang="ts">
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import ActionCard from 'components/actions/action-card.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import { Dialog, Notify, Platform } from 'quasar';
 import { useDeleteTemplate } from 'src/composables/use-action-mutations';
@@ -227,7 +219,7 @@ const emits = defineEmits<{
 // --- State ---
 const searchTerm = ref('');
 const showArchived = ref(false);
-const searchInput = ref<HTMLInputElement | null>(null);
+const searchInput = ref<any | null>(null);
 const viewMode = ref<'grid' | 'list'>('grid');
 
 const isMac = computed(() => Platform.is.mac);

@@ -11,15 +11,10 @@
             />
 
             <div class="flex q-gutter-x-sm items-center">
-                <q-input
+                <app-search-bar
                     v-model="searchName"
-                    dense
-                    outlined
                     placeholder="Filter executions..."
-                    bg-color="white"
-                >
-                    <template #append><q-icon name="sym_o_search" /></template>
-                </q-input>
+                />
 
                 <q-btn
                     flat
@@ -56,6 +51,7 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query';
 import ActionsTable from 'components/actions/actions-table.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import { useHandler } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
