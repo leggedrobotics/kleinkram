@@ -7,10 +7,22 @@
         behavior="desktop"
         overlay
     >
-        <div class="q-pa-md row items-center justify-between bg-grey-1">
-            <div class="text-h6">Version History</div>
-            <q-btn flat round dense icon="sym_o_close" @click="closeDrawer" />
+        <div
+            class="q-pa-lg flex row justify-between items-center"
+            style="height: 84px"
+        >
+            <h3 class="text-h4 q-ma-none">Version History</h3>
+            <q-btn
+                flat
+                dense
+                padding="6px"
+                class="button-border"
+                icon="sym_o_close"
+                @click="closeDrawer"
+            />
         </div>
+
+        <q-separator />
 
         <div class="q-pa-md">
             <div class="text-subtitle2 q-mb-md">
@@ -24,12 +36,14 @@
                     :title="`Version ${ver.version}`"
                     :subtitle="formatDate(ver.createdAt)"
                     :icon="
-                        ver.version === currentVersion
+                        ver.version === currentVersion && !ver.archived
                             ? 'sym_o_check_circle'
                             : 'sym_o_circle'
                     "
                     :color="
-                        ver.version === currentVersion ? 'positive' : 'grey'
+                        ver.version === currentVersion && !ver.archived
+                            ? 'positive'
+                            : 'grey'
                     "
                 >
                     <template #title>
@@ -60,7 +74,15 @@
                     </div>
 
                     <div
-                        v-if="ver.version !== currentVersion"
+                        v-if="ver.version === currentVersion"
+                        class="text-caption text-weight-bold"
+                        :class="ver.archived ? 'text-grey' : 'text-positive'"
+                    >
+                        {{ ver.archived ? 'Archived' : 'Current Latest' }}
+                    </div>
+
+                    <div
+                        v-if="ver.version !== currentVersion || ver.archived"
                         class="row q-gutter-x-sm q-mt-sm"
                     >
                         <q-btn
@@ -71,12 +93,6 @@
                             icon="sym_o_restore"
                             @click="() => $emit('restore', ver)"
                         />
-                    </div>
-                    <div
-                        v-else
-                        class="text-caption text-positive text-weight-bold"
-                    >
-                        Current Latest
                     </div>
                 </q-timeline-entry>
             </q-timeline>

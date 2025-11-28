@@ -75,7 +75,9 @@ const props = withDefaults(
         customMissionRules?: ValidationRule[];
         projectPlaceholder?: string;
         missionPlaceholder?: string;
+        missionPlaceholder?: string;
         selectWidth?: string;
+        bgColor?: string;
     }>(),
     {
         layout: 'column',

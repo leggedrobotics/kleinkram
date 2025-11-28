@@ -59,8 +59,8 @@ const mainMenu: MainMenu[] = [
     {
         title: 'Actions',
         icon: 'sym_o_analytics',
-        to: ROUTES.ACTION.path,
-        subpageNames: [ROUTES.ANALYSIS_DETAILS.name],
+        to: '/actions',
+        subpageNames: [ROUTES.ANALYSIS_DETAILS.name, ROUTES.ACTION.name],
     },
     {
         title: 'Access Groups',

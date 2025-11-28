@@ -1,5 +1,5 @@
 <template>
-    <div class="q-pa-md h-full column">
+    <div class="h-full column">
         <div class="flex justify-between items-center q-mb-lg">
             <ButtonGroup>
                 <q-toggle
@@ -52,7 +52,7 @@
                 <q-tr
                     :props="props"
                     class="cursor-pointer"
-                    @click="() => handleSelect(props.row)"
+                    @click="() => handleRowClick(props.row)"
                 >
                     <q-td
                         v-for="col in props.cols"
@@ -123,33 +123,41 @@
                                     @click.stop="
                                         () => handleRevisions(props.row)
                                     "
-                                />
+                                >
+                                    <q-tooltip>History</q-tooltip>
+                                </q-btn>
                                 <q-btn
                                     flat
                                     round
                                     dense
                                     icon="sym_o_edit"
                                     color="grey-7"
-                                    :disable="props.row.archived"
                                     @click.stop="() => handleEdit(props.row)"
-                                />
+                                >
+                                    <q-tooltip>Edit</q-tooltip>
+                                </q-btn>
                                 <q-btn
+                                    v-if="!props.row.archived"
                                     flat
                                     round
                                     dense
                                     icon="sym_o_play_arrow"
                                     color="primary"
-                                    :disable="props.row.archived"
                                     @click.stop="() => handleSelect(props.row)"
-                                />
+                                >
+                                    <q-tooltip>Launch</q-tooltip>
+                                </q-btn>
                                 <q-btn
+                                    v-if="!props.row.archived"
                                     flat
                                     round
                                     dense
                                     icon="sym_o_delete"
                                     color="negative"
                                     @click.stop="() => confirmDelete(props.row)"
-                                />
+                                >
+                                    <q-tooltip>Delete</q-tooltip>
+                                </q-btn>
                             </div>
                         </div>
                     </q-td>
@@ -193,14 +201,19 @@ import { useDeleteTemplate } from 'src/composables/use-action-mutations';
 import { useTemplateList } from 'src/composables/use-actions-queries';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
+import { useRoute, useRouter } from 'vue-router';
+
 const emits = defineEmits<{
     (event: 'select' | 'edit' | 'revisions', template: ActionTemplateDto): void;
     (event: 'create'): void;
 }>();
 
+const router = useRouter();
+const route = useRoute();
+
 // --- State ---
 const searchTerm = ref('');
-const showArchived = ref(false);
+const showArchived = ref(route.query.showArchived === 'true');
 const searchInput = ref<any | null>(null);
 
 import { QTableColumn } from 'quasar';
@@ -227,6 +240,18 @@ onMounted(() => {
 });
 onUnmounted(() => {
     globalThis.removeEventListener('keydown', handleKeydown);
+});
+
+// --- URL Persistence ---
+import { watch } from 'vue';
+watch(showArchived, (val) => {
+    const query = { ...route.query };
+    if (val) {
+        query.showArchived = 'true';
+    } else {
+        delete query.showArchived;
+    }
+    router.replace({ query });
 });
 
 // --- Composable Hooks ---
@@ -273,6 +298,19 @@ const handleCreate = (): void => {
 
 const handleSelect = (template: ActionTemplateDto): void => {
     emits('select', template);
+};
+
+const handleRowClick = async (template: ActionTemplateDto): Promise<void> => {
+    await router.push({
+        path: '/actions/runs',
+        query: {
+            name: template.name,
+            sortBy: 'createdAt',
+            descending: 'true',
+            projectUuid: '',
+            missionUuid: '',
+        },
+    });
 };
 
 const handleEdit = (template: ActionTemplateDto): void => {

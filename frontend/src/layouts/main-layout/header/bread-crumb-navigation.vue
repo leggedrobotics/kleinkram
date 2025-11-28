@@ -79,10 +79,12 @@ import {
     useProjectUUID,
 } from 'src/hooks/router-hooks';
 import { PageBreadCrumb } from 'src/router/routes-utilities';
+import { useRoute } from 'vue-router';
 import { computed } from 'vue';
 
 const $q = useQuasar();
 const crumbs = useCrumbs();
+const route = useRoute();
 
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
@@ -93,6 +95,9 @@ const { data: mission } = useMission(missionUuid);
 const { data: file } = useFile(fileUuid);
 
 const resolvedCrumbs = computed(() => {
+    const tab = route.params.tab as string | undefined;
+    const tabName = tab === 'runs' ? 'Executions' : 'Templates';
+
     let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
@@ -102,7 +107,8 @@ const resolvedCrumbs = computed(() => {
             displayName: crumb.displayName
                 .replace(':project_name', project.value?.name ?? '')
                 .replace(':mission_name', mission.value?.name ?? '')
-                .replace(':file_name', file.value?.filename ?? ''),
+                .replace(':file_name', file.value?.filename ?? '')
+                .replace(':tab_name', tabName),
             name: crumb.name,
         } as PageBreadCrumb;
     });

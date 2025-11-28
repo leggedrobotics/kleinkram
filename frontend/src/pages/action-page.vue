@@ -8,7 +8,7 @@
                 dense
                 class="text-grey"
             >
-                <q-tab name="store" label="Action Store" style="color: #222" />
+                <q-tab name="store" label="Action Templates" style="color: #222" />
                 <q-tab
                     name="executions"
                     label="Executions"
@@ -20,7 +20,6 @@
 
     <q-tab-panels
         v-model="activeTab"
-        keep-alive
         class="q-mt-lg"
         style="background: transparent"
     >
@@ -82,8 +81,35 @@ import { Notify } from 'quasar';
 import { actionKeys } from 'src/api/keys/action-keys';
 import { ActionService } from 'src/api/services/action.service';
 
+import { useRoute, useRouter } from 'vue-router';
+
 // State
-const activeTab = ref('store');
+const route = useRoute();
+const router = useRouter();
+
+const TAB_MAPPING = {
+    store: 'templates',
+    executions: 'runs',
+} as const;
+
+const REVERSE_TAB_MAPPING = {
+    templates: 'store',
+    runs: 'executions',
+} as const;
+
+const activeTab = computed({
+    get: () => {
+        const tabParam = route.params.tab as string | undefined;
+        if (tabParam && tabParam in REVERSE_TAB_MAPPING) {
+            return REVERSE_TAB_MAPPING[tabParam as keyof typeof REVERSE_TAB_MAPPING];
+        }
+        return 'store';
+    },
+    set: (value: string) => {
+        const tabSlug = TAB_MAPPING[value as keyof typeof TAB_MAPPING] || 'templates';
+        router.replace({ params: { ...route.params, tab: tabSlug }, query: route.query });
+    },
+});
 const isLaunchOpen = ref(false);
 const isCreateOpen = ref(false);
 const selectedTemplate = ref<ActionTemplateDto | undefined>(undefined);

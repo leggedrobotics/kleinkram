@@ -42,9 +42,10 @@ const ROUTES = {
 
     ACTION: routeWithLayout({
         name: 'ActionPage',
-        path: '/actions',
+        path: '/actions/:tab?',
         breadcrumbs: [
-            { displayName: 'All Actions', to: '/actions' },
+            { displayName: 'Actions', to: '/actions' },
+            { displayName: ':tab_name', to: undefined },
             {
                 displayName: ':project_name',
                 to: '/project/:projectUuid/missions',
@@ -62,7 +63,8 @@ const ROUTES = {
         name: 'AnalysisDetailsPage',
         path: '/action/:id',
         breadcrumbs: [
-            { displayName: 'All Actions', to: '/actions' },
+            { displayName: 'Actions', to: '/actions' },
+            { displayName: 'Executions', to: '/actions/runs' },
             { displayName: 'Action Details', to: undefined },
         ],
         component: () => import('pages/action-details-page.vue'),

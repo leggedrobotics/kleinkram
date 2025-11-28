@@ -126,10 +126,10 @@ properties.handler.setDescending(true);
 const queryFilters = computed(() => ({
     projectUuid: (route.query.projectUuid as string) || undefined,
     missionUuid: (route.query.missionUuid as string) || undefined,
-    take: Number(properties.handler.take ?? 100),
-    skip: Number(properties.handler.skip ?? 0),
-    sortBy: properties.handler.sortBy || undefined,
-    sortDirection: properties.handler.descending ? 'DESC' : 'ASC',
+    take: route.query.rowsPerPage ? Number(route.query.rowsPerPage) : 100,
+    skip: route.query.page ? (Number(route.query.page) - 1) * (route.query.rowsPerPage ? Number(route.query.rowsPerPage) : 100) : 0,
+    sortBy: (route.query.sortBy as string) || undefined,
+    sortDirection: route.query.descending === 'true' ? 'DESC' : 'ASC',
     search: undefined,
     templateName: (route.query.name as string) || undefined,
 }));

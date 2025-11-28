@@ -56,7 +56,7 @@
                     flat
                     icon="sym_o_arrow_back"
                     label="Back to Actions"
-                    @click="$router.push({ name: ROUTES.ACTION.routeName })"
+                    @click="navigateBackToActions"
                 />
                 <q-btn
                     class="button-border"
@@ -254,6 +254,33 @@ const openMission = async (): Promise<void> => {
             missionUuid: action.value.mission.uuid,
         },
     });
+};
+
+const navigateBackToActions = async (): Promise<void> => {
+    const previousPath = window.history.state?.back as string | undefined;
+    
+    // If we came from the actions list (any tab), go back to preserve filters/state
+    if (previousPath?.includes('/actions')) {
+        $router.back();
+        return;
+    }
+
+    // Fallback: Go to Executions tab with current action's scope
+    if (action.value) {
+        await $router.push({
+            name: ROUTES.ACTION.name,
+            params: { tab: 'runs' },
+            query: {
+                projectUuid: action.value.mission.project.uuid,
+                missionUuid: action.value.mission.uuid,
+                sortBy: 'createdAt',
+                descending: 'true',
+            },
+        });
+    } else {
+        // Safety fallback
+        await $router.push({ name: ROUTES.ACTION.name });
+    }
 };
 </script>
 

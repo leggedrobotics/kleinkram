@@ -9,6 +9,7 @@
                     project-placeholder="All Projects"
                     mission-placeholder="All Missions"
                     select-width="220px"
+                    bg-color="transparent"
                 />
 
                 <AppSearchBar
