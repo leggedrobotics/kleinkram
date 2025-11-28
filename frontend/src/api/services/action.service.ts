@@ -10,7 +10,6 @@ import {
     SubmitActionDto,
 } from '@api/types/submit-action-response.dto';
 import { ActionQuery, SubmitActionMulti } from '@api/types/submit-action.dto';
-import { ActionState } from '@common/enum';
 import axios from 'src/api/axios';
 
 export const ActionService = {
@@ -50,17 +49,6 @@ export const ActionService = {
     async getOne(uuid: string): Promise<ActionDto> {
         const { data } = await axios.get<ActionDto>(`/actions/${uuid}`);
         return data;
-    },
-
-    /**
-     * Convenience method for fetching currently processing actions
-     */
-    async getRunning(): Promise<ActionsDto> {
-        return this.getAll({
-            skip: 0,
-            take: 10,
-            states: [ActionState.PROCESSING],
-        } as ActionQuery);
     },
 
     async delete(uuid: string): Promise<void> {

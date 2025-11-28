@@ -129,7 +129,7 @@ export class ActionService {
             }
         } else {
             // Default sort: newest first
-            qb.orderBy('action.created_at', 'DESC');
+            qb.orderBy('action.createdAt', 'DESC');
         }
 
         // Security

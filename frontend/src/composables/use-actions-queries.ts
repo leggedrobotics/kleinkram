@@ -2,6 +2,7 @@ import { ActionTemplatesDto } from '@api/types/actions/action-templates.dto';
 import { ActionDto } from '@api/types/actions/action.dto';
 import { ActionsDto } from '@api/types/actions/actions.dto';
 import { ActionQuery } from '@api/types/submit-action.dto';
+import { ActionState } from '@common/enum';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { actionKeys } from 'src/api/keys/action-keys';
 import { ActionService } from 'src/api/services/action.service';
@@ -53,9 +54,21 @@ export function useTemplateList(
 }
 
 export function useRunningActions(): UseQueryReturnType<ActionsDto, Error> {
-    return useQuery({
-        queryKey: computed(() => actionKeys.running()),
-        queryFn: () => ActionService.getRunning(),
-        refetchInterval: 2500, // Poll every 2.5s for live updates
-    });
+    const filters = computed<ActionQuery>(() => ({
+        skip: 0,
+        take: 10,
+        states: [ActionState.PROCESSING],
+    }));
+
+    const { data, refetch, isLoading, error, isFetched } =
+        useActionList(filters);
+
+    // We need to return the same structure as useQuery
+    return {
+        data,
+        refetch,
+        isLoading,
+        error,
+        isFetched,
+    } as UseQueryReturnType<ActionsDto, Error>;
 }
