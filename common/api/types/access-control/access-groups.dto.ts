@@ -2,10 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsNumber, ValidateNested } from 'class-validator';
 
-import { AccessGroupDto } from '@common/api/types/access-control/access-group.dto';
-import { Paginated } from '@common/api/types/pagination';
-import { IsSkip } from '@common/validation/skip-validation';
-import { IsTake } from '@common/validation/take-validation';
+import { AccessGroupDto } from '../../../api/types/access-control/access-group.dto';
+import { Paginated } from '../../../api/types/pagination';
+import { IsSkip } from '../../../validation/skip-validation';
+import { IsTake } from '../../../validation/take-validation';
 
 export class AccessGroupsDto implements Paginated<AccessGroupDto> {
     @ApiProperty()

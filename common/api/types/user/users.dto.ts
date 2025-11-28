@@ -1,5 +1,5 @@
-import { UserDto } from '@common/api/types/user/user.dto';
 import { ApiProperty } from '@nestjs/swagger';
+import { UserDto } from '../../../api/types/user/user.dto';
 
 export class UsersDto {
     @ApiProperty({

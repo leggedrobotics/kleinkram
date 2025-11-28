@@ -30,11 +30,11 @@ const model = defineModel<string | number | null>();
 
 withDefaults(
     defineProps<{
-        label?: string;
+        label?: string | undefined;
         required?: boolean;
         readonly?: boolean;
-        placeholder?: string;
-        hint?: string;
+        placeholder?: string | undefined;
+        hint?: string | undefined;
         type?: 'text' | 'number' | 'textarea';
         rules?: ValidationRule[];
     }>(),

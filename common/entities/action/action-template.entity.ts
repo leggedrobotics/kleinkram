@@ -1,8 +1,8 @@
-import ActionEntity from '@common/entities/action/action.entity';
-import BaseEntity from '@common/entities/base-entity.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupRights } from '@common/frontend_shared/enum';
 import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
+import ActionEntity from '../../entities/action/action.entity';
+import BaseEntity from '../../entities/base-entity.entity';
+import UserEntity from '../../entities/user/user.entity';
+import { AccessGroupRights } from '../../frontend_shared/enum';
 
 @Entity({ name: 'action_template' })
 @Unique('unique_versioned_action_name', ['name', 'version'])

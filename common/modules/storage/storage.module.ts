@@ -1,10 +1,10 @@
-import { FileAuditService } from '@common/audit/file-audit.service';
-import FileEventEntity from '@common/entities/file/file-event.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import { MinioClientFactory } from '@common/modules/storage/storage-config.factory';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { FileAuditService } from '../../audit/file-audit.service';
+import FileEventEntity from '../../entities/file/file-event.entity';
+import FileEntity from '../../entities/file/file.entity';
+import MissionEntity from '../../entities/mission/mission.entity';
+import { MinioClientFactory } from '../../modules/storage/storage-config.factory';
 import { StorageAuthService } from './storage-auth.service';
 import { StorageMetricsService } from './storage-metrics.service';
 import { StorageService } from './storage.service';

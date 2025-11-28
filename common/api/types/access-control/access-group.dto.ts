@@ -1,8 +1,3 @@
-import { GroupMembershipDto } from '@common/api/types/access-control/group-membership.dto';
-import { ProjectWithAccessRightsDto } from '@common/api/types/project/project-access.dto';
-import { UserDto } from '@common/api/types/user/user.dto';
-import { AccessGroupType } from '@common/frontend_shared/enum';
-import { IsNotUndefined } from '@common/validation/is-not-undefined';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -14,6 +9,11 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
+import { GroupMembershipDto } from '../../../api/types/access-control/group-membership.dto';
+import { ProjectWithAccessRightsDto } from '../../../api/types/project/project-access.dto';
+import { UserDto } from '../../../api/types/user/user.dto';
+import { AccessGroupType } from '../../../frontend_shared/enum';
+import { IsNotUndefined } from '../../../validation/is-not-undefined';
 
 export class AccessGroupDto {
     @ApiProperty()

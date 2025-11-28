@@ -80,7 +80,9 @@
                         <q-chip
                             v-for="chip_mission in selectedMissions?.data ?? []"
                             :key="chip_mission.uuid"
-                            :removable="canRemoveMission(chip_mission.uuid)"
+                            :removable="
+                                () => canRemoveMission(chip_mission.uuid)
+                            "
                             @remove="() => removeMission(chip_mission.uuid)"
                         >
                             {{ chip_mission.name }}
@@ -265,6 +267,7 @@ import { computed, Ref, ref, watch } from 'vue';
 
 // 1. New Composable Imports
 import {
+    SubmitActionPayload,
     useCreateTemplate,
     useSubmitAction,
     useUpdateTemplateVersion,
@@ -501,7 +504,7 @@ async function submitAnalysis(): Promise<void> {
             missionUUIDs: hasMissionUUIDs.value
                 ? allMissionUUIDs.value
                 : undefined,
-        });
+        } as SubmitActionPayload);
 
         Notify.create({ message: 'Analysis submitted', color: 'positive' });
         closeDrawer();

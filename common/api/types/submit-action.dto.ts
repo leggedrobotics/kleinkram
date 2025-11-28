@@ -1,6 +1,6 @@
-import { ActionState } from '@common/frontend_shared/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import { ActionState } from '../../frontend_shared/enum';
 import { IsSkip } from '../../validation/skip-validation';
 
 export class SubmitActionMulti {

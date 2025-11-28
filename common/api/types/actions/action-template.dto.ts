@@ -1,5 +1,3 @@
-import { UserDto } from '@common/api/types/user/user.dto';
-import { AccessGroupRights } from '@common/frontend_shared/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -12,6 +10,8 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
+import { UserDto } from '../../../api/types/user/user.dto';
+import { AccessGroupRights } from '../../../frontend_shared/enum';
 
 export class ActionTemplateDto {
     @ApiProperty()

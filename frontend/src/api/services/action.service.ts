@@ -59,8 +59,8 @@ export const ActionService = {
         return this.getAll({
             skip: 0,
             take: 10,
-            state: ActionState.PROCESSING,
-        });
+            states: [ActionState.PROCESSING],
+        } as ActionQuery);
     },
 
     async delete(uuid: string): Promise<void> {

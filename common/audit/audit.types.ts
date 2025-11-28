@@ -1,5 +1,5 @@
-import UserEntity from '@common/entities/user/user.entity';
-import { FileEventType } from '@common/frontend_shared/enum';
+import UserEntity from '../entities/user/user.entity';
+import { FileEventType } from '../frontend_shared/enum';
 
 export type AuditActionType = FileEventType;
 

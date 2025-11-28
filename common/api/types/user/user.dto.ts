@@ -1,6 +1,6 @@
-import { IsNotUndefined } from '@common/validation/is-not-undefined';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotUndefined } from '../../../validation/is-not-undefined';
 
 export class UserDto {
     @ApiProperty()

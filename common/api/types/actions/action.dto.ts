@@ -1,11 +1,3 @@
-import { ActionWorkerDto } from '@common/api/types/action-workers.dto';
-import { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
-import { AuditLogDto } from '@common/api/types/actions/audit-log.dto';
-import { DockerImageDto } from '@common/api/types/actions/docker-image.dto';
-import { LogsDto } from '@common/api/types/actions/logs.dto';
-import { MissionDto } from '@common/api/types/mission/mission.dto';
-import { UserDto } from '@common/api/types/user/user.dto';
-import { ActionState, ArtifactState } from '@common/frontend_shared/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -15,6 +7,14 @@ import {
     IsUUID,
     ValidateNested,
 } from 'class-validator';
+import { ActionWorkerDto } from '../../../api/types/action-workers.dto';
+import { ActionTemplateDto } from '../../../api/types/actions/action-template.dto';
+import { AuditLogDto } from '../../../api/types/actions/audit-log.dto';
+import { DockerImageDto } from '../../../api/types/actions/docker-image.dto';
+import { LogsDto } from '../../../api/types/actions/logs.dto';
+import { MissionDto } from '../../../api/types/mission/mission.dto';
+import { UserDto } from '../../../api/types/user/user.dto';
+import { ActionState, ArtifactState } from '../../../frontend_shared/enum';
 
 export class ActionDto {
     @ApiProperty()

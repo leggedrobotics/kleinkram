@@ -1,9 +1,9 @@
-import FileEventEntity from '@common/entities/file/file-event.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import FileEventEntity from '../entities/file/file-event.entity';
+import FileEntity from '../entities/file/file.entity';
+import MissionEntity from '../entities/mission/mission.entity';
 import { AuditActionType, AuditContext } from './audit.types';
 
 @Injectable()

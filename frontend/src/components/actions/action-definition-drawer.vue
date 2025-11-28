@@ -62,7 +62,7 @@
                             lazy-rules
                             :rules="[
                                 (val) => !!val || 'Name is required',
-                                (val) =>
+                                () =>
                                     isNameAvailable ||
                                     'This name is already taken',
                             ]"
@@ -120,7 +120,7 @@
                             Docker Image <span class="text-negative">*</span>
                         </label>
                         <q-input
-                            v-model="localTemplate.dockerImage"
+                            v-model="localTemplate.imageName"
                             outlined
                             dense
                             placeholder="registry.example.com/namespace/image:tag"
@@ -291,7 +291,7 @@ const emits = defineEmits(['close', 'saved']);
 const _open = ref(false);
 const isSaving = ref(false);
 const gpuEnabled = ref(false);
-const actionForm = ref<QForm | null>(null);
+const actionForm = ref<QForm | null>();
 
 // Name Validation State
 const isCheckingName = ref(false);
@@ -361,16 +361,21 @@ const checkName = debounce(async (name: string) => {
     }
 }, 500);
 
-function onNameChange(value: string): void {
+function onNameChange(value: string | number | null): void {
     if (isEditing.value) return;
 
     // Reset state immediately on type
     isNameAvailable.value = true;
     nameCheckDirty.value = true;
 
-    if (value && value.length > 0) {
+    if (value === null) {
+        isCheckingName.value = false;
+        nameCheckDirty.value = false;
+        return;
+    }
+    if (value.toString().length > 0) {
         isCheckingName.value = true;
-        checkName(value);
+        checkName(value.toString());
     } else {
         isCheckingName.value = false;
         nameCheckDirty.value = false;
@@ -392,7 +397,7 @@ watch(
             if (props.initialTemplate) {
                 localTemplate.value = {
                     ...structuredClone(props.initialTemplate),
-                    dockerImage: props.initialTemplate.imageName,
+                    imageName: props.initialTemplate.imageName,
                 };
             } else {
                 localTemplate.value = { ...defaultTemplate };
@@ -438,7 +443,7 @@ async function saveTemplate(): Promise<void> {
             name: localTemplate.value.name ?? '',
             description: localTemplate.value.description ?? '',
             command: localTemplate.value.command ?? '',
-            dockerImage: localTemplate.value.dockerImage``,
+            dockerImage: localTemplate.value.imageName ?? '',
             cpuCores: localTemplate.value.cpuCores ?? 1,
             cpuMemory: localTemplate.value.cpuMemory ?? 2,
             maxRuntime: localTemplate.value.maxRuntime ?? 2,

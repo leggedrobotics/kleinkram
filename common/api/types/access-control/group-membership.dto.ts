@@ -1,6 +1,3 @@
-import { AccessGroupDto } from '@common/api/types/access-control/access-group.dto';
-import { UserDto } from '@common/api/types/user/user.dto';
-import { IsNotUndefined } from '@common/validation/is-not-undefined';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -11,6 +8,9 @@ import {
     ValidateIf,
     ValidateNested,
 } from 'class-validator';
+import { UserDto } from '../../..//api/types/user/user.dto';
+import { AccessGroupDto } from '../../../api/types/access-control/access-group.dto';
+import { IsNotUndefined } from '../../../validation/is-not-undefined';
 
 export class GroupMembershipDto {
     @ApiProperty()

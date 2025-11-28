@@ -1,11 +1,3 @@
-import { redis } from '@common/consts';
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import WorkerEntity from '@common/entities/worker/worker.entity';
-import { ActionState } from '@common/frontend_shared/enum';
-import { addActionQueue } from '@common/scheduling-logic';
 import {
     ConflictException,
     Injectable,
@@ -18,6 +10,14 @@ import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
 import { Gauge } from 'prom-client';
 import { EntityManager, LessThan, Repository } from 'typeorm';
+import { redis } from '../../consts';
+import ActionTemplateEntity from '../../entities/action/action-template.entity';
+import ActionEntity from '../../entities/action/action.entity';
+import MissionEntity from '../../entities/mission/mission.entity';
+import UserEntity from '../../entities/user/user.entity';
+import WorkerEntity from '../../entities/worker/worker.entity';
+import { ActionState } from '../../frontend_shared/enum';
+import { addActionQueue } from '../../scheduling-logic';
 
 @Injectable()
 export class ActionDispatcherService implements OnModuleInit {

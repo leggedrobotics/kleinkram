@@ -93,7 +93,7 @@ export interface SubmitActionPayload {
 }
 
 export function useSubmitAction(): UseMutationReturnType<
-    ActionSubmitResponseDto,
+    ActionSubmitResponseDto[] | ActionSubmitResponseDto,
     Error,
     SubmitActionPayload,
     unknown

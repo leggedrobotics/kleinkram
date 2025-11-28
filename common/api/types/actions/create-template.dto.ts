@@ -1,4 +1,3 @@
-import { AccessGroupRights } from '@common/frontend_shared/enum';
 import {
     IsEnum,
     IsNotEmpty,
@@ -6,6 +5,7 @@ import {
     IsOptional,
     IsString,
 } from 'class-validator';
+import { AccessGroupRights } from '../../../frontend_shared/enum';
 
 export class CreateTemplateDto {
     @IsString()

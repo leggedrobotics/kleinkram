@@ -1,15 +1,15 @@
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import AccountEntity from '@common/entities/auth/account.entity';
-import MetadataEntity from '@common/entities/metadata/metadata.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import WorkerEntity from '@common/entities/worker/worker.entity';
 import { ActionDispatcherService } from '@common/modules/action-dispatcher/action-dispatcher.service';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
+import ActionTemplateEntity from '../../entities/action/action-template.entity';
+import ActionEntity from '../../entities/action/action.entity';
+import AccessGroupEntity from '../../entities/auth/accessgroup.entity';
+import AccountEntity from '../../entities/auth/account.entity';
+import MetadataEntity from '../../entities/metadata/metadata.entity';
+import MissionEntity from '../../entities/mission/mission.entity';
+import ProjectEntity from '../../entities/project/project.entity';
+import WorkerEntity from '../../entities/worker/worker.entity';
 
 @Module({
     imports: [
