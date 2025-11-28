@@ -12,8 +12,3 @@ export const currentQueue = async (
     const response = await axios.get('/queue/active', { params: parameters });
     return response.data;
 };
-
-export const bullQueue = async () => {
-    const response = await axios.get('/queue/bullQueue');
-    return response.data;
-};

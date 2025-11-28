@@ -62,15 +62,12 @@
         @restore="onRestoreVersion"
         @close="closeHistoryDrawer"
     />
-
-    <BullQueue v-if="showBullQueue" />
 </template>
 
 <script setup lang="ts">
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import { ActionTemplatesDto } from '@api/types/actions/action-templates.dto';
-import { UserRole } from '@common/enum';
-import { usePermissionsQuery } from 'src/hooks/query-hooks';
+
 import { computed, ref } from 'vue';
 
 // Components
@@ -80,7 +77,7 @@ import ActionExecutions from 'components/actions/action-executions.vue';
 import ActionLaunchDrawer from 'components/actions/action-launch-drawer.vue';
 import ActionRevisionsDrawer from 'components/actions/action-revisions-drawer.vue';
 import ActionStore from 'components/actions/action-store.vue';
-import BullQueue from 'components/bull-queue.vue';
+
 import TitleSection from 'components/title-section.vue';
 import { Notify } from 'quasar';
 import { actionKeys } from 'src/api/keys/action-keys';
@@ -135,11 +132,6 @@ const selectedHistoryVersions = ref<ActionTemplatesDto>({
 } as ActionTemplatesDto);
 
 const queryClient = useQueryClient();
-
-const { data: permissions } = usePermissionsQuery();
-const showBullQueue = computed(
-    () => permissions.value?.role === UserRole.ADMIN,
-);
 
 // --- Handlers ---
 const openHistoryDrawer = async (
