@@ -199,6 +199,7 @@ import ButtonGroup from 'components/buttons/button-group.vue';
 import { Dialog, Notify, Platform } from 'quasar';
 import { useDeleteTemplate } from 'src/composables/use-action-mutations';
 import { useTemplateList } from 'src/composables/use-actions-queries';
+import DeleteActionTemplateDialog from 'src/dialogs/delete-action-template-dialog.vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 import { useRoute, useRouter } from 'vue-router';
@@ -372,14 +373,10 @@ const executeDelete = async (template: ActionTemplateDto): Promise<void> => {
 
 const confirmDelete = (template: ActionTemplateDto): void => {
     Dialog.create({
-        title: 'Delete Action Template',
-        message: `Are you sure you want to delete "${template.name}" (v${template.version})?`,
-        html: true,
-        ok: { label: 'Delete', color: 'negative', flat: true },
-        cancel: true,
-        persistent: true,
-    }).onOk(() => {
-        void executeDelete(template);
+        component: DeleteActionTemplateDialog,
+        componentProps: {
+            template: template,
+        },
     });
 };
 </script>

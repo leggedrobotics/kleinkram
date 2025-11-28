@@ -10,7 +10,7 @@ import {
 } from '@common/api/types/submit-action.dto';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decarators';
 import { ActionService } from '../../services/action.service';
 import { ParameterUuid } from '../../validation/parameter-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
@@ -68,6 +68,8 @@ export class ActionsController {
     @Delete(':uuid')
     @CanDeleteAction()
     @ApiOperation({ summary: 'Delete a specific action run' })
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    @OutputDto(null)
     async remove(
         @ParameterUuid('uuid') uuid: string,
     ): Promise<{ success: boolean }> {
