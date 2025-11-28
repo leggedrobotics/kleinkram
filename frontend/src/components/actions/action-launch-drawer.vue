@@ -249,6 +249,9 @@ async function submitAnalysis(): Promise<void> {
         await queryClient.invalidateQueries({
             queryKey: actionKeys.templates.all,
         });
+        await queryClient.invalidateQueries({
+            queryKey: actionKeys.all,
+        });
 
         closeDrawer();
     } catch (error: any) {
