@@ -8,6 +8,7 @@
         <q-select
             v-bind="$attrs"
             v-model="model"
+            :label="inputLabel"
             outlined
             dense
             map-options
@@ -36,6 +37,7 @@ defineOptions({ inheritAttrs: false });
 withDefaults(
     defineProps<{
         label?: string | undefined;
+        inputLabel?: string | undefined;
         required?: boolean | undefined;
         options?: readonly T[] | undefined;
         optionLabel?: string | ((opt: T) => string) | undefined;
@@ -44,6 +46,7 @@ withDefaults(
     {
         options: () => [],
         label: undefined,
+        inputLabel: undefined,
         optionLabel: undefined,
         optionValue: undefined,
         required: false,

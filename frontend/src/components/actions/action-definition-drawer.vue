@@ -408,7 +408,9 @@ watch(
                 localTemplate.value.gpuMemory = 6;
             }
 
-            nextTick(() => actionForm.value?.resetValidation()).catch(console.log);
+            nextTick(() => actionForm.value?.resetValidation()).catch(
+                console.log,
+            );
         }
     },
 );

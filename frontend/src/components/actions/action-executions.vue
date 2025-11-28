@@ -1,9 +1,14 @@
 <template>
     <div class="column q-gutter-y-md">
-        <div
-            class="flex justify-between items-start bg-grey-1 q-pa-sm rounded-borders"
-        >
-            <ScopeSelector layout="row" mode="filter" :show-labels="false" />
+        <div class="flex justify-between items-center">
+            <ScopeSelector
+                layout="row"
+                mode="filter"
+                :show-labels="false"
+                project-placeholder="All Projects"
+                mission-placeholder="All Missions"
+                style="min-width: 300px"
+            />
 
             <div class="flex q-gutter-x-sm items-center">
                 <q-input

@@ -14,7 +14,7 @@
                 bg-color="white"
                 option-label="name"
                 option-value="uuid"
-                placeholder="Select Project"
+                :input-label="showLabels ? undefined : projectPlaceholder"
                 :rules="projectRules"
                 @update:model-value="handleProjectChange"
             />
@@ -34,7 +34,7 @@
                 bg-color="white"
                 option-label="name"
                 option-value="uuid"
-                placeholder="Select Mission"
+                :input-label="showLabels ? undefined : missionPlaceholder"
                 :rules="missionRules"
                 @update:model-value="handleMissionChange"
             />
@@ -61,6 +61,8 @@ const props = withDefaults(
         missionUuid?: string | undefined;
         customProjects?: ProjectWithRequiredTagsDto[] | undefined;
         customMissionRules?: ValidationRule[];
+        projectPlaceholder?: string;
+        missionPlaceholder?: string;
     }>(),
     {
         layout: 'column',
@@ -73,6 +75,8 @@ const props = withDefaults(
         missionUuid: undefined,
         customProjects: undefined,
         customMissionRules: () => [],
+        projectPlaceholder: 'Select Project',
+        missionPlaceholder: 'Select Mission',
     },
 );
 
