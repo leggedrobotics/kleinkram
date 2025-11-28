@@ -33,7 +33,8 @@ def paginated_request(
 
     params[TAKE] = page_size
     params[SKIP] = 0
-    params[EXACT_MATCH] = str(exact_match).lower()  # pass string rather than bool
+    if exact_match:
+        params[EXACT_MATCH] = str(exact_match).lower()  # pass string rather than bool
 
     while True:
         resp = client.get(endpoint, params=params)

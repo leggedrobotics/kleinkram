@@ -185,7 +185,7 @@ def get_projects(
     yield from map(lambda p: _parse_project(ProjectObject(p)), response_stream)
 
 
-LIST_ACTIONS_ENDPOINT = "/action/listActions"
+LIST_ACTIONS_ENDPOINT = "/actions"
 
 
 def get_runs(
@@ -201,7 +201,7 @@ def get_run(
     client: AuthenticatedClient,
     run_id: str,
 ) -> Run:
-    resp = client.get(f"{ACTION_ENDPOINT}/details", params={"uuid": run_id})
+    resp = client.get(f"{ACTION_ENDPOINT}s/{run_id}")
     if resp.status_code == 404:
         raise kleinkram.errors.RunNotFound(f"Run not found: {run_id}")
     resp.raise_for_status()
@@ -211,7 +211,7 @@ def get_run(
 def get_action_templates(
     client: AuthenticatedClient,
 ) -> Generator[ActionTemplate, None, None]:
-    response_stream = paginated_request(client, "/action/listTemplates")
+    response_stream = paginated_request(client, "/templates")
     yield from map(lambda p: _parse_action_template(RunObject(p)), response_stream)
 
 
@@ -247,7 +247,7 @@ def submit_action(
     }
 
     typer.echo("Submitting action...")
-    resp = client.post(f"{ACTION_ENDPOINT}/submit", json=submit_payload)
+    resp = client.post(f"{ACTION_ENDPOINT}s", json=submit_payload)
     resp.raise_for_status()  # Raises on 4xx/5xx responses
 
     response_data = resp.json()
