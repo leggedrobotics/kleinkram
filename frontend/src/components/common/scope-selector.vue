@@ -75,8 +75,8 @@ const props = withDefaults(
         customMissionRules?: ValidationRule[];
         projectPlaceholder?: string;
         missionPlaceholder?: string;
-        selectWidth?: string;
-        bgColor?: string;
+        selectWidth?: string | undefined;
+        bgColor?: string | undefined;
     }>(),
     {
         layout: 'column',
@@ -91,6 +91,8 @@ const props = withDefaults(
         customMissionRules: () => [],
         projectPlaceholder: 'Select Project',
         missionPlaceholder: 'Select Mission',
+        selectWidth: undefined,
+        bgColor: undefined,
     },
 );
 

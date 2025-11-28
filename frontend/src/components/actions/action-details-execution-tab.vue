@@ -133,14 +133,18 @@ const runtimeString = computed(() => {
 
 const artifactStateText = computed(() => {
     switch (props.action.artifacts) {
-        case ArtifactState.UPLOADING:
+        case ArtifactState.UPLOADING: {
             return 'Uploading...';
-        case ArtifactState.ERROR:
+        }
+        case ArtifactState.ERROR: {
             return 'Error uploading artifacts';
-        case ArtifactState.AWAITING_ACTION:
+        }
+        case ArtifactState.AWAITING_ACTION: {
             return 'Waiting for action completion...';
-        default:
+        }
+        default: {
             return 'N/A';
+        }
     }
 });
 

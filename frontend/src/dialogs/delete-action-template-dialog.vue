@@ -10,7 +10,7 @@
         <template #content>
             <DeleteActionTemplate
                 v-if="template"
-                ref="deleteActionRef"
+                ref="deleteActionReference"
                 :template="template"
             />
             <q-skeleton v-else height="200px" />
@@ -19,7 +19,7 @@
         <template #actions>
             <q-btn
                 flat
-                :disable="deleteActionRef?.nameCheck !== template?.name"
+                :disable="deleteActionReference?.nameCheck !== template?.name"
                 :label="isArchiving ? 'Archive' : 'Delete'"
                 class="bg-button-danger"
                 @click="onConfirm"
@@ -40,15 +40,15 @@ const props = defineProps<{
 }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const deleteActionRef = ref<
+const deleteActionReference = ref<
     InstanceType<typeof DeleteActionTemplate> | undefined
 >(undefined);
 
 const isArchiving = computed(() => (props.template?.executionCount ?? 0) > 0);
 
 const onConfirm = async (): Promise<void> => {
-    if (!deleteActionRef.value) return;
-    await deleteActionRef.value.executeAction();
+    if (!deleteActionReference.value) return;
+    await deleteActionReference.value.executeAction();
     onDialogOK();
 };
 </script>

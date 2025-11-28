@@ -403,6 +403,7 @@ watch(
             // eslint-disable-next-line unicorn/prefer-ternary
             if (props.initialTemplate) {
                 localTemplate.value = {
+                    // eslint-disable-next-line unicorn/prefer-structured-clone
                     ...JSON.parse(JSON.stringify(props.initialTemplate)),
                     imageName: props.initialTemplate.imageName,
                 };
@@ -415,9 +416,9 @@ watch(
                 localTemplate.value.gpuMemory = 6;
             }
 
-            nextTick(() => actionForm.value?.resetValidation()).catch(
-                console.log,
-            );
+            void nextTick(() => {
+                actionForm.value?.resetValidation();
+            });
         }
     },
 );

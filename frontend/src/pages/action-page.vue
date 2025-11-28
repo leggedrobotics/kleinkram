@@ -104,10 +104,10 @@ const REVERSE_TAB_MAPPING = {
 
 const activeTab = computed({
     get: () => {
-        const tabParam = route.params.tab as string | undefined;
-        if (tabParam && tabParam in REVERSE_TAB_MAPPING) {
+        const tabParameter = route.params.tab as string | undefined;
+        if (tabParameter && tabParameter in REVERSE_TAB_MAPPING) {
             return REVERSE_TAB_MAPPING[
-                tabParam as keyof typeof REVERSE_TAB_MAPPING
+                tabParameter as keyof typeof REVERSE_TAB_MAPPING
             ];
         }
         return 'store';
@@ -115,7 +115,7 @@ const activeTab = computed({
     set: (value: string) => {
         const tabSlug =
             TAB_MAPPING[value as keyof typeof TAB_MAPPING] || 'templates';
-        router.replace({
+        void router.replace({
             params: { ...route.params, tab: tabSlug },
             query: route.query,
         });

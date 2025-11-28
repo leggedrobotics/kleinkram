@@ -200,7 +200,6 @@
 </template>
 
 <script setup lang="ts">
-import { ArtifactState } from '@common/enum';
 import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
@@ -221,27 +220,6 @@ const { data: action } = useActionDetails(
     computed(() => $route.params.id as string),
 );
 
-const artifactState = computed(() => {
-    switch (action.value?.artifacts ?? ArtifactState.ERROR) {
-        case ArtifactState.UPLOADING: {
-            return 'Uploading...';
-        }
-        case ArtifactState.ERROR: {
-            return 'N/A';
-        }
-        case ArtifactState.AWAITING_ACTION: {
-            return 'Waiting action completion...';
-        }
-        // No default
-    }
-    return 'N/A';
-});
-
-const openArtifact = (): void => {
-    if (action.value === undefined) return;
-    window.open(action.value.artifactUrl, '_blank');
-};
-
 const openMission = async (): Promise<void> => {
     if (action.value === undefined) return;
 
@@ -255,7 +233,7 @@ const openMission = async (): Promise<void> => {
 };
 
 const navigateBackToActions = async (): Promise<void> => {
-    const previousPath = window.history.state?.back as string | undefined;
+    const previousPath = globalThis.history.state?.back as string | undefined;
 
     // If we came from the actions list (any tab), go back to preserve filters/state
     if (previousPath?.includes('/actions')) {
@@ -264,21 +242,21 @@ const navigateBackToActions = async (): Promise<void> => {
     }
 
     // Fallback: Go to Executions tab with current action's scope
-    if (action.value) {
-        await $router.push({
-            name: ROUTES.ACTION.name,
-            params: { tab: 'runs' },
-            query: {
-                projectUuid: action.value.mission.project.uuid,
-                missionUuid: action.value.mission.uuid,
-                sortBy: 'createdAt',
-                descending: 'true',
-            },
-        });
-    } else {
-        // Safety fallback
-        await $router.push({ name: ROUTES.ACTION.name });
-    }
+    // Fallback: Go to Executions tab with current action's scope
+    await $router.push(
+        action.value
+            ? {
+                  name: ROUTES.ACTION.name,
+                  params: { tab: 'runs' },
+                  query: {
+                      projectUuid: action.value.mission.project.uuid,
+                      missionUuid: action.value.mission.uuid,
+                      sortBy: 'createdAt',
+                      descending: 'true',
+                  },
+              }
+            : { name: ROUTES.ACTION.name },
+    );
 };
 </script>
 

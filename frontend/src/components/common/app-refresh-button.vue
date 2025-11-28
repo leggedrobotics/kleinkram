@@ -5,14 +5,18 @@
         color="icon-secondary"
         class="button-border"
         icon="sym_o_loop"
-        @click="$emit('click')"
+        @click="handleClick"
     >
         <q-tooltip>Refetch the Data</q-tooltip>
     </q-btn>
 </template>
 
 <script setup lang="ts">
-defineEmits(['click']);
+const emits = defineEmits(['click']);
+
+const handleClick = (): void => {
+    emits('click');
+};
 </script>
 
 <style scoped>

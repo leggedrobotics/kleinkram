@@ -25,9 +25,7 @@ withDefaults(
     },
 );
 
-const emit = defineEmits<{
-    (e: 'click', event: Event): void;
-}>();
+const emit = defineEmits<(event: 'click', event_: Event) => void>();
 
 const onClick = (event: Event): void => {
     emit('click', event);

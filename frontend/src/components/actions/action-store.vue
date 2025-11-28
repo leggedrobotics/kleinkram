@@ -210,7 +210,7 @@ const route = useRoute();
 // --- State ---
 const searchTerm = ref('');
 const showArchived = ref(route.query.showArchived === 'true');
-const searchInput = ref<any | null>(null);
+const searchInput = ref<any>(null);
 
 import { QTableColumn } from 'quasar';
 
@@ -240,14 +240,14 @@ onUnmounted(() => {
 
 // --- URL Persistence ---
 import { watch } from 'vue';
-watch(showArchived, (val) => {
+watch(showArchived, (value) => {
     const query = { ...route.query };
-    if (val) {
+    if (value) {
         query.showArchived = 'true';
     } else {
         delete query.showArchived;
     }
-    router.replace({ query });
+    void router.replace({ query });
 });
 
 // --- Composable Hooks ---
@@ -372,6 +372,8 @@ const confirmDelete = (template: ActionTemplateDto): void => {
         componentProps: {
             template: template,
         },
+    }).onOk(() => {
+        void executeDelete(template);
     });
 };
 </script>

@@ -44,10 +44,10 @@ const clear = (): void => {
     model.value = '';
 };
 
-const inputRef = ref<QInput | null>(null);
+const inputReference = ref<QInput | null>(null);
 
 const focus = (): void => {
-    inputRef.value?.focus();
+    inputReference.value?.focus();
 };
 
 defineExpose({
