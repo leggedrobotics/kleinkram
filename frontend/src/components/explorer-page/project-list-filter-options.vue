@@ -13,17 +13,7 @@
                 placeholder="Search by Project Name"
             />
 
-            <q-btn
-                flat
-                dense
-                padding="6px"
-                color="icon-secondary"
-                class="button-border"
-                icon="sym_o_loop"
-                @click="resetCache"
-            >
-                <q-tooltip> Refetch the Data</q-tooltip>
-            </q-btn>
+            <app-refresh-button @click="resetCache" />
 
             <dialog-opener-create-project>
                 <q-btn
@@ -42,6 +32,7 @@
 import { useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import MyProjectsSelector from 'components/explorer-page/my-projects-selector.vue';
 import { useHandler } from 'src/hooks/query-hooks';

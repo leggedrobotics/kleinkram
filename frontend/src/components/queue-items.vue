@@ -88,17 +88,7 @@
             </q-select>
         </div>
         <div class="col-2 q-py-md">
-            <q-btn
-                flat
-                dense
-                padding="6px"
-                color="icon-secondary"
-                class="button-border"
-                icon="sym_o_loop"
-                @click="refresh"
-            >
-                <q-tooltip> Refresh Data </q-tooltip>
-            </q-btn>
+            <app-refresh-button @click="refresh" />
         </div>
     </div>
 
@@ -211,6 +201,7 @@ import { useRouter } from 'vue-router';
 
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
 
 const $router = useRouter();
 const queryClient = useQueryClient();

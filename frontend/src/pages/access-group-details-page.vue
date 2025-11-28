@@ -30,17 +30,7 @@
                             <q-icon name="sym_o_search" />
                         </template>
                     </q-input>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        color="icon-secondary"
-                        class="button-border"
-                        icon="sym_o_loop"
-                        @click="refetchOnClick"
-                    >
-                        <q-tooltip> Refetch the Data</q-tooltip>
-                    </q-btn>
+                    <app-refresh-button @click="refetchOnClick" />
                     <q-btn
                         flat
                         class="bg-button-secondary text-on-color"
@@ -142,17 +132,7 @@
                             <q-icon name="sym_o_search" />
                         </template>
                     </q-input>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        color="icon-secondary"
-                        class="button-border"
-                        icon="sym_o_loop"
-                        @click="refetchOnClick"
-                    >
-                        <q-tooltip> Refetch the Data</q-tooltip>
-                    </q-btn>
+                    <app-refresh-button @click="refetchOnClick" />
 
                     <DialogOpenerAddUser
                         v-if="accessGroup"
@@ -270,6 +250,7 @@ import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-use
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import RemoveProjectDialogOpener from 'components/button-wrapper/remove-project-dialog-opener.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import { projectAccessColumns } from 'components/explorer-page/explorer-page-table-columns';
 import TitleSection from 'components/title-section.vue';
 import { Notify, QTable, useQuasar } from 'quasar';

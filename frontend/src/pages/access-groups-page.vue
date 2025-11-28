@@ -38,15 +38,7 @@
                     placeholder="Search"
                 />
 
-                <q-btn
-                    flat
-                    dense
-                    padding="6px"
-                    color="icon-secondary"
-                    class="button-border"
-                    icon="sym_o_loop"
-                    @click="refetchAccessGroup"
-                />
+                <app-refresh-button @click="refetchAccessGroup" />
 
                 <CreateAccessGroupDialogOpener />
             </button-group>
@@ -135,6 +127,7 @@ import DeleteAccessGroup from 'components/button-wrapper/delete-access-group.vue
 import CreateAccessGroupDialogOpener from 'components/button-wrapper/dialog-opener-create-access-group.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable } from 'quasar';
 import ROUTES from 'src/router/routes';

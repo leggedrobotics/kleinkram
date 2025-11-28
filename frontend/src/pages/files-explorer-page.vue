@@ -233,17 +233,7 @@
                     placeholder="Search by Filename"
                 />
 
-                <q-btn
-                    flat
-                    dense
-                    padding="6px"
-                    color="icon-secondary"
-                    class="button-border"
-                    icon="sym_o_loop"
-                    @click="refresh"
-                >
-                    <q-tooltip> Refetch the Data</q-tooltip>
-                </q-btn>
+                <app-refresh-button @click="refresh" />
 
                 <create-file-dialog-opener
                     :mission="mission as MissionWithFilesDto"
@@ -365,6 +355,7 @@ import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
 import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
 import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';

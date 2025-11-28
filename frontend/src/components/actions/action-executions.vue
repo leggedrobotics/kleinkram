@@ -16,16 +16,7 @@
                     placeholder="Filter executions..."
                 />
 
-                <q-btn
-                    flat
-                    dense
-                    round
-                    color="primary"
-                    icon="sym_o_refresh"
-                    @click="refetchData"
-                >
-                    <q-tooltip>Refresh</q-tooltip>
-                </q-btn>
+                <app-refresh-button @click="refetchData" />
             </div>
         </div>
 
@@ -52,6 +43,7 @@
 import { useQueryClient } from '@tanstack/vue-query';
 import ActionsTable from 'components/actions/actions-table.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import { useHandler } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 

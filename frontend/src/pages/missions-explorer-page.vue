@@ -118,17 +118,7 @@
                     placeholder="Search by Mission Name"
                 />
 
-                <q-btn
-                    flat
-                    dense
-                    padding="6px"
-                    color="icon-secondary"
-                    class="button-border"
-                    icon="sym_o_loop"
-                    @click="refresh"
-                >
-                    <q-tooltip> Refetch the Data</q-tooltip>
-                </q-btn>
+                <app-refresh-button @click="refresh" />
                 <UploadMissionFolder :project-uuid="projectUuid">
                     <q-btn
                         flat
@@ -248,6 +238,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import ActionConfiguration from 'components/actions/action-configuration.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
 import CreateMissionDialogOpener from 'components/button-wrapper/dilaog-opener-create-mission.vue';
