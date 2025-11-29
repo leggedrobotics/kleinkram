@@ -33,7 +33,7 @@ The `--build` flag ensures that the Docker images are built before starting. For
 You can now access the frontend at `http://localhost:8003`.
 
 ::: tip Browser Compatibility
-Make sure to use Chrome or Firefox for the best experience with 
+Make sure to use Chrome or Firefox for the best experience with
 the local development server. There are some known iessues related to Safari when running Kleinkram locally.
 :::
 

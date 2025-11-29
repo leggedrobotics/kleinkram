@@ -48,6 +48,7 @@ Here are some examples of how to implement custom actions.
 This example uses a bash script to calculate SHA256 checksums of all files in a mission. It demonstrates how to use the Kleinkram CLI directly.
 
 **Dockerfile**
+
 ```Dockerfile [Dockerfile]
 FROM python:3.9-slim
 
@@ -62,6 +63,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 ```
 
 **entrypoint.sh**
+
 ```bash [entrypoint.sh]
 #!/bin/bash
 set -e
@@ -87,6 +89,7 @@ echo "Validation complete. Checksums saved to checksums.txt"
 This example demonstrates how to use the Python SDK to interact with Kleinkram. It is recommended for complex logic.
 
 **Dockerfile**
+
 ```Dockerfile [Dockerfile]
 FROM python:3.9-slim
 
@@ -104,6 +107,7 @@ ENTRYPOINT ["python3", "/main.py"]
 ```
 
 **main.py**
+
 ```python [main.py]
 import os
 import kleinkram
@@ -112,16 +116,16 @@ def main():
     # 1. Authenticate
     # The client automatically picks up authentication from environment variables
     # (KLEINKRAM_API_KEY, KLEINKRAM_API_ENDPOINT)
-    
+
     # 2. Download data
     mission_uuid = os.environ.get("KLEINKRAM_MISSION_UUID")
     print(f"Downloading data for mission {mission_uuid}...")
-    
+
     download_dir = "/data"
     os.makedirs(download_dir, exist_ok=True)
-    
+
     kleinkram.download(mission_ids=[mission_uuid], dest=download_dir)
-    
+
     # 3. Process data
     # ... your processing logic here ...
     print("Processing complete.")
@@ -181,7 +185,7 @@ mission_uuid = os.environ.get("KLEINKRAM_MISSION_UUID")
 kleinkram.download(mission_ids=[mission_uuid], dest="/data")
 
 # Upload artifact (if needed explicitly, though /out is auto-uploaded)
-kleinkram.upload(...) 
+kleinkram.upload(...)
 ```
 
 ### CLI Commands
@@ -200,4 +204,3 @@ klein download -m <MISSION_UUID> --dest <DIR>
 # List files in a mission
 klein list files -m <MISSION_UUID>
 ```
-

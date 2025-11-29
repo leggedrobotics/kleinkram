@@ -13,7 +13,10 @@ export function useActionDetails(
 ): UseQueryReturnType<ActionDto, Error> {
     return useQuery({
         queryKey: computed(() => actionKeys.detail(uuid)),
-        queryFn: () => ActionService.getOne(unref(uuid)),
+        queryFn: ({ queryKey }) => {
+            const _uuid = queryKey[2] as string;
+            return ActionService.getOne(_uuid);
+        },
         enabled: computed(() => !!unref(uuid)),
         refetchInterval: 5000,
     });

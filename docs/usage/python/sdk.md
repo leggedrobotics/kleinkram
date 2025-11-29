@@ -28,7 +28,7 @@ projects = kleinkram.list_projects(project_names=["my-project"])
 
 # List missions
 missions = kleinkram.list_missions(
-    project_names=["my-project"], 
+    project_names=["my-project"],
     mission_names=["my-mission"]
 )
 
@@ -53,7 +53,7 @@ file = kleinkram.get_file(file_id="...")
 ```python
 # Create a project
 kleinkram.create_project(
-    project_name="New Project", 
+    project_name="New Project",
     description="My new project"
 )
 

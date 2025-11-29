@@ -4,7 +4,7 @@
 You can use Actions to validate, convert, and process your data. See the [Actions guide](actions/usage.md).
 :::
 
-::: details What file formats are supported? 
+::: details What file formats are supported?
 Kleinkram supports the most common robotics data formats. See the [Files documentation](files/files.md) for the full list.
 :::
 

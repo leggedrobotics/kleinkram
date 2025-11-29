@@ -5,6 +5,7 @@ An action to extract metadata from robotics data files.
 ## Description
 
 This action analyzes files in the mission and extracts useful metadata such as:
+
 - Start and end times
 - Topic lists
 - Message counts

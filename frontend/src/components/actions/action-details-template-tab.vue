@@ -1,17 +1,33 @@
 <template>
     <div class="q-pa-md">
         <div class="row q-col-gutter-md">
-            <div class="col-12">
-                <q-banner class="bg-blue-1 text-blue-10 rounded-borders">
-                    This execution ran using
-                    <strong>
-                        {{ template.name }} (v {{ template.version }}) </strong
-                    >.
-                    <div class="text-caption q-mt-xs">
-                        Defined by {{ template.creator?.name }} on
-                        {{ formatDate(template.createdAt) }}
-                    </div>
-                </q-banner>
+            <div class="col-6">
+                <AppInput
+                    label="Template Name"
+                    :model-value="template.name"
+                    readonly
+                />
+            </div>
+            <div class="col-6">
+                <AppInput
+                    label="Version"
+                    :model-value="template.version"
+                    readonly
+                />
+            </div>
+            <div class="col-6">
+                <AppInput
+                    label="Creator"
+                    :model-value="template.creator?.name || 'N/A'"
+                    readonly
+                />
+            </div>
+            <div class="col-6">
+                <AppInput
+                    label="Created At"
+                    :model-value="formatDate(template.createdAt)"
+                    readonly
+                />
             </div>
 
             <div class="col-6">
@@ -19,7 +35,20 @@
                     label="Docker Image"
                     :model-value="template.imageName"
                     readonly
-                />
+                >
+                    <template v-if="dockerHubUrl" #append>
+                        <q-btn
+                            flat
+                            round
+                            dense
+                            icon="sym_o_open_in_new"
+                            color="primary"
+                            @click.stop="openDockerHub"
+                        >
+                            <q-tooltip>View on Docker Hub</q-tooltip>
+                        </q-btn>
+                    </template>
+                </AppInput>
             </div>
             <div class="col-6">
                 <AppInput
@@ -69,8 +98,36 @@ import { AccessGroupRights } from '@common/enum';
 import ComputeResourcesFieldset from 'components/actions/compute-resources-fieldset.vue';
 import AppInput from 'components/common/app-input.vue';
 import { accessGroupRightsMap } from 'src/services/generic';
+import { computed } from 'vue';
 
 // Props: template object passed from the parent ActionDto
-defineProps<{ template: ActionTemplateDto }>();
+const props = defineProps<{ template: ActionTemplateDto }>();
 const formatDate = (d: string | Date) => new Date(d).toLocaleString();
+
+const openDockerHub = () => {
+    if (dockerHubUrl.value) {
+        window.open(dockerHubUrl.value, '_blank');
+    }
+};
+
+const dockerHubUrl = computed(() => {
+    const image = props.template.imageName;
+    if (
+        image.includes('localhost') ||
+        image.includes(':5000') ||
+        image.includes('ghcr.io')
+    )
+        return undefined;
+
+    const parts = image.split('/');
+    if (parts.length === 1 && parts[0]) {
+        // Official image, e.g. "ubuntu" -> https://hub.docker.com/_/ubuntu
+        return `https://hub.docker.com/_/${parts[0].split(':')[0]}`;
+    }
+    if (parts.length === 2 && parts[0] && parts[1]) {
+        // User image, e.g. "rslethz/kleinkram" -> https://hub.docker.com/r/rslethz/kleinkram
+        return `https://hub.docker.com/r/${parts[0]}/${parts[1].split(':')[0]}`;
+    }
+    return undefined;
+});
 </script>

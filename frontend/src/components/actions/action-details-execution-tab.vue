@@ -1,18 +1,26 @@
 <template>
     <div class="q-pa-md">
         <div class="row q-col-gutter-md">
-            <!-- State Banner -->
-            <div class="col-12">
-                <div class="row items-center q-gutter-x-md">
-                    <div class="text-subtitle1">State:</div>
-                    <ActionBadge :action="action" />
-                </div>
+            <!-- State Info -->
+            <div class="col-6">
+                <AppInput label="State" :model-value="action.state" readonly>
+                    <template
+                        v-if="
+                            action.state === ActionState.PROCESSING ||
+                            action.state === ActionState.STARTING
+                        "
+                        #append
+                    >
+                        <q-spinner color="primary" size="1em" />
+                    </template>
+                </AppInput>
             </div>
-
-            <div v-if="action.stateCause" class="col-12">
-                <q-banner class="bg-red-1 text-red-10 rounded-borders">
-                    <strong>State Reason:</strong> {{ action.stateCause }}
-                </q-banner>
+            <div class="col-6">
+                <AppInput
+                    label="State Reason"
+                    :model-value="action.stateCause || 'N/A'"
+                    readonly
+                />
             </div>
 
             <!-- Execution Info -->
@@ -59,7 +67,11 @@
             <div class="col-6">
                 <AppInput
                     label="Resolved Image Digest"
-                    :model-value="action.image.repoDigests?.[0] || 'N/A'"
+                    :model-value="
+                        action.image.repoDigests?.[0] ||
+                        action.image.sha ||
+                        'N/A'
+                    "
                     readonly
                 />
             </div>
@@ -68,7 +80,20 @@
                     label="Project / Mission"
                     :model-value="`${action.mission?.project?.name} / ${action.mission?.name}`"
                     readonly
-                />
+                >
+                    <template #append>
+                        <q-btn
+                            flat
+                            round
+                            dense
+                            icon="sym_o_open_in_new"
+                            color="primary"
+                            @click.stop="openMission"
+                        >
+                            <q-tooltip>Go to Mission</q-tooltip>
+                        </q-btn>
+                    </template>
+                </AppInput>
             </div>
             <div class="col-6">
                 <AppInput
@@ -97,7 +122,7 @@
                         v-if="action.artifacts === ArtifactState.UPLOADED"
                         label="Open Artifacts"
                         unelevated
-                        color="primary"
+                        class="bg-button-secondary text-on-color"
                         icon="sym_o_link"
                         @click="openArtifact"
                     />
@@ -115,12 +140,14 @@
 
 <script setup lang="ts">
 import { ActionDto } from '@api/types/actions/action.dto';
-import { ArtifactState } from '@common/enum';
-import ActionBadge from 'components/action-badge.vue';
+import { ActionState, ArtifactState } from '@common/enum';
 import AppInput from 'components/common/app-input.vue';
+import ROUTES from 'src/router/routes';
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const props = defineProps<{ action: ActionDto }>();
+const $router = useRouter();
 
 const formatDate = (d: string | Date) => new Date(d).toLocaleString();
 
@@ -152,5 +179,15 @@ const openArtifact = (): void => {
     if (props.action.artifactUrl) {
         window.open(props.action.artifactUrl, '_blank');
     }
+};
+
+const openMission = async (): Promise<void> => {
+    await $router.push({
+        name: ROUTES.FILES.routeName,
+        params: {
+            projectUuid: props.action.mission.project.uuid,
+            missionUuid: props.action.mission.uuid,
+        },
+    });
 };
 </script>

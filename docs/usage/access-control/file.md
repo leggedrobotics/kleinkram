@@ -17,4 +17,4 @@ The valid operations that can be performed on a file are:
 - **Raw Logs**: Only core engineers should be able to delete raw logs (`Delete` right).
 - **Processed Data**: Researchers can generate and upload processed data (`Write` right).
 - **Public Release**: A specific set of files is approved for public release. A "Public" group could be given `Read` access to these specific files.
- | delete | Delete a File | <Delete /> <Creator/> |
+  | delete | Delete a File | <Delete /> <Creator/> |

@@ -15,9 +15,9 @@ The valid operations that can be performed on an action are:
 **Scenario**: A custom action "Convert to TUM Format" is developed by the "Perception Team".
 
 - **Developers**: The "Perception Team" needs to update the action definition. They get `Write` access.
-- **Users**: All users in the "Robotics Corp" project need to *run* this action. They get `Read` access (which allows execution).
+- **Users**: All users in the "Robotics Corp" project need to _run_ this action. They get `Read` access (which allows execution).
 - **Restricted Action**: An experimental "Delete Outliers" action might be restricted to senior engineers only, so only they are granted `Read` access to it.
-| stop | Stop an Action | <Delete /> <Creator/> |
+  | stop | Stop an Action | <Delete /> <Creator/> |
 
 ## Action Template
 

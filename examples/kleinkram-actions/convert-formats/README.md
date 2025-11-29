@@ -5,6 +5,7 @@ An action to convert robotics data files between different formats.
 ## Description
 
 This action automatically converts MCAP files found in the mission data to CSV format for easier analysis.
+
 - **Input**: `.mcap`
 - **Output**: `.csv` (one per topic)
 

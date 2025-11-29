@@ -158,6 +158,7 @@ export class ActionService {
                 'mission.project',
                 'creator',
                 'template',
+                'template.creator',
                 'worker',
             ],
         });
@@ -209,6 +210,7 @@ export class ActionService {
             .leftJoinAndSelect('action.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('action.template', 'template')
+            .leftJoinAndSelect('template.creator', 'templateCreator')
             .leftJoinAndSelect('action.creator', 'creator');
     }
 

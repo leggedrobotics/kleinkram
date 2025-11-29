@@ -17,8 +17,6 @@ system:
 To enable code completion and linting in your IDE, you may also need a NodeJS, yarn, and python installation.
 :::
 
-
-
 ## Getting Started with Development
 
 This section will guide you through setting up the development environment for the project.
@@ -79,7 +77,7 @@ machine. This is necessary for code completion and linting in your IDE.
 
 In order to seed the database with mock data, you can run the following command:
 
-```bash
+````bash
 # This will remove the existing database
 docker compose down --volumes
 
@@ -89,7 +87,7 @@ sed -i 's/SEED=false/SEED=true/' .env
 ```bash
 # This will seed the database with mock data
 docker compose up --build --watch
-```
+````
 
 ### Configuration
 

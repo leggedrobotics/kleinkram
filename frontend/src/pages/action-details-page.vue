@@ -9,13 +9,13 @@
                 active-color="primary"
             >
                 <q-tab
-                    name="template"
-                    label="Action Template"
+                    name="info"
+                    label="Execution Details"
                     style="color: #222"
                 />
                 <q-tab
-                    name="info"
-                    label="Execution Details"
+                    name="template"
+                    label="Action Template"
                     style="color: #222"
                 />
                 <q-tab
@@ -68,13 +68,56 @@
                 >
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
+                <q-btn
+                    class="button-border"
+                    flat
+                    color="primary"
+                    icon="sym_o_play_arrow"
+                    label="Restart"
+                    @click="restartAction"
+                >
+                    <q-tooltip>Restart Action</q-tooltip>
+                </q-btn>
             </button-group>
         </template>
     </title-section>
 
-    <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
+    <div v-if="isLoading" class="flex flex-center q-pa-lg">
+        <q-spinner color="primary" size="3em" />
+    </div>
+
+    <div v-else-if="!action" class="flex flex-center column q-pa-lg text-grey">
+        <q-icon name="sym_o_error" size="4em" class="q-mb-md" />
+        <div class="text-h6">Action not found</div>
+        <div class="q-mt-md">
+            <q-btn
+                color="primary"
+                label="Reload"
+                icon="sym_o_refresh"
+                unelevated
+                @click="() => refetch()"
+            />
+        </div>
+        <div v-if="error" class="text-caption text-negative q-mt-sm">
+            {{ error.message }}
+        </div>
+    </div>
+
+    <q-tab-panels
+        v-else
+        v-model="tab"
+        class="q-mt-lg"
+        style="background: transparent"
+    >
         <q-tab-panel name="info">
             <ActionDetailsExecutionTab v-if="action" :action="action" />
+        </q-tab-panel>
+
+        <q-tab-panel name="template">
+            <ActionDetailsTemplateTab
+                v-if="action"
+                :template="action.template"
+            />
         </q-tab-panel>
 
         <q-tab-panel name="logs">
@@ -189,13 +232,6 @@
                 </div>
             </q-card>
         </q-tab-panel>
-
-        <q-tab-panel name="template">
-            <ActionDetailsTemplateTab
-                v-if="action"
-                :template="action.template"
-            />
-        </q-tab-panel>
     </q-tab-panels>
 </template>
 
@@ -204,6 +240,8 @@ import ActionDetailsExecutionTab from 'components/actions/action-details-executi
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import TitleSection from 'components/title-section.vue';
+import { useQuasar } from 'quasar';
+import { ActionService } from 'src/api/services/action.service';
 import { useActionDetails } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
@@ -211,14 +249,18 @@ import { computed, ref } from 'vue';
 import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 
-const tab = ref('template');
+const tab = ref('info');
 
 const $route = useRoute();
 const $router = useRouter();
+const $q = useQuasar();
 
-const { data: action } = useActionDetails(
-    computed(() => $route.params.id as string),
-);
+const {
+    data: action,
+    isLoading,
+    error,
+    refetch,
+} = useActionDetails(computed(() => $route.params.id as string));
 
 const openMission = async (): Promise<void> => {
     if (action.value === undefined) return;
@@ -232,6 +274,33 @@ const openMission = async (): Promise<void> => {
     });
 };
 
+const restartAction = async (): Promise<void> => {
+    if (!action.value) return;
+
+    try {
+        const response = await ActionService.createAnalysis({
+            missionUUID: action.value.mission.uuid,
+            templateUUID: action.value.template.uuid,
+        });
+
+        $q.notify({
+            type: 'positive',
+            message: 'Action restarted successfully',
+        });
+
+        const routeData = $router.resolve({
+            name: ROUTES.ANALYSIS_DETAILS.name,
+            params: { id: response.actionUUID },
+        });
+        window.location.assign(routeData.href);
+    } catch (e) {
+        $q.notify({
+            type: 'negative',
+            message: 'Failed to restart action',
+        });
+    }
+};
+
 const navigateBackToActions = async (): Promise<void> => {
     const previousPath = globalThis.history.state?.back as string | undefined;
 
@@ -241,7 +310,6 @@ const navigateBackToActions = async (): Promise<void> => {
         return;
     }
 
-    // Fallback: Go to Executions tab with current action's scope
     // Fallback: Go to Executions tab with current action's scope
     await $router.push(
         action.value

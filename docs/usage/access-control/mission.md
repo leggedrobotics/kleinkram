@@ -18,4 +18,4 @@ The valid operations that can be performed on a mission are:
 
 - **Project Members**: By default, they inherit their project-level access.
 - **Sensitive Data Handling**: If this specific mission requires stricter control, you could potentially restrict access (though currently, Kleinkram's permission model is additive).
-- **Guest Access**: A visiting student needs access to *only* this mission. You can grant them `Read` access specifically to this mission without giving them access to the entire project.
+- **Guest Access**: A visiting student needs access to _only_ this mission. You can grant them `Read` access specifically to this mission without giving them access to the entire project.

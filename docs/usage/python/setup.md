@@ -47,6 +47,7 @@ In case your device does not support a browser, or if the default port **8000** 
 ```bash
 klein login --headless
 ```
+
 :::
 
 ### Choose another OAuth Provider

@@ -75,7 +75,11 @@
                                 clickable
                                 @click="
                                     () =>
-                                        router.push('action/' + props.row.uuid)
+                                        router.push({
+                                            name: ROUTES.ANALYSIS_DETAILS
+                                                .routeName,
+                                            params: { id: props.row.uuid },
+                                        })
                                 "
                             >
                                 <q-item-section>View Details</q-item-section>

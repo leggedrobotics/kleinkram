@@ -132,7 +132,7 @@ export class DockerDaemon {
             );
         }
         const repoDigests = details.RepoDigests;
-        const sha = '';
+        const sha = details.Id;
         const needsGpu = containerOptions.needs_gpu || false;
         const addGpuCapabilities = {
             DeviceRequests: [
@@ -384,17 +384,38 @@ export class DockerDaemon {
     ): ContainerLog {
         const logLevel = [...line][0]?.charCodeAt(0) ?? 0;
 
+        // Strip ANSI codes first
+        // eslint-disable-next-line no-control-regex
+        const ansiRegex =
+            /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
+        line = line.replace(ansiRegex, '');
+
         // remove all non-printable characters
+        // eslint-disable-next-line no-control-regex
         line = line.replace(/[\u0000-\u001F\u007F]/u, '');
 
         const dateStartIndex = line.indexOf('20');
-        let dateEndIndex = line.indexOf(' ', dateStartIndex);
-        dateEndIndex = dateEndIndex === -1 ? line.length : dateEndIndex;
 
-        const dateString = line.slice(dateStartIndex, dateEndIndex);
-        const timestamp = new Date(dateString).toISOString();
+        let timestamp: string;
+        let message: string;
 
-        let message = line.slice(Math.max(0, dateEndIndex));
+        if (dateStartIndex !== -1) {
+            let dateEndIndex = line.indexOf(' ', dateStartIndex);
+            dateEndIndex = dateEndIndex === -1 ? line.length : dateEndIndex;
+
+            const dateString = line.slice(dateStartIndex, dateEndIndex);
+            try {
+                timestamp = new Date(dateString).toISOString();
+            } catch {
+                timestamp = new Date().toISOString();
+            }
+
+            message = line.slice(Math.max(0, dateEndIndex));
+        } else {
+            timestamp = new Date().toISOString();
+            message = line;
+        }
+
         if (sanitizeCallback && message !== '') {
             message = sanitizeCallback(message);
         }
@@ -435,7 +456,7 @@ export class DockerDaemon {
             dockerodeLogStream.on('data', (chunk) => {
                 for (const logEntry of chunk
                     .toString()
-                    .split('\n')
+                    .split(/[\r\n]+/)
                     .filter((line) => line !== '')
                     .map((line) =>
                         DockerDaemon.parseContainerLogLine(
@@ -502,9 +523,9 @@ export class DockerDaemon {
             name: `kleinkram-artifact-uploader-${containerId}`,
             Env: [
                 `KLEINKRAM_ACTION_UUID=${containerId}`,
-                `MINIO_ENDPOINT=${environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
-                `MINIO_ACCESS_KEY=${environment.MINIO_USER}`,
-                `MINIO_SECRET_KEY=${environment.MINIO_PASSWORD}`,
+                `MINIO_ENDPOINT=${environment.MINIO_ENDPOINT === 'localhost' ? '127.0.0.1' : environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+                `MINIO_ACCESS_KEY=${environment.MINIO_ACCESS_KEY}`,
+                `MINIO_SECRET_KEY=${environment.MINIO_SECRET_KEY}`,
                 `MINIO_ARTIFACTS_BUCKET_NAME=${environment.MINIO_ARTIFACTS_BUCKET_NAME}`,
             ],
 
@@ -538,6 +559,14 @@ export class DockerDaemon {
         logger.info('Container created! Starting container...');
         await container.start();
         logger.info(`Container started with id: ${container.id}`);
+
+        // Stream logs to stdout/stderr for debugging
+        const stream = await container.logs({
+            follow: true,
+            stdout: true,
+            stderr: true,
+        });
+        container.modem.demuxStream(stream, process.stdout, process.stderr);
 
         // stop the container after max_runtime seconds
         await this.killContainerAfterMaxRuntime(

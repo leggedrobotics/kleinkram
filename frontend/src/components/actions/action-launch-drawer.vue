@@ -121,6 +121,7 @@
 <script setup lang="ts">
 import { Notify } from 'quasar';
 import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 // --- Shared Components ---
 import ComputeResourcesFieldset from 'components/actions/compute-resources-fieldset.vue';
@@ -149,6 +150,7 @@ const emits = defineEmits(['close', 'create-action']);
 
 // --- State ---
 const queryClient = useQueryClient();
+const router = useRouter();
 const _open = ref(false);
 const runtimeCommand = ref('');
 const addedMissions = ref<string[]>([]);
@@ -230,7 +232,7 @@ async function submitAnalysis(): Promise<void> {
 
     try {
         // The Composable handles the distinction between single and multi internally
-        await launchAction({
+        const result = await launchAction({
             templateUUID: props.template.uuid,
             missionUUID:
                 !hasMissionUUIDs.value && selectedMission.value
@@ -254,6 +256,13 @@ async function submitAnalysis(): Promise<void> {
         });
 
         closeDrawer();
+
+        if (!Array.isArray(result)) {
+            await router.push({
+                name: 'AnalysisDetailsPage',
+                params: { id: result.actionUUID },
+            });
+        }
     } catch (error: any) {
         Notify.create({
             message: error.message || 'Launch Failed',

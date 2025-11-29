@@ -11,7 +11,6 @@ Kleinkram is an open-source, self-hosted platform for managing and processing ro
 
 ![Landing Page](/assets/landingpage.png)
 
-
 ## Core Concepts
 
 Kleinkram organizes data in a three-level hierarchy: **Project**, **Mission**, and **File**.
@@ -27,7 +26,9 @@ Kleinkram organizes data in a three-level hierarchy: **Project**, **Mission**, a
 Kleinkram allows you to organize and search your data using metadata and tags at different levels.
 
 #### Mission Level: Metadata Tags
+
 You can add key-value pairs as metadata to missions. This allows for powerful filtering and organization.
+
 - **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" tag for every mission).
 - **Usage**: Use these tags to quickly find all missions performed by a specific robot or in a specific location.
 
@@ -38,7 +39,9 @@ The GrandTourDataset uses a Metadata Tag `Short Name` to identify the mission in
 :::
 
 #### File Level: Category Tags
+
 At the file level, you can use **Category Tags** to label specific files.
+
 - **Usage**: Tag files as `Raw Data`, `Processed`, `Calibration`, or `Validated`. This helps in distinguishing between different types of data within the same mission.
 
 ## Next Steps: Uploading Data
@@ -46,11 +49,13 @@ At the file level, you can use **Category Tags** to label specific files.
 The primary way to upload data to Kleinkram is using the **Kleinkram CLI**.
 
 1.  **Install the CLI**:
+
     ```bash
     pip install kleinkram
     ```
 
 2.  **Authenticate**:
+
     ```bash
     klein login
     ```
@@ -62,4 +67,3 @@ The primary way to upload data to Kleinkram is using the **Kleinkram CLI**.
     ```
 
 For more details on installation and usage, see the [CLI Documentation](python/cli.md).
-
