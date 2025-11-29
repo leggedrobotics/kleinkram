@@ -80,6 +80,16 @@
                     </AppInput>
 
                     <AppInput
+                        :model-value="permissionLevel"
+                        label="Permission Level"
+                        readonly
+                    >
+                        <template #prepend>
+                            <q-icon name="sym_o_lock" />
+                        </template>
+                    </AppInput>
+
+                    <AppInput
                         v-model="runtimeCommand"
                         label="Command"
                         placeholder="Use Default"
@@ -103,15 +113,20 @@
                         color="grey-7"
                         @click="closeDrawer"
                     />
-                    <q-btn
-                        unelevated
-                        class="bg-button-secondary text-on-color"
-                        label="Launch Action"
-                        icon="sym_o_rocket_launch"
-                        type="submit"
-                        :loading="isSubmitting"
-                        :disable="!canSubmit"
-                    />
+                    <div>
+                        <q-btn
+                            unelevated
+                            class="bg-button-secondary text-on-color"
+                            label="Launch Action"
+                            icon="sym_o_rocket_launch"
+                            type="submit"
+                            :loading="isSubmitting"
+                            :disable="!canSubmit"
+                        />
+                        <q-tooltip v-if="!canSubmit">
+                            Please select a mission to launch this action
+                        </q-tooltip>
+                    </div>
                 </div>
             </q-form>
         </div>
@@ -119,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { Notify } from 'quasar';
+import { Dialog, Notify } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -139,6 +154,7 @@ import { useManyMissions } from 'src/hooks/query-hooks';
 
 // --- Types ---
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import { AccessGroupRights } from '@common/enum';
 
 const props = defineProps<{
     open: boolean;
@@ -181,6 +197,11 @@ const computeStats = computed(() => ({
     gpuMemory: props.template?.gpuMemory ?? -1,
 }));
 
+const permissionLevel = computed(() => {
+    if (!props.template) return '';
+    return AccessGroupRights[props.template.accessRights];
+});
+
 // --- Watchers ---
 watch(
     () => props.open,
@@ -196,7 +217,7 @@ watch(
 watch(
     () => _open.value,
     (value) => {
-        if (!value) emits('close');
+        if (!value && props.open) emits('close');
     },
 );
 
@@ -228,6 +249,38 @@ const canSubmit = computed(() => {
 });
 
 async function submitAnalysis(): Promise<void> {
+    if (!props.template) return;
+
+    if (
+        props.template.accessRights === AccessGroupRights.WRITE ||
+        props.template.accessRights === AccessGroupRights.DELETE
+    ) {
+        const permissionName = AccessGroupRights[props.template.accessRights];
+        let detailMessage = '';
+
+        if (props.template.accessRights === AccessGroupRights.DELETE) {
+            detailMessage =
+                'DELETE permissions allow this action to delete ANY file within the project it is run in.';
+        } else if (props.template.accessRights === AccessGroupRights.WRITE) {
+            detailMessage =
+                'WRITE permissions allow this action to modify or overwrite files within the project it is run in.';
+        }
+
+        Dialog.create({
+            title: 'Confirm Action Launch',
+            message: `This action requires ${permissionName} permissions.<br/><br/>${detailMessage}<br/><br/>Are you sure you want to proceed?`,
+            html: true,
+            cancel: true,
+            persistent: true,
+        }).onOk(async () => {
+            await executeLaunch();
+        });
+    } else {
+        await executeLaunch();
+    }
+}
+
+async function executeLaunch(): Promise<void> {
     if (!props.template) return;
 
     try {
@@ -273,6 +326,5 @@ async function submitAnalysis(): Promise<void> {
 
 const createAction = (): void => {
     emits('create-action');
-    closeDrawer();
 };
 </script>
