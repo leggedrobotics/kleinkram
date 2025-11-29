@@ -43,8 +43,25 @@ def authorize():
     client_id = request.args.get("client_id")
     redirect_uri = request.args.get("redirect_uri")
     state = request.args.get("state")  # Get the state parameter
+    user_id = request.args.get("user")  # Get the user parameter for auto-login
 
-    # Pass the state parameter to the template
+    # If user parameter is provided, auto-login without showing UI
+    if user_id:
+        user = next((u for u in FAKE_USERS if u["id"] == user_id), None)
+        if not user:
+            return f"User with ID {user_id} not found. Available user IDs: 1, 2, 3", 400
+
+        # Generate auth code and redirect immediately
+        fake_auth_code = f"fake-auth-code-{user['id']}"
+        print(f"Auto-login: Generated fake auth code: {fake_auth_code} for user: {user['email']}")
+        
+        redirect_url = f"{redirect_uri}?code={fake_auth_code}"
+        if state:
+            redirect_url += f"&state={state}"
+        
+        return redirect(redirect_url)
+
+    # Pass the state parameter to the template for normal flow
     return render_template(
         "login.html", users=FAKE_USERS, redirect_uri=redirect_uri, state=state
     )

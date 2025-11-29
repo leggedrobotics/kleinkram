@@ -36,6 +36,31 @@ Some of the tests directly interact with the database in order to seed the datab
 Thus, it is important to run the tests in a separate environment to avoid data corruption in the development or
 production environment.
 
+## Automated CLI Testing
+
+For automated testing of CLI commands, you can use the fake OAuth provider with the `--user` parameter to automatically authenticate without browser interaction:
+
+```bash
+# Authenticate as admin user
+klein login --oauth-provider fake-oauth --user 1
+
+# Run your CLI commands
+klein project list
+klein file list
+
+# Test with different user permissions
+klein login --oauth-provider fake-oauth --user 2
+klein project create --name "Test Project"
+```
+
+This is particularly useful for:
+- CI/CD pipelines
+- Integration tests
+- Automated scripts
+- Testing different permission levels
+
+See the [Fake OAuth Provider](/development/getting-started#fake-oauth-provider) documentation for more details on available users.
+
 ## End-to-End Testing
 
 End-to-end testing is currently not implemented. We are planning to implement end-to-end tests in the future.

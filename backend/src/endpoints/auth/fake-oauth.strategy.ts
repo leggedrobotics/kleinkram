@@ -37,6 +37,10 @@ export class FakeOauthStrategy extends PassportStrategy(
 
     authenticate(request: e.Request, options?: any) {
         options.state = request.query['state'];
+        // Pass the user parameter to the OAuth provider for auto-login
+        if (request.query['user']) {
+            options.user = request.query['user'];
+        }
         super.authenticate(request, options);
     }
 

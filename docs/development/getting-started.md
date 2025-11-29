@@ -106,3 +106,34 @@ klein login --oauth-provider fake-oauth
 ```
 
 This provider is only available when the application is running in development mode (i.e., when the API endpoint is set to a local instance).
+
+#### Auto-Select User for Automated Testing
+
+The fake OAuth provider supports automatic user selection, which is useful for automated testing and CI/CD pipelines. You can specify a user ID to automatically log in without any browser interaction:
+
+```bash
+# Login as admin user (user 1)
+klein login --oauth-provider fake-oauth --user 1
+
+# Login as internal user (user 2)
+klein login --oauth-provider fake-oauth --user 2
+
+# Login as external user (user 3)
+klein login --oauth-provider fake-oauth --user 3
+```
+
+**Available fake users:**
+
+| User ID | Email | Role | Description |
+|---------|-------|------|-------------|
+| 1 | `admin@kleinkram.leggedrobotics.com` | Admin | Has admin access, sees all seeded projects |
+| 2 | `internal-user@kleinkram.leggedrobotics.com` | Internal User | Part of affiliation group, can create projects, sees no seeded projects |
+| 3 | `external-user@example.com` | External User | Cannot create projects, sees no projects by default |
+
+::: tip
+The `--user` parameter only works with the `fake-oauth` provider. Using it with other providers (Google, GitHub) will result in an error.
+:::
+
+::: info
+When using `--user`, the authentication happens entirely programmatically without opening a browser, making it perfect for automated scripts and testing.
+:::

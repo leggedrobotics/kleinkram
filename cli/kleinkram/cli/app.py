@@ -141,6 +141,12 @@ def login(
     ),
     key: Optional[str] = typer.Option(None, help="CLI key"),
     headless: bool = typer.Option(False),
+    user: Optional[str] = typer.Option(
+        None,
+        "--user",
+        "-u",
+        help="Auto-select user ID for fake-oauth (e.g., 1, 2, 3). Only works with fake-oauth provider.",
+    ),
 ) -> None:
 
     # logic to resolve the "auto" default
@@ -157,7 +163,13 @@ def login(
             f"Unsupported OAuth provider '{oAuthProvider}'. Supported providers: google, github, fake-oauth."
         )
 
-    login_flow(oAuthProvider=oAuthProvider, key=key, headless=headless)
+    # validate that user parameter is only used with fake-oauth
+    if user is not None and oAuthProvider != "fake-oauth":
+        raise typer.BadParameter(
+            "--user parameter can only be used with fake-oauth provider"
+        )
+
+    login_flow(oAuthProvider=oAuthProvider, key=key, headless=headless, user=user)
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
