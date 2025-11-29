@@ -14,7 +14,7 @@ export function useActionDetails(
     return useQuery({
         queryKey: computed(() => actionKeys.detail(uuid)),
         queryFn: ({ queryKey }) => {
-            const _uuid = queryKey[2] as string;
+            const _uuid = queryKey[2];
             return ActionService.getOne(_uuid);
         },
         enabled: computed(() => !!unref(uuid)),

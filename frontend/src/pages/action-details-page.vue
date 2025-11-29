@@ -95,7 +95,7 @@
                 label="Reload"
                 icon="sym_o_refresh"
                 unelevated
-                @click="() => refetch()"
+                @click="refetch"
             />
         </div>
         <div v-if="error" class="text-caption text-negative q-mt-sm">
@@ -292,8 +292,8 @@ const restartAction = async (): Promise<void> => {
             name: ROUTES.ANALYSIS_DETAILS.name,
             params: { id: response.actionUUID },
         });
-        window.location.assign(routeData.href);
-    } catch (e) {
+        globalThis.location.assign(routeData.href);
+    } catch {
         $q.notify({
             type: 'negative',
             message: 'Failed to restart action',

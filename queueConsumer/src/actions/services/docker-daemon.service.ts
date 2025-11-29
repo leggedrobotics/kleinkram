@@ -387,8 +387,8 @@ export class DockerDaemon {
         // Strip ANSI codes first
         // eslint-disable-next-line no-control-regex
         const ansiRegex =
-            /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
-        line = line.replace(ansiRegex, '');
+            /[\u001B\u009B][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
+        line = line.replaceAll(ansiRegex, '');
 
         // remove all non-printable characters
         // eslint-disable-next-line no-control-regex
@@ -399,7 +399,10 @@ export class DockerDaemon {
         let timestamp: string;
         let message: string;
 
-        if (dateStartIndex !== -1) {
+        if (dateStartIndex === -1) {
+            timestamp = new Date().toISOString();
+            message = line;
+        } else {
             let dateEndIndex = line.indexOf(' ', dateStartIndex);
             dateEndIndex = dateEndIndex === -1 ? line.length : dateEndIndex;
 
@@ -411,9 +414,6 @@ export class DockerDaemon {
             }
 
             message = line.slice(Math.max(0, dateEndIndex));
-        } else {
-            timestamp = new Date().toISOString();
-            message = line;
         }
 
         if (sanitizeCallback && message !== '') {

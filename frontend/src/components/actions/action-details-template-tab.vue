@@ -117,7 +117,7 @@ const dockerHubUrl = computed(() => {
         image.includes(':5000') ||
         image.includes('ghcr.io')
     )
-        return undefined;
+        return '';
 
     const parts = image.split('/');
     if (parts.length === 1 && parts[0]) {
@@ -128,6 +128,6 @@ const dockerHubUrl = computed(() => {
         // User image, e.g. "rslethz/kleinkram" -> https://hub.docker.com/r/rslethz/kleinkram
         return `https://hub.docker.com/r/${parts[0]}/${parts[1].split(':')[0]}`;
     }
-    return undefined;
+    return '';
 });
 </script>
