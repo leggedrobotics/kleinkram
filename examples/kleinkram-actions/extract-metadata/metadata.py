@@ -38,4 +38,7 @@ if __name__ == "__main__":
         print("Usage: python metadata.py <data_dir> <output_file>")
         sys.exit(1)
     
+    import subprocess
+    subprocess.run(["klein", "--version"])
+
     extract_metadata(sys.argv[1], sys.argv[2])

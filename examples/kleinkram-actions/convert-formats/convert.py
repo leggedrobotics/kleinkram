@@ -45,4 +45,7 @@ if __name__ == "__main__":
         print("Usage: python convert.py <data_dir> <output_dir>")
         sys.exit(1)
     
+    import subprocess
+    subprocess.run(["klein", "--version"])
+
     convert_to_csv(sys.argv[1], sys.argv[2])

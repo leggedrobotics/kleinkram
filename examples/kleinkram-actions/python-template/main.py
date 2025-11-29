@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 import kleinkram
 
 # This is a template script.
@@ -18,11 +19,13 @@ def main():
         return
 
     print(f"Starting Python Action for mission {mission_uuid}")
+    subprocess.run(["klein", "--version"])
 
     # Download data
     # The client automatically picks up authentication from environment variables
     # (KLEINKRAM_API_KEY, KLEINKRAM_API_ENDPOINT)
     print("Downloading data...")
+    os.makedirs(DATA_DIR, exist_ok=True)
     try:
         kleinkram.download(
             mission_ids=[mission_uuid],
