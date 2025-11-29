@@ -13,6 +13,7 @@ import {
     FileEventType,
     FileLocation,
     FileOrigin,
+    FileSource,
     FileState,
     FileType,
     QueueState,
@@ -134,6 +135,7 @@ class QueueService implements OnModuleInit {
         uuid: string,
         md5: string,
         actor: UserEntity,
+        source: FileSource | string = FileSource.WEB_INTERFACE,
     ): Promise<void> {
         let job = await this.queueRepository.findOne({
             where: { identifier: uuid },
@@ -187,6 +189,7 @@ class QueueService implements OnModuleInit {
 
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
+        file.hash = md5;
         await this.fileRepository.save(file);
 
         job.state = QueueState.AWAITING_PROCESSING;
@@ -206,7 +209,7 @@ class QueueService implements OnModuleInit {
                 filename: file.filename,
                 ...(job.mission?.uuid ? { missionUuid: job.mission.uuid } : {}),
                 ...(actor ? { actor } : {}),
-                details: { origin: FileOrigin.UPLOAD },
+                details: { origin: FileOrigin.UPLOAD, source },
             },
             true,
         );

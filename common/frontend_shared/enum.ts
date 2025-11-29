@@ -174,3 +174,9 @@ export enum FileEventType {
     RENAMED = 'RENAMED',
     MOVED = 'MOVED',
 }
+
+export enum FileSource {
+    ACTION = 'Action',
+    CLI = 'CLI',
+    WEB_INTERFACE = 'Web Interface',
+}

@@ -4,10 +4,15 @@ import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-respo
 import { DriveCreate } from '@common/api/types/drive-create.dto';
 import { QueueActiveDto } from '@common/api/types/queue-active.dto';
 import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
+import { FileSource } from '@common/frontend_shared/enum';
 import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import QueueService from '../../services/queue.service';
-import { BodyString, BodyUUID } from '../../validation/body-decorators';
+import {
+    BodyOptionalSource,
+    BodyString,
+    BodyUUID,
+} from '../../validation/body-decorators';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
     QueryDate,
@@ -49,9 +54,23 @@ export class QueueController {
         uuid: string,
         @BodyString('md5', 'MD5 hash to validate uncorrupted upload')
         md5: string,
+        @BodyOptionalSource(
+            'source',
+            'Source of the upload (CLI, Web Interface, etc.)',
+        )
+        source: FileSource | undefined,
         @AddUser() auth: AuthHeader,
     ): Promise<ConfirmUploadDto> {
-        await this.queueService.confirmUpload(uuid, md5, auth.user);
+        let _source = source;
+        if (!_source) {
+            _source = FileSource.WEB_INTERFACE;
+            if (auth.apikey) {
+                _source = auth.apikey.action
+                    ? FileSource.ACTION
+                    : FileSource.CLI;
+            }
+        }
+        await this.queueService.confirmUpload(uuid, md5, auth.user, _source);
         return {
             success: true,
         };

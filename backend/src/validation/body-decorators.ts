@@ -9,7 +9,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { IsUUID, validateOrReject } from 'class-validator';
 import { metadataApplier } from './metadata-applier';
-import { StringValidate, UUIDValidate } from './validation-types';
+import {
+    OptionalStringValidate,
+    SourceValidate,
+    StringValidate,
+    UUIDValidate,
+} from './validation-types';
 
 export function ApiUUIDProperty(description = 'UUID'): PropertyDecorator {
     return applyDecorators(
@@ -75,6 +80,66 @@ export const BodyString = (
             'body',
             'string',
             true,
+        ),
+    )(parameterName);
+
+export const BodyOptionalString = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
+    createParamDecorator(
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
+            const value = request.body[data];
+
+            if (value === undefined) return;
+
+            const object = plainToInstance(OptionalStringValidate, { value });
+            await validateOrReject(object).catch(() => {
+                throw new BadRequestException(
+                    undefined,
+                    'Parameter is not a valid String',
+                );
+            });
+
+            return value;
+        },
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'body',
+            'string',
+            false,
+        ),
+    )(parameterName);
+
+export const BodyOptionalSource = (
+    parameterName: string,
+    parameterDescription: string,
+) =>
+    createParamDecorator(
+        async (data: string, context: ExecutionContext) => {
+            const request = context.switchToHttp().getRequest();
+            const value = request.body[data];
+
+            if (value === undefined) return;
+
+            const object = plainToInstance(SourceValidate, { value });
+            await validateOrReject(object).catch(() => {
+                throw new BadRequestException(
+                    undefined,
+                    'Parameter is not a valid Source',
+                );
+            });
+
+            return value;
+        },
+        metadataApplier(
+            parameterName,
+            parameterDescription,
+            'body',
+            'string',
+            false,
         ),
     )(parameterName);
 

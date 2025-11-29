@@ -1,9 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import {
+    IsEnum,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    IsUUID,
+} from 'class-validator';
 import {
     IsNoValidUUID,
     IsValidFileName,
 } from '../../../backend/src/validation/property-decorator';
+import { FileSource } from '../../frontend_shared/enum';
 
 export class CreatePreSignedURLSDto {
     @IsString({ each: true })
@@ -21,4 +28,13 @@ export class CreatePreSignedURLSDto {
             'UUID of the mission for which to generate temporary access',
     })
     missionUUID!: string;
+
+    @IsEnum(FileSource)
+    @IsOptional()
+    @ApiProperty({
+        description: 'Source of the upload (CLI, Web Interface, etc.)',
+        required: false,
+        enum: FileSource,
+    })
+    source?: FileSource;
 }

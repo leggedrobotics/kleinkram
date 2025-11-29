@@ -62,6 +62,7 @@ def _confirm_file_upload(
     data = {
         "uuid": str(file_id),
         "md5": file_hash,
+        "source": "CLI",
     }
     resp = client.post(UPLOAD_CONFIRM, json=data)
     resp.raise_for_status()
@@ -96,6 +97,7 @@ def _get_upload_creditials(
     dct = {
         "filenames": [internal_filename],
         "missionUUID": str(mission_id),
+        "source": "CLI",
     }
     resp = client.post(UPLOAD_CREDS, json=dct)
     resp.raise_for_status()

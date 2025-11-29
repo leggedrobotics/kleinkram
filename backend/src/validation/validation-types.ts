@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
     ArrayNotEmpty,
     IsArray,
+    IsEnum,
     IsNotEmpty,
     IsNumber,
     IsString,
@@ -18,6 +19,18 @@ export class StringValidate {
     @IsString()
     @IsNotEmpty()
     value: any;
+}
+
+import { FileSource } from '@common/frontend_shared/enum';
+
+export class OptionalStringValidate {
+    @IsString()
+    value: any;
+}
+
+export class SourceValidate {
+    @IsEnum(FileSource)
+    value!: FileSource;
 }
 
 export class NameValidate {

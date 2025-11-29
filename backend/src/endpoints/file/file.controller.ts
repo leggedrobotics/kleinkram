@@ -56,7 +56,7 @@ import { FileEventsDto } from '@common/api/types/file/file-event.dto';
 import { FileQueryDto } from '@common/api/types/file/file-query.dto';
 import { FoxgloveLinkResponseDto } from '@common/api/types/file/foxglove-link-response.dto';
 import FileEntity from '@common/entities/file/file.entity';
-import { HealthStatus } from '@common/frontend_shared/enum';
+import { FileSource, HealthStatus } from '@common/frontend_shared/enum';
 import { FoxgloveService } from '../../services/foxglove.service';
 
 @Controller(['files'])
@@ -307,9 +307,14 @@ export class FileController {
         @AddUser() auth: AuthHeader,
         @Body() body: CreatePreSignedURLSDto,
     ): Promise<TemporaryFileAccessesDto> {
-        let source = 'Web Interface';
-        if (auth.apikey) {
-            source = auth.apikey.action ? 'Action' : 'CLI';
+        let source = body.source;
+        if (!source) {
+            source = FileSource.WEB_INTERFACE;
+            if (auth.apikey) {
+                source = auth.apikey.action
+                    ? FileSource.ACTION
+                    : FileSource.CLI;
+            }
         }
         return await this.fileService.getTemporaryAccess(
             body.filenames,
