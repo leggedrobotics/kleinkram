@@ -7,7 +7,7 @@ For instructions on how to set up the python environment, see the [User Guide](.
 
 ## Usage
 
-If you wish to use the CLI follow the [Getting Started](../../usage/python/getting-started.md) guide.
+If you wish to use the CLI follow the [Getting Started](../../usage/python/cli.md) guide.
 
 ## Development Setup
 

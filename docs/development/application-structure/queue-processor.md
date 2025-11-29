@@ -3,7 +3,7 @@
 The Queue Processor is a NodeJS application. It reads from the Redis queue and processes the tasks. The tasks are
 scheduled by the API. The queue processor is a separate service that processes jobs from the queue. It is implemented in TypeScript and uses the `bullmq` library.
 
-For more information see the [QueingService Documentation](./queuingService/README.md)
+
 
 The Queue Processor also uses NestJS & TypeORM. But with `@nestjs/bull` for Queuing. The Documentation can be
 found [here](https://docs.nestjs.com/techniques/queues).
