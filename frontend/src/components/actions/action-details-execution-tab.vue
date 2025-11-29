@@ -116,7 +116,12 @@
 
             <!-- Artifacts -->
             <div class="col-12">
-                <div class="text-subtitle2 q-mb-sm">Artifact Files</div>
+                <div class="text-subtitle2 q-mb-sm">
+                    Artifact Files
+                    <span class="text-caption text-grey-6 q-ml-sm">
+                        (Artifacts are stored for 3 months)
+                    </span>
+                </div>
                 <div class="row items-center q-gutter-x-md">
                     <q-btn
                         v-if="action.artifacts === ArtifactState.UPLOADED"
@@ -128,9 +133,6 @@
                     />
                     <div v-else class="text-grey-7">
                         {{ artifactStateText }}
-                    </div>
-                    <div class="text-caption text-grey-6">
-                        Artifacts are stored for 3 months.
                     </div>
                 </div>
             </div>
@@ -159,6 +161,10 @@ const runtimeString = computed(() => {
 });
 
 const artifactStateText = computed(() => {
+    if (props.action.state === ActionState.UNPROCESSABLE) {
+        return 'Action was unprocessable. No artifacts were generated.';
+    }
+
     switch (props.action.artifacts) {
         case ArtifactState.UPLOADING: {
             return 'Uploading...';
