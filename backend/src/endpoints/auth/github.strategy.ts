@@ -12,8 +12,8 @@ import { AuthFlowException } from '../../types/auth-flow-exception';
 export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
     constructor(private authService: AuthService) {
         super({
-            clientID: env.GITHUB_CLIENT_ID,
-            clientSecret: env.GITHUB_CLIENT_SECRET,
+            clientID: env.GITHUB_CLIENT_ID || 'dummy',
+            clientSecret: env.GITHUB_CLIENT_SECRET || 'dummy',
             callbackURL: `${env.ENDPOINT}/auth/github/callback`,
             scope: ['user:email', 'user:profile'],
         });

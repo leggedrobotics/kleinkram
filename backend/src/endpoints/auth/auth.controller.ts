@@ -1,6 +1,7 @@
 import UserEntity from '@common/entities/user/user.entity';
 import env from '@common/environment';
 import { CookieNames, Providers } from '@common/frontend_shared/enum';
+import { AvailableProvidersDto } from '@common/api/types/available-providers.dto';
 import {
     Controller,
     Get,
@@ -25,7 +26,17 @@ export class AuthController {
         private authService: AuthService,
         private readonly jwtService: JwtService,
         private userService: UserService,
-    ) {}
+    ) { }
+
+    @Get('available-providers')
+    @OutputDto(null)
+    getAvailableProviders(): AvailableProvidersDto {
+        return {
+            google: !!env.GOOGLE_CLIENT_ID && !!env.GOOGLE_CLIENT_SECRET,
+            github: !!env.GITHUB_CLIENT_ID && !!env.GITHUB_CLIENT_SECRET,
+            fakeOauth: env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT,
+        };
+    }
 
     @Get('github')
     @UseGuards(AuthGuard('github'))

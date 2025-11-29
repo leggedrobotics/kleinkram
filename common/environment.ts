@@ -46,6 +46,19 @@ function asBoolean(value: string | undefined): boolean {
     return stringVariable === 'true';
 }
 
+/**
+ * Returns environment variable as string or undefined if not set
+ *
+ * @param value - extracted environment variable
+ * @returns environment variable as string or undefined
+ */
+function asOptionalString(value: string | undefined): string | undefined {
+    if (value === undefined || value === '') {
+        return undefined;
+    }
+    return value;
+}
+
 export default {
     /**
      * @returns database name
@@ -138,19 +151,19 @@ export default {
         return asString(process.env['MINIO_PASSWORD']);
     },
 
-    get GOOGLE_CLIENT_ID(): string {
-        return asString(process.env['GOOGLE_CLIENT_ID']);
+    get GOOGLE_CLIENT_ID(): string | undefined {
+        return asOptionalString(process.env['GOOGLE_CLIENT_ID']);
     },
-    get GOOGLE_CLIENT_SECRET(): string {
-        return asString(process.env['GOOGLE_CLIENT_SECRET']);
-    },
-
-    get GITHUB_CLIENT_ID(): string {
-        return asString(process.env['GITHUB_CLIENT_ID']);
+    get GOOGLE_CLIENT_SECRET(): string | undefined {
+        return asOptionalString(process.env['GOOGLE_CLIENT_SECRET']);
     },
 
-    get GITHUB_CLIENT_SECRET(): string {
-        return asString(process.env['GITHUB_CLIENT_SECRET']);
+    get GITHUB_CLIENT_ID(): string | undefined {
+        return asOptionalString(process.env['GITHUB_CLIENT_ID']);
+    },
+
+    get GITHUB_CLIENT_SECRET(): string | undefined {
+        return asOptionalString(process.env['GITHUB_CLIENT_SECRET']);
     },
 
     get JWT_SECRET(): string {

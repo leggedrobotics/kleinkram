@@ -12,8 +12,8 @@ import { AuthFlowException } from '../../types/auth-flow-exception';
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     constructor(private authService: AuthService) {
         super({
-            clientID: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
+            clientID: env.GOOGLE_CLIENT_ID || 'dummy',
+            clientSecret: env.GOOGLE_CLIENT_SECRET || 'dummy',
             callbackURL: `${env.ENDPOINT}/auth/google/callback`,
             scope: ['email', 'profile'],
         });
