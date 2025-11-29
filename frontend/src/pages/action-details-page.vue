@@ -93,7 +93,7 @@
                 label="Reload"
                 icon="sym_o_refresh"
                 unelevated
-                @click="(_event: Event) => refetch()"
+                @click="handleRefetch"
             />
         </div>
         <div v-if="error" class="text-caption text-negative q-mt-sm">
@@ -285,6 +285,10 @@ const {
     error,
     refetch,
 } = useActionDetails(computed(() => $route.params.id as string));
+
+const handleRefetch = () => {
+    void refetch();
+};
 
 const logsLimit = ref(10);
 const { data: logs } = useActionLogs(
