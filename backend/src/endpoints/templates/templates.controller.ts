@@ -83,6 +83,7 @@ export class TemplatesController {
     }
 
     @Get(':uuid/revisions')
+    @LoggedIn()
     @ApiOperation({ summary: 'Get history/revisions of a template' })
     @ApiOkResponse({ type: ActionTemplatesDto })
     async findTemplateRevisions(
