@@ -1,7 +1,7 @@
 # Queue Processor
 
 The Queue Processor is a NodeJS application. It reads from the Redis queue and processes the tasks. The tasks are
-scheduled by the API. The QueingService is responsible for offloading heavy processing from the API.
+scheduled by the API. The queue processor is a separate service that processes jobs from the queue. It is implemented in TypeScript and uses the `bullmq` library.
 
 For more information see the [QueingService Documentation](./queuingService/README.md)
 

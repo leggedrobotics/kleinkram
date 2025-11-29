@@ -17,7 +17,7 @@ export default withMermaid({
             { rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined' },
         ],
     ],
-    ignoreDeadLinks: true,
+    ignoreDeadLinks: false,
     themeConfig: {
         nav: [
             {
@@ -33,248 +33,200 @@ export default withMermaid({
         sidebar: {
             '/usage/': [
                 {
-                    text: 'Introduction',
+                    text: 'Introduction for Users',
                     items: [
                         {
-                            text: 'Getting Started',
+                            text: 'How to Use Kleinkram?',
                             link: '/usage/getting-started.md',
+                        },
+                        {
+                            text: 'FAQ',
+                            link: '/usage/faq.md',
                         },
                     ],
                     collapsed: false,
                 },
-
                 {
-                    text: 'Kleinkram Actions',
+                    text: 'CLI & Python',
                     items: [
                         {
-                            text: 'Getting Started',
-                            link: '/usage/actions/getting-started.md',
+                            text: 'Setup & Installation',
+                            link: '/usage/python/setup.md',
                         },
                         {
-                            text: 'Write Custom Actions',
-                            link: '/usage/actions/write-custom-actions.md',
+                            text: 'CLI Reference',
+                            link: '/usage/python/cli.md',
+                        },
+                        {
+                            text: 'Python SDK Reference',
+                            link: '/usage/python/sdk.md',
                         },
                     ],
-                    collapsed: true,
+                    collapsed: false,
                 },
                 {
-                    text: 'Access Control',
-                    collapsed: true,
+                    text: 'Data Organization',
                     items: [
                         {
-                            text: 'Concepts',
-                            link: '/usage/access-control/base-concepts',
-
-                        },
-                        {
-                            text: 'Project',
-                            link: '/usage/access-control/project',
-                        },
-                        {
-                            text: 'Mission',
-                            link: '/usage/access-control/mission',
-                        },
-                        {
-                            text: 'File',
-                            link: '/usage/access-control/file',
-                        },
-                        {
-                            text: 'Action',
-                            link: '/usage/access-control/action',
-                        },
-                        {
-                            text: 'Access Group',
-                            link: '/usage/access-control/access-group',
-                        },
-                        {
-                            text: 'Example',
-                            link: '/usage/access-control/example',
-                        },
-                    ],
-
-                },
-
-                {
-                    text: 'Kleinkram CLI & Python Package',
-                    items: [
-                        {
-                            text: 'Getting Started',
-                            link: '/usage/python/getting-started.md',
-                        },
-                    ],
-                    collapsed: true,
-                },
-                {
-                    text: 'Files',
-                    items: [
-                        {
-                            text: 'Getting Started',
+                            text: 'File Formats',
                             link: '/usage/files/files',
                         },
+                        {
+                            text: 'Access Control',
+                            link: '/usage/access-control/base-concepts',
+                            items: [
+                                { text: 'Project Level', link: '/usage/access-control/project' },
+                                { text: 'Mission Level', link: '/usage/access-control/mission' },
+                                { text: 'File Level', link: '/usage/access-control/file' },
+                                { text: 'Action Level', link: '/usage/access-control/action' },
+                                { text: 'Access Groups', link: '/usage/access-control/access-group' },
+                            ],
+                            collapsed: true,
+                        },
                     ],
+                    collapsed: false,
                 },
-
+                {
+                    text: 'Actions & Automation',
+                    items: [
+                        {
+                            text: 'Using Actions',
+                            link: '/usage/actions/usage.md',
+                        },
+                        {
+                            text: 'Developing Actions',
+                            link: '/usage/actions/developing.md',
+                        },
+                    ],
+                    collapsed: false,
+                },
             ],
             '/development/': [
                 {
-                    text: 'Introduction',
+                    text: 'Introduction for Devs',
                     items: [
                         {
-                            text: 'Getting Started',
+                            text: 'Try Kleinkram Locally',
+                            link: '/development/try-locally.md',
+                        },
+                        {
+                            text: 'How to Use Kleinkram?',
+                            link: '/usage/getting-started.md',
+                        },
+                        {
+                            text: 'Start Development',
                             link: '/development/getting-started.md',
                         },
                     ],
-                    collapsed: true,
+                    collapsed: false,
                 },
                 {
-                    text: 'Application Structure',
+                    text: 'System Architecture',
                     items: [
-
                         {
                             text: 'Overview',
                             link: '/development/application-structure',
                         },
-
                         {
                             text: 'Core Services',
                             items: [
-
-
                                 {
                                     text: 'frontend',
                                     link: '/development/application-structure/frontend',
                                 },
-
                                 {
                                     text: 'api-server',
                                     link: '/development/application-structure/api-server',
                                 },
-
                                 {
                                     text: 'queue-processor',
                                     link: '/development/application-structure/queue-processor',
                                 },
-
                             ],
                             collapsed: true,
                         },
-
                         {
-                            text: 'Databases and File Storage',
+                            text: 'Databases & Storage',
                             items: [
-
                                 {
                                     text: 'minio',
                                     link: '/development/application-structure/minio',
                                 },
-
                                 {
                                     text: 'postgres',
                                     link: '/development/application-structure/postgres',
                                 },
-
                                 {
                                     text: 'redis',
                                     link: '/development/application-structure/redis',
                                 },
-
                                 {
                                     text: 'prometheus',
                                     link: '/development/application-structure/prometheus',
                                 },
-
                             ],
                             collapsed: true,
                         },
-
-
                         {
-                            text: 'Logging and Monitoring',
+                            text: 'Logging & Monitoring',
                             items: [
-
                                 {
                                     text: 'grafana',
                                     link: '/development/application-structure/grafana',
                                 },
-
                                 {
                                     text: 'tempo',
                                     link: '/development/application-structure/tempo',
                                 },
-
                                 {
                                     text: 'loki',
                                     link: '/development/application-structure/loki',
                                 },
-
                             ],
                             collapsed: true,
                         },
-
                         {
-                            text: 'Documentation',
-                            link: '/development/application-structure/docs',
-                        },
-
-                    ],
-                    collapsed: true,
-                },
-
-                {
-                    text: 'Access Control',
-                    items: [
-                        {
-                            text: 'Base Concepts',
-                            link: '/development/access-control/base-concepts',
-                        },
-                        {
-                            text: 'Implementation',
-                            link: '/development/access-control/implementation',
+                            text: 'Access Control',
                             items: [
                                 {
-                                    text: 'Access Filtering',
-                                    link: '/development/access-control/addAccessConstraints',
+                                    text: 'Base Concepts',
+                                    link: '/development/access-control/base-concepts',
+                                },
+                                {
+                                    text: 'Implementation',
+                                    link: '/development/access-control/implementation',
                                 },
                             ],
+                            collapsed: true,
                         },
                     ],
                     collapsed: true,
                 },
                 {
-                    text: 'API, CLI & Python Package',
+                    text: 'Details',
                     items: [
                         {
-                            text: 'Developing the API',
+                            text: 'API Development',
                             link: '/development/api/Introduction',
                         },
                         {
-                            text: 'Developing the CLI and Python Package',
+                            text: 'CLI & Python SDK',
                             link: '/development/python/getting-started.md',
                         },
-                    ],
-                },
-                {
-                    text: 'Migrations',
-                    items: [
                         {
-                            text: 'Running Migrations',
+                            text: 'Database Migrations',
                             link: '/development/migrations/Readme',
                         },
-                    ],
-                },
-                {
-                    text: 'Testing',
-                    items: [
-
                         {
-                            text: 'Run Testsuite',
+                            text: 'Testing',
                             link: '/development/testing/getting-started.md',
                         },
+                        {
+                            text: 'Cronjobs',
+                            link: '/development/cron/CronJobs',
+                        },
                     ],
-                },
-                {
-                    text: 'Cronjobs',
-                    link: '/development/cron/CronJobs',
+                    collapsed: true,
                 },
 
             ],
@@ -298,8 +250,8 @@ export default withMermaid({
         },
 
         footer: {
-            message: 'Released under the MIT License.<br /><a href="https://datasets.leggedrobotics.com/">datasets.leggedrobotics.com</a>',
-            copyright: 'Copyright © 2024-present Robotic Systems Lab',
+            message: 'Released under the MIT License.',
+            copyright: 'Copyright © 2025 - Robotic Systems Lab',
         },
     },
 });

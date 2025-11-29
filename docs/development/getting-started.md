@@ -17,31 +17,7 @@ system:
 To enable code completion and linting in your IDE, you may also need a NodeJS, yarn, and python installation.
 :::
 
-## Run the Project Locally
 
-1. Clone the repository
-
-```bash
-git clone git@github.com:leggedrobotics/kleinkram.git
-cd kleinkram
-```
-
-2. Run the following command to start the development server
-
-```bash
-docker compose up --build
-```
-
-3. You can now open the projects frontend at [http://localhost:8003](http://localhost:8003).
-
-::: info
-The `--build` flag is used to re-build the docker images before starting the development server. See [official docker docs](https://docs.docker.com/reference/cli/docker/compose/up/#options).
-:::
-
-::: tip
-A full overview of the project structure can be found in the [Application Structure](./application-structure.md)
-documentation.
-:::
 
 ## Getting Started with Development
 
@@ -64,9 +40,9 @@ In principle the setup works similar to running the project locally, however, th
   :::
 
 3. You can now open the projects:
-    - frontend at [http://localhost:8003](http://localhost:8003).
-    - minio console at [http://localhost:9001](http://localhost:9001).
-    - documentation at [http://localhost:4000](http://localhost:4000).
+    - frontend at `http://localhost:8003`.
+    - minio console at `http://localhost:9001`.
+    - documentation at `http://localhost:4000`.
 
     ::: warning
     There are some known issues with Safari while developing locally. Please use Chrome or Firefox instead.
@@ -110,6 +86,25 @@ docker compose down --volumes
 # enable seeding by changing SEED in the .env file to true
 sed -i 's/SEED=false/SEED=true/' .env
 
+```bash
 # This will seed the database with mock data
 docker compose up --build --watch
 ```
+
+### Configuration
+
+The application can be configured using environment variables.
+
+- `VITE_DOCKER_HUB_NAMESPACE`: This variable restricts which Docker Hub namespaces can be used for actions. If set, only images starting with this namespace (e.g., `my-org/`) will be allowed. If left empty, any image can be used. This is important for security in production environments.
+
+### Fake OAuth Provider
+
+For development purposes, Kleinkram includes a `fake-oauth` provider. This allows you to log in without setting up a real OAuth application with Google or GitHub.
+
+To use it with the CLI:
+
+```bash
+klein login --oauth-provider fake-oauth
+```
+
+This provider is only available when the application is running in development mode (i.e., when the API endpoint is set to a local instance).

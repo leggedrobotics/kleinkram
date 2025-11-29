@@ -1,0 +1,35 @@
+yarn run v1.22.22
+$ vitepress build
+
+  vitepress v1.6.4
+
+- building client + server bundles...
+
+
+(!) Found dead link ./queuingService/README in file development/application-structure/queue-processor.md
+(!) Found dead link http://localhost:8003 in file development/getting-started.md
+(!) Found dead link http://localhost:9001 in file development/getting-started.md
+(!) Found dead link http://localhost:4000 in file development/getting-started.md
+(!) Found dead link ./../../usage/python/getting-started in file development/python/getting-started.md
+(!) Found dead link http://localhost:8003 in file development/try-locally.md
+(!) Found dead link /usage/python/getting-started in file usage/actions/developing.md
+(!) Found dead link ./../development/getting-started in file usage/actions/developing.md
+(!) Found dead link ./getting-started in file usage/python/cli.md
+(!) Found dead link ./package in file usage/python/setup.md
+
+If this is expected, you can disable this check via config. Refer: https://vitepress.dev/reference/site-config#ignoredeadlinks
+
+x Build failed in 8.24s
+[31m✖[0m building client + server bundles...
+build error:
+[vitepress] 10 dead link(s) found.
+[vitepress] 10 dead link(s) found.
+    at Object.renderStart (file:///projects/kleinkram/docs/node_modules/vitepress/dist/node/chunk-D3CUZ4fa.js:45027:15)
+    at file:///projects/kleinkram/docs/node_modules/rollup/dist/es/shared/node-entry.js:21840:40
+    at async Promise.all (index 0)
+    at async PluginDriver.hookParallel (file:///projects/kleinkram/docs/node_modules/rollup/dist/es/shared/node-entry.js:21768:9)
+    at async Bundle.generate (file:///projects/kleinkram/docs/node_modules/rollup/dist/es/shared/node-entry.js:20100:13)
+    at async file:///projects/kleinkram/docs/node_modules/rollup/dist/es/shared/node-entry.js:22810:27
+    at async catchUnfinishedHookActions (file:///projects/kleinkram/docs/node_modules/rollup/dist/es/shared/node-entry.js:22192:16)
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.

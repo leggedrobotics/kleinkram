@@ -1,4 +1,4 @@
-# Getting Started with the Kleinkram CLI and Python Package
+# Python Setup
 
 The `kleinkram` CLI allows you to interact with kleinkram from the command line. This guide will help you get started
 with the CLI. The CLI does not yet support all functionalities so for some use cases you will still need to use the web
@@ -6,10 +6,13 @@ interface.
 
 ## Installation and Prerequisites
 
-The CLI requires python3.8 or later. It is recommended that you use a virtual environment
+The CLI requires **Python 3.8 or later**. We recommend using the latest available Python version.
+
+It is best practice to use a virtual environment:
 
 ```bash
-virtualenv .venv -ppython3.8
+# Create a virtual environment using your default python version
+virtualenv .venv
 source .venv/bin/activate
 ```
 
@@ -39,25 +42,25 @@ klein login
 If the above does not work, consider one of the following options:
 
 ::: details Headless Authentication
-In case your device does not support a browser you can use:
+In case your device does not support a browser, or if the default port **8000** is already in use, you can use:
 
-```
+```bash
 klein login --headless
 ```
-
 :::
 
-::: details Choose another OAuth Provider
-By default the CLI uses Google as OAuth provider. If you want to use another provider you can use:
+### Choose another OAuth Provider
 
+By default the CLI uses Google as OAuth provider. If you want to use another provider (e.g. GitHub) you can use:
+
+```bash
+klein login --oauth-provider github
 ```
-klein login --oauth-provider <provider>
-```
 
-Where `<provider>` is one of `google`, `github`, or `fake-oauth`. Where the `fake-oauth` provider is only available on
-development instances of kleinkram. By default the `google` provider is used. If the endpoint is set to `locale`,
-i.e. to a dev version, the default provider is `fake-oauth`.
+Supported providers are `google` and `github`.
 
+::: info Development Providers
+For development purposes, a `fake-oauth` provider is available. See the [Developer Guide](../../development/getting-started.md#fake-oauth-provider) for more details.
 :::
 
 ::: details Authentication inside Actions
@@ -73,4 +76,4 @@ klein login --key $APIKEY
 ## Next Steps
 
 - [using the CLI](./cli.md)
-- [using the python package](./package.md)
+- For using the python package in your scripts, see the [Python SDK Reference](./sdk.md).

@@ -6,34 +6,38 @@ titleTemplate: A structured bag and mcap storage solution
 
 hero:
     name: Kleinkram
-    text: Robotic Systems Lab
-    tagline: A structured bag and mcap storage solution
+    text: Open Robotic Data Management
+    tagline: Kleinkram is a self-hosted, open-source platform for managing and processing robotics data.
     actions:
         - theme: brand
-          text: For Users
-          link: /usage/getting-started.md
-        - theme: brand
-          text: For Developers
-          link: /development/getting-started.md
+          text: Get Started
+          link: /usage/getting-started
         - theme: alt
-          text: View on GitHub
-          link: http://github.com/leggedrobotics/kleinkram
+          text: Use Actions
+          link: /usage/actions/usage
+        - theme: alt
+          text: Try Locally
+          link: /development/try-locally
 
 features:
-    - title: Get Started
-      icon: 🚀
-      details: Get Started by visiting datasets.leggedrobotics.com.
-      link: https://datasets.leggedrobotics.com/
-    - title: Write Custom Actions?
-      icon: 📝
-      details: Custom actions can be used for data processing, click here for more information.
-      link: /usage/actions/getting-started.md
-    - title: How to Use the CLI?
-      icon: 💻
-      details: We offer a python CLI to interact with the application, click here for more information.
-      link: /usage/python/getting-started.md
-    - title: Want to Contribute?
-      icon: 🤝
-      details: Information on how to start the project locally can be found in the developer documentation.
-      link: /development/getting-started.md
+    - title: Structured Storage
+      icon: 🗂️
+      details: Organize your robotics data into Projects and Missions with strict hierarchy and access control.
+      link: /usage/getting-started.md
+    - title: Powerful Actions
+      icon: ⚡
+      details: Validate, convert, and process your data using Docker-based actions.
+      link: /usage/actions/usage.md
+    - title: CLI & Python SDK
+      icon: 🐍
+      details: Automate your workflows and integrate seamlessly with our robust Python SDK and CLI.
+      link: /usage/python/setup.md
+    - title: MCAP Support
+      icon: 📦
+      details: First-class support for MCAP, alongside most common file types used in robotics including.
+      link: /usage/files/files.md
 ---
+
+::: tip Kleinkram is Self-Hosted
+Kleinkram is designed to be self-hosted within your lab or company infrastructure. These documentation pages are intended for users of an **existing deployment**. If you are an administrator looking to set up a new Kleinkram instance, please refer to the [Developer & Deployment Guide](/development/getting-started). If you want to try Kleinkram out locally on your machine, please refer to the [Try Locally](/development/try-locally) section.
+:::
