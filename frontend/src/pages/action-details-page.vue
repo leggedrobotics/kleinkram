@@ -22,11 +22,9 @@
                     name="logs"
                     label="Logs"
                     style="color: #222"
-                    :disable="!action?.logs || action?.logs.length === 0"
+                    :disable="!logs?.data || logs?.data.length === 0"
                 >
-                    <q-tooltip
-                        v-if="!action?.logs || action?.logs.length === 0"
-                    >
+                    <q-tooltip v-if="!logs?.data || logs?.data.length === 0">
                         <span>No logs available</span>
                     </q-tooltip>
                 </q-tab>
@@ -135,8 +133,8 @@
             >
                 <q-card-section class="flex column q-pa-none">
                     <div
-                        v-for="log in action?.logs"
-                        :key="log.timestamp.toISOString()"
+                        v-for="log in logs?.data"
+                        :key="log.timestamp"
                         class="flex justify-start q-pb-xs"
                         style="
                             font-family: monospace;
@@ -193,6 +191,19 @@
                         </template>
                     </div>
                 </q-card-section>
+                <q-card-actions align="center">
+                    <div v-if="logs?.count" class="text-caption q-mr-md">
+                        Showing {{ logs.data.length }} of {{ logs.count }} log
+                        lines
+                    </div>
+                    <q-btn
+                        v-if="(logs?.count || 0) > (logs?.data.length || 0)"
+                        flat
+                        label="Load More"
+                        color="primary"
+                        @click="loadMoreLogs"
+                    />
+                </q-card-actions>
             </q-card>
         </q-tab-panel>
 
@@ -242,7 +253,10 @@ import ButtonGroup from 'components/buttons/button-group.vue';
 import TitleSection from 'components/title-section.vue';
 import { useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
-import { useActionDetails } from 'src/composables/use-actions-queries';
+import {
+    useActionDetails,
+    useActionLogs,
+} from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
 import { computed, ref } from 'vue';
@@ -261,6 +275,17 @@ const {
     error,
     refetch,
 } = useActionDetails(computed(() => $route.params.id as string));
+
+const logsLimit = ref(10);
+const { data: logs } = useActionLogs(
+    computed(() => $route.params.id as string),
+    0,
+    logsLimit,
+);
+
+const loadMoreLogs = () => {
+    logsLimit.value += 100;
+};
 
 const openMission = async (): Promise<void> => {
     if (action.value === undefined) return;

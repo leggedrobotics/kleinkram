@@ -1,5 +1,7 @@
+import { ActionLogsDto } from '@common/api/types/actions/action-logs.dto';
 import { ActionDto } from '@common/api/types/actions/action.dto';
 import { ActionsDto } from '@common/api/types/actions/actions.dto';
+import { PaginatedQueryDto } from '@common/api/types/pagination';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -173,6 +175,27 @@ export class ActionService {
         }
 
         return dto;
+    }
+
+    async getLogs(
+        actionUuid: string,
+        query: PaginatedQueryDto,
+    ): Promise<ActionLogsDto> {
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: actionUuid },
+            select: ['logs'],
+        });
+
+        const logs = action.logs ?? [];
+        const count = logs.length;
+        const data = logs.slice(query.skip, query.skip + query.take);
+
+        return {
+            count,
+            skip: query.skip,
+            take: query.take,
+            data,
+        };
     }
 
     async delete(actionUUID: string): Promise<boolean> {

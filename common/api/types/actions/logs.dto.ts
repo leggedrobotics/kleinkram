@@ -4,7 +4,7 @@ import { IsEnum, IsString } from 'class-validator';
 export class LogsDto {
     @ApiProperty()
     @IsString()
-    timestamp!: Date;
+    timestamp!: string;
 
     @ApiProperty()
     @IsString()

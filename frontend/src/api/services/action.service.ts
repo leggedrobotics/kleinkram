@@ -1,3 +1,4 @@
+import { ActionLogsDto } from '@api/types/actions/action-logs.dto';
 import { ActionTemplateAvailabilityDto } from '@api/types/actions/action-template-availability.dto';
 import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
 import { ActionTemplatesDto } from '@api/types/actions/action-templates.dto';
@@ -111,5 +112,15 @@ export const ActionService = {
 
     async deleteTemplate(uuid: string): Promise<void> {
         await axios.delete(`/templates/${uuid}`);
+    },
+
+    async getLogs(uuid: string, skip = 0, take = 100): Promise<ActionLogsDto> {
+        const { data } = await axios.get<ActionLogsDto>(
+            `/actions/${uuid}/logs`,
+            {
+                params: { skip, take },
+            },
+        );
+        return data;
     },
 };

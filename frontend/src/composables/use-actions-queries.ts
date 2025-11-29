@@ -1,3 +1,4 @@
+import { ActionLogsDto } from '@api/types/actions/action-logs.dto';
 import { ActionTemplatesDto } from '@api/types/actions/action-templates.dto';
 import { ActionDto } from '@api/types/actions/action.dto';
 import { ActionsDto } from '@api/types/actions/actions.dto';
@@ -74,4 +75,22 @@ export function useRunningActions(): UseQueryReturnType<ActionsDto, Error> {
         error,
         isFetched,
     } as UseQueryReturnType<ActionsDto, Error>;
+}
+
+export function useActionLogs(
+    uuid: MaybeRef<string>,
+    skip: MaybeRef<number> = 0,
+    take: MaybeRef<number> = 1000,
+): UseQueryReturnType<ActionLogsDto, Error> {
+    return useQuery({
+        queryKey: computed(() => [
+            ...actionKeys.detail(unref(uuid)),
+            'logs',
+            String(unref(skip)),
+            String(unref(take)),
+        ]),
+        queryFn: () =>
+            ActionService.getLogs(unref(uuid), unref(skip), unref(take)),
+        enabled: computed(() => !!unref(uuid)),
+    });
 }

@@ -11,7 +11,6 @@ import { ActionWorkerDto } from '../../../api/types/action-workers.dto';
 import { ActionTemplateDto } from '../../../api/types/actions/action-template.dto';
 import { AuditLogDto } from '../../../api/types/actions/audit-log.dto';
 import { DockerImageDto } from '../../../api/types/actions/docker-image.dto';
-import { LogsDto } from '../../../api/types/actions/logs.dto';
 import { MissionDto } from '../../../api/types/mission/mission.dto';
 import { UserDto } from '../../../api/types/user/user.dto';
 import { ActionState, ArtifactState } from '../../../frontend_shared/enum';
@@ -50,11 +49,6 @@ export class ActionDto {
     @ValidateNested({ each: true })
     @Type(() => AuditLogDto)
     auditLogs!: AuditLogDto[];
-
-    @ApiProperty()
-    @ValidateNested({ each: true })
-    @Type(() => LogsDto)
-    logs?: LogsDto[];
 
     @ApiProperty()
     @IsString()

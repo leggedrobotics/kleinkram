@@ -1,5 +1,7 @@
+import { ActionLogsDto } from '@common/api/types/actions/action-logs.dto';
 import { ActionDto } from '@common/api/types/actions/action.dto';
 import { ActionsDto } from '@common/api/types/actions/actions.dto';
+import { PaginatedQueryDto } from '@common/api/types/pagination';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -63,6 +65,17 @@ export class ActionsController {
     @ApiOkResponse({ type: ActionDto })
     async findOne(@ParameterUuid('uuid') uuid: string): Promise<ActionDto> {
         return this.actionService.details(uuid);
+    }
+
+    @Get(':uuid/logs')
+    @LoggedIn()
+    @ApiOperation({ summary: 'Get action logs' })
+    @ApiOkResponse({ type: ActionLogsDto })
+    async getLogs(
+        @ParameterUuid('uuid') uuid: string,
+        @Query() query: PaginatedQueryDto,
+    ): Promise<ActionLogsDto> {
+        return this.actionService.getLogs(uuid, query);
     }
 
     @Delete(':uuid')
