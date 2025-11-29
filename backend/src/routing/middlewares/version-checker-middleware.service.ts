@@ -12,7 +12,7 @@ import logger from '../../logger';
  * - `x.y.z`: Block an exact version match.
  *
  */
-const FORBIDDEN_RANGES = ['<0.55.1'];
+const FORBIDDEN_RANGES = ['<0.56.0'];
 
 /**
  * Enforces client version compatibility by inspecting the request headers.
