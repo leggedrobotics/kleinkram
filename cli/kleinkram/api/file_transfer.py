@@ -408,6 +408,7 @@ def download_file(
 
     observed_hash = b64_md5(path)
     if file.hash is not None and observed_hash != file.hash:
+        print(f"HASH MISMATCH: {path} expected={file.hash} observed={observed_hash}", file=sys.stderr)
         # Download completed but hash failed
         return (
             DownloadState.DOWNLOADED_INVALID_HASH,
