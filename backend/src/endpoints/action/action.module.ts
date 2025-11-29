@@ -11,6 +11,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActionService } from '../../services/action.service';
 import { ActionGuardService } from '../auth/action-guard.service';
+import { FileModule } from '../file/file.module';
 import { QueueModule } from '../queue/queue.module';
 import { ActionsController } from './action.controller';
 
@@ -27,7 +28,9 @@ import { ActionsController } from './action.controller';
         ]),
         QueueModule,
         StorageModule,
+        StorageModule,
         ActionDispatcherModule,
+        FileModule,
     ],
     providers: [ActionService, ActionGuardService],
     exports: [ActionService],

@@ -301,7 +301,7 @@ export const createActionUsingPost = async (
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const response = await fetch(`${DEFAULT_URL}/action/createTemplate`, {
+    const response = await fetch(`${DEFAULT_URL}/templates`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify(action),

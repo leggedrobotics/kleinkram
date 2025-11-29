@@ -205,6 +205,7 @@ export class FileController {
             expires,
             preview_only,
             auth.user,
+            auth.apikey?.action,
         );
     }
 
@@ -229,7 +230,12 @@ export class FileController {
         @Body() dto: UpdateFile,
         @AddUser() auth: AuthHeader,
     ): Promise<FileEntity | null> {
-        return this.fileService.update(uuid, dto, auth.user);
+        return this.fileService.update(
+            uuid,
+            dto,
+            auth.user,
+            auth.apikey?.action,
+        );
     }
 
     @Post('moveFiles')
@@ -239,8 +245,14 @@ export class FileController {
         @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
         fileUUIDs: string[],
         @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
+        @AddUser() auth: AuthHeader,
     ): Promise<void> {
-        return this.fileService.moveFiles(fileUUIDs, missionUUID);
+        return this.fileService.moveFiles(
+            fileUUIDs,
+            missionUUID,
+            auth.user,
+            auth.apikey?.action,
+        );
     }
 
     @Get('oneByName')
@@ -256,8 +268,11 @@ export class FileController {
     @Delete(':uuid')
     @CanDeleteFile()
     @OutputDto(null) // TODO: type API response
-    async deleteFile(@ParameterUID('uuid') uuid: string): Promise<void> {
-        await this.fileService.deleteFile(uuid);
+    async deleteFile(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() auth: AuthHeader,
+    ): Promise<void> {
+        await this.fileService.deleteFile(uuid, auth.user, auth.apikey?.action);
     }
 
     @Get('storage')
@@ -292,10 +307,16 @@ export class FileController {
         @AddUser() auth: AuthHeader,
         @Body() body: CreatePreSignedURLSDto,
     ): Promise<TemporaryFileAccessesDto> {
+        let source = 'Web Interface';
+        if (auth.apikey) {
+            source = auth.apikey.action ? 'Action' : 'CLI';
+        }
         return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
             auth.user.uuid,
+            auth.apikey?.action,
+            source,
         );
     }
 

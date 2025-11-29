@@ -1,6 +1,7 @@
 import { ActionLogsDto } from '@common/api/types/actions/action-logs.dto';
 import { ActionDto } from '@common/api/types/actions/action.dto';
 import { ActionsDto } from '@common/api/types/actions/actions.dto';
+import { FileEventsDto } from '@common/api/types/file/file-event.dto';
 import { PaginatedQueryDto } from '@common/api/types/pagination';
 import {
     ActionSubmitResponseDto,
@@ -14,6 +15,7 @@ import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiOkResponse, OutputDto } from '../../decarators';
 import { ActionService } from '../../services/action.service';
+import { FileService } from '../../services/file.service';
 import { ParameterUuid } from '../../validation/parameter-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
@@ -25,7 +27,10 @@ import {
 @ApiTags('Actions')
 @Controller('actions')
 export class ActionsController {
-    constructor(private readonly actionService: ActionService) {}
+    constructor(
+        private readonly actionService: ActionService,
+        private readonly fileService: FileService,
+    ) {}
 
     @Post()
     @CanCreateAction()
@@ -76,6 +81,16 @@ export class ActionsController {
         @Query() query: PaginatedQueryDto,
     ): Promise<ActionLogsDto> {
         return this.actionService.getLogs(uuid, query);
+    }
+
+    @Get(':uuid/file-events')
+    @LoggedIn()
+    @ApiOperation({ summary: 'Get file events triggered by this action' })
+    @ApiOkResponse({ type: FileEventsDto })
+    async getFileEvents(
+        @ParameterUuid('uuid') uuid: string,
+    ): Promise<FileEventsDto> {
+        return this.fileService.getActionFileEvents(uuid);
     }
 
     @Delete(':uuid')

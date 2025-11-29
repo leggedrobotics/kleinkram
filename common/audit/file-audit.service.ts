@@ -68,6 +68,7 @@ export class FileAuditService {
                 },
                 ...(mission ? { mission } : {}),
                 ...(context.actor ? { actor: context.actor } : {}),
+                ...(context.action ? { action: context.action } : {}),
             });
 
             await this.eventRepo.save(event);

@@ -241,7 +241,7 @@ export class UserService implements OnModuleInit {
      */
     async findUserByAPIKey(
         apikey: string,
-    ): Promise<{ apiKey: ApikeyEntity; user: UserEntity }> {
+    ): Promise<{ apikey: ApikeyEntity; user: UserEntity }> {
         const user = await this.userRepository.findOneOrFail({
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
@@ -260,7 +260,7 @@ export class UserService implements OnModuleInit {
             },
         });
 
-        return { user, apiKey };
+        return { user, apikey: apiKey };
     }
 
     /**

@@ -272,8 +272,8 @@ async function submitAnalysis(): Promise<void> {
             html: true,
             cancel: true,
             persistent: true,
-        }).onOk(async () => {
-            await executeLaunch();
+        }).onOk(() => {
+            void executeLaunch();
         });
     } else {
         await executeLaunch();

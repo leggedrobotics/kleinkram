@@ -93,7 +93,7 @@
                 label="Reload"
                 icon="sym_o_refresh"
                 unelevated
-                @click="refetch"
+                @click="(_event: Event) => refetch()"
             />
         </div>
         <div v-if="error" class="text-caption text-negative q-mt-sm">
@@ -215,6 +215,14 @@
                 kleinkram CLI during the execution of the action.
             </p>
 
+            <FileHistory
+                v-if="fileEvents"
+                :events="fileEvents"
+                class="q-mb-md"
+                hide-action-attribution
+            />
+
+            <h2 class="text-h5 q-mb-sm text-grey-9">Called Endpoints</h2>
             <q-card
                 class="q-pa-lg"
                 style="background-color: #f4f4f4"
@@ -250,16 +258,18 @@
 import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import FileHistory from 'components/inspect-file/file-history.vue';
 import TitleSection from 'components/title-section.vue';
 import { useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
 import {
     useActionDetails,
+    useActionFileEvents,
     useActionLogs,
 } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -281,6 +291,18 @@ const { data: logs } = useActionLogs(
     computed(() => $route.params.id as string),
     0,
     logsLimit,
+);
+
+const { data: fileEvents, refetch: refetchFileEvents } = useActionFileEvents(
+    computed(() => $route.params.id as string),
+);
+
+// Refetch file events when action state changes (e.g. from PROCESSING to COMPLETED)
+watch(
+    () => action.value?.state,
+    () => {
+        void refetchFileEvents();
+    },
 );
 
 const loadMoreLogs = () => {

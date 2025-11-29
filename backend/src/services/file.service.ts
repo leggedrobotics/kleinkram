@@ -1,5 +1,6 @@
 import { SortOrder } from '@common/api/types/pagination';
 import { UpdateFile } from '@common/api/types/update-file.dto';
+import ActionEntity from '@common/entities/action/action.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import MissionEntity from '@common/entities/mission/mission.entity';
 import ProjectEntity from '@common/entities/project/project.entity';
@@ -715,7 +716,7 @@ export class FileService implements OnModuleInit {
             where: {
                 file: { uuid: fileUuid },
             },
-            relations: ['actor'],
+            relations: ['actor', 'action', 'action.template', 'action.creator'],
             order: { createdAt: 'DESC' },
         });
 
@@ -731,6 +732,76 @@ export class FileService implements OnModuleInit {
                         ? {
                               uuid: event.actor.uuid,
                               name: event.actor.name,
+                              avatarUrl: null,
+                              email: null,
+                          }
+                        : undefined,
+                    action: event.action
+                        ? {
+                              uuid: event.action.uuid,
+                              name: event.action.template?.name,
+                              creator: event.action.creator
+                                  ? {
+                                        uuid: event.action.creator.uuid,
+                                        name: event.action.creator.name,
+                                        avatarUrl: null,
+                                        email: null,
+                                    }
+                                  : undefined,
+                          }
+                        : undefined,
+                })) ?? [],
+        } as FileEventsDto;
+    }
+
+    async getActionFileEvents(actionUuid: string): Promise<FileEventsDto> {
+        const events = await this.eventRepo.find({
+            where: {
+                action: { uuid: actionUuid },
+            },
+            relations: [
+                'actor',
+                'action',
+                'action.template',
+                'file',
+                'file.mission',
+                'file.mission.project',
+            ],
+            order: { createdAt: 'DESC' },
+        });
+
+        return {
+            count: events.length,
+            data:
+                events.map((event) => ({
+                    uuid: event.uuid,
+                    type: event.type,
+                    createdAt: event.createdAt,
+                    details: event.details,
+                    actor: event.actor
+                        ? {
+                              uuid: event.actor.uuid,
+                              name: event.actor.name,
+                              avatarUrl: null,
+                              email: null,
+                          }
+                        : undefined,
+                    action: event.action
+                        ? {
+                              uuid: event.action.uuid,
+                              name: event.action.template?.name,
+                          }
+                        : undefined,
+                    file: event.file
+                        ? {
+                              uuid: event.file.uuid,
+                              filename: event.file.filename,
+                              missionUuid: event.file.mission?.uuid ?? '',
+                              missionName: event.file.mission?.name ?? '',
+                              projectUuid:
+                                  event.file.mission?.project?.uuid ?? '',
+                              projectName:
+                                  event.file.mission?.project?.name ?? '',
                           }
                         : undefined,
                 })) ?? [],
@@ -749,6 +820,7 @@ export class FileService implements OnModuleInit {
         uuid: string,
         file: UpdateFile,
         actor?: UserEntity,
+        action?: ActionEntity,
     ): Promise<FileEntity | null> {
         logger.debug(`Updating file with uuid: ${uuid}`);
 
@@ -813,6 +885,7 @@ export class FileService implements OnModuleInit {
                     filename: databaseFile.filename,
                     missionUuid: databaseFile.mission.uuid,
                     ...(actor ? { actor } : {}),
+                    ...(action ? { action } : {}),
                     details: { oldFilename, newFilename: file.filename },
                 },
                 true,
@@ -865,6 +938,7 @@ export class FileService implements OnModuleInit {
         expires: boolean,
         preview_only: boolean,
         actor?: UserEntity,
+        action?: ActionEntity,
     ): Promise<string> {
         // verify that an uuid is provided
         if (!uuid || uuid === '')
@@ -897,6 +971,7 @@ export class FileService implements OnModuleInit {
                     missionUuid: file.mission?.uuid ?? '',
                     details: { expiresIn: expires ? '4 hours' : '1 week' },
                     ...(actor ? { actor } : {}),
+                    ...(action ? { action } : {}),
                 },
                 true,
             );
@@ -927,6 +1002,7 @@ export class FileService implements OnModuleInit {
         fileUUIDs: string[],
         missionUUID: string,
         actor?: UserEntity,
+        action?: ActionEntity,
     ): Promise<void> {
         await Promise.all(
             fileUUIDs.map(async (uuid) => {
@@ -949,6 +1025,7 @@ export class FileService implements OnModuleInit {
                             filename: file.filename,
                             missionUuid: missionUUID,
                             ...(actor ? { actor } : {}),
+                            ...(action ? { action } : {}),
                             details: {
                                 fromMission: oldMissionUuid,
                                 toMission: missionUUID,
@@ -985,7 +1062,11 @@ export class FileService implements OnModuleInit {
      * @param uuid The unique identifier of the file
      * @param actor
      */
-    async deleteFile(uuid: string, actor?: UserEntity): Promise<void> {
+    async deleteFile(
+        uuid: string,
+        actor?: UserEntity,
+        action?: ActionEntity,
+    ): Promise<void> {
         if (!uuid) throw new BadRequestException('UUID is required');
 
         logger.debug(`Deleting file with uuid: ${uuid}`);
@@ -1003,6 +1084,7 @@ export class FileService implements OnModuleInit {
                     filename: file.filename,
                     missionUuid: file.mission?.uuid ?? '',
                     ...(actor ? { actor } : {}),
+                    ...(action ? { action } : {}),
                     details: { snapshot: 'File deleted from DB and Storage' },
                 },
                 true,
@@ -1072,6 +1154,8 @@ export class FileService implements OnModuleInit {
         filenames: string[],
         missionUUID: string,
         userUUID: string,
+        action?: ActionEntity,
+        uploadSource = 'Web Interface',
     ): Promise<TemporaryFileAccessesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
@@ -1173,7 +1257,11 @@ export class FileService implements OnModuleInit {
                         filename: file.filename,
                         missionUuid: missionUUID,
                         actor: user,
-                        details: { origin: FileOrigin.UPLOAD },
+                        ...(action ? { action } : {}),
+                        details: {
+                            origin: FileOrigin.UPLOAD,
+                            source: uploadSource,
+                        },
                     },
                     true,
                 );

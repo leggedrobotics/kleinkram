@@ -1,3 +1,4 @@
+import ActionEntity from '../entities/action/action.entity';
 import UserEntity from '../entities/user/user.entity';
 import { FileEventType } from '../frontend_shared/enum';
 
@@ -8,6 +9,7 @@ export interface AuditContext {
     filename?: string;
     missionUuid?: string;
     actor?: UserEntity;
+    action?: ActionEntity;
     details?: Record<string, any>;
 }
 

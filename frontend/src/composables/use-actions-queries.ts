@@ -2,6 +2,7 @@ import { ActionLogsDto } from '@api/types/actions/action-logs.dto';
 import { ActionTemplatesDto } from '@api/types/actions/action-templates.dto';
 import { ActionDto } from '@api/types/actions/action.dto';
 import { ActionsDto } from '@api/types/actions/actions.dto';
+import { FileEventsDto } from '@api/types/file/file-event.dto';
 import { ActionQuery } from '@api/types/submit-action.dto';
 import { ActionState } from '@common/enum';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
@@ -91,6 +92,19 @@ export function useActionLogs(
         ]),
         queryFn: () =>
             ActionService.getLogs(unref(uuid), unref(skip), unref(take)),
+        enabled: computed(() => !!unref(uuid)),
+    });
+}
+
+export function useActionFileEvents(
+    uuid: MaybeRef<string>,
+): UseQueryReturnType<FileEventsDto, Error> {
+    return useQuery({
+        queryKey: computed(() => [
+            ...actionKeys.detail(unref(uuid)),
+            'file-events',
+        ]),
+        queryFn: () => ActionService.getActionFileEvents(unref(uuid)),
         enabled: computed(() => !!unref(uuid)),
     });
 }

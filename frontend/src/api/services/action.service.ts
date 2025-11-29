@@ -6,6 +6,7 @@ import { ActionDto } from '@api/types/actions/action.dto';
 import { ActionsDto } from '@api/types/actions/actions.dto';
 import { CreateTemplateDto } from '@api/types/actions/create-template.dto';
 import { UpdateTemplateDto } from '@api/types/actions/update-template.dto';
+import { FileEventsDto } from '@api/types/file/file-event.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
@@ -120,6 +121,13 @@ export const ActionService = {
             {
                 params: { skip, take },
             },
+        );
+        return data;
+    },
+
+    async getActionFileEvents(uuid: string): Promise<FileEventsDto> {
+        const { data } = await axios.get<FileEventsDto>(
+            `/actions/${uuid}/file-events`,
         );
         return data;
     },

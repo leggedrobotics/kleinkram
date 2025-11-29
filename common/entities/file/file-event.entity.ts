@@ -52,4 +52,7 @@ export default class FileEventEntity {
     @ManyToOne(() => MissionEntity, { nullable: true, onDelete: 'CASCADE' })
     @Index()
     mission?: MissionEntity;
+
+    @ManyToOne('ActionEntity', { nullable: true, onDelete: 'CASCADE' })
+    action?: any;
 }
