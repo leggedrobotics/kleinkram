@@ -129,8 +129,13 @@
                         unelevated
                         class="bg-button-secondary text-on-color"
                         icon="sym_o_link"
+                        :disable="isExpired"
                         @click="openArtifact"
-                    />
+                    >
+                        <q-tooltip v-if="isExpired">
+                            Artifacts are only available for 3 months.
+                        </q-tooltip>
+                    </q-btn>
                     <div v-else class="text-grey-7">
                         {{ artifactStateText }}
                     </div>
@@ -179,6 +184,15 @@ const artifactStateText = computed(() => {
             return 'N/A';
         }
     }
+});
+
+const isExpired = computed(() => {
+    if (!props.action.createdAt) return false;
+    const created = new Date(props.action.createdAt);
+    const now = new Date();
+    // 3 months ago
+    const threeMonthsAgo = new Date(now.setMonth(now.getMonth() - 3));
+    return created < threeMonthsAgo;
 });
 
 const openArtifact = (): void => {
