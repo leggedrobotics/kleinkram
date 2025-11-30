@@ -13,6 +13,9 @@ from kleinkram import list_missions
 from kleinkram import list_projects
 from kleinkram import upload
 
+import subprocess
+import sys
+
 # we expect the mission files to be in this folder that is not commited to the repo
 DATA_PATH = Path(__file__).parent.parent / "data" / "testing"
 DATA_FILES = [
@@ -63,3 +66,25 @@ def empty_mission(project):
     mission = list_missions(project_ids=[project.id], mission_names=[mission_name])[0]
 
     yield mission
+
+
+@pytest.fixture(scope="session", autouse=True)
+def auto_login():
+    """
+    Automatically logs in using the CLI before running any tests.
+    """
+    try:
+        # Run: python3 -m kleinkram login --user 1
+        result = subprocess.run(
+            [sys.executable, "-m", "kleinkram", "login", "--user", "1"],
+            cwd=str(Path(__file__).parent.parent),  # Run from cli root
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            pytest.fail(
+                f"Failed to auto-login. Return code: {result.returncode}\nStdout: {result.stdout}\nStderr: {result.stderr}"
+            )
+
+    except Exception as e:
+        pytest.fail(f"Failed to auto-login: {e}")
