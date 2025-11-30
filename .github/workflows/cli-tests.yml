@@ -92,8 +92,8 @@ jobs:
                   python -m venv .venv
                   source .venv/bin/activate
 
-                  # Install CLI in development mode
-                  pip install -e . -r requirements.txt
+                  # Install CLI in development mode and dev dependencies
+                  pip install -e . -r requirements.txt -r requirements-dev.txt
 
                   # Verify installation
                   klein --version
