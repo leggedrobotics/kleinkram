@@ -1,5 +1,5 @@
-import { CurrentAPIUserDto } from '@api/types/user/current-api-user.dto';
 import { AvailableProvidersDto } from '@api/types/available-providers.dto';
+import { CurrentAPIUserDto } from '@api/types/user/current-api-user.dto';
 import axios from 'src/api/axios';
 import { getMe } from 'src/services/queries/user';
 import ENV from '../environment';
@@ -56,7 +56,10 @@ export const login = (provider: string): void => {
     globalThis.location.href = `${ENV.ENDPOINT}/auth/${provider}`;
 };
 
-export const getAvailableProviders = async (): Promise<AvailableProvidersDto> => {
-    const response = await axios.get<AvailableProvidersDto>('/auth/available-providers');
-    return response.data;
-};
+export const getAvailableProviders =
+    async (): Promise<AvailableProvidersDto> => {
+        const response = await axios.get<AvailableProvidersDto>(
+            '/auth/available-providers',
+        );
+        return response.data;
+    };

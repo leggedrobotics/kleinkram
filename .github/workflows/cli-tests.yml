@@ -46,7 +46,7 @@ jobs:
                   SECONDS=0
                   TIMEOUT=180
                   echo "Waiting for backend to be ready..."
-                  
+
                   while ! curl -s http://localhost:3000/auth/available-providers > /dev/null; do
                     if [ $SECONDS -ge $TIMEOUT ]; then
                         echo "Timeout reached: Backend not ready"
@@ -57,32 +57,32 @@ jobs:
                     sleep 2
                     echo "Waiting for backend... ($SECONDS seconds elapsed)"
                   done
-                  
+
                   echo "Backend is ready!"
 
             - name: Generate mock test data
               run: |
                   # Create test data directory if it doesn't exist
                   mkdir -p cli/data/testing
-                  
+
                   # Generate bag files with specific sizes to match cli/data/testing
                   # Using dd to create files with random content (or zeros) of specific sizes
-                  
+
                   # 10 KB
                   dd if=/dev/zero of=cli/data/testing/10_KB.bag bs=1024 count=10
-                  
+
                   # 50 KB
                   dd if=/dev/zero of=cli/data/testing/50_KB.bag bs=1024 count=50
-                  
+
                   # 1 MB
                   dd if=/dev/zero of=cli/data/testing/1_MB.bag bs=1024 count=1024
-                  
+
                   # 17 MB
                   dd if=/dev/zero of=cli/data/testing/17_MB.bag bs=1M count=17
-                  
+
                   # 125 MB
                   dd if=/dev/zero of=cli/data/testing/125_MB.bag bs=1M count=125
-                  
+
                   echo "Mock test data generated"
 
             - name: Install CLI
@@ -91,53 +91,53 @@ jobs:
                   # Create virtual environment
                   python -m venv .venv
                   source .venv/bin/activate
-                  
+
                   # Install CLI in development mode
                   pip install -e . -r requirements.txt
-                  
+
                   # Verify installation
                   klein --version
-                  
+
                   echo "CLI installed successfully"
 
             - name: Configure CLI endpoint
               working-directory: ./cli
               run: |
                   source .venv/bin/activate
-                  
+
                   # Set endpoint to local
                   klein endpoint local
-                  
+
                   echo "CLI endpoint configured to local"
 
             - name: Authenticate with fake OAuth (User 1 - Admin)
               working-directory: ./cli
               run: |
                   source .venv/bin/activate
-                  
+
                   # Authenticate as admin user using auto-select
                   klein login --oauth-provider fake-oauth --user 1
-                  
+
                   echo "Authenticated as admin user"
 
             - name: Run CLI tests
               working-directory: ./cli
               run: |
                   source .venv/bin/activate
-                  
+
                   # Run pytest with verbose output
                   pytest tests/ -v --tb=short
-                  
+
                   echo "CLI tests completed successfully"
 
             - name: Test with different user (User 2 - Internal)
               working-directory: ./cli
               run: |
                   source .venv/bin/activate
-                  
+
                   # Re-authenticate as internal user
                   klein login --oauth-provider fake-oauth --user 2
-                  
+
                   # Run a subset of tests that check permissions
                   # (This is optional - only if you have permission-specific tests)
                   echo "Authenticated as internal user for permission testing"
@@ -148,10 +148,10 @@ jobs:
                   # Stop Docker stack
                   docker compose -f docker-compose.testing.yml down
                   docker compose down fake-oauth
-                  
+
                   # Clean up test data
                   rm -rf cli/data/testing
-                  
+
                   echo "Cleanup completed"
 
             - name: Delete Docker volumes

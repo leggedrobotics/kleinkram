@@ -1,7 +1,7 @@
+import { AvailableProvidersDto } from '@common/api/types/available-providers.dto';
 import UserEntity from '@common/entities/user/user.entity';
 import env from '@common/environment';
 import { CookieNames, Providers } from '@common/frontend_shared/enum';
-import { AvailableProvidersDto } from '@common/api/types/available-providers.dto';
 import {
     Controller,
     Get,
@@ -26,7 +26,7 @@ export class AuthController {
         private authService: AuthService,
         private readonly jwtService: JwtService,
         private userService: UserService,
-    ) { }
+    ) {}
 
     @Get('available-providers')
     @OutputDto(null)

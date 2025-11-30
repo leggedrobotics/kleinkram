@@ -128,7 +128,7 @@ services:
         user: '0:0'
         image: grafana/tempo:latest
         container_name: kleinkram-tempo
-        command: [ '-config.file=/etc/tempo/tempo.yml' ]
+        command: ['-config.file=/etc/tempo/tempo.yml']
         volumes:
             - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
             - logging-tempo-data:/tmp/tempo
@@ -168,7 +168,6 @@ volumes:
     logging-tempo-data:
     vitepress_dist:
     node_modules:
-
 
 networks:
     webnet:

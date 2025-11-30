@@ -54,6 +54,7 @@ klein project create --name "Test Project"
 ```
 
 This is particularly useful for:
+
 - CI/CD pipelines
 - Integration tests
 - Automated scripts

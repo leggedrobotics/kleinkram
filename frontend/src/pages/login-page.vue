@@ -143,15 +143,12 @@
 
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { login, getAvailableProviders } from 'src/services/auth';
+import { getAvailableProviders, login } from 'src/services/auth';
 import { getMe } from 'src/services/queries/user';
 import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 const $router = useRouter();
-
-const useFakeOauth =
-    import.meta.env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT === 'true';
 
 const {
     data: availableProviders,
