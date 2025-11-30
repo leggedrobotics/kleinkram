@@ -53,12 +53,14 @@ def authorize():
 
         # Generate auth code and redirect immediately
         fake_auth_code = f"fake-auth-code-{user['id']}"
-        print(f"Auto-login: Generated fake auth code: {fake_auth_code} for user: {user['email']}")
-        
+        print(
+            f"Auto-login: Generated fake auth code: {fake_auth_code} for user: {user['email']}"
+        )
+
         redirect_url = f"{redirect_uri}?code={fake_auth_code}"
         if state:
             redirect_url += f"&state={state}"
-        
+
         return redirect(redirect_url)
 
     # Pass the state parameter to the template for normal flow
