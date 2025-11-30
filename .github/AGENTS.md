@@ -7,7 +7,7 @@ This document provides a quick reference for AI agents working on the Kleinkram 
 To launch the full application stack:
 
 ```bash
-docker compose up -d
+docker compose up --build --watch -d
 ```
 
 **Access Points:**
