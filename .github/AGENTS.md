@@ -33,6 +33,8 @@ headers: {
 }
 ```
 
+**Exception:** The `/api/health` endpoint does not require this header.
+
 ### Formatting & Linting
 
 Run these commands before submitting changes:

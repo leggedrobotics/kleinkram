@@ -14,6 +14,7 @@ import { ActionModule } from './endpoints/action/action.module';
 import { AuthModule } from './endpoints/auth/auth.module';
 import { CategoryModule } from './endpoints/category/category.module';
 import { FileModule } from './endpoints/file/file.module';
+import { HealthModule } from './endpoints/health/health.module';
 import { FoxgloveModule } from './endpoints/integrations/foxglove.module';
 import { MissionModule } from './endpoints/mission/mission.module';
 import { ProjectModule } from './endpoints/project/project.module';
@@ -66,6 +67,7 @@ import { AccessGroupConfig } from './types/access-group-config';
             inject: [ConfigService],
         }),
         FileModule,
+        HealthModule,
         FoxgloveModule,
         ProjectModule,
         TopicModule,
@@ -104,6 +106,7 @@ export class AppModule implements NestModule {
             .exclude(
                 '/auth/(.*)', // excludes auth endpoints
                 '/integrations/(.*)', // excludes integration endpoints
+                '/api/health', // excludes health check
             )
             .forRoutes('*');
     }

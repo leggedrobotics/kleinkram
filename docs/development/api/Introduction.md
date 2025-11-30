@@ -35,4 +35,8 @@ curl 'http://localhost:3000/user/me' \
   -b 'authtoken=...; refreshtoken=...'
 ```
 
+::: tip
+
+**Exception:** The `/api/health` endpoint does not require this header.
+
 :::
