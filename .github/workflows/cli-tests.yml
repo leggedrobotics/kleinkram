@@ -41,25 +41,6 @@ jobs:
                   docker compose -f docker-compose.testing.yml up -d
                   echo "Docker stack started"
 
-            - name: Wait for backend to be ready
-              run: |
-                  SECONDS=0
-                  TIMEOUT=180
-                  echo "Waiting for backend to be ready..."
-
-                  while ! curl -s http://localhost:3000/auth/available-providers > /dev/null; do
-                    if [ $SECONDS -ge $TIMEOUT ]; then
-                        echo "Timeout reached: Backend not ready"
-                        docker compose -f docker-compose.testing.yml logs api-server
-                        docker compose -f docker-compose.testing.yml down
-                        exit 1
-                    fi
-                    sleep 2
-                    echo "Waiting for backend... ($SECONDS seconds elapsed)"
-                  done
-
-                  echo "Backend is ready!"
-
             - name: Generate mock test data
               run: |
                   # Create test data directory if it doesn't exist
@@ -100,10 +81,32 @@ jobs:
 
                   echo "CLI installed successfully"
 
+            - name: Wait for backend to be ready
+              run: |
+                  SECONDS=0
+                  TIMEOUT=180
+                  echo "Waiting for backend to be ready..."
+
+                  while ! curl -s http://localhost:3000/auth/available-providers > /dev/null; do
+                    if [ $SECONDS -ge $TIMEOUT ]; then
+                        echo "Timeout reached: Backend not ready"
+                        docker compose -f docker-compose.testing.yml logs api-server
+                        docker compose -f docker-compose.testing.yml down
+                        exit 1
+                    fi
+                    sleep 2
+                    echo "Waiting for backend... ($SECONDS seconds elapsed)"
+                  done
+
+                  echo "Backend is ready!"
+
             - name: Configure CLI endpoint
               working-directory: ./cli
               run: |
                   source .venv/bin/activate
+
+                  # Remove existing config to avoid compatibility check prompt
+                  rm -f ~/.kleinkram.json
 
                   # Set endpoint to local
                   klein endpoint local
