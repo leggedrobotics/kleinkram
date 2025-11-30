@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsDate, IsOptional, IsString, IsUUID } from 'class-validator';
 import {
     IsNoValidUUID,
@@ -10,6 +11,6 @@ export class UpdateFile {
     @IsNoValidUUID() @IsValidFileName() @IsString() filename!: string;
 
     @IsOptional() @IsUUID() missionUuid?: string;
-    @IsDate() date!: Date;
+    @IsDate() @Type(() => Date) date!: Date;
     @IsOptional() @IsUUID('all', { each: true }) categories!: string[];
 }
