@@ -9,6 +9,7 @@ const UNAUTHENTICATED_ENDPOINTS: string[] = [
     '/auth/github/callback',
     '/auth/fake-oauth',
     '/auth/fake-oauth/callback',
+    '/auth/available-providers',
     '/auth/logout',
     '/metrics',
     '/swagger',
