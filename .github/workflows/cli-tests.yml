@@ -43,26 +43,11 @@ jobs:
 
             - name: Generate mock test data
               run: |
-                  # Create test data directory if it doesn't exist
-                  mkdir -p cli/data/testing
+                  # Install dependencies for data generation
+                  pip install rosbags
 
-                  # Generate bag files with specific sizes to match cli/data/testing
-                  # Using dd to create files with random content (or zeros) of specific sizes
-
-                  # 10 KB
-                  dd if=/dev/zero of=cli/data/testing/10_KB.bag bs=1024 count=10
-
-                  # 50 KB
-                  dd if=/dev/zero of=cli/data/testing/50_KB.bag bs=1024 count=50
-
-                  # 1 MB
-                  dd if=/dev/zero of=cli/data/testing/1_MB.bag bs=1024 count=1024
-
-                  # 17 MB
-                  dd if=/dev/zero of=cli/data/testing/17_MB.bag bs=1M count=17
-
-                  # 125 MB
-                  dd if=/dev/zero of=cli/data/testing/125_MB.bag bs=1M count=125
+                  # Generate valid bag files using the script
+                  python3 cli/tests/generate_test_data.py
 
                   echo "Mock test data generated"
 

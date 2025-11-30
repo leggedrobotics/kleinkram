@@ -17,7 +17,7 @@ from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.models import FileVerificationStatus
-from testing.backend_fixtures import DATA_FILES
+from tests.backend_fixtures import DATA_FILES
 
 
 @pytest.mark.slow

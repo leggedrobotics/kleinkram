@@ -16,7 +16,7 @@ VERBOSE = True
 
 CLI = "klein"
 PROJECT_NAME = "automated-testing"
-DATA_PATH = Path(__file__).parent.parent / "data" / "testing"
+DATA_PATH = Path(__file__).parent / "data"
 
 
 @pytest.fixture(scope="session")

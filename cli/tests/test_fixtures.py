@@ -5,8 +5,8 @@ import pytest
 from kleinkram import list_files
 from kleinkram import list_missions
 from kleinkram import list_projects
-from testing.backend_fixtures import DATA_FILES
-from testing.backend_fixtures import PROJECT_DESCRIPTION
+from tests.backend_fixtures import DATA_FILES
+from tests.backend_fixtures import PROJECT_DESCRIPTION
 
 
 @pytest.mark.slow

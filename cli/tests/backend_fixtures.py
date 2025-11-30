@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 # we expect the mission files to be in this folder that is not commited to the repo
-DATA_PATH = Path(__file__).parent.parent / "data" / "testing"
+DATA_PATH = Path(__file__).parent / "data"
 DATA_FILES = [
     DATA_PATH / "10_KB.bag",
     DATA_PATH / "50_KB.bag",

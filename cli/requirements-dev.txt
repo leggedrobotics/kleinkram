@@ -4,3 +4,4 @@ mypy
 pre-commit
 pytest
 types-boto3
+rosbags
