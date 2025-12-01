@@ -6,9 +6,7 @@ on:
         branches:
             - main
             - dev
-    push:
-        branches:
-            - dev
+
 
 jobs:
     test_CLI:
