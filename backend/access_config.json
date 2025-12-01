@@ -1,13 +1,13 @@
 {
     "emails": [
         {
-            "email": "kleinkram.leggedrobotics.com",
+            "email": "kleinkram.dev",
             "access_groups": ["00000000-0000-0000-0000-000000000000"]
         }
     ],
     "access_groups": [
         {
-            "name": "Leggedrobotics",
+            "name": "Kleinkram Developers",
             "uuid": "00000000-0000-0000-0000-000000000000",
             "rights": 10
         }

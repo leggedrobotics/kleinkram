@@ -19,9 +19,13 @@ define(ProjectAccessEntity, (_, context: ProjectAccessFactoryContext) => {
         0, 10, 20, 30,
     ]) as AccessGroupRights;
 
-    projectAccess.project = faker.helpers.arrayElement(context.projects);
-    projectAccess.accessGroup = faker.helpers.arrayElement(
-        context.accessGroups,
-    );
+    if (context?.projects) {
+        projectAccess.project = faker.helpers.arrayElement(context.projects);
+    }
+    if (context?.accessGroups) {
+        projectAccess.accessGroup = faker.helpers.arrayElement(
+            context.accessGroups,
+        );
+    }
     return projectAccess;
 });

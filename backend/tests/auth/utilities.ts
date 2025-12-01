@@ -94,7 +94,7 @@ export const generateAndFetchDatabaseUser = async (
 
         const baseEmail =
             userType === 'internal'
-                ? 'internal-user@kleinkram.leggedrobotics.com'
+                ? 'internal-user@kleinkram.dev'
                 : 'external-user@third-party.com';
 
         let userEmail = baseEmail;

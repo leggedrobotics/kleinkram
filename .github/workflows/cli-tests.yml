@@ -7,7 +7,6 @@ on:
             - main
             - dev
 
-
 jobs:
     test_CLI:
         runs-on: [self-hosted, linux]

@@ -124,11 +124,11 @@ klein login --oauth-provider fake-oauth --user 3
 
 **Available fake users:**
 
-| User ID | Email                                        | Role          | Description                                                             |
-| ------- | -------------------------------------------- | ------------- | ----------------------------------------------------------------------- |
-| 1       | `admin@kleinkram.leggedrobotics.com`         | Admin         | Has admin access, sees all seeded projects                              |
-| 2       | `internal-user@kleinkram.leggedrobotics.com` | Internal User | Part of affiliation group, can create projects, sees no seeded projects |
-| 3       | `external-user@example.com`                  | External User | Cannot create projects, sees no projects by default                     |
+| User ID | Email                         | Role          | Description                                                             |
+| ------- | ----------------------------- | ------------- | ----------------------------------------------------------------------- |
+| 1       | `admin@kleinkram.dev`         | Admin         | Has admin access, sees all seeded projects                              |
+| 2       | `internal-user@kleinkram.dev` | Internal User | Part of affiliation group, can create projects, sees no seeded projects |
+| 3       | `external-user@example.com`   | External User | Cannot create projects, sees no projects by default                     |
 
 ::: tip
 The `--user` parameter only works with the `fake-oauth` provider. Using it with other providers (Google, GitHub) will result in an error.

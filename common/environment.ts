@@ -91,6 +91,12 @@ export default {
     get DB_HOST(): string {
         return asString(process.env['DB_HOST']);
     },
+    get SEED(): boolean {
+        if (process.env['SEED'] === undefined) {
+            return false;
+        }
+        return asBoolean(process.env['SEED']);
+    },
     /**
      * @returns whether application runs in development mode
      */

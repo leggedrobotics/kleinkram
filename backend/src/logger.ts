@@ -45,8 +45,20 @@ const logger = winston.createLogger({
 
 @Injectable()
 export class NestLoggerWrapper implements LoggerService {
+    // Messages to filter out from console logs (reduce initialization spam)
+    private shouldFilterMessage(message: string): boolean {
+        const filters = [
+            'dependencies initialized',
+            'Mapped {/', // Route mapping logs
+        ];
+        return filters.some((filter) => message.includes(filter));
+    }
+
     log(message: never, ...optionalParameters: never[]): void {
-        logger.info(message, ...optionalParameters);
+        // Filter out module initialization spam
+        if (!this.shouldFilterMessage(String(message))) {
+            logger.info(message, ...optionalParameters);
+        }
     }
 
     fatal(message: never, ...optionalParameters: never[]): void {

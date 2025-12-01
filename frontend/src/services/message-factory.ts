@@ -51,7 +51,7 @@ export const detectPreviewType = (
     messageType: string,
     sampleData?: any,
 ): PreviewType => {
-    const typeLower = messageType.toLowerCase();
+    const typeLower = messageType.toLowerCase().replace('/msg/', '/');
 
     // Explicit Matches
     if (typeLower.includes('std_msgs/string')) return PreviewType.STRING; // Explicit

@@ -16,7 +16,7 @@ describe('Verify Access Groups External', () => {
     });
 
     // user: external
-    test('Non "kleinkram.leggedrobotics.com" email is not added to default group', async () => {
+    test('Non "kleinkram.dev" email is not added to default group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
 
@@ -83,7 +83,7 @@ describe('Verify Access Groups Internal', () => {
         // TODO: implement this test
         expect(true).toBe(true);
 
-        // const mockEmail = 'internal-user@kleinkram.leggedrobotics.com';
+        // const mockEmail = 'internal-user@kleinkram.dev';
         // const internalUuid = await mockDatabaseUser(mockEmail);
 
         // const accessGroups = await getAllAccessGroups();
@@ -107,7 +107,7 @@ describe('Verify Access Groups Internal', () => {
         //     select: ['email'],
         // });
 
-        // expect(user.email).toBe('internal-user@kleinkram.leggedrobotics.com');
+        // expect(user.email).toBe('internal-user@kleinkram.dev');
     });
 
     test('if primary group cannot be deleted', () => {

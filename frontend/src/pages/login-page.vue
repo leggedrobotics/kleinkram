@@ -79,6 +79,13 @@
                             Please try again later or contact your system
                             administrator.
                         </div>
+                        <q-btn
+                            label="Retry Connection"
+                            color="warning"
+                            flat
+                            class="q-mt-sm full-width"
+                            @click="() => refetchProviders()"
+                        />
                     </div>
 
                     <!-- OAuth buttons -->
@@ -116,9 +123,9 @@
                     </template>
 
                     <div v-if="$route.query.error_msg" class="q-mt-lg">
-                        <span class="text-negative">{{
-                            $route.query.error_msg
-                        }}</span>
+                        <span class="text-negative">
+                            {{ $route.query.error_msg }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -154,11 +161,13 @@ const {
     data: availableProviders,
     isLoading: isLoadingProviders,
     isError: isProvidersError,
+    refetch: refetchProviders,
 } = useQuery({
     queryKey: ['available-providers'],
     queryFn: getAvailableProviders,
     staleTime: Infinity,
-    retry: 2,
+    retry: false,
+    refetchInterval: (query) => (query.state.error ? 5000 : false),
 });
 
 const { data: me, error } = useQuery({

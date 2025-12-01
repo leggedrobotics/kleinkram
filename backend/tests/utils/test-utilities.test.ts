@@ -20,7 +20,7 @@ describe('Test Suite Utils', () => {
         // Insert some data
         const user = new UserEntity();
         user.name = 'John Doe';
-        user.email = 'test-01@kleinkram.leggedrobotics.com';
+        user.email = 'test-01@kleinkram.dev';
         user.role = UserRole.USER;
 
         await database.getRepository(UserEntity).save(user);
@@ -40,14 +40,14 @@ describe('Test Suite Utils', () => {
     test('Create User with Valid Token', async () => {
         // TODO: Finish this test
 
-        await mockDatabaseUser('test-01@kleinkram.leggedrobotics.com');
+        await mockDatabaseUser('test-01@kleinkram.dev');
 
         const userRepository = database.getRepository(UserEntity);
         const users = await userRepository.find({
             select: ['email', 'uuid'],
         });
         expect(users.length).toBe(1);
-        expect(users[0]?.email).toBe('test-01@kleinkram.leggedrobotics.com');
+        expect(users[0]?.email).toBe('test-01@kleinkram.dev');
 
         const accountRepository = database.getRepository(AccountEntity);
         const accounts = await accountRepository.find();

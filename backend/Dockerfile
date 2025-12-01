@@ -11,7 +11,8 @@ RUN yarn --immutable
 WORKDIR /usr/src/app/common
 RUN yarn --immutable
 
-RUN apk --no-cache add postgresql-client
+RUN apk --no-cache add postgresql-client git python3 py3-pip build-base python3-dev
+RUN pip3 install rosbags --break-system-packages
 # copy the rest of the files
 COPY ./backend /usr/src/app/backend
 COPY ./common /usr/src/app/common

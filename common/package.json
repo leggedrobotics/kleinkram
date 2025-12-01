@@ -3,8 +3,8 @@
     "version": "0.56.0",
     "license": "MIT",
     "scripts": {
-        "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config",
-        "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed"
+        "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config -n ormconfig.ts",
+        "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed -n ormconfig.ts"
     },
     "dependencies": {
         "@faker-js/faker": "^10.1.0",

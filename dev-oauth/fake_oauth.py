@@ -6,14 +6,14 @@ app = Flask(__name__)
 FAKE_USERS = [
     {
         "id": "1",
-        "email": "admin@kleinkram.leggedrobotics.com",
+        "email": "admin@kleinkram.dev",
         "displayName": "Kleinkram Admin User Nr. 1",
         "photo": "https://randomuser.me/api/portraits/men/8.jpg",
         "comment": "This user has admin access to Kleinkram. It sees all seeded projects.",
     },
     {
         "id": "2",
-        "email": "internal-user@kleinkram.leggedrobotics.com",
+        "email": "internal-user@kleinkram.dev",
         "displayName": "Kleinkram User Nr. 2",
         "photo": "https://randomuser.me/api/portraits/women/71.jpg",
         "comment": "This user is an internal user of Kleinkram. She is part of an affiliation group and can create projects. This user sees no seeded projects.",
