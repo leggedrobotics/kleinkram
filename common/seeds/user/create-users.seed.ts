@@ -1,5 +1,6 @@
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
+import UserEntity from '../../entities/user/user.entity';
 import { seedActionTemplates } from './seed-action-templates';
 import { seedFiles } from './seed-files';
 import { seedProjects } from './seed-projects';
@@ -12,12 +13,21 @@ export default class CreateUsers implements Seeder {
             return;
         }
 
+
+        // Check if admin user already exists
+        const existingAdmin = await conn.getRepository(UserEntity).findOne({
+            where: { email: 'admin@kleinkram.dev' },
+        });
+
+        if (existingAdmin) {
+            console.log('Seeding already done, skipping...');
+            return;
+        }
+
         console.log('\n\n »» Seeding Users and Data...\n\n');
 
-        // 1. Create Users
         const { adminUser, internalUser } = await seedUsers(factory, conn);
 
-        // 2. Create Projects and Missions
         const { createdMissions, tagTypes } = await seedProjects(
             factory,
             conn,
@@ -25,10 +35,8 @@ export default class CreateUsers implements Seeder {
             internalUser,
         );
 
-        // 3. Create Action Templates
         await seedActionTemplates(conn, adminUser);
 
-        // 4. Generate and Upload Data
         await seedFiles(factory, conn, adminUser, createdMissions, tagTypes);
     }
 }
