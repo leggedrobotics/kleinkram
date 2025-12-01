@@ -27,16 +27,13 @@
                     class="q-py-sm"
                 >
                     <q-item-section>
-                        <div class="row items-baseline q-gutter-x-md">
-                            <div
-                                class="text-caption text-grey-6 font-mono"
-                                style="min-width: 80px"
-                            >
+                        <div class="column q-gutter-y-xs">
+                            <div class="text-caption text-grey-6 font-mono">
                                 {{ formatTime(msg.logTime) }}
                             </div>
 
                             <div class="text-body2 text-grey-9 break-word">
-                                {{ msg.data.data }}
+                                {{ getDisplayText(msg.data.data) }}
                             </div>
                         </div>
                     </q-item-section>
@@ -80,6 +77,20 @@ onMounted(() => {
         emit('load-required');
 });
 
+// --- Truncation Logic ---
+const MAX_LENGTH = 300;
+
+const shouldTruncate = (text: string): boolean => {
+    return text?.length > MAX_LENGTH;
+};
+
+const getDisplayText = (text: string): string => {
+    if (!shouldTruncate(text)) {
+        return text;
+    }
+    return text.slice(0, MAX_LENGTH) + '...';
+};
+
 // --- Formatters ---
 const formatTime = (nano: bigint): string => {
     const ms = Number(nano / 1_000_000n);
@@ -120,5 +131,6 @@ const loadMore = (): void => {
 .break-word {
     word-wrap: break-word;
     white-space: pre-wrap;
+    word-break: break-all;
 }
 </style>
