@@ -89,6 +89,32 @@ sed -i 's/SEED=false/SEED=true/' .env
 docker compose up --build --watch
 ````
 
+### Seeded Entities
+
+When seeding is enabled, the following entities are created in the database:
+
+| Entity Type | Name / Identifier | Details |
+| :--- | :--- | :--- |
+| **Users** | `admin@kleinkram.dev` | Role: `ADMIN`. Has access to all projects. |
+| | `internal-user@kleinkram.dev` | Role: `USER`. Member of primary access group. |
+| | `external-user@example.com` | Role: `USER`. No default project access. |
+| **Projects** | Autonomous Driving | Missions: `Highway Pilot`, `Urban Navigation` |
+| | Robotics Manipulation | Missions: `Pick and Place`, `Assembly` |
+| | Drone Surveillance | Missions: `Perimeter Check`, `Search and Rescue` |
+| **Action Templates** | `validate-data` | Validates data integrity |
+| | `extract-metadata` | Extracts metadata from files |
+| | `convert-formats` | Converts file formats |
+| | `python-template` | Basic Python action template |
+| **Files** | Various | `.bag`, `.mcap`, and `.yaml` files are generated and distributed across missions. |
+
+::: tip Source Code
+For a complete list of what is seeded, check out the seed files in `common/seeds`.
+:::
+
+::: tip Actions
+More info about actions can be found in the [actions](/development/actions) section.
+:::
+
 ### Configuration
 
 The application can be configured using environment variables.

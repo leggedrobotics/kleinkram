@@ -28,6 +28,12 @@ docker compose up --build
 The `--build` flag ensures that the Docker images are built before starting. For more details on Docker Compose, see the [official docs](https://docs.docker.com/compose/).
 :::
 
+::: tip Seeding
+By default, the application is seeded with example data (users, projects, files, and action templates) to help you explore the features immediately. This is controlled by the `SEED` variable in your `.env` file (default: `true`). To start with an empty database, set `SEED=false`.
+
+For a detailed list of what is seeded, see [Enable Database Seeding](./getting-started.md#enable-database-seeding).
+:::
+
 4. **Open the application**
 
 You can now access the frontend at `http://localhost:8003`.
