@@ -7,6 +7,7 @@ on:
             - dev
         paths:
             - 'cli/**'
+            - '.github/workflows/updatePypi.yml'
 
 jobs:
     build_and_deploy:
@@ -47,3 +48,15 @@ jobs:
                   password: ${{ secrets.PYPI_API_TOKEN }}
                   package: cli/dist/*
                   packages_dir: cli/dist
+
+            - name: Get version from setup.cfg
+              id: get_version
+              run: |
+                  VERSION=$(grep "version =" cli/setup.cfg | cut -d = -f 2 | xargs)
+                  echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+            - name: Trigger Build Generic Actions
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  gh workflow run build_generic_actions.yml -f kleinkram_version=$VERSION

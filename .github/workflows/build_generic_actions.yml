@@ -1,6 +1,12 @@
 name: Build Generic Actions
 
 on:
+    workflow_dispatch:
+        inputs:
+            kleinkram_version:
+                description: 'Kleinkram version to install'
+                required: false
+                default: 'kleinkram'
     workflow_run:
         workflows: ['Update PyPI']
         types:
@@ -40,7 +46,10 @@ jobs:
             - name: Determine Tag
               id: tag
               run: |
-                  if [ "${{ matrix.type }}" == "dev" ]; then
+                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                    echo "tag=dev" >> $GITHUB_OUTPUT
+                    echo "kleinkram_version=${{ inputs.kleinkram_version }}" >> $GITHUB_OUTPUT
+                  elif [ "${{ matrix.type }}" == "dev" ]; then
                     echo "tag=dev" >> $GITHUB_OUTPUT
                     echo "kleinkram_version=kleinkram" >> $GITHUB_OUTPUT # Installs latest from PyPI which is updated by Update PyPI workflow
                   else
