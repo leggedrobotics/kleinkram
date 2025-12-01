@@ -55,8 +55,8 @@ jobs:
                   VERSION=$(grep "version =" cli/setup.cfg | cut -d = -f 2 | xargs)
                   echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-            - name: Trigger Build Generic Actions
+            - name: Trigger Build Sample Actions
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  gh workflow run build_generic_actions.yml -f kleinkram_version=$VERSION
+                  gh workflow run build_sample_actions.yml -f kleinkram_version=$VERSION --ref ${{ github.ref }}
