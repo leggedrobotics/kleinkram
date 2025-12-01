@@ -84,7 +84,7 @@
                             color="warning"
                             flat
                             class="q-mt-sm full-width"
-                            @click="() => refetchProviders()"
+                            @click="refetchProviders"
                         />
                     </div>
 

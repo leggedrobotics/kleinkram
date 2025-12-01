@@ -13,7 +13,6 @@ export default class CreateUsers implements Seeder {
             return;
         }
 
-
         // Check if admin user already exists
         const existingAdmin = await conn.getRepository(UserEntity).findOne({
             where: { email: 'admin@kleinkram.dev' },

@@ -108,6 +108,14 @@
         style="background: transparent"
     >
         <q-tab-panel name="info">
+            <InfoBanner
+                v-if="showCliWarning"
+                text="This action likely failed due to an outdated Kleinkram CLI. Please rebuild it with a newer CLI version"
+                button-label="View Logs"
+                color="orange-1"
+                text-color="orange-9"
+                @click="viewTriggeringLog"
+            />
             <ActionDetailsExecutionTab v-if="action" :action="action" />
         </q-tab-panel>
 
@@ -125,6 +133,28 @@
                 during the execution of the action.
             </p>
 
+            <div class="row justify-between items-center q-mb-md">
+                <div v-if="logs?.count" class="text-caption">
+                    Showing {{ logs.data.length }} of {{ logs.count }} log lines
+                </div>
+                <div class="q-gutter-x-sm">
+                    <q-btn
+                        v-if="(logs?.count || 0) > (logs?.data.length || 0)"
+                        flat
+                        label="Load More"
+                        color="primary"
+                        @click="loadMoreLogs"
+                    />
+                    <q-btn
+                        flat
+                        label="Download Logs"
+                        color="primary"
+                        icon="sym_o_download"
+                        @click="downloadLogs"
+                    />
+                </div>
+            </div>
+
             <q-card
                 class="q-pa-lg"
                 style="background-color: #f4f4f4"
@@ -133,13 +163,18 @@
             >
                 <q-card-section class="flex column q-pa-none">
                     <div
-                        v-for="log in logs?.data"
+                        v-for="(log, index) in logs?.data"
+                        :id="`log-line-${index}`"
                         :key="log.timestamp"
                         class="flex justify-start q-pb-xs"
+                        :class="{
+                            'bg-orange-1': index === highlightedLogIndex,
+                        }"
                         style="
                             font-family: monospace;
                             color: #222222;
                             font-size: 0.8em;
+                            transition: background-color 3s ease-out;
                         "
                     >
                         <template v-if="log.type == 'stdout'">
@@ -191,19 +226,6 @@
                         </template>
                     </div>
                 </q-card-section>
-                <q-card-actions align="center">
-                    <div v-if="logs?.count" class="text-caption q-mr-md">
-                        Showing {{ logs.data.length }} of {{ logs.count }} log
-                        lines
-                    </div>
-                    <q-btn
-                        v-if="(logs?.count || 0) > (logs?.data.length || 0)"
-                        flat
-                        label="Load More"
-                        color="primary"
-                        @click="loadMoreLogs"
-                    />
-                </q-card-actions>
             </q-card>
         </q-tab-panel>
 
@@ -258,6 +280,7 @@
 import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import InfoBanner from 'components/info-banner.vue';
 import FileHistory from 'components/inspect-file/file-history.vue';
 import TitleSection from 'components/title-section.vue';
 import { useQuasar } from 'quasar';
@@ -269,7 +292,7 @@ import {
 } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch, watchEffect } from 'vue';
 import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -290,12 +313,118 @@ const handleRefetch = () => {
     void refetch();
 };
 
-const logsLimit = ref(10);
+const logsLimit = ref(100);
+const totalLogsCount = ref(0);
+const isWarningDismissed = ref(false);
+const triggeringLogIndex = ref<number | null>(null);
+const highlightedLogIndex = ref<number | null>(null);
+
+const logsSkip = computed(() => {
+    if (totalLogsCount.value === 0) return 0;
+    return Math.max(0, totalLogsCount.value - logsLimit.value);
+});
+
 const { data: logs, refetch: refetchLogs } = useActionLogs(
     computed(() => $route.params.id as string),
-    0,
+    logsSkip,
     logsLimit,
 );
+
+watch(logs, (newLogs) => {
+    if (newLogs) {
+        totalLogsCount.value = newLogs.count;
+    }
+});
+
+const showCliWarning = ref(false);
+
+watchEffect(() => {
+    if (isWarningDismissed.value) {
+        showCliWarning.value = false;
+        return;
+    }
+
+    const currentLogs = logs.value;
+    if (!currentLogs?.data) {
+        showCliWarning.value = false;
+        return;
+    }
+
+    const lastLogs = currentLogs.data.slice(-25);
+    const startIndex = Math.max(0, currentLogs.data.length - 25);
+
+    let foundIndex = -1;
+
+    for (const [index, lastLog] of lastLogs.entries()) {
+        const message = lastLog?.message;
+        if (
+            message &&
+            (message.includes('Update CLIVersion') ||
+                message.includes('Please update your CLI') ||
+                message.includes(
+                    'Error downloading data: Please update your CLI',
+                ))
+        ) {
+            foundIndex = Math.max(0, startIndex + index);
+            break;
+        }
+    }
+
+    if (foundIndex === -1) {
+        triggeringLogIndex.value = null;
+        showCliWarning.value = false;
+    } else {
+        triggeringLogIndex.value = foundIndex;
+        showCliWarning.value = true;
+    }
+});
+
+const viewTriggeringLog = async () => {
+    tab.value = 'logs';
+    if (triggeringLogIndex.value !== null) {
+        highlightedLogIndex.value = triggeringLogIndex.value;
+        // Wait for tab switch and DOM update
+        await nextTick();
+        const element = document.querySelector(
+            `#log-line-${triggeringLogIndex.value}`,
+        );
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        setTimeout(() => {
+            highlightedLogIndex.value = null;
+        }, 2000);
+    }
+};
+
+const downloadLogs = async () => {
+    if (!action.value) return;
+    try {
+        const allLogs = await ActionService.getLogs(
+            action.value.uuid,
+            0,
+            totalLogsCount.value || 10_000,
+        );
+        const logContent = allLogs.data
+            .map(
+                (l) =>
+                    `[${formatDate(new Date(l.timestamp), true)}] [${l.type}] ${l.message}`,
+            )
+            .join('\n');
+        const blob = new Blob([logContent], { type: 'text/plain' });
+        const url = globalThis.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `action-${action.value.uuid}.log`;
+        a.click();
+        globalThis.URL.revokeObjectURL(url);
+    } catch {
+        $q.notify({
+            type: 'negative',
+            message: 'Failed to download logs',
+        });
+    }
+};
 
 const { data: fileEvents, refetch: refetchFileEvents } = useActionFileEvents(
     computed(() => $route.params.id as string),
