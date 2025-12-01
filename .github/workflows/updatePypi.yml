@@ -12,6 +12,10 @@ on:
 jobs:
     build_and_deploy:
         runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            actions: write 
+            id-token: write
         steps:
             - name: Check out repository
               uses: actions/checkout@v6
