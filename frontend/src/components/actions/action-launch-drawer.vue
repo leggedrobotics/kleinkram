@@ -316,9 +316,11 @@ async function executeLaunch(): Promise<void> {
                 params: { id: result.actionUUID },
             });
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : 'Unknown error occurred';
         Notify.create({
-            message: error.message || 'Launch Failed',
+            message: message || 'Launch Failed',
             color: 'negative',
         });
     }

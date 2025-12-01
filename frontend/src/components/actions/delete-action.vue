@@ -41,9 +41,11 @@ async function deleteActionAction(): Promise<void> {
             timeout: 2000,
             position: 'bottom',
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : 'Unknown error occurred';
         Notify.create({
-            message: `Error deleting Action: ${error?.response?.data?.message || 'Unknown Error'}`,
+            message: `Error deleting Action: ${message}`,
             color: 'negative',
             position: 'bottom',
         });

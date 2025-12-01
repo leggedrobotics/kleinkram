@@ -55,9 +55,11 @@ async function executeAction(): Promise<void> {
             timeout: 2000,
             position: 'bottom',
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : 'Unknown error occurred';
         Notify.create({
-            message: `Error: ${error?.response?.data?.message || 'Unknown Error'}`,
+            message: `Error: ${message}`,
             color: 'negative',
             position: 'bottom',
         });

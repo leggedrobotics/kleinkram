@@ -40,7 +40,7 @@
             bordered
             separator="none"
             virtual-scroll
-            :pagination="{ rowsPerPage: 20 }"
+            :pagination="{ rowsPerPage: DEFAULT_PAGINATION_SIZE }"
             class="bg-white"
         >
             <template #body="props">
@@ -194,6 +194,7 @@ import AppSearchBar from 'components/common/app-search-bar.vue';
 import { Dialog, Notify } from 'quasar';
 import { useDeleteTemplate } from 'src/composables/use-action-mutations';
 import { useTemplateList } from 'src/composables/use-actions-queries';
+import { DEFAULT_PAGINATION_SIZE } from 'src/constants';
 import DeleteActionTemplateDialog from 'src/dialogs/delete-action-template-dialog.vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
@@ -350,6 +351,7 @@ const emptyState = computed(() => {
 });
 
 // --- Delete Handler ---
+// --- Delete Handler ---
 const executeDelete = async (template: ActionTemplateDto): Promise<void> => {
     try {
         await removeTemplate(template.uuid);
@@ -358,10 +360,13 @@ const executeDelete = async (template: ActionTemplateDto): Promise<void> => {
             color: 'positive',
             icon: 'sym_o_delete',
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : 'Unknown error occurred';
         Notify.create({
-            message: error.response?.data?.message || 'Failed to delete action',
+            message: `Failed to delete action: ${message}`,
             color: 'negative',
+            icon: 'sym_o_error',
         });
     }
 };
