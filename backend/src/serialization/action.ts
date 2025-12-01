@@ -23,6 +23,8 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
     return {
         artifactUrl: action.artifact_path ?? '',
         artifacts: action.artifacts,
+        artifactSize: action.artifact_size,
+        artifactFiles: action.artifact_files,
         auditLogs: (action.auditLogs as unknown as AuditLogDto[]) ?? [],
         createdAt: action.createdAt,
         creator: userEntityToDto(action.creator),

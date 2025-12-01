@@ -180,3 +180,14 @@ export enum FileSource {
     CLI = 'CLI',
     WEB_INTERFACE = 'Web Interface',
 }
+
+export enum ImageSource {
+    PULLED = 'pulled',
+    CACHED = 'cached',
+    LOCALLY_BUILT = 'locally_built',
+}
+
+export enum LogType {
+    STDOUT = 'stdout',
+    STDERR = 'stderr',
+}

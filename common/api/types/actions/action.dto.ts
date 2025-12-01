@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
     IsDate,
     IsEnum,
+    IsOptional,
     IsString,
     IsUUID,
     ValidateNested,
@@ -53,6 +54,15 @@ export class ActionDto {
     @ApiProperty()
     @IsString()
     artifactUrl!: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    artifactSize?: number | undefined;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString({ each: true })
+    artifactFiles?: string[] | undefined;
 
     @ApiProperty()
     @ValidateNested()

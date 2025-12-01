@@ -1,5 +1,6 @@
 import ActionEntity, {
     ContainerLog,
+    Image,
 } from '@common/entities/action/action.entity';
 import ApikeyEntity from '@common/entities/auth/apikey.entity';
 import environment from '@common/environment';
@@ -114,36 +115,48 @@ export class ActionManagerService {
                 KLEINKRAM_S3_ENDPOINT: `https://${environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
             };
             const needsGpu = action.template.gpuMemory > 0;
-            const { container, repoDigests, sha } =
-                await this.containerDaemon.startContainer(
-                    async (): Promise<void> => {
-                        await this.actionRepository.update(
-                            { uuid: action.uuid },
-                            { state: ActionState.PROCESSING },
-                        );
+            const {
+                container,
+                repoDigests,
+                sha,
+                source,
+                localCreatedAt,
+                remoteCreatedAt,
+            } = await this.containerDaemon.startContainer(
+                async () => {
+                    await this.actionRepository.update(
+                        { uuid: action.uuid },
+                        { state: ActionState.PROCESSING },
+                    );
+                },
+                {
+                    docker_image: action.template.image_name,
+                    name: action.uuid,
+                    limits: {
+                        max_runtime:
+                            action.template.maxRuntime * 60 * 60 * 1000, // Hours to milliseconds
+                        n_cpu: action.template.cpuCores || 1,
+                        memory_limit:
+                            (action.template.cpuMemory || 2) *
+                            1024 *
+                            1024 *
+                            1024, // min 2 GB
                     },
-                    {
-                        docker_image: action.template.image_name,
-                        name: action.uuid,
-                        limits: {
-                            max_runtime:
-                                action.template.maxRuntime * 60 * 60 * 1000, // Hours to milliseconds
-                            n_cpu: action.template.cpuCores || 1,
-                            memory_limit:
-                                (action.template.cpuMemory || 2) *
-                                1024 *
-                                1024 *
-                                1024, // min 2 GB
-                        },
-                        needs_gpu: needsGpu,
-                        environment: environmentVariables ?? '',
-                        command: action.template.command ?? '',
-                        entrypoint: action.template.entrypoint ?? '',
-                    },
-                );
+                    needs_gpu: needsGpu,
+                    environment: environmentVariables ?? '',
+                    command: action.template.command ?? '',
+                    entrypoint: action.template.entrypoint ?? '',
+                },
+            );
 
             // capture runner information
-            const actionImage = { repoDigests: repoDigests, sha };
+            const actionImage: Image = {
+                repoDigests: repoDigests,
+                sha,
+                source,
+                localCreatedAt,
+                remoteCreatedAt,
+            };
             const { executionStartedAt, container: actionContainer } =
                 await this.getContainerInfo(container);
             await this.actionRepository.update(
@@ -207,7 +220,7 @@ export class ActionManagerService {
                 throw new Error('Template is undefined');
             }
 
-            const { container: artifactUploadContainer } =
+            const { container: artifactUploadContainer, artifactMetadata } =
                 await this.containerDaemon.launchArtifactUploadContainer(
                     action.uuid,
                 );
@@ -219,12 +232,21 @@ export class ActionManagerService {
             const filename = `${action.uuid}.tar.gz`;
             const artifactPath = `/${bucketName}/${filename}`;
 
+            const updateData: any = {
+                artifacts: ArtifactState.UPLOADED,
+                artifact_path: artifactPath,
+            };
+
+            if (artifactMetadata?.size !== undefined) {
+                updateData.artifact_size = artifactMetadata.size;
+            }
+            if (artifactMetadata?.files !== undefined) {
+                updateData.artifact_files = artifactMetadata.files;
+            }
+
             await this.actionRepository.update(
                 { uuid: action.uuid },
-                {
-                    artifacts: ArtifactState.UPLOADED,
-                    artifact_path: artifactPath,
-                },
+                updateData,
             );
 
             return true; // Mark the job as completed

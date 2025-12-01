@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
+import { ImageSource } from '../../../frontend_shared/enum';
 
 export class DockerImageDto {
     @ApiProperty()
@@ -11,4 +12,21 @@ export class DockerImageDto {
     @IsOptional()
     @IsString()
     sha!: string;
+
+    @ApiProperty({
+        description: 'Source of the image',
+        required: false,
+        enum: ImageSource,
+    })
+    @IsOptional()
+    @IsEnum(ImageSource)
+    source?: ImageSource;
+
+    @ApiProperty({ description: 'Local creation timestamp', required: false })
+    @IsOptional()
+    localCreatedAt?: Date;
+
+    @ApiProperty({ description: 'Remote creation timestamp', required: false })
+    @IsOptional()
+    remoteCreatedAt?: Date;
 }

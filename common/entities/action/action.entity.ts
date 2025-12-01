@@ -1,5 +1,10 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
-import { ActionState, ArtifactState } from '../../frontend_shared/enum';
+import {
+    ActionState,
+    ArtifactState,
+    ImageSource,
+    LogType,
+} from '../../frontend_shared/enum';
 import { RuntimeDescription } from '../../types';
 import ApikeyEntity from '../auth/apikey.entity';
 import BaseEntity from '../base-entity.entity';
@@ -11,12 +16,15 @@ import ActionTemplateEntity from './action-template.entity';
 export interface ContainerLog {
     timestamp: string;
     message: string;
-    type: 'stdout' | 'stderr';
+    type: LogType;
 }
 
 export interface Image {
     sha: string | null;
     repoDigests: string[] | null;
+    source?: ImageSource;
+    localCreatedAt?: Date | undefined;
+    remoteCreatedAt?: Date | undefined;
 }
 
 export interface Container {
@@ -74,6 +82,12 @@ export default class ActionEntity extends BaseEntity {
 
     @Column({ nullable: false, default: ArtifactState.AWAITING_ACTION })
     artifacts!: ArtifactState;
+
+    @Column({ nullable: true })
+    artifact_size?: number;
+
+    @Column({ type: 'json', nullable: true })
+    artifact_files?: string[];
 
     @OneToOne(() => ApikeyEntity, (apikey) => apikey.action)
     @JoinColumn()

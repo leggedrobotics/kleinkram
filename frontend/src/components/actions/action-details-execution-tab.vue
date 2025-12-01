@@ -56,25 +56,6 @@
                     readonly
                 />
             </div>
-
-            <div class="col-12">
-                <q-separator class="q-my-sm" />
-            </div>
-
-            <!-- Technical Details -->
-            <div class="col-12 text-h6">Technical Details</div>
-
-            <div class="col-6">
-                <AppInput
-                    label="Resolved Image Digest"
-                    :model-value="
-                        action.image.repoDigests?.[0] ||
-                        action.image.sha ||
-                        'N/A'
-                    "
-                    readonly
-                />
-            </div>
             <div class="col-6">
                 <AppInput
                     label="Project / Mission"
@@ -87,7 +68,7 @@
                             round
                             dense
                             icon="sym_o_open_in_new"
-                            color="primary"
+                            color="grey-7"
                             @click.stop="openMission"
                         >
                             <q-tooltip>Go to Mission</q-tooltip>
@@ -95,6 +76,229 @@
                     </template>
                 </AppInput>
             </div>
+
+            <div class="col-12">
+                <q-separator class="q-my-sm" />
+            </div>
+
+            <!-- Artifacts -->
+            <div class="col-12">
+                <div class="text-h6 q-mb-sm">
+                    Artifact Files
+                    <span class="text-caption text-grey-6 q-ml-sm">
+                        (Artifacts are stored for 3 months)
+                    </span>
+                </div>
+                <div class="row items-center q-gutter-x-md">
+                    <q-btn
+                        v-if="action.artifacts === ArtifactState.UPLOADED"
+                        label="Download Artifacts"
+                        unelevated
+                        class="bg-button-secondary text-on-color"
+                        icon="sym_o_download"
+                        :disable="isExpired"
+                        @click="openArtifact"
+                    >
+                        <q-tooltip v-if="isExpired">
+                            Artifacts are only available for 3 months.
+                        </q-tooltip>
+                    </q-btn>
+                    <div v-else class="text-grey-7">
+                        {{ artifactStateText }}
+                    </div>
+                    <div
+                        v-if="action.artifactSize"
+                        class="text-caption text-grey-7"
+                    >
+                        {{ formatBytes(action.artifactSize) }}
+                    </div>
+                </div>
+                <div
+                    v-if="
+                        action.artifactFiles && action.artifactFiles.length > 0
+                    "
+                    class="q-mt-md"
+                >
+                    <ArtifactFileTree :files="action.artifactFiles || []" />
+                </div>
+            </div>
+
+            <div class="col-12">
+                <q-separator class="q-my-sm" />
+            </div>
+
+            <!-- Technical Details -->
+            <div class="col-12 text-h6">Technical Details</div>
+
+            <div class="col-6">
+                <AppInput
+                    label="Docker Image"
+                    :model-value="action.template.imageName"
+                    readonly
+                >
+                    <template v-if="dockerHubUrl" #append>
+                        <q-btn
+                            flat
+                            round
+                            dense
+                            icon="sym_o_open_in_new"
+                            color="grey-7"
+                            @click.stop="openDockerHub"
+                        >
+                            <q-tooltip>View on Docker Hub</q-tooltip>
+                        </q-btn>
+                    </template>
+                </AppInput>
+            </div>
+
+            <div class="col-6">
+                <AppInput
+                    label="Image ID"
+                    :model-value="action.image.sha || 'N/A'"
+                    readonly
+                >
+                    <template v-if="action.image.sha" #append>
+                        <q-btn
+                            flat
+                            round
+                            dense
+                            icon="sym_o_content_copy"
+                            color="grey-7"
+                            @click.stop="copyImageSha"
+                        >
+                            <q-tooltip>Copy Image ID</q-tooltip>
+                        </q-btn>
+                        <q-btn
+                            flat
+                            round
+                            dense
+                            icon="sym_o_help"
+                            color="grey-7"
+                        >
+                            <q-tooltip>
+                                The image ID is a hash of the local image JSON
+                                configuration.
+                            </q-tooltip>
+                        </q-btn>
+                    </template>
+                </AppInput>
+            </div>
+            <div class="col-6">
+                <AppInput
+                    label="Image Source"
+                    :model-value="
+                        action.image.source
+                            ? action.image.source === 'pulled'
+                                ? 'Pulled from Registry'
+                                : action.image.source === 'locally_built'
+                                  ? 'Locally Built (Override)'
+                                  : 'Cached Locally'
+                            : 'N/A'
+                    "
+                    readonly
+                >
+                    <template #append>
+                        <q-btn
+                            v-if="
+                                action.image.source === ImageSource.CACHED ||
+                                action.image.source ===
+                                    ImageSource.LOCALLY_BUILT
+                            "
+                            flat
+                            round
+                            dense
+                            icon="sym_o_info"
+                            color="grey-7"
+                        >
+                            <q-tooltip>
+                                <div
+                                    v-if="
+                                        action.image.source ===
+                                        ImageSource.CACHED
+                                    "
+                                >
+                                    Local image is up to date with remote image
+                                    registry.
+                                    <div v-if="action.image.localCreatedAt">
+                                        Local Build Time:
+                                        {{
+                                            formatDate(
+                                                action.image.localCreatedAt,
+                                            )
+                                        }}
+                                    </div>
+                                    <div v-if="action.image.remoteCreatedAt">
+                                        Remote Build Time:
+                                        {{
+                                            formatDate(
+                                                action.image.remoteCreatedAt,
+                                            )
+                                        }}
+                                    </div>
+                                </div>
+                                <div
+                                    v-else-if="
+                                        action.image.source ===
+                                        ImageSource.LOCALLY_BUILT
+                                    "
+                                >
+                                    <div>Local image is newer than remote.</div>
+                                    <div v-if="action.image.localCreatedAt">
+                                        Local Build Time:
+                                        {{
+                                            formatDate(
+                                                action.image.localCreatedAt,
+                                            )
+                                        }}
+                                    </div>
+                                    <div v-if="action.image.remoteCreatedAt">
+                                        Remote Build Time:
+                                        {{
+                                            formatDate(
+                                                action.image.remoteCreatedAt,
+                                            )
+                                        }}
+                                    </div>
+                                </div>
+                            </q-tooltip>
+                        </q-btn>
+                    </template>
+                </AppInput>
+            </div>
+
+            <div class="col-6">
+                <AppInput
+                    label="Repo Digest"
+                    :model-value="action.image.repoDigests?.[0] || 'N/A'"
+                    readonly
+                >
+                    <template v-if="action.image.repoDigests?.[0]" #append>
+                        <q-btn
+                            flat
+                            round
+                            dense
+                            icon="sym_o_content_copy"
+                            color="grey-7"
+                            @click.stop="copyRepoDigest"
+                        >
+                            <q-tooltip>Copy Repo Digest</q-tooltip>
+                        </q-btn>
+                        <q-btn
+                            flat
+                            round
+                            dense
+                            icon="sym_o_help"
+                            color="grey-7"
+                        >
+                            <q-tooltip>
+                                The "digest" is a hash of the manifest of the
+                                image in the Docker registry v2.
+                            </q-tooltip>
+                        </q-btn>
+                    </template>
+                </AppInput>
+            </div>
+
             <div class="col-6">
                 <AppInput
                     label="Runner CPU Model"
@@ -109,46 +313,16 @@
                     readonly
                 />
             </div>
-
-            <div class="col-12">
-                <q-separator class="q-my-sm" />
-            </div>
-
-            <!-- Artifacts -->
-            <div class="col-12">
-                <div class="text-subtitle2 q-mb-sm">
-                    Artifact Files
-                    <span class="text-caption text-grey-6 q-ml-sm">
-                        (Artifacts are stored for 3 months)
-                    </span>
-                </div>
-                <div class="row items-center q-gutter-x-md">
-                    <q-btn
-                        v-if="action.artifacts === ArtifactState.UPLOADED"
-                        label="Open Artifacts"
-                        unelevated
-                        class="bg-button-secondary text-on-color"
-                        icon="sym_o_link"
-                        :disable="isExpired"
-                        @click="openArtifact"
-                    >
-                        <q-tooltip v-if="isExpired">
-                            Artifacts are only available for 3 months.
-                        </q-tooltip>
-                    </q-btn>
-                    <div v-else class="text-grey-7">
-                        {{ artifactStateText }}
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ActionDto } from '@api/types/actions/action.dto';
-import { ActionState, ArtifactState } from '@common/enum';
+import { ActionState, ArtifactState, ImageSource } from '@common/enum';
+import ArtifactFileTree from 'components/actions/artifact-file-tree.vue';
 import AppInput from 'components/common/app-input.vue';
+import { copyToClipboard } from 'quasar';
 import ROUTES from 'src/router/routes';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
@@ -157,6 +331,28 @@ const props = defineProps<{ action: ActionDto }>();
 const $router = useRouter();
 
 const formatDate = (d: string | Date) => new Date(d).toLocaleString();
+
+const formatBytes = (bytes: number, decimals = 2) => {
+    if (!+bytes) return '0 Bytes';
+
+    const k = 1024;
+    const dm = Math.max(decimals, 0);
+    const sizes = [
+        'Bytes',
+        'KiB',
+        'MiB',
+        'GiB',
+        'TiB',
+        'PiB',
+        'EiB',
+        'ZiB',
+        'YiB',
+    ];
+
+    const index = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return `${Number.parseFloat((bytes / Math.pow(k, index)).toFixed(dm))} ${sizes[index]}`;
+};
 
 const runtimeString = computed(() => {
     if (!props.action.createdAt || !props.action.updatedAt) return 'N/A';
@@ -209,5 +405,40 @@ const openMission = async (): Promise<void> => {
             missionUuid: props.action.mission.uuid,
         },
     });
+};
+
+const openDockerHub = () => {
+    if (dockerHubUrl.value) {
+        window.open(dockerHubUrl.value, '_blank');
+    }
+};
+
+const dockerHubUrl = computed(() => {
+    const image = props.action.template.imageName;
+    if (
+        image.includes('localhost') ||
+        image.includes(':5000') ||
+        image.includes('ghcr.io')
+    )
+        return '';
+
+    const parts = image.split('/');
+    if (parts.length === 1 && parts[0]) {
+        // Official image, e.g. "ubuntu" -> https://hub.docker.com/_/ubuntu
+        return `https://hub.docker.com/_/${parts[0].split(':')[0]}`;
+    }
+    if (parts.length === 2 && parts[0] && parts[1]) {
+        // User image, e.g. "rslethz/kleinkram" -> https://hub.docker.com/r/rslethz/kleinkram
+        return `https://hub.docker.com/r/${parts[0]}/${parts[1].split(':')[0]}`;
+    }
+    return '';
+});
+
+const copyImageSha = () => {
+    void copyToClipboard(props.action.image.sha || '');
+};
+
+const copyRepoDigest = () => {
+    void copyToClipboard(props.action.image.repoDigests?.[0] || '');
 };
 </script>

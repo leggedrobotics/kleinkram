@@ -1,5 +1,6 @@
 import os
 import tarfile
+import json
 from minio import Minio
 
 
@@ -58,5 +59,17 @@ if __name__ == "__main__":
 
         print(f"Uploading to MinIO bucket: {BUCKET_NAME}...")
         upload_to_minio(tar_filename, BUCKET_NAME, object_name)
+
+        # Get file size
+        file_size = os.path.getsize(tar_filename)
+
+        # Get file list
+        files = []
+        with tarfile.open(tar_filename, "r:gz") as tar:
+            files = tar.getnames()
+
+        metadata = {"size": file_size, "files": files}
+        print(f"ARTIFACT_METADATA: {json.dumps(metadata)}", flush=True)
+
     else:
         print(f"Directory {SOURCE_DIR} does not exist, skipping upload.")

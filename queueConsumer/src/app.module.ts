@@ -34,6 +34,7 @@ import { ActionQueueProcessorProvider } from './actions/action-queue-processor.p
 import { ActionManagerService } from './actions/services/action-manager.service';
 import { ContainerCleanupService } from './actions/services/cleanup-containers.service';
 import { DockerDaemon } from './actions/services/docker-daemon.service';
+import { ImageResolutionService } from './actions/services/image-resolution.service';
 import { FileProcessorModule } from './file-processor/file-processor.module';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-queue-processor.provider';
 
@@ -138,6 +139,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
         ActionManagerService,
         ContainerCleanupService,
         AccessGroupExpiryProvider,
+        ImageResolutionService,
     ],
 })
 export class AppModule {}

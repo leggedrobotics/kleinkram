@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString } from 'class-validator';
+import { LogType } from '../../../frontend_shared/enum';
 
 export class LogsDto {
     @ApiProperty()
@@ -11,6 +12,6 @@ export class LogsDto {
     message!: string;
 
     @ApiProperty()
-    @IsEnum(['stdout', 'stderr'])
-    type!: 'stdout' | 'stderr';
+    @IsEnum(LogType)
+    type!: LogType;
 }

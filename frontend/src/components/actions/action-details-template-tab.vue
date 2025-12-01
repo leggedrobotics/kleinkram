@@ -42,7 +42,7 @@
                             round
                             dense
                             icon="sym_o_open_in_new"
-                            color="primary"
+                            color="grey-7"
                             @click.stop="openDockerHub"
                         >
                             <q-tooltip>View on Docker Hub</q-tooltip>

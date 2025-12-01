@@ -1,5 +1,6 @@
 import { ContainerLog } from '@common/entities/action/action.entity';
 import environment from '@common/environment';
+import { ImageSource, LogType } from '@common/frontend_shared/enum';
 import { Injectable } from '@nestjs/common';
 import Dockerode, { Image } from 'dockerode';
 import process from 'node:process';
@@ -14,6 +15,7 @@ import {
     PidsLimit,
     SecurityOpt,
 } from '../helper/container-configs';
+import { ImageResolutionService } from './image-resolution.service';
 
 export interface ContainerLimits {
     /**
@@ -59,7 +61,7 @@ export const dockerDaemonErrorHandler = (error: unknown): void => {
 
 const artifactUploaderImage =
     environment.ARTIFACTS_UPLOADER_IMAGE ||
-    'rslethz/grandtour-datasets:artifact-uploader-latest';
+    'rslethz/kleinkram:artifact-uploader-latest';
 
 /**
  * The DockerDaemon class is responsible for managing the Docker daemon.
@@ -72,7 +74,9 @@ export class DockerDaemon {
 
     static readonly CONTAINER_PREFIX = 'kleinkram-user-action-';
 
-    constructor() {
+    constructor(
+        private readonly imageResolutionService: ImageResolutionService,
+    ) {
         this.docker = new Dockerode({ socketPath: '/var/run/docker.sock' });
     }
 
@@ -99,6 +103,9 @@ export class DockerDaemon {
         container: Dockerode.Container;
         repoDigests: string[];
         sha: string;
+        source: ImageSource;
+        localCreatedAt: Date | undefined;
+        remoteCreatedAt: Date | undefined;
     }> {
         // merge the given container limitations with the default ones
         if (!containerOptions) containerOptions = {};
@@ -123,7 +130,8 @@ export class DockerDaemon {
             throw new Error('No name specified');
         }
 
-        const image = await this.getImage(containerOptions.docker_image);
+        const { image, source, localCreatedAt, remoteCreatedAt } =
+            await this.getImage(containerOptions.docker_image);
         // get image details
         const details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
@@ -203,7 +211,14 @@ export class DockerDaemon {
             containerOptions.limits?.max_runtime ?? 0,
         );
 
-        return { container, repoDigests: repoDigests, sha };
+        return {
+            container,
+            repoDigests: repoDigests,
+            sha,
+            source,
+            localCreatedAt,
+            remoteCreatedAt,
+        };
     }
 
     private errorHandling() {
@@ -300,7 +315,12 @@ export class DockerDaemon {
     }
 
     @tracing()
-    private async getImage(dockerImage: string): Promise<Image> {
+    private async getImage(dockerImage: string): Promise<{
+        image: Image;
+        source: ImageSource;
+        localCreatedAt: Date | undefined;
+        remoteCreatedAt: Date | undefined;
+    }> {
         const dockerhub_namespace = process.env['VITE_DOCKER_HUB_NAMESPACE'];
         // assert that we only run images from a specified namespace
         if (
@@ -317,11 +337,22 @@ export class DockerDaemon {
             throw new Error('Docker socket not available or not responding');
         }
 
-        await this.pullImage(dockerImage)
-            // ignore errors, image might already exist locally
-            .catch(() => ({}));
+        const { source, localCreatedAt, remoteCreatedAt, shouldPull } =
+            await this.imageResolutionService.resolveImage(
+                this.docker,
+                dockerImage,
+            );
 
-        return this.docker.getImage(dockerImage);
+        if (shouldPull) {
+            await this.pullImage(dockerImage);
+        }
+
+        return {
+            image: this.docker.getImage(dockerImage),
+            source,
+            localCreatedAt,
+            remoteCreatedAt,
+        };
     }
 
     async stopContainer(containerId: string): Promise<void> {
@@ -423,7 +454,7 @@ export class DockerDaemon {
         return {
             timestamp: timestamp,
             message: message,
-            type: logLevel === 2 ? 'stderr' : 'stdout',
+            type: logLevel === 2 ? LogType.STDERR : LogType.STDOUT,
         };
     }
 
@@ -481,6 +512,7 @@ export class DockerDaemon {
     async launchArtifactUploadContainer(containerId: string): Promise<{
         container: Dockerode.Container;
         repoDigests: string[];
+        artifactMetadata?: { size: number; files: string[] } | undefined;
     }> {
         const containerOptions = { limits: defaultContainerLimitations };
 
@@ -493,22 +525,10 @@ export class DockerDaemon {
             throw new Error('Docker socket not available or not responding');
         }
 
-        let image = this.docker.getImage(artifactUploaderImage);
-        let details = await image.inspect().catch(dockerDaemonErrorHandler);
-        logger.info(`Checking if image ${artifactUploaderImage} exists...`);
-
-        if (!details) {
-            logger.info('Image does not exist, pulling image...');
-            const pullResult = await this.pullImage(
-                artifactUploaderImage,
-            ).catch(this.errorHandling());
-
-            logger.info(`Image pulled: ${pullResult}. Starting container...`);
-            image = this.docker.getImage(artifactUploaderImage);
-        }
+        const { image } = await this.getImage(artifactUploaderImage);
 
         // get image details
-        details = await image.inspect().catch(dockerDaemonErrorHandler);
+        const details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
             throw new Error(
                 `Crashed during Artifacts upload. Image ${artifactUploaderImage} not found!`,
@@ -516,7 +536,9 @@ export class DockerDaemon {
         }
         const repoDigests = details.RepoDigests;
 
-        logger.info('Creating artifact uploader container...');
+        logger.info(
+            `Creating artifact uploader container from image: ${artifactUploaderImage} with options: ${JSON.stringify(containerOptions)}`,
+        );
 
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: artifactUploaderImage,
@@ -560,13 +582,85 @@ export class DockerDaemon {
         await container.start();
         logger.info(`Container started with id: ${container.id}`);
 
-        // Stream logs to stdout/stderr for debugging
+        // Stream logs to stdout/stderr for debugging and capture metadata
+        let artifactMetadata: { size: number; files: string[] } | undefined;
+
         const stream = await container.logs({
             follow: true,
             stdout: true,
             stderr: true,
         });
-        container.modem.demuxStream(stream, process.stdout, process.stderr);
+
+        const logPromise = new Promise<void>((resolve, reject) => {
+            let buffer = '';
+            const stdoutWritable = {
+                write: (chunk: Buffer) => {
+                    const chunkString = chunk.toString();
+                    buffer += chunkString;
+
+                    const lines = buffer.split('\n');
+                    // Keep the last part in the buffer as it might be an incomplete line
+                    buffer = lines.pop() ?? '';
+
+                    for (const line of lines) {
+                        logger.debug(`[ArtifactUpload] ${line}`);
+                        if (line.includes('ARTIFACT_METADATA:')) {
+                            try {
+                                const jsonString = line
+                                    .split('ARTIFACT_METADATA:')[1]
+                                    ?.trim();
+                                if (jsonString) {
+                                    artifactMetadata = JSON.parse(jsonString);
+                                }
+                            } catch (error) {
+                                logger.error(
+                                    `Failed to parse artifact metadata: ${error}`,
+                                );
+                            }
+                        }
+                    }
+                    return true;
+                },
+            };
+
+            const stderrWritable = {
+                write: (chunk: Buffer) => {
+                    logger.debug(
+                        `[ArtifactUpload STDERR] ${chunk.toString().trim()}`,
+                    );
+                    return true;
+                },
+            };
+
+            stream.on('end', () => {
+                if (buffer) {
+                    logger.debug(`[ArtifactUpload] ${buffer}`);
+                    if (buffer.includes('ARTIFACT_METADATA:')) {
+                        try {
+                            const jsonString = buffer
+                                .split('ARTIFACT_METADATA:')[1]
+                                ?.trim();
+                            if (jsonString) {
+                                artifactMetadata = JSON.parse(jsonString);
+                            }
+                        } catch (error) {
+                            logger.error(
+                                `Failed to parse artifact metadata: ${error}`,
+                            );
+                        }
+                    }
+                }
+                resolve();
+            });
+
+            stream.on('error', reject);
+
+            container.modem.demuxStream(
+                stream,
+                stdoutWritable as any,
+                stderrWritable as any,
+            );
+        });
 
         // stop the container after max_runtime seconds
         await this.killContainerAfterMaxRuntime(
@@ -575,7 +669,8 @@ export class DockerDaemon {
             true,
         );
 
-        // 4. Update return type (removed parentFolder)
-        return { container, repoDigests };
+        await logPromise;
+
+        return { container, repoDigests, artifactMetadata };
     }
 }

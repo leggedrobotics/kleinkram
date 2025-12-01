@@ -272,7 +272,7 @@ services:
 
     artifactUploader:
         container_name: kleinkram-artifact-uploader
-        image: rslethz/grandtour-datasets:artifact-uploader-latest
+        image: rslethz/kleinkram:artifact-uploader-latest
         build:
             context: queueConsumer/src/artifactUpload
             dockerfile: Dockerfile
