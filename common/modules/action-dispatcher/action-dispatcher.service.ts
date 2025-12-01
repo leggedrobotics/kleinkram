@@ -100,8 +100,8 @@ export class ActionDispatcherService implements OnModuleInit {
                 ...parameters,
             };
 
-            // - Passing this.actionQueues which is now managed here
-            const queued = await addActionQueue(
+            // Try to queue
+            let queued = await addActionQueue(
                 action,
                 runtimeRequirements,
                 this.workerRepository,
@@ -109,6 +109,22 @@ export class ActionDispatcherService implements OnModuleInit {
                 this.actionQueues,
                 this.logger,
             );
+
+            // If failed, try to refresh workers and retry
+            if (!queued) {
+                this.logger.warn(
+                    'Queue rejection, attempting to refresh workers and retry...',
+                );
+                await this.healthCheck();
+                queued = await addActionQueue(
+                    action,
+                    runtimeRequirements,
+                    this.workerRepository,
+                    this.actionRepository,
+                    this.actionQueues,
+                    this.logger,
+                );
+            }
 
             if (!queued) throw new Error('Queue rejection');
 

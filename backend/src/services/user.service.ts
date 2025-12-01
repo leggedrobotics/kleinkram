@@ -241,7 +241,7 @@ export class UserService implements OnModuleInit {
      */
     async findUserByAPIKey(
         apikey: string,
-    ): Promise<{ apikey: ApikeyEntity; user: UserEntity }> {
+    ): Promise<{ apiKey: ApikeyEntity; user: UserEntity }> {
         const user = await this.userRepository.findOneOrFail({
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
@@ -253,14 +253,15 @@ export class UserService implements OnModuleInit {
             // Disable global eager loading to ensure your manual relations take precedence
             loadEagerRelations: false,
             relations: {
-                action: true,
+                action: {
+                    template: true,
+                },
                 mission: {
                     project: true,
                 },
             },
         });
-
-        return { user, apikey: apiKey };
+        return { user, apiKey };
     }
 
     /**

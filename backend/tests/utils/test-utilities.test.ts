@@ -2,11 +2,7 @@ import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
 import AccountEntity from '@common/entities/auth/account.entity';
 import UserEntity from '@common/entities/user/user.entity';
 import { UserRole } from '@common/frontend_shared/enum';
-import {
-    clearAllData,
-    database,
-    mockDatabaseUser,
-} from './utils/database-utilities';
+import { clearAllData, database, mockDatabaseUser } from './database-utilities';
 
 describe('Test Suite Utils', () => {
     beforeAll(async () => {

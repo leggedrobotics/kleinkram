@@ -75,11 +75,12 @@ def main():
         os.path.dirname(__file__), "../../backend/tests/fixtures"
     )
     os.makedirs(backend_fixtures_dir, exist_ok=True)
-    generate_bag(os.path.join(backend_fixtures_dir, 'test.bag'), 10 * 1024)
-    generate_bag(os.path.join(backend_fixtures_dir, 'to_delete.bag'), 10 * 1024)
-    generate_bag(os.path.join(backend_fixtures_dir, 'file1.bag'), 10 * 1024)
-    generate_bag(os.path.join(backend_fixtures_dir, 'file2.bag'), 10 * 1024)
-    generate_bag(os.path.join(backend_fixtures_dir, 'move_me.bag'), 10 * 1024)
+    generate_bag(os.path.join(backend_fixtures_dir, "test.bag"), 10 * 1024)
+    generate_bag(os.path.join(backend_fixtures_dir, "to_delete.bag"), 10 * 1024)
+    generate_bag(os.path.join(backend_fixtures_dir, "file1.bag"), 10 * 1024)
+    generate_bag(os.path.join(backend_fixtures_dir, "file2.bag"), 10 * 1024)
+    generate_bag(os.path.join(backend_fixtures_dir, "move_me.bag"), 10 * 1024)
+    generate_bag(os.path.join(backend_fixtures_dir, "state_test.bag"), 10 * 1024)
 
     print("Done.")
 

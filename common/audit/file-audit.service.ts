@@ -25,10 +25,6 @@ export class FileAuditService {
         isSuccess: boolean,
         error?: string,
     ): Promise<void> {
-        console.debug(
-            `Logging audit event: action=${action}, fileUuid=${context.fileUuid}, missionUuid=${context.missionUuid}, isSuccess=${isSuccess}`,
-        );
-
         try {
             // Resolve File and Mission Relations
             let file: FileEntity | undefined = undefined;

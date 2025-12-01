@@ -77,3 +77,37 @@ pytest
 - **General Setup**: [../docs/development/getting-started.md](../docs/development/getting-started.md)
 - **Testing**: [../docs/development/testing/getting-started.md](../docs/development/testing/getting-started.md)
 - **Python/CLI**: [../docs/development/python/getting-started.md](../docs/development/python/getting-started.md)
+
+## 🧪 Test Naming Conventions
+
+To ensure consistency and readability, please adhere to the following naming conventions for test files and test cases:
+
+### File Naming
+
+- **Format**: `kebab-case.test.ts`
+- **Location**: `tests/<component>/` or `tests/functional/`
+- **Examples**:
+    - `user-authentication.test.ts`
+    - `file-upload.test.ts`
+    - `action-execution.test.ts`
+
+### Test Suite Naming (`describe`)
+
+- **Format**: Title Case or Sentence case describing the component or feature under test.
+- **Examples**:
+    - `describe('User Authentication', ...)`
+    - `describe('File Upload Service', ...)`
+
+### Test Case Naming (`test` / `it`)
+
+- **Format**: Should start with a verb (e.g., "should", "if") and describe the expected behavior or scenario.
+- **Style**:
+    - **"should" style**: `test('should return 200 OK when valid credentials are provided', ...)`
+    - **"if" style**: `test('if a user can view details of a submitted action', ...)`
+- **Clarity**: Be specific about the condition and the expected result.
+
+### General Rules
+
+- Keep tests focused on a single behavior.
+- Use descriptive variable names within tests.
+- Clean up resources in `afterEach` or `afterAll` to prevent state leakage.

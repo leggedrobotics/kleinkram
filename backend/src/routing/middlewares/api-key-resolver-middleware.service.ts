@@ -27,6 +27,16 @@ export class APIKeyResolverMiddleware implements NestMiddleware {
             }
         }
 
+        if (!request.user) {
+            const headerKey = request.headers['x-api-key'] as
+                | string
+                | undefined;
+            if (headerKey) {
+                request.user =
+                    await this.userService.findUserByAPIKey(headerKey);
+            }
+        }
+
         // pass on to the next middleware function
         next();
     }

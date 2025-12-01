@@ -15,13 +15,13 @@ import {
     FileType,
 } from '@common/frontend_shared/enum';
 import { Repository } from 'typeorm';
-import QueueService from '../src/services/queue.service';
+import QueueService from '../../src/services/queue.service';
 import {
     clearAllData,
     database,
     getUserFromDatabase,
     mockDatabaseUser,
-} from './utils/database-utilities';
+} from '../utils/database-utilities';
 
 // Mock dependencies
 const mockStorageService = {

@@ -88,7 +88,7 @@ export enum ActionState {
 }
 
 export enum KeyTypes {
-    CONTAINER = 'CONTAINER',
+    ACTION = 'ACTION',
 }
 
 export enum CookieNames {

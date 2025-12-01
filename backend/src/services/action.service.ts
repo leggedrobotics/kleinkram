@@ -183,7 +183,7 @@ export class ActionService {
     ): Promise<ActionLogsDto> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUuid },
-            select: ['logs'],
+            select: ['uuid', 'logs'],
         });
 
         const logs = action.logs ?? [];

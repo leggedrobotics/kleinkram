@@ -33,7 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             try {
                 const user = await this.userService.findOneByUUID(
                     payload.uuid,
-                    {},
+                    { uuid: true, role: true, name: true },
                     {},
                 );
                 return { user };

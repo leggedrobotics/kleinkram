@@ -946,6 +946,7 @@ export class FileService implements OnModuleInit {
 
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
+            relations: ['mission'],
         });
 
         // verify that the file exists in DB

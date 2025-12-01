@@ -10,7 +10,8 @@ import {
 } from '../utils/database-utilities';
 
 // DEFAUL_URL for backend
-export const DEFAULT_URL = 'http://localhost:3000';
+export const DEFAULT_URL =
+    process.env['DEFAULT_URL'] ?? 'http://localhost:3000';
 export const DEFAULT_GROUP_UUIDS: [string] = [
     '00000000-0000-0000-0000-000000000000',
 ] as const;

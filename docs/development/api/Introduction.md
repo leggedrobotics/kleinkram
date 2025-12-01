@@ -35,8 +35,18 @@ curl 'http://localhost:3000/user/me' \
   -b 'authtoken=...; refreshtoken=...'
 ```
 
+### API Key Authentication
+
+For programmatic access, you can use an API key. Pass it in the `x-api-key` header.
+
+```bash
+curl 'http://localhost:3000/user/me' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Kleinkram-Client-Version: 0.50.0'
+```
+
 ::: tip
 
-**Exception:** The `/api/health` endpoint does not require this header.
+**Exception:** The `/api/health` endpoint does not require a kleinkram client version header.
 
 :::

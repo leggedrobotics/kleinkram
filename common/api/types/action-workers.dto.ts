@@ -4,6 +4,7 @@ import {
     IsBoolean,
     IsDate,
     IsNumber,
+    IsOptional,
     IsString,
     IsUUID,
     ValidateNested,
@@ -38,8 +39,9 @@ export class ActionWorkerDto {
     cpuMemory!: number;
 
     @ApiProperty()
+    @IsOptional()
     @IsString()
-    gpuModel!: string;
+    gpuModel!: string | null;
 
     @ApiProperty()
     @IsNumber()

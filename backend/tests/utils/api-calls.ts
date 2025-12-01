@@ -5,15 +5,23 @@ import { CreateMission } from '@common/api/types/create-mission.dto';
 import { CreateProject } from '@common/api/types/create-project.dto';
 import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
 import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
 import UserEntity from '@common/entities/user/user.entity';
-import { QueueState } from '@common/frontend_shared/enum';
 import crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import { appVersion } from '../../src/app-version';
 import { DEFAULT_URL } from '../auth/utilities';
 import { database, getJwtToken } from './database-utilities';
 import { uploadFileMultipart } from './multipart-upload';
+
+export const getAuthHeaders = (user?: UserEntity): Record<string, string> => {
+    const headers: Record<string, string> = {
+        'kleinkram-client-version': appVersion,
+    };
+    if (user) {
+        headers['cookie'] = `authtoken=${getJwtToken(user)}`;
+    }
+    return headers;
+};
 
 export class HeaderCreator {
     headers: Headers;
@@ -126,11 +134,12 @@ export async function uploadFile(
     filename: string,
     missionUuid: string,
 ): Promise<ArrayBuffer> {
-    const response = await fetch(`${DEFAULT_URL}/file/temporaryAccess`, {
+    const response = await fetch(`${DEFAULT_URL}/files/temporaryAccess`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             cookie: `authtoken=${await getJwtToken(user)}`,
+            'kleinkram-client-version': appVersion,
         },
         body: JSON.stringify({
             filenames: [filename],
@@ -142,14 +151,21 @@ export async function uploadFile(
     const json = await response.json();
     expect(json).toBeDefined();
 
-    const fileresponseponse = json[0];
+    const fileresponseponse = json.data[0];
 
     expect(fileresponseponse).toBeDefined();
     expect(fileresponseponse.bucket).toBe('data');
     expect(fileresponseponse.fileUUID).toBeDefined();
 
-    // open file from fixturesponse
-    const file = fs.readFileSync(`./tests/fixturesponse/${filename}`);
+    // open file from fixtures
+    const filePath = `./tests/fixtures/${filename}`;
+    if (!fs.existsSync(filePath)) {
+        throw new Error(
+            `Test data file '${filename}' not found at '${filePath}'. ` +
+                `Please run 'python3 cli/tests/generate_test_data.py' to generate the required test data.`,
+        );
+    }
+    const file = fs.readFileSync(filePath);
     const blob = new Blob([file], {
         type: 'application/octet-stream',
     });
@@ -184,6 +200,7 @@ export async function uploadFile(
         headers: {
             'Content-Type': 'application/json',
             cookie: `authtoken=${await getJwtToken(user)}`,
+            'kleinkram-client-version': appVersion,
         },
         body: JSON.stringify({
             uuid: fileresponseponse.fileUUID,
@@ -191,28 +208,6 @@ export async function uploadFile(
         }),
     });
     expect(responseConfirm.status).toBe(201);
-
-    while (true) {
-        const responseActive = await fetch(`${DEFAULT_URL}/queue/active`, {
-            method: 'GET',
-            headers: {
-                cookie: `authtoken=${await getJwtToken(user)}`,
-            },
-        });
-
-        expect(responseActive.status).toBe(200);
-        const active = await responseActive.json();
-        if (
-            active.some(
-                (x: IngestionJobEntity) =>
-                    x.uuid === fileresponseponse.queueUUID &&
-                    x.state === QueueState.COMPLETED,
-            )
-        ) {
-            break;
-        }
-        await new Promise((r) => setTimeout(r, 1000));
-    }
 
     return fileHash;
 }

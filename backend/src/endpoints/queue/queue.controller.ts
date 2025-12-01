@@ -64,8 +64,8 @@ export class QueueController {
         let _source = source;
         if (!_source) {
             _source = FileSource.WEB_INTERFACE;
-            if (auth.apikey) {
-                _source = auth.apikey.action
+            if (auth.apiKey) {
+                _source = auth.apiKey.action
                     ? FileSource.ACTION
                     : FileSource.CLI;
             }

@@ -62,7 +62,7 @@ export class ActionManagerService {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
             rights: action.template.accessRights,
-            key_type: KeyTypes.CONTAINER,
+            key_type: KeyTypes.ACTION,
             action: action,
             user: action.creator,
         });

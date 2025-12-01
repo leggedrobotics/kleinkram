@@ -11,6 +11,7 @@ import { MinioStrategy } from './strategies/minio.strategy';
 
 import ActionTemplateEntity from '@common/entities/action/action-template.entity';
 import ActionEntity from '@common/entities/action/action.entity';
+import ApikeyEntity from '@common/entities/auth/apikey.entity';
 import FileEventEntity from '@common/entities/file/file-event.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
@@ -34,6 +35,7 @@ import { RosBagMetadataService } from './handlers/rosbag-metadata.service';
             ActionTemplateEntity,
             FileEventEntity,
             WorkerEntity,
+            ApikeyEntity,
         ]),
         BullModule.registerQueue({ name: 'file-queue' }),
         StorageModule,

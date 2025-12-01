@@ -15,12 +15,27 @@ import logger from '../../logger';
 function validateResponseJSON<T extends object>(dto: ClassConstructor<T>) {
     return (data: JSON): JSON => {
         if (dto) {
-            const instance: T = plainToInstance(dto, data);
-            const errors = validateSync(instance, {
-                whitelist: true,
-                forbidNonWhitelisted: true,
-                forbidUnknownValues: true,
-            });
+            const isArray = Array.isArray(dto);
+            const cls = isArray ? dto[0] : dto;
+            const instance: T = plainToInstance(cls, data);
+
+            let errors: any[] = [];
+            if (Array.isArray(instance)) {
+                for (const item of instance) {
+                    const itemErrors = validateSync(item, {
+                        whitelist: true,
+                        forbidNonWhitelisted: true,
+                        forbidUnknownValues: true,
+                    });
+                    errors.push(...itemErrors);
+                }
+            } else {
+                errors = validateSync(instance as object, {
+                    whitelist: true,
+                    forbidNonWhitelisted: true,
+                    forbidUnknownValues: true,
+                });
+            }
 
             if (errors.length > 0) {
                 logger.error(

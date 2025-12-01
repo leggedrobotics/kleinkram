@@ -22,11 +22,14 @@ export async function findWorkerForAction(
             hostname: 'DESC',
         },
     });
+
+    const activeWorkers = worker.filter((w) => actionQueues[w.identifier]);
+
     logger.debug(
-        `Available Worker (GPU: ${runtimeRequirements.gpuMemory.toString()}GB): ${worker.map((a) => a.identifier).join(', ')}`,
+        `Available Worker (GPU: ${runtimeRequirements.gpuMemory.toString()}GB): ${activeWorkers.map((a) => a.identifier).join(', ')}`,
     );
 
-    if (worker.length === 0) {
+    if (activeWorkers.length === 0) {
         return;
     }
 
@@ -37,7 +40,7 @@ export async function findWorkerForAction(
         }),
     );
     logger.debug('jobDistribution: ', nrJobs);
-    return worker.sort(
+    return activeWorkers.sort(
         (a, b) => nrJobs[a.identifier] - nrJobs[b.identifier],
     )[0];
 }

@@ -2,6 +2,7 @@ import ApikeyEntity from '@common/entities/auth/apikey.entity';
 import {
     AccessGroupRights,
     ActionState,
+    KeyTypes,
     UserRole,
 } from '@common/frontend_shared/enum';
 import {
@@ -43,6 +44,7 @@ export class BaseGuard extends AuthGuard('jwt') {
         if (!user) {
             throw new UnauthorizedException('User not logged in');
         }
+
         return { user, apiKey, request };
     }
 }
@@ -103,11 +105,27 @@ export class ReadProjectGuard extends BaseGuard {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
+
+        const projectUUID = request.query.uuid || request.params.uuid;
+
         if (apiKey) {
+            // Check if this is an action API key
+            if (
+                apiKey.key_type === KeyTypes.ACTION &&
+                apiKey.mission?.project?.uuid
+            ) {
+                // Action keys can only access their associated project
+                if (apiKey.mission.project.uuid !== projectUUID) {
+                    throw new ForbiddenException(
+                        'Action key cannot access this project',
+                    );
+                }
+                return true;
+            }
+            // CLI keys and other keys cannot read projects
             throw new UnauthorizedException('CLI Keys cannot read projects');
         }
 
-        const projectUUID = request.query.uuid || request.params.uuid;
         return this.projectGuardService.canAccessProject(user, projectUUID);
     }
 }

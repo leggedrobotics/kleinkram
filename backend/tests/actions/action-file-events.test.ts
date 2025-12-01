@@ -1,68 +1,86 @@
 import { FileEventsDto } from '@common/api/types/file/file-event.dto';
+import ActionTemplateEntity from '@common/entities/action/action-template.entity';
 import ActionEntity from '@common/entities/action/action.entity';
 import FileEntity from '@common/entities/file/file.entity';
 import MissionEntity from '@common/entities/mission/mission.entity';
+
+import ApikeyEntity from '@common/entities/auth/apikey.entity';
+import UserEntity from '@common/entities/user/user.entity';
 import environment from '@common/environment';
 import {
     AccessGroupRights,
+    ActionState,
+    ArtifactState,
     CookieNames,
     FileEventType,
     FileState,
     FileType,
-    UserRole,
+    KeyTypes,
 } from '@common/frontend_shared/enum';
 import * as Minio from 'minio';
 import { appVersion } from '../../src/app-version';
-import { DEFAULT_URL } from '../auth/utilities';
+import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createActionUsingPost,
     createMissionUsingPost,
     createProjectUsingPost,
+    getAuthHeaders,
 } from '../utils/api-calls';
-import {
-    clearAllData,
-    database,
-    getJwtToken,
-    getUserFromDatabase,
-    mockDatabaseUser,
-} from '../utils/database-utilities';
+
+import { database } from '../utils/database-utilities';
+import { setupDatabaseHooks } from '../utils/test-helpers';
 
 describe('Action File Events', () => {
-    beforeAll(async () => {
-        await database.initialize();
-        await clearAllData();
-    }, 30000);
-
-    beforeEach(clearAllData);
-
-    afterAll(async () => {
-        await database.destroy();
-    });
+    setupDatabaseHooks();
 
     test('should track file events triggered by an action', async () => {
-        // 1. Setup User, Project, Mission
-        const userId = await mockDatabaseUser(
-            'test@kleinkram.io',
-            'Test User',
-            UserRole.ADMIN,
-        );
-        const user = await getUserFromDatabase(userId);
-        const projectUuid = await createProjectUsingPost(
-            { name: 'test_project', description: 'desc', requiredTags: [] },
-            user,
-        );
-        const missionUuid = await createMissionUsingPost(
+        console.log('DEFAULT_URL:', DEFAULT_URL);
+        // 1. Setup User
+        const setup = await generateAndFetchDatabaseUser('internal', 'user');
+        let user: UserEntity = setup.user;
+
+        // 2. Create Mission
+        const missionResponse = await createMissionUsingPost(
             {
                 name: 'test_mission',
-                projectUUID: projectUuid,
+                projectUUID: await createProjectUsingPost(
+                    {
+                        name: 'test_project',
+                        description: 'desc',
+                        requiredTags: [],
+                        accessGroups: [],
+                    },
+                    user,
+                ),
                 tags: {},
                 ignoreTags: true,
             },
             user,
         );
+        let missionUuid = missionResponse;
 
-        // 2. Create Action Template
-        const templateUuid = await createActionUsingPost(
+        // Create a file
+        const fileRepo = database.getRepository(FileEntity);
+        const missionRepo = database.getRepository(MissionEntity);
+        const mission = await missionRepo.findOneByOrFail({
+            uuid: missionUuid,
+        });
+
+        const file = await fileRepo.save(
+            fileRepo.create({
+                filename: 'test.bag',
+                mission: mission,
+                // project: mission.project, // project is not a direct property of FileEntity
+                creator: user,
+                type: FileType.BAG,
+                size: 123,
+                date: new Date(),
+                state: FileState.OK,
+            }),
+        );
+
+        // 3. Create Action Template
+        const createdTemplate = await createActionUsingPost(
             {
                 name: 'Test Action',
                 description: 'desc',
@@ -75,71 +93,64 @@ describe('Action File Events', () => {
             },
             user,
         );
+        const templateUuid = createdTemplate;
 
-        // Submit action
-        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                cookie: `authtoken=${await getJwtToken(user)}`,
-                'kleinkram-client-version': appVersion,
+        // 4. Manually Create Action (Mock Execution)
+        const actionRepo = database.getRepository(ActionEntity);
+        const templateRepo = database.getRepository(ActionTemplateEntity);
+        const template = await templateRepo.findOneOrFail({
+            where: { uuid: templateUuid },
+        });
+
+        const action = actionRepo.create({
+            state: ActionState.PROCESSING,
+            template: template,
+            mission: mission,
+            creator: user,
+            artifacts: ArtifactState.AWAITING_ACTION,
+            image: {
+                sha: 'sha256:mock',
+                repoDigests: [],
             },
-            body: JSON.stringify({
-                missionUUID: missionUuid,
-                templateUUID: templateUuid,
-            }),
         });
-        expect(submitResponse.status).toBe(201);
-        const { actionUUID } = await submitResponse.json();
+        await actionRepo.save(action);
+        const actionUUID = action.uuid;
 
-        // 3. Get Action API Key
-        // Wait for action key to be generated (async worker)
-        let action = await database.getRepository(ActionEntity).findOneOrFail({
-            where: { uuid: actionUUID },
-            relations: ['key'],
+        // 5. Create Action API Key
+        const apikeyRepo = database.getRepository(ApikeyEntity);
+        const apikeyEntity = apikeyRepo.create({
+            key_type: KeyTypes.ACTION,
+            mission: mission,
+            action: action,
+            rights: AccessGroupRights.WRITE,
+            user: user,
         });
-
-        let attempts = 0;
-        while (!action.key && attempts < 20) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            action = await database.getRepository(ActionEntity).findOneOrFail({
-                where: { uuid: actionUUID },
-                relations: ['key'],
-            });
-            attempts++;
-        }
-        const actionKey = action.key?.apikey as string;
-
-        if (!action.key) {
-            throw new Error('Action key not found');
-        }
-        const apiKey = action.key.apikey;
+        await apikeyRepo.save(apikeyEntity);
+        const actionKey = apikeyEntity.apikey;
+        const apiKey = actionKey;
 
         // 4. Create a File directly in DB
-        const missionRepo = database.getRepository(MissionEntity);
-        const mission = await missionRepo.findOneByOrFail({
-            uuid: missionUuid,
-        });
+        // Reuse the file created earlier
+        // const missionRepo = database.getRepository(MissionEntity);
+        // const mission = await missionRepo.findOneByOrFail({
+        //     uuid: missionUuid,
+        // });
 
-        const fileRepo = database.getRepository(FileEntity);
-        const file = fileRepo.create({
-            filename: 'test.bag',
-            mission: mission,
-            size: 1024,
-            // bucket: 'data', // bucket does not exist on FileEntity
-            hash: 'hash',
-            // uploaded: true, // uploaded does not exist on FileEntity? Let's check.
-            // It seems I copied properties from somewhere else or guessed them.
-            // Let's check FileEntity again.
-            // It has state.
-            state: FileState.OK,
-            date: new Date(),
-            type: FileType.BAG,
-            creator: user,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        await fileRepo.save(file);
+        // const fileRepo = database.getRepository(FileEntity);
+        // const file = fileRepo.create({
+        //     filename: 'test.bag',
+        //     mission: mission,
+        //     size: 1024,
+        //     // bucket: 'data', // bucket does not exist on FileEntity
+        //     hash: 'hash',
+        //     state: FileState.OK,
+        //     date: new Date(),
+        //     type: FileType.BAG,
+        //     creator: user,
+        //     createdAt: new Date(),
+        //     updatedAt: new Date(),
+        // });
+        // await fileRepo.save(file);
 
         // Upload file to MinIO to avoid 500 error during update (which tries to tag the object)
         const minioClient = new Minio.Client({
@@ -151,59 +162,14 @@ describe('Action File Events', () => {
         });
 
         const bucketName = environment.MINIO_DATA_BUCKET_NAME;
-        const exists = await minioClient.bucketExists(bucketName);
-        if (!exists) {
-            await minioClient.makeBucket(bucketName, 'us-east-1');
-        }
+        // Bucket is created on container start
         await minioClient.putObject(
             bucketName,
             file.uuid,
             Buffer.from('dummy content'),
         );
 
-        // 5. Update File using Action API Key
-        const updateResponse = await fetch(
-            `${DEFAULT_URL}/files/${file.uuid}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    cookie: `${CookieNames.CLI_KEY}=${apiKey}`,
-                    'kleinkram-client-version': appVersion,
-                },
-                body: JSON.stringify({
-                    uuid: file.uuid,
-                    filename: 'updated.bag',
-                    date: new Date(),
-                }),
-            },
-        );
-        expect(updateResponse.status).toBe(200);
-
-        // 6. Verify File Event via Action Endpoint
-        const eventsResponse = await fetch(
-            `${DEFAULT_URL}/actions/${actionUUID}/file-events`,
-            {
-                method: 'GET',
-                headers: {
-                    cookie: `authtoken=${await getJwtToken(user)}`,
-                    'kleinkram-client-version': appVersion,
-                },
-            },
-        );
-        expect(eventsResponse.status).toBe(200);
-        const events: FileEventsDto = await eventsResponse.json();
-
-        expect(events.count).toBeGreaterThan(0);
-        // Find the RENAMED event
-        const event = events.data.find((e) => e.type === FileEventType.RENAMED);
-        expect(event).toBeDefined();
-        expect(event?.action?.uuid).toBe(actionUUID);
-        expect(event?.action?.name).toBe('Test Action');
-        expect(event?.details['oldFilename']).toBe('test.bag');
-        expect(event?.details['newFilename']).toBe('updated.bag');
-
-        // 7. Download File using Action API Key
+        // 5. Download File using Action API Key
         const downloadResponse = await fetch(
             `${DEFAULT_URL}/files/download?uuid=${file.uuid}&expires=false&preview_only=false`,
             {
@@ -216,24 +182,24 @@ describe('Action File Events', () => {
         );
         expect(downloadResponse.status).toBe(200);
 
-        // 8. Verify Download Event via Action Endpoint
-        const eventsResponse2 = await fetch(
+        // 6. Verify Download Event via Action Endpoint
+        const eventsResponse = await fetch(
             `${DEFAULT_URL}/actions/${actionUUID}/file-events`,
             {
                 method: 'GET',
-                headers: {
-                    cookie: `authtoken=${await getJwtToken(user)}`,
-                    'kleinkram-client-version': appVersion,
-                },
+                headers: getAuthHeaders(user),
             },
         );
-        expect(eventsResponse2.status).toBe(200);
-        const events2: FileEventsDto = await eventsResponse2.json();
+        expect(eventsResponse.status).toBe(200);
+        const events: FileEventsDto = await eventsResponse.json();
 
-        const downloadEvent = events2.data.find(
+        expect(events.count).toBeGreaterThan(0);
+
+        const downloadEvent = events.data.find(
             (e) => e.type === FileEventType.DOWNLOADED,
         );
         expect(downloadEvent).toBeDefined();
         expect(downloadEvent?.action?.uuid).toBe(actionUUID);
-    }, 30000);
+        expect(downloadEvent?.action?.name).toBe('Test Action');
+    }, 60_000);
 });

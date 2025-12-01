@@ -15,6 +15,7 @@ const UNAUTHENTICATED_ENDPOINTS: string[] = [
     '/swagger',
     '/swagger/',
     '/integrations/',
+    '/api/health',
 ];
 
 /**

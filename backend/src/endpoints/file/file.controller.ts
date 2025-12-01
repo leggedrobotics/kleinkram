@@ -158,8 +158,8 @@ export class FileController {
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
         let _missionUUID = missionUUID;
-        if (auth.apikey) {
-            _missionUUID = auth.apikey.mission.uuid;
+        if (auth.apiKey) {
+            _missionUUID = auth.apiKey.mission.uuid;
         }
         return await this.fileService.findFiltered(
             fileName,
@@ -205,7 +205,7 @@ export class FileController {
             expires,
             preview_only,
             auth.user,
-            auth.apikey?.action,
+            auth.apiKey?.action,
         );
     }
 
@@ -234,7 +234,7 @@ export class FileController {
             uuid,
             dto,
             auth.user,
-            auth.apikey?.action,
+            auth.apiKey?.action,
         );
     }
 
@@ -251,7 +251,7 @@ export class FileController {
             fileUUIDs,
             missionUUID,
             auth.user,
-            auth.apikey?.action,
+            auth.apiKey?.action,
         );
     }
 
@@ -272,7 +272,7 @@ export class FileController {
         @ParameterUID('uuid') uuid: string,
         @AddUser() auth: AuthHeader,
     ): Promise<void> {
-        await this.fileService.deleteFile(uuid, auth.user, auth.apikey?.action);
+        await this.fileService.deleteFile(uuid, auth.user, auth.apiKey?.action);
     }
 
     @Get('storage')
@@ -310,8 +310,8 @@ export class FileController {
         let source = body.source;
         if (!source) {
             source = FileSource.WEB_INTERFACE;
-            if (auth.apikey) {
-                source = auth.apikey.action
+            if (auth.apiKey) {
+                source = auth.apiKey.action
                     ? FileSource.ACTION
                     : FileSource.CLI;
             }
@@ -320,7 +320,7 @@ export class FileController {
             body.filenames,
             body.missionUUID,
             auth.user.uuid,
-            auth.apikey?.action,
+            auth.apiKey?.action,
             source,
         );
     }

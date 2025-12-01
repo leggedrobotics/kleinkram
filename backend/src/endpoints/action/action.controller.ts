@@ -20,6 +20,7 @@ import { ParameterUuid } from '../../validation/parameter-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreateAction,
+    CanCreateActions,
     CanDeleteAction,
     LoggedIn,
 } from '../auth/roles.decorator';
@@ -44,8 +45,9 @@ export class ActionsController {
     }
 
     @Post('batch')
-    @CanCreateAction()
+    @CanCreateActions()
     @ApiOperation({ summary: 'Batch submit multiple actions' })
+    @ApiOkResponse({ type: [ActionSubmitResponseDto] })
     async createBatch(
         @Body() dto: SubmitActionMulti,
         @AddUser() user: AuthHeader,
