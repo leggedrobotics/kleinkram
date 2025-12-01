@@ -112,7 +112,7 @@ For a complete list of what is seeded, check out the seed files in `common/seeds
 :::
 
 ::: tip Actions
-More info about actions can be found in the [actions](/development/actions) section.
+More info about actions can be found in the [actions](/usage/actions/usage) section.
 :::
 
 ### Configuration
