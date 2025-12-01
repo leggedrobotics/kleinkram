@@ -291,7 +291,7 @@ const handleRefetch = () => {
 };
 
 const logsLimit = ref(10);
-const { data: logs } = useActionLogs(
+const { data: logs, refetch: refetchLogs } = useActionLogs(
     computed(() => $route.params.id as string),
     0,
     logsLimit,
@@ -306,6 +306,7 @@ watch(
     () => action.value?.state,
     () => {
         void refetchFileEvents();
+        void refetchLogs();
     },
 );
 
