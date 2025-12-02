@@ -26,6 +26,17 @@
             </div>
         </div>
 
+        <!-- TUM Preview -->
+        <div v-else-if="isTum" class="q-mb-lg">
+            <h2 class="text-h4 q-mb-md">Trajectory Preview</h2>
+            <div v-if="tumContent">
+                <TumViewer :content="tumContent" />
+            </div>
+            <div v-else class="row items-center q-gutter-sm text-grey-7">
+                <q-spinner-dots size="1.5em" /> <span>Loading content...</span>
+            </div>
+        </div>
+
         <!-- Binary/ROS Preview -->
         <div v-else-if="displayTopics">
             <FileTopicTable
@@ -94,6 +105,7 @@ import { computed, onUnmounted, ref, watch } from 'vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
 import FileTopicTable from './file-topic-table.vue';
+import TumViewer from './viewers/tum-viewer.vue';
 
 const fileUuid = useFileUUID();
 const { isLoading, data: file, error, isLoadingError } = useFile(fileUuid);
@@ -102,11 +114,13 @@ const { data: events } = useFileEvents(fileUuid);
 
 const preview = useRosmsgPreview();
 const yamlContent = ref<string | undefined>(undefined);
+const tumContent = ref<string | undefined>(undefined);
 
 const fileExtension = computed(
     () => file.value?.filename?.split('.').pop()?.toLowerCase() ?? '',
 );
 const isYaml = computed(() => ['yml', 'yaml'].includes(fileExtension.value));
+const isTum = computed(() => file.value?.type === FileType.TUM);
 const isSupportedBinary = computed(() => {
     if (!file.value) return false;
     return (
@@ -134,6 +148,11 @@ watch(
             if (isYaml.value) {
                 const results = await fetch(url);
                 yamlContent.value = results.ok
+                    ? await results.text()
+                    : 'Error loading content';
+            } else if (isTum.value) {
+                const results = await fetch(url);
+                tumContent.value = results.ok
                     ? await results.text()
                     : 'Error loading content';
             } else if (isSupportedBinary.value) {
