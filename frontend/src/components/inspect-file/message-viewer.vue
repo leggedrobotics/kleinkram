@@ -30,21 +30,36 @@
 
         <div
             v-else-if="isLoading && !hasData"
-            class="row items-center q-pa-md text-grey-7"
+            class="column flex-center q-pa-lg text-grey-7 bg-white rounded-borders"
+            style="min-height: 200px"
         >
-            <q-spinner-dots size="1.5em" />
-            <span class="q-ml-sm">Fetching data...</span>
+            <q-spinner-dots size="3em" color="primary" />
+            <div class="text-subtitle1 q-mt-md">
+                Fetching {{ messageType }}...
+            </div>
+            <div class="text-caption q-mt-xs">
+                Loaded {{ messages.length }} / {{ totalCount }} messages
+            </div>
         </div>
 
-        <component
-            :is="activeComponent"
-            v-else-if="hasData || isLoading"
-            :messages="messages"
-            :topic-name="topicName"
-            :total-count="totalCount"
-            @load-required="loadRequired"
-            @load-more="loadMore"
-        />
+        <div v-else-if="hasData || isLoading" class="relative-position">
+            <q-linear-progress
+                v-if="isLoading"
+                indeterminate
+                color="primary"
+                class="absolute-top"
+                style="z-index: 1; height: 2px"
+            />
+            <component
+                :is="activeComponent"
+                :messages="messages"
+                :topic-name="topicName"
+                :total-count="totalCount"
+                @load-required="loadRequired"
+                @load-more="loadMore"
+                @pause-preview="emitPausePreview"
+            />
+        </div>
 
         <div
             v-else
@@ -80,7 +95,7 @@ const properties = defineProps<{
     topicSize?: number;
 }>();
 
-const emit = defineEmits(['load-more', 'load-required']);
+const emit = defineEmits(['load-more', 'load-required', 'pause-preview']);
 
 const hasData = computed(
     () => properties.messages && properties.messages.length > 0,
@@ -102,5 +117,9 @@ const loadRequired = (): void => {
 
 const loadMore = (): void => {
     emit('load-more');
+};
+
+const emitPausePreview = (): void => {
+    emit('pause-preview');
 };
 </script>

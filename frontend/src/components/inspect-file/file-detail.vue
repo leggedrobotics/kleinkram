@@ -27,7 +27,7 @@
         </div>
 
         <!-- Binary/ROS Preview -->
-        <div v-else-if="displayTopics && preview.isReaderReady.value">
+        <div v-else-if="displayTopics">
             <FileTopicTable
                 :topics="file.topics"
                 :is-loading="isLoading"
@@ -35,7 +35,18 @@
                 :loading-state="preview.topicLoadingState"
                 :topic-errors="preview.topicErrors"
                 @load-preview="preview.fetchTopicMessages"
+                @pause-preview="preview.cancelTopic"
+                @resume-preview="handleResumePreview"
             />
+        </div>
+
+        <!-- Uploading Placeholder -->
+        <div
+            v-else-if="file.state === FileState.UPLOADING"
+            class="text-center q-pa-xl bg-grey-1 rounded-borders border-dashed text-grey-7"
+        >
+            <q-icon name="sym_o_cloud_upload" size="4em" class="q-mb-md" />
+            <div class="text-h6">No preview available while uploading</div>
         </div>
 
         <!-- Fallback / Unsupported -->
@@ -79,7 +90,7 @@ import {
 import { useFileUUID } from 'src/hooks/router-hooks';
 import { _downloadFile } from 'src/services/generic';
 import { downloadFile, getFoxgloveLink } from 'src/services/queries/file';
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
 import FileTopicTable from './file-topic-table.vue';
@@ -137,6 +148,10 @@ watch(
     { immediate: true },
 );
 
+onUnmounted(() => {
+    preview.reset();
+});
+
 // --- Actions ---
 const handleDownload = (): Promise<void> =>
     _downloadFile(file.value?.uuid ?? '', file.value?.filename ?? '');
@@ -177,6 +192,10 @@ async function copyPublicLink(): Promise<void> {
         message: 'Copied: Link valid for 7 days',
         color: 'positive',
     });
+}
+
+function handleResumePreview(t: string, limit: number) {
+    void preview.fetchTopicMessages(t, { append: true, limit });
 }
 </script>
 

@@ -11,6 +11,16 @@ export enum PreviewType {
     POINT_CLOUD = 'POINT_CLOUD',
     STRING = 'STRING',
     JSON = 'JSON',
+    IMU = 'IMU',
+    GRID_MAP = 'GRID_MAP',
+    STATISTICS = 'STATISTICS',
+    ODOMETRY = 'ODOMETRY',
+    POSE_STAMPED = 'POSE_STAMPED',
+    PATH = 'PATH',
+    TRANSFORM_STAMPED = 'TRANSFORM_STAMPED',
+    NAV_SAT_FIX = 'NAV_SAT_FIX',
+    POINT_STAMPED = 'POINT_STAMPED',
+    ANYMAL_STATE = 'ANYMAL_STATE',
 }
 
 // Lazy load components
@@ -46,6 +56,39 @@ const PointCloudViewer = defineAsyncComponent(
 const StringViewer = defineAsyncComponent(
     () => import('../components/inspect-file/viewers/string-viewer.vue'),
 );
+const ImuViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/imu-viewer.vue'),
+);
+const GridMapViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/grid-map-viewer.vue'),
+);
+const StatisticsViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/statistics-viewer.vue'),
+);
+const OdometryViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/odometry-viewer.vue'),
+);
+const PoseStampedViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/pose-stamped-viewer.vue'),
+);
+const PathViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/path-viewer.vue'),
+);
+const TransformStampedViewer = defineAsyncComponent(
+    () =>
+        import(
+            '../components/inspect-file/viewers/transform-stamped-viewer.vue'
+        ),
+);
+const NavSatFixViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/nav-sat-fix-viewer.vue'),
+);
+const PointStampedViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/point-stamped-viewer.vue'),
+);
+const AnymalStateViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/anymal-state-viewer.vue'),
+);
 
 export const detectPreviewType = (
     messageType: string,
@@ -72,6 +115,23 @@ export const detectPreviewType = (
         return PreviewType.TIME_REFERENCE;
     if (typeLower === 'tf2_msgs/tfmessage' || typeLower === 'tf/tfmessage')
         return PreviewType.TF;
+    if (typeLower.includes('sensor_msgs/imu')) return PreviewType.IMU;
+    if (typeLower.includes('grid_map_msgs/gridmap'))
+        return PreviewType.GRID_MAP;
+    if (typeLower.includes('elevation_map_msgs/statistics'))
+        return PreviewType.STATISTICS;
+    if (typeLower.includes('nav_msgs/odometry')) return PreviewType.ODOMETRY;
+    if (typeLower.includes('geometry_msgs/posestamped'))
+        return PreviewType.POSE_STAMPED;
+    if (typeLower.includes('nav_msgs/path')) return PreviewType.PATH;
+    if (typeLower.includes('geometry_msgs/transformstamped'))
+        return PreviewType.TRANSFORM_STAMPED;
+    if (typeLower.includes('sensor_msgs/navsatfix'))
+        return PreviewType.NAV_SAT_FIX;
+    if (typeLower.includes('geometry_msgs/pointstamped'))
+        return PreviewType.POINT_STAMPED;
+    if (typeLower.includes('anymal_msgs/anymalstate'))
+        return PreviewType.ANYMAL_STATE;
 
     // Heuristics
     if (sampleData) {
@@ -94,9 +154,51 @@ export const detectPreviewType = (
             return PreviewType.TWIST;
         if ('temperature' in sampleData && 'variance' in sampleData)
             return PreviewType.TEMPERATURE;
+        if (
+            'orientation' in sampleData &&
+            'angular_velocity' in sampleData &&
+            'linear_acceleration' in sampleData
+        )
+            return PreviewType.IMU;
 
         const hasDim = 'width' in sampleData && 'height' in sampleData;
         if ('encoding' in sampleData && hasDim) return PreviewType.IMAGE;
+
+        if (
+            'info' in sampleData &&
+            'layers' in sampleData &&
+            'data' in sampleData
+        )
+            return PreviewType.GRID_MAP;
+
+        if ('pointcloud_process_fps' in sampleData)
+            return PreviewType.STATISTICS;
+
+        if (
+            'latitude' in sampleData &&
+            'longitude' in sampleData &&
+            'altitude' in sampleData &&
+            'position_covariance' in sampleData
+        )
+            return PreviewType.NAV_SAT_FIX;
+
+        if (
+            'point' in sampleData &&
+            'header' in sampleData &&
+            'x' in sampleData.point &&
+            'y' in sampleData.point &&
+            'z' in sampleData.point
+        )
+            return PreviewType.POINT_STAMPED;
+
+        if (
+            'state' in sampleData &&
+            'pose' in sampleData &&
+            'twist' in sampleData &&
+            'joints' in sampleData &&
+            'contacts' in sampleData
+        )
+            return PreviewType.ANYMAL_STATE;
     }
 
     return PreviewType.JSON;
@@ -114,6 +216,16 @@ export const getViewerComponent = (type: PreviewType) => {
         [PreviewType.POINT_CLOUD]: PointCloudViewer,
         [PreviewType.STRING]: StringViewer,
         [PreviewType.JSON]: JsonLogViewer,
+        [PreviewType.IMU]: ImuViewer,
+        [PreviewType.GRID_MAP]: GridMapViewer,
+        [PreviewType.STATISTICS]: StatisticsViewer,
+        [PreviewType.ODOMETRY]: OdometryViewer,
+        [PreviewType.POSE_STAMPED]: PoseStampedViewer,
+        [PreviewType.PATH]: PathViewer,
+        [PreviewType.TRANSFORM_STAMPED]: TransformStampedViewer,
+        [PreviewType.NAV_SAT_FIX]: NavSatFixViewer,
+        [PreviewType.POINT_STAMPED]: PointStampedViewer,
+        [PreviewType.ANYMAL_STATE]: AnymalStateViewer,
     };
     return map[type] ?? JsonLogViewer;
 };

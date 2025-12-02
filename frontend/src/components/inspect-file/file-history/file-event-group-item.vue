@@ -1,7 +1,9 @@
 <template>
     <q-expansion-item group="file-events" dense class="q-py-none">
         <template #header>
-            <FileEventIcon :type="event.type" />
+            <q-item-section avatar>
+                <FileEventIcon :type="event.type" />
+            </q-item-section>
 
             <q-item-section>
                 <q-item-label>

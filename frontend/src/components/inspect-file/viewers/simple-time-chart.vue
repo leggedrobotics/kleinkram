@@ -18,7 +18,12 @@
             </div>
         </div>
 
-        <div class="graph-wrapper bg-grey-1 rounded-borders">
+        <div
+            class="graph-wrapper bg-grey-1 rounded-borders"
+            ref="graphContainer"
+            @mousemove="onMouseMove"
+            @mouseleave="onMouseLeave"
+        >
             <svg
                 :viewBox="`0 0 ${width} ${height}`"
                 class="chart-svg"
@@ -43,11 +48,50 @@
                     stroke-width="1.5"
                     :points="getPoints(s.data)"
                 />
+
+                <!-- Cursor Line -->
+                <line
+                    v-if="hoverX !== null"
+                    :x1="hoverX"
+                    :y1="0"
+                    :x2="hoverX"
+                    :y2="height"
+                    stroke="#666"
+                    stroke-width="1"
+                    stroke-dasharray="2"
+                />
             </svg>
 
             <div class="axis-labels">
                 <span class="max">{{ fmt(yRange.max) }}</span>
                 <span class="min">{{ fmt(yRange.min) }}</span>
+            </div>
+
+            <!-- Inspection Tooltip -->
+            <div
+                v-if="hoverX !== null && hoverPoints.length > 0"
+                class="inspection-tooltip"
+                :style="{ left: tooltipLeft + 'px' }"
+            >
+                <div class="row items-baseline q-gutter-x-sm q-mb-xs">
+                    <div class="text-weight-bold">
+                        {{ hoverTime?.toFixed(3) }}s
+                    </div>
+                    <div v-if="absoluteTime" class="text-caption text-grey-7">
+                        {{ absoluteTime }}
+                    </div>
+                </div>
+                <div
+                    v-for="p in hoverPoints"
+                    :key="p.name"
+                    class="row items-center q-gutter-x-xs text-caption"
+                >
+                    <div
+                        :style="{ backgroundColor: p.color }"
+                        style="width: 8px; height: 8px; border-radius: 50%"
+                    ></div>
+                    <div>{{ p.name }}: {{ p.value.toFixed(4) }}</div>
+                </div>
             </div>
 
             <div v-if="isSubsampled" class="sampling-badge">
@@ -62,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 export interface DataPoint {
     time: number; // Relative time in seconds
@@ -81,6 +125,8 @@ const properties = withDefaults(
         title?: string;
         height?: number;
         width?: number;
+        // eslint-disable-next-line vue/require-default-prop
+        startTime?: bigint; // Absolute start time in nanoseconds
     }>(),
     {
         title: '',
@@ -133,7 +179,8 @@ const maxTime = computed(() => {
             if (last > max) max = last;
         }
     }
-    return max || 1;
+    // Avoid division by zero if max is 0 (e.g. single point at t=0)
+    return max === 0 ? 1 : max;
 });
 
 // --- Subsampling Logic ---
@@ -187,6 +234,124 @@ const getPoints = (data: (DataPoint | undefined)[]): string => {
 };
 
 const fmt = (n: number): string => n.toFixed(2);
+
+// --- Inspection Logic ---
+const graphContainer = ref<HTMLElement | null>(null);
+const hoverX = ref<number | null>(null);
+const hoverTime = ref<number | null>(null);
+const hoverPoints = ref<{ name: string; color: string; value: number }[]>([]);
+const tooltipLeft = ref(0);
+
+const absoluteTime = computed(() => {
+    if (hoverTime.value === null || properties.startTime === undefined)
+        return null;
+
+    // hoverTime is in seconds, startTime is in nanoseconds
+    const timeInMs =
+        Number(properties.startTime) / 1_000_000 + hoverTime.value * 1000;
+    return new Date(timeInMs).toISOString().replace('T', ' ').slice(0, 23);
+});
+
+const onMouseMove = (event: MouseEvent) => {
+    if (!graphContainer.value) return;
+
+    const rect = graphContainer.value.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+
+    // Clamp x to width
+    const clampedX = Math.max(0, Math.min(x, rect.width));
+
+    // Map screen X to SVG coordinate X (assuming SVG fills container)
+    // Since we use viewBox width=1000, we need to scale
+    const scaleX = properties.width / rect.width;
+    const svgX = clampedX * scaleX;
+
+    hoverX.value = svgX;
+
+    // Calculate time
+    const t = (svgX / properties.width) * maxTime.value;
+    hoverTime.value = t;
+
+    // Find closest points
+    const points: { name: string; color: string; value: number }[] = [];
+
+    for (const s of properties.series) {
+        if (s.data.length === 0) continue;
+
+        // Binary search or simple find for closest time
+        // Since data is sorted by time, we can be efficient.
+        // For simplicity with small-ish datasets (2k points subsampled), simple scan is ok,
+        // but let's do a quick find.
+
+        // Find index where data[i].time >= t
+        // We can use the sampledSeries for display, but for values we might want full precision?
+        // Actually, using sampledSeries matches what's drawn.
+
+        // Let's use the full series for accurate values if possible, but sampled is fine for UI.
+        // Let's use the full series to be accurate.
+
+        // Simple linear search optimization: start from last known index? No, stateless is easier.
+        // Binary search is best.
+
+        let low = 0;
+        let high = s.data.length - 1;
+        let closestIndex = -1;
+
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            const midPoint = s.data[mid];
+            if (!midPoint) {
+                // Should not happen if data is consistent
+                break;
+            }
+            if (midPoint.time < t) {
+                low = mid + 1;
+            } else {
+                closestIndex = mid;
+                high = mid - 1;
+            }
+        }
+
+        // closestIdx is the first point >= t.
+        // We should check if the previous point is closer.
+        let bestPoint = s.data[closestIndex];
+
+        if (closestIndex > 0) {
+            const previous = s.data[closestIndex - 1];
+            if (
+                previous &&
+                (!bestPoint ||
+                    Math.abs(t - previous.time) < Math.abs(t - bestPoint.time))
+            ) {
+                bestPoint = previous;
+            }
+        } else if (closestIndex === -1) {
+            // All points are < t, take the last one
+            bestPoint = s.data.at(-1);
+        }
+
+        if (bestPoint) {
+            points.push({
+                name: s.name,
+                color: s.color,
+                value: bestPoint.value,
+            });
+        }
+    }
+
+    hoverPoints.value = points;
+
+    // Tooltip positioning
+    // If on right side, show tooltip on left
+    tooltipLeft.value =
+        clampedX > rect.width / 2 ? clampedX - 160 : clampedX + 20;
+};
+
+const onMouseLeave = () => {
+    hoverX.value = null;
+    hoverTime.value = null;
+    hoverPoints.value = [];
+};
 </script>
 
 <style scoped>
@@ -195,6 +360,7 @@ const fmt = (n: number): string => n.toFixed(2);
     height: v-bind(height + 'px');
     overflow: hidden;
     border: 1px solid #e0e0e0;
+    cursor: crosshair;
 }
 .chart-svg {
     width: 100%;
@@ -229,5 +395,18 @@ const fmt = (n: number): string => n.toFixed(2);
     padding: 1px 4px;
     border-radius: 2px;
     cursor: help;
+}
+.inspection-tooltip {
+    position: absolute;
+    top: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    z-index: 10;
+    font-size: 11px;
+    min-width: 120px;
 }
 </style>

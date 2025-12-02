@@ -18,7 +18,7 @@
                 <q-tr
                     :props="props"
                     class="cursor-pointer hover:bg-grey-1"
-                    @click="() => (props.expand = !props.expand)"
+                    @click="() => toggleExpand(props)"
                 >
                     <q-td
                         v-for="col in props.cols"
@@ -36,9 +36,7 @@
                                         ? 'sym_o_expand_less'
                                         : 'sym_o_expand_more'
                                 "
-                                @click.stop="
-                                    () => (props.expand = !props.expand)
-                                "
+                                @click.stop="() => toggleExpand(props)"
                             />
                         </template>
 
@@ -48,7 +46,7 @@
                     </q-td>
                 </q-tr>
 
-                <q-tr v-show="props.expand" :props="props">
+                <q-tr v-if="props.expand" :props="props">
                     <q-td colspan="100%" class="q-pa-none">
                         <div class="q-pa-md bg-grey-1">
                             <MessageViewer
@@ -64,6 +62,9 @@
                                 :protocol="props.row.protocol"
                                 @load-required="() => loadSmart(props.row)"
                                 @load-more="() => loadMore(props.row.name)"
+                                @pause-preview="
+                                    () => emit('pause-preview', props.row.name)
+                                "
                             />
                         </div>
                     </q-td>
@@ -88,7 +89,7 @@ const properties = defineProps<{
     isLoading: boolean;
 }>();
 
-const emit = defineEmits(['load-preview']);
+const emit = defineEmits(['load-preview', 'pause-preview', 'resume-preview']);
 const search = ref('');
 
 const filteredTopics = computed(() => {
@@ -139,49 +140,83 @@ const columns: QTableColumn[] = [
     },
 ];
 
+const getSmartLimit = (row: any): number => {
+    const type = detectPreviewType(row.type);
+
+    // 1. Full Load (Visual Plots / Images)
+    if (type === PreviewType.CAMERA_INFO) {
+        return 1;
+    }
+    // 1. Full Load (Visual Plots / Images)
+    if (
+        type === PreviewType.IMAGE ||
+        type === PreviewType.TWIST ||
+        type === PreviewType.TEMPERATURE ||
+        type === PreviewType.IMU ||
+        type === PreviewType.STATISTICS ||
+        type === PreviewType.ODOMETRY ||
+        type === PreviewType.POSE_STAMPED ||
+        type === PreviewType.PATH ||
+        type === PreviewType.TRANSFORM_STAMPED
+    ) {
+        return row.nrMessages;
+    }
+
+    // 2. Medium Load (Logs)
+    if (type === PreviewType.ROS_LOG || type === PreviewType.STRING) {
+        return 100;
+    }
+
+    // 3. Light Load (TimeReference)
+    if (type === PreviewType.TIME_REFERENCE) {
+        return 20;
+    }
+
+    // 3. Strict Load (Heavy Binary)
+    if (type === PreviewType.POINT_CLOUD || type === PreviewType.GRID_MAP) {
+        return 1;
+    }
+
+    // 4. Default
+    return 5;
+};
+
+const toggleExpand = (props: any): void => {
+    props.expand = !props.expand;
+    if (props.expand) {
+        const type = detectPreviewType(props.row.type);
+        const hasData =
+            properties.previews?.[props.row.name] &&
+            (properties.previews[props.row.name]?.length ?? 0) > 0;
+
+        // Only resume fetching for video/image topics (buffering)
+        // For others, only fetch if no data exists (initial load)
+        if (type === PreviewType.IMAGE) {
+            const limit = getSmartLimit(props.row);
+            emit('resume-preview', props.row.name, limit);
+            if (!hasData) loadSmart(props.row);
+        } else if (!hasData) {
+            loadSmart(props.row);
+        }
+    } else {
+        emit('pause-preview', props.row.name);
+    }
+};
+
 // Directly load specific count (Base function)
-const loadData = (topic: string, count: number): void => {
-    emit('load-preview', topic, count);
+const loadData = (topic: string, count: number, append = false): void => {
+    emit('load-preview', topic, { limit: count, append });
 };
 
 // In file-topic-table.vue > script > loadSmart
 
 const loadSmart = (row: any): void => {
-    const type = detectPreviewType(row.type);
-
-    // 1. Full Load (Visual Plots / Images)
-    if (
-        type === PreviewType.IMAGE ||
-        type === PreviewType.TWIST ||
-        type === PreviewType.TEMPERATURE
-    ) {
-        loadData(row.name, row.nrMessages);
-        return;
-    }
-
-    // 2. Medium Load (Logs)
-    if (
-        type === PreviewType.ROS_LOG ||
-        type === PreviewType.TIME_REFERENCE ||
-        type === PreviewType.STRING
-    ) {
-        loadData(row.name, 100);
-        return;
-    }
-
-    // 3. Strict Load (Heavy Binary)
-    if (type === PreviewType.POINT_CLOUD) {
-        loadData(row.name, 1);
-        return;
-    }
-
-    // 4. Default
-    loadData(row.name, 5);
+    const limit = getSmartLimit(row);
+    loadData(row.name, limit);
 };
 
 // Incremental Load (Load More button)
 const loadMore = (topicName: string): void => {
-    const currentCount = properties.previews[topicName]?.length || 0;
-    loadData(topicName, currentCount + 20);
+    loadData(topicName, 20, true);
 };
 </script>

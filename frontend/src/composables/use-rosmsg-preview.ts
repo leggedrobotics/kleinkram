@@ -1,5 +1,5 @@
 import { UniversalHttpReader } from '@common/universal-http-reader';
-import { reactive, Ref, ref, shallowRef } from 'vue';
+import { markRaw, reactive, Ref, ref, shallowRef } from 'vue';
 import { LogStrategy, McapStrategy, RosbagStrategy } from './rosmsg-strategies';
 import { formatPayload } from './rosmsg-utilities.ts';
 
@@ -10,8 +10,13 @@ export function useRosmsgPreview(): {
     topicLoadingState: Record<string, boolean>;
     topicErrors: Record<string, string | null>;
     init: (url: string, type: 'mcap' | 'rosbag') => Promise<void>;
-    fetchTopicMessages: (topicName: string, limit?: number) => Promise<void>;
+    fetchTopicMessages: (
+        topicName: string,
+        options?: { limit?: number; append?: boolean },
+    ) => Promise<void>;
     formatPayload: (data: any) => string;
+    cancelTopic: (topicName: string) => void;
+    reset: () => void;
 } {
     const isReaderReady = ref(false);
     const readerError = ref<string | null>(null);
@@ -21,10 +26,12 @@ export function useRosmsgPreview(): {
     const topicErrors = reactive<Record<string, string | null>>({});
 
     const strategy = shallowRef<LogStrategy | null>(null);
+    const abortControllers = new Map<string, AbortController>();
 
     async function init(url: string, type: 'mcap' | 'rosbag'): Promise<void> {
         isReaderReady.value = false;
         readerError.value = null;
+        reset();
         // Clear previous errors on new file load
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         for (const k of Object.keys(topicErrors)) delete topicErrors[k];
@@ -45,31 +52,83 @@ export function useRosmsgPreview(): {
         }
     }
 
+    function cancelTopic(topicName: string): void {
+        const controller = abortControllers.get(topicName);
+        if (controller) {
+            controller.abort();
+            abortControllers.delete(topicName);
+            topicLoadingState[topicName] = false;
+        }
+    }
+
+    function reset(): void {
+        for (const controller of abortControllers.values()) {
+            controller.abort();
+        }
+        abortControllers.clear();
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        for (const k of Object.keys(topicPreviews)) delete topicPreviews[k];
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        for (const k of Object.keys(topicLoadingState)) {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete topicLoadingState[k];
+        }
+    }
+
     /**
      * Fetches messages for a topic.
      * Uses streaming to populate the array as data arrives.
      */
     async function fetchTopicMessages(
         topicName: string,
-        limit?: number,
+        options?: { limit?: number; append?: boolean },
     ): Promise<void> {
         if (!strategy.value) return;
+
+        // Cancel any existing request for this topic
+        cancelTopic(topicName);
+
+        const controller = new AbortController();
+        abortControllers.set(topicName, controller);
 
         topicLoadingState[topicName] = true;
         topicErrors[topicName] = null;
 
-        // Reset the array so it can be filled from scratch
-        // If you want append logic (load more), you would check array length here
-        // But typically we are reloading or loading a fresh batch.
-        topicPreviews[topicName] = [];
+        const limit = options?.limit ?? 10;
+        const append = options?.append ?? false;
+
+        let startTime: bigint | undefined;
+
+        if (append) {
+            // Calculate start time from the last message
+            const currentMessages = topicPreviews[topicName];
+            if (currentMessages && currentMessages.length > 0) {
+                const lastMessage = currentMessages.at(-1);
+                // Add 1ns to avoid duplicate of the last message
+                startTime = BigInt(lastMessage.logTime) + 1n;
+            }
+        } else {
+            // Reset the array so it can be filled from scratch
+            topicPreviews[topicName] = [];
+        }
 
         try {
             // We ignore the return value (full array) because we populate
             // the reactive array via the callback for immediate UI feedback.
-            await strategy.value.getMessages(topicName, limit, (message) => {
-                (topicPreviews[topicName] ??= []).push(message);
-            });
+            await strategy.value.getMessages(
+                topicName,
+                limit,
+                (message) => {
+                    if (controller.signal.aborted) return;
+                    // Use markRaw to prevent deep reactivity overhead
+                    (topicPreviews[topicName] ??= []).push(markRaw(message));
+                },
+                controller.signal,
+                startTime,
+            );
         } catch (error: unknown) {
+            if (controller.signal.aborted) return; // Ignore abort errors
+
             console.error(`Error reading ${topicName}`, error);
             // Don't necessarily clear previews on error, we might have partial data
             if (!topicPreviews[topicName]) topicPreviews[topicName] = [];
@@ -77,7 +136,10 @@ export function useRosmsgPreview(): {
             topicErrors[topicName] =
                 error instanceof Error ? error.message : String(error);
         } finally {
-            topicLoadingState[topicName] = false;
+            if (!controller.signal.aborted) {
+                topicLoadingState[topicName] = false;
+                abortControllers.delete(topicName);
+            }
         }
     }
 
@@ -90,5 +152,7 @@ export function useRosmsgPreview(): {
         init,
         fetchTopicMessages,
         formatPayload,
+        cancelTopic,
+        reset,
     };
 }

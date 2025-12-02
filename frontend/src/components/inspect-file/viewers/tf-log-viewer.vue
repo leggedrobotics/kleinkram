@@ -38,7 +38,10 @@
 
                 <div class="full-width q-gutter-y-sm">
                     <div
-                        v-for="(tf, tfIdx) in msg.data.transforms || []"
+                        v-for="(tf, tfIdx) in (msg.data.transforms || []).slice(
+                            0,
+                            5,
+                        )"
                         :key="tfIdx"
                         class="bg-grey-1 rounded-borders q-pa-sm"
                     >
@@ -123,6 +126,12 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div
+                        v-if="(msg.data.transforms || []).length > 5"
+                        class="text-center text-caption text-grey-7 q-pa-xs bg-grey-2 rounded-borders"
+                    >
+                        + {{ msg.data.transforms.length - 5 }} more transforms
                     </div>
                 </div>
             </q-item>

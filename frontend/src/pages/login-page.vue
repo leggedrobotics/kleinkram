@@ -84,7 +84,7 @@
                             color="warning"
                             flat
                             class="q-mt-sm full-width"
-                            @click="refetchProviders"
+                            @click="handleRefetchProviders"
                         />
                     </div>
 
@@ -206,4 +206,8 @@ watch(
     },
     { immediate: true },
 );
+
+const handleRefetchProviders = () => {
+    void refetchProviders();
+};
 </script>

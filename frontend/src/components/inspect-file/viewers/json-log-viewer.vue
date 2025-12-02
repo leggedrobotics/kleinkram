@@ -110,7 +110,7 @@ const formatTime = (nano: bigint): string => {
 const getByteSize = (data: any): number => {
     if (!data) return 0;
     if (data instanceof Uint8Array) return data.byteLength;
-    return JSON.stringify(data).length;
+    return JSON.stringify(data, replacer).length;
 };
 
 const formatContent = (data: any): string => {
@@ -127,13 +127,17 @@ const formatContent = (data: any): string => {
     }
 };
 
-const replacer = (_key: string, value: any) =>
-    Array.isArray(value) && value.length > 20
+const replacer = (_key: string, value: any) => {
+    if (typeof value === 'bigint') {
+        return value.toString();
+    }
+    return Array.isArray(value) && value.length > 20
         ? `[Array(${value.length})]`
         : value;
+};
 
 async function copyToClipboard(data: any): Promise<void> {
-    await quasarCopy(JSON.stringify(data, null, 2));
+    await quasarCopy(JSON.stringify(data, replacer, 2));
     Notify.create({
         message: 'Payload copied',
         color: 'positive',

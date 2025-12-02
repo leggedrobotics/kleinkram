@@ -23,54 +23,51 @@
                 </q-btn>
             </div>
 
-            <q-list separator dense>
-                <q-item
+            <div
+                class="q-pa-sm bg-grey-1 rounded-borders"
+                style="max-height: 500px; overflow-y: auto"
+            >
+                <div
                     v-for="(msg, idx) in messages"
                     :key="idx"
-                    class="q-py-sm items-start hover-bg"
+                    class="row no-wrap items-baseline q-py-xs"
+                    style="font-family: monospace; font-size: 0.8em"
                 >
-                    <q-item-section avatar style="min-width: 40px">
-                        <q-icon
-                            :name="getLevelIcon(msg.data.level)"
-                            :color="getLevelColor(msg.data.level)"
-                            size="sm"
-                        />
-                    </q-item-section>
+                    <!-- Time -->
+                    <span class="text-grey-7 q-mr-sm" style="min-width: 140px">
+                        [{{ formatTime(msg.logTime) }}]
+                    </span>
 
-                    <q-item-section>
-                        <div class="row items-baseline q-gutter-x-sm">
-                            <span class="text-weight-bold text-body2">
-                                {{ msg.data.name }}
-                            </span>
-                            <span class="text-caption text-grey-6 font-mono">
-                                {{ formatTime(msg.logTime) }}
-                            </span>
-                        </div>
+                    <!-- Level -->
+                    <span
+                        class="text-weight-bold q-mr-sm"
+                        :class="getLevelClass(msg.data.level)"
+                        style="min-width: 50px"
+                    >
+                        [{{ getLevelLabel(msg.data.level) }}]
+                    </span>
 
-                        <div class="text-body2 q-mt-xs break-word">
-                            {{ msg.data.msg }}
-                        </div>
+                    <!-- Node -->
+                    <span class="text-grey-9 q-mr-sm text-weight-medium">
+                        [{{ msg.data.name }}]
+                    </span>
 
-                        <div
-                            class="text-caption text-grey-5 q-mt-xs font-mono"
-                            style="font-size: 10px"
-                        >
-                            {{ msg.data.file }}:{{ msg.data.line }}
-                            <span v-if="msg.data.function"
-                                >({{ msg.data.function }})</span
-                            >
-                        </div>
-                    </q-item-section>
-                </q-item>
-            </q-list>
+                    <!-- Message -->
+                    <span class="text-grey-10 break-word col">
+                        {{ msg.data.msg }}
+                    </span>
+                </div>
+            </div>
 
             <div
                 v-if="messages.length < totalCount"
                 class="text-center q-pa-md bg-grey-1"
             >
-                <div class="text-caption text-grey-7 q-mb-xs">
-                    Showing {{ messages.length }} / {{ totalCount }} logs.
-                </div>
+                <SmoothLoading
+                    :current="messages.length"
+                    :total="totalCount"
+                    message="Showing {current} / {total} logs."
+                />
                 <q-btn
                     label="Load More"
                     icon="sym_o_download"
@@ -87,6 +84,7 @@
 <script setup lang="ts">
 import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { onMounted } from 'vue';
+import SmoothLoading from '../../common/smooth-loading.vue';
 
 const properties = defineProps<{
     messages: any[];
@@ -115,48 +113,44 @@ const formatTime = (nano: bigint): string => {
 };
 
 // ROS Log Levels: 1=Debug, 2=Info, 4=Warn, 8=Error, 16=Fatal
-const getLevelColor = (level: number): string => {
+const getLevelClass = (level: number): string => {
     switch (level) {
-        case 1: {
-            return 'grey';
-        } // DEBUG
+        case 1:
         case 2: {
-            return 'positive';
-        } // INFO
+            return 'text-grey-7';
+        } // DEBUG, INFO
         case 4: {
-            return 'warning';
+            return 'text-orange-9';
         } // WARN
-        case 8: {
-            return 'negative';
-        } // ERROR
+        case 8:
         case 16: {
-            return 'purple';
-        } // FATAL
+            return 'text-negative';
+        } // ERROR, FATAL
         default: {
-            return 'grey-8';
+            return 'text-grey-8';
         }
     }
 };
 
-const getLevelIcon = (level: number): string => {
+const getLevelLabel = (level: number): string => {
     switch (level) {
         case 1: {
-            return 'sym_o_bug_report';
+            return 'DEBUG';
         }
         case 2: {
-            return 'sym_o_info';
+            return 'INFO';
         }
         case 4: {
-            return 'sym_o_warning';
+            return 'WARN';
         }
         case 8: {
-            return 'sym_o_error';
+            return 'ERROR';
         }
         case 16: {
-            return 'sym_o_dangerous';
+            return 'FATAL';
         }
         default: {
-            return 'sym_o_help';
+            return 'UNK';
         }
     }
 };
