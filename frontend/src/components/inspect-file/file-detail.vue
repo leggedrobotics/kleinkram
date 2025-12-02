@@ -37,6 +37,12 @@
             </div>
         </div>
 
+        <!-- SVO2 Preview -->
+        <div v-else-if="isSvo2" class="q-mb-lg">
+            <h2 class="text-h4 q-mb-md">Video Preview</h2>
+            <Svo2Viewer @download="handleDownload" />
+        </div>
+
         <!-- Binary/ROS Preview -->
         <div v-else-if="displayTopics">
             <FileTopicTable
@@ -105,6 +111,7 @@ import { computed, onUnmounted, ref, watch } from 'vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
 import FileTopicTable from './file-topic-table.vue';
+import Svo2Viewer from './viewers/svo2-viewer.vue';
 import TumViewer from './viewers/tum-viewer.vue';
 
 const fileUuid = useFileUUID();
@@ -121,6 +128,7 @@ const fileExtension = computed(
 );
 const isYaml = computed(() => ['yml', 'yaml'].includes(fileExtension.value));
 const isTum = computed(() => file.value?.type === FileType.TUM);
+const isSvo2 = computed(() => file.value?.type === FileType.SVO2);
 const isSupportedBinary = computed(() => {
     if (!file.value) return false;
     return (
