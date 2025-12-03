@@ -39,12 +39,12 @@
 </template>
 
 <script setup lang="ts">
-import FileEntity from '@common/entities/file/file.entity';
+import { FileDto } from '@api/types/file/file.dto';
 import { FileState } from '@common/enum';
 import { computed } from 'vue';
 
 const props = defineProps<{
-    file: FileEntity;
+    file: FileDto;
 }>();
 
 const fileExtension = computed(

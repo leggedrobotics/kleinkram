@@ -30,9 +30,6 @@ export class MagicNumberValidator {
                     const { bytesRead } = await handle.read(buffer, 0, 1024, 0);
                     if (bytesRead === 0) return false;
 
-                    const content = buffer
-                        .subarray(0, bytesRead)
-                        .toString('utf-8');
                     // Check for common YAML markers or just that it's not binary garbage
                     // A simple heuristic: check if it has printable characters
                     // But YAML can start with anything.
@@ -52,7 +49,7 @@ export class MagicNumberValidator {
 
                     const content = buffer
                         .subarray(0, bytesRead)
-                        .toString('utf-8');
+                        .toString('utf8');
                     const lines = content.split('\n');
 
                     for (const line of lines) {

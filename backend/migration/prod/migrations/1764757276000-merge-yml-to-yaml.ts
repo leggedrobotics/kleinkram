@@ -9,7 +9,7 @@ export class MergeYmlToYaml1764757276000 implements MigrationInterface {
         );
     }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        // No operation for down as we cannot distinguish which were originally YML
+    public async down(): Promise<void> {
+        // No down migration needed as we are just updating data
     }
 }
