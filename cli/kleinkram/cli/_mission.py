@@ -26,18 +26,14 @@ NOT_IMPLEMENTED_YET = """\
 Not implemented yet, open an issue if you want specific functionality
 """
 
-mission_typer = typer.Typer(
-    no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
-)
+mission_typer = typer.Typer(no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]})
 
 
 @mission_typer.command(help=CREATE_HELP)
 def create(
     project: str = typer.Option(..., "--project", "-p", help="project id or name"),
     mission_name: str = typer.Option(..., "--mission", "-m", help="mission name"),
-    metadata: Optional[str] = typer.Option(
-        None, help="path to metadata file (json or yaml)"
-    ),
+    metadata: Optional[str] = typer.Option(None, help="path to metadata file (json or yaml)"),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
     project_ids, project_patterns = split_args([project] if project else [])
@@ -64,9 +60,7 @@ def create(
 
 @mission_typer.command(help=INFO_HELP)
 def info(
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
 ) -> None:
     mission_ids, mission_patterns = split_args([mission])
@@ -86,9 +80,7 @@ def info(
 
 @mission_typer.command(help=UPDATE_HELP)
 def update(
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
     metadata: str = typer.Option(help="path to metadata file (json or yaml)"),
 ) -> None:
@@ -106,9 +98,7 @@ def update(
 
     client = AuthenticatedClient()
     mission_id = get_mission(client, mission_query).id
-    kleinkram.core.update_mission(
-        client=client, mission_id=mission_id, metadata=metadata_dct
-    )
+    kleinkram.core.update_mission(client=client, mission_id=mission_id, metadata=metadata_dct)
 
     mission_parsed = get_mission(client, mission_query)
     print_mission_info(mission_parsed, pprint=get_shared_state().verbose)
@@ -116,13 +106,9 @@ def update(
 
 @mission_typer.command(help=DELETE_HELP)
 def delete(
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
-    confirm: bool = typer.Option(
-        False, "--confirm", "-y", "--yes", help="confirm deletion"
-    ),
+    confirm: bool = typer.Option(False, "--confirm", "-y", "--yes", help="confirm deletion"),
 ) -> None:
     project_ids, project_patterns = split_args([project] if project else [])
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
@@ -152,9 +138,7 @@ def delete(
 
 @mission_typer.command(help=NOT_IMPLEMENTED_YET)
 def prune(
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
 ) -> None:
     """\

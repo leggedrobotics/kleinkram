@@ -23,10 +23,7 @@ def extract_metadata(data_dir, output_file):
                                 "message_start_time": summary.statistics.message_start_time,
                                 "message_end_time": summary.statistics.message_end_time,
                             },
-                            "channels": [
-                                {"topic": c.topic, "schema": c.schema_name}
-                                for c in summary.channels.values()
-                            ],
+                            "channels": [{"topic": c.topic, "schema": c.schema_name} for c in summary.channels.values()],
                         }
             except Exception as e:
                 print(f"Error reading {filename}: {e}")

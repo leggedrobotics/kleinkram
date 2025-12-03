@@ -19,19 +19,13 @@ INFO_HELP = "get information about a file"
 DELETE_HELP = "delete a file"
 
 
-file_typer = typer.Typer(
-    no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
-)
+file_typer = typer.Typer(no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]})
 
 
 @file_typer.command(help=INFO_HELP)
 def info(
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
-    mission: Optional[str] = typer.Option(
-        None, "--mission", "-m", help="mission id or name"
-    ),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
+    mission: Optional[str] = typer.Option(None, "--mission", "-m", help="mission id or name"),
     file: str = typer.Option(..., "--file", "-f", help="file id or name"),
 ) -> None:
     project_ids, project_patterns = split_args([project] if project else [])
@@ -58,16 +52,10 @@ def info(
 
 @file_typer.command(help=DELETE_HELP)
 def delete(
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
-    mission: Optional[str] = typer.Option(
-        None, "--mission", "-m", help="mission id or name"
-    ),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
+    mission: Optional[str] = typer.Option(None, "--mission", "-m", help="mission id or name"),
     file: str = typer.Option(..., "--file", "-f", help="file id or name"),
-    confirm: bool = typer.Option(
-        False, "--confirm", "-y", "--yes", help="confirm deletion"
-    ),
+    confirm: bool = typer.Option(False, "--confirm", "-y", "--yes", help="confirm deletion"),
 ) -> None:
     if not confirm:
         typer.confirm(f"delete {project} {mission}", abort=True)

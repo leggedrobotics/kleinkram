@@ -26,9 +26,7 @@ def convert_to_csv(data_dir, output_dir):
 
                         with open(csv_filepath, "w", newline="") as csvfile:
                             writer = csv.writer(csvfile)
-                            writer.writerow(
-                                ["timestamp", "data_size"]
-                            )  # Simplified header
+                            writer.writerow(["timestamp", "data_size"])  # Simplified header
 
                             # Note: This is a simplified example.
                             # Real conversion would need to handle message decoding based on schema.
@@ -37,9 +35,7 @@ def convert_to_csv(data_dir, output_dir):
                             # Re-read to iterate messages
                             f.seek(0)
                             reader = make_reader(f)
-                            for schema, channel, message in reader.iter_messages(
-                                topics=[channel.topic]
-                            ):
+                            for schema, channel, message in reader.iter_messages(topics=[channel.topic]):
                                 writer.writerow([message.log_time, len(message.data)])
 
             except Exception as e:

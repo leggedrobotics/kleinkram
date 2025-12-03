@@ -72,9 +72,7 @@ def test_load_config_default(config_path):
     assert config.selected_endpoint == get_env().value
 
 
-def test_load_default_config_with_env_var_api_key_specified(
-    config_path, set_api_key_env
-):
+def test_load_default_config_with_env_var_api_key_specified(config_path, set_api_key_env):
     assert set_api_key_env is None
 
     config = _load_config(path=config_path)
@@ -87,9 +85,7 @@ def test_load_default_config_with_env_var_api_key_specified(
     assert not config_path.exists()
 
 
-def test_load_default_config_with_env_var_endpoints_specified(
-    config_path, set_endpoint_env
-):
+def test_load_default_config_with_env_var_endpoints_specified(config_path, set_endpoint_env):
     assert set_endpoint_env is None
     config = _load_config(path=config_path)
 

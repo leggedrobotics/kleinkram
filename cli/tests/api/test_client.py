@@ -29,9 +29,7 @@ def config_path():
 @pytest.fixture
 def empty_config(config_path):
     test_creds = Credentials(api_key="test")
-    config = Config(
-        endpoint_credentials={"local": test_creds}, selected_endpoint="local"
-    )
+    config = Config(endpoint_credentials={"local": test_creds}, selected_endpoint="local")
     save_config(config, config_path)
     return config_path
 
@@ -43,17 +41,13 @@ def mock_transport(request: httpx.Request) -> httpx.Response:
 
 
 def test_client_sending_kleinkram_version_header(empty_config):
-    with AuthenticatedClient(
-        config_path=empty_config, transport=httpx.MockTransport(mock_transport)
-    ) as client:
+    with AuthenticatedClient(config_path=empty_config, transport=httpx.MockTransport(mock_transport)) as client:
         resp = client.get("/example")
         assert resp.status_code == 200
 
 
 def test_client_sending_kleinkram_version_header_with_custom_headers(empty_config):
-    with AuthenticatedClient(
-        config_path=empty_config, transport=httpx.MockTransport(mock_transport)
-    ) as client:
+    with AuthenticatedClient(config_path=empty_config, transport=httpx.MockTransport(mock_transport)) as client:
         resp = client.get("/example", headers={"foo": "bar"})
         assert resp.status_code == 200
 
@@ -63,9 +57,7 @@ def test_client_response_on_426_status_code(empty_config):
         _ = request
         return httpx.Response(426)
 
-    with AuthenticatedClient(
-        config_path=empty_config, transport=httpx.MockTransport(return_426_response)
-    ) as client:
+    with AuthenticatedClient(config_path=empty_config, transport=httpx.MockTransport(return_426_response)) as client:
         with pytest.raises(kleinkram.errors.UpdateCLIVersion):
             client.get("/example")
 
@@ -98,15 +90,11 @@ def test_convert_list_data_query_params_values():
     key = "foo"
     values = ["foo1", "foo2"]
     expected = [("foo", "foo1"), ("foo", "foo2")]
-    assert sorted(_convert_list_data_query_params_values(key, values)) == sorted(
-        expected
-    )
+    assert sorted(_convert_list_data_query_params_values(key, values)) == sorted(expected)
 
 
 def test_convert_nested_data_query_params_values():
     key = "foo"
     values = {"k1": "v1", "k2": "v2"}
     expected = [("foo[k1]", "v1"), ("foo[k2]", "v2")]
-    assert sorted(_convert_nested_data_query_params_values(key, values)) == sorted(
-        expected
-    )
+    assert sorted(_convert_nested_data_query_params_values(key, values)) == sorted(expected)

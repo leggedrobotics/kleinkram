@@ -95,11 +95,7 @@ def mission_query_is_unique(query: MissionQuery) -> bool:
         return True
 
     # a single mission name a unique project spec are specified
-    if (
-        project_query_is_unique(query.project_query)
-        and len(query.patterns) == 1
-        and _pattern_is_unique(query.patterns[0])
-    ):
+    if project_query_is_unique(query.project_query) and len(query.patterns) == 1 and _pattern_is_unique(query.patterns[0]):
         return True
     return False
 
@@ -110,10 +106,6 @@ def file_query_is_unique(query: FileQuery) -> bool:
         return True
 
     # a single file name a unique mission spec are specified
-    if (
-        mission_query_is_unique(query.mission_query)
-        and len(query.patterns) == 1
-        and _pattern_is_unique(query.patterns[0])
-    ):
+    if mission_query_is_unique(query.mission_query) and len(query.patterns) == 1 and _pattern_is_unique(query.patterns[0]):
         return True
     return False

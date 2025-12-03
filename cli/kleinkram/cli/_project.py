@@ -13,9 +13,7 @@ from kleinkram.config import get_shared_state
 from kleinkram.printing import print_project_info
 from kleinkram.utils import split_args
 
-project_typer = typer.Typer(
-    no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
-)
+project_typer = typer.Typer(no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]})
 
 
 NOT_IMPLEMENTED_YET = """\
@@ -31,9 +29,7 @@ DELETE_HELP = "delete a project"
 @project_typer.command(help=CREATE_HELP)
 def create(
     project: str = typer.Option(..., "--project", "-p", help="project name"),
-    description: str = typer.Option(
-        ..., "--description", "-d", help="project description"
-    ),
+    description: str = typer.Option(..., "--description", "-d", help="project description"),
 ) -> None:
     client = AuthenticatedClient()
     project_id = kleinkram.api.routes._create_project(client, project, description)
@@ -43,9 +39,7 @@ def create(
 
 
 @project_typer.command(help=INFO_HELP)
-def info(
-    project: str = typer.Option(..., "--project", "-p", help="project id or name")
-) -> None:
+def info(project: str = typer.Option(..., "--project", "-p", help="project id or name")) -> None:
     project_ids, project_patterns = split_args([project])
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
@@ -57,35 +51,25 @@ def info(
 @project_typer.command(help=UPDATE_HELP)
 def update(
     project: str = typer.Option(..., "--project", "-p", help="project id or name"),
-    description: Optional[str] = typer.Option(
-        None, "--description", "-d", help="project description"
-    ),
-    new_name: Optional[str] = typer.Option(
-        None, "--new-name", "-n", "--name", help="new project name"
-    ),
+    description: Optional[str] = typer.Option(None, "--description", "-d", help="project description"),
+    new_name: Optional[str] = typer.Option(None, "--new-name", "-n", "--name", help="new project name"),
 ) -> None:
     if description is None and new_name is None:
-        raise typer.BadParameter(
-            "nothing to update, provide --description or --new-name"
-        )
+        raise typer.BadParameter("nothing to update, provide --description or --new-name")
 
     project_ids, project_patterns = split_args([project])
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 
     client = AuthenticatedClient()
     project_id = get_project(client=client, query=project_query, exact_match=True).id
-    kleinkram.core.update_project(
-        client=client, project_id=project_id, description=description, new_name=new_name
-    )
+    kleinkram.core.update_project(client=client, project_id=project_id, description=description, new_name=new_name)
 
     project_parsed = get_project(client, ProjectQuery(ids=[project_id]))
     print_project_info(project_parsed, pprint=get_shared_state().verbose)
 
 
 @project_typer.command(help=DELETE_HELP)
-def delete(
-    project: str = typer.Option(..., "--project", "-p", help="project id or name")
-) -> None:
+def delete(project: str = typer.Option(..., "--project", "-p", help="project id or name")) -> None:
     project_ids, project_patterns = split_args([project])
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
 

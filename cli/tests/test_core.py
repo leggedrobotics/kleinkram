@@ -23,37 +23,27 @@ from tests.backend_fixtures import DATA_FILES
 @pytest.mark.slow
 def test_upload_create(project):
     mission_name = token_hex(8)
-    mission_query = MissionQuery(
-        patterns=[mission_name], project_query=ProjectQuery(ids=[project.id])
-    )
+    mission_query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project.id]))
 
     client = AuthenticatedClient()
-    kleinkram.core.upload(
-        client=client, query=mission_query, file_paths=DATA_FILES, create=True
-    )
+    kleinkram.core.upload(client=client, query=mission_query, file_paths=DATA_FILES, create=True)
 
     mission = list_missions(mission_names=[mission_name])[0]
     assert mission.project_id == project.id
     assert mission.name == mission_name
 
     files = list_files(mission_ids=[mission.id])
-    assert set([file.name for file in files if file.name.endswith(".bag")]) == set(
-        [file.name for file in DATA_FILES]
-    )
+    assert set([file.name for file in files if file.name.endswith(".bag")]) == set([file.name for file in DATA_FILES])
 
 
 @pytest.mark.slow
 def test_upload_no_create(project):
     mission_name = token_hex(8)
-    mission_query = MissionQuery(
-        patterns=[mission_name], project_query=ProjectQuery(ids=[project.id])
-    )
+    mission_query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project.id]))
 
     client = AuthenticatedClient()
     with pytest.raises(MissionNotFound):
-        kleinkram.core.upload(
-            client=client, query=mission_query, file_paths=DATA_FILES, create=False
-        )
+        kleinkram.core.upload(client=client, query=mission_query, file_paths=DATA_FILES, create=False)
 
 
 @pytest.mark.slow
@@ -64,9 +54,7 @@ def test_upload_to_existing_mission(empty_mission):
     kleinkram.core.upload(client=client, query=mission_query, file_paths=DATA_FILES)
 
     files = list_files(mission_ids=[empty_mission.id])
-    assert set([file.name for file in files if file.name.endswith(".bag")]) == set(
-        [file.name for file in DATA_FILES]
-    )
+    assert set([file.name for file in files if file.name.endswith(".bag")]) == set([file.name for file in DATA_FILES])
 
 
 @pytest.mark.slow
@@ -84,9 +72,7 @@ def test_delete_working_as_expected_when_passing_empty_list(mission):
     # we need to filter by *.bag to not get flakyness due to conversion
     n_files = len(list_files(mission_ids=[mission.id], file_names=["*.bag"]))
     kleinkram.core.delete_files(client=client, file_ids=[])
-    n_files_after_delete = len(
-        list_files(mission_ids=[mission.id], file_names=["*.bag"])
-    )
+    n_files_after_delete = len(list_files(mission_ids=[mission.id], file_names=["*.bag"]))
     assert n_files == n_files_after_delete
 
 
@@ -132,9 +118,7 @@ def test_create_update_delete_project():
     assert project.description == "test"
 
     new_name = token_hex(8)
-    kleinkram.core.update_project(
-        client=client, project_id=project.id, new_name=new_name, description="new desc"
-    )
+    kleinkram.core.update_project(client=client, project_id=project.id, new_name=new_name, description="new desc")
 
     project = list_projects(project_ids=[project.id])[0]
     assert project.name == new_name
@@ -162,13 +146,9 @@ def test_verify(mission):
     client = AuthenticatedClient()
     query = MissionQuery(ids=[mission.id])
 
-    verify_status = kleinkram.core.verify(
-        client=client, query=query, file_paths=DATA_FILES, skip_hash=True
-    )
+    verify_status = kleinkram.core.verify(client=client, query=query, file_paths=DATA_FILES, skip_hash=True)
 
-    assert all(
-        status == FileVerificationStatus.UPLOADED for status in verify_status.values()
-    )
+    assert all(status == FileVerificationStatus.UPLOADED for status in verify_status.values())
 
 
 @pytest.mark.slow

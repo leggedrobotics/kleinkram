@@ -48,9 +48,7 @@ def test_upload_verify_update_download_mission(project, tmp_path, api):
 
     mission_name = secrets.token_hex(8)
     upload = f"{CLI} upload -p {project.name} -m {mission_name} --create {DATA_PATH.absolute()}/*.bag"
-    verify = (
-        f"{CLI} verify -p {project.name} -m {mission_name} {DATA_PATH.absolute()}/*.bag"
-    )
+    verify = f"{CLI} verify -p {project.name} -m {mission_name} {DATA_PATH.absolute()}/*.bag"
     # update = f"{CLI} mission update -p {project.name} -m {mission_name} --metadata {DATA_PATH.absolute()}/metadata.yaml"
     download = f"{CLI} download -p {project.name} -m {mission_name} --dest {tmp_path.absolute()}"
     delete_file = f"{CLI} file delete -p {project.name} -m {mission_name} -f {file_names[0].name} -y"

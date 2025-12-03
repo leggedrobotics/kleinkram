@@ -50,9 +50,7 @@ def endpoint(
             console.print(f"Endpoint {name} not found.\n", style="red")
             console.print(endpoint_table(config))
     elif not (name and api and s3):
-        raise typer.BadParameter(
-            "to add a new endpoint you must specify the api and s3 endpoints"
-        )
+        raise typer.BadParameter("to add a new endpoint you must specify the api and s3 endpoints")
     else:
         new_endpoint = Endpoint(name, api, s3)
         add_endpoint(config, new_endpoint)
