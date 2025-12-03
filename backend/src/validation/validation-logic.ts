@@ -7,7 +7,10 @@ export const PROJECT_NAME_REGEX = /^[\w\-_]{3,50}$/;
 const validTypes = Object.values(FileType).filter(
     (type) => type !== FileType.ALL,
 );
-const extensionsGroup = validTypes.map((type) => type.toLowerCase()).join('|');
+const extensionsGroup = validTypes
+    .map((type) => type.toLowerCase())
+    .concat(['yml'])
+    .join('|');
 const regexString = `^[\\w\\-.()]{3,50}\\.(${extensionsGroup})$`;
 export const FILE_NAME_REGEX = new RegExp(regexString);
 

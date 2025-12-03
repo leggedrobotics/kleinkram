@@ -532,6 +532,8 @@ export class FileService implements OnModuleInit {
         )) {
             validTypesLookup.set(type.toLowerCase(), type);
         }
+        // Manually add 'yml' to map to YAML since we merged them
+        validTypesLookup.set('yml', FileType.YAML);
 
         // Map requested types to their valid, cased enum values and deduplicate
         const typesToFilter = [
@@ -1208,7 +1210,7 @@ export class FileService implements OnModuleInit {
                     ['.bag', FileType.BAG],
                     ['.mcap', FileType.MCAP],
                     ['.yaml', FileType.YAML],
-                    ['.yml', FileType.YML],
+                    ['.yml', FileType.YAML],
                     ['.svo2', FileType.SVO2],
                     ['.tum', FileType.TUM],
                     ['.db3', FileType.DB3],

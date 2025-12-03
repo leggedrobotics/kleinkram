@@ -58,7 +58,7 @@ pids
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /grandtourdatasets-5295745f7fab.json
-/migration/*/migrations/
+
 /junit.xml
 
 # ignore bag and mcap files

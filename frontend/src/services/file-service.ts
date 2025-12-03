@@ -70,7 +70,8 @@ export const createFileAction = async (
 
 const VALID_EXTENSIONS = Object.values(FileType)
     .filter((type) => type !== FileType.ALL)
-    .map((type) => `.${type.toLowerCase()}`);
+    .map((type) => `.${type.toLowerCase()}`)
+    .concat(['.yml']);
 
 const VALID_EXTENSION_SET = new Set(VALID_EXTENSIONS);
 
