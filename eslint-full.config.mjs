@@ -135,6 +135,8 @@ export default tseslint.config(
                 {
                     allowList: {
                         props: true,
+                        db: true,
+                        Db: true,
                     },
                 },
             ],

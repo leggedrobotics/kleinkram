@@ -1,7 +1,24 @@
 <template>
     <div class="file-topic-table">
         <div class="flex justify-between items-center q-mb-md">
-            <h2 class="text-h4 q-my-none">Messages</h2>
+            <h2 class="text-h4 q-my-none flex items-center">
+                Messages
+                <q-badge
+                    color="orange-7"
+                    text-color="white"
+                    label="BETA"
+                    class="text-weight-bold cursor-help q-ml-sm"
+                    style="
+                        font-size: 10px;
+                        padding: 2px 6px;
+                        vertical-align: middle;
+                    "
+                >
+                    <q-tooltip>
+                        Preview functionality is currently in beta.
+                    </q-tooltip>
+                </q-badge>
+            </h2>
             <app-search-bar v-model="search" placeholder="Search topics..." />
         </div>
 

@@ -1,5 +1,5 @@
 import { ref, Ref, watch } from 'vue';
-import { renderMessageToCanvas } from '../services/image-utilities';
+import { renderMessageToCanvas } from '../services/decoding-strategies/image-utilities';
 
 // Maximum number of attempts before aborting compressed image loading
 const MAX_COMPRESSED_ATTEMPTS = 1000;

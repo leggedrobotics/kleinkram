@@ -1,18 +1,12 @@
 <template>
-    <div class="svo2-viewer bg-grey-1 rounded-borders q-pa-xl text-center">
-        <q-icon name="sym_o_videocam" size="4em" class="text-grey-7 q-mb-md" />
-        <div class="text-h6 text-grey-9">ZED SVO2 Video Recording</div>
-        <div
-            class="text-body1 text-grey-7 q-mt-sm"
-            style="max-width: 600px; margin: 0 auto"
-        >
-            This file contains high-fidelity video and sensor data recorded with a
-            ZED camera.
-            <br>
-            Preview is not supported in the browser.
+    <div class="svo2-viewer bg-grey-1 rounded-borders q-pa-lg text-center">
+        <div class="text-h6 q-mb-md">Preview Not Supported</div>
+        <div class="text-body1 q-mb-lg text-grey-8">
+            Previewing SV02 files in Kleinkarm is not yet supported. Please
+            download the file to view it using the ZED SDK tools.
         </div>
 
-        <div class="q-mt-lg row justify-center q-gutter-md">
+        <div class="row justify-center q-gutter-md">
             <q-btn
                 label="Download File"
                 color="primary"
@@ -32,9 +26,19 @@
 </template>
 
 <script setup lang="ts">
+defineProps<{
+    url?: string | undefined;
+}>();
+
 const emit = defineEmits<(event: 'download') => void>();
 
 function onDownload(): void {
     emit('download');
 }
 </script>
+
+<style scoped>
+.svo2-viewer {
+    border: 1px solid #e0e0e0;
+}
+</style>

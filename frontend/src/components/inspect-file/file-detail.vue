@@ -28,9 +28,26 @@
 
         <!-- TUM Preview -->
         <div v-else-if="isTum" class="q-mb-lg">
-            <h2 class="text-h4 q-mb-md">Trajectory Preview</h2>
+            <h2 class="text-h4 q-mb-md flex items-center">
+                Trajectory Preview
+                <q-badge
+                    color="orange-7"
+                    text-color="white"
+                    label="BETA"
+                    class="text-weight-bold cursor-help q-ml-sm"
+                    style="
+                        font-size: 10px;
+                        padding: 2px 6px;
+                        vertical-align: middle;
+                    "
+                >
+                    <q-tooltip>
+                        Preview functionality is currently in beta.
+                    </q-tooltip>
+                </q-badge>
+            </h2>
             <div v-if="tumContent">
-                <TumViewer :content="tumContent" />
+                <TumViewer :content="tumContent ?? ''" />
             </div>
             <div v-else class="row items-center q-gutter-sm text-grey-7">
                 <q-spinner-dots size="1.5em" /> <span>Loading content...</span>
@@ -39,8 +56,7 @@
 
         <!-- SVO2 Preview -->
         <div v-else-if="isSvo2" class="q-mb-lg">
-            <h2 class="text-h4 q-mb-md">Video Preview</h2>
-            <Svo2Viewer @download="handleDownload" />
+            <Svo2Viewer :url="svo2Url" @download="handleDownload" />
         </div>
 
         <!-- Binary/ROS Preview -->
@@ -55,6 +71,33 @@
                 @pause-preview="preview.cancelTopic"
                 @resume-preview="handleResumePreview"
             />
+
+            <div
+                v-if="
+                    (preview.dbSchema || isLoading) &&
+                    (!file.topics || file.topics.length === 0)
+                "
+                class="q-mt-lg"
+            >
+                <h3 class="text-h5 q-mb-md">SQL Schema</h3>
+                <div
+                    v-if="isLoading"
+                    class="row justify-center q-pa-md bg-grey-1 rounded-borders"
+                >
+                    <q-spinner color="primary" size="2em" />
+                    <span class="q-ml-sm">Loading schema...</span>
+                </div>
+                <div
+                    v-else-if="preview.dbSchema?.value"
+                    class="bg-grey-1 q-pa-md rounded-borders border-solid"
+                >
+                    <pre class="q-ma-none text-code" style="overflow-x: auto">{{
+                        preview.dbSchema.value
+                            ?.replace(/CREATE TABLE/g, '\nCREATE TABLE')
+                            .trim()
+                    }}</pre>
+                </div>
+            </div>
         </div>
 
         <!-- Uploading Placeholder -->
@@ -122,6 +165,7 @@ const { data: events } = useFileEvents(fileUuid);
 const preview = useRosmsgPreview();
 const yamlContent = ref<string | undefined>(undefined);
 const tumContent = ref<string | undefined>(undefined);
+const svo2Url = ref<string | undefined>(undefined);
 
 const fileExtension = computed(
     () => file.value?.filename?.split('.').pop()?.toLowerCase() ?? '',
@@ -132,7 +176,9 @@ const isSvo2 = computed(() => file.value?.type === FileType.SVO2);
 const isSupportedBinary = computed(() => {
     if (!file.value) return false;
     return (
-        file.value.type === FileType.BAG || file.value.type === FileType.MCAP
+        file.value.type === FileType.BAG ||
+        file.value.type === FileType.MCAP ||
+        file.value.type === FileType.DB3
     );
 });
 const displayTopics = computed(
@@ -163,9 +209,15 @@ watch(
                 tumContent.value = results.ok
                     ? await results.text()
                     : 'Error loading content';
+            } else if (isSvo2.value) {
+                // For SVO2, we just need the URL to be available for the viewer
+                // The viewer will handle the range requests
+                svo2Url.value = url;
             } else if (isSupportedBinary.value) {
-                const type =
-                    currentFile.type === FileType.BAG ? 'rosbag' : 'mcap';
+                let type: 'rosbag' | 'mcap' | 'db3';
+                if (currentFile.type === FileType.BAG) type = 'rosbag';
+                else if (currentFile.type === FileType.MCAP) type = 'mcap';
+                else type = 'db3';
                 await preview.init(url, type);
             }
         } catch (error_) {

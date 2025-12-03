@@ -48,6 +48,15 @@
                     currentMessage?.data?.format ||
                     'unknown'
                 }}
+                <q-tooltip
+                    v-if="
+                        (!currentMessage?.data?.encoding &&
+                            !currentMessage?.data?.format) ||
+                        currentMessage?.data?.encoding === 'unknown'
+                    "
+                >
+                    Magic bytes: {{ magicBytes }}
+                </q-tooltip>
             </div>
             <div v-if="frameSize">Size: {{ frameSize }}</div>
         </div>
@@ -106,6 +115,22 @@ const frameSize = computed(() => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 });
 const currentData = computed(() => currentMessage.value?.data);
+const magicBytes = computed(() => {
+    const data = currentData.value?.data;
+    if (!data) return '';
+    let bytes: Uint8Array | number[] = [];
+    if (data instanceof Uint8Array) {
+        bytes = data.slice(0, 4);
+    } else if (Array.isArray(data)) {
+        bytes = data.slice(0, 4);
+    } else {
+        return '';
+    }
+
+    return [...bytes]
+        .map((b) => `0x${b.toString(16).toUpperCase().padStart(2, '0')}`)
+        .join(' ');
+});
 
 // --- Rendering ---
 const { draw, renderError, isDecoded, isUltraWide } = useImageDecoder(
@@ -138,12 +163,40 @@ watch(renderError, (error) => {
 });
 
 // --- Playback Logic ---
+const inferredInterval = computed(() => {
+    if (properties.messages.length < 2) return 100;
+
+    let totalDiff = 0n;
+    let count = 0;
+    // Check up to first 20 frames to estimate FPS
+    const limit = Math.min(properties.messages.length - 1, 20);
+
+    for (let index = 0; index < limit; index++) {
+        const t1 = properties.messages[index]?.logTime;
+        const t2 = properties.messages[index + 1]?.logTime;
+
+        if (typeof t1 === 'bigint' && typeof t2 === 'bigint' && t2 > t1) {
+            totalDiff += t2 - t1;
+            count++;
+        }
+    }
+
+    if (count === 0) return 100;
+
+    const avgNano = Number(totalDiff) / count;
+    const avgMs = avgNano / 1_000_000;
+
+    // Clamp to reasonable values (e.g., 1fps to 60fps -> 1000ms to 16ms)
+    // If it's too fast, we might not want to render that fast anyway, but let's stick to a reasonable lower bound.
+    return Math.max(16, Math.min(1000, avgMs));
+});
+
 const togglePlay = (): void => {
     isPlaying.value = !isPlaying.value;
     if (isPlaying.value) {
         intervalId = setInterval(() => {
             step(1);
-        }, 100); // 10 FPS default
+        }, inferredInterval.value);
     } else {
         clearInterval(intervalId);
     }

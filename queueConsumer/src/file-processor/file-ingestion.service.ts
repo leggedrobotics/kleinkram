@@ -145,6 +145,11 @@ export class FileIngestionService {
         }
 
         const isBag = data.filename.endsWith('.bag');
+        const isDb3 = data.filename.endsWith('.db3');
+
+        let type = FileType.MCAP;
+        if (isBag) type = FileType.BAG;
+        if (isDb3) type = FileType.DB3;
 
         const entity = this.fileRepo.create({
             date: new Date(),
@@ -152,7 +157,7 @@ export class FileIngestionService {
             size: data.size,
             filename: data.filename,
             creator: queueItem.creator,
-            type: isBag ? FileType.BAG : FileType.MCAP,
+            type,
             state: FileState.UPLOADING,
             hash: data.hash,
             origin:

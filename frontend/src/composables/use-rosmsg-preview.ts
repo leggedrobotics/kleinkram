@@ -1,6 +1,9 @@
 import { UniversalHttpReader } from '@common/universal-http-reader';
 import { markRaw, reactive, Ref, ref, shallowRef } from 'vue';
-import { LogStrategy, McapStrategy, RosbagStrategy } from './rosmsg-strategies';
+import { DecodingStrategy } from '../services/decoding-strategies';
+import { Db3Strategy } from '../services/decoding-strategies/db3-strategy';
+import { McapStrategy } from '../services/decoding-strategies/mcap-strategy';
+import { RosbagStrategy } from '../services/decoding-strategies/rosbag-strategy';
 import { formatPayload } from './rosmsg-utilities.ts';
 
 export function useRosmsgPreview(): {
@@ -9,7 +12,11 @@ export function useRosmsgPreview(): {
     topicPreviews: Record<string, any[]>;
     topicLoadingState: Record<string, boolean>;
     topicErrors: Record<string, string | null>;
-    init: (url: string, type: 'mcap' | 'rosbag') => Promise<void>;
+    init: (
+        url: string,
+        type: 'mcap' | 'rosbag' | 'db3',
+        missionUuid?: string,
+    ) => Promise<void>;
     fetchTopicMessages: (
         topicName: string,
         options?: { limit?: number; append?: boolean },
@@ -17,6 +24,7 @@ export function useRosmsgPreview(): {
     formatPayload: (data: any) => string;
     cancelTopic: (topicName: string) => void;
     reset: () => void;
+    dbSchema?: Ref<string | null>;
 } {
     const isReaderReady = ref(false);
     const readerError = ref<string | null>(null);
@@ -25,32 +33,9 @@ export function useRosmsgPreview(): {
 
     const topicErrors = reactive<Record<string, string | null>>({});
 
-    const strategy = shallowRef<LogStrategy | null>(null);
+    const strategy = shallowRef<DecodingStrategy | null>(null);
+    const dbSchema = ref<string | null>(null);
     const abortControllers = new Map<string, AbortController>();
-
-    async function init(url: string, type: 'mcap' | 'rosbag'): Promise<void> {
-        isReaderReady.value = false;
-        readerError.value = null;
-        reset();
-        // Clear previous errors on new file load
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-        for (const k of Object.keys(topicErrors)) delete topicErrors[k];
-
-        try {
-            const httpReader = new UniversalHttpReader(url);
-            await httpReader.init();
-
-            const impl =
-                type === 'mcap' ? new McapStrategy() : new RosbagStrategy();
-            await impl.init(httpReader);
-
-            strategy.value = impl;
-            isReaderReady.value = true;
-        } catch (error: any) {
-            console.error('Preview init failed:', error);
-            readerError.value = error.message;
-        }
-    }
 
     function cancelTopic(topicName: string): void {
         const controller = abortControllers.get(topicName);
@@ -62,6 +47,7 @@ export function useRosmsgPreview(): {
     }
 
     function reset(): void {
+        dbSchema.value = null;
         for (const controller of abortControllers.values()) {
             controller.abort();
         }
@@ -72,6 +58,41 @@ export function useRosmsgPreview(): {
         for (const k of Object.keys(topicLoadingState)) {
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete topicLoadingState[k];
+        }
+    }
+
+    async function init(
+        url: string,
+        type: 'mcap' | 'rosbag' | 'db3',
+    ): Promise<void> {
+        isReaderReady.value = false;
+        readerError.value = null;
+        reset();
+        // Clear previous errors on new file load
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        for (const k of Object.keys(topicErrors)) delete topicErrors[k];
+
+        try {
+            const httpReader = new UniversalHttpReader(url);
+            await httpReader.init();
+
+            let impl: DecodingStrategy;
+            if (type === 'mcap') impl = new McapStrategy();
+            else if (type === 'db3') {
+                impl = new Db3Strategy();
+                await impl.init(httpReader);
+                dbSchema.value = impl.getSchema();
+            } else impl = new RosbagStrategy();
+
+            if (type !== 'db3') {
+                await impl.init(httpReader);
+            }
+
+            strategy.value = impl;
+            isReaderReady.value = true;
+        } catch (error: any) {
+            console.error('Preview init failed:', error);
+            readerError.value = error.message;
         }
     }
 
@@ -149,6 +170,7 @@ export function useRosmsgPreview(): {
         topicPreviews,
         topicLoadingState,
         topicErrors,
+        dbSchema,
         init,
         fetchTopicMessages,
         formatPayload,

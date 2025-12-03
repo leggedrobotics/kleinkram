@@ -232,53 +232,76 @@ interface Point {
     z: number;
 }
 
+const renderError = ref<string | null>(null);
+
 function parsePoints(message: any): Point[] {
+    renderError.value = null;
     if (!message) return [];
 
-    const fields = message.fields as any[];
-    const data = message.data as Uint8Array | number[];
-    const pointStep = message.point_step as number;
-    const isBigEndian = message.is_bigendian;
-    const totalPoints = message.width * message.height;
-
-    const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-
-    const xField = fields.find((f: any) => f.name === 'x');
-    const yField = fields.find((f: any) => f.name === 'y');
-    const zField = fields.find((f: any) => f.name === 'z');
-
-    if (!xField || !yField) return [];
-
-    const xOff: number = xField.offset;
-    const yOff: number = yField.offset;
-    const zOff: number = zField ? zField.offset : -1;
-    const isFloat32 = xField.datatype === 7;
-
-    const points: Point[] = [];
-
-    for (let index = 0; index < totalPoints; index++) {
-        const base = index * pointStep;
-        if (base + pointStep > bytes.length) break;
-
-        let x,
-            y,
-            z = 0;
-        if (isFloat32) {
-            x = view.getFloat32(base + xOff, !isBigEndian);
-            y = view.getFloat32(base + yOff, !isBigEndian);
-            if (zOff >= 0) z = view.getFloat32(base + zOff, !isBigEndian);
-        } else {
-            x = view.getFloat64(base + xOff, !isBigEndian);
-            y = view.getFloat64(base + yOff, !isBigEndian);
-            if (zOff >= 0) z = view.getFloat64(base + zOff, !isBigEndian);
+    try {
+        const fields = message.fields as any[];
+        if (!fields || !Array.isArray(fields)) {
+            throw new Error('Message missing "fields" array');
         }
 
-        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z))
-            continue;
-        points.push({ x, y, z });
+        const data = message.data as Uint8Array | number[];
+        const pointStep = message.point_step as number;
+        const isBigEndian = message.is_bigendian;
+        const totalPoints = message.width * message.height;
+
+        const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+        const view = new DataView(
+            bytes.buffer,
+            bytes.byteOffset,
+            bytes.byteLength,
+        );
+
+        const xField = fields.find((f: any) => f.name === 'x');
+        const yField = fields.find((f: any) => f.name === 'y');
+        const zField = fields.find((f: any) => f.name === 'z');
+
+        if (!xField || !yField) {
+            throw new Error('Missing x or y fields in PointCloud2');
+        }
+
+        const xOff: number = xField.offset;
+        const yOff: number = yField.offset;
+        const zOff: number = zField ? zField.offset : -1;
+        const isFloat32 = xField.datatype === 7;
+
+        const points: Point[] = [];
+
+        for (let index = 0; index < totalPoints; index++) {
+            const base = index * pointStep;
+            if (base + pointStep > bytes.length) break;
+
+            let x,
+                y,
+                z = 0;
+            if (isFloat32) {
+                x = view.getFloat32(base + xOff, !isBigEndian);
+                y = view.getFloat32(base + yOff, !isBigEndian);
+                if (zOff >= 0) z = view.getFloat32(base + zOff, !isBigEndian);
+            } else {
+                x = view.getFloat64(base + xOff, !isBigEndian);
+                y = view.getFloat64(base + yOff, !isBigEndian);
+                if (zOff >= 0) z = view.getFloat64(base + zOff, !isBigEndian);
+            }
+
+            if (
+                !Number.isFinite(x) ||
+                !Number.isFinite(y) ||
+                !Number.isFinite(z)
+            )
+                continue;
+            points.push({ x, y, z });
+        }
+        return points;
+    } catch (error: any) {
+        console.error('Error parsing PointCloud2:', error);
+        renderError.value = error.message;
+        return [];
     }
-    return points;
 }
 
 // --- Rendering Logic ---
