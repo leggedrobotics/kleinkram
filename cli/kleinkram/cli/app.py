@@ -31,8 +31,8 @@ from kleinkram.cli._upload import upload_typer
 from kleinkram.cli._verify import verify_typer
 from kleinkram.cli.error_handling import ErrorHandledTyper
 from kleinkram.cli.error_handling import display_error
-from kleinkram.config import Config
 from kleinkram.config import MAX_TABLE_SIZE
+from kleinkram.config import Config
 from kleinkram.config import check_config_compatibility
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
@@ -165,9 +165,7 @@ def login(
 
     # validate that user parameter is only used with fake-oauth
     if user is not None and oAuthProvider != "fake-oauth":
-        raise typer.BadParameter(
-            "--user parameter can only be used with fake-oauth provider"
-        )
+        raise typer.BadParameter("--user parameter can only be used with fake-oauth provider")
 
     login_flow(oAuthProvider=oAuthProvider, key=key, headless=headless, user=user)
 
@@ -217,9 +215,7 @@ def check_version_compatiblity() -> None:
 def cli(
     verbose: bool = typer.Option(True, help="Enable verbose mode."),
     debug: bool = typer.Option(False, help="Enable debug mode."),
-    version: Optional[bool] = typer.Option(
-        None, "--version", "-v", callback=_version_callback
-    ),
+    version: Optional[bool] = typer.Option(None, "--version", "-v", callback=_version_callback),
     log_level: Optional[LogLevel] = typer.Option(None, help="Set log level."),
     max_lines: int = typer.Option(
         MAX_TABLE_SIZE,
@@ -246,9 +242,7 @@ def cli(
         log_level = LogLevel.WARNING
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
-        level=LOG_LEVEL_MAP[log_level], filename=LOG_FILE, format=LOG_FORMAT
-    )
+    logging.basicConfig(level=LOG_LEVEL_MAP[log_level], filename=LOG_FILE, format=LOG_FORMAT)
     logger.info(f"CLI version: {__version__}")
 
     try:
@@ -258,7 +252,5 @@ def cli(
         raise
     except Exception:
         err = "failed to check version compatibility"
-        Console(file=sys.stderr).print(
-            err, style="yellow" if shared_state.verbose else None
-        )
+        Console(file=sys.stderr).print(err, style="yellow" if shared_state.verbose else None)
         logger.error(err)

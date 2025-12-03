@@ -237,7 +237,7 @@ export class OldProjectController {
     @LoggedIn()
     @ApiOperation({
         summary: 'Get default rights',
-        description: `Get the default rights for a project, the default rights 
+        description: `Get the default rights for a project, the default rights
         are the rights that should be assigned to a new project upon creation`,
     })
     @ApiOkResponse({

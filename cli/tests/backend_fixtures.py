@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import time
 from pathlib import Path
 from secrets import token_hex
@@ -12,9 +14,6 @@ from kleinkram import delete_project
 from kleinkram import list_missions
 from kleinkram import list_projects
 from kleinkram import upload
-
-import subprocess
-import sys
 
 # we expect the mission files to be in this folder that is not commited to the repo
 DATA_PATH = Path(__file__).parent / "data"

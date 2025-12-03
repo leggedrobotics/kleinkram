@@ -116,11 +116,11 @@ export class AuthController {
         <body>
             <h1>Authentication Successful</h1>
             <p>Please copy your tokens from below and paste them back into your application.</p>
-            
+
             <h2>Authentication Token</h2>
             <div class="token" id="authToken">${authToken}</div>
             <button onclick="copyToClipboard('authToken')">Copy Authentication Token</button>
-            
+
             <h2>Refresh Token</h2>
             <div class="token" id="refreshToken">${refreshToken}</div>
             <button onclick="copyToClipboard('refreshToken')">Copy Refresh Token</button>

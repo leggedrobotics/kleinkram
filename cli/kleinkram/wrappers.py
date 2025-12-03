@@ -9,7 +9,8 @@ conversion to the internal representation
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Collection, Any
+from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Literal
@@ -66,9 +67,7 @@ def _args_to_mission_query(
     return MissionQuery(
         ids=[parse_uuid_like(_id) for _id in mission_ids or []],
         patterns=list(mission_names or []),
-        project_query=_args_to_project_query(
-            project_names=project_names, project_ids=project_ids
-        ),
+        project_query=_args_to_project_query(project_names=project_names, project_ids=project_ids),
     )
 
 
@@ -85,9 +84,7 @@ def _verify_string_sequence(arg_name: str, arg_value: Optional[Sequence[Any]]) -
         if not isinstance(arg_value, Sequence):
             raise TypeError(f"{arg_name} must be a Sequence, None, or empty array.")
         if isinstance(arg_value, str):
-            raise TypeError(
-                f"{arg_name} cannot be a string, but a sequence of strings."
-            )
+            raise TypeError(f"{arg_name} cannot be a string, but a sequence of strings.")
         for item in arg_value:
             if not isinstance(item, str):
                 raise TypeError(f"{arg_name} must contain strings only.")
@@ -358,15 +355,11 @@ def create_mission(
 
 
 def create_project(project_name: str, description: str) -> None:
-    kleinkram.api.routes._create_project(
-        AuthenticatedClient(), project_name, description
-    )
+    kleinkram.api.routes._create_project(AuthenticatedClient(), project_name, description)
 
 
 def update_file(file_id: IdLike) -> None:
-    kleinkram.core.update_file(
-        client=AuthenticatedClient(), file_id=parse_uuid_like(file_id)
-    )
+    kleinkram.core.update_file(client=AuthenticatedClient(), file_id=parse_uuid_like(file_id))
 
 
 def update_mission(mission_id: IdLike, metadata: Dict[str, str]) -> None:
@@ -399,48 +392,34 @@ def delete_file(file_id: IdLike) -> None:
     """\
     delete a single file by id
     """
-    file = kleinkram.api.routes.get_file(
-        AuthenticatedClient(), FileQuery(ids=[parse_uuid_like(file_id)])
-    )
-    kleinkram.api.routes._delete_files(
-        AuthenticatedClient(), file_ids=[file.id], mission_id=file.mission_id
-    )
+    file = kleinkram.api.routes.get_file(AuthenticatedClient(), FileQuery(ids=[parse_uuid_like(file_id)]))
+    kleinkram.api.routes._delete_files(AuthenticatedClient(), file_ids=[file.id], mission_id=file.mission_id)
 
 
 def delete_mission(mission_id: IdLike) -> None:
-    kleinkram.core.delete_mission(
-        client=AuthenticatedClient(), mission_id=parse_uuid_like(mission_id)
-    )
+    kleinkram.core.delete_mission(client=AuthenticatedClient(), mission_id=parse_uuid_like(mission_id))
 
 
 def delete_project(project_id: IdLike) -> None:
-    kleinkram.core.delete_project(
-        client=AuthenticatedClient(), project_id=parse_uuid_like(project_id)
-    )
+    kleinkram.core.delete_project(client=AuthenticatedClient(), project_id=parse_uuid_like(project_id))
 
 
 def get_file(file_id: IdLike) -> File:
     """\
     get a file by its id
     """
-    return kleinkram.api.routes.get_file(
-        AuthenticatedClient(), FileQuery(ids=[parse_uuid_like(file_id)])
-    )
+    return kleinkram.api.routes.get_file(AuthenticatedClient(), FileQuery(ids=[parse_uuid_like(file_id)]))
 
 
 def get_mission(mission_id: IdLike) -> Mission:
     """\
     get a mission by its id
     """
-    return kleinkram.api.routes.get_mission(
-        AuthenticatedClient(), MissionQuery(ids=[parse_uuid_like(mission_id)])
-    )
+    return kleinkram.api.routes.get_mission(AuthenticatedClient(), MissionQuery(ids=[parse_uuid_like(mission_id)]))
 
 
 def get_project(project_id: IdLike) -> Project:
     """\
     get a project by its id
     """
-    return kleinkram.api.routes.get_project(
-        AuthenticatedClient(), ProjectQuery(ids=[parse_uuid_like(project_id)])
-    )
+    return kleinkram.api.routes.get_project(AuthenticatedClient(), ProjectQuery(ids=[parse_uuid_like(project_id)]))

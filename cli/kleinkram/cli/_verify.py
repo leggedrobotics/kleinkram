@@ -9,7 +9,8 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.cli._file_validator import FileValidator, _report_skipped_files
+from kleinkram.cli._file_validator import FileValidator
+from kleinkram.cli._file_validator import _report_skipped_files
 from kleinkram.cli._upload import _build_mission_query
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_file_verification_status
@@ -23,18 +24,14 @@ Verify if files were uploaded correctly.
 verify_typer = typer.Typer(name="verify", invoke_without_command=True, help=HELP)
 
 
-def _handle_no_files_to_process(
-    original_count: int, processed_count: int, action: str = "verify"
-) -> None:
+def _handle_no_files_to_process(original_count: int, processed_count: int, action: str = "verify") -> None:
     """Checks if any files are left and exits if not."""
     if processed_count > 0:
         return
 
     if original_count > 0:
         typer.echo(
-            typer.style(
-                f"All paths were skipped. No files to {action}.", fg=typer.colors.RED
-            ),
+            typer.style(f"All paths were skipped. No files to {action}.", fg=typer.colors.RED),
             err=True,
         )
     else:
@@ -48,9 +45,7 @@ def _handle_no_files_to_process(
 @verify_typer.callback()
 def verify(
     files: List[str] = typer.Argument(help="files to verify"),
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
     skip: bool = typer.Option(
         False,
@@ -58,9 +53,7 @@ def verify(
         "-s",
         help="skip unsupported file types, badly named files, or directories instead of erroring",
     ),
-    experimental_datatypes: bool = typer.Option(
-        False, help="allow experimental datatypes (yaml, svo2, db3, tum)"
-    ),
+    experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
     skip_hash: bool = typer.Option(None, help="skip hash check"),
     check_file_hash: bool = typer.Option(
         True,

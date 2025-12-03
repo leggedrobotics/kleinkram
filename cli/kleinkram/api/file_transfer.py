@@ -7,7 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 from enum import Enum
 from pathlib import Path
-from time import monotonic, sleep
+from time import monotonic
+from time import sleep
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
@@ -56,9 +57,7 @@ class UploadCredentials(NamedTuple):
     bucket: str
 
 
-def _confirm_file_upload(
-    client: AuthenticatedClient, file_id: UUID, file_hash: str
-) -> None:
+def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: str) -> None:
     data = {
         "uuid": str(file_id),
         "md5": file_hash,
@@ -68,9 +67,7 @@ def _confirm_file_upload(
     resp.raise_for_status()
 
 
-def _cancel_file_upload(
-    client: AuthenticatedClient, file_id: UUID, mission_id: UUID
-) -> None:
+def _cancel_file_upload(client: AuthenticatedClient, file_id: UUID, mission_id: UUID) -> None:
     data = {
         "uuids": [str(file_id)],
         "missionUuid": str(mission_id),
@@ -158,9 +155,7 @@ class UploadState(Enum):
     CANCELED = 3
 
 
-def _get_upload_credentials_with_retry(
-    client, pbar, filename, mission_id, max_attempts=5
-):
+def _get_upload_credentials_with_retry(client, pbar, filename, mission_id, max_attempts=5):
     """
     Retrieves upload credentials with retry logic.
 
@@ -175,9 +170,7 @@ def _get_upload_credentials_with_retry(
     """
     attempt = 0
     while attempt < max_attempts:
-        creds = _get_upload_creditials(
-            client, internal_filename=filename, mission_id=mission_id
-        )
+        creds = _get_upload_creditials(client, internal_filename=filename, mission_id=mission_id)
         if creds is not None:
             return creds
 
@@ -232,9 +225,7 @@ def upload_file(
                 try:
                     _cancel_file_upload(client, creds.file_id, mission_id)
                 except Exception as cancel_e:
-                    logger.error(
-                        f"Failed to cancel upload for {creds.file_id}: {cancel_e}"
-                    )
+                    logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
 
                 if attempt < 2:  # Retry if not the last attempt
                     pbar.update(0)
@@ -253,14 +244,11 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     """\
     get the download url for a file by file id
     """
-    resp = client.get(
-        DOWNLOAD_URL, params={"uuid": str(id), "expires": True, "preview_only": False}
-    )
+    resp = client.get(DOWNLOAD_URL, params={"uuid": str(id), "expires": True, "preview_only": False})
 
     if 400 <= resp.status_code < 500:
         raise AccessDenied(
-            f"Failed to download file: {resp.json()['message']}"
-            f" Status Code: {resp.status_code}",
+            f"Failed to download file: {resp.json()['message']}" f" Status Code: {resp.status_code}",
         )
 
     resp.raise_for_status()
@@ -268,9 +256,7 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     return resp.text
 
 
-def _url_download(
-    url: str, *, path: Path, size: int, overwrite: bool = False, verbose: bool = False
-) -> None:
+def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False, verbose: bool = False) -> None:
     if path.exists():
         if overwrite:
             path.unlink()
@@ -286,18 +272,11 @@ def _url_download(
     while downloaded < size:
         try:
             headers = {"Range": f"bytes={downloaded}-"}
-            with httpx.stream(
-                "GET", url, headers=headers, timeout=S3_READ_TIMEOUT
-            ) as response:
+            with httpx.stream("GET", url, headers=headers, timeout=S3_READ_TIMEOUT) as response:
                 # Accept both 206 Partial Content and 200 OK if starting from 0
-                if not (
-                    response.status_code == 206
-                    or (downloaded == 0 and response.status_code == 200)
-                ):
+                if not (response.status_code == 206 or (downloaded == 0 and response.status_code == 200)):
                     response.raise_for_status()
-                    raise RuntimeError(
-                        f"Expected 206 Partial Content, got {response.status_code}"
-                    )
+                    raise RuntimeError(f"Expected 206 Partial Content, got {response.status_code}")
 
                 mode = "ab" if downloaded > 0 else "wb"
                 with open(path, mode) as f:
@@ -310,9 +289,7 @@ def _url_download(
                         leave=False,
                         disable=not verbose,
                     ) as pbar:
-                        for chunk in response.iter_bytes(
-                            chunk_size=DOWNLOAD_CHUNK_SIZE
-                        ):
+                        for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
                             attempt = 0  # reset attempt counter on successful download of non-empty chunk
                             if not chunk:
                                 break
@@ -324,13 +301,9 @@ def _url_download(
             logger.info(f"Error: {e}, retrying...")
             attempt += 1
             if attempt > MAX_RETRIES:
-                raise RuntimeError(
-                    f"Download failed after {MAX_RETRIES} retries due to {e}"
-                ) from e
+                raise RuntimeError(f"Download failed after {MAX_RETRIES} retries due to {e}") from e
             if verbose:
-                print(
-                    f"{e} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff..."
-                )
+                print(f"{e} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff...")
             sleep(RETRY_BACKOFF_BASE**attempt)
 
 
@@ -370,17 +343,13 @@ def download_file(
                 return DownloadState.SKIPPED_OK, 0
 
             elif verbose:
-                tqdm.write(
-                    styled_string(f"overwriting {path}, hash mismatch", style="yellow")
-                )
+                tqdm.write(styled_string(f"overwriting {path}, hash mismatch", style="yellow"))
 
         elif not overwrite and file.size is not None:
             return DownloadState.SKIPPED_FILE_SIZE_MISMATCH, 0
 
         elif verbose:
-            tqdm.write(
-                styled_string(f"overwriting {path}, file size mismatch", style="yellow")
-            )
+            tqdm.write(styled_string(f"overwriting {path}, file size mismatch", style="yellow"))
 
     # request a download url
     download_url = _get_file_download(client, file.id)
@@ -430,9 +399,7 @@ UPLOAD_STATE_COLOR = {
 }
 
 
-def _upload_handler(
-    future: Future[Tuple[UploadState, int]], path: Path, *, verbose: bool = False
-) -> int:
+def _upload_handler(future: Future[Tuple[UploadState, int]], path: Path, *, verbose: bool = False) -> int:
     """Returns bytes uploaded successfully."""
     state = UploadState.CANCELED  # Default to canceled if exception occurs
     size_bytes = 0
@@ -441,7 +408,7 @@ def _upload_handler(
     except Exception as e:
         logger.error(format_traceback(e))
         if verbose:
-            tqdm.write(format_error(f"error uploading", e, verbose=verbose))
+            tqdm.write(format_error("error uploading", e, verbose=verbose))
         else:
             print(f"ERROR: {path.absolute()}: {e}", file=sys.stderr)
         return 0  # Return 0 bytes on error
@@ -511,11 +478,7 @@ def _download_handler(
     elif state not in (DownloadState.DOWNLOADED_OK, DownloadState.SKIPPED_OK):
         print(f"SKIP/FAIL: {path.absolute()} ({state.name})", file=sys.stderr)
 
-    return (
-        size_bytes
-        if state in (DownloadState.DOWNLOADED_OK, DownloadState.SKIPPED_OK)
-        else 0
-    )
+    return size_bytes if state in (DownloadState.DOWNLOADED_OK, DownloadState.SKIPPED_OK) else 0
 
 
 def upload_files(
@@ -542,9 +505,7 @@ def upload_files(
         with ThreadPoolExecutor(max_workers=n_workers) as executor:
             for name, path in files.items():
                 if not path.is_file():
-                    console.print(
-                        f"[yellow]Skipping non-existent file: {path}[/yellow]"
-                    )
+                    console.print(f"[yellow]Skipping non-existent file: {path}[/yellow]")
                     pbar.update()
                     continue
 
@@ -564,10 +525,7 @@ def upload_files(
                 if future.exception():
                     failed_files += 1
 
-                if (
-                    future.exception() is None
-                    and future.result()[0] == UploadState.EXISTS
-                ):
+                if future.exception() is None and future.result()[0] == UploadState.EXISTS:
                     skipped_files += 1
 
                 path = futures[future]
@@ -587,13 +545,12 @@ def upload_files(
 
             if failed_files > 0:
                 console.print(
-                    f"\nUploaded {len(files) - failed_files - skipped_files} files, {skipped_files} skipped, {failed_files} uploads failed",
+                    f"\nUploaded {len(files) - failed_files - skipped_files} files, "
+                    f"{skipped_files} skipped, {failed_files} uploads failed",
                     style="red",
                 )
             else:
-                console.print(
-                    f"\nUploaded {len(files) - skipped_files} files, {skipped_files} skipped"
-                )
+                console.print(f"\nUploaded {len(files) - skipped_files} files, {skipped_files} skipped")
 
 
 def download_files(
@@ -630,9 +587,7 @@ def download_files(
             total_downloaded_bytes = 0
             for future in as_completed(futures):
                 file, path = futures[future]
-                downloaded_bytes = _download_handler(
-                    future, file, path, verbose=verbose
-                )
+                downloaded_bytes = _download_handler(future, file, path, verbose=verbose)
                 total_downloaded_bytes += downloaded_bytes
                 pbar.update()
 
@@ -641,7 +596,5 @@ def download_files(
         avg_speed_bps = total_downloaded_bytes / elapsed_time if elapsed_time > 0 else 0
 
         console.print(f"Download took {elapsed_time:.2f} seconds")
-        console.print(
-            f"Total downloaded/verified: {format_bytes(total_downloaded_bytes)}"
-        )
+        console.print(f"Total downloaded/verified: {format_bytes(total_downloaded_bytes)}")
         console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")

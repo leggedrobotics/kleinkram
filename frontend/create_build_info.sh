@@ -15,7 +15,7 @@ git_branch="unknown"
 if [ -f "$GIT_DIR/HEAD" ]; then
     # Try manual extraction first (works without git binary and with partial repo)
     head_content=$(cat "$GIT_DIR/HEAD")
-    
+
     if [[ "$head_content" =~ "ref: " ]]; then
         ref_path=$(echo "$head_content" | sed 's/ref: //')
         if [ -f "$GIT_DIR/$ref_path" ]; then
@@ -32,7 +32,7 @@ if [ -f "$GIT_DIR/HEAD" ]; then
 
     # Truncate to short hash
     git_commit=${git_commit:0:7}
-    
+
     # Fallback to git command if manual extraction failed
     if [ -z "$git_commit" ] || [ "$git_commit" == "unknown" ]; then
          git_commit=$(git --work-tree=. --git-dir="$GIT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")

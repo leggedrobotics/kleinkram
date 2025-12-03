@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
-import time
 import struct
+import time
+
 from rosbags.rosbag1 import Writer
 
 
@@ -15,16 +18,10 @@ def serialize_time(secs, nsecs):
 
 
 def serialize_header(seq, secs, nsecs, frame_id):
-    return (
-        struct.pack("<I", seq)
-        + serialize_time(secs, nsecs)
-        + serialize_string(frame_id)
-    )
+    return struct.pack("<I", seq) + serialize_time(secs, nsecs) + serialize_string(frame_id)
 
 
-def serialize_log(
-    seq, secs, nsecs, frame_id, level, name, msg, file, function, line, topics
-):
+def serialize_log(seq, secs, nsecs, frame_id, level, name, msg, file, function, line, topics):
     # rosgraph_msgs/Log
     # Header header
     # byte level
@@ -116,9 +113,7 @@ def generate_bag(filename, target_size):
     if num_msgs < 1:
         num_msgs = 1
 
-    print(
-        f"Generating {filename} (~{target_size} bytes) with {num_msgs} messages of payload {payload_size}..."
-    )
+    print(f"Generating {filename} (~{target_size} bytes) with {num_msgs} messages of payload {payload_size}...")
 
     if os.path.exists(filename):
         os.remove(filename)
@@ -147,35 +142,59 @@ def generate_frontend_bag(filename):
         conn_log = writer.add_connection(
             topic="/rosout",
             msgtype="rosgraph_msgs/msg/Log",
-            msgdef="Header header\nbyte level\nstring name\nstring msg\nstring file\nstring function\nuint32 line\nstring[] topics\n================================================================================\nMSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id",
+            msgdef="Header header\nbyte level\nstring name\nstring msg\nstring file\nstring function\nuint32 "
+            "line\nstring[] topics\n================================================================================\n"
+            "MSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id",
             md5sum="acffd30cd6b6de30f120938c17c593fb",
         )
         # 2. sensor_msgs/Temperature
         conn_temp = writer.add_connection(
             topic="/sensors/temperature",
             msgtype="sensor_msgs/msg/Temperature",
-            msgdef="Header header\nfloat64 temperature\nfloat64 variance\n================================================================================\nMSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id",
+            msgdef="Header header\nfloat64 temperature\nfloat64 variance"
+            "\n================================================================================\n"
+            "MSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id",
             md5sum="ff71b307acdbe7c871a5a6d7edce2f6e",
         )
         # 3. sensor_msgs/TimeReference
         conn_time = writer.add_connection(
             topic="/time_ref",
             msgtype="sensor_msgs/msg/TimeReference",
-            msgdef="Header header\ntime time_ref\nstring source\n================================================================================\nMSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id",
+            msgdef="Header header\ntime time_ref\nstring source\n"
+            "================================================================================\n"
+            "MSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id",
             md5sum="fded64a0265108ba86c3d38fb11c0c16",
         )
         # 4. geometry_msgs/TwistStamped
         conn_twist = writer.add_connection(
             topic="/cmd_vel",
             msgtype="geometry_msgs/msg/TwistStamped",
-            msgdef="Header header\ngeometry_msgs/Twist twist\n================================================================================\nMSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id\n================================================================================\nMSG: geometry_msgs/Twist\nVector3 linear\nVector3 angular\n================================================================================\nMSG: geometry_msgs/Vector3\nfloat64 x\nfloat64 y\nfloat64 z",
+            msgdef="Header header\ngeometry_msgs/Twist twist\n"
+            "================================================================================\n"
+            "MSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id\n"
+            "================================================================================\n"
+            "MSG: geometry_msgs/Twist\nVector3 linear\nVector3 angular\n"
+            "================================================================================\n"
+            "MSG: geometry_msgs/Vector3\nfloat64 x\nfloat64 y\nfloat64 z",
             md5sum="98d34b0043a2093cf9d9345ab6eef12e",
         )
         # 5. tf2_msgs/TFMessage
         conn_tf = writer.add_connection(
             topic="/tf",
             msgtype="tf2_msgs/msg/TFMessage",
-            msgdef="geometry_msgs/TransformStamped[] transforms\n================================================================================\nMSG: geometry_msgs/TransformStamped\nHeader header\nstring child_frame_id\ngeometry_msgs/Transform transform\n================================================================================\nMSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id\n================================================================================\nMSG: geometry_msgs/Transform\ngeometry_msgs/Vector3 translation\ngeometry_msgs/Quaternion rotation\n================================================================================\nMSG: geometry_msgs/Vector3\nfloat64 x\nfloat64 y\nfloat64 z\n================================================================================\nMSG: geometry_msgs/Quaternion\nfloat64 x\nfloat64 y\nfloat64 z\nfloat64 w",
+            msgdef="geometry_msgs/TransformStamped[] transforms\n"
+            "================================================================================\n"
+            "MSG: geometry_msgs/TransformStamped\nHeader header\nstring child_frame_id\n"
+            "geometry_msgs/Transform transform\n"
+            "================================================================================\n"
+            "MSG: std_msgs/Header\nuint32 seq\ntime stamp\nstring frame_id\n"
+            "================================================================================\n"
+            "MSG: geometry_msgs/Transform\ngeometry_msgs/Vector3 translation\n"
+            "geometry_msgs/Quaternion rotation\n"
+            "================================================================================\n"
+            "MSG: geometry_msgs/Vector3\nfloat64 x\nfloat64 y\nfloat64 z\n"
+            "================================================================================\n"
+            "MSG: geometry_msgs/Quaternion\nfloat64 x\nfloat64 y\nfloat64 z\nfloat64 w",
             md5sum="94810edda583a504dfda3829e70d7eec",
         )
 
@@ -218,18 +237,14 @@ def generate_frontend_bag(filename):
             writer.write(
                 conn_time,
                 timestamp,
-                serialize_time_reference(
-                    i, secs, nsecs, "time_frame", secs, nsecs, "GPS"
-                ),
+                serialize_time_reference(i, secs, nsecs, "time_frame", secs, nsecs, "GPS"),
             )
 
             # TwistStamped (circle)
             writer.write(
                 conn_twist,
                 timestamp,
-                serialize_twist_stamped(
-                    i, secs, nsecs, "base_link", [1.0, 0.0, 0.0], [0.0, 0.0, 0.5]
-                ),
+                serialize_twist_stamped(i, secs, nsecs, "base_link", [1.0, 0.0, 0.0], [0.0, 0.0, 0.5]),
             )
 
             # TF
@@ -274,9 +289,7 @@ def main():
         generate_bag(filepath, size)
 
     # Generate backend fixtures
-    backend_fixtures_dir = os.path.join(
-        os.path.dirname(__file__), "../../backend/tests/fixtures"
-    )
+    backend_fixtures_dir = os.path.join(os.path.dirname(__file__), "../../backend/tests/fixtures")
     os.makedirs(backend_fixtures_dir, exist_ok=True)
     generate_bag(os.path.join(backend_fixtures_dir, "test.bag"), 10 * 1024)
     generate_bag(os.path.join(backend_fixtures_dir, "to_delete.bag"), 10 * 1024)

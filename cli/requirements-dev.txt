@@ -3,5 +3,5 @@ flake8
 mypy
 pre-commit
 pytest
-types-boto3
 rosbags
+types-boto3

@@ -33,9 +33,7 @@ def _headless_auth(*, url: str) -> None:
 
     if auth_token and refresh_token:
         config = get_config()
-        config.credentials = Credentials(
-            auth_token=auth_token, refresh_token=refresh_token
-        )
+        config.credentials = Credentials(auth_token=auth_token, refresh_token=refresh_token)
         save_config(config)
         print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
     else:
@@ -92,7 +90,7 @@ def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
     try:
         # Step 1: Get the authorization code from fake OAuth
         # The fake OAuth server will auto-redirect when user parameter is provided
-        fake_oauth_url = f"http://localhost:8004/oauth/authorize"
+        fake_oauth_url = "http://localhost:8004/oauth/authorize"
         callback_url = f"{endpoint}/auth/{provider}/callback"
 
         params = {
@@ -107,9 +105,7 @@ def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
         response = requests.get(fake_oauth_url, params=params, allow_redirects=False)
 
         if response.status_code not in [301, 302, 303, 307, 308]:
-            raise RuntimeError(
-                f"Expected redirect from OAuth provider, got {response.status_code}"
-            )
+            raise RuntimeError(f"Expected redirect from OAuth provider, got {response.status_code}")
 
         # Extract the redirect location
         location = response.headers.get("Location")
@@ -126,7 +122,7 @@ def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
         auth_code = query_params["code"][0]
         state = query_params.get("state", [None])[0]
 
-        print(f"Received authorization code, exchanging for tokens...")
+        print("Received authorization code, exchanging for tokens...")
 
         # Step 2: Exchange the code for tokens by calling the backend callback
         # Use a session to preserve cookies
@@ -135,15 +131,11 @@ def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
         if state:
             callback_params["state"] = state
 
-        callback_response = session.get(
-            callback_url, params=callback_params, allow_redirects=False
-        )
+        callback_response = session.get(callback_url, params=callback_params, allow_redirects=False)
 
         # The backend should set cookies and redirect
         if callback_response.status_code not in [301, 302, 303, 307, 308]:
-            raise RuntimeError(
-                f"Expected redirect from callback, got {callback_response.status_code}"
-            )
+            raise RuntimeError(f"Expected redirect from callback, got {callback_response.status_code}")
 
         # Extract tokens from cookies
         auth_token = session.cookies.get("authtoken")
@@ -154,9 +146,7 @@ def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
 
         # Save tokens
         config = get_config()
-        config.credentials = Credentials(
-            auth_token=auth_token, refresh_token=refresh_token
-        )
+        config.credentials = Credentials(auth_token=auth_token, refresh_token=refresh_token)
         save_config(config)
         print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
 
@@ -180,9 +170,7 @@ def login_flow(
 
     # If user parameter is provided with fake-oauth, use direct OAuth flow
     if user is not None and oAuthProvider == "fake-oauth":
-        _direct_oauth_auth(
-            endpoint=config.endpoint.api, provider=oAuthProvider, user=user
-        )
+        _direct_oauth_auth(endpoint=config.endpoint.api, provider=oAuthProvider, user=user)
         return
 
     # Build OAuth URL with state parameter
@@ -200,9 +188,7 @@ def login_flow(
         is_port_available = False
 
     if not is_port_available:
-        print(
-            "Warning: Port 8000 is not available. Falling back to headless authentication.\n\n"
-        )
+        print("Warning: Port 8000 is not available. Falling back to headless authentication.\n\n")
 
     if not headless and _has_browser() and is_port_available:
         _browser_auth(url=oauth_url)
