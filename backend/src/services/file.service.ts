@@ -73,6 +73,15 @@ const FIND_MANY_SORT_KEYS = {
     createdAt: 'file.createdAt',
     updatedAt: 'file.updatedAt',
     creator: 'user.name',
+    size: 'file.size',
+    state: 'file.state',
+    date: 'file.date',
+    'file.filename': 'file.filename',
+    'file.createdAt': 'file.createdAt',
+    'file.updatedAt': 'file.updatedAt',
+    'file.size': 'file.size',
+    'file.state': 'file.state',
+    'file.date': 'file.date',
 };
 
 @Injectable()
@@ -99,7 +108,7 @@ export class FileService implements OnModuleInit {
         @InjectRepository(FileEventEntity)
         private eventRepo: Repository<FileEventEntity>,
         private readonly auditService: FileAuditService,
-    ) {}
+    ) { }
 
     onModuleInit(): void {
         this.fileCleanupQueue = new Queue('file-cleanup', {
@@ -456,7 +465,10 @@ export class FileService implements OnModuleInit {
         // and allow 'HAVING' clauses for topics and tags
         idQuery.groupBy('file.uuid');
 
-        idQuery.orderBy(sort, sortOrder).offset(skip).limit(take);
+        const order = sortOrder === 'ASC' ? SortOrder.ASC : SortOrder.DESC;
+
+        idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sort, order);
+        idQuery.offset(skip).limit(take);
 
         const [fileIdObjects, count] = await idQuery.getManyAndCount();
 
@@ -473,16 +485,18 @@ export class FileService implements OnModuleInit {
         const fileIds = fileIdObjects.map((file) => file.uuid);
 
         // It must re-apply joins (for selection) and sorting.
-        const files = await this.fileRepository
+        let filesQuery = this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
             .leftJoinAndSelect('file.categories', 'category')
-            .where('file.uuid IN (:...fileIds)', { fileIds })
-            .orderBy(sort, sortOrder)
-            .getMany();
+            .where('file.uuid IN (:...fileIds)', { fileIds });
+
+        filesQuery = addSort(filesQuery, FIND_MANY_SORT_KEYS, sort, order);
+
+        const files = await filesQuery.getMany();
 
         return {
             count,
@@ -730,25 +744,25 @@ export class FileService implements OnModuleInit {
                     details: event.details,
                     actor: event.actor
                         ? {
-                              uuid: event.actor.uuid,
-                              name: event.actor.name,
-                              avatarUrl: null,
-                              email: null,
-                          }
+                            uuid: event.actor.uuid,
+                            name: event.actor.name,
+                            avatarUrl: null,
+                            email: null,
+                        }
                         : undefined,
                     action: event.action
                         ? {
-                              uuid: event.action.uuid,
-                              name: event.action.template?.name,
-                              creator: event.action.creator
-                                  ? {
-                                        uuid: event.action.creator.uuid,
-                                        name: event.action.creator.name,
-                                        avatarUrl: null,
-                                        email: null,
-                                    }
-                                  : undefined,
-                          }
+                            uuid: event.action.uuid,
+                            name: event.action.template?.name,
+                            creator: event.action.creator
+                                ? {
+                                    uuid: event.action.creator.uuid,
+                                    name: event.action.creator.name,
+                                    avatarUrl: null,
+                                    email: null,
+                                }
+                                : undefined,
+                        }
                         : undefined,
                 })) ?? [],
         } as FileEventsDto;
@@ -780,29 +794,29 @@ export class FileService implements OnModuleInit {
                     details: event.details,
                     actor: event.actor
                         ? {
-                              uuid: event.actor.uuid,
-                              name: event.actor.name,
-                              avatarUrl: null,
-                              email: null,
-                          }
+                            uuid: event.actor.uuid,
+                            name: event.actor.name,
+                            avatarUrl: null,
+                            email: null,
+                        }
                         : undefined,
                     action: event.action
                         ? {
-                              uuid: event.action.uuid,
-                              name: event.action.template?.name,
-                          }
+                            uuid: event.action.uuid,
+                            name: event.action.template?.name,
+                        }
                         : undefined,
                     file: event.file
                         ? {
-                              uuid: event.file.uuid,
-                              filename: event.file.filename,
-                              missionUuid: event.file.mission?.uuid ?? '',
-                              missionName: event.file.mission?.name ?? '',
-                              projectUuid:
-                                  event.file.mission?.project?.uuid ?? '',
-                              projectName:
-                                  event.file.mission?.project?.name ?? '',
-                          }
+                            uuid: event.file.uuid,
+                            filename: event.file.filename,
+                            missionUuid: event.file.mission?.uuid ?? '',
+                            missionName: event.file.mission?.name ?? '',
+                            projectUuid:
+                                event.file.mission?.project?.uuid ?? '',
+                            projectName:
+                                event.file.mission?.project?.name ?? '',
+                        }
                         : undefined,
                 })) ?? [],
         } as FileEventsDto;
