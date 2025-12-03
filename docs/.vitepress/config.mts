@@ -225,6 +225,10 @@ export default withMermaid({
                             text: 'Cronjobs',
                             link: '/development/cron/CronJobs',
                         },
+                        {
+                            text: 'GitHub Actions',
+                            link: '/development/github-actions.md',
+                        },
                     ],
                     collapsed: true,
                 },
