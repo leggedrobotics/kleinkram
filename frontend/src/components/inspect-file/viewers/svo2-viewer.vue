@@ -1,8 +1,13 @@
 <template>
-    <div class="svo2-viewer bg-grey-1 rounded-borders q-pa-lg text-center">
-        <div class="text-h6 q-mb-md">Preview Not Supported</div>
-        <div class="text-body1 q-mb-lg text-grey-8">
-            Previewing SV02 files in Kleinkarm is not yet supported. Please
+    <div class="svo2-viewer bg-grey-1 rounded-borders q-pa-xl text-center">
+        <q-icon
+            name="sym_o_videocam_off"
+            size="4em"
+            class="q-mb-md text-grey-7"
+        />
+        <div class="text-h6 q-mb-sm text-grey-7">Preview Not Supported</div>
+        <div class="text-body2 q-mb-lg text-grey-7">
+            Previewing SV02 files in Kleinkram is not yet supported. Please
             download the file to view it using the ZED SDK tools.
         </div>
 
@@ -12,6 +17,7 @@
                 color="primary"
                 icon="sym_o_download"
                 @click="onDownload"
+                unelevated
             />
             <q-btn
                 label="Learn about SVO2"
@@ -39,6 +45,6 @@ function onDownload(): void {
 
 <style scoped>
 .svo2-viewer {
-    border: 1px solid #e0e0e0;
+    border: 2px dashed #e0e0e0;
 }
 </style>

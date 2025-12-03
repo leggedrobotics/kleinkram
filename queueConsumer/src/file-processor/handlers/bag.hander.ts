@@ -55,8 +55,8 @@ export class RosBagHandler implements FileHandler {
         job.state = QueueState.CONVERTING_AND_EXTRACTING_TOPICS;
         await this.jobRepo.save(job);
 
-        try {
-            if (autoConvert) {
+        if (autoConvert) {
+            try {
                 // --- Path A: Convert to MCAP, then extract from MCAP ---
                 const mcapFilename = primaryFile.filename.replace(
                     '.bag',
@@ -76,16 +76,22 @@ export class RosBagHandler implements FileHandler {
                     mcapOutputPath,
                     mcapFilename,
                 );
-            } else {
+            } catch (error) {
+                logger.error(`RosBag Conversion failed: ${error}`);
+                primaryFile.state = FileState.CONVERSION_ERROR;
+                await this.fileRepo.save(primaryFile);
+                throw error;
+            }
+        } else {
+            try {
                 // --- Path B: Extraction Only (Stream directly from Bag) ---
                 await this.handleExtractionOnly(primaryFile, filePath);
+            } catch (error) {
+                logger.error(`RosBag Extraction failed: ${error}`);
+                primaryFile.state = FileState.CORRUPTED;
+                await this.fileRepo.save(primaryFile);
+                throw error;
             }
-        } catch (error) {
-            logger.error(`RosBag Processing failed: ${error}`);
-
-            primaryFile.state = FileState.CONVERSION_ERROR;
-            await this.fileRepo.save(primaryFile);
-            throw error;
         }
     }
 

@@ -24,6 +24,7 @@ import {
     FileProcessingContext,
 } from './handlers/file-handler.interface';
 import { createHashingStream } from './helper/hash-helper';
+import { MagicNumberValidator } from './helper/magic-number.validator';
 import { FileSourceStrategy } from './strategies/file-source.interface';
 
 interface DownloadResult {
@@ -66,6 +67,24 @@ export class FileIngestionService {
                         primaryFile,
                         fileData.filePath,
                     );
+
+                    const isValid = await MagicNumberValidator.validate(
+                        fileData.filePath,
+                        primaryFile.type,
+                    );
+
+                    if (!isValid) {
+                        logger.warn(
+                            `Magic number validation failed for ${primaryFile.filename} (${primaryFile.type})`,
+                        );
+                        primaryFile.state = FileState.CORRUPTED;
+                        await this.fileRepo.save(primaryFile);
+                        await this.updateQueueState(
+                            queueItem,
+                            QueueState.CORRUPTED,
+                        );
+                        return;
+                    }
 
                     await this.executeFileHandlers(
                         queueItem,
@@ -146,10 +165,19 @@ export class FileIngestionService {
 
         const isBag = data.filename.endsWith('.bag');
         const isDb3 = data.filename.endsWith('.db3');
+        const isMcap = data.filename.endsWith('.mcap');
+        const isSvo2 = data.filename.endsWith('.svo2');
+        const isTum = data.filename.endsWith('.tum');
+        const isYaml =
+            data.filename.endsWith('.yaml') || data.filename.endsWith('.yml');
 
         let type = FileType.MCAP;
         if (isBag) type = FileType.BAG;
         if (isDb3) type = FileType.DB3;
+        if (isMcap) type = FileType.MCAP;
+        if (isSvo2) type = FileType.SVO2;
+        if (isTum) type = FileType.TUM;
+        if (isYaml) type = FileType.YAML;
 
         const entity = this.fileRepo.create({
             date: new Date(),

@@ -109,17 +109,9 @@
             <div class="text-h6">No preview available while uploading</div>
         </div>
 
-        <!-- Fallback / Unsupported -->
-        <div
-            v-else-if="!displayTopics && !isLoading"
-            class="text-center q-pa-xl bg-grey-1 rounded-borders border-dashed text-grey-7"
-        >
-            <q-icon name="sym_o_description" size="4em" class="q-mb-md" />
-            <div class="text-h6">No Preview Available</div>
-            <div class="text-caption q-mt-xs">
-                Preview not supported for
-                <span class="text-weight-bold">.{{ fileExtension }}</span>
-            </div>
+        <!-- Fallback / Unsupported / Error -->
+        <div v-else-if="!displayTopics && !isLoading">
+            <FileErrorState :file="file" />
         </div>
 
         <FileHistory v-if="events !== undefined" :events="events" />
@@ -151,6 +143,7 @@ import { useFileUUID } from 'src/hooks/router-hooks';
 import { _downloadFile } from 'src/services/generic';
 import { downloadFile, getFoxgloveLink } from 'src/services/queries/file';
 import { computed, onUnmounted, ref, watch } from 'vue';
+import FileErrorState from './file-error-state.vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
 import FileTopicTable from './file-topic-table.vue';
@@ -170,9 +163,20 @@ const svo2Url = ref<string | undefined>(undefined);
 const fileExtension = computed(
     () => file.value?.filename?.split('.').pop()?.toLowerCase() ?? '',
 );
-const isYaml = computed(() => ['yml', 'yaml'].includes(fileExtension.value));
-const isTum = computed(() => file.value?.type === FileType.TUM);
-const isSvo2 = computed(() => file.value?.type === FileType.SVO2);
+const isYaml = computed(
+    () =>
+        ['yml', 'yaml'].includes(fileExtension.value) &&
+        file.value?.state === FileState.OK,
+);
+const isTum = computed(
+    () =>
+        file.value?.type === FileType.TUM && file.value?.state === FileState.OK,
+);
+const isSvo2 = computed(
+    () =>
+        file.value?.type === FileType.SVO2 &&
+        file.value?.state === FileState.OK,
+);
 const isSupportedBinary = computed(() => {
     if (!file.value) return false;
     return (
