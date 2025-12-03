@@ -31,7 +31,7 @@ export const IsValidFileName = (
     validationOptions?: ValidationOptions,
 ): PropertyDecorator =>
     Matches(FILE_NAME_REGEX, {
-        message: 'Filename is not valid!',
+        message: 'Filename "$value" is not valid!',
         ...validationOptions,
     });
 

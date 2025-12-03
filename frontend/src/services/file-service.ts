@@ -1,3 +1,4 @@
+import { TemporaryFileAccessesDto } from '@api/types/file/access.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
 import { FlatMissionDto, MissionDto } from '@api/types/mission/mission.dto';
 import { ProjectDto } from '@api/types/project/base-project.dto';
@@ -9,11 +10,13 @@ import {
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import { FileType } from '@common/enum';
+import { isValidFileName } from '@common/validation/filename.validation';
 import { QueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
 import pLimit from 'p-limit';
-import { Notify } from 'quasar';
+import { Dialog, Notify } from 'quasar';
 import SparkMD5 from 'spark-md5';
+import RenameFilesDialog from 'src/components/rename-files-dialog.vue';
 import {
     cancelUploads,
     generateTemporaryCredentials,
@@ -68,10 +71,12 @@ export const createFileAction = async (
     });
 };
 
-const VALID_EXTENSIONS = Object.values(FileType)
-    .filter((type) => type !== FileType.ALL)
-    .map((type) => `.${type.toLowerCase()}`)
-    .concat(['.yml']);
+const VALID_EXTENSIONS = [
+    ...Object.values(FileType)
+        .filter((type) => type !== FileType.ALL)
+        .map((type) => `.${type.toLowerCase()}`),
+    '.yml',
+];
 
 const VALID_EXTENSION_SET = new Set(VALID_EXTENSIONS);
 
@@ -94,6 +99,9 @@ const hasValidFileSize = (file: File): boolean => {
     return file.size <= maxSizeInBytes && file.size > 0;
 };
 
+const isValidNameFilter = (filename: string): boolean =>
+    isValidFileName(filename);
+
 async function _createFileAction(
     selectedMission: FlatMissionDto,
     selectedProject: ProjectDto,
@@ -112,16 +120,8 @@ async function _createFileAction(
         return;
     }
 
-    const filenameRegex = /^[a-zA-Z0-9_\-. [\]()äöüÄÖÜ]+$/;
-    const isValidNameFilter = (filename: string): boolean =>
-        filenameRegex.test(filename);
-
     const validFiles = files.filter(
-        (file) =>
-            isValidFileTypeFilter(file.name) &&
-            isValidNameFilter(file.name) &&
-            hasValidFileSize(file) &&
-            file.name.length <= 50,
+        (file) => isValidFileTypeFilter(file.name) && hasValidFileSize(file),
     );
 
     ////////////////////////////////////////////////////////////////////////////
@@ -183,40 +183,93 @@ async function _createFileAction(
         });
     }
 
-    const fileNames = validFiles.map((file) => file.name);
-    const temporaryCredentials = await generateTemporaryCredentials(
-        fileNames,
-        selectedMission.uuid,
-    ).catch((error: unknown) => {
-        console.error('error', error);
+    const fileItems = validFiles.map((file) => ({
+        file,
+        virtualName: file.name,
+    }));
 
-        let errorMessage = '';
+    let temporaryCredentials: TemporaryFileAccessesDto | undefined;
 
-        if (error instanceof Error) {
-            errorMessage = error.message;
-        }
+    while (!temporaryCredentials) {
+        const filenames = fileItems.map((item) => item.virtualName);
+        try {
+            temporaryCredentials = await generateTemporaryCredentials({
+                filenames,
+                missionUUID: selectedMission.uuid,
+            });
+        } catch (error: unknown) {
+            let handled = false;
+            if (error instanceof AxiosError && error.response?.status === 400) {
+                const responseData = error.response.data;
+                // Check for structured error: { message: 'Validation failed', errors: [...] }
+                if (
+                    responseData &&
+                    responseData.message === 'Validation failed' &&
+                    Array.isArray(responseData.errors)
+                ) {
+                    const invalidFilesList = responseData.errors;
+                    try {
+                        const renameMap: Record<string, string> =
+                            await new Promise((resolve, reject) => {
+                                Dialog.create({
+                                    component: RenameFilesDialog,
+                                    componentProps: {
+                                        invalidFiles: invalidFilesList,
+                                    },
+                                })
+                                    .onOk(resolve)
+                                    .onCancel(reject)
+                                    .onDismiss(reject);
+                            });
 
-        let message = `Upload failed: ${errorMessage}`;
+                        // Update virtual names
+                        for (const item of fileItems) {
+                            if (renameMap[item.virtualName]) {
+                                item.virtualName =
+                                    renameMap[item.virtualName] ??
+                                    item.virtualName;
+                            }
+                        }
+                        handled = true;
+                        // Continue loop to retry
+                    } catch {
+                        // User cancelled
+                        return;
+                    }
+                }
+            }
 
-        // show special error for 403
-        if (error instanceof AxiosError) {
-            if (error.response?.status === 403) {
-                message = `Upload failed: You do not have the necessary permissions.`;
-            } else if (error.response?.status === 400) {
-                message = `Upload failed: ${error.response.data.message}`;
+            if (!handled) {
+                console.error('error', error);
+                let errorMessage = '';
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                }
+                let message = `Upload failed: ${errorMessage}`;
+
+                if (error instanceof AxiosError) {
+                    if (error.response?.status === 403) {
+                        message = `Upload failed: You do not have the necessary permissions.`;
+                    } else if (error.response?.status === 400) {
+                        const responseData = error.response.data;
+                        message = responseData.message
+                            ? `Upload failed: ${JSON.stringify(responseData.message)}`
+                            : `Upload failed: ${JSON.stringify(responseData)}`;
+                    }
+                }
+
+                Notify.create({
+                    message: message,
+                    color: 'negative',
+                    spinner: false,
+                    position: 'bottom',
+                    timeout: 30_000,
+                    closeBtn: true,
+                });
+                return;
             }
         }
-
-        // close the notification
-        Notify.create({
-            message: message,
-            color: 'negative',
-            spinner: false,
-            position: 'bottom',
-            timeout: 30_000,
-            closeBtn: true,
-        });
-    });
+    }
 
     if (!temporaryCredentials) {
         return;
@@ -234,10 +287,9 @@ async function _createFileAction(
         timeout: 2000,
     });
 
-    uploadingFiles.value = fileNames as unknown as Record<
-        string,
-        Record<string, string>
-    >;
+    uploadingFiles.value = fileItems.map(
+        (item) => item.virtualName,
+    ) as unknown as Record<string, Record<string, string>>;
 
     const api = ENV.ENDPOINT;
     let minioEndpoint = api.replace('api', 'minio');
@@ -254,7 +306,9 @@ async function _createFileAction(
     await Promise.all(
         temporaryCredentials.data.map(
             async (accessResp: any, index: number) => {
-                const file = validFiles[index];
+                const fileItem = fileItems[index];
+                if (!fileItem) return;
+                const file = fileItem.file;
 
                 if (file === undefined) {
                     Notify.create({
@@ -291,7 +345,7 @@ async function _createFileAction(
                 });
 
                 const newFileUpload = {
-                    name: file.name,
+                    name: fileItem.virtualName,
                     size: file.size,
                     fileUUID: accessResp.fileUUID,
                     missionUuid: selectedMission.uuid,

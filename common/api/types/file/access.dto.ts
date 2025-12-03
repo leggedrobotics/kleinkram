@@ -42,10 +42,6 @@ export class TemporaryFileAccessDto {
     @ValidateNested()
     @Type(() => AccessCredentialsDto)
     accessCredentials!: AccessCredentialsDto;
-
-    @ApiProperty()
-    @IsString()
-    queueUUID!: string;
 }
 
 export class TemporaryFileAccessesDto

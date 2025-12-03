@@ -91,10 +91,12 @@ const selectedMission = computed((): FlatMissionDto | undefined => {
 });
 
 const acceptedFileTypes = computed(() => {
-    return Object.values(FileType)
-        .filter((type) => type !== FileType.ALL)
-        .map((type) => `.${type.toLowerCase()}`)
-        .concat(['.yml']) // ymal files could have both .yml and .yaml as extension
+    return [
+        ...Object.values(FileType)
+            .filter((type) => type !== FileType.ALL)
+            .map((type) => `.${type.toLowerCase()}`),
+        '.yml',
+    ] // ymal files could have both .yml and .yaml as extension
         .join(',');
 });
 

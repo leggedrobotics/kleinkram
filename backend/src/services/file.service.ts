@@ -27,6 +27,7 @@ import {
     DataSource,
     In,
     MoreThan,
+    QueryFailedError,
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
@@ -41,7 +42,6 @@ import {
 
 import {
     FileExistsResponseDto,
-    TemporaryFileAccessDto,
     TemporaryFileAccessesDto,
 } from '@common/api/types/file/access.dto';
 import { FileEventsDto } from '@common/api/types/file/file-event.dto';
@@ -1182,8 +1182,25 @@ export class FileService implements OnModuleInit {
             where: { uuid: userUUID },
         });
 
-        const credentials = await Promise.all(
-            filenames.map(async (filename) => {
+        return await this.dataSource.transaction(async (manager) => {
+            const credentials: any[] = [];
+            const invalidFiles: { filename: string; error: string }[] = [];
+
+            // Check for existing files first to avoid transaction abortion on duplicate key error
+            const existingFiles = await manager.find(FileEntity, {
+                where: {
+                    filename: In(filenames),
+                    mission: {
+                        uuid: missionUUID,
+                    },
+                },
+            });
+
+            const existingFilenames = new Set(
+                existingFiles.map((f) => f.filename),
+            );
+
+            for (const filename of filenames) {
                 const emptyCredentials: {
                     bucket: string | null;
                     fileName: string;
@@ -1226,7 +1243,8 @@ export class FileService implements OnModuleInit {
                     )
                 ) {
                     emptyCredentials.error = 'Invalid file ending';
-                    return emptyCredentials;
+                    credentials.push(emptyCredentials);
+                    continue;
                 }
 
                 const matchingFileType = supported_file_endings.find((ending) =>
@@ -1239,70 +1257,86 @@ export class FileService implements OnModuleInit {
                 if (fileType === undefined)
                     throw new UnsupportedMediaTypeException();
 
-                // check if file already exists
-                const existingFile = await this.fileRepository.exists({
-                    where: {
+                if (existingFilenames.has(filename)) {
+                    invalidFiles.push({
                         filename,
-                        mission: {
-                            uuid: missionUUID,
-                        },
-                    },
-                });
-                if (existingFile) {
-                    emptyCredentials.error = 'File already exists';
-                    emptyCredentials.fileName = filename;
-                    return emptyCredentials;
+                        error: 'File already exists',
+                    });
+                    continue;
                 }
 
-                const file = await this.fileRepository.save(
-                    this.fileRepository.create({
-                        date: new Date(),
-                        size: 0,
-                        filename,
-                        mission,
-                        creator: user,
-                        type: fileType,
-                        state: FileState.UPLOADING,
-                        origin: FileOrigin.UPLOAD,
-                    }),
-                );
-
-                await this.auditService.log(
-                    FileEventType.UPLOAD_STARTED,
-                    {
-                        fileUuid: file.uuid,
-                        filename: file.filename,
-                        missionUuid: missionUUID,
-                        actor: user,
-                        ...(action ? { action } : {}),
-                        details: {
+                try {
+                    const file = await manager.save(
+                        FileEntity,
+                        manager.create(FileEntity, {
+                            date: new Date(),
+                            size: 0,
+                            filename,
+                            mission,
+                            creator: user,
+                            type: fileType,
+                            state: FileState.UPLOADING,
                             origin: FileOrigin.UPLOAD,
-                            source: uploadSource,
+                        }),
+                    );
+
+                    await this.auditService.log(
+                        FileEventType.UPLOAD_STARTED,
+                        {
+                            fileUuid: file.uuid,
+                            filename: file.filename,
+                            missionUuid: missionUUID,
+                            actor: user,
+                            ...(action ? { action } : {}),
+                            details: {
+                                origin: FileOrigin.UPLOAD,
+                                source: uploadSource,
+                            },
                         },
-                    },
-                    true,
-                );
+                        true,
+                    );
 
-                return {
-                    bucket: env.MINIO_DATA_BUCKET_NAME,
-                    fileUUID: file.uuid,
-                    fileName: filename,
-                    accessCredentials:
-                        await this.storageService.generateTemporaryCredential(
-                            file.uuid,
-                            env.MINIO_DATA_BUCKET_NAME,
-                        ),
-                };
-            }),
-        );
+                    credentials.push({
+                        bucket: env.MINIO_DATA_BUCKET_NAME,
+                        fileUUID: file.uuid,
+                        fileName: filename,
+                        accessCredentials:
+                            await this.storageService.generateTemporaryCredential(
+                                file.uuid,
+                                env.MINIO_DATA_BUCKET_NAME,
+                            ),
+                    });
+                } catch (error: any) {
+                    if (
+                        error instanceof QueryFailedError &&
+                        error.driverError.code === '23505'
+                    ) {
+                        invalidFiles.push({
+                            filename,
+                            error: 'File already exists',
+                        });
+                    } else {
+                        throw error;
+                    }
+                }
+            }
 
-        return {
-            // TODO: fix typing
-            data: credentials as unknown as TemporaryFileAccessDto[],
-            count: credentials.length,
-            skip: 0,
-            take: credentials.length,
-        };
+            if (invalidFiles.length > 0) {
+                throw new BadRequestException({
+                    message: 'Validation failed',
+                    errors: invalidFiles,
+                });
+            }
+
+            return {
+                // TODO: fix typing
+                // @ts-ignore
+                data: credentials,
+                count: credentials.length,
+                skip: 0,
+                take: credentials.length,
+            };
+        });
     }
 
     async cancelUpload(

@@ -1,6 +1,7 @@
 import { CategoryDto } from '@api/types/category.dto';
 import { TemporaryFileAccessesDto } from '@api/types/file/access.dto';
 import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { TemporaryAccessRequestDto } from '@api/types/file/temporary-access-request.dto';
 import axios from 'src/api/axios';
 
 // define type for generateTemporaryCredentials 'files' return
@@ -41,13 +42,9 @@ export const deleteFile = async (file: FileWithTopicDto) => {
 };
 
 export const generateTemporaryCredentials = async (
-    filenames: string[],
-    missionUUID: string,
+    payload: TemporaryAccessRequestDto,
 ): Promise<TemporaryFileAccessesDto> => {
-    const response = await axios.post('/files/temporaryAccess', {
-        filenames,
-        missionUUID,
-    });
+    const response = await axios.post('/files/temporaryAccess', payload);
     return response.data as TemporaryFileAccessesDto;
 };
 

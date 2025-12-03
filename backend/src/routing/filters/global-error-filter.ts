@@ -90,6 +90,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
             if (typeof resp === 'object' && resp.hasOwnProperty('message')) {
                 response.status(400).json({
                     statusCode: 400,
+                    ...resp,
                     message: resp.message.toString(),
                 });
                 return;

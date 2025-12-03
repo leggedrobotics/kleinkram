@@ -1,4 +1,3 @@
-import { CreatePreSignedURLSDto } from '@common/api/types/create-pre-signed-url.dto';
 import {
     FileExistsResponseDto,
     TemporaryFileAccessesDto,
@@ -6,11 +5,14 @@ import {
 import { FileWithTopicDto } from '@common/api/types/file/file.dto';
 import { FilesDto } from '@common/api/types/file/files.dto';
 import { IsUploadingDto } from '@common/api/types/file/is-uploading.dto';
+import { TemporaryAccessRequestDto } from '@common/api/types/file/temporary-access-request.dto';
 import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
 import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
 import { UpdateFile } from '@common/api/types/update-file.dto';
 import env from '@common/environment';
+import { isValidFileName } from '@common/frontend_shared/validation/filename.validation';
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -302,10 +304,13 @@ export class FileController {
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Temporary file access',
+        type: TemporaryFileAccessesDto,
+    })
     async getTemporaryAccess(
         @AddUser() auth: AuthHeader,
-        @Body() body: CreatePreSignedURLSDto,
+        @Body() body: TemporaryAccessRequestDto,
     ): Promise<TemporaryFileAccessesDto> {
         let source = body.source;
         if (!source) {
@@ -316,6 +321,24 @@ export class FileController {
                     : FileSource.CLI;
             }
         }
+
+        const invalidFiles: { filename: string; error: string }[] = [];
+        for (const filename of body.filenames) {
+            if (!isValidFileName(filename)) {
+                invalidFiles.push({
+                    filename,
+                    error: `Filename "${filename}" is not valid!`,
+                });
+            }
+        }
+
+        if (invalidFiles.length > 0) {
+            throw new BadRequestException({
+                message: 'Validation failed',
+                errors: invalidFiles,
+            });
+        }
+
         return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
