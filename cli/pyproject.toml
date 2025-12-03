@@ -1,2 +1,2 @@
-[too.black]
+[tool.black]
 line-length = 127

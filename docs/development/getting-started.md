@@ -17,6 +17,39 @@ system:
 To enable code completion and linting in your IDE, you may also need a NodeJS, yarn, and python installation.
 :::
 
+## Pre-commit Hooks
+
+This project uses [pre-commit](https://pre-commit.com/) to ensure code quality and consistency. The hooks are configured to run:
+
+- `black` for Python formatting.
+- `flake8` and `isort` for CLI Python code.
+- `prettier` for JavaScript, TypeScript, Vue, JSON, YAML, and Markdown formatting.
+
+### Installation
+
+To install the pre-commit hooks, run the following command in the root directory:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+### Usage
+
+The hooks will automatically run on staged files when you commit. If any hook fails (e.g., because it reformatted a file), the commit will be aborted. You can then review the changes and commit again.
+
+To run the hooks manually on all files:
+
+```bash
+pre-commit run --all-files
+```
+
+To run the hooks manually on staged files only:
+
+```bash
+pre-commit run
+```
+
 ## Getting Started with Development
 
 This section will guide you through setting up the development environment for the project.
