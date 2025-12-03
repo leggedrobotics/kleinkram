@@ -69,8 +69,6 @@ export default tseslint.config(
             '@typescript-eslint/ban-ts-comment': 'warn',
             'unicorn/no-null': 'warn',
             'unicorn/filename-case': 'error',
-
-            // used as we have disabled prettier for the local dev setup
             'vue/html-indent': 'off',
             'vue/max-attributes-per-line': 'off',
             'vue/singleline-html-element-content-newline': 'off',

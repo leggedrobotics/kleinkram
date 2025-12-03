@@ -1,6 +1,6 @@
 import vueTsEslintConfig from '@vue/eslint-config-typescript';
+import eslintConfigPrettier from 'eslint-config-prettier';
 import progress from 'eslint-plugin-file-progress';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import pluginVue from 'eslint-plugin-vue';
 import tseslint from 'typescript-eslint';
@@ -106,7 +106,7 @@ export default tseslint.config(
         },
     },
     ...vueTsEslintConfig({ extends: ['recommendedTypeChecked'] }),
-    eslintPluginPrettierRecommended,
+    eslintConfigPrettier,
     {
         files: ['**/*.ts', '**/*.vue'],
         rules: {
