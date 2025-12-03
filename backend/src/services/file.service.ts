@@ -108,7 +108,7 @@ export class FileService implements OnModuleInit {
         @InjectRepository(FileEventEntity)
         private eventRepo: Repository<FileEventEntity>,
         private readonly auditService: FileAuditService,
-    ) { }
+    ) {}
 
     onModuleInit(): void {
         this.fileCleanupQueue = new Queue('file-cleanup', {
@@ -744,25 +744,25 @@ export class FileService implements OnModuleInit {
                     details: event.details,
                     actor: event.actor
                         ? {
-                            uuid: event.actor.uuid,
-                            name: event.actor.name,
-                            avatarUrl: null,
-                            email: null,
-                        }
+                              uuid: event.actor.uuid,
+                              name: event.actor.name,
+                              avatarUrl: null,
+                              email: null,
+                          }
                         : undefined,
                     action: event.action
                         ? {
-                            uuid: event.action.uuid,
-                            name: event.action.template?.name,
-                            creator: event.action.creator
-                                ? {
-                                    uuid: event.action.creator.uuid,
-                                    name: event.action.creator.name,
-                                    avatarUrl: null,
-                                    email: null,
-                                }
-                                : undefined,
-                        }
+                              uuid: event.action.uuid,
+                              name: event.action.template?.name,
+                              creator: event.action.creator
+                                  ? {
+                                        uuid: event.action.creator.uuid,
+                                        name: event.action.creator.name,
+                                        avatarUrl: null,
+                                        email: null,
+                                    }
+                                  : undefined,
+                          }
                         : undefined,
                 })) ?? [],
         } as FileEventsDto;
@@ -794,29 +794,29 @@ export class FileService implements OnModuleInit {
                     details: event.details,
                     actor: event.actor
                         ? {
-                            uuid: event.actor.uuid,
-                            name: event.actor.name,
-                            avatarUrl: null,
-                            email: null,
-                        }
+                              uuid: event.actor.uuid,
+                              name: event.actor.name,
+                              avatarUrl: null,
+                              email: null,
+                          }
                         : undefined,
                     action: event.action
                         ? {
-                            uuid: event.action.uuid,
-                            name: event.action.template?.name,
-                        }
+                              uuid: event.action.uuid,
+                              name: event.action.template?.name,
+                          }
                         : undefined,
                     file: event.file
                         ? {
-                            uuid: event.file.uuid,
-                            filename: event.file.filename,
-                            missionUuid: event.file.mission?.uuid ?? '',
-                            missionName: event.file.mission?.name ?? '',
-                            projectUuid:
-                                event.file.mission?.project?.uuid ?? '',
-                            projectName:
-                                event.file.mission?.project?.name ?? '',
-                        }
+                              uuid: event.file.uuid,
+                              filename: event.file.filename,
+                              missionUuid: event.file.mission?.uuid ?? '',
+                              missionName: event.file.mission?.name ?? '',
+                              projectUuid:
+                                  event.file.mission?.project?.uuid ?? '',
+                              projectName:
+                                  event.file.mission?.project?.name ?? '',
+                          }
                         : undefined,
                 })) ?? [],
         } as FileEventsDto;
