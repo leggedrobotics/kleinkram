@@ -47,7 +47,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { UserDto } from '@kleinkram/api-dto/types/user/user.dto';
+import type { UserDto } from '@kleinkram/api-dto/types/user/user.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';

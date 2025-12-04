@@ -19,7 +19,7 @@ import DeleteFileDialog from 'src/dialogs/delete-file-dialog.vue';
 import { canDeleteMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 const { file } = defineProps<{ file: FileWithTopicDto }>();
 

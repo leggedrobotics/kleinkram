@@ -75,8 +75,8 @@
 </template>
 
 <script setup lang="ts">
-import { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { isAxiosError } from 'axios';
 import { Notify, useDialogPluginComponent } from 'quasar';

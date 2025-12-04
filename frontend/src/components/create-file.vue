@@ -40,9 +40,9 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
-import { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
-import { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
+import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { FileType } from '@kleinkram/shared';
 import { useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';

@@ -1,4 +1,4 @@
-import { ProjectAccessDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
+import type { ProjectAccessDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 

@@ -273,8 +273,8 @@
 </template>
 
 <script setup lang="ts">
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import { FileType } from '@kleinkram/shared';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';

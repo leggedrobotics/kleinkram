@@ -7,7 +7,7 @@ import {
 } from '@kleinkram/shared';
 import { downloadFile } from 'src/services/queries/file';
 
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 export const icon = (type: DataType) => {
     switch (type) {

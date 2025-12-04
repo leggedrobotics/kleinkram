@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import { computed } from 'vue';
 
 const { missions } = defineProps<{

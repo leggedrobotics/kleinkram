@@ -5,15 +5,15 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
-import { TemporaryFileAccessesDto } from '@kleinkram/api-dto/types/file/access.dto';
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { TemporaryFileAccessesDto } from '@kleinkram/api-dto/types/file/access.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import {
     FlatMissionDto,
     MissionDto,
 } from '@kleinkram/api-dto/types/mission/mission.dto';
-import { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
+import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
 import { FileType } from '@kleinkram/shared';
-import { isValidFileName } from '@kleinkram/validation';
+import { isValidFileName } from '@kleinkram/validation/frontend';
 import { QueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
 import pLimit from 'p-limit';

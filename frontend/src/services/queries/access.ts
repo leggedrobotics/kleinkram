@@ -1,6 +1,6 @@
-import { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
-import { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
-import { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
+import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
+import type { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
 import { AccessGroupType } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';

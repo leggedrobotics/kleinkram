@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
+import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
 import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import AccessGroupAvatar from 'components/configure-access-rights/access-group-avatar.vue';
 import { QTableColumn } from 'quasar';

@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileEventDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import type { FileEventDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import { formatDate } from 'src/services/date-formating';
 import FileEventAttribution from './file-event-attribution.vue';
 import FileEventFileInfo from './file-event-file-info.vue';

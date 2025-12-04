@@ -1,4 +1,4 @@
-import { ActionQuery } from '@kleinkram/api-dto/types/submit-action.dto';
+import type { ActionQuery } from '@kleinkram/api-dto/types/submit-action.dto';
 import { MaybeRef, unref } from 'vue';
 
 export const actionKeys = {

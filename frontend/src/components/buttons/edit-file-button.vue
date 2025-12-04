@@ -21,7 +21,7 @@ import { useQuasar } from 'quasar';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import EditFile from 'components/edit-file.vue';
 
 const { file } = defineProps<{ file: FileWithTopicDto }>();

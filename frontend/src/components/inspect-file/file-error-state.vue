@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FileDto } from '@kleinkram/api-dto/types/file/file.dto';
 import { FileState } from '@kleinkram/shared';
 import { computed } from 'vue';
 

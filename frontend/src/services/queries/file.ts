@@ -1,10 +1,10 @@
-import { FileExistsResponseDto } from '@kleinkram/api-dto/types/file/access.dto';
-import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
-import { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
-import { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
-import { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
+import type { FileExistsResponseDto } from '@kleinkram/api-dto/types/file/access.dto';
+import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
+import type { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
+import type { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
+import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
 import { FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';

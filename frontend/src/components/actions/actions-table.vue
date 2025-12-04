@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import { ActionState } from '@kleinkram/shared';
 import ActionBadge from 'components/action-badge.vue';
 import { QTable } from 'quasar';

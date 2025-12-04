@@ -38,8 +38,8 @@ import { Notify, useDialogPluginComponent } from 'quasar';
 import { ref } from 'vue';
 
 // API Types
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 
 // Components & Services
 import ScopeSelector from 'components/common/scope-selector.vue';

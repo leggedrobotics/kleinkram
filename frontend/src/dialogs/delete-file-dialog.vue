@@ -24,7 +24,7 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import DeleteFile from 'components/delete-file.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();

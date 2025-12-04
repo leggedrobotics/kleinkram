@@ -5,6 +5,7 @@
 import { defineConfig } from '#q-app/wrappers';
 
 import path from 'path';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig((/* ctx */) => {
     return {
@@ -42,20 +43,26 @@ export default defineConfig((/* ctx */) => {
                     __dirname,
                     '../packages/api-dto/src/index.ts',
                 ),
-                '@kleinkram/validation': path.resolve(
+                // Use frontend-safe validation (no @nestjs dependencies)
+                '@kleinkram/validation/frontend': path.resolve(
                     __dirname,
-                    '../packages/validation/src/index.ts',
+                    '../packages/validation/src/frontend.ts',
                 ),
                 '@kleinkram/backend-common': path.resolve(
                     __dirname,
                     '../packages/backend-common/src/index.ts',
+                ),
+                // Alias to resolve class-transformer/storage issue
+                'class-transformer/storage': path.resolve(
+                    __dirname,
+                    '../node_modules/class-transformer',
                 ),
             },
 
             typescript: {
                 strict: true,
                 vueShim: true,
-                extendTsConfig(tsConfig) {
+                extendTsConfig(tsConfig: any) {
                     if (tsConfig.compilerOptions === undefined) return;
                     tsConfig.compilerOptions.experimentalDecorators = true;
                 },
@@ -95,15 +102,32 @@ export default defineConfig((/* ctx */) => {
                 viteConfig.optimizeDeps.exclude.push(
                     '@kleinkram/shared',
                     '@kleinkram/api-dto',
-                    '@kleinkram/validation',
+                    '@kleinkram/validation/frontend',
                     '@kleinkram/backend-common',
+                    // Exclude problematic paths
+                    'class-transformer/storage',
                 );
+
+                // Add validation/frontend alias for runtime resolution
+                viteConfig.resolve = viteConfig.resolve || {};
+                viteConfig.resolve.alias = viteConfig.resolve.alias || {};
+                viteConfig.resolve.alias['@kleinkram/validation/frontend'] =
+                    path.resolve(
+                        __dirname,
+                        '../packages/validation/src/frontend.ts',
+                    );
             },
             // viteVuePluginOptions: {},
 
-            // vitePlugins: [
-            //   [ 'package-name', { ..options.. } ]
-            // ]
+            vitePlugins: [
+                [
+                    nodePolyfills,
+                    {
+                        globals: { global: true, Buffer: true, process: true },
+                        protocolImports: true,
+                    },
+                ],
+            ],
         },
 
         // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer

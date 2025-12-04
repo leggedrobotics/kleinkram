@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 const { file } = defineProps<{
     file: FileWithTopicDto;

@@ -85,7 +85,7 @@ import { useSearchAccessGroup, useUserSearch } from 'src/hooks/query-hooks';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { computed, Ref, ref } from 'vue';
 
-import { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
+import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
 
 const properties = defineProps<{
     existingRights: Record<string, { label: string; value: AccessGroupRights }>;

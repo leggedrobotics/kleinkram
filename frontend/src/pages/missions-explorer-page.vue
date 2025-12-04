@@ -229,7 +229,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import ActionConfiguration from 'components/actions/action-configuration.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';

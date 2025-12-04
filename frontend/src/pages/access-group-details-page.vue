@@ -223,7 +223,7 @@
     </q-tab-panels>
 </template>
 <script setup lang="ts">
-import { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
+import type { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
 import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';

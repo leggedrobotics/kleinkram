@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import DeleteActionTemplate from 'components/actions/delete-action-template.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';

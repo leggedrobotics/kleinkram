@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileEventDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import type { FileEventDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 
 defineProps<{
     file?: FileEventDto['file'];

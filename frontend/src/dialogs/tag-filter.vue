@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { DataType } from '@kleinkram/shared';
 import MetadataFilterInput from 'components/metadata-filter-input.vue';
 import MetadataTypeTable from 'components/metadata-type-table.vue';

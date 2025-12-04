@@ -21,7 +21,7 @@ import { ArtifactState } from '@kleinkram/shared';
 import { getActionColor } from 'src/services/generic';
 import { computed } from 'vue';
 
-import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 
 const properties = defineProps<{ action: ActionDto }>();
 

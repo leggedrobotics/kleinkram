@@ -30,7 +30,7 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
-import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import DeleteAction from 'components/actions/delete-action.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();

@@ -1,9 +1,9 @@
-import { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
-import { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
-import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
-import { ActionsDto } from '@kleinkram/api-dto/types/actions/actions.dto';
-import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
-import { ActionQuery } from '@kleinkram/api-dto/types/submit-action.dto';
+import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
+import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
+import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import type { ActionsDto } from '@kleinkram/api-dto/types/actions/actions.dto';
+import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import type { ActionQuery } from '@kleinkram/api-dto/types/submit-action.dto';
 import { ActionState } from '@kleinkram/shared';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { actionKeys } from 'src/api/keys/action-keys';

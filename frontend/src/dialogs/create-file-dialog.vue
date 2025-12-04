@@ -25,8 +25,8 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
-import { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import CreateFile from 'components/create-file.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';

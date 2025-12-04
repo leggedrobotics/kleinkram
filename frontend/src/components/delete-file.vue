@@ -19,7 +19,7 @@ import { deleteFile } from 'src/services/mutations/file';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 const fileNameCheck = ref('');
 const client = useQueryClient();

@@ -145,9 +145,9 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
-import { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
-import { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
+import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import CreateFile from 'components/create-file.vue';

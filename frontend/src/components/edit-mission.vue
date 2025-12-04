@@ -25,7 +25,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { DataType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useQuasar } from 'quasar';

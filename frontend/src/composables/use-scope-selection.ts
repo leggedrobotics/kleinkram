@@ -1,5 +1,5 @@
-import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
-import { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
 import {
     useFilteredProjects,
     useHandler,

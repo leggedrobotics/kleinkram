@@ -17,8 +17,8 @@ import AddMultiCategory from 'src/dialogs/add-multi-category.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 
 const $q = useQuasar();
 const { mission, files } = defineProps<{

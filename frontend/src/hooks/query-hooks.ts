@@ -1,12 +1,12 @@
-import { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
-import { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
-import { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
-import { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
-import { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
-import { ActionWorkersDto } from '@kleinkram/api-dto/types/action-workers.dto';
-import { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
-import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
+import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
+import type { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
+import type { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
+import type { ActionWorkersDto } from '@kleinkram/api-dto/types/action-workers.dto';
+import type { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
+import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import {
     MissionsDto,
     MissionWithFilesDto,
@@ -15,12 +15,15 @@ import {
     PermissionsDto,
     ProjectPermissions,
 } from '@kleinkram/api-dto/types/permissions.dto';
-import { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
-import { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
-import { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
-import { TagsDto, TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
-import { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
-import { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
+import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
+import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
+import type {
+    TagsDto,
+    TagTypeDto,
+} from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
+import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
 import {
     AccessGroupRights,
     AccessGroupType,

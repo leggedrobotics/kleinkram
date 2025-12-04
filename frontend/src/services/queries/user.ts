@@ -1,6 +1,6 @@
-import { PermissionsDto } from '@kleinkram/api-dto/types/permissions.dto';
-import { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
-import { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
+import type { PermissionsDto } from '@kleinkram/api-dto/types/permissions.dto';
+import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
+import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 

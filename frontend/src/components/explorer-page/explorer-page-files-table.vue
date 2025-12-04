@@ -211,9 +211,9 @@
 </template>
 
 <script setup lang="ts">
-import { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
+import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import { FileType, HealthStatus } from '@kleinkram/shared';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';

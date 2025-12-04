@@ -1,4 +1,4 @@
-import { Paginated } from '@kleinkram/api-dto/types/pagination';
+import type { Paginated } from '@kleinkram/api-dto/types/pagination';
 import { ref, Ref, unref, watch } from 'vue';
 
 /**

@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import { UserRole } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
 import AddUserToAccessGroupDialog from 'src/dialogs/add-user-access-group-dialog.vue';

@@ -247,10 +247,10 @@
 </template>
 
 <script setup lang="ts">
-import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
-import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
-import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
-import { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
+import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import ActionSelector from 'components/action-selector.vue';
 import { Notify } from 'quasar';

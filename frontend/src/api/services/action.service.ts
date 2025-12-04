@@ -1,17 +1,17 @@
-import { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
-import { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto/types/actions/action-template-availability.dto';
-import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
-import { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
-import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
-import { ActionsDto } from '@kleinkram/api-dto/types/actions/actions.dto';
-import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
-import { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
-import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
-import {
+import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
+import type { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto/types/actions/action-template-availability.dto';
+import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
+import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import type { ActionsDto } from '@kleinkram/api-dto/types/actions/actions.dto';
+import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import type { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
+import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import type {
     ActionSubmitResponseDto,
     SubmitActionDto,
 } from '@kleinkram/api-dto/types/submit-action-response.dto';
-import {
+import type {
     ActionQuery,
     SubmitActionMulti,
 } from '@kleinkram/api-dto/types/submit-action.dto';

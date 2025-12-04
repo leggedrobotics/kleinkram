@@ -1,4 +1,4 @@
-import { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
+import type { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 

@@ -101,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
+import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{

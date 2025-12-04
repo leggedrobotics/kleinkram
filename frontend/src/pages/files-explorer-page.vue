@@ -340,8 +340,8 @@
 </template>
 
 <script setup lang="ts">
-import { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
-import { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
+import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { DataType, FileType, HealthStatus } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { copyToClipboard, Notify, useQuasar } from 'quasar';
@@ -358,8 +358,8 @@ import { deleteFiles } from 'src/services/mutations/file';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';

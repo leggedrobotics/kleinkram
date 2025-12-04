@@ -1,4 +1,7 @@
-import { TagsDto, TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type {
+    TagsDto,
+    TagTypeDto,
+} from '@kleinkram/api-dto/types/tags/tags.dto';
 import { DataType } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';

@@ -153,7 +153,7 @@ import { useScopeSelection } from 'src/composables/use-scope-selection';
 import { useManyMissions } from 'src/hooks/query-hooks';
 
 // --- Types ---
-import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 
 const props = defineProps<{
