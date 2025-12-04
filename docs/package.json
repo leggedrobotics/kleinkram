@@ -8,7 +8,8 @@
         "docs:build:staging": "VITE_MODE=staging vitepress build",
         "docs:build:production": "VITE_MODE=production vitepress build",
         "docs:build": "vitepress build",
-        "docs:serve": "vitepress build && vitepress serve --port 4000"
+        "docs:serve": "vitepress build && vitepress serve --port 4000",
+        "build": "vitepress build"
     },
     "author": "Cyrill Püntener",
     "dependencies": {

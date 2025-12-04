@@ -2,9 +2,11 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
 // @ts-ignore
-import wrapper from '#q-app/wrappers';
+import { defineConfig } from '#q-app/wrappers';
 
-export default wrapper.defineConfig((/* ctx */) => {
+import path from 'path';
+
+export default defineConfig((/* ctx */) => {
     return {
         // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
         // preFetch: true,
@@ -31,7 +33,24 @@ export default wrapper.defineConfig((/* ctx */) => {
         ],
 
         build: {
-            alias: {},
+            alias: {
+                '@kleinkram/shared': path.resolve(
+                    __dirname,
+                    '../packages/shared/src/index.ts',
+                ),
+                '@kleinkram/api-dto': path.resolve(
+                    __dirname,
+                    '../packages/api-dto/src/index.ts',
+                ),
+                '@kleinkram/validation': path.resolve(
+                    __dirname,
+                    '../packages/validation/src/index.ts',
+                ),
+                '@kleinkram/backend-common': path.resolve(
+                    __dirname,
+                    '../packages/backend-common/src/index.ts',
+                ),
+            },
 
             typescript: {
                 strict: true,
@@ -69,6 +88,15 @@ export default wrapper.defineConfig((/* ctx */) => {
                     '@foxglove/rosmsg2-serialization', // ROS 2 (CDR)
                     '@mcap/core',
                     'fzstd',
+                );
+
+                viteConfig.optimizeDeps.exclude =
+                    viteConfig.optimizeDeps.exclude || [];
+                viteConfig.optimizeDeps.exclude.push(
+                    '@kleinkram/shared',
+                    '@kleinkram/api-dto',
+                    '@kleinkram/validation',
+                    '@kleinkram/backend-common',
                 );
             },
             // viteVuePluginOptions: {},
