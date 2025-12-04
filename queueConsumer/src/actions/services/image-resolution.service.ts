@@ -1,7 +1,11 @@
 import { ImageSource } from '@common/frontend_shared/enum';
 import { Injectable } from '@nestjs/common';
+import { exec } from 'child_process';
 import Dockerode from 'dockerode';
+import util from 'util';
 import logger from '../../logger';
+
+const execAsync = util.promisify(exec);
 
 export interface ImageResolutionResult {
     source: ImageSource;
@@ -34,10 +38,11 @@ export class ImageResolutionService {
                 `Local RepoDigests: ${localRepoDigests.join(', ')}. Remote Digest: ${remoteDigest}`,
             );
 
-            const result = this.determineImageSource(
+            const result = await this.determineImageSource(
                 localCreatedAt,
                 localRepoDigests,
                 remoteDigest,
+                dockerImage,
             );
             source = result.source;
             shouldPull = result.shouldPull;
@@ -48,7 +53,7 @@ export class ImageResolutionService {
             );
             if (localCreatedAt) {
                 // Fallback to local
-                source = ImageSource.LOCALLY_BUILT;
+                source = ImageSource.LOCALLY_BUILT_LOCAL_ONLY;
             } else {
                 // Local does not exist and remote check failed. Try to pull anyway as a last resort
                 source = ImageSource.PULLED;
@@ -106,15 +111,16 @@ export class ImageResolutionService {
         return distributionInspect.Descriptor?.digest;
     }
 
-    private determineImageSource(
+    private async determineImageSource(
         localCreatedAt: Date | undefined,
         localRepoDigests: string[],
         remoteDigest: string | undefined,
-    ): {
+        dockerImage: string,
+    ): Promise<{
         source: ImageSource;
         shouldPull: boolean;
         remoteCreatedAt: Date | undefined;
-    } {
+    }> {
         if (
             remoteDigest &&
             localRepoDigests.some((digest) => digest.includes(remoteDigest))
@@ -133,14 +139,30 @@ export class ImageResolutionService {
 
         // Mismatch or remote check failed to get digest
         if (localCreatedAt) {
-            // Local exists but digest mismatches.
-            // We can't easily check if remote is newer without creation date.
-            // Default to LOCALLY_BUILT to prefer local changes.
+            if (remoteDigest) {
+                // Local exists but digest mismatches.
+                // We can't easily check if remote is newer without creation date.
+                // Default to LOCALLY_BUILT to prefer local changes.
+                logger.info(
+                    `Local image exists but digest mismatches. Using local (Override).`,
+                );
+
+                const remoteCreatedAt =
+                    await this.getRemoteCreationDate(dockerImage);
+
+                return {
+                    source: ImageSource.LOCALLY_BUILT,
+                    shouldPull: false,
+                    remoteCreatedAt,
+                };
+            }
+
+            // Remote digest is undefined (e.g. could not be fetched but no error thrown, or empty)
             logger.info(
-                `Local image exists but digest mismatches or remote date unknown. Using local.`,
+                `Local image exists but remote digest unknown. Using local (Local Only).`,
             );
             return {
-                source: ImageSource.LOCALLY_BUILT,
+                source: ImageSource.LOCALLY_BUILT_LOCAL_ONLY,
                 shouldPull: false,
                 remoteCreatedAt: undefined,
             };
@@ -153,5 +175,22 @@ export class ImageResolutionService {
             shouldPull: true,
             remoteCreatedAt: undefined,
         };
+    }
+
+    private async getRemoteCreationDate(
+        dockerImage: string,
+    ): Promise<Date | undefined> {
+        try {
+            // Use crane config to get the config json which contains the creation date
+            const { stdout } = await execAsync(`crane config ${dockerImage}`);
+            const config = JSON.parse(stdout);
+            if (config.created) {
+                return new Date(config.created);
+            }
+            return undefined;
+        } catch (error) {
+            logger.warn(`Failed to get remote creation date: ${error}`);
+            return undefined;
+        }
     }
 }

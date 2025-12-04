@@ -188,11 +188,15 @@
                     label="Image Source"
                     :model-value="
                         action.image.source
-                            ? action.image.source === 'pulled'
+                            ? action.image.source === ImageSource.PULLED
                                 ? 'Pulled from Registry'
-                                : action.image.source === 'locally_built'
+                                : action.image.source ===
+                                    ImageSource.LOCALLY_BUILT
                                   ? 'Locally Built (Override)'
-                                  : 'Cached Locally'
+                                  : action.image.source ===
+                                      ImageSource.LOCALLY_BUILT_LOCAL_ONLY
+                                    ? 'Locally Built (Local Only)'
+                                    : 'Cached Locally'
                             : 'N/A'
                     "
                     readonly
@@ -202,7 +206,9 @@
                             v-if="
                                 action.image.source === ImageSource.CACHED ||
                                 action.image.source ===
-                                    ImageSource.LOCALLY_BUILT
+                                    ImageSource.LOCALLY_BUILT ||
+                                action.image.source ===
+                                    ImageSource.LOCALLY_BUILT_LOCAL_ONLY
                             "
                             flat
                             round
@@ -256,6 +262,25 @@
                                         {{
                                             formatDate(
                                                 action.image.remoteCreatedAt,
+                                            )
+                                        }}
+                                    </div>
+                                </div>
+                                <div
+                                    v-else-if="
+                                        action.image.source ===
+                                        ImageSource.LOCALLY_BUILT_LOCAL_ONLY
+                                    "
+                                >
+                                    <div>
+                                        Local image built locally but not found
+                                        on remote registry.
+                                    </div>
+                                    <div v-if="action.image.localCreatedAt">
+                                        Local Build Time:
+                                        {{
+                                            formatDate(
+                                                action.image.localCreatedAt,
                                             )
                                         }}
                                     </div>

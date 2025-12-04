@@ -184,6 +184,7 @@ export enum ImageSource {
     PULLED = 'pulled',
     CACHED = 'cached',
     LOCALLY_BUILT = 'locally_built',
+    LOCALLY_BUILT_LOCAL_ONLY = 'locally_built_local_only',
 }
 
 export enum LogType {
