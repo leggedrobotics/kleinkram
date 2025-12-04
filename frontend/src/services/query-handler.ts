@@ -1,4 +1,4 @@
-import { FileType } from '@common/enum';
+import { FileType } from '@kleinkram/shared';
 import { watch } from 'vue';
 import { RouteLocationNormalizedLoaded, Router } from 'vue-router';
 

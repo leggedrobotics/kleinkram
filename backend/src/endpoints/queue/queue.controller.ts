@@ -1,18 +1,20 @@
-import { CancelProcessingResponseDto } from '@common/api/types/cancel-processing-response.dto';
-import { ConfirmUploadDto } from '@common/api/types/confirm-upload.dto';
-import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
-import { DriveCreate } from '@common/api/types/drive-create.dto';
-import { QueueActiveDto } from '@common/api/types/queue-active.dto';
-import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
-import { FileSource } from '@common/frontend_shared/enum';
-import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
-import { ApiOkResponse, OutputDto } from '../../decarators';
-import QueueService from '../../services/queue.service';
+import {
+    CancelProcessingResponseDto,
+    ConfirmUploadDto,
+    DeleteMissionResponseDto,
+    DriveCreate,
+    QueueActiveDto,
+    UpdateTagTypeDto,
+} from '@kleinkram/api-dto';
+import { FileSource } from '@kleinkram/shared';
 import {
     BodyOptionalSource,
     BodyString,
     BodyUUID,
-} from '../../validation/body-decorators';
+} from '@kleinkram/validation';
+import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
+import { ApiOkResponse, OutputDto } from '../../decorators';
+import QueueService from '../../services/queue.service';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
     QueryDate,

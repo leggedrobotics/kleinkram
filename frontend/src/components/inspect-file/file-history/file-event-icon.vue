@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileEventType } from '@common/enum';
+import { FileEventType } from '@kleinkram/shared';
 import { getEventColor, getEventIcon } from './utilities';
 
 defineProps<{

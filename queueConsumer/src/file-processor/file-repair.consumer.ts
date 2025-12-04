@@ -1,11 +1,11 @@
-import FileEntity from '@common/entities/file/file.entity';
-import env from '@common/environment';
-import { StorageService } from '@common/modules/storage/storage.service';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import { Process, Processor } from '@nestjs/bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Job } from 'bull';
-import logger from 'src/logger';
 import { Repository } from 'typeorm';
+import logger from '../logger';
 import { RosBagMetadataService } from './handlers/rosbag-metadata.service';
 
 @Processor('file-cleanup')

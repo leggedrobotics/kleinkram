@@ -1,4 +1,4 @@
-import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
+import { ProjectAccessDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { isAxiosError } from 'axios';
 import { Notify } from 'quasar';

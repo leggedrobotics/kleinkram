@@ -18,6 +18,10 @@
         "typeorm": "typeorm-ts-node-commonjs"
     },
     "dependencies": {
+        "@kleinkram/backend-common": "0.56.0",
+        "@kleinkram/shared": "0.56.0",
+        "@kleinkram/validation": "0.56.0",
+        "@kleinkram/api-dto": "0.56.0",
         "@aws-sdk/client-sts": "3.939.0",
         "@google-cloud/local-auth": "^3.0.1",
         "@nestjs/common": "^10.4.20",

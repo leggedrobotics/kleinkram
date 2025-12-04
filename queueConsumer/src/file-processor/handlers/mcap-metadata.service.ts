@@ -1,8 +1,8 @@
-import FileEventEntity from '@common/entities/file/file-event.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import TopicEntity from '@common/entities/topic/topic.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UniversalHttpReader } from '@common/frontend_shared/universal-http-reader';
+import FileEventEntity from '@kleinkram/backend-common/entities/file/file-event.entity';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { UniversalHttpReader } from '@kleinkram/shared';
 import { McapIndexedReader } from '@mcap/core';
 import { IReadable } from '@mcap/core/dist/cjs/src/types';
 import { Injectable } from '@nestjs/common';

@@ -1,4 +1,14 @@
-import { AccessGroupType } from '@common/frontend_shared/enum';
+import { AccessGroupType } from '@kleinkram/shared';
+import {
+    BooleanValidate,
+    DateStringValidate,
+    metadataApplier,
+    NumberValidate,
+    StringArrayValidate,
+    StringValidate,
+    UUIDArrayValidate,
+    UUIDValidate,
+} from '@kleinkram/validation';
 import {
     BadRequestException,
     createParamDecorator,
@@ -6,16 +16,6 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
-import { metadataApplier } from './metadata-applier';
-import {
-    BooleanValidate,
-    DateStringValidate,
-    NumberValidate,
-    StringArrayValidate,
-    StringValidate,
-    UUIDArrayValidate,
-    UUIDValidate,
-} from './validation-types';
 
 export const QueryUUID = (
     parameterName: string,

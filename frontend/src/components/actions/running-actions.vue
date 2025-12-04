@@ -69,8 +69,8 @@
 </template>
 
 <script setup lang="ts">
-import { ActionDto } from '@api/types/actions/action.dto';
-import { ActionState } from '@common/enum';
+import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import { ActionState } from '@kleinkram/shared';
 import ActionBadge from 'components/action-badge.vue';
 import { useRunningActions } from 'src/composables/use-actions-queries';
 import { getActionColor } from 'src/services/generic';

@@ -1,9 +1,9 @@
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import MetadataEntity from '@common/entities/metadata/metadata.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
+import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import MetadataEntity from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
+import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';

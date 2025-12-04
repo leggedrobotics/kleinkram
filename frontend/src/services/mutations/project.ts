@@ -1,4 +1,4 @@
-import { AccessGroupRights } from '@common/enum';
+import { AccessGroupRights } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 
 export const createProject = async (

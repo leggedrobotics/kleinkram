@@ -1,10 +1,10 @@
-import { ActionLogsDto } from '@api/types/actions/action-logs.dto';
-import { ActionTemplatesDto } from '@api/types/actions/action-templates.dto';
-import { ActionDto } from '@api/types/actions/action.dto';
-import { ActionsDto } from '@api/types/actions/actions.dto';
-import { FileEventsDto } from '@api/types/file/file-event.dto';
-import { ActionQuery } from '@api/types/submit-action.dto';
-import { ActionState } from '@common/enum';
+import { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
+import { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
+import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import { ActionsDto } from '@kleinkram/api-dto/types/actions/actions.dto';
+import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import { ActionQuery } from '@kleinkram/api-dto/types/submit-action.dto';
+import { ActionState } from '@kleinkram/shared';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import { actionKeys } from 'src/api/keys/action-keys';
 import { ActionService } from 'src/api/services/action.service';

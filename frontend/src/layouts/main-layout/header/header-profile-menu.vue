@@ -72,7 +72,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { UserRole } from '@common/enum';
+import { UserRole } from '@kleinkram/shared';
 import { useUser } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { logout } from 'src/services/auth';

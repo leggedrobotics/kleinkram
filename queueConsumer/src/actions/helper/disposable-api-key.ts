@@ -1,6 +1,6 @@
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import { KeyTypes } from '@common/frontend_shared/enum';
+import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { KeyTypes } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 

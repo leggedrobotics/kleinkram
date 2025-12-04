@@ -4,10 +4,10 @@ import {
     DataType,
     FileState,
     QueueState,
-} from '@common/enum';
+} from '@kleinkram/shared';
 import { downloadFile } from 'src/services/queries/file';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 export const icon = (type: DataType) => {
     switch (type) {

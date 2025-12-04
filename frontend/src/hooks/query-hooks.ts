@@ -1,29 +1,32 @@
-import { AccessGroupDto } from '@api/types/access-control/access-group.dto';
-import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import { DefaultRights } from '@api/types/access-control/default-rights';
-import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
-import { ActionWorkersDto } from '@api/types/action-workers.dto';
-import { CategoriesDto } from '@api/types/category.dto';
-import { FileEventsDto } from '@api/types/file/file-event.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
+import { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
+import { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
+import { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
+import { ActionWorkersDto } from '@kleinkram/api-dto/types/action-workers.dto';
+import { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
+import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import {
     MissionsDto,
     MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
-import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
-import { ProjectWithRequiredTagsDto } from '@api/types/project/project-with-required-tags.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import { StorageOverviewDto } from '@api/types/storage-overview.dto';
-import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
-import { CurrentAPIUserDto } from '@api/types/user/current-api-user.dto';
-import { UsersDto } from '@api/types/user/users.dto';
+} from '@kleinkram/api-dto/types/mission/mission.dto';
+import {
+    PermissionsDto,
+    ProjectPermissions,
+} from '@kleinkram/api-dto/types/permissions.dto';
+import { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
+import { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
+import { TagsDto, TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
+import { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
 import {
     AccessGroupRights,
     AccessGroupType,
     DataType,
     UserRole,
-} from '@common/enum';
+} from '@kleinkram/shared';
 import {
     ThrowOnError,
     useQuery,

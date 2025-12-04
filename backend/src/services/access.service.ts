@@ -1,22 +1,22 @@
-import { AccessGroupDto } from '@common/api/types/access-control/access-group.dto';
-import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
-import { GroupMembershipDto } from '@common/api/types/access-control/group-membership.dto';
 import {
+    AccessGroupDto,
+    AccessGroupsDto,
+    GroupMembershipDto,
     ProjectAccessDto,
     ProjectAccessListDto,
-} from '@common/api/types/access-control/project-access.dto';
-import { ProjectWithAccessRightsDto } from '@common/api/types/project/project-access.dto';
-import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
-import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
+    ProjectWithAccessRightsDto,
+    ProjectWithMissionsDto,
+} from '@kleinkram/api-dto';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import GroupMembershipEntity from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import ProjectAccessEntity from '@kleinkram/backend-common/entities/auth/project-access.entity';
+import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {

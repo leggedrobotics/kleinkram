@@ -180,8 +180,8 @@
 </template>
 
 <script setup lang="ts">
-import { FileQueueEntryDto } from '@api/types/file/file-queue-entry.dto';
-import { FileLocation, QueueState } from '@common/enum';
+import { FileQueueEntryDto } from '@kleinkram/api-dto/types/file/file-queue-entry.dto';
+import { FileLocation, QueueState } from '@kleinkram/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Notify, QTable, useQuasar } from 'quasar';
 import ConfirmDeleteFile from 'src/dialogs/confirm-delete-file-dialog.vue';
@@ -199,8 +199,8 @@ import { currentQueue } from 'src/services/queries/queue';
 import { computed, ref, Ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { ProjectWithMissionsDto } from '@kleinkram/api-dto/types/project/project-with-missions.dto';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 
 const $router = useRouter();

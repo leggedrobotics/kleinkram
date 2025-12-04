@@ -1,7 +1,7 @@
-import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
-import TopicEntity from '@common/entities/topic/topic.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UserRole } from '@common/frontend_shared/enum';
+import { TopicNamesDto, TopicsDto } from '@kleinkram/api-dto';
+import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,7 +17,7 @@ export class TopicService {
         private userRepository: Repository<UserEntity>,
     ) {}
 
-    async findAllNames(userUuid): Promise<TopicNamesDto> {
+    async findAllNames(userUuid: string): Promise<TopicNamesDto> {
         const baseQuery = this.topicRepository
             .createQueryBuilder('topic')
             .select('DISTINCT topic.name', 'name')

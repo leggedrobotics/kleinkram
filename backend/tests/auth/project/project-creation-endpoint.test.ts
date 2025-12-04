@@ -1,11 +1,11 @@
 import { database } from '../../utils/database-utilities';
 import { setupDatabaseHooks } from '../../utils/test-helpers';
 
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupRights } from '@common/frontend_shared/enum';
+import { AccessGroupRights } from '@kleinkram/backend-common';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import ProjectEntity from '@kleinkram/backend-common/project/project.entity';
 import {
     createMissionUsingPost,
     createProjectUsingPost,
@@ -140,7 +140,7 @@ describe('Verification project endpoint', () => {
         const project = await projectRepository.findOneOrFail({
             where: { uuid: projectUuid },
         });
-        expect(project['name']).toBe('test_project');
+        expect(project.name).toBe('test_project');
     });
 
     test('if it is not possible to create a project with the same name', async () => {
@@ -165,7 +165,7 @@ describe('Verification project endpoint', () => {
         });
         expect(response.status).toBe(200);
         const projectResponse = await response.json();
-        expect(projectResponse['name']).toBe('test_project');
+        expect(projectResponse.name).toBe('test_project');
 
         // check denied modification access with user2
         header.addHeader('Content-Type', 'application/json');
@@ -199,8 +199,8 @@ describe('Verification project endpoint', () => {
         const project = await projectRepository.findOneOrFail({
             where: { uuid: projectUuid },
         });
-        expect(project['name']).toBe('test_project');
-        expect(project['uuid']).toBe(projectUuid);
+        expect(project.name).toBe('test_project');
+        expect(project.uuid).toBe(projectUuid);
 
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
@@ -391,7 +391,7 @@ describe('Verification project endpoint', () => {
         const mission = await missionRepository.findOneOrFail({
             where: { uuid: missionUuid },
         });
-        expect(mission['name']).toBe('test_mission');
+        expect(mission.name).toBe('test_mission');
         const missions = await missionRepository.find();
         expect(missions.length).toBe(1);
         expect(missions.length).toBe(1);
@@ -513,7 +513,7 @@ describe('Verification project endpoint', () => {
         const mission = await missionRepository.findOneOrFail({
             where: { uuid: missionUuid },
         });
-        expect(mission['name']).toBe('test_mission');
+        expect(mission.name).toBe('test_mission');
         const missions = await missionRepository.find();
         expect(missions.length).toBe(1);
         expect(missions.length).toBe(1);

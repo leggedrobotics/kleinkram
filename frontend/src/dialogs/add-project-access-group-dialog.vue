@@ -37,7 +37,9 @@ const { accessGroupUuid } = defineProps<{
 }>();
 
 const addProjectToAccessGroupAction = (): void => {
-    addProjectReference.value?.mutate();
+    if (addProjectReference.value) {
+        addProjectReference.value.mutate?.();
+    }
     onDialogOK();
 };
 </script>

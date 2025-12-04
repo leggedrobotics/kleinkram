@@ -40,12 +40,14 @@ if (projectUuid === '') throw new Error('Project UUID is required');
 
 const saveProjects = (): void => {
     if (editProjectReference.value === undefined) return;
-    editProjectReference.value
-        .save_changes()
-        .then(onDialogOK)
-        .catch(() => {
-            console.error('Error saving project');
-        });
+    if (editProjectReference.value) {
+        editProjectReference.value
+            .save_changes()
+            .then(onDialogOK)
+            .catch(() => {
+                console.error('Error saving project');
+            });
+    }
 };
 </script>
 <style scoped></style>

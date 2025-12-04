@@ -1,6 +1,6 @@
-import { CreateProject } from '@common/api/types/create-project.dto';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
+import { CreateProject } from '@kleinkram/api-dto';
+import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     BadRequestException,
     ConflictException,
@@ -19,22 +19,24 @@ import {
     addSort,
 } from './utilities';
 
-import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
-import { DefaultRights } from '@common/api/types/access-control/default-rights';
-import { SortOrder } from '@common/api/types/pagination';
-import { ProjectDto } from '@common/api/types/project/base-project.dto';
-import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
-import { ProjectsDto } from '@common/api/types/project/projects.dto';
-import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
+import {
+    DefaultRightDto,
+    DefaultRights,
+    ProjectDto,
+    ProjectsDto,
+    ProjectWithRequiredTagsDto,
+    ResentProjectDto,
+    SortOrder,
+} from '@kleinkram/api-dto';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import ProjectAccessEntity from '@kleinkram/backend-common/entities/auth/project-access.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import {

@@ -211,10 +211,10 @@
 </template>
 
 <script setup lang="ts">
-import { CategoryDto } from '@api/types/category.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FilesDto } from '@api/types/file/files.dto';
-import { FileType, HealthStatus } from '@common/enum';
+import { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
+import { FileType, HealthStatus } from '@kleinkram/shared';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';

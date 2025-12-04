@@ -19,7 +19,7 @@ import { useHandler } from 'src/hooks/query-hooks';
 import { deleteProject } from 'src/services/mutations/project';
 import { ref } from 'vue';
 
-import { ProjectWithCreator } from '@api/types/project/project-with-creator.dto';
+import { ProjectWithCreator } from '@kleinkram/api-dto/types/project/project-with-creator.dto';
 
 const projectNameCheck = ref('');
 const client = useQueryClient();

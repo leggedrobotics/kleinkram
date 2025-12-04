@@ -164,7 +164,7 @@ export function tracing<A extends unknown[], C>(
                     // @ts-ignore
                     originalMethod.bind(this),
                     traceName,
-                )(...arguments_) as C;
+                )(...arguments_);
             };
         };
 

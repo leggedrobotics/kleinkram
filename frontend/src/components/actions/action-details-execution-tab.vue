@@ -343,8 +343,8 @@
 </template>
 
 <script setup lang="ts">
-import { ActionDto } from '@api/types/actions/action.dto';
-import { ActionState, ArtifactState, ImageSource } from '@common/enum';
+import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import { ActionState, ArtifactState, ImageSource } from '@kleinkram/shared';
 import ArtifactFileTree from 'components/actions/artifact-file-tree.vue';
 import AppInput from 'components/common/app-input.vue';
 import { copyToClipboard } from 'quasar';

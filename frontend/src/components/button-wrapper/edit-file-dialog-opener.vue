@@ -19,7 +19,7 @@ import { useQuasar } from 'quasar';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import NewEditFile from 'components/edit-file.vue';
 
 const $q = useQuasar();

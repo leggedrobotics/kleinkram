@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { GroupMembershipDto } from '@api/types/access-control/group-membership.dto';
+import { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { formatDate, parseDate } from 'src/services/date-formating';

@@ -1,11 +1,11 @@
-import { ImageSource } from '@common/frontend_shared/enum';
+import { ImageSource } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
-import { exec } from 'child_process';
 import Dockerode from 'dockerode';
-import util from 'util';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import logger from '../../logger';
 
-const execAsync = util.promisify(exec);
+const execAsync = promisify(exec);
 
 export interface ImageResolutionResult {
     source: ImageSource;
@@ -35,7 +35,7 @@ export class ImageResolutionService {
             );
 
             logger.debug(
-                `Local RepoDigests: ${localRepoDigests.join(', ')}. Remote Digest: ${remoteDigest}`,
+                `Local RepoDigests: ${localRepoDigests.join(', ')}. Remote Digest: ${remoteDigest} `,
             );
 
             const result = await this.determineImageSource(
@@ -89,7 +89,7 @@ export class ImageResolutionService {
         const distributionInspect = await new Promise<any>(
             (resolve, reject) => {
                 const options = {
-                    path: `/distribution/${dockerImage}/json`,
+                    path: `/ distribution / ${dockerImage}/json`,
                     method: 'GET',
                     statusCodes: {
                         200: true,

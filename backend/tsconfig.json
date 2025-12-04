@@ -1,31 +1,30 @@
 {
+    "extends": "../tsconfig.base.json",
     "compilerOptions": {
-        "strict": true,
-        "strictNullChecks": true,
-        "exactOptionalPropertyTypes": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noUncheckedIndexedAccess": true,
-        "skipLibCheck": true,
-        "module": "commonjs",
-        "declaration": true,
-        "esModuleInterop": true,
-        "removeComments": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "resolveJsonModule": true,
-        "allowSyntheticDefaultImports": true,
-        "target": "ES2021",
-        "sourceMap": true,
-        "outDir": "./dist",
-        "baseUrl": "./",
-        "incremental": true,
-        "noImplicitAny": false,
-        "strictBindCallApply": false,
-        "forceConsistentCasingInFileNames": false,
-        "noFallthroughCasesInSwitch": false,
+        "rootDir": "src",
+        "outDir": "dist",
+        "baseUrl": ".",
         "paths": {
-            "@common/*": ["../common/*"]
+            "@/*": ["src/*"],
+            "@kleinkram/backend-common/*": ["../packages/backend-common/src/*"],
+            "@kleinkram/shared/*": ["../packages/shared/src/*"],
+            "@kleinkram/validation/*": ["../packages/validation/src/*"]
         }
     },
-    "exclude": ["dist/**/*"]
+    "include": ["src/**/*", "access_config.json"],
+    "exclude": ["node_modules", "dist"],
+    "references": [
+        {
+            "path": "../packages/api-dto"
+        },
+        {
+            "path": "../packages/backend-common"
+        },
+        {
+            "path": "../packages/shared"
+        },
+        {
+            "path": "../packages/validation"
+        }
+    ]
 }

@@ -1,5 +1,5 @@
-import env from '@common/environment';
-import { Providers } from '@common/frontend_shared/enum';
+import env from '@kleinkram/backend-common/environment';
+import { Providers } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
@@ -20,7 +20,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     }
 
     authenticate(request: e.Request, options?: any) {
-        options.state = request.query['state'];
+        options.state = request.query.state;
         super.authenticate(request, options);
     }
 

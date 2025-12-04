@@ -1,10 +1,10 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupRights, DataType } from '@common/frontend_shared/enum';
+import { AccessGroupRights, DataType } from '@kleinkram/backend-common';
+import ProjectAccessEntity from '@kleinkram/backend-common/auth/project-access.entity';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import ProjectEntity from '@kleinkram/backend-common/project/project.entity';
+import TagTypeEntity from '@kleinkram/backend-common/tagType/tag-type.entity';
 import {
     createMetadataUsingPost,
     createProjectUsingPost,

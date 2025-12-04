@@ -1,16 +1,20 @@
 import {
     FileExistsResponseDto,
+    FilesDto,
+    FileWithTopicDto,
+    IsUploadingDto,
+    NoQueryParametersDto,
+    StorageOverviewDto,
+    TemporaryAccessRequestDto,
     TemporaryFileAccessesDto,
-} from '@common/api/types/file/access.dto';
-import { FileWithTopicDto } from '@common/api/types/file/file.dto';
-import { FilesDto } from '@common/api/types/file/files.dto';
-import { IsUploadingDto } from '@common/api/types/file/is-uploading.dto';
-import { TemporaryAccessRequestDto } from '@common/api/types/file/temporary-access-request.dto';
-import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
-import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { UpdateFile } from '@common/api/types/update-file.dto';
-import env from '@common/environment';
-import { isValidFileName } from '@common/frontend_shared/validation/filename.validation';
+    UpdateFile,
+} from '@kleinkram/api-dto';
+import env from '@kleinkram/backend-common/environment';
+import {
+    BodyUUID,
+    BodyUUIDArray,
+    isValidFileName,
+} from '@kleinkram/validation';
 import {
     BadRequestException,
     Body,
@@ -21,10 +25,9 @@ import {
     Put,
     Query,
 } from '@nestjs/common';
-import { ApiOkResponse, OutputDto } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decorators';
 import logger from '../../logger';
 import { FileService } from '../../services/file.service';
-import { BodyUUID, BodyUUIDArray } from '../../validation/body-decorators';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
     QueryBoolean,
@@ -53,12 +56,14 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 
-import { CancelFileUploadDto } from '@common/api/types/cancel-file-upload.dto';
-import { FileEventsDto } from '@common/api/types/file/file-event.dto';
-import { FileQueryDto } from '@common/api/types/file/file-query.dto';
-import { FoxgloveLinkResponseDto } from '@common/api/types/file/foxglove-link-response.dto';
-import FileEntity from '@common/entities/file/file.entity';
-import { FileSource, HealthStatus } from '@common/frontend_shared/enum';
+import {
+    CancelFileUploadDto,
+    FileEventsDto,
+    FileQueryDto,
+    FoxgloveLinkResponseDto,
+} from '@kleinkram/api-dto';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import { FileSource, HealthStatus } from '@kleinkram/shared';
 import { FoxgloveService } from '../../services/foxglove.service';
 
 @Controller(['files'])

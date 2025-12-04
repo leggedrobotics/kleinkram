@@ -1,12 +1,9 @@
-import { FileEventsDto } from '@common/api/types/file/file-event.dto';
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
+import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import ActionTemplateEntity from '@kleinkram/backend-common/action/action-template.entity';
+import ActionEntity from '@kleinkram/backend-common/action/action.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import FileEntity from '@kleinkram/backend-common/file/file.entity';
 
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import environment from '@common/environment';
 import {
     AccessGroupRights,
     ActionState,
@@ -16,7 +13,10 @@ import {
     FileState,
     FileType,
     KeyTypes,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/backend-common';
+import ApikeyEntity from '@kleinkram/backend-common/auth/apikey.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import environment from '@kleinkram/backend-common/environment';
 import * as Minio from 'minio';
 import { appVersion } from '../../src/app-version';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
@@ -37,7 +37,7 @@ describe('Action File Events', () => {
         console.log('DEFAULT_URL:', DEFAULT_URL);
         // 1. Setup User
         const setup = await generateAndFetchDatabaseUser('internal', 'user');
-        let user: UserEntity = setup.user;
+        const user: UserEntity = setup.user;
 
         // 2. Create Mission
         const missionResponse = await createMissionUsingPost(
@@ -57,7 +57,7 @@ describe('Action File Events', () => {
             },
             user,
         );
-        let missionUuid = missionResponse;
+        const missionUuid = missionResponse;
 
         // Create a file
         const fileRepo = database.getRepository(FileEntity);

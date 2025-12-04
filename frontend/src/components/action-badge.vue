@@ -17,11 +17,11 @@
     </q-badge>
 </template>
 <script setup lang="ts">
-import { ArtifactState } from '@common/enum';
+import { ArtifactState } from '@kleinkram/shared';
 import { getActionColor } from 'src/services/generic';
 import { computed } from 'vue';
 
-import { ActionDto } from '@api/types/actions/action.dto';
+import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 
 const properties = defineProps<{ action: ActionDto }>();
 

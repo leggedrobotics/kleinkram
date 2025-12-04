@@ -1,9 +1,9 @@
-import { AccessGroupRights } from '@common/frontend_shared/enum';
+import { AccessGroupRights } from '@kleinkram/backend-common';
 import { database } from '../utils/database-utilities';
 
 import { createActionUsingPost, getAuthHeaders } from '../utils/api-calls';
 
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
+import ActionTemplateEntity from '@kleinkram/backend-common/action/action-template.entity';
 import { DEFAULT_URL } from '../auth/utilities';
 import {
     createMockWorker,
@@ -36,7 +36,7 @@ describe('Action Management Tests', () => {
         );
 
         const templateRepo = database.getRepository(ActionTemplateEntity);
-        let template = await templateRepo.findOneOrFail({
+        const template = await templateRepo.findOneOrFail({
             where: { uuid: templateUuid },
         });
         expect(template.isArchived).toBe(false);

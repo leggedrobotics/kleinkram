@@ -1,14 +1,17 @@
-import { CancelProcessingResponseDto } from '@common/api/types/cancel-processing-response.dto';
-import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
-import { DriveCreate } from '@common/api/types/drive-create.dto';
-import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
-import { FileAuditService } from '@common/audit/file-audit.service';
-import { redis } from '@common/consts';
-import FileEntity from '@common/entities/file/file.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import env from '@common/environment';
+import {
+    CancelProcessingResponseDto,
+    DeleteMissionResponseDto,
+    DriveCreate,
+    UpdateTagTypeDto,
+} from '@kleinkram/api-dto';
+import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
+import { redis } from '@kleinkram/backend-common/consts';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {
     FileEventType,
     FileLocation,
@@ -18,8 +21,7 @@ import {
     FileType,
     QueueState,
     UserRole,
-} from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
+} from '@kleinkram/shared';
 import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';

@@ -1,4 +1,4 @@
-import { UniversalHttpReader } from '@common/universal-http-reader';
+import { UniversalHttpReader } from '@kleinkram/shared';
 import { markRaw, reactive, Ref, ref, shallowRef } from 'vue';
 import { DecodingStrategy } from '../services/decoding-strategies';
 import { Db3Strategy } from '../services/decoding-strategies/db3-strategy';
@@ -54,7 +54,7 @@ export function useRosmsgPreview(): {
         abortControllers.clear();
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         for (const k of Object.keys(topicPreviews)) delete topicPreviews[k];
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+
         for (const k of Object.keys(topicLoadingState)) {
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete topicLoadingState[k];

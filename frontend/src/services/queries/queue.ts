@@ -1,4 +1,4 @@
-import { QueueState } from '@common/enum';
+import { QueueState } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 
 export const currentQueue = async (

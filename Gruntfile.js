@@ -7,7 +7,11 @@ module.exports = function (grunt) {
     grunt.initConfig({
         bump: {
             options: {
-                files: ['package.json', '*/package.json'],
+                files: [
+                    'package.json',
+                    '*/package.json',
+                    'packages/*/package.json',
+                ],
                 commit: false,
                 push: false,
                 createTag: false,
@@ -92,7 +96,10 @@ module.exports = function (grunt) {
         const version = packageJson.version;
         console.log(`Checking all versions match ${version}`);
 
-        const files = grunt.file.expand('*/package.json');
+        const files = grunt.file.expand([
+            '*/package.json',
+            'packages/*/package.json',
+        ]);
         files.push('package.json');
 
         files.forEach((file) => {

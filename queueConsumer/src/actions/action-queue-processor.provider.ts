@@ -1,8 +1,8 @@
 import ActionEntity, {
     SubmittedAction,
-} from '@common/entities/action/action.entity';
-import WorkerEntity from '@common/entities/worker/worker.entity';
-import { ActionState, ArtifactState } from '@common/frontend_shared/enum';
+} from '@kleinkram/backend-common/entities/action/action.entity';
+import WorkerEntity from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { ActionState, ArtifactState } from '@kleinkram/shared';
 import {
     InjectQueue,
     OnQueueActive,

@@ -157,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { ActionWorkerDto } from '@api/types/action-workers.dto';
+import { ActionWorkerDto } from '@kleinkram/api-dto/types/action-workers.dto';
 import { useWorkers } from 'src/hooks/query-hooks';
 import { computed, ComputedRef, ref, watch } from 'vue';
 

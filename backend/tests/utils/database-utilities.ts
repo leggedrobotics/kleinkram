@@ -1,8 +1,8 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import AccountEntity from '@common/entities/auth/account.entity';
-import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { Providers, UserRole } from '@common/frontend_shared/enum';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import AccountEntity from '@kleinkram/backend-common/entities/auth/account.entity';
+import GroupMembershipEntity from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { Providers, UserRole } from '@kleinkram/shared';
 import jwt from 'jsonwebtoken';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';

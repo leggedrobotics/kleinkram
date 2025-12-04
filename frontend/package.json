@@ -8,10 +8,14 @@
     "type": "module",
     "scripts": {
         "test": "echo \"No test speciyafied\" && exit 0",
-        "dev": "sh ./create_build_info.sh && quasar dev -p 8003 ",
-        "build": "sh ./create_build_info.sh && quasar build"
+        "dev": "bash ./create_build_info.sh && quasar dev -p 8003 ",
+        "build": "bash ./create_build_info.sh && quasar build"
     },
     "dependencies": {
+        "@kleinkram/shared": "0.56.0",
+        "@kleinkram/validation": "0.56.0",
+        "@mdi/font": "7.4.47",
+        "@kleinkram/api-dto": "0.56.0",
         "@aws-sdk/client-s3": "3.726.1",
         "@foxglove/rosbag": "^0.4.1",
         "@foxglove/rosmsg": "^5.0.5",

@@ -21,7 +21,7 @@ const messageOnly = winston.format.printf(
 const traceIdFormat = winston.format((info) => {
     const currentSpan = trace.getSpan(context.active());
     if (currentSpan) {
-        info['trace_id'] = currentSpan.spanContext().traceId;
+        info.trace_id = currentSpan.spanContext().traceId;
     }
     return info;
 });
@@ -41,7 +41,7 @@ const logger = winston.createLogger({
             interval: 5,
             labels: {
                 job: QUEUE_CONSUMER_LABEL,
-                container_id: process.env['HOSTNAME'],
+                container_id: process.env.HOSTNAME,
             },
             json: true,
             format: winston.format.json(),

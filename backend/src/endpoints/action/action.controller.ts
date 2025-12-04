@@ -1,19 +1,17 @@
-import { ActionLogsDto } from '@common/api/types/actions/action-logs.dto';
-import { ActionDto } from '@common/api/types/actions/action.dto';
-import { ActionsDto } from '@common/api/types/actions/actions.dto';
-import { FileEventsDto } from '@common/api/types/file/file-event.dto';
-import { PaginatedQueryDto } from '@common/api/types/pagination';
 import {
-    ActionSubmitResponseDto,
-    SubmitActionDto,
-} from '@common/api/types/submit-action-response.dto';
-import {
+    ActionDto,
+    ActionLogsDto,
     ActionQuery,
+    ActionsDto,
+    ActionSubmitResponseDto,
+    FileEventsDto,
+    PaginatedQueryDto,
+    SubmitActionDto,
     SubmitActionMulti,
-} from '@common/api/types/submit-action.dto';
+} from '@kleinkram/api-dto';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiOkResponse, OutputDto } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decorators';
 import { ActionService } from '../../services/action.service';
 import { FileService } from '../../services/file.service';
 import { ParameterUuid } from '../../validation/parameter-decorators';
@@ -98,7 +96,6 @@ export class ActionsController {
     @Delete(':uuid')
     @CanDeleteAction()
     @ApiOperation({ summary: 'Delete a specific action run' })
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     @OutputDto(null)
     async remove(
         @ParameterUuid('uuid') uuid: string,

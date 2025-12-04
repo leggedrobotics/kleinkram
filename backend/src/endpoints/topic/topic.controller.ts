@@ -1,6 +1,6 @@
-import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
+import { TopicNamesDto, TopicsDto } from '@kleinkram/api-dto';
 import { Controller, Get } from '@nestjs/common';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse } from '../../decorators';
 import { TopicService } from '../../services/topic.service';
 import { QuerySkip, QueryTake } from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';

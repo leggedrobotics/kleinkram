@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileEventType } from '@common/enum';
+import { FileEventType } from '@kleinkram/shared';
 import { formatDate } from 'src/services/date-formating';
 import FileEventAttribution from './file-event-attribution.vue';
 import FileEventFileInfo from './file-event-file-info.vue';

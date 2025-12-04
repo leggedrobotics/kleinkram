@@ -1,11 +1,13 @@
-import { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
-import { ActionTemplatesDto } from '@common/api/types/actions/action-templates.dto';
-import { CreateTemplateDto } from '@common/api/types/actions/create-template.dto';
-import { DeleteTemplateResponseDto } from '@common/api/types/actions/delete-template-response.dto';
-import { UpdateTemplateDto } from '@common/api/types/actions/update-template.dto';
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import UserEntity from '@common/entities/user/user.entity';
+import {
+    ActionTemplateDto,
+    ActionTemplatesDto,
+    CreateTemplateDto,
+    DeleteTemplateResponseDto,
+    UpdateTemplateDto,
+} from '@kleinkram/api-dto';
+import ActionTemplateEntity from '@kleinkram/backend-common/entities/action/action-template.entity';
+import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     ConflictException,
     Injectable,
@@ -18,8 +20,7 @@ import { actionTemplateEntityToDto } from '../serialization/action-template';
 
 @Injectable()
 export class TemplateService {
-    private readonly DOCKER_NAMESPACE =
-        process.env['VITE_DOCKER_HUB_NAMESPACE'];
+    private readonly DOCKER_NAMESPACE = process.env.VITE_DOCKER_HUB_NAMESPACE;
 
     constructor(
         @InjectRepository(ActionTemplateEntity)
@@ -74,7 +75,7 @@ export class TemplateService {
     ): Promise<ActionTemplateDto> {
         const nextVersion = await this.calculateNextVersion(data.name);
 
-        delete (data as Partial<UpdateTemplateDto>).uuid;
+        delete (data as any).uuid;
         this.validateDockerNamespace(data.dockerImage);
 
         const newTemplate = this.actionTemplateRepository.create({

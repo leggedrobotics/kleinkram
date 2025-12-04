@@ -1,23 +1,21 @@
-import { ActionLogsDto } from '@common/api/types/actions/action-logs.dto';
-import { ActionDto } from '@common/api/types/actions/action.dto';
-import { ActionsDto } from '@common/api/types/actions/actions.dto';
-import { PaginatedQueryDto } from '@common/api/types/pagination';
 import {
-    ActionSubmitResponseDto,
-    SubmitActionDto,
-} from '@common/api/types/submit-action-response.dto';
-import {
+    ActionDto,
+    ActionLogsDto,
     ActionQuery,
+    ActionsDto,
+    ActionSubmitResponseDto,
+    PaginatedQueryDto,
+    SubmitActionDto,
     SubmitActionMulti,
-} from '@common/api/types/submit-action.dto';
-import ActionEntity from '@common/entities/action/action.entity';
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import environment from '@common/environment';
-import { ArtifactState, UserRole } from '@common/frontend_shared/enum';
-import { ActionDispatcherService } from '@common/modules/action-dispatcher/action-dispatcher.service';
-import { StorageService } from '@common/modules/storage/storage.service';
+} from '@kleinkram/api-dto';
+import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
+import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import environment from '@kleinkram/backend-common/environment';
+import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { ArtifactState, UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {

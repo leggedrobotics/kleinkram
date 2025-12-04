@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { AccessGroupDto } from '@api/types/access-control/access-group.dto';
+import { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { canDeleteProject, usePermissionsQuery } from 'src/hooks/query-hooks';

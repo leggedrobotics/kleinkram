@@ -1,9 +1,9 @@
+import { OutputDto } from '@/decorators';
+import { FoxgloveService } from '@/services/foxglove.service';
+import { ParameterUuid } from '@/validation/parameter-decorators';
 import { Controller, Get, Query, Req, Res } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { OutputDto } from '../../decarators';
-import { FoxgloveService } from '../../services/foxglove.service';
-import { ParameterUuid } from '../../validation/parameter-decorators';
 
 @Controller('integrations/foxglove')
 export class FoxgloveController {
@@ -21,7 +21,6 @@ export class FoxgloveController {
         description: '302 Redirect to actual file URL',
         status: 302,
     })
-    // eslint-disable-next-line unicorn/no-null
     @OutputDto(null) // No response body, just a redirect
     // No @LoggedIn() guard here! The signature IS the guard.
     async proxyFoxglove(

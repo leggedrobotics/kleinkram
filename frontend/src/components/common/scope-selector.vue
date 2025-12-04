@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { ProjectWithRequiredTagsDto } from '@api/types/project/project-with-required-tags.dto';
+import { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
 import AppSelect from 'components/common/app-select.vue';
 import { ValidationRule } from 'quasar';
 import { useScopeSelection } from 'src/composables/use-scope-selection';

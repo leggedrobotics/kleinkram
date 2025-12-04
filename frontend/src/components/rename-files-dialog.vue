@@ -70,7 +70,7 @@ import {
     FILENAME_MAX_LENGTH,
     isValidFileNamePart,
     splitFileName,
-} from '@common/validation/filename.validation';
+} from '@kleinkram/validation';
 import { useDialogPluginComponent } from 'quasar';
 import { computed, defineComponent, PropType, ref } from 'vue';
 

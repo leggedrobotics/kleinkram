@@ -1,5 +1,5 @@
-import type { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
-import type ActionTemplateEntity from '@common/entities/action/action-template.entity';
+import type { ActionTemplateDto } from '@kleinkram/api-dto';
+import type ActionTemplateEntity from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { userEntityToDto } from './user';
 
 export const actionTemplateEntityToDto = (

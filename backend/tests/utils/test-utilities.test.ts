@@ -1,7 +1,7 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import AccountEntity from '@common/entities/auth/account.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UserRole } from '@common/frontend_shared/enum';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import AccountEntity from '@kleinkram/backend-common/entities/auth/account.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { UserRole } from '@kleinkram/shared';
 import { clearAllData, database, mockDatabaseUser } from './database-utilities';
 
 describe('Test Suite Utils', () => {

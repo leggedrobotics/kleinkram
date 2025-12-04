@@ -274,10 +274,10 @@
 </template>
 
 <script setup lang="ts">
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import { CreateTemplateDto } from '@api/types/actions/create-template.dto';
-import { UpdateTemplateDto } from '@api/types/actions/update-template.dto';
-import { AccessGroupRights } from '@common/enum';
+import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
+import { AccessGroupRights } from '@kleinkram/shared';
 import { debounce, Notify, QForm } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
 import {

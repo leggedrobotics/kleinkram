@@ -16,12 +16,12 @@
 </template>
 
 <script setup lang="ts">
-import { FileState } from '@common/enum';
+import { FileState } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import EditFile from 'components/edit-file.vue';
 
 const { file } = defineProps<{ file: FileWithTopicDto }>();

@@ -1,10 +1,10 @@
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
+import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
 import {
     AccessGroupRights,
     ActionState,
     KeyTypes,
     UserRole,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/shared';
 import {
     BadRequestException,
     CanActivate,
@@ -18,14 +18,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import { FileGuardService } from '../../services/file-guard.service';
-import { ProjectGuardService } from '../../services/project-guard.service';
-import { UserService } from '../../services/user.service';
-import { ActionGuardService } from './action-guard.service';
-import { AuthGuardService } from './auth-guard.service';
-import { MissionGuardService } from './mission-guard.service';
+import { ActionGuardService } from '@/endpoints/auth/action-guard.service';
+import { AuthGuardService } from '@/endpoints/auth/auth-guard.service';
+import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
+import { FileGuardService } from '@/services/file-guard.service';
+import { ProjectGuardService } from '@/services/project-guard.service';
+import { UserService } from '@/services/user.service';
+import ActionTemplateEntity from '@kleinkram/backend-common/entities/action/action-template.entity';
+import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -766,7 +766,7 @@ export class CreateActionsGuard extends BaseGuard {
             });
         if (apiKey) {
             const allCanAccess = await Promise.all(
-                missionUUIDs.map((missionUUID) =>
+                missionUUIDs.map((missionUUID: string) =>
                     this.missionGuardService.canKeyAccessMission(
                         apiKey,
                         missionUUID,
@@ -777,7 +777,7 @@ export class CreateActionsGuard extends BaseGuard {
             return allCanAccess.every(Boolean);
         }
         const allCanAccess = await Promise.all(
-            missionUUIDs.map((missionUUID) =>
+            missionUUIDs.map((missionUUID: string) =>
                 this.missionGuardService.canAccessMission(
                     user.uuid,
                     missionUUID,

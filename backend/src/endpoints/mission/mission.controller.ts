@@ -1,14 +1,14 @@
-import { CreateMission } from '@common/api/types/create-mission.dto';
 import {
+    CreateMission,
     FlatMissionDto,
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
-} from '@common/api/types/mission/mission.dto';
+} from '@kleinkram/api-dto';
+import { BodyUUID, MISSION_NAME_REGEX } from '@kleinkram/validation';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
-import { ApiOkResponse, OutputDto } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decorators';
 import { MissionService } from '../../services/mission.service';
-import { BodyUUID } from '../../validation/body-decorators';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
     QueryOptionalString,
@@ -18,7 +18,6 @@ import {
     QueryTake,
     QueryUUID,
 } from '../../validation/query-decorators';
-import { MISSION_NAME_REGEX } from '../../validation/validation-logic';
 import {
     CanCreateInProjectByBody,
     CanDeleteMission,
@@ -28,7 +27,7 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 
-import { MissionQueryDto } from '@common/api/types/mission/mission-query.dto';
+import { MissionQueryDto } from '@kleinkram/api-dto';
 
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 

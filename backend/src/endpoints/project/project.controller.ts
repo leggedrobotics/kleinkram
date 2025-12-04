@@ -1,18 +1,19 @@
-import { DefaultRights } from '@common/api/types/access-control/default-rights';
 import {
+    AddTagTypeDto,
+    CreateProject,
+    DefaultRights,
+    DeleteProjectResponseDto,
     ProjectAccessDto,
     ProjectAccessListDto,
-} from '@common/api/types/access-control/project-access.dto';
-import { AddTagTypeDto } from '@common/api/types/add-tag-type.dto';
-import { CreateProject } from '@common/api/types/create-project.dto';
-import { ProjectDto } from '@common/api/types/project/base-project.dto';
-import { DeleteProjectResponseDto } from '@common/api/types/project/delete-project-response.dto';
-import { ProjectQueryDto } from '@common/api/types/project/project-query.dto';
-import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
-import { ProjectsDto } from '@common/api/types/project/projects.dto';
-import { ResentProjectsDto } from '@common/api/types/project/recent-projects.dto';
-import { RemoveTagTypeDto } from '@common/api/types/remove-tag-type.dto';
-import { UpdateTagTypesDto } from '@common/api/types/update-tag-types.dto';
+    ProjectDto,
+    ProjectQueryDto,
+    ProjectsDto,
+    ProjectWithRequiredTagsDto,
+    RemoveTagTypeDto,
+    ResentProjectsDto,
+    UpdateTagTypesDto,
+} from '@kleinkram/api-dto';
+import { BodyUUIDArray } from '@kleinkram/validation';
 import {
     Body,
     Controller,
@@ -24,10 +25,9 @@ import {
     Query,
 } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
-import { ApiOkResponse, ApiResponse, OutputDto } from '../../decarators';
+import { ApiOkResponse, ApiResponse, OutputDto } from '../../decorators';
 import { AccessService } from '../../services/access.service';
 import { ProjectService } from '../../services/project.service';
-import { BodyUUIDArray } from '../../validation/body-decorators';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { QueryTake, QueryUUID } from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';

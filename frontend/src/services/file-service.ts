@@ -1,7 +1,3 @@
-import { TemporaryFileAccessesDto } from '@api/types/file/access.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FlatMissionDto, MissionDto } from '@api/types/mission/mission.dto';
-import { ProjectDto } from '@api/types/project/base-project.dto';
 import {
     AbortMultipartUploadCommand,
     CompleteMultipartUploadCommand,
@@ -9,8 +5,15 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
-import { FileType } from '@common/enum';
-import { isValidFileName } from '@common/validation/filename.validation';
+import { TemporaryFileAccessesDto } from '@kleinkram/api-dto/types/file/access.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import {
+    FlatMissionDto,
+    MissionDto,
+} from '@kleinkram/api-dto/types/mission/mission.dto';
+import { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
+import { FileType } from '@kleinkram/shared';
+import { isValidFileName } from '@kleinkram/validation';
 import { QueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
 import pLimit from 'p-limit';

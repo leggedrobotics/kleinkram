@@ -1,4 +1,4 @@
-import environment from '@common/environment';
+import environment from '@kleinkram/backend-common/environment';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';

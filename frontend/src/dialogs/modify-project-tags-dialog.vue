@@ -29,7 +29,7 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { TagTypeDto } from '@api/types/tags/tags.dto';
+import { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import CreateTagTypeDialogOpener from 'components/button-wrapper/dialog-opener-create-tag-type.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';

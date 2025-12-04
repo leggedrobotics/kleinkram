@@ -1,3 +1,4 @@
+// @ts-ignore
 import { defineRouter } from '#q-app/wrappers';
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import routes from './routes';

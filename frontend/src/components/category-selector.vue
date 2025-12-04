@@ -51,7 +51,7 @@
     </q-select>
 </template>
 <script setup lang="ts">
-import { CategoryDto } from '@api/types/category.dto';
+import { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import { useCategories } from 'src/hooks/query-hooks';
 import { hashUUIDtoColor } from 'src/services/generic';
 import { computed, ref, Ref } from 'vue';

@@ -1,0 +1,23 @@
+{
+    "files": [],
+    "references": [
+        {
+            "path": "./packages/api-dto"
+        },
+        {
+            "path": "./packages/backend-common"
+        },
+        {
+            "path": "./packages/shared"
+        },
+        {
+            "path": "./packages/validation"
+        },
+        {
+            "path": "./backend"
+        },
+        {
+            "path": "./queueConsumer"
+        }
+    ]
+}

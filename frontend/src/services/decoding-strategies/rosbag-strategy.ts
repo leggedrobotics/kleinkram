@@ -1,5 +1,5 @@
-import { UniversalHttpReader } from '@common/universal-http-reader';
 import { Bag } from '@foxglove/rosbag';
+import { UniversalHttpReader } from '@kleinkram/shared';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { DecodingStrategy } from './index';

@@ -1,5 +1,5 @@
-import { redis } from '@common/consts';
-import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
+import { redis } from '@kleinkram/backend-common/consts';
+import GroupMembershipEntity from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';

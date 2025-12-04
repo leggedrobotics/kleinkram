@@ -1,7 +1,7 @@
-import { AvailableProvidersDto } from '@common/api/types/available-providers.dto';
-import UserEntity from '@common/entities/user/user.entity';
-import env from '@common/environment';
-import { CookieNames, Providers } from '@common/frontend_shared/enum';
+import { AvailableProvidersDto } from '@kleinkram/api-dto';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import env from '@kleinkram/backend-common/environment';
+import { CookieNames, Providers } from '@kleinkram/shared';
 import {
     Controller,
     Get,
@@ -14,7 +14,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
-import { OutputDto } from '../../decarators';
+import { OutputDto } from '../../decorators';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { InvalidJwtTokenException } from './jwt.strategy';
@@ -40,7 +40,7 @@ export class AuthController {
 
     @Get('github')
     @UseGuards(AuthGuard('github'))
-    async githubAuth(): Promise<void> {
+    async githubAuth(@Req() request: any): Promise<void> {
         // Initiates the GitHub OAuth flow
         // OAuth is handled by the AuthGuard
     }
@@ -62,21 +62,30 @@ export class AuthController {
     @Get('github/callback')
     @UseGuards(AuthGuard('github'))
     @OutputDto(null) // TODO: type API response
-    githubAuthRedirect(@Req() request, @Res() response: Response): void {
-        this.handleAuthRedirect(request, response);
+    async githubAuthCallback(
+        @Req() request: any,
+        @Res() res: Response,
+    ): Promise<void> {
+        this.handleAuthRedirect(request, res);
     }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     @OutputDto(null) // TODO: type API response
-    googleAuthRedirect(@Req() request, @Res() response: Response): void {
+    googleAuthRedirect(
+        @Req() request: Request,
+        @Res() response: Response,
+    ): void {
         this.handleAuthRedirect(request, response);
     }
 
     @Get('fake-oauth/callback')
     @UseGuards(AuthGuard(Providers.FakeOAuth))
     @OutputDto(null) // TODO: type API response
-    fakeOAuthAuthRedirect(@Req() request, @Res() response: Response): void {
+    fakeOAuthAuthRedirect(
+        @Req() request: Request,
+        @Res() response: Response,
+    ): void {
         if (!env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT)
             throw new MethodNotAllowedException();
         this.handleAuthRedirect(request, response);
@@ -88,7 +97,7 @@ export class AuthController {
     ): void {
         const user = request.user;
         const token = this.authService.login(user as UserEntity);
-        const state = request.query['state'];
+        const state = request.query.state;
 
         if (state === 'cli') {
             response.redirect(

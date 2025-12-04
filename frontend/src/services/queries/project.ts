@@ -1,7 +1,7 @@
-import { DefaultRights } from '@api/types/access-control/default-rights';
-import { ProjectWithRequiredTagsDto } from '@api/types/project/project-with-required-tags.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import { ResentProjectsDto } from '@api/types/project/recent-projects.dto';
+import { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
+import { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
+import { ResentProjectsDto } from '@kleinkram/api-dto/types/project/recent-projects.dto';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 

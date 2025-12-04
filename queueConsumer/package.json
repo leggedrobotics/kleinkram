@@ -9,6 +9,11 @@
         "build": "nest build"
     },
     "dependencies": {
+        "@kleinkram/backend-common": "0.56.0",
+        "@kleinkram/shared": "0.56.0",
+        "@kleinkram/validation": "0.56.0",
+        "@kubernetes/client-node": "^1.0.0",
+        "@kleinkram/api-dto": "0.56.0",
         "@foxglove/rosbag": "^0.4.1",
         "@mcap/core": "^2.1.7",
         "@mcap/nodejs": "^1.0.2",

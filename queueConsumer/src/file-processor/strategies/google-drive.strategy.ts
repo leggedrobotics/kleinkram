@@ -1,5 +1,5 @@
-import env from '@common/environment';
-import { FileLocation } from '@common/frontend_shared/enum';
+import env from '@kleinkram/backend-common/environment';
+import { FileLocation } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { drive_v3, google } from 'googleapis';
 import { FileSourceResult, FileSourceStrategy } from './file-source.interface';

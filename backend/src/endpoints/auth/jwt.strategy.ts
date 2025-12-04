@@ -1,5 +1,5 @@
-import env from '@common/environment';
-import { CookieNames } from '@common/frontend_shared/enum';
+import env from '@kleinkram/backend-common/environment';
+import { CookieNames } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';

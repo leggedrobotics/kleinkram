@@ -1,14 +1,10 @@
 import ActionEntity, {
     ContainerLog,
     Image,
-} from '@common/entities/action/action.entity';
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import environment from '@common/environment';
-import {
-    ActionState,
-    ArtifactState,
-    KeyTypes,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/backend-common/entities/action/action.entity';
+import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import environment from '@kleinkram/backend-common/environment';
+import { ActionState, ArtifactState, KeyTypes } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
@@ -441,13 +437,13 @@ export class ActionManagerService {
             ),
         );
         const { hostname: name } = await si.osInfo();
-        const actionsInLocalProcess = (await this.actionRepository.find({
+        const actionsInLocalProcess = await this.actionRepository.find({
             where: {
                 state: ActionState.PROCESSING,
                 worker: { identifier: name },
             },
             relations: ['mission', 'mission.project'],
-        })) as Readonly<ActionEntity>[];
+        });
         logger.info(
             `Checking ${actionsInLocalProcess.length.toString()} pending Actions.`,
         );
@@ -485,9 +481,9 @@ export class ActionManagerService {
                 continue;
             }
 
-            const action = (await this.actionRepository.findOne({
+            const action = await this.actionRepository.findOne({
                 where: { uuid },
-            })) as Readonly<ActionEntity> | null;
+            });
 
             // kill action container if no corresponding action is found
             if (!action) {

@@ -1,8 +1,8 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import AccountEntity from '@common/entities/auth/account.entity';
-import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import AccountEntity from '@kleinkram/backend-common/entities/auth/account.entity';
+import ProjectAccessEntity from '@kleinkram/backend-common/entities/auth/project-access.entity';
+import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AccessService } from '../../services/access.service';

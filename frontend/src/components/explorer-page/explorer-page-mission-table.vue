@@ -148,8 +148,8 @@
 </template>
 
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import { TagDto } from '@api/types/tags/tags.dto';
+import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { useQuery } from '@tanstack/vue-query';
 import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { QTable } from 'quasar';

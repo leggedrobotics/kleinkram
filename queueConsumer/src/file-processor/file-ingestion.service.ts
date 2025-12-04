@@ -6,18 +6,18 @@ import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Repository } from 'typeorm';
 
-import FileEntity from '@common/entities/file/file.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import env from '@common/environment';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {
     FileLocation,
     FileOrigin,
     FileState,
     FileType,
     QueueState,
-} from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
-import logger from 'src/logger';
+} from '@kleinkram/shared';
+import logger from '../logger';
 import {
     FILE_HANDLER,
     FileHandler,

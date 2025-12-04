@@ -1,18 +1,18 @@
-import { redis } from '@common/consts';
-import FileEntity from '@common/entities/file/file.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import env from '@common/environment';
+import { redis } from '@kleinkram/backend-common/consts';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
     AccessGroupRights,
     FileState,
     QueueState,
     UserRole,
-} from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+} from '@kleinkram/shared';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';

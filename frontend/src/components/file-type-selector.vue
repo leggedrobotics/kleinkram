@@ -43,13 +43,10 @@
 </template>
 
 <script setup lang="ts">
-import { FileType } from '@common/enum';
+import { FileType } from '@kleinkram/shared';
 import { computed, ref, watch } from 'vue';
 
-export interface FileTypeOption {
-    name: string;
-    value: boolean;
-}
+import { FileTypeOption } from 'src/types/file-type-option';
 
 const properties = defineProps<{
     modelValue?: FileTypeOption[] | undefined;

@@ -111,7 +111,7 @@
                     </div>
 
                     <!-- Playback Controls -->
-                    <div class="q-mt-md" v-if="messages.length > 1">
+                    <div v-if="messages.length > 1" class="q-mt-md">
                         <PlaybackControls
                             v-model="currentIndex"
                             :max="messages.length - 1"
@@ -122,7 +122,7 @@
                         />
                     </div>
 
-                    <div class="q-mt-md" v-if="basicLayers.length > 0">
+                    <div v-if="basicLayers.length > 0" class="q-mt-md">
                         <div class="text-caption text-grey-7 q-mb-xs">
                             Basic Layers
                         </div>

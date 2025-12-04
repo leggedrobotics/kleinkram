@@ -142,8 +142,8 @@
 </template>
 
 <script setup lang="ts">
-import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { DataType } from '@common/enum';
+import { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import { DataType } from '@kleinkram/shared';
 import { useAllTags, useProjectQuery } from 'src/hooks/query-hooks';
 import { icon } from 'src/services/generic';
 import { computed, Ref, ref, watch } from 'vue';

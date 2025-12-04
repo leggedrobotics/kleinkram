@@ -1,17 +1,20 @@
-import { ActionLogsDto } from '@api/types/actions/action-logs.dto';
-import { ActionTemplateAvailabilityDto } from '@api/types/actions/action-template-availability.dto';
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import { ActionTemplatesDto } from '@api/types/actions/action-templates.dto';
-import { ActionDto } from '@api/types/actions/action.dto';
-import { ActionsDto } from '@api/types/actions/actions.dto';
-import { CreateTemplateDto } from '@api/types/actions/create-template.dto';
-import { UpdateTemplateDto } from '@api/types/actions/update-template.dto';
-import { FileEventsDto } from '@api/types/file/file-event.dto';
+import { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
+import { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto/types/actions/action-template-availability.dto';
+import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
+import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import { ActionsDto } from '@kleinkram/api-dto/types/actions/actions.dto';
+import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
+import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import {
     ActionSubmitResponseDto,
     SubmitActionDto,
-} from '@api/types/submit-action-response.dto';
-import { ActionQuery, SubmitActionMulti } from '@api/types/submit-action.dto';
+} from '@kleinkram/api-dto/types/submit-action-response.dto';
+import {
+    ActionQuery,
+    SubmitActionMulti,
+} from '@kleinkram/api-dto/types/submit-action.dto';
 import axios from 'src/api/axios';
 
 export const ActionService = {

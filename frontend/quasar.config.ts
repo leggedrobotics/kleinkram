@@ -1,10 +1,10 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
-import { defineConfig } from '#q-app/wrappers';
-import { fileURLToPath } from 'node:url';
+// @ts-ignore
+import wrapper from '#q-app/wrappers';
 
-export default defineConfig((/* ctx */) => {
+export default wrapper.defineConfig((/* ctx */) => {
     return {
         // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
         // preFetch: true,
@@ -31,14 +31,7 @@ export default defineConfig((/* ctx */) => {
         ],
 
         build: {
-            alias: {
-                '@common': fileURLToPath(
-                    new URL('../common/frontend_shared', import.meta.url),
-                ),
-                '@api/types': fileURLToPath(
-                    new URL('../common/api/types', import.meta.url),
-                ),
-            },
+            alias: {},
 
             typescript: {
                 strict: true,

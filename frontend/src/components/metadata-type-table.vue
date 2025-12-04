@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { TagTypeDto } from '@api/types/tags/tags.dto';
+import { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { defineEmits, defineProps } from 'vue';
 
 defineProps<{ rows: TagTypeDto[]; columns: any[]; filter: string }>();

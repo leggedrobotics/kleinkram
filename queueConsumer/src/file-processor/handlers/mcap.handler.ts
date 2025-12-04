@@ -1,7 +1,7 @@
-import FileEntity from '@common/entities/file/file.entity';
-import env from '@common/environment';
-import { FileState } from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { FileState } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

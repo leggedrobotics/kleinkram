@@ -1,8 +1,10 @@
-import { ActionWorkerDto } from '@common/api/types/action-workers.dto';
-import { ActionDto } from '@common/api/types/actions/action.dto';
-import { AuditLogDto } from '@common/api/types/actions/audit-log.dto';
-import { DockerImageDto } from '@common/api/types/actions/docker-image.dto';
-import ActionEntity from '@common/entities/action/action.entity';
+import {
+    ActionDto,
+    ActionWorkerDto,
+    AuditLogDto,
+    DockerImageDto,
+} from '@kleinkram/api-dto';
+import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
 import { actionTemplateEntityToDto } from './action-template';
 import { missionEntityToDto } from './index';
 import { userEntityToDto } from './user';

@@ -1,17 +1,19 @@
-import { PermissionsDto } from '@common/api/types/permissions.dto';
-import { CurrentAPIUserDto } from '@common/api/types/user/current-api-user.dto';
-import { UserDto } from '@common/api/types/user/user.dto';
-import { UsersDto } from '@common/api/types/user/users.dto';
-import { systemUser } from '@common/consts';
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import UserEntity from '@common/entities/user/user.entity';
+import {
+    CurrentAPIUserDto,
+    PermissionsDto,
+    UserDto,
+    UsersDto,
+} from '@kleinkram/api-dto';
+import { systemUser } from '@kleinkram/backend-common/consts';
+import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
-} from '@common/frontend_shared/enum';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+} from '@kleinkram/shared';
 import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';

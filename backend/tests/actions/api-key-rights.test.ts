@@ -1,16 +1,16 @@
-import { CreateTemplateDto } from '@common/api/types/actions/create-template.dto';
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
+import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import {
     AccessGroupRights,
     ActionState,
     KeyTypes,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/backend-common';
+import ActionTemplateEntity from '@kleinkram/backend-common/action/action-template.entity';
+import ActionEntity from '@kleinkram/backend-common/action/action.entity';
+import ApikeyEntity from '@kleinkram/backend-common/auth/apikey.entity';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import ProjectEntity from '@kleinkram/backend-common/project/project.entity';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,

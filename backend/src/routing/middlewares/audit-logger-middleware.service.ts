@@ -1,4 +1,4 @@
-import { CookieNames } from '@common/frontend_shared/enum';
+import { CookieNames } from '@kleinkram/shared';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import logger from '../../logger';

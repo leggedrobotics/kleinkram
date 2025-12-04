@@ -10,7 +10,7 @@ export class AuthFlowExceptionRedirectFilter implements ExceptionFilter {
     constructor() {
         logger.debug('AuthFlowExceptionRedirectFilter created');
 
-        const frontendUrl = process.env['FRONTEND_URL'];
+        const frontendUrl = process.env.FRONTEND_URL;
         if (frontendUrl === undefined) {
             throw new Error('FRONTEND_URL env var not set');
         }

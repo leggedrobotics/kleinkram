@@ -1,5 +1,5 @@
-import FileEntity from '@common/entities/file/file.entity';
-import TopicEntity from '@common/entities/topic/topic.entity';
+import FileEntity from '@kleinkram/backend-common/file/file.entity';
+import TopicEntity from '@kleinkram/backend-common/topic/topic.entity';
 import { DEFAULT_URL } from '../auth/utilities';
 import { getAuthHeaders, uploadFile } from '../utils/api-calls';
 import { database } from '../utils/database-utilities';
@@ -9,7 +9,7 @@ import {
 } from '../utils/test-helpers';
 
 describe('Topic Extraction Tests', () => {
-    jest.setTimeout(60000);
+    jest.setTimeout(60_000);
     setupDatabaseHooks();
 
     test('should extract topics from a file', async () => {

@@ -1,7 +1,7 @@
-import { ActionWorkersDto } from '@common/api/types/action-workers.dto';
+import { ActionWorkersDto } from '@kleinkram/api-dto';
 import { Controller, Get } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
-import { ApiOkResponse } from '../../decarators';
+import { ApiOkResponse } from '../../decorators';
 import { WorkerService } from '../../services/worker.service';
 import { LoggedIn } from '../auth/roles.decorator';
 

@@ -32,8 +32,8 @@
 
             <!-- Canvas Container -->
             <div
-                class="canvas-container bg-grey-1 rounded-borders relative-position"
                 ref="containerReference"
+                class="canvas-container bg-grey-1 rounded-borders relative-position"
             >
                 <canvas ref="canvasReference" class="path-canvas"></canvas>
 

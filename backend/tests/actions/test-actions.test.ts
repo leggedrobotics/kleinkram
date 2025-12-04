@@ -1,14 +1,14 @@
-import { ActionDto } from '@common/api/types/actions/action.dto';
-import { CreateTemplateDto } from '@common/api/types/actions/create-template.dto';
-import { SubmitActionDto } from '@common/api/types/submit-action-response.dto';
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import WorkerEntity from '@common/entities/worker/worker.entity';
-import { AccessGroupRights, ActionState } from '@common/frontend_shared/enum';
+import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
+import { AccessGroupRights, ActionState } from '@kleinkram/backend-common';
+import ActionTemplateEntity from '@kleinkram/backend-common/action/action-template.entity';
+import ActionEntity from '@kleinkram/backend-common/action/action.entity';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import WorkerEntity from '@kleinkram/backend-common/entities/worker/worker.entity';
+import ProjectEntity from '@kleinkram/backend-common/project/project.entity';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,

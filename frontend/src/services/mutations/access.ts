@@ -1,5 +1,5 @@
-import { ProjectAccessDto } from '@api/types/access-control/project-access.dto';
-import { AccessGroupRights } from '@common/enum';
+import { ProjectAccessDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
+import { AccessGroupRights } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 
 export const addUsersToProject = async (

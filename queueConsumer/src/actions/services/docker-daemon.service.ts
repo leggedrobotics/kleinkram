@@ -1,6 +1,6 @@
-import { ContainerLog } from '@common/entities/action/action.entity';
-import environment from '@common/environment';
-import { ImageSource, LogType } from '@common/frontend_shared/enum';
+import { ContainerLog } from '@kleinkram/backend-common/entities/action/action.entity';
+import environment from '@kleinkram/backend-common/environment';
+import { ImageSource, LogType } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import Dockerode, { Image } from 'dockerode';
 import process from 'node:process';
@@ -289,8 +289,8 @@ export class DockerDaemon {
             throw new Error('No docker image specified');
         }
 
-        const DOCKER_HUB_PASSWORD = process.env['DOCKER_HUB_PASSWORD'];
-        const DOCKER_HUB_USERNAME = process.env['DOCKER_HUB_USERNAME'];
+        const DOCKER_HUB_PASSWORD = process.env.DOCKER_HUB_PASSWORD;
+        const DOCKER_HUB_USERNAME = process.env.DOCKER_HUB_USERNAME;
 
         if (
             DOCKER_HUB_PASSWORD === undefined ||
@@ -321,7 +321,7 @@ export class DockerDaemon {
         localCreatedAt: Date | undefined;
         remoteCreatedAt: Date | undefined;
     }> {
-        const dockerhub_namespace = process.env['VITE_DOCKER_HUB_NAMESPACE'];
+        const dockerhub_namespace = process.env.VITE_DOCKER_HUB_NAMESPACE;
         // assert that we only run images from a specified namespace
         if (
             dockerhub_namespace !== undefined &&
@@ -416,13 +416,13 @@ export class DockerDaemon {
         const logLevel = [...line][0]?.charCodeAt(0) ?? 0;
 
         // Strip ANSI codes first
-        // eslint-disable-next-line no-control-regex
+
         const ansiRegex =
             /[\u001B\u009B][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
         line = line.replaceAll(ansiRegex, '');
 
         // remove all non-printable characters
-        // eslint-disable-next-line no-control-regex
+
         line = line.replace(/[\u0000-\u001F\u007F]/u, '');
 
         const dateStartIndex = line.indexOf('20');
@@ -488,8 +488,8 @@ export class DockerDaemon {
                 for (const logEntry of chunk
                     .toString()
                     .split(/[\r\n]+/)
-                    .filter((line) => line !== '')
-                    .map((line) =>
+                    .filter((line: string) => line !== '')
+                    .map((line: string) =>
                         DockerDaemon.parseContainerLogLine(
                             line,
                             sanitizeCallback,

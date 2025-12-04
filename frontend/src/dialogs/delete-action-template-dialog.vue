@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import DeleteActionTemplate from 'components/actions/delete-action-template.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
@@ -48,7 +48,9 @@ const isArchiving = computed(() => (props.template?.executionCount ?? 0) > 0);
 
 const onConfirm = async (): Promise<void> => {
     if (!deleteActionReference.value) return;
-    await deleteActionReference.value.executeAction();
+    if (deleteActionReference.value) {
+        await (deleteActionReference.value as any).executeAction();
+    }
     onDialogOK();
 };
 </script>

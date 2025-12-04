@@ -1,11 +1,11 @@
-import { FileExistsResponseDto } from '@api/types/file/access.dto';
-import { FileEventsDto } from '@api/types/file/file-event.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FilesDto } from '@api/types/file/files.dto';
-import { FoxgloveLinkResponseDto } from '@api/types/file/foxglove-link-response.dto';
-import { IsUploadingDto } from '@api/types/file/is-uploading.dto';
-import { StorageOverviewDto } from '@api/types/storage-overview.dto';
-import { FileType, HealthStatus } from '@common/enum';
+import { FileExistsResponseDto } from '@kleinkram/api-dto/types/file/access.dto';
+import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
+import { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
+import { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
+import { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
+import { FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 

@@ -1,6 +1,6 @@
-import { CategoriesDto } from '@common/api/types/category.dto';
-import CategoryEntity from '@common/entities/category/category.entity';
-import FileEntity from '@common/entities/file/file.entity';
+import { CategoriesDto } from '@kleinkram/api-dto';
+import CategoryEntity from '@kleinkram/backend-common/entities/category/category.entity';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';

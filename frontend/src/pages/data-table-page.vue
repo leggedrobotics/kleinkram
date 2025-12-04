@@ -273,16 +273,14 @@
 </template>
 
 <script setup lang="ts">
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FilesDto } from '@api/types/file/files.dto';
-import { FileType } from '@common/enum';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
+import { FileType } from '@kleinkram/shared';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 import ScopeSelector from 'components/common/scope-selector.vue';
-import FileTypeSelector, {
-    FileTypeOption,
-} from 'components/file-type-selector.vue';
+import FileTypeSelector from 'components/file-type-selector.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable, useQuasar } from 'quasar';
 import TagFilter from 'src/dialogs/tag-filter.vue';
@@ -293,6 +291,7 @@ import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
 import { allTopicsNames } from 'src/services/queries/topic';
+import { FileTypeOption } from 'src/types/file-type-option';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 

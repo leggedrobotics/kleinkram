@@ -1,7 +1,7 @@
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import { CreateTemplateDto } from '@api/types/actions/create-template.dto';
-import { UpdateTemplateDto } from '@api/types/actions/update-template.dto';
-import { ActionSubmitResponseDto } from '@api/types/submit-action-response.dto';
+import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
+import { ActionSubmitResponseDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
 import {
     useMutation,
     UseMutationReturnType,

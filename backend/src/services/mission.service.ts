@@ -1,16 +1,16 @@
-import { CreateMission } from '@common/api/types/create-mission.dto';
 import {
+    CreateMission,
     FlatMissionDto,
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
-} from '@common/api/types/mission/mission.dto';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UserRole } from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
+} from '@kleinkram/api-dto';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { UserRole } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
@@ -35,8 +35,8 @@ import {
     addSort,
 } from './utilities';
 
-import { SortOrder } from '@common/api/types/pagination';
-import env from '@common/environment';
+import { SortOrder } from '@kleinkram/api-dto';
+import env from '@kleinkram/backend-common/environment';
 
 const FIND_MANY_SORT_KEYS = {
     missionName: 'mission.name',

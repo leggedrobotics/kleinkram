@@ -16,8 +16,8 @@
                 label="Download File"
                 color="primary"
                 icon="sym_o_download"
-                @click="onDownload"
                 unelevated
+                @click="onDownload"
             />
             <q-btn
                 label="Learn about SVO2"

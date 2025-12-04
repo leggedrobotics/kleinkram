@@ -20,8 +20,8 @@ import MoveFiles from 'src/dialogs/modify-file-location-dialog.vue';
 import { canDeleteMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { MissionDto } from '@api/types/mission/mission.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { MissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 
 const $q = useQuasar();
 const { mission, files } = defineProps<{

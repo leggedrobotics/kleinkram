@@ -1,0 +1,19 @@
+{
+    "name": "@kleinkram/validation",
+    "version": "0.56.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "license": "MIT",
+    "scripts": {
+        "build": "tsc -b",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "@kleinkram/shared": "0.56.0",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.14.3"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3"
+    }
+}

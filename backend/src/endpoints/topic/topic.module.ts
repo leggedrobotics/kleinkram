@@ -1,4 +1,4 @@
-import TopicEntity from '@common/entities/topic/topic.entity';
+import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TopicService } from '../../services/topic.service';

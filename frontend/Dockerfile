@@ -13,25 +13,23 @@ RUN mkdir -p /app/common /app/frontend && chown -R node:node /app
 USER node
 
 # Dependency Layer (Cached)
-COPY --chown=node:node ./common/package.json ./common/
-COPY --chown=node:node ./common/yarn.lock ./common/
-COPY --chown=node:node ./frontend/package.json ./frontend/
-COPY --chown=node:node ./frontend/yarn.lock ./frontend/
-COPY --chown=node:node ./common/frontend_shared ./common/frontend_shared
+# Dependency Layer (Cached)
+COPY package.json yarn.lock ./
+COPY packages/shared/package.json ./packages/shared/
+COPY frontend/package.json ./frontend/
 
 # Install dependencies
-WORKDIR /app/common
-RUN yarn --immutable
-
-WORKDIR /app/frontend
-RUN yarn install --ignore-engines --immutable
+RUN yarn install --frozen-lockfile
 
 # Copy source code
-COPY --chown=node:node ./frontend/. ./
+COPY packages/shared ./packages/shared
+COPY frontend ./frontend
 
 # Copy git metadata
-COPY --chown=node:node ./.git/HEAD ./.git/HEAD
-COPY --chown=node:node ./.git/refs/heads/ ./.git/refs/heads/
+COPY ./.git/HEAD ./frontend/.git/HEAD
+COPY ./.git/refs/heads/ ./frontend/.git/refs/heads/
+
+WORKDIR /app/frontend
 
 # Run the build script and build
 RUN export VITE_QUASAR_VERSION=$(node -pe "require('./package.json').version") && \

@@ -1,6 +1,6 @@
-import { CreateTemplateDto } from '@common/api/types/actions/create-template.dto';
-import { SubmitActionDto } from '@common/api/types/submit-action-response.dto';
-import { AccessGroupRights } from '@common/frontend_shared/enum';
+import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
+import { AccessGroupRights } from '@kleinkram/backend-common';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,

@@ -1,6 +1,6 @@
-import { FileType } from '@common/frontend_shared/enum';
+import { FileType } from '@kleinkram/shared';
 import * as fs from 'node:fs/promises';
-import logger from 'src/logger';
+import logger from '../../logger';
 
 export class MagicNumberValidator {
     private static readonly MAGIC_NUMBERS: Partial<Record<FileType, Buffer>> = {

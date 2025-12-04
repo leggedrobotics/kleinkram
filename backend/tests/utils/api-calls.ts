@@ -1,11 +1,11 @@
 import { S3Client } from '@aws-sdk/client-s3';
-import { CreateTemplateDto } from '@common/api/types/actions/create-template.dto';
-import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
-import { CreateMission } from '@common/api/types/create-mission.dto';
-import { CreateProject } from '@common/api/types/create-project.dto';
-import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import UserEntity from '@common/entities/user/user.entity';
+import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import { CreateAccessGroupDto } from '@kleinkram/api-dto/types/create-access-group.dto';
+import { CreateMission } from '@kleinkram/api-dto/types/create-mission.dto';
+import { CreateProject } from '@kleinkram/api-dto/types/create-project.dto';
+import { CreateTagTypeDto } from '@kleinkram/api-dto/types/tags/create-tag-type.dto';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
 import crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import { appVersion } from '../../src/app-version';

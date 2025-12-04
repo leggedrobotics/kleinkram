@@ -1,12 +1,8 @@
-import { CategoriesDto } from '@common/api/types/category.dto';
+import { CategoriesDto } from '@kleinkram/api-dto';
+import { BodyString, BodyUUID, BodyUUIDArray } from '@kleinkram/validation';
 import { Controller, Get, Post } from '@nestjs/common';
-import { ApiOkResponse, OutputDto } from '../../decarators';
+import { ApiOkResponse, OutputDto } from '../../decorators';
 import { CategoryService } from '../../services/category.service';
-import {
-    BodyString,
-    BodyUUID,
-    BodyUUIDArray,
-} from '../../validation/body-decorators';
 import {
     QueryOptionalString,
     QueryUUID,

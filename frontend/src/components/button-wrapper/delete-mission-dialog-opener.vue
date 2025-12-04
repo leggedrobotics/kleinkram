@@ -21,7 +21,7 @@
 import {
     FlatMissionDto,
     MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
+} from '@kleinkram/api-dto/types/mission/mission.dto';
 import { useQuasar } from 'quasar';
 import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';

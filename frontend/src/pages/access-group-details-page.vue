@@ -223,8 +223,8 @@
     </q-tab-panels>
 </template>
 <script setup lang="ts">
-import { GroupMembershipDto } from '@api/types/access-control/group-membership.dto';
-import { AccessGroupRights, AccessGroupType } from '@common/enum';
+import { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
+import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
@@ -233,9 +233,9 @@ import ButtonGroup from 'components/buttons/button-group.vue';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
-import { projectAccessColumns } from 'components/explorer-page/explorer-page-table-columns';
 import TitleSection from 'components/title-section.vue';
 import { Notify, QTable, useQuasar } from 'quasar';
+import { projectAccessColumns } from 'src/components/explorer-page/explorer-page-table-columns';
 import AddProjectToAccessGroupDialog from 'src/dialogs/add-project-access-group-dialog.vue';
 import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expiration-date-dialog.vue';
 import { useAccessGroup, useUser } from 'src/hooks/query-hooks';

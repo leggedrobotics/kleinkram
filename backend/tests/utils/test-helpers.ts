@@ -1,5 +1,5 @@
-import WorkerEntity from '@common/entities/worker/worker.entity';
-import { UserRole } from '@common/frontend_shared/enum';
+import WorkerEntity from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { UserRole } from '@kleinkram/shared';
 import { createMissionUsingPost, createProjectUsingPost } from './api-calls';
 import {
     clearAllData,

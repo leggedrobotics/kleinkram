@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { DataType } from '@common/enum';
+import { DataType } from '@kleinkram/shared';
 import { icon } from 'src/services/generic';
 import { computed } from 'vue';
 

@@ -1,7 +1,9 @@
-import { ActionTemplateDto } from '@common/api/types/actions/action-template.dto';
-import { ActionTemplatesDto } from '@common/api/types/actions/action-templates.dto';
-import { CreateTemplateDto } from '@common/api/types/actions/create-template.dto';
-import { UpdateTemplateDto } from '@common/api/types/actions/update-template.dto';
+import {
+    ActionTemplateDto,
+    ActionTemplatesDto,
+    CreateTemplateDto,
+    UpdateTemplateDto,
+} from '@kleinkram/api-dto';
 import {
     Body,
     Controller,
@@ -14,8 +16,8 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { ActionTemplateAvailabilityDto } from '@common/api/types/actions/action-template-availability.dto';
-import { ApiOkResponse, OutputDto } from '../../decarators';
+import { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto';
+import { ApiOkResponse, OutputDto } from '../../decorators';
 import { TemplateService } from '../../services/template.service';
 import { ParameterUuid } from '../../validation/parameter-decorators';
 import { QuerySkip, QueryTake } from '../../validation/query-decorators';
@@ -98,7 +100,6 @@ export class TemplatesController {
     @CanCreate()
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Archive or delete a template' })
-    // eslint-disable-next-line unicorn/no-null
     @OutputDto(null)
     async removeTemplate(@ParameterUuid('uuid') uuid: string): Promise<void> {
         await this.templateService.delete(uuid);

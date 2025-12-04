@@ -52,7 +52,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { UserDto } from '@api/types/user/user.dto';
+import { UserDto } from '@kleinkram/api-dto/types/user/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { useUserSearch } from 'src/hooks/query-hooks';

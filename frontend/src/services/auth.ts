@@ -1,5 +1,5 @@
-import { AvailableProvidersDto } from '@api/types/available-providers.dto';
-import { CurrentAPIUserDto } from '@api/types/user/current-api-user.dto';
+import { AvailableProvidersDto } from '@kleinkram/api-dto/types/available-providers.dto';
+import { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
 import axios from 'src/api/axios';
 import { getMe } from 'src/services/queries/user';
 import ENV from '../environment';

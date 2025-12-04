@@ -1,9 +1,9 @@
-import FileEventEntity from '@common/entities/file/file-event.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import TopicEntity from '@common/entities/topic/topic.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UniversalHttpReader } from '@common/frontend_shared/universal-http-reader';
 import { Bag } from '@foxglove/rosbag';
+import FileEventEntity from '@kleinkram/backend-common/entities/file/file-event.entity';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { UniversalHttpReader } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fsPromises from 'node:fs/promises';

@@ -81,9 +81,9 @@
 </template>
 
 <script setup lang="ts">
-import { AccessGroupDto } from '@api/types/access-control/access-group.dto';
-import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import { AccessGroupRights, AccessGroupType } from '@common/enum';
+import { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
+import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import AccessGroupAvatar from 'components/configure-access-rights/access-group-avatar.vue';
 import AccessRightsTable from 'components/configure-access-rights/access-rights-table.vue';
 import { QSelect } from 'quasar';

@@ -169,8 +169,8 @@
 </template>
 
 <script setup lang="ts">
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FileState } from '@common/enum';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { FileState } from '@kleinkram/shared';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import EditFileButton from 'components/buttons/edit-file-button.vue';

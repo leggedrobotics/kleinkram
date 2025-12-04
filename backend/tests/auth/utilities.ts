@@ -1,6 +1,6 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupType, UserRole } from '@common/frontend_shared/enum';
+import { AccessGroupType, UserRole } from '@kleinkram/backend-common';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
 import { HeaderCreator } from '../utils/api-calls';
 import {
     database,
@@ -18,7 +18,7 @@ export const DEFAULT_GROUP_UUIDS: [string] = [
 export const getAllAccessGroups = async (): Promise<AccessGroupEntity[]> => {
     const accessGroupRepository =
         database.getRepository<AccessGroupEntity>(AccessGroupEntity);
-    return (await accessGroupRepository.find({
+    return await accessGroupRepository.find({
         relations: ['members', 'members.user'],
         select: {
             memberships: {
@@ -31,7 +31,7 @@ export const getAllAccessGroups = async (): Promise<AccessGroupEntity[]> => {
                 },
             },
         },
-    })) as AccessGroupEntity[];
+    });
 };
 
 /**

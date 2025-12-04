@@ -1,4 +1,4 @@
-import { FileEventType } from '@common/enum';
+import { FileEventType } from '@kleinkram/shared';
 
 export function formatEventType(type: FileEventType): string {
     const map: Record<string, string> = {

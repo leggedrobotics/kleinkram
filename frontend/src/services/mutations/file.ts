@@ -1,7 +1,7 @@
-import { CategoryDto } from '@api/types/category.dto';
-import { TemporaryFileAccessesDto } from '@api/types/file/access.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { TemporaryAccessRequestDto } from '@api/types/file/temporary-access-request.dto';
+import { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
+import { TemporaryFileAccessesDto } from '@kleinkram/api-dto/types/file/access.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { TemporaryAccessRequestDto } from '@kleinkram/api-dto/types/file/temporary-access-request.dto';
 import axios from 'src/api/axios';
 
 // define type for generateTemporaryCredentials 'files' return

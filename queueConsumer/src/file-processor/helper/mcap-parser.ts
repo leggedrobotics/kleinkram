@@ -1,10 +1,10 @@
 // src/modules/file-processor/helper/mcap-parser.ts
-import TopicEntity from '@common/entities/topic/topic.entity';
+import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { McapIndexedReader } from '@mcap/core';
 import { FileHandleReadable } from '@mcap/nodejs';
 import { loadDecompressHandlers } from '@mcap/support';
 import { open } from 'node:fs/promises';
-import logger from 'src/logger';
+import logger from '../../logger';
 
 export interface McapMetadata {
     topics: Partial<TopicEntity>[];

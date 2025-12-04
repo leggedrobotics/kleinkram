@@ -65,8 +65,8 @@
 </template>
 
 <script setup lang="ts">
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
-import { ActionTemplatesDto } from '@api/types/actions/action-templates.dto';
+import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
 
 import { computed, ref } from 'vue';
 

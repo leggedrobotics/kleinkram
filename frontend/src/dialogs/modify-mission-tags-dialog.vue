@@ -20,8 +20,8 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import { DataType } from '@common/enum';
+import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { DataType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import SelectMissionTags from 'components/select-mission-tags.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';

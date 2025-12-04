@@ -1,4 +1,4 @@
-import env from '@common/environment';
+import env from '@kleinkram/backend-common/environment';
 import {
     ArgumentsHost,
     BadRequestException,
@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { Response } from 'express';
-import { appVersion } from 'src/app-version';
 import { EntityNotFoundError } from 'typeorm';
+import { appVersion } from '../../app-version';
 import logger from '../../logger';
 import { AuthFlowException } from '../../types/auth-flow-exception';
 

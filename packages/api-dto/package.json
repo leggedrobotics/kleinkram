@@ -1,0 +1,25 @@
+{
+    "name": "@kleinkram/api-dto",
+    "version": "0.56.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "license": "MIT",
+    "scripts": {
+        "build": "tsc -b",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "@kleinkram/shared": "0.56.0",
+        "@kleinkram/validation": "0.56.0",
+        "@mcap/core": "^2.1.7",
+        "@nestjs/swagger": "^11.2.2",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.14.3",
+        "fs-extra": "^11.3.2",
+        "minimatch": "^10.1.1",
+        "qs": "^6.14.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3"
+    }
+}

@@ -1,3 +1,4 @@
+import { metadataApplier, UUIDValidate } from '@kleinkram/validation';
 import {
     BadRequestException,
     createParamDecorator,
@@ -5,8 +6,6 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
-import { metadataApplier } from './metadata-applier';
-import { UUIDValidate } from './validation-types';
 
 export const ParameterUuid = (
     parameterName: string,

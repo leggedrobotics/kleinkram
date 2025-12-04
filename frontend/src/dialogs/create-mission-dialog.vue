@@ -145,9 +145,9 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import { FileUploadDto } from '@api/types/upload.dto';
+import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
+import { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import CreateFile from 'components/create-file.vue';
@@ -276,7 +276,9 @@ const updateTagValue = (update: Record<string, string>): void => {
 };
 
 const uploadEventHandler = (): void => {
-    createFileReference.value?.createFileAction();
+    if (createFileReference.value) {
+        (createFileReference.value as any).createFileAction();
+    }
     onDialogOK();
 };
 

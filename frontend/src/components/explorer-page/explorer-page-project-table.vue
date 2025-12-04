@@ -132,8 +132,8 @@ import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-op
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
-import { explorerPageTableColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { QTable } from 'quasar';
+import { explorerPageTableColumns } from 'src/components/explorer-page/explorer-page-table-columns';
 import {
     useFilteredProjects,
     useHandler,

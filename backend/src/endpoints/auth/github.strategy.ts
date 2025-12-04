@@ -1,9 +1,9 @@
-import env from '@common/environment';
-import { Providers } from '@common/frontend_shared/enum';
+import env from '@kleinkram/backend-common/environment';
+import { Providers } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
-import { Strategy, VerifyCallback } from 'passport-github2';
+import { Strategy } from 'passport-github2';
 import logger from '../../logger';
 import { AuthService } from '../../services/auth.service';
 import { AuthFlowException } from '../../types/auth-flow-exception';
@@ -20,7 +20,7 @@ export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
     }
 
     authenticate(request: e.Request, options?: any) {
-        options.state = request.query['state'];
+        options.state = request.query.state;
         super.authenticate(request, options);
     }
 
@@ -28,7 +28,7 @@ export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
         accessToken: string,
         refreshToken: string,
         profile: any,
-        callback: VerifyCallback,
+        callback: any,
     ): Promise<any> {
         const { provider } = profile;
 

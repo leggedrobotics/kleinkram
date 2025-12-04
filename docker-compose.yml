@@ -5,12 +5,15 @@ services:
         build:
             context: .
             dockerfile: backend/Dockerfile
+            args:
+                USER_ID: ${USER_ID:-1000}
+                GROUP_ID: ${GROUP_ID:-1000}
 
         develop:
             watch:
                 - action: sync
-                  path: ./common
-                  target: /usr/src/app/common
+                  path: ./packages
+                  target: /usr/src/app/packages
                   ignore:
                       - node_modules/
                       - dist/
@@ -101,6 +104,8 @@ services:
             dockerfile: ./frontend/dev.Dockerfile
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
+                - USER_ID=${USER_ID:-1000}
+                - GROUP_ID=${GROUP_ID:-1000}
 
         ports:
             - '8003:8003'
@@ -117,14 +122,11 @@ services:
                       - node_modules/
                       - dist/
                 - action: sync
-                  path: ./common
-                  target: /app/common
+                  path: ./packages
+                  target: /app/packages
                   ignore:
                       - node_modules/
                       - dist/
-                - action: sync
-                  path: ./common/frontend_shared
-                  target: /app/common/frontend_shared
 
         depends_on:
             - api-server
@@ -152,6 +154,9 @@ services:
         build:
             context: .
             dockerfile: queueConsumer/Dockerfile
+            args:
+                USER_ID: ${USER_ID:-1000}
+                GROUP_ID: ${GROUP_ID:-1000}
 
         volumes:
             # mount docker socket to access docker from within the container
@@ -167,8 +172,8 @@ services:
                       - dist/
 
                 - action: sync
-                  path: ./common
-                  target: /usr/src/common
+                  path: ./packages
+                  target: /usr/src/app/packages
                   ignore:
                       - node_modules/
                       - dist/

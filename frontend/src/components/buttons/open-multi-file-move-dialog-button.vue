@@ -13,13 +13,13 @@
     Move
 </template>
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import { useQuasar } from 'quasar';
 import MoveFiles from 'src/dialogs/modify-file-location-dialog.vue';
 import { canDeleteMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 const $q = useQuasar();
 

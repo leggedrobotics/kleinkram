@@ -1,5 +1,5 @@
-import env from '@common/environment';
-import { Providers } from '@common/frontend_shared/enum';
+import env from '@kleinkram/backend-common/environment';
+import { Providers } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
@@ -36,10 +36,10 @@ export class FakeOauthStrategy extends PassportStrategy(
     }
 
     authenticate(request: e.Request, options?: any) {
-        options.state = request.query['state'];
+        options.state = request.query.state;
         // Pass the user parameter to the OAuth provider for auto-login
-        if (request.query['user']) {
-            options.user = request.query['user'];
+        if (request.query.user) {
+            options.user = request.query.user;
         }
         super.authenticate(request, options);
     }

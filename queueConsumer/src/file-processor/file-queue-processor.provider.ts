@@ -1,5 +1,5 @@
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import { FileLocation } from '@common/frontend_shared/enum';
+import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { FileLocation } from '@kleinkram/shared';
 import { Process, Processor } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';

@@ -1,26 +1,25 @@
 FROM node:24-alpine
 
-COPY ./queueConsumer/package.json /usr/src/queueConsumer/
-COPY ./queueConsumer/yarn.lock /usr/src/queueConsumer/
-COPY ./common/package.json /usr/src/common/
-COPY ./common/yarn.lock /usr/src/common/
+COPY package.json yarn.lock ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/backend-common/package.json ./packages/backend-common/
+COPY queueConsumer/package.json ./queueConsumer/
 
-WORKDIR /usr/src/queueConsumer
-RUN yarn --immutable
+RUN yarn install --frozen-lockfile
+
 RUN wget https://github.com/foxglove/mcap/releases/download/releases%2Fmcap-cli%2Fv0.0.42/mcap-linux-amd64 -O /usr/local/bin/mcap \
     && chmod +x /usr/local/bin/mcap \
     && apk add --no-cache crane --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
-WORKDIR /usr/src/common
-RUN yarn --immutable
-
 # copy the rest of the files
-COPY ./queueConsumer /usr/src/queueConsumer
-COPY ./common /usr/src/common
+WORKDIR /usr/src/app
+COPY packages ./packages
+COPY queueConsumer ./queueConsumer
 
-WORKDIR /usr/src/queueConsumer
+WORKDIR /usr/src/app/queueConsumer
+ENV PATH /usr/src/app/node_modules/.bin:$PATH
 RUN yarn build
 
 # build the app
-WORKDIR /usr/src/queueConsumer
+WORKDIR /usr/src/app/queueConsumer
 CMD ["yarn", "start:prod"]

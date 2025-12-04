@@ -29,8 +29,8 @@
 </template>
 
 <script setup lang="ts">
-import { FileEventDto } from '@api/types/file/file-event.dto';
-import { FileEventType } from '@common/enum';
+import { FileEventDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import { FileEventType } from '@kleinkram/shared';
 
 defineProps<{
     event: FileEventDto;

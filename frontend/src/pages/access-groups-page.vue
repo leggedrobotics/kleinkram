@@ -120,10 +120,10 @@ import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/date-formating';
 import { computed, Ref, ref, watch } from 'vue';
 
-import { AccessGroupDto } from '@api/types/access-control/access-group.dto';
-import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
-import { AccessGroupType } from '@common/enum';
+import { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
+import { ProjectWithMissionsDto } from '@kleinkram/api-dto/types/project/project-with-missions.dto';
+import { AccessGroupType } from '@kleinkram/shared';
 import DeleteAccessGroup from 'components/button-wrapper/delete-access-group.vue';
 import CreateAccessGroupDialogOpener from 'components/button-wrapper/dialog-opener-create-access-group.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';

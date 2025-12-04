@@ -187,7 +187,7 @@
 </template>
 
 <script setup lang="ts">
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';

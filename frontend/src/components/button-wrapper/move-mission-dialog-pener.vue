@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import { useQuasar } from 'quasar';
 import MoveMission from 'src/dialogs/modify-mission-location-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';

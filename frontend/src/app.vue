@@ -2,7 +2,7 @@
     <router-view />
 </template>
 <script setup lang="ts">
-import { FileUploadDto } from '@api/types/upload.dto';
+import { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { provide, Ref, ref } from 'vue';
 
 const uploads: Ref<Ref<FileUploadDto>[]> = ref([]);

@@ -108,8 +108,8 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import { FileUploadDto } from '@api/types/upload.dto';
+import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import SelectMissionTags from 'components/select-mission-tags.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';

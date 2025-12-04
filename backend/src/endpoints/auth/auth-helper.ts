@@ -1,10 +1,10 @@
-import File from '@common/entities/file/file.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UserRole } from '@common/frontend_shared/enum';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+import File from '@kleinkram/backend-common/entities/file/file.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
+import { UserRole } from '@kleinkram/shared';
 import { Brackets, SelectQueryBuilder } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 

@@ -340,9 +340,9 @@
 </template>
 
 <script setup lang="ts">
-import { CategoryDto } from '@api/types/category.dto';
-import { TagDto } from '@api/types/tags/tags.dto';
-import { DataType, FileType, HealthStatus } from '@common/enum';
+import { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
+import { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import { DataType, FileType, HealthStatus } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { copyToClipboard, Notify, useQuasar } from 'quasar';
 import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
@@ -358,8 +358,8 @@ import { deleteFiles } from 'src/services/mutations/file';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
@@ -377,12 +377,11 @@ import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import ExplorerPageFilesTable from 'components/explorer-page/explorer-page-files-table.vue';
 import ExplorerPageTableHeader from 'components/explorer-page/explorer-page-table-header.vue';
-import FileTypeSelector, {
-    FileTypeOption,
-} from 'components/file-type-selector.vue';
+import FileTypeSelector from 'components/file-type-selector.vue';
 import TitleSection from 'components/title-section.vue';
 import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
+import { FileTypeOption } from 'src/types/file-type-option';
 
 const queryClient = useQueryClient();
 const handler = useHandler();

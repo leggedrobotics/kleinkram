@@ -43,14 +43,14 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { CategoryDto } from '@api/types/category.dto';
+import { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { addManyCategories } from 'src/services/mutations/categories';
 import { Ref, ref } from 'vue';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import CategoryCreator from 'components/category-creator.vue';
 import CategorySelector from 'components/category-selector.vue';
 

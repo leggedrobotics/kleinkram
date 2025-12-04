@@ -1,8 +1,8 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupRights } from '@common/frontend_shared/enum';
+import { AccessGroupRights } from '@kleinkram/backend-common';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import ProjectEntity from '@kleinkram/backend-common/project/project.entity';
 import { HeaderCreator } from '../../utils/api-calls';
 import { clearAllData, database } from '../../utils/database-utilities';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
@@ -98,7 +98,7 @@ describe('Verify project user/admin access', () => {
                         ],
                     }),
                 );
-                return project['uuid'];
+                return project.uuid;
             }),
         );
         const projects = await projectRepository.find();
@@ -159,7 +159,7 @@ describe('Verify project user/admin access', () => {
 
             expect(response.status).toBe(200);
             const json = await response.json();
-            expect(json['name']).toBe(`test_project${index + 1}`);
+            expect(json.name).toBe(`test_project${index + 1}`);
         }
     });
 
@@ -181,7 +181,7 @@ describe('Verify project user/admin access', () => {
 
             expect(response.status).toBe(200);
             const json = await response.json();
-            expect(json['name']).toBe(`newName${index}`);
+            expect(json.name).toBe(`newName${index}`);
         }
     });
 
@@ -224,7 +224,7 @@ describe('Verify project user/admin access', () => {
                         project: project,
                     }),
                 );
-                return mission['uuid'];
+                return mission.uuid;
             }),
         );
 

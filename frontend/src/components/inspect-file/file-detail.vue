@@ -131,7 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileState, FileType } from '@common/enum';
+import { FileState, FileType } from '@kleinkram/shared';
 import { copyToClipboard, Notify } from 'quasar';
 import { useRosmsgPreview } from 'src/composables/use-rosmsg-preview';
 import {

@@ -25,8 +25,8 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import { FileUploadDto } from '@api/types/upload.dto';
+import { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import CreateFile from 'components/create-file.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
@@ -46,7 +46,9 @@ defineProps<{
 
 const createFileAction = (): void => {
     if (createFileReference.value === undefined) return;
-    createFileReference.value.createFileAction();
+    if (createFileReference.value) {
+        (createFileReference.value as any).createFileAction();
+    }
     onDialogOK();
 };
 </script>

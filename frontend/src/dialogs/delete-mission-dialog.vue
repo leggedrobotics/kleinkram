@@ -43,7 +43,9 @@ const { data: mission } = useMission(computed(() => missionUuid));
 
 const deleteMissionAction = (): void => {
     if (deleteMissionReference.value === undefined) return;
-    deleteMissionReference.value.deleteMissionAction();
+    if (deleteMissionReference.value) {
+        (deleteMissionReference.value as any).deleteMissionAction();
+    }
     onDialogOK();
 };
 </script>

@@ -1,34 +1,30 @@
 {
+    "extends": "../tsconfig.base.json",
     "compilerOptions": {
-        "strict": true,
-        "exactOptionalPropertyTypes": true,
-        "strictNullChecks": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noUncheckedIndexedAccess": true,
-        "declaration": true,
-        "esModuleInterop": true,
-        "removeComments": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "allowSyntheticDefaultImports": true,
-        "sourceMap": true,
         "outDir": "./dist",
-        "baseUrl": "./",
-        "incremental": true,
-        "skipLibCheck": true,
-        "noImplicitAny": false,
-        "strictBindCallApply": false,
-        "forceConsistentCasingInFileNames": false,
-        "noFallthroughCasesInSwitch": false,
-        "module": "commonjs",
-        "moduleResolution": "node",
+        "rootDir": "./src",
+        "baseUrl": ".",
         "paths": {
-            "@common/*": ["../common/*"]
-        },
-        "target": "esnext",
-        "lib": ["esnext", "dom"]
+            "@/*": ["src/*"],
+            "@kleinkram/backend-common/*": ["../packages/backend-common/src/*"],
+            "@kleinkram/shared/*": ["../packages/shared/src/*"],
+            "@kleinkram/validation/*": ["../packages/validation/src/*"]
+        }
     },
-    "rules": {
-        "no-console": [true, "warning"]
-    }
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"],
+    "references": [
+        {
+            "path": "../packages/backend-common"
+        },
+        {
+            "path": "../packages/shared"
+        },
+        {
+            "path": "../packages/api-dto"
+        },
+        {
+            "path": "../packages/validation"
+        }
+    ]
 }

@@ -1,10 +1,10 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import AccountEntity from '@common/entities/auth/account.entity';
-import MetadataEntity from '@common/entities/metadata/metadata.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import { StorageModule } from '@common/modules/storage/storage.module';
+import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import AccountEntity from '@kleinkram/backend-common/entities/auth/account.entity';
+import MetadataEntity from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MissionService } from '../../services/mission.service';

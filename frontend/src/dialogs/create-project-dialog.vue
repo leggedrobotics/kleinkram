@@ -115,9 +115,9 @@
 <script setup lang="ts">
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 
-import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { AccessGroupType } from '@common/enum';
+import { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
+import { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import { AccessGroupType } from '@kleinkram/shared';
 import { useQueryClient } from '@tanstack/vue-query';
 import AccessRightsManager from 'components/configure-access-rights/access-rights-manager.vue';
 import ConfigureMetadata from 'components/configure-metadata.vue';

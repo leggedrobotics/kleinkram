@@ -39,8 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { FileDto } from '@api/types/file/file.dto';
-import { FileState } from '@common/enum';
+import { FileDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { FileState } from '@kleinkram/shared';
 import { computed } from 'vue';
 
 const props = defineProps<{

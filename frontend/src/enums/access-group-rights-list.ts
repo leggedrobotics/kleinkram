@@ -1,4 +1,4 @@
-import { AccessGroupRights } from '@common/enum';
+import { AccessGroupRights } from '@kleinkram/shared';
 
 export const accessGroupRightsList: AccessGroupRights[] = Object.values(
     AccessGroupRights,

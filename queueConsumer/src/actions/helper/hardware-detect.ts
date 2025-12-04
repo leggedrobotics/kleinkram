@@ -1,4 +1,4 @@
-import WorkerEntity from '@common/entities/worker/worker.entity';
+import WorkerEntity from '@kleinkram/backend-common/entities/worker/worker.entity';
 import Docker from 'dockerode';
 import fs from 'node:fs';
 import { promisify } from 'node:util';

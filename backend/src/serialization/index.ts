@@ -1,30 +1,29 @@
-import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
-import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import MetadataEntity from '@common/entities/metadata/metadata.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import TopicEntity from '@common/entities/topic/topic.entity';
+import GroupMembershipEntity from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import ProjectAccessEntity from '@kleinkram/backend-common/entities/auth/project-access.entity';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import MetadataEntity from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
 
-import { GroupMembershipDto } from '@common/api/types/access-control/group-membership.dto';
-import { FileDto, FileWithTopicDto } from '@common/api/types/file/file.dto';
 import {
+    FileDto,
+    FileWithTopicDto,
     FlatMissionDto,
+    GroupMembershipDto,
     MinimumMissionDto,
     MissionDto,
     MissionWithCreatorDto,
     MissionWithFilesDto,
-} from '@common/api/types/mission/mission.dto';
-import { ProjectDto } from '@common/api/types/project/base-project.dto';
-import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
-import { TagDto, TagTypeDto } from '@common/api/types/tags/tags.dto';
-import { TopicDto } from '@common/api/types/topic.dto';
-import {
-    AccessGroupRights,
-    AccessGroupType,
-} from '@common/frontend_shared/enum';
+    ProjectDto,
+    ProjectWithMissionsDto,
+    ProjectWithRequiredTagsDto,
+    TagDto,
+    TagTypeDto,
+    TopicDto,
+} from '@kleinkram/api-dto';
+import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import { userEntityToDto } from './user';
 
 export const missionEntityToDto = (mission: MissionEntity): MissionDto => {

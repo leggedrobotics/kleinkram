@@ -36,7 +36,7 @@
             </div>
 
             <div v-if="messages.length === 0" class="row q-col-gutter-md">
-                <div class="col-12" v-for="i in 2" :key="i">
+                <div v-for="i in 2" :key="i" class="col-12">
                     <!-- Skeleton ... -->
                     <div
                         class="skeleton-graph rounded-borders overflow-hidden relative-position"

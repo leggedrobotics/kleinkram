@@ -1,10 +1,9 @@
-import { SortOrder } from '@common/api/types/pagination';
-import { UpdateFile } from '@common/api/types/update-file.dto';
-import ActionEntity from '@common/entities/action/action.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import env from '@common/environment';
+import { SortOrder, UpdateFile } from '@kleinkram/api-dto';
+import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
+import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import env from '@kleinkram/backend-common/environment';
 import {
     DataType,
     FileEventType,
@@ -13,7 +12,7 @@ import {
     FileType,
     HealthStatus,
     UserRole,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/shared';
 import {
     BadRequestException,
     Injectable,
@@ -41,21 +40,21 @@ import {
 } from './utilities';
 
 import {
+    FileEventsDto,
     FileExistsResponseDto,
+    FilesDto,
+    FileWithTopicDto,
+    StorageOverviewDto,
     TemporaryFileAccessesDto,
-} from '@common/api/types/file/access.dto';
-import { FileEventsDto } from '@common/api/types/file/file-event.dto';
-import { FileWithTopicDto } from '@common/api/types/file/file.dto';
-import { FilesDto } from '@common/api/types/file/files.dto';
-import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { FileAuditService } from '@common/audit/file-audit.service';
-import { redis } from '@common/consts';
-import CategoryEntity from '@common/entities/category/category.entity';
-import FileEventEntity from '@common/entities/file/file-event.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { StorageService } from '@common/modules/storage/storage.service';
+} from '@kleinkram/api-dto';
+import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
+import { redis } from '@kleinkram/backend-common/consts';
+import CategoryEntity from '@kleinkram/backend-common/entities/category/category.entity';
+import FileEventEntity from '@kleinkram/backend-common/entities/file/file-event.entity';
+import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import Queue from 'bull';
 import Credentials from 'minio/dist/main/Credentials';
 import { BucketItem } from 'minio/dist/main/internal/type';
@@ -621,7 +620,7 @@ export class FileService implements OnModuleInit {
             .leftJoin('tag.tagType', 'tagtype');
 
         const tagWhereClauses: string[] = [];
-        const tagParameters = {};
+        const tagParameters: Record<string, any> = {};
         let validTagCount = 0;
 
         for (const uuid of tagTypeUUIDs) {
@@ -1209,14 +1208,13 @@ export class FileService implements OnModuleInit {
                     error: string | null;
                     queueUUID?: string;
                 } = {
-                    // eslint-disable-next-line unicorn/no-null
                     bucket: null,
                     fileName: filename,
-                    // eslint-disable-next-line unicorn/no-null
+
                     fileUUID: null,
-                    // eslint-disable-next-line unicorn/no-null
+
                     accessCredentials: null,
-                    // eslint-disable-next-line unicorn/no-null
+
                     error: null,
                 };
 

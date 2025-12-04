@@ -19,8 +19,8 @@
         </div>
 
         <div
-            class="graph-wrapper bg-grey-1 rounded-borders"
             ref="graphContainer"
+            class="graph-wrapper bg-grey-1 rounded-borders"
             @mousemove="onMouseMove"
             @mouseleave="onMouseLeave"
         >

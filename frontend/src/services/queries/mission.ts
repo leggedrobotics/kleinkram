@@ -1,7 +1,7 @@
 import {
     MissionsDto,
     MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
+} from '@kleinkram/api-dto/types/mission/mission.dto';
 import { AxiosResponse } from 'axios';
 import qs from 'qs';
 import axios from 'src/api/axios';
