@@ -17,7 +17,7 @@ export class TagTypeEntity extends BaseEntity {
 
     @ManyToMany(() => ProjectEntity, (project) => project.requiredTags)
     @JoinTable()
-    project?: ProjectEntity;
+    project?: ProjectEntity[];
 
     @OneToMany(() => MetadataEntity, (tag) => tag.tagType)
     tags?: MetadataEntity[];

@@ -9,6 +9,7 @@ import { Providers, UserRole } from '@kleinkram/shared';
 import jwt from 'jsonwebtoken';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import process from 'node:process';
 import { DataSource } from 'typeorm';
 import {
@@ -55,8 +56,8 @@ export const mockDatabaseUser = async (
     role: UserRole = UserRole.USER,
 ): Promise<string> => {
     // read config from access_config.json
-
-    const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
+    const configPath = path.join(__dirname, '../../src/access_config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     const accessGroupRepository = database.getRepository(AccessGroupEntity);
     const groupMembershipRepository = database.getRepository(
         GroupMembershipEntity,

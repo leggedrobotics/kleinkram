@@ -5,9 +5,7 @@ module.exports = {
         '^.+\\.[tj]sx?$': [
             'ts-jest',
             {
-                tsconfig: {
-                    allowJs: true,
-                },
+                tsconfig: 'tsconfig.test.json',
             },
         ],
     },

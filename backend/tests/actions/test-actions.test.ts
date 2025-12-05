@@ -183,6 +183,11 @@ describe('Verify Action (Templates & Runs)', () => {
         }
     });
 
+    afterAll(async () => {
+        await clearAllData();
+        await database.destroy();
+    });
+
     test('if a internal user with rights can create a action template', async () => {
         // Verification is essentially done in beforeEach, but we verify DB state here
         const templateRepository =

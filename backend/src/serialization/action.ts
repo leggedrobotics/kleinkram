@@ -5,8 +5,31 @@ import {
     DockerImageDto,
 } from '@kleinkram/api-dto';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import { actionTemplateEntityToDto } from './action-template';
 import { missionEntityToDto, userEntityToDto } from './index';
+
+const workerEntityToDto = (
+    worker: WorkerEntity | null | undefined,
+): ActionWorkerDto | null => {
+    if (!worker) return null;
+
+    return {
+        uuid: worker.uuid,
+        createdAt: worker.createdAt,
+        updatedAt: worker.updatedAt,
+        identifier: worker.identifier,
+        hostname: worker.hostname,
+        cpuMemory: worker.cpuMemory,
+        gpuModel: worker.gpuModel ?? null,
+        gpuMemory: worker.gpuMemory,
+        cpuCores: worker.cpuCores,
+        cpuModel: worker.cpuModel,
+        storage: worker.storage,
+        lastSeen: worker.lastSeen,
+        reachable: worker.reachable,
+    };
+};
 
 export const actionEntityToDto = (action: ActionEntity): ActionDto => {
     if (action.creator === undefined) {
@@ -37,6 +60,6 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         template: actionTemplateEntityToDto(action.template),
         updatedAt: action.updatedAt,
         uuid: action.uuid,
-        worker: action.worker as ActionWorkerDto,
+        worker: workerEntityToDto(action.worker) as ActionWorkerDto,
     };
 };

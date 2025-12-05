@@ -1,4 +1,10 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare global {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    interface GlobalThis {
+        [key: string]: any;
+    }
+
     var creator: any;
     var user: any;
     var externalUser: any;
