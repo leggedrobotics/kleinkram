@@ -33,6 +33,7 @@ services:
                   ignore:
                       - node_modules/
                       - dist/
+                      - tests/
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
