@@ -1,9 +1,8 @@
-import ActionTemplateEntity from '@backend-common/entities/action/action-template.entity';
-import ApikeyEntity from '@backend-common/entities/auth/apikey.entity';
-import BaseEntity from '@backend-common/entities/base-entity.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
-import WorkerEntity from '@backend-common/entities/worker/worker.entity';
+import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
+import { ApikeyEntity } from '@backend-common/entities/auth/apikey.entity';
+import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { RuntimeDescription } from '@backend-common/types';
 import {
     ActionState,
@@ -12,6 +11,7 @@ import {
     LogType,
 } from '@kleinkram/shared';
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import { WorkerEntity } from '../worker/worker.entity';
 
 export interface ContainerLog {
     timestamp: string;
@@ -41,8 +41,8 @@ export interface SubmittedAction {
 }
 
 @Entity({ name: 'action' })
-export default class ActionEntity extends BaseEntity {
-    @Column()
+export class ActionEntity extends BaseEntity {
+    @Column({ type: 'enum', enum: ActionState })
     state!: ActionState;
 
     @Column({ type: 'json', nullable: true })
@@ -72,7 +72,7 @@ export default class ActionEntity extends BaseEntity {
     logs?: ContainerLog[];
 
     @Column({ type: 'json', nullable: true, default: [] })
-    auditLogs?: any[];
+    auditLogs?: unknown[];
 
     @Column({ nullable: true })
     exit_code?: number;
@@ -80,7 +80,12 @@ export default class ActionEntity extends BaseEntity {
     @Column({ nullable: true })
     artifact_path?: string;
 
-    @Column({ nullable: false, default: ArtifactState.AWAITING_ACTION })
+    @Column({
+        type: 'enum',
+        enum: ArtifactState,
+        nullable: false,
+        default: ArtifactState.AWAITING_ACTION,
+    })
     artifacts!: ArtifactState;
 
     @Column({ nullable: true })

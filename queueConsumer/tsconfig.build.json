@@ -3,8 +3,8 @@
     "exclude": ["node_modules", "tests", "dist", "**/*spec.ts"],
     "include": ["src/**/*", "../packages/**/*"],
     "compilerOptions": {
-        "rootDir": "..",
-        "baseUrl": "."
+        "baseUrl": ".",
+        "rootDir": ".."
     },
     "references": []
 }

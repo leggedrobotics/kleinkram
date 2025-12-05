@@ -6,6 +6,7 @@ import { FileState, FileType } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+    IsBoolean,
     IsDate,
     IsEnum,
     IsNumber,
@@ -100,7 +101,18 @@ export class FileWithTopicDto extends FileDto {
 
     // additional properties only used in frontend
     // TODO: extract them in a subclass
+    @ApiProperty()
+    @IsOptional()
+    @IsNumber()
     uploaded?: number;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsBoolean()
     canceled?: boolean;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
     missionUUID?: string;
 }

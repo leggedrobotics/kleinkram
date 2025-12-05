@@ -6,20 +6,17 @@
     "author": "Johann Schwabe <johann@schwabe.dev>",
     "license": "MIT",
     "private": true,
-    "workspaces": [
-        "packages/*",
-        "backend",
-        "frontend",
-        "queueConsumer"
-    ],
     "scripts": {
         "start": "docker compose up --build -d",
+        "start:infra": "docker compose up -d database minio redis",
+        "stop:infra": "docker compose stop database minio redis",
+        "dev": "pnpm start:infra && dotenv -e .env -- pnpm --parallel --filter \"./backend\" --filter \"./frontend\" --filter \"./queueConsumer\" run start:dev",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
         "type-check": "tsc -b",
-        "eslint": "yarn run type-check && yarn run lint",
-        "eslint:check": "yarn run type-check && yarn run lint:check",
-        "tsc:check": "yarn run type-check",
+        "eslint": "pnpm run type-check && pnpm run lint",
+        "eslint:check": "pnpm run type-check && pnpm run lint:check",
+        "tsc:check": "pnpm run type-check",
         "prettier": "prettier --write .",
         "prettier:check": "prettier --check .",
         "bump": "grunt bumpVersion",
@@ -58,5 +55,8 @@
         "vite-plugin-top-level-await": "^1.6.0",
         "vite-plugin-wasm": "^3.5.0"
     },
-    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+    "engines": {
+        "node": ">=22"
+    },
+    "packageManager": "pnpm@10.24.0"
 }

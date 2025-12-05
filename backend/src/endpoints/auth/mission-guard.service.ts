@@ -1,7 +1,7 @@
-import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
-import MetadataEntity from '@kleinkram/backend-common/entities/metadata/metadata.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';

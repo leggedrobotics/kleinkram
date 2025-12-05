@@ -1,9 +1,9 @@
-import AccessGroupEntity from '@backend-common/entities/auth/accessgroup.entity';
-import ProjectAccessEntity from '@backend-common/entities/auth/project-access.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@backend-common/entities/project/project.entity';
-import TagTypeEntity from '@backend-common/entities/tagType/tag-type.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@backend-common/entities/project/project.entity';
+import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupType } from '@kleinkram/shared';
 import { Connection } from 'typeorm';
 import { Factory } from 'typeorm-seeding';

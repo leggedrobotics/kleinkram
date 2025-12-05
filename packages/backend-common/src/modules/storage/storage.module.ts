@@ -1,7 +1,7 @@
 import { FileAuditService } from '@backend-common/audit/file-audit.service';
-import FileEventEntity from '@backend-common/entities/file/file-event.entity';
-import FileEntity from '@backend-common/entities/file/file.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
+import { FileEventEntity } from '@backend-common/entities/file/file-event.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { StorageAuthService } from '@backend-common/modules/storage/storage-auth.service';
 import { MinioClientFactory } from '@backend-common/modules/storage/storage-config.factory';
 import { StorageMetricsService } from '@backend-common/modules/storage/storage-metrics.service';

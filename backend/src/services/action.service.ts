@@ -8,10 +8,10 @@ import {
     SubmitActionDto,
     SubmitActionMulti,
 } from '@kleinkram/api-dto';
-import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
-import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';

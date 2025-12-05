@@ -1,4 +1,4 @@
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { Connection } from 'typeorm';
 
 export const seedActionTemplates = async (

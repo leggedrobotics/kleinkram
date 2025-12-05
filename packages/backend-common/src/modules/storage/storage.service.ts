@@ -2,7 +2,9 @@ import { StorageAuthService } from '@backend-common/modules/storage/storage-auth
 import { StorageMetricsService } from '@backend-common/modules/storage/storage-metrics.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { BucketItemStat, Client, ItemBucketMetadata } from 'minio';
+// @ts-ignore
 import Credentials from 'minio/dist/main/Credentials';
+// @ts-ignore
 import { BucketItem, TaggingOpts, Tags } from 'minio/dist/main/internal/type';
 import { Stream } from 'node:stream';
 

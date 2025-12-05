@@ -1,6 +1,6 @@
 import { CreateProject } from '@kleinkram/api-dto';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     BadRequestException,
     ConflictException,
@@ -28,10 +28,10 @@ import {
     ResentProjectDto,
     SortOrder,
 } from '@kleinkram/api-dto';
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import ProjectAccessEntity from '@kleinkram/backend-common/entities/auth/project-access.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -40,6 +40,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import {
+    projectEntityToDto,
     projectEntityToDtoWithMissionCountAndTags,
     projectEntityToDtoWithRequiredTags,
 } from '../serialization';
@@ -369,9 +370,10 @@ export class ProjectService {
             },
         );
 
-        return (await this.projectRepository.findOneOrFail({
+        const createdProject = await this.projectRepository.findOneOrFail({
             where: { uuid: transactedProject.uuid },
-        })) as unknown as ProjectDto;
+        });
+        return projectEntityToDto(createdProject);
     }
 
     async update(uuid: string, project: CreateProject): Promise<ProjectDto> {
@@ -391,9 +393,10 @@ export class ProjectService {
                 ? {}
                 : { autoConvert: project.autoConvert }),
         });
-        return (await this.projectRepository.findOneOrFail({
+        const updatedProject = await this.projectRepository.findOneOrFail({
             where: { uuid },
-        })) as unknown as ProjectDto;
+        });
+        return projectEntityToDto(updatedProject);
     }
 
     async addTagType(uuid: string, tagTypeUUID: string): Promise<void> {

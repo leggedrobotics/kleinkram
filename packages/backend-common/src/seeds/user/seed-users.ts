@@ -1,5 +1,5 @@
-import AccessGroupEntity from '@backend-common/entities/auth/accessgroup.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupFactoryContext } from '@backend-common/factories/auth/accessgroup.factory';
 import { UserContext } from '@backend-common/factories/user/user.factory';
 import { UserRole } from '@kleinkram/shared';

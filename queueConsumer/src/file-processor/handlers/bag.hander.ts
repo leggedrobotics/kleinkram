@@ -5,8 +5,8 @@ import * as fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import { Repository } from 'typeorm';
 
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import env from '@kleinkram/backend-common/environment';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {
@@ -18,7 +18,7 @@ import {
 } from '@kleinkram/shared';
 import logger from '../../logger';
 
-import FileEventEntity from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { calculateFileHash } from '../helper/hash-helper';
 import { FileHandler, FileProcessingContext } from './file-handler.interface';
 import { McapMetadataService } from './mcap-metadata.service';

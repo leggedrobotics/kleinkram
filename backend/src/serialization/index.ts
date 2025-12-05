@@ -1,13 +1,14 @@
-import GroupMembershipEntity from '@kleinkram/backend-common/entities/auth/group-membership.entity';
-import ProjectAccessEntity from '@kleinkram/backend-common/entities/auth/project-access.entity';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import MetadataEntity from '@kleinkram/backend-common/entities/metadata/metadata.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
-import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
-import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
+import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 
 import {
+    CurrentAPIUserDto,
     FileDto,
     FileWithTopicDto,
     FlatMissionDto,
@@ -22,9 +23,39 @@ import {
     TagDto,
     TagTypeDto,
     TopicDto,
+    UserDto,
 } from '@kleinkram/api-dto';
-import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
-import { userEntityToDto } from './user';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '@kleinkram/shared';
+
+export const userEntityToDto = (
+    user: UserEntity,
+    includeEmail = false,
+): UserDto => {
+    return {
+        uuid: user.uuid,
+        name: user.name,
+        avatarUrl: user.avatarUrl ?? null,
+        email: includeEmail && user.email ? user.email : null,
+    };
+};
+
+export const userEntityToCurrentAPIUserDto = (
+    user: UserEntity,
+): CurrentAPIUserDto => {
+    return {
+        ...userEntityToDto(user, true),
+        role: user.role ?? UserRole.USER,
+        memberships:
+            user.memberships?.map((m) =>
+                groupMembershipEntityToDto(m, false, user),
+            ) ?? [],
+    };
+};
 
 export const missionEntityToDto = (mission: MissionEntity): MissionDto => {
     if (!mission.project) {
@@ -190,8 +221,17 @@ export const projectAccessEntityToDto = (
 export const groupMembershipEntityToDto = (
     groupMembership: GroupMembershipEntity,
     includeEmail = false,
+    userOverride?: UserEntity,
 ): GroupMembershipDto => {
-    if (groupMembership.user === undefined) {
+    const user = groupMembership.user ?? userOverride;
+    console.log('groupMembershipEntityToDto debug:', {
+        gmUuid: groupMembership.uuid,
+        hasUser: !!groupMembership.user,
+        hasOverride: !!userOverride,
+        resolvedUser: !!user,
+    });
+
+    if (user === undefined) {
         throw new Error('Member can never be undefined');
     }
 
@@ -202,7 +242,7 @@ export const groupMembershipEntityToDto = (
         createdAt: groupMembership.createdAt,
         updatedAt: groupMembership.updatedAt,
         expirationDate: groupMembership.expirationDate ?? null,
-        user: userEntityToDto(groupMembership.user, includeEmail),
+        user: userEntityToDto(user, includeEmail),
     };
 };
 

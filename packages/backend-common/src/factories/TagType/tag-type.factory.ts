@@ -1,4 +1,4 @@
-import TagTypeEntity from '@backend-common/entities/tagType/tag-type.entity';
+import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { define } from 'typeorm-seeding';
 

@@ -1,4 +1,4 @@
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { FileState } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';

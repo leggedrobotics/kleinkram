@@ -1,7 +1,8 @@
-import ActionEntity, {
+import {
+    ActionEntity,
     SubmittedAction,
 } from '@kleinkram/backend-common/entities/action/action.entity';
-import WorkerEntity from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import { ActionState, ArtifactState } from '@kleinkram/shared';
 import {
     InjectQueue,
@@ -99,7 +100,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             await this.actionRepository
                 .createQueryBuilder()
                 .update()
-                .set({ worker: this.worker })
+                .set({ worker: { uuid: this.worker.uuid } })
                 .where('uuid = :uuid', { uuid: action.uuid })
                 .execute();
             logger.warn(

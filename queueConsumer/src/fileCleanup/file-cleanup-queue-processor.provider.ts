@@ -1,8 +1,8 @@
 import { redis } from '@kleinkram/backend-common/consts';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
@@ -60,7 +60,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
     onModuleInit(): void {
         const redisClient = new Redis(redis);
-        this.redlock = new Redlock([redisClient], {
+        this.redlock = new Redlock([redisClient as any], {
             retryCount: 0,
             retryDelay: 200, // Time in ms between retries
         });
@@ -116,6 +116,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
     @Cron(CronExpression.EVERY_DAY_AT_3AM)
     async fixFileHashes(): Promise<void> {
         await this.redlock
+            // @ts-ignore
             .using([`lock:hash-repair`], 10_000, async () => {
                 logger.debug('Fixing file hashes');
 
@@ -173,6 +174,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
     @Cron(CronExpression.EVERY_DAY_AT_1AM)
     async cleanupFailedUploads(): Promise<void> {
         await this.redlock
+            // @ts-ignore
             .using([`lock:cleanup-failed-uploads`], 10_000, async () => {
                 logger.debug('Cleaning up failed uploads');
                 const failedUploads = await this.fileRepository.find({

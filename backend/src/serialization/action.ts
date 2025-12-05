@@ -4,10 +4,9 @@ import {
     AuditLogDto,
     DockerImageDto,
 } from '@kleinkram/api-dto';
-import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { actionTemplateEntityToDto } from './action-template';
-import { missionEntityToDto } from './index';
-import { userEntityToDto } from './user';
+import { missionEntityToDto, userEntityToDto } from './index';
 
 export const actionEntityToDto = (action: ActionEntity): ActionDto => {
     if (action.creator === undefined) {

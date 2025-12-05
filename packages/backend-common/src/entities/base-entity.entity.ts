@@ -11,7 +11,7 @@ import {
  * Includes unique UUID, as well as creation/modification/deletion timestamps
  */
 @Entity()
-export default class BaseEntity {
+export class BaseEntity {
     /**
      * Unique UUID for the entity
      */

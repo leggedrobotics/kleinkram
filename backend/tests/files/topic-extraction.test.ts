@@ -1,5 +1,5 @@
-import FileEntity from '@kleinkram/backend-common/file/file.entity';
-import TopicEntity from '@kleinkram/backend-common/topic/topic.entity';
+import { FileEntity } from '@kleinkram/backend-common/file/file.entity';
+import { TopicEntity } from '@kleinkram/backend-common/topic/topic.entity';
 import { DEFAULT_URL } from '../auth/utilities';
 import { getAuthHeaders, uploadFile } from '../utils/api-calls';
 import { database } from '../utils/database-utilities';

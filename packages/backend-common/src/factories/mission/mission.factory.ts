@@ -1,6 +1,6 @@
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@backend-common/entities/project/project.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@backend-common/entities/project/project.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { define } from 'typeorm-seeding';
 

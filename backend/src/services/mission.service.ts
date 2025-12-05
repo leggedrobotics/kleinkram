@@ -5,10 +5,10 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@kleinkram/api-dto';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
-import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import { UserRole } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
@@ -409,7 +409,7 @@ export class MissionService {
         }
 
         await this.missionRepository.update(missionUUID, {
-            project: project,
+            project: { uuid: project.uuid } as ProjectEntity,
         });
 
         if (mission.files === undefined) throw new Error('Files not loaded');

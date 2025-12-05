@@ -1,8 +1,8 @@
-import BaseEntity from '@backend-common/entities/base-entity.entity';
-import CategoryEntity from '@backend-common/entities/category/category.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import TopicEntity from '@backend-common/entities/topic/topic.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { CategoryEntity } from '@backend-common/entities/category/category.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { FileOrigin, FileState, FileType } from '@kleinkram/shared';
 import {
     Column,
@@ -16,7 +16,7 @@ import {
 
 @Entity({ name: 'file_entity' })
 @Unique('unique_file_name_per_mission', ['filename', 'mission'])
-export default class FileEntity extends BaseEntity {
+export class FileEntity extends BaseEntity {
     @ManyToOne(() => MissionEntity, (mission) => mission.files, {
         nullable: false,
     })
@@ -46,10 +46,10 @@ export default class FileEntity extends BaseEntity {
     @ManyToOne(() => UserEntity, (user) => user.files, { nullable: false })
     creator?: UserEntity;
 
-    @Column()
+    @Column({ type: 'enum', enum: FileType })
     type!: FileType;
 
-    @Column({ default: FileState.OK })
+    @Column({ type: 'enum', enum: FileState, default: FileState.OK })
     state!: FileState;
 
     @Column({ nullable: true })
@@ -75,6 +75,6 @@ export default class FileEntity extends BaseEntity {
     @OneToMany(() => FileEntity, (file) => file.parent)
     derivedFiles?: FileEntity[];
 
-    @Column({ nullable: true })
+    @Column({ type: 'enum', enum: FileOrigin, nullable: true })
     origin?: FileOrigin;
 }

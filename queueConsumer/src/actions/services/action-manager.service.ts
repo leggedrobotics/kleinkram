@@ -1,8 +1,9 @@
-import ActionEntity, {
+import {
+    ActionEntity,
     ContainerLog,
     Image,
 } from '@kleinkram/backend-common/entities/action/action.entity';
-import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { ActionState, ArtifactState, KeyTypes } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';

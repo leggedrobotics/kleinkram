@@ -11,8 +11,8 @@ import {
     RemoveAccessGroupFromProjectDto,
     SetAccessGroupUserExpirationDto,
 } from '@kleinkram/api-dto';
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import {
     Body,
     ConflictException,

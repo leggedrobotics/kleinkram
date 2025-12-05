@@ -1,5 +1,5 @@
-import FileEventEntity from '@kleinkram/backend-common/entities/file/file-event.entity';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';

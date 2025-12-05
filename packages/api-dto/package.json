@@ -8,9 +8,21 @@
         "build": "tsc -b && tsc-alias -p tsconfig.json",
         "clean": "rm -rf dist"
     },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.js"
+        },
+        "./*": {
+            "types": "./dist/*.d.ts",
+            "import": "./dist/*.js",
+            "require": "./dist/*.js"
+        }
+    },
     "dependencies": {
-        "@kleinkram/shared": "0.56.0",
-        "@kleinkram/validation": "0.56.0",
+        "@kleinkram/shared": "workspace:*",
+        "@kleinkram/validation": "workspace:*",
         "@mcap/core": "^2.1.7",
         "@nestjs/swagger": "^8.0.0",
         "class-transformer": "^0.5.1",

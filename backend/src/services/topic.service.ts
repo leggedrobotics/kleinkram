@@ -1,6 +1,6 @@
 import { TopicNamesDto, TopicsDto } from '@kleinkram/api-dto';
-import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';

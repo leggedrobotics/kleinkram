@@ -80,7 +80,8 @@ export default tseslint.config(
             // --- Unicorn Overrides ---
             'unicorn/filename-case': [
                 'error',
-                { cases: { camelCase: true, pascalCase: true } },
+                // we use some-name-file.ts
+                { cases: { kebabCase: true } },
             ],
             'unicorn/no-null': 'off',
             'unicorn/prevent-abbreviations': [

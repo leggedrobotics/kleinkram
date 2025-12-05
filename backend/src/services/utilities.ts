@@ -1,7 +1,7 @@
 import { SortOrder } from '@kleinkram/api-dto';
-import File from '@kleinkram/backend-common/entities/file/file.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import { FileEntity as File } from '@kleinkram/backend-common/entities/file/file.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { MethodNotAllowedException } from '@nestjs/common';
 import { isValid, parseISO } from 'date-fns';
 import {

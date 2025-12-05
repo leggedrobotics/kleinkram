@@ -117,19 +117,6 @@ export default {
     get SERVER_PORT(): number {
         return asNumber(process.env.SERVER_PORT);
     },
-    /**
-     * @returns base url of frontend
-     */
-    get BASE_URL(): string {
-        return asString(process.env.BASE_URL);
-    },
-
-    /**
-     * @returns name of project
-     */
-    get PROJECT_NAME(): string {
-        return asString(process.env.PROJECT_NAME);
-    },
 
     get MINIO_ACCESS_KEY(): string {
         return asString(process.env.MINIO_ACCESS_KEY);

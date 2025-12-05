@@ -1,7 +1,7 @@
-import FileEventEntity from '@backend-common/entities/file/file-event.entity';
-import FileEntity from '@backend-common/entities/file/file.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { FileEventEntity } from '@backend-common/entities/file/file-event.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { FileEventType } from '@kleinkram/shared';
 import { define } from 'typeorm-seeding';
 

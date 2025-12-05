@@ -1,0 +1,19 @@
+packages:
+  - packages/*
+  - backend
+  - frontend
+  - queueConsumer
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@parcel/watcher'
+  - '@scarf/scarf'
+  - '@swc/core'
+  - better-sqlite3
+  - core-js
+  - cpu-features
+  - esbuild
+  - msgpackr-extract
+  - protobufjs
+  - ssh2
+  - vue-demi

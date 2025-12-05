@@ -1,7 +1,7 @@
-import CategoryEntity from '@backend-common/entities/category/category.entity';
-import FileEntity from '@backend-common/entities/file/file.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { CategoryEntity } from '@backend-common/entities/category/category.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { FileState, FileType } from '@kleinkram/shared';
 import { define } from 'typeorm-seeding';

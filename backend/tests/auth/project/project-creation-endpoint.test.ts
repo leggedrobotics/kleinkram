@@ -2,10 +2,10 @@ import { database } from '../../utils/database-utilities';
 import { setupDatabaseHooks } from '../../utils/test-helpers';
 
 import { AccessGroupRights } from '@kleinkram/backend-common';
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
-import ProjectEntity from '@kleinkram/backend-common/project/project.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/project/project.entity';
 import {
     createMissionUsingPost,
     createProjectUsingPost,

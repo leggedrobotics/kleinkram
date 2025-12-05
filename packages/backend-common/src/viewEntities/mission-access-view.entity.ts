@@ -1,4 +1,4 @@
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { AccessGroupRights } from '@kleinkram/shared';
 import type { DataSource } from 'typeorm';
 import { ViewColumn, ViewEntity } from 'typeorm';

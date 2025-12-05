@@ -1,5 +1,5 @@
-import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 /**

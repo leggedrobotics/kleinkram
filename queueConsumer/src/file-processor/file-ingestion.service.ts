@@ -6,8 +6,8 @@ import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Repository } from 'typeorm';
 
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import env from '@kleinkram/backend-common/environment';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {

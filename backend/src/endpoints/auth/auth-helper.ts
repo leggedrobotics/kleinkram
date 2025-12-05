@@ -1,7 +1,7 @@
-import File from '@kleinkram/backend-common/entities/file/file.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { FileEntity as File } from '@kleinkram/backend-common/entities/file/file.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import { UserRole } from '@kleinkram/shared';

@@ -1,5 +1,5 @@
 import { redis } from '@kleinkram/backend-common/consts';
-import GroupMembershipEntity from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -23,7 +23,7 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
 
     onModuleInit(): void {
         const redisClient = new Redis(redis);
-        this.redlock = new Redlock([redisClient], {
+        this.redlock = new Redlock([redisClient as any], {
             retryCount: 0,
             retryDelay: 200, // Time in ms between retries
         });
@@ -35,6 +35,7 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
             throw new Error('RedLock not initialized');
         }
 
+        // @ts-ignore
         await this.redlock.using(
             [LOCK_KEY],
             LOCK_TTL,

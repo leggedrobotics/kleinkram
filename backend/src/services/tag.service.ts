@@ -5,9 +5,9 @@ import {
     TagTypeDto,
     TagTypesDto,
 } from '@kleinkram/api-dto';
-import MetadataEntity from '@kleinkram/backend-common/entities/metadata/metadata.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { DataType } from '@kleinkram/shared';
 import {
     ConflictException,

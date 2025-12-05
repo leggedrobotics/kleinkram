@@ -52,3 +52,49 @@ export * from '@backend-common/types';
 export * from '@backend-common/viewEntities/mission-access-view.entity';
 export * from '@backend-common/viewEntities/project-access-view.entity';
 export * from '@kleinkram/shared';
+
+import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
+import { ActionEntity } from '@backend-common/entities/action/action.entity';
+import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { AccountEntity } from '@backend-common/entities/auth/account.entity';
+import { ApikeyEntity } from '@backend-common/entities/auth/apikey.entity';
+import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
+import { MissionAccessEntity } from '@backend-common/entities/auth/mission-access.entity';
+import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
+import { CategoryEntity } from '@backend-common/entities/category/category.entity';
+import { FileEventEntity } from '@backend-common/entities/file/file-event.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@backend-common/entities/file/ingestion-job.entity';
+import { MetadataEntity } from '@backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@backend-common/entities/project/project.entity';
+import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
+import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
+import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
+import { MissionAccessViewEntity } from '@backend-common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@backend-common/viewEntities/project-access-view.entity';
+
+export const ALL_ENTITIES = [
+    ActionTemplateEntity,
+    ActionEntity,
+    AccessGroupEntity,
+    AccountEntity,
+    ApikeyEntity,
+    GroupMembershipEntity,
+    MissionAccessEntity,
+    ProjectAccessEntity,
+    CategoryEntity,
+    FileEventEntity,
+    FileEntity,
+    IngestionJobEntity,
+    MetadataEntity,
+    MissionEntity,
+    ProjectEntity,
+    TagTypeEntity,
+    TopicEntity,
+    UserEntity,
+    WorkerEntity,
+    MissionAccessViewEntity,
+    ProjectAccessViewEntity,
+];

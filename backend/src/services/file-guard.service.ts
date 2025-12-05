@@ -1,6 +1,6 @@
-import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';

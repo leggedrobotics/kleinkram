@@ -4,8 +4,8 @@ import { CreateAccessGroupDto } from '@kleinkram/api-dto/types/create-access-gro
 import { CreateMission } from '@kleinkram/api-dto/types/create-mission.dto';
 import { CreateProject } from '@kleinkram/api-dto/types/create-project.dto';
 import { CreateTagTypeDto } from '@kleinkram/api-dto/types/tags/create-tag-type.dto';
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import { appVersion } from '../../src/app-version';

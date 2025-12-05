@@ -1,4 +1,4 @@
-import WorkerEntity from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import { UserRole } from '@kleinkram/shared';
 import { createMissionUsingPost, createProjectUsingPost } from './api-calls';
 import {

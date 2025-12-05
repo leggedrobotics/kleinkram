@@ -1,17 +1,17 @@
-import ActionEntity from '@backend-common/entities/action/action.entity';
-import BaseEntity from '@backend-common/entities/base-entity.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { ActionEntity } from '@backend-common/entities/action/action.entity';
+import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupRights, KeyTypes } from '@kleinkram/shared';
 import { Column, Entity, Generated, ManyToOne, OneToOne } from 'typeorm';
 
 @Entity({ name: 'apikey' })
-export default class ApikeyEntity extends BaseEntity {
+export class ApikeyEntity extends BaseEntity {
     @Column({ unique: true })
     @Generated('uuid')
     apikey!: string;
 
-    @Column()
+    @Column({ type: 'enum', enum: KeyTypes })
     key_type!: KeyTypes;
 
     @ManyToOne(() => MissionEntity, (mission) => mission.api_keys, {
@@ -31,6 +31,6 @@ export default class ApikeyEntity extends BaseEntity {
     })
     user?: UserEntity;
 
-    @Column()
+    @Column({ type: 'enum', enum: AccessGroupRights })
     rights!: AccessGroupRights;
 }

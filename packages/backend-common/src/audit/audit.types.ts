@@ -1,5 +1,5 @@
-import ActionEntity from '@backend-common/entities/action/action.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { ActionEntity } from '@backend-common/entities/action/action.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { FileEventType } from '@kleinkram/shared';
 
 export type AuditActionType = FileEventType;

@@ -133,7 +133,12 @@ export default defineConfig((/* ctx */) => {
         // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
         devServer: {
             // https: true
-            open: true, // opens browser window automatically
+            open: false, // Don't auto-open browser in Docker
+            host: '0.0.0.0', // Bind to all interfaces for Docker
+            hmr: {
+                // Use the client host for HMR WebSocket connection
+                clientPort: 8003,
+            },
         },
 
         // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

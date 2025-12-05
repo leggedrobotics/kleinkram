@@ -1,4 +1,4 @@
-import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { FileLocation } from '@kleinkram/shared';
 import { Process, Processor } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';

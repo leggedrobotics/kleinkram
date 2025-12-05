@@ -1,5 +1,5 @@
 import { AvailableProvidersDto } from '@kleinkram/api-dto';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
 import { CookieNames, Providers } from '@kleinkram/shared';
 import {

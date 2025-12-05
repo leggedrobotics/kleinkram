@@ -6,10 +6,10 @@ import {
 } from '@kleinkram/api-dto';
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
 import { redis } from '@kleinkram/backend-common/consts';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {

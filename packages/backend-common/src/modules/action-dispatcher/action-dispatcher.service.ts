@@ -1,9 +1,9 @@
 import { redis } from '@backend-common/consts';
-import ActionTemplateEntity from '@backend-common/entities/action/action-template.entity';
-import ActionEntity from '@backend-common/entities/action/action.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
-import WorkerEntity from '@backend-common/entities/worker/worker.entity';
+import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
+import { ActionEntity } from '@backend-common/entities/action/action.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
+import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { addActionQueue } from '@backend-common/scheduling-logic';
 import { ActionState } from '@kleinkram/shared';
 import {

@@ -1,10 +1,10 @@
-import ActionTemplateEntity from '@kleinkram/backend-common/entities/action/action-template.entity';
-import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import AccountEntity from '@kleinkram/backend-common/entities/auth/account.entity';
-import MetadataEntity from '@kleinkram/backend-common/entities/metadata/metadata.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
+import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { ActionDispatcherModule } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.module';
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import { Module } from '@nestjs/common';

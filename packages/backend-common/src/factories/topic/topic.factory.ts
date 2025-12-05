@@ -1,5 +1,5 @@
-import FileEntity from '@backend-common/entities/file/file.entity';
-import TopicEntity from '@backend-common/entities/topic/topic.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { define } from 'typeorm-seeding';
 

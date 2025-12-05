@@ -1,4 +1,4 @@
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import env from '@kleinkram/backend-common/environment';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import { FileState } from '@kleinkram/shared';

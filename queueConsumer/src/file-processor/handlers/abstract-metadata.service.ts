@@ -1,7 +1,7 @@
-import FileEventEntity from '@kleinkram/backend-common/entities/file/file-event.entity';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { FileEventType, FileState } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import logger from '../../logger';

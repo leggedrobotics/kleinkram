@@ -2,9 +2,9 @@ import {
     AuditActionType,
     AuditContext,
 } from '@backend-common/audit/audit.types';
-import FileEventEntity from '@backend-common/entities/file/file-event.entity';
-import FileEntity from '@backend-common/entities/file/file.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
+import { FileEventEntity } from '@backend-common/entities/file/file-event.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

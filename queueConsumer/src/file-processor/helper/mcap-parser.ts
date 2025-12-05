@@ -1,5 +1,5 @@
 // src/modules/file-processor/helper/mcap-parser.ts
-import TopicEntity from '@kleinkram/backend-common/entities/topic/topic.entity';
+import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { McapIndexedReader } from '@mcap/core';
 import { FileHandleReadable } from '@mcap/nodejs';
 import { loadDecompressHandlers } from '@mcap/support';

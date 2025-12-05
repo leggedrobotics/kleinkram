@@ -1,4 +1,4 @@
-import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
 import {
     AccessGroupRights,
     ActionState,
@@ -24,8 +24,8 @@ import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { FileGuardService } from '@/services/file-guard.service';
 import { ProjectGuardService } from '@/services/project-guard.service';
 import { UserService } from '@/services/user.service';
-import ActionTemplateEntity from '@kleinkram/backend-common/entities/action/action-template.entity';
-import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {

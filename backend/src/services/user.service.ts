@@ -5,8 +5,8 @@ import {
     UsersDto,
 } from '@kleinkram/api-dto';
 import { systemUser } from '@kleinkram/backend-common/consts';
-import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
@@ -18,6 +18,10 @@ import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
 import { AuthHeader } from '../endpoints/auth/parameter-decorator';
+import {
+    userEntityToCurrentAPIUserDto,
+    userEntityToDto,
+} from '../serialization';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -79,26 +83,32 @@ export class UserService implements OnModuleInit {
 
         user.role = UserRole.ADMIN;
         await this.userRepository.save(user);
-        return user as unknown as CurrentAPIUserDto;
+        return userEntityToCurrentAPIUserDto(user);
     }
 
     async me(auth: AuthHeader): Promise<CurrentAPIUserDto> {
-        return (await this.userRepository.findOneOrFail({
+        const user = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
             select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
-            relations: ['memberships', 'memberships.accessGroup'],
-        })) as unknown as CurrentAPIUserDto;
+            relations: [
+                'memberships',
+                'memberships.accessGroup',
+                'memberships.user',
+            ],
+        });
+
+        return userEntityToCurrentAPIUserDto(user);
     }
 
     async findAll(skip: number, take: number): Promise<UsersDto> {
-        const [user, count] = await this.userRepository.findAndCount({
+        const [users, count] = await this.userRepository.findAndCount({
             skip,
             take,
             where: { hidden: false },
         });
 
         return {
-            users: user as UserDto[],
+            users: users.map((u) => userEntityToDto(u)),
             count,
         };
     }
@@ -109,7 +119,7 @@ export class UserService implements OnModuleInit {
         });
         user.role = UserRole.ADMIN;
         await this.userRepository.save(user);
-        return user as unknown as UserDto;
+        return userEntityToDto(user);
     }
 
     async demoteUser(usermail: string) {
@@ -118,7 +128,7 @@ export class UserService implements OnModuleInit {
         });
         user.role = UserRole.USER;
         await this.userRepository.save(user);
-        return user as unknown as UserDto;
+        return userEntityToDto(user);
     }
 
     async search(
@@ -150,7 +160,7 @@ export class UserService implements OnModuleInit {
             .take(take)
             .getManyAndCount();
 
-        const usersDto = users as UserDto[];
+        const usersDto = users.map((u) => userEntityToDto(u, true));
 
         // return the email only if it is an exact match
         // otherwise set it to null
@@ -218,12 +228,12 @@ export class UserService implements OnModuleInit {
         // map project accesses
         const projectAccesses = projectAccessRows.map((r) => ({
             uuid: r.projectUuid,
-            access: r.rights,
+            access: Number(r.rights),
         }));
 
         const missionAccesses = missionAccessRows.map((r) => ({
             uuid: r.missionUuid,
-            access: r.rights,
+            access: Number(r.rights),
         }));
 
         return {

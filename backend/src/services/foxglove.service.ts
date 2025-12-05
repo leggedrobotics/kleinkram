@@ -1,6 +1,6 @@
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import { FileEventType, FileType } from '@kleinkram/shared';

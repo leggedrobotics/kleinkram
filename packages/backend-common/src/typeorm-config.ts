@@ -1,4 +1,5 @@
-import Environment from '@backend-common/environment';
+import environment from '@backend-common/environment';
+import { ALL_ENTITIES } from '@backend-common/index';
 
 interface DatabaseConfig {
     host: string;
@@ -14,21 +15,21 @@ interface ServerConfig {
 
 interface TypeormConfig {
     server: ServerConfig;
-    entities: string;
+    entities: unknown;
     database: DatabaseConfig;
 }
 
 const typeormConfig = (): TypeormConfig => ({
     server: {
-        port: Environment.SERVER_PORT || 3000,
+        port: environment.SERVER_PORT || 3000,
     },
-    entities: Environment.ENTITIES,
+    entities: ALL_ENTITIES,
     database: {
-        host: Environment.DB_HOST,
-        port: Environment.DB_PORT,
-        username: Environment.DB_USER,
-        password: Environment.DB_PASSWORD,
-        database: Environment.DB_DATABASE,
+        host: environment.DB_HOST,
+        port: environment.DB_PORT,
+        username: environment.DB_USER,
+        password: environment.DB_PASSWORD,
+        database: environment.DB_DATABASE,
     },
 });
 export default typeormConfig;

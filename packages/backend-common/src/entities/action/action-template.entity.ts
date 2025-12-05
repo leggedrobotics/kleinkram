@@ -1,12 +1,12 @@
-import ActionEntity from '@backend-common/entities/action/action.entity';
-import BaseEntity from '@backend-common/entities/base-entity.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { ActionEntity } from '@backend-common/entities/action/action.entity';
+import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupRights } from '@kleinkram/shared';
 import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 
 @Entity({ name: 'action_template' })
 @Unique('unique_versioned_action_name', ['name', 'version'])
-export default class ActionTemplateEntity extends BaseEntity {
+export class ActionTemplateEntity extends BaseEntity {
     @Column()
     image_name!: string;
 
@@ -46,7 +46,7 @@ export default class ActionTemplateEntity extends BaseEntity {
     @Column({ nullable: true })
     entrypoint?: string;
 
-    @Column()
+    @Column({ type: 'enum', enum: AccessGroupRights })
     accessRights!: AccessGroupRights;
 
     // Add this (not a column, just for runtime data)

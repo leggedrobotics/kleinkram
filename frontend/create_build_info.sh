@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Stop on errors
 set -e
@@ -16,25 +16,29 @@ if [ -f "$GIT_DIR/HEAD" ]; then
     # Try manual extraction first (works without git binary and with partial repo)
     head_content=$(cat "$GIT_DIR/HEAD")
 
-    if [[ "$head_content" =~ "ref: " ]]; then
-        ref_path=$(echo "$head_content" | sed 's/ref: //')
-        if [ -f "$GIT_DIR/$ref_path" ]; then
-            git_commit=$(cat "$GIT_DIR/$ref_path")
-        elif [ -f "$GIT_DIR/packed-refs" ]; then
-             # Fallback for packed refs
-             git_commit=$(grep "$ref_path" "$GIT_DIR/packed-refs" | awk '{print $1}')
-        fi
-        git_branch=$(echo "$ref_path" | sed 's/refs\/heads\///')
-    else
-        git_commit="$head_content"
-        git_branch="DETACHED-$git_commit"
-    fi
+    # POSIX-compatible check for "ref: " prefix
+    case "$head_content" in
+        "ref: "*)
+            ref_path=$(echo "$head_content" | sed 's/ref: //')
+            if [ -f "$GIT_DIR/$ref_path" ]; then
+                git_commit=$(cat "$GIT_DIR/$ref_path")
+            elif [ -f "$GIT_DIR/packed-refs" ]; then
+                 # Fallback for packed refs
+                 git_commit=$(grep "$ref_path" "$GIT_DIR/packed-refs" | awk '{print $1}')
+            fi
+            git_branch=$(echo "$ref_path" | sed 's/refs\/heads\///')
+            ;;
+        *)
+            git_commit="$head_content"
+            git_branch="DETACHED-$git_commit"
+            ;;
+    esac
 
-    # Truncate to short hash
-    git_commit=${git_commit:0:7}
+    # Truncate to short hash (POSIX-compatible)
+    git_commit=$(echo "$git_commit" | cut -c1-7)
 
     # Fallback to git command if manual extraction failed
-    if [ -z "$git_commit" ] || [ "$git_commit" == "unknown" ]; then
+    if [ -z "$git_commit" ] || [ "$git_commit" = "unknown" ]; then
          git_commit=$(git --work-tree=. --git-dir="$GIT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
     fi
 fi

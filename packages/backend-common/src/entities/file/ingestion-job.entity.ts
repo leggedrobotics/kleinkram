@@ -1,12 +1,12 @@
-import BaseEntity from '@backend-common/entities/base-entity.entity';
-import FileEntity from '@backend-common/entities/file/file.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { FileLocation, QueueState } from '@kleinkram/shared';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'ingestion_job' })
-export default class IngestionJobEntity extends BaseEntity {
+export class IngestionJobEntity extends BaseEntity {
     /**
      * The unique identifier of the file.
      *

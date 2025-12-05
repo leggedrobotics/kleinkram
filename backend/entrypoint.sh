@@ -9,7 +9,7 @@ else
 fi
 
 sleep 10
-cd ../common
+cd ../packages/backend-common
 
 if [ "$SEED" = "true" ]; then
   echo "Seeding Database"

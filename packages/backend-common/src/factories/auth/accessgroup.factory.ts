@@ -1,6 +1,6 @@
-import AccessGroupEntity from '@backend-common/entities/auth/accessgroup.entity';
-import GroupMembershipEntity from '@backend-common/entities/auth/group-membership.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { faker } from '@faker-js/faker';
 import { AccessGroupType } from '@kleinkram/shared';

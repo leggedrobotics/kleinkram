@@ -62,7 +62,7 @@ import {
     FileQueryDto,
     FoxgloveLinkResponseDto,
 } from '@kleinkram/api-dto';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { FileSource, HealthStatus } from '@kleinkram/shared';
 import { FoxgloveService } from '../../services/foxglove.service';
 

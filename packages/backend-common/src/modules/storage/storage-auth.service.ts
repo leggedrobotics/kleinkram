@@ -1,6 +1,8 @@
 import environment from '@backend-common/environment';
 import { Injectable } from '@nestjs/common';
+// @ts-ignore
 import AssumeRoleProvider from 'minio/dist/main/AssumeRoleProvider.js';
+// @ts-ignore
 import Credentials from 'minio/dist/main/Credentials';
 
 const ACTION_PUT_OBJECT = 's3:PutObject' as const;

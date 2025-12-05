@@ -7,8 +7,9 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+// @ts-ignore
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import accessConfig from '../access_config.json';
+import accessConfig from './access_config.json';
 import { appVersion } from './app-version';
 import { ActionModule } from './endpoints/action/action.module';
 import { AuthModule } from './endpoints/auth/auth.module';
@@ -39,6 +40,7 @@ import { AccessGroupConfig } from './types/access-group-config';
             },
         }),
         ConfigModule.forRoot({
+            envFilePath: ['.env', '../.env'],
             isGlobal: true,
             load: [
                 configuration,
@@ -60,7 +62,7 @@ import { AccessGroupConfig } from './types/access-group-config';
                         configService.getOrThrow<string>('database.password'),
                     database:
                         configService.getOrThrow<string>('database.database'),
-                    entities: [configService.getOrThrow<string>('entities')],
+                    entities: configService.getOrThrow('entities'),
                     synchronize: env.DEV,
                     logging: ['warn', 'error'],
                 }) as PostgresConnectionOptions,

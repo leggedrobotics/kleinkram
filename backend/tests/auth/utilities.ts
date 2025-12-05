@@ -1,6 +1,6 @@
 import { AccessGroupType, UserRole } from '@kleinkram/backend-common';
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { HeaderCreator } from '../utils/api-calls';
 import {
     database,

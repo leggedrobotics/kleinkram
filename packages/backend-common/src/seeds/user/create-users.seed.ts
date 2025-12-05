@@ -1,4 +1,4 @@
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { seedActionTemplates } from '@backend-common/seeds/user/seed-action-templates';
 import { seedFiles } from '@backend-common/seeds/user/seed-files';
 import { seedProjects } from '@backend-common/seeds/user/seed-projects';

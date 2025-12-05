@@ -1,13 +1,20 @@
 version: '3.8'
 
 services:
+    base:
+        image: kleinkram-base
+        build:
+            context: .
+            dockerfile: docker/base.Dockerfile
+
     api-server:
         image: rslethz/kleinkram:api-server-latest
         container_name: kleinkram-api-server
 
         build:
             context: .
-            dockerfile: ./backend/prod.Dockerfile
+            dockerfile: docker/backend.Dockerfile
+            target: production
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -76,7 +83,8 @@ services:
 
         build:
             context: .
-            dockerfile: ./frontend/Dockerfile
+            dockerfile: docker/frontend.Dockerfile
+            target: production
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
 
@@ -99,7 +107,8 @@ services:
         container_name: kleinkram-queue-consumer
         build:
             context: .
-            dockerfile: ./queueConsumer/prod.Dockerfile
+            dockerfile: docker/queue-consumer.Dockerfile
+            target: production
         env_file:
             - .env
         networks:
@@ -173,8 +182,9 @@ services:
         image: rslethz/kleinkram:docs-latest
         container_name: kleinkram-documentation
         build:
-            context: docs/.
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: docker/docs.Dockerfile
+            target: production
 
     artifact-uploader:
         image: rslethz/kleinkram:artifact-uploader-latest

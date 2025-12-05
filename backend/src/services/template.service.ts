@@ -5,9 +5,9 @@ import {
     DeleteTemplateResponseDto,
     UpdateTemplateDto,
 } from '@kleinkram/api-dto';
-import ActionTemplateEntity from '@kleinkram/backend-common/entities/action/action-template.entity';
-import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     ConflictException,
     Injectable,

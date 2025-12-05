@@ -4,13 +4,13 @@ import {
     ActionState,
     KeyTypes,
 } from '@kleinkram/backend-common';
-import ActionTemplateEntity from '@kleinkram/backend-common/action/action-template.entity';
-import ActionEntity from '@kleinkram/backend-common/action/action.entity';
-import ApikeyEntity from '@kleinkram/backend-common/auth/apikey.entity';
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
-import ProjectEntity from '@kleinkram/backend-common/project/project.entity';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/action/action-template.entity';
+import { ActionEntity } from '@kleinkram/backend-common/action/action.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/auth/apikey.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/project/project.entity';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,

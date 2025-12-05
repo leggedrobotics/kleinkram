@@ -1,5 +1,5 @@
-import ApikeyEntity from '@kleinkram/backend-common/entities/auth/apikey.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { KeyTypes } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import logger from '../../logger';

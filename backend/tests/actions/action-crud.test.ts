@@ -3,7 +3,7 @@ import { database } from '../utils/database-utilities';
 
 import { createActionUsingPost, getAuthHeaders } from '../utils/api-calls';
 
-import ActionTemplateEntity from '@kleinkram/backend-common/action/action-template.entity';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/action/action-template.entity';
 import { DEFAULT_URL } from '../auth/utilities';
 import {
     createMockWorker,

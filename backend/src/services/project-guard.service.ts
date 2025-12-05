@@ -1,6 +1,6 @@
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
     AccessGroupRights,

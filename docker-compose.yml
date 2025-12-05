@@ -1,10 +1,20 @@
 services:
+    base:
+        image: kleinkram-base
+        build:
+            context: .
+            dockerfile: docker/base.Dockerfile
+            args:
+                USER_ID: ${USER_ID:-1000}
+                GROUP_ID: ${GROUP_ID:-1000}
+
     api-server:
         container_name: kleinkram-api-server
 
         build:
             context: .
-            dockerfile: backend/Dockerfile
+            dockerfile: docker/backend.Dockerfile
+            target: development
             args:
                 USER_ID: ${USER_ID:-1000}
                 GROUP_ID: ${GROUP_ID:-1000}
@@ -13,13 +23,13 @@ services:
             watch:
                 - action: sync
                   path: ./packages
-                  target: /usr/src/app/packages
+                  target: /app/packages
                   ignore:
                       - node_modules/
                       - dist/
                 - action: sync
                   path: ./backend
-                  target: /usr/src/app/backend
+                  target: /app/backend
                   ignore:
                       - node_modules/
                       - dist/
@@ -39,12 +49,17 @@ services:
             MINIO_ENDPOINT_INTERNAL: 'minio'
 
         depends_on:
-            - database
-            - minio
-            - redis
+            database:
+                condition: service_started
+            minio:
+                condition: service_healthy
+            redis:
+                condition: service_started
+            base:
+                condition: service_started
 
         volumes:
-            - ./cli/tests/generate_test_data.py:/usr/src/app/common/cli/tests/generate_test_data.py
+            - ./cli/tests/generate_test_data.py:/app/common/cli/tests/generate_test_data.py
 
     database:
         image: postgres:17
@@ -92,6 +107,13 @@ services:
             - '127.0.0.1:9000:9000'
             - '127.0.0.1:9001:9001'
 
+        healthcheck:
+            test:
+                ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+            interval: 30s
+            timeout: 20s
+            retries: 3
+
         networks:
             - public-network
             - private-network
@@ -101,7 +123,8 @@ services:
 
         build:
             context: .
-            dockerfile: ./frontend/dev.Dockerfile
+            dockerfile: docker/frontend.Dockerfile
+            target: development
             args:
                 - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
                 - USER_ID=${USER_ID:-1000}
@@ -112,6 +135,9 @@ services:
 
         env_file:
             - .env
+
+        environment:
+            VITE_QUASAR_ENDPOINT: ${QUASAR_ENDPOINT}
 
         develop:
             watch:
@@ -131,6 +157,7 @@ services:
         depends_on:
             - api-server
             - minio
+            - base
 
         networks:
             - public-network
@@ -153,7 +180,8 @@ services:
 
         build:
             context: .
-            dockerfile: queueConsumer/Dockerfile
+            dockerfile: docker/queue-consumer.Dockerfile
+            target: development
             args:
                 USER_ID: ${USER_ID:-1000}
                 GROUP_ID: ${GROUP_ID:-1000}
@@ -166,14 +194,14 @@ services:
             watch:
                 - action: sync
                   path: ./queueConsumer
-                  target: /usr/src/queueConsumer
+                  target: /app/queueConsumer
                   ignore:
                       - node_modules/
                       - dist/
 
                 - action: sync
                   path: ./packages
-                  target: /usr/src/app/packages
+                  target: /app/packages
                   ignore:
                       - node_modules/
                       - dist/
@@ -181,12 +209,16 @@ services:
         env_file:
             - .env
 
+        environment:
+            REDIS_HOST: redis
+
         networks:
             - private-network
 
         depends_on:
             - database
             - redis
+            - base
 
     prometheus:
         image: prom/prometheus
@@ -202,7 +234,7 @@ services:
             - '--enable-feature=native-histograms'
             - '--log.level=error'
         ports:
-            - '9090:9090'
+            - '9099:9090'
         networks:
             - private-network
             - public-network
@@ -263,8 +295,9 @@ services:
         depends_on:
             - api-server
         build:
-            context: docs/.
-            dockerfile: local-dev.Dockerfile
+            context: .
+            dockerfile: docker/docs.Dockerfile
+            target: development
         environment:
             DEVBUILD: 'true'
         ports:
@@ -281,6 +314,8 @@ services:
         build:
             context: queueConsumer/src/artifactUpload
             dockerfile: Dockerfile
+        environment:
+            KLEINKRAM_ACTION_UUID: 'dev-action-uuid'
 
     postgres-exporter:
         image: prometheuscommunity/postgres-exporter

@@ -1,8 +1,8 @@
 import { SortOrder, UpdateFile } from '@kleinkram/api-dto';
-import ActionEntity from '@kleinkram/backend-common/entities/action/action.entity';
-import FileEntity from '@kleinkram/backend-common/entities/file/file.entity';
-import MissionEntity from '@kleinkram/backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import env from '@kleinkram/backend-common/environment';
 import {
     DataType,
@@ -49,14 +49,16 @@ import {
 } from '@kleinkram/api-dto';
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
 import { redis } from '@kleinkram/backend-common/consts';
-import CategoryEntity from '@kleinkram/backend-common/entities/category/category.entity';
-import FileEventEntity from '@kleinkram/backend-common/entities/file/file-event.entity';
-import IngestionJobEntity from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
-import TagTypeEntity from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import Queue from 'bull';
+// @ts-ignore
 import Credentials from 'minio/dist/main/Credentials';
+// @ts-ignore
 import { BucketItem } from 'minio/dist/main/internal/type';
 import {
     addAccessConstraints,
@@ -1134,10 +1136,11 @@ export class FileService implements OnModuleInit {
         const metrics = await this.storageService.getSystemMetrics();
 
         return {
-            usedBytes: metrics.minio_system_drive_used_bytes[0].value,
-            totalBytes: metrics.minio_system_drive_total_bytes[0].value,
-            usedInodes: metrics.minio_system_drive_used_inodes[0].value,
-            totalInodes: metrics.minio_system_drive_total_inodes[0].value,
+            usedBytes: metrics.minio_system_drive_used_bytes?.[0]?.value ?? 0,
+            totalBytes: metrics.minio_system_drive_total_bytes?.[0]?.value ?? 0,
+            usedInodes: metrics.minio_system_drive_used_inodes?.[0]?.value ?? 0,
+            totalInodes:
+                metrics.minio_system_drive_total_inodes?.[0]?.value ?? 0,
         } as StorageOverviewDto;
     }
 

@@ -1,20 +1,20 @@
-import ActionTemplateEntity from '@backend-common/entities/action/action-template.entity';
-import ActionEntity from '@backend-common/entities/action/action.entity';
-import AccountEntity from '@backend-common/entities/auth/account.entity';
-import ApikeyEntity from '@backend-common/entities/auth/apikey.entity';
-import GroupMembershipEntity from '@backend-common/entities/auth/group-membership.entity';
-import BaseEntity from '@backend-common/entities/base-entity.entity';
-import CategoryEntity from '@backend-common/entities/category/category.entity';
-import FileEntity from '@backend-common/entities/file/file.entity';
-import IngestionJobEntity from '@backend-common/entities/file/ingestion-job.entity';
-import MetadataEntity from '@backend-common/entities/metadata/metadata.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import ProjectEntity from '@backend-common/entities/project/project.entity';
+import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
+import { ActionEntity } from '@backend-common/entities/action/action.entity';
+import { AccountEntity } from '@backend-common/entities/auth/account.entity';
+import { ApikeyEntity } from '@backend-common/entities/auth/apikey.entity';
+import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
+import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { CategoryEntity } from '@backend-common/entities/category/category.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@backend-common/entities/file/ingestion-job.entity';
+import { MetadataEntity } from '@backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { UserRole } from '@kleinkram/shared';
 import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 
 @Entity({ name: 'user' })
-export default class UserEntity extends BaseEntity {
+export class UserEntity extends BaseEntity {
     /**
      * The name of the user. This is the name that will be displayed in the UI.
      * The name gets automatically extracted from the oauth provider.

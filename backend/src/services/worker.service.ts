@@ -1,7 +1,9 @@
 import { ActionWorkersDto } from '@kleinkram/api-dto';
-import WorkerEntity from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -30,7 +32,7 @@ export class WorkerService {
         );
 
         const count = Object.keys(workerMap).length;
-        return {
+        const result = {
             count,
             data: Object.values(workerMap).map((worker) => ({
                 ...worker,
@@ -39,5 +41,9 @@ export class WorkerService {
             skip: 0,
             take: count,
         };
+
+        const dto = plainToInstance(ActionWorkersDto, result);
+        validateSync(dto, { whitelist: true, forbidNonWhitelisted: false });
+        return dto;
     }
 }

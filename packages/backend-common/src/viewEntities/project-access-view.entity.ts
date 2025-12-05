@@ -1,4 +1,4 @@
-import ProjectEntity from '@backend-common/entities/project/project.entity';
+import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { AccessGroupRights } from '@kleinkram/shared';
 import type { DataSource, SelectQueryBuilder } from 'typeorm';
 import { ViewColumn, ViewEntity } from 'typeorm';

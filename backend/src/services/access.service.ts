@@ -7,11 +7,11 @@ import {
     ProjectWithAccessRightsDto,
     ProjectWithMissionsDto,
 } from '@kleinkram/api-dto';
-import AccessGroupEntity from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import GroupMembershipEntity from '@kleinkram/backend-common/entities/auth/group-membership.entity';
-import ProjectAccessEntity from '@kleinkram/backend-common/entities/auth/project-access.entity';
-import ProjectEntity from '@kleinkram/backend-common/entities/project/project.entity';
-import UserEntity from '@kleinkram/backend-common/entities/user/user.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -32,8 +32,8 @@ import logger from '../logger';
 import {
     groupMembershipEntityToDto,
     projectAccessEntityToDto,
+    userEntityToDto,
 } from '../serialization';
-import { userEntityToDto } from '../serialization/user';
 
 @Injectable()
 export class AccessService {

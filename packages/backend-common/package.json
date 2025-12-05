@@ -5,14 +5,26 @@
     "types": "dist/index.d.ts",
     "license": "MIT",
     "scripts": {
-        "build": "tsc -b",
-        "clean": "rm -rf dist"
+        "build": "tsc -b && tsc-alias -p tsconfig.json",
+        "seed:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm-seeding/dist/cli.js seed"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.js"
+        },
+        "./*": {
+            "types": "./dist/*.d.ts",
+            "import": "./dist/*.js",
+            "require": "./dist/*.js"
+        }
     },
     "dependencies": {
         "@faker-js/faker": "^10.1.0",
-        "@kleinkram/api-dto": "0.56.0",
-        "@kleinkram/shared": "0.56.0",
-        "@kleinkram/validation": "0.56.0",
+        "@kleinkram/api-dto": "workspace:*",
+        "@kleinkram/shared": "workspace:*",
+        "@kleinkram/validation": "workspace:*",
         "@nestjs/common": "^10.0.0",
         "@nestjs/core": "^10.0.0",
         "@nestjs/schedule": "^6.0.1",
@@ -32,7 +44,11 @@
         "typeorm-seeding": "^1.6.1"
     },
     "devDependencies": {
+        "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^24.10.1",
+        "tsc-alias": "^1.8.16",
+        "ts-node": "^10.9.1",
+        "tsconfig-paths": "^4.2.0",
         "typescript": "^5.9.3"
     }
 }

@@ -1,13 +1,13 @@
-import ProjectAccessEntity from '@backend-common/entities/auth/project-access.entity';
-import BaseEntity from '@backend-common/entities/base-entity.entity';
-import CategoryEntity from '@backend-common/entities/category/category.entity';
-import MissionEntity from '@backend-common/entities/mission/mission.entity';
-import TagTypeEntity from '@backend-common/entities/tagType/tag-type.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
+import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { CategoryEntity } from '@backend-common/entities/category/category.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 
 @Entity({ name: 'project' })
-export default class ProjectEntity extends BaseEntity {
+export class ProjectEntity extends BaseEntity {
     /**
      * The name of the project. This is the name that will be displayed in the UI.
      * The name must be globally unique.

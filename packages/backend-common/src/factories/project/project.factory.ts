@@ -1,7 +1,7 @@
-import AccessGroupEntity from '@backend-common/entities/auth/accessgroup.entity';
-import ProjectEntity from '@backend-common/entities/project/project.entity';
-import TagTypeEntity from '@backend-common/entities/tagType/tag-type.entity';
-import UserEntity from '@backend-common/entities/user/user.entity';
+import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { ProjectEntity } from '@backend-common/entities/project/project.entity';
+import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
+import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { faker } from '@faker-js/faker';
 import { define } from 'typeorm-seeding';
