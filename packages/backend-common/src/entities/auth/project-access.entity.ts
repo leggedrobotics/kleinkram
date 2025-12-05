@@ -1,6 +1,6 @@
-import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import type { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
-import { ProjectEntity } from '@backend-common/entities/project/project.entity';
+import type { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { Column, Entity, ManyToOne, Unique } from 'typeorm';
 
 import { AccessGroupRights } from '@kleinkram/shared';
@@ -11,15 +11,27 @@ export class ProjectAccessEntity extends BaseEntity {
     @Column({ type: 'enum', enum: AccessGroupRights })
     rights!: AccessGroupRights;
 
-    @ManyToOne(() => AccessGroupEntity, (group) => group.project_accesses, {
-        nullable: false,
-    })
+    @ManyToOne(
+        () =>
+            require('@backend-common/entities/auth/accessgroup.entity')
+                .AccessGroupEntity as typeof AccessGroupEntity,
+        (group) => group.project_accesses,
+        {
+            nullable: false,
+        },
+    )
     accessGroup?: AccessGroupEntity;
 
-    @ManyToOne(() => ProjectEntity, (project) => project.project_accesses, {
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
-        nullable: false,
-    })
+    @ManyToOne(
+        () =>
+            require('@backend-common/entities/project/project.entity')
+                .ProjectEntity as typeof ProjectEntity,
+        (project) => project.project_accesses,
+        {
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+            nullable: false,
+        },
+    )
     project?: ProjectEntity;
 }

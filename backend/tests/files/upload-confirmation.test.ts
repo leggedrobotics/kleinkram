@@ -1,19 +1,19 @@
-import { ProjectEntity } from '@kleinkram/backend-common/project/project.entity';
+import { ProjectEntity } from '@kleinkram/backend-common';
 
 jest.mock('uuid', () => ({
     v4: () => 'test-uuid',
 }));
 
 import {
+    FileEntity,
     FileEventType,
     FileOrigin,
     FileState,
     FileType,
+    IngestionJobEntity,
+    MissionEntity,
+    UserEntity,
 } from '@kleinkram/backend-common';
-import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { FileEntity } from '@kleinkram/backend-common/file/file.entity';
-import { IngestionJobEntity } from '@kleinkram/backend-common/file/ingestion-job.entity';
 import { Repository } from 'typeorm';
 import QueueService from '../../src/services/queue.service';
 import {

@@ -73,8 +73,10 @@
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "24.10.1",
         "@types/redlock": "^4.0.8",
+        "run-script-webpack-plugin": "^0.2.3",
         "ts-loader": "^9.5.4",
         "typescript": "5.9.3",
+        "webpack": "^5.103.0",
         "webpack-node-externals": "^3.0.0"
     }
 }

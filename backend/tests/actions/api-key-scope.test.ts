@@ -1,14 +1,18 @@
+/// <reference path="../global.d.ts" />
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
-import { AccessGroupRights, KeyTypes } from '@kleinkram/backend-common';
-import { ActionTemplateEntity } from '@kleinkram/backend-common/action/action-template.entity';
-import { ActionEntity } from '@kleinkram/backend-common/action/action.entity';
-import { ApikeyEntity } from '@kleinkram/backend-common/auth/apikey.entity';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
-import { ProjectEntity } from '@kleinkram/backend-common/project/project.entity';
+import {
+    AccessGroupEntity,
+    AccessGroupRights,
+    ActionEntity,
+    ActionTemplateEntity,
+    ApikeyEntity,
+    KeyTypes,
+    MissionEntity,
+    ProjectEntity,
+    UserEntity,
+    WorkerEntity,
+} from '@kleinkram/backend-common';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -45,7 +49,7 @@ describe('Verify Action API Key Scope', () => {
 
         // Create internal user (Creator)
         ({
-            user: globalThis.creator as UserEntity,
+            user: globalThis.creator,
             token: globalThis.creator.token,
             response: globalThis.creator.Response,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
@@ -143,6 +147,12 @@ describe('Verify Action API Key Scope', () => {
             if (items.length > 0) {
                 await repository.remove(items);
             }
+        }
+    });
+
+    afterAll(async () => {
+        if (database.isInitialized) {
+            await database.destroy();
         }
     });
 

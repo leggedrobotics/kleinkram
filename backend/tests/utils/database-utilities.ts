@@ -1,7 +1,10 @@
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
-import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import {
+    AccessGroupEntity,
+    AccountEntity,
+    ALL_ENTITIES,
+    GroupMembershipEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
 import { Providers, UserRole } from '@kleinkram/shared';
 import jwt from 'jsonwebtoken';
 import * as crypto from 'node:crypto';
@@ -24,10 +27,7 @@ export const database = new DataSource({
     password: process.env['DB_PASSWORD'] ?? '',
     database: process.env['DB_DATABASE'] ?? '',
     synchronize: false,
-    entities: [
-        '../common/entities/**/*.entity{.ts,.js}',
-        '../common/viewEntities/**/*.entity{.ts,.js}',
-    ],
+    entities: ALL_ENTITIES,
 });
 
 export const clearAllData = async () => {

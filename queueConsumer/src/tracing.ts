@@ -151,7 +151,7 @@ export function tracing<A extends unknown[], C>(
         propertyKey?: string | symbol,
         descriptor?: TypedPropertyDescriptor<(...arguments_: A) => C>,
     ): // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void
+        | void
         | (new (...arguments_: A) => C)
         | TypedPropertyDescriptor<(...arguments_: A) => C> {
         const applyWrap = (

@@ -1,7 +1,7 @@
-import { ActionEntity } from '@backend-common/entities/action/action.entity';
+import type { ActionEntity } from '@backend-common/entities/action/action.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
-import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
-import { UserEntity } from '@backend-common/entities/user/user.entity';
+import type { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import type { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupRights, KeyTypes } from '@kleinkram/shared';
 import { Column, Entity, Generated, ManyToOne, OneToOne } from 'typeorm';
 
@@ -14,21 +14,39 @@ export class ApikeyEntity extends BaseEntity {
     @Column({ type: 'enum', enum: KeyTypes })
     key_type!: KeyTypes;
 
-    @ManyToOne(() => MissionEntity, (mission) => mission.api_keys, {
-        onDelete: 'CASCADE',
-        eager: true,
-    })
+    @ManyToOne(
+        () =>
+            require('@backend-common/entities/mission/mission.entity')
+                .MissionEntity as typeof MissionEntity,
+        (mission) => mission.api_keys,
+        {
+            onDelete: 'CASCADE',
+            eager: true,
+        },
+    )
     mission!: MissionEntity;
 
-    @OneToOne(() => ActionEntity, (action) => action.key, {
-        onDelete: 'CASCADE',
-        nullable: true,
-    })
+    @OneToOne(
+        () =>
+            require('@backend-common/entities/action/action.entity')
+                .ActionEntity as typeof ActionEntity,
+        (action) => action.key,
+        {
+            onDelete: 'CASCADE',
+            nullable: true,
+        },
+    )
     action?: ActionEntity;
 
-    @ManyToOne(() => UserEntity, (user) => user.api_keys, {
-        onDelete: 'CASCADE',
-    })
+    @ManyToOne(
+        () =>
+            require('@backend-common/entities/user/user.entity')
+                .UserEntity as typeof UserEntity,
+        (user) => user.api_keys,
+        {
+            onDelete: 'CASCADE',
+        },
+    )
     user?: UserEntity;
 
     @Column({ type: 'enum', enum: AccessGroupRights })

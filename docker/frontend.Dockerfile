@@ -1,21 +1,9 @@
-FROM node:22-slim AS development
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-WORKDIR /app
-
-# Install dependencies using pnpm fetch
-COPY pnpm-lock.yaml ./
-RUN pnpm fetch
-
-COPY . .
-RUN pnpm install -r --offline
-
-# No pre-build needed - Vite resolves packages from source via aliases in quasar.config.ts
+FROM kleinkram-base AS development
 
 WORKDIR /app/frontend
 
 CMD ["pnpm", "start:dev"]
+
 
 FROM node:22-slim AS build
 
@@ -27,7 +15,7 @@ COPY pnpm-lock.yaml ./
 RUN pnpm fetch
 
 COPY . .
-RUN pnpm install -r --offline
+RUN pnpm install -r
 
 RUN pnpm --filter @kleinkram/shared build
 RUN pnpm --filter @kleinkram/validation build

@@ -224,12 +224,6 @@ export const groupMembershipEntityToDto = (
     userOverride?: UserEntity,
 ): GroupMembershipDto => {
     const user = groupMembership.user ?? userOverride;
-    console.log('groupMembershipEntityToDto debug:', {
-        gmUuid: groupMembership.uuid,
-        hasUser: !!groupMembership.user,
-        hasOverride: !!userOverride,
-        resolvedUser: !!user,
-    });
 
     if (user === undefined) {
         throw new Error('Member can never be undefined');

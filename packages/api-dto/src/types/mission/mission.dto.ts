@@ -1,4 +1,3 @@
-import { FileDto } from '@api-dto/file/file.dto';
 import { Paginated } from '@api-dto/pagination';
 import { ProjectDto } from '@api-dto/project/base-project.dto';
 import { TagDto } from '@api-dto/tags/tags.dto';
@@ -69,16 +68,6 @@ export class FlatMissionDto extends MissionWithCreatorDto {
     @ApiProperty()
     @IsInt()
     size!: number;
-}
-
-export class MissionWithFilesDto extends MissionWithCreatorDto {
-    @ApiProperty({
-        type: () => FileDto,
-        description: 'List of files',
-    })
-    @ValidateNested()
-    @Type(() => FileDto)
-    files!: FileDto[];
 }
 
 export class MissionsDto implements Paginated<FlatMissionDto> {

@@ -43,9 +43,7 @@ export class TemporaryFileAccessDto {
     accessCredentials!: AccessCredentialsDto;
 }
 
-export class TemporaryFileAccessesDto
-    implements Paginated<TemporaryFileAccessDto>
-{
+export class TemporaryFileAccessesDto implements Paginated<TemporaryFileAccessDto> {
     @ApiProperty({
         type: () => [TemporaryFileAccessDto],
         description: 'List of temporary file accesses',

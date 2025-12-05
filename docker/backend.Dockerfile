@@ -1,22 +1,9 @@
-FROM node:22-slim AS development
-
-RUN apt-get update && apt-get install -y --no-install-recommends procps && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-WORKDIR /app
-
-# Install dependencies using pnpm fetch
-COPY pnpm-lock.yaml ./
-RUN pnpm fetch
-
-COPY . .
-RUN pnpm install -r --offline
-
-# No pre-build needed - webpack handles module resolution at runtime (like pnpm dev locally)
+FROM kleinkram-base AS development
 
 WORKDIR /app/backend
 
 CMD ["pnpm", "start:dev"]
+
 
 FROM node:22-slim AS build
 
@@ -28,7 +15,7 @@ COPY pnpm-lock.yaml ./
 RUN pnpm fetch
 
 COPY . .
-RUN pnpm install -r --offline
+RUN pnpm install -r
 
 # Build packages and backend
 RUN pnpm --filter @kleinkram/shared build

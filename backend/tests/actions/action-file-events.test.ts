@@ -1,21 +1,23 @@
 import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
-import { ActionTemplateEntity } from '@kleinkram/backend-common/action/action-template.entity';
-import { ActionEntity } from '@kleinkram/backend-common/action/action.entity';
-import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { FileEntity } from '@kleinkram/backend-common/file/file.entity';
+import {
+    ActionEntity,
+    ActionTemplateEntity,
+    FileEntity,
+    MissionEntity,
+} from '@kleinkram/backend-common';
 
 import {
     AccessGroupRights,
     ActionState,
+    ApikeyEntity,
     ArtifactState,
     CookieNames,
     FileEventType,
     FileState,
     FileType,
     KeyTypes,
+    UserEntity,
 } from '@kleinkram/backend-common';
-import { ApikeyEntity } from '@kleinkram/backend-common/auth/apikey.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
 import * as Minio from 'minio';
 import { appVersion } from '../../src/app-version';

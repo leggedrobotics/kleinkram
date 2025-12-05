@@ -1,16 +1,18 @@
+/// <reference path="../global.d.ts" />
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import {
+    AccessGroupEntity,
     AccessGroupRights,
+    ActionEntity,
     ActionState,
+    ActionTemplateEntity,
+    ApikeyEntity,
     KeyTypes,
+    MissionEntity,
+    ProjectEntity,
+    UserEntity,
+    WorkerEntity,
 } from '@kleinkram/backend-common';
-import { ActionTemplateEntity } from '@kleinkram/backend-common/action/action-template.entity';
-import { ActionEntity } from '@kleinkram/backend-common/action/action.entity';
-import { ApikeyEntity } from '@kleinkram/backend-common/auth/apikey.entity';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { ProjectEntity } from '@kleinkram/backend-common/project/project.entity';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -47,7 +49,7 @@ describe('Verify Action Access Rights', () => {
 
         // Create internal user (Creator)
         ({
-            user: globalThis.creator as UserEntity,
+            user: globalThis.creator,
             token: globalThis.creator.token,
             response: globalThis.creator.Response,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
@@ -115,6 +117,7 @@ describe('Verify Action Access Rights', () => {
             { name: 'Missions', entity: MissionEntity },
             { name: 'Projects', entity: ProjectEntity },
             { name: 'ApiKeys', entity: ApikeyEntity },
+            { name: 'Workers', entity: WorkerEntity },
         ];
 
         for (const repo of repos) {
@@ -123,6 +126,12 @@ describe('Verify Action Access Rights', () => {
             if (items.length > 0) {
                 await repository.remove(items);
             }
+        }
+    });
+
+    afterAll(async () => {
+        if (database.isInitialized) {
+            await database.destroy();
         }
     });
 

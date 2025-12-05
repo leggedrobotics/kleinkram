@@ -3,6 +3,7 @@ import { ApikeyEntity } from '@backend-common/entities/auth/apikey.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
+import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { RuntimeDescription } from '@backend-common/types';
 import {
     ActionState,
@@ -11,7 +12,6 @@ import {
     LogType,
 } from '@kleinkram/shared';
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
-import { WorkerEntity } from '../worker/worker.entity';
 
 export interface ContainerLog {
     timestamp: string;

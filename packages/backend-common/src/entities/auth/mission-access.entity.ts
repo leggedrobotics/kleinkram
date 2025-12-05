@@ -1,6 +1,6 @@
-import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import type { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
-import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import type { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { Column, Entity, ManyToOne, Unique } from 'typeorm';
 
 import { AccessGroupRights } from '@kleinkram/shared';
@@ -11,13 +11,25 @@ export class MissionAccessEntity extends BaseEntity {
     @Column({ type: 'enum', enum: AccessGroupRights })
     rights!: AccessGroupRights;
 
-    @ManyToOne(() => AccessGroupEntity, (group) => group.project_accesses, {
-        nullable: false,
-    })
+    @ManyToOne(
+        () =>
+            require('@backend-common/entities/auth/accessgroup.entity')
+                .AccessGroupEntity as typeof AccessGroupEntity,
+        (group) => group.project_accesses,
+        {
+            nullable: false,
+        },
+    )
     accessGroup?: AccessGroupEntity;
 
-    @ManyToOne(() => MissionEntity, (mission) => mission.mission_accesses, {
-        nullable: false,
-    })
+    @ManyToOne(
+        () =>
+            require('@backend-common/entities/mission/mission.entity')
+                .MissionEntity as typeof MissionEntity,
+        (mission) => mission.mission_accesses,
+        {
+            nullable: false,
+        },
+    )
     mission?: MissionEntity;
 }

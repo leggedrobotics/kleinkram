@@ -18,9 +18,10 @@
                 "../packages/backend-common/src/index.ts"
             ],
             "@backend-common/*": ["../packages/backend-common/src/*"]
-        }
+        },
+        "resolveJsonModule": true
     },
-    "include": ["src/**/*", "../packages/**/*"],
+    "include": ["src/**/*", "src/**/*.json", "../packages/**/*"],
     "exclude": ["node_modules", "dist"],
     "references": [
         {

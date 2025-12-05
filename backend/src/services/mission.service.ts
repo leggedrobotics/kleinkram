@@ -409,7 +409,7 @@ export class MissionService {
         }
 
         await this.missionRepository.update(missionUUID, {
-            project: { uuid: project.uuid } as ProjectEntity,
+            project: { uuid: project.uuid } as any,
         });
 
         if (mission.files === undefined) throw new Error('Files not loaded');

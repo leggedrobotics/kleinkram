@@ -9,6 +9,7 @@ import tracer from './tracing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as fs from 'node:fs';
+import { register } from 'prom-client';
 import logger, { NestLoggerWrapper } from './logger';
 import { GlobalErrorFilter } from './routing/filters/global-error-filter';
 import { GlobalResponseValidationInterceptor } from './routing/interceptors/output-validation';
@@ -99,7 +100,17 @@ async function bootstrap(): Promise<void> {
     logger.debug('Save endpoints as JSON');
     saveEndpointsAsJson(app, '.endpoints/__generated__endpoints.json');
     logger.debug('Endpoints saved');
+
+    if (module.hot) {
+        module.hot.accept();
+        module.hot.dispose(() => {
+            app.close();
+            register.clear();
+        });
+    }
 }
+
+declare const module: any;
 
 // eslint-disable-next-line unicorn/prefer-top-level-await
 bootstrap().catch((error: unknown) => {

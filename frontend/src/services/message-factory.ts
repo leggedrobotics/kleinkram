@@ -76,9 +76,7 @@ const PathViewer = defineAsyncComponent(
 );
 const TransformStampedViewer = defineAsyncComponent(
     () =>
-        import(
-            '../components/inspect-file/viewers/transform-stamped-viewer.vue'
-        ),
+        import('../components/inspect-file/viewers/transform-stamped-viewer.vue'),
 );
 const NavSatFixViewer = defineAsyncComponent(
     () => import('../components/inspect-file/viewers/nav-sat-fix-viewer.vue'),
