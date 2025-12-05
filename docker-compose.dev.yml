@@ -31,9 +31,11 @@ services:
 
         environment:
             DEVBUILD: 'false'
+            REDIS_HOST: redis
 
         depends_on:
             - database
+            - redis
 
     database:
         image: postgres:17
@@ -122,6 +124,9 @@ services:
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+        # Add docker group to allow access to docker socket
+        group_add:
+            - ${DOCKER_GID:-999}
     prometheus:
         image: prom/prometheus
         container_name: kleinkram-prometheus

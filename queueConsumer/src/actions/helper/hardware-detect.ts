@@ -44,9 +44,19 @@ export async function createWorker(
     // Gather Hostname (assuming this will be the worker's unique name)
     const { hostname: name } = await si.osInfo();
 
-    const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-    const info = await docker.info();
-    const hostname = info.Name;
+    // Try to get hostname from docker, fall back to OS hostname if unavailable
+    let hostname = name;
+    try {
+        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+        const info = await docker.info();
+        hostname = info.Name;
+    } catch (error: unknown) {
+        const errorMessage =
+            error instanceof Error ? error.message : String(error);
+        logger.warn(
+            `Could not connect to Docker to get hostname, using OS hostname: ${errorMessage}`,
+        );
+    }
 
     // Assume "reachable" is true since we're creating the worker entity on the current machine
     const reachable = true;
@@ -120,7 +130,9 @@ const getGpuModels = async () => {
             errorMessage = error.message;
         }
 
-        logger.error(`Error reading NVIDIA GPU data: ${errorMessage}`);
+        logger.warn(
+            `Could not detect NVIDIA GPU data (this is normal if NVIDIA toolkit is not installed): ${errorMessage}`,
+        );
         return [];
     }
 };

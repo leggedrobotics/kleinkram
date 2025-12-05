@@ -79,6 +79,7 @@ services:
         environment:
             DEVBUILD: 'true'
             MINIO_ENDPOINT_INTERNAL: 'minio'
+            REDIS_HOST: redis
 
         depends_on:
             database:
@@ -259,6 +260,10 @@ services:
             - ./packages:/app/packages
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+
+        # Add docker group to allow access to docker socket
+        group_add:
+            - ${DOCKER_GID:-999}
 
         develop:
             watch:

@@ -1,3 +1,4 @@
+import { redis } from '@kleinkram/backend-common/consts';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
@@ -41,10 +42,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
 @Module({
     imports: [
         BullModule.forRoot({
-            redis: {
-                host: 'redis',
-                port: 6379,
-            },
+            redis,
         }),
 
         FileProcessorModule,
