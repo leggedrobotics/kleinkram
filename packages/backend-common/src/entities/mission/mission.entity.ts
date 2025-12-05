@@ -33,12 +33,15 @@ export class MissionEntity extends BaseEntity {
     creator?: UserEntity;
 
     @OneToMany(() => ApikeyEntity, (apiKey) => apiKey.mission)
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     api_keys?: ApikeyEntity[];
 
     @OneToMany(
         () => MissionAccessEntity,
         (missionAccess) => missionAccess.mission,
     )
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_accesses?: MissionAccessEntity[];
 
     @OneToMany(() => MetadataEntity, (tag) => tag.mission)

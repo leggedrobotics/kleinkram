@@ -40,6 +40,7 @@ export class AuthController {
 
     @Get('github')
     @UseGuards(AuthGuard('github'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
     async githubAuth(@Req() request: any): Promise<void> {
         // Initiates the GitHub OAuth flow
         // OAuth is handled by the AuthGuard
@@ -62,11 +63,14 @@ export class AuthController {
     @Get('github/callback')
     @UseGuards(AuthGuard('github'))
     @OutputDto(null) // TODO: type API response
+    // eslint-disable-next-line @typescript-eslint/require-await
     async githubAuthCallback(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         @Req() request: any,
-        @Res() res: Response,
+        @Res() response: Response,
     ): Promise<void> {
-        this.handleAuthRedirect(request, res);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        this.handleAuthRedirect(request, response);
     }
 
     @Get('google/callback')
@@ -180,6 +184,7 @@ export class AuthController {
     @Post('refresh-token')
     @OutputDto(null) // TODO: type API response
     async refreshToken(@Req() request: Request, @Res() response: Response) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const refreshToken = request.cookies[CookieNames.REFRESH_TOKEN];
         if (!refreshToken) {
             return response
@@ -188,15 +193,19 @@ export class AuthController {
         }
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
             const payload = this.jwtService.verify(refreshToken);
 
             // @ts-ignore
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
             const user = await this.userService.findOneByUUID(payload.uuid, {
                 uuid: true,
                 email: true,
                 role: true,
             });
 
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (!user) {
                 return response
                     .status(401)
@@ -212,7 +221,7 @@ export class AuthController {
                 secure: env.DEV,
                 sameSite: 'strict',
             });
-            response.status(200).json({ message: 'Token refreshed' });
+            return response.status(200).json({ message: 'Token refreshed' });
         } catch {
             throw InvalidJwtTokenException;
         }

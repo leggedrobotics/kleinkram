@@ -11,6 +11,7 @@ export function IsSkip(validationOptions?: ValidationOptions) {
             validator: {
                 validate(value: number) {
                     // Allow undefined (optional)
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     if (value === undefined) return true;
 
                     // Check if the value is an integer and within range

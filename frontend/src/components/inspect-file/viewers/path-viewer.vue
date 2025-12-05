@@ -100,6 +100,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -119,6 +120,7 @@ const isLoading = computed(
 );
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0)
         emit('load-required');
 
@@ -156,12 +158,15 @@ watch(showMap, () => {
     void renderPath();
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 const currentMessage = computed(() => properties.messages[currentIndex.value]);
 const currentPathPointCount = computed(
-    () => currentMessage.value?.data?.poses?.length || 0,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    () => currentMessage.value?.data?.poses?.length ?? 0,
 );
 const frameId = computed(
-    () => currentMessage.value?.data?.header?.frame_id || '-',
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    () => currentMessage.value?.data?.header?.frame_id ?? '-',
 );
 
 /*
@@ -231,7 +236,9 @@ async function renderPath() {
     const container = containerReference.value;
     if (!canvas || !container || !currentMessage.value) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const poses = currentMessage.value.data.poses;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (!poses || poses.length === 0) {
         const context = canvas.getContext('2d');
         if (context) context.clearRect(0, 0, canvas.width, canvas.height);
@@ -252,17 +259,24 @@ async function renderPath() {
         minY = Infinity,
         maxY = -Infinity;
     for (const p of poses) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const x = p.pose.position.x;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const y = p.pose.position.y;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         if (x < minX) minX = x;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         if (x > maxX) maxX = x;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         if (y < minY) minY = y;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         if (y > maxY) maxY = y;
     }
 
     if (showMap.value) {
         await renderGeoPath(
             context,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             poses,
             minX,
             maxX,
@@ -274,6 +288,7 @@ async function renderPath() {
     } else {
         renderLocalPath(
             context,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             poses,
             minX,
             maxX,
@@ -287,6 +302,7 @@ async function renderPath() {
 
 function renderLocalPath(
     context: CanvasRenderingContext2D,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     poses: any[],
     minX: number,
     maxX: number,
@@ -324,7 +340,9 @@ function renderLocalPath(
     const transformY = (y: number) => height - (y * scale + offsetY);
 
     for (const [index, p] of poses.entries()) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         const x = transformX(p.pose.position.x);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         const y = transformY(p.pose.position.y);
         if (index === 0) context.moveTo(x, y);
         else context.lineTo(x, y);
@@ -336,6 +354,7 @@ function renderLocalPath(
 
 async function renderGeoPath(
     context: CanvasRenderingContext2D,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     poses: any[],
     minLon: number,
     maxLon: number,
@@ -412,7 +431,9 @@ async function renderGeoPath(
     const transformY = (lat: number) => lat2tile(lat, zoom) * TILE_SIZE - viewY;
 
     for (const [index, p] of poses.entries()) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         const x = transformX(p.pose.position.x);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         const y = transformY(p.pose.position.y);
         if (index === 0) context.moveTo(x, y);
         else context.lineTo(x, y);
@@ -434,7 +455,9 @@ async function loadTile(
     y: number,
     z: number,
 ): Promise<{ tx: number; ty: number; img: HTMLImageElement } | null> {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     const url = `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     const key = `${z}-${x}-${y}`;
 
     if (tileCache.has(key)) {
@@ -458,27 +481,33 @@ async function loadTile(
 
 function drawEndpoints(
     context: CanvasRenderingContext2D,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     poses: any[],
     transformX: (x: number) => number,
     transformY: (y: number) => number,
 ) {
     // Start Point (Green)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const start = poses[0].pose.position;
     context.fillStyle = '#4CAF50';
     context.beginPath();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     context.arc(transformX(start.x), transformY(start.y), 4, 0, Math.PI * 2);
     context.fill();
 
     // End Point (Red)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = poses.at(-1).pose.position;
     context.fillStyle = '#F44336';
     context.beginPath();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     context.arc(transformX(end.x), transformY(end.y), 4, 0, Math.PI * 2);
     context.fill();
 }
 
 async function copyRaw(): Promise<void> {
     if (!currentMessage.value) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     await quasarCopy(JSON.stringify(currentMessage.value.data, null, 2));
     Notify.create({
         message: 'Path data copied',

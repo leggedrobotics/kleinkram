@@ -13,6 +13,7 @@ import {
 
 export class MissionQueryDto extends ProjectQueryDto {
     @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
     @ArrayNotEmpty()
@@ -21,6 +22,7 @@ export class MissionQueryDto extends ProjectQueryDto {
     missionUuids?: string[];
 
     @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
     @ArrayNotEmpty()

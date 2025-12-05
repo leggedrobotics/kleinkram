@@ -15,6 +15,7 @@ export class AuditLoggerMiddleware implements NestMiddleware {
     constructor(private actionService: ActionService) {}
 
     use(request: Request, _: Response, next: NextFunction): void {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!request.cookies) {
             next(); // pass on to the next middleware function
             return;

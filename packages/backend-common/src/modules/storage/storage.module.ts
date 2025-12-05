@@ -22,4 +22,5 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     ],
     exports: [StorageService, FileAuditService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class StorageModule {}

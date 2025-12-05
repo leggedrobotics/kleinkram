@@ -164,6 +164,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { onMounted } from 'vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -172,6 +173,7 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0) {
         emit('load-required');
     }
@@ -191,7 +193,9 @@ const formatTime = (nano: bigint): string => {
     return timePart?.replace('Z', '') ?? 'Invalid Time';
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const fmt = (number_: number): string => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (number_ === undefined || number_ === null) return '-';
     // If integer, show integer, else 4 decimals
     if (Number.isInteger(number_)) return String(number_);
@@ -199,21 +203,30 @@ const fmt = (number_: number): string => {
 };
 
 // Handle both Arrays and Object-style arrays {"0": val, "1": val}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getArray = (data: any): number[] => {
     if (!data) return [];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     if (Array.isArray(data)) return data;
     // Convert object keys "0", "1", "2" to array
-    return Object.keys(data)
-        .map(Number)
-        .sort((a, b) => a - b)
-        .map((k) => data[k]);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        Object.keys(data)
+            .map(Number)
+            .sort((a, b) => a - b)
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+            .map((k) => data[k])
+    );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const formatD = (data: any): string => {
     const array = getArray(data);
     return array.map((v) => fmt(v)).join(', ');
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function copyRaw(data: any): Promise<void> {
     await quasarCopy(JSON.stringify(data, null, 2));
     Notify.create({

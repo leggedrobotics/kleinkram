@@ -18,10 +18,15 @@ export class AddVersionInterceptor implements NestInterceptor {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const response = context.switchToHttp().getResponse();
 
         // Set headers early, so they are included even if an error occurs
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         response.header('kleinkram-version', appVersion);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         response.header('Access-Control-Expose-Headers', 'kleinkram-version');
 
         return next.handle();

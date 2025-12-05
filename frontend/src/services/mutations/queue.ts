@@ -4,6 +4,7 @@ import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 export const confirmUpload = async (uuid: string, md5: string) => {
     const response = await axios.post('/queue/confirmUpload', { uuid, md5 });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -21,6 +22,7 @@ export const createFile = async (
         headers: {},
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -29,6 +31,7 @@ export const createDrive = async (missionUUID: string, driveURL: string) => {
         missionUUID,
         driveURL,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -36,6 +39,7 @@ export const deleteFile = async (missionUUID: string, queueUUID: string) => {
     const response = await axios.delete(`/queue/${queueUUID}`, {
         data: { missionUUID },
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 export const cancelProcessing = async (
@@ -46,10 +50,12 @@ export const cancelProcessing = async (
         queueUUID,
         missionUUID,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const stopQueue = async (queueUUID: string) => {
     const response = await axios.post(`/queue/stopJob`, { jobId: queueUUID });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

@@ -81,6 +81,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed } from 'vue';
 
 const props = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     isLoading?: boolean;
@@ -89,16 +90,20 @@ const props = defineProps<{
 
 const duration = computed(() => {
     if (props.messages.length < 2) return 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const start = props.messages[0].logTime;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = props.messages.at(-1).logTime;
     return Number(end - start) / 1_000_000_000;
 });
 
 // Helper to handle BigInt serialization
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const replacer = (_key: string, value: any) => {
     if (typeof value === 'bigint') {
         return value.toString();
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return value;
 };
 
@@ -113,7 +118,9 @@ async function copyRaw(): Promise<void> {
     // But for now, let's implement a smart default: if > 1 message, copy latest?
     // Or just copy the last one.
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const last = props.messages.at(-1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const dataToCopy = last.data === undefined ? last : last.data;
 
     await quasarCopy(JSON.stringify(dataToCopy, replacer, 2));

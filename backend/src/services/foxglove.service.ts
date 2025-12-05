@@ -83,6 +83,7 @@ export class FoxgloveService {
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
         });
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         const dataToSign = `${uuid}:${file.filename}:${expires}:${userUuid}`;
         const expectedSignature = crypto
             .createHmac('sha256', this.LINK_SECRET)
@@ -97,6 +98,7 @@ export class FoxgloveService {
             file.uuid,
             3600,
             {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'response-content-disposition': `attachment; filename ="${file.filename}"`,
             },
         );
@@ -115,9 +117,11 @@ export class FoxgloveService {
         userUuid: string,
     ): string {
         const expires = Date.now() + 4 * 60 * 60 * 1000;
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         const dataToSign = `${fileUuid}:${filename}:${expires}:${userUuid}`;
         const signature = this.generateSignature(dataToSign);
         const cleanFilename = filename.replaceAll(/[^a-zA-Z0-9.-]/g, '_');
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `${this.BASE_URL}/integrations/foxglove/${fileUuid}/${cleanFilename}?expires=${expires}&signature=${signature}&u=${userUuid}`;
     }
 }

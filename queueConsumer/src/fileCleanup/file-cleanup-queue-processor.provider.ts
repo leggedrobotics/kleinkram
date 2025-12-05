@@ -60,7 +60,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
     onModuleInit(): void {
         const redisClient = new Redis(redis);
-        this.redlock = new Redlock([redisClient as any], {
+        this.redlock = new Redlock([redisClient], {
             retryCount: 0,
             retryDelay: 200, // Time in ms between retries
         });
@@ -101,6 +101,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
                 const queue = await this.queueRepository.findOneOrFail({
                     where: {
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         display_name: file.filename,
                         mission: { uuid: file.mission.uuid },
                     },
@@ -116,7 +117,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
     @Cron(CronExpression.EVERY_DAY_AT_3AM)
     async fixFileHashes(): Promise<void> {
         await this.redlock
-            // @ts-ignore
             .using([`lock:hash-repair`], 10_000, async () => {
                 logger.debug('Fixing file hashes');
 
@@ -151,7 +151,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                             logger.error(error);
                             resolve(void 0);
                         });
-                        datastream.on('data', (chunk) => {
+                        datastream.on('data', (chunk: Buffer) => {
                             hash.update(chunk);
                         });
                         datastream.on('end', () => {
@@ -174,7 +174,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
     @Cron(CronExpression.EVERY_DAY_AT_1AM)
     async cleanupFailedUploads(): Promise<void> {
         await this.redlock
-            // @ts-ignore
             .using([`lock:cleanup-failed-uploads`], 10_000, async () => {
                 logger.debug('Cleaning up failed uploads');
                 const failedUploads = await this.fileRepository.find({
@@ -199,6 +198,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
                         const queue = await this.queueRepository.findOne({
                             where: {
+                                // eslint-disable-next-line @typescript-eslint/naming-convention
                                 display_name: file.filename,
                                 mission: { uuid: file.mission.uuid },
                             },
@@ -240,9 +240,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
-        if (!user) {
-            return false;
-        }
         if (user.role === UserRole.ADMIN) {
             return true;
         }
@@ -250,12 +247,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
             where: { uuid: missionUUID },
             relations: ['project'],
         });
-        if (mission === undefined) {
-            logger.error(
-                `Mission ${missionUUID} is undefined, skipping cancel upload`,
-            );
-            return false;
-        }
 
         if (mission.project === undefined) {
             logger.error(

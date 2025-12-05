@@ -70,6 +70,8 @@ async function deleteProjectAction(): Promise<void> {
 
 defineExpose({
     deleteProjectAction,
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     project_name_check: projectNameCheck,
 });
 </script>

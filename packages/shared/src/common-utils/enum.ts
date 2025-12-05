@@ -152,6 +152,7 @@ export enum AccessGroupRights {
     CREATE = 10,
     WRITE = 20,
     DELETE = 30,
+
     _ADMIN = 100,
 }
 

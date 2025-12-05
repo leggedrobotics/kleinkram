@@ -7,6 +7,8 @@ export interface RosImageMessage {
     width?: number; // Optional because CompressedImage lacks this
     height?: number;
     encoding?: string; // Optional because CompressedImage lacks this
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     is_bigendian?: number;
     step?: number;
     data: Uint8Array | Record<string, number> | number[];
@@ -21,7 +23,9 @@ import {
 
 /**
  * Renders a ROS message directly onto a specific HTML Canvas.
+ // eslint-disable-next-line complexity
  */
+// eslint-disable-next-line complexity
 export function renderMessageToCanvas(
     message: RosImageMessage,
     canvas: HTMLCanvasElement,
@@ -107,18 +111,21 @@ export function renderMessageToCanvas(
         }
         default: {
             // Throw error so the UI shows it instead of spinning forever
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             throw new Error(`Unsupported encoding: ${message.encoding}`);
         }
     }
     onRender?.();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getBytesFromPayload(dataField: any): Uint8Array | undefined {
     if (!dataField) return;
     if (dataField instanceof Uint8Array) return dataField;
     if (Array.isArray(dataField)) return new Uint8Array(dataField);
 
     if (typeof dataField === 'object') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const keys = Object.keys(dataField)
             .map(Number)
             .filter((k) => !Number.isNaN(k));

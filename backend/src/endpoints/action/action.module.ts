@@ -36,4 +36,5 @@ import { ActionsController } from './action.controller';
     exports: [ActionService],
     controllers: [ActionsController],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ActionModule {}

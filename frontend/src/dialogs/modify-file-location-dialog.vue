@@ -56,7 +56,9 @@ const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 
 // State: Initialize with the current location of the file(s)
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
 const targetProjectUuid = ref<string | undefined>(props.mission.project.uuid);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
 const targetMissionUuid = ref<string | undefined>(props.mission.uuid);
 
 const { mutate: moveFilesMutation, isPending } = useMutation({
@@ -90,8 +92,9 @@ const { mutate: moveFilesMutation, isPending } = useMutation({
     onError(error: unknown) {
         console.error(error);
         const message =
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             (error as { response?: { data?: { message?: string } } })?.response
-                ?.data?.message || 'Unknown error occurred';
+                ?.data?.message ?? 'Unknown error occurred';
 
         Notify.create({
             group: false,

@@ -200,6 +200,7 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
     try {
         // Open a directory picker so the user can select where to save the files
         // @ts-expect-error
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
         const directoryHandle = await globalThis.showDirectoryPicker();
 
         for (const { url, filename } of files) {
@@ -212,9 +213,11 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
             }
 
             // Create a file handle and writable stream for the file
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             const fileHandle = await directoryHandle.getFileHandle(filename, {
                 create: true,
             });
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             const writableStream = await fileHandle.createWritable();
 
             // Create a reader for the response body stream
@@ -226,6 +229,7 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
                 let done: boolean;
                 let value: Uint8Array;
 
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 while (true) {
                     if (reader === undefined) break;
 
@@ -238,6 +242,7 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
                     if (done) break;
 
                     // Write the current chunk to the file
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                     await writableStream.write(value);
                 }
             }
@@ -246,8 +251,10 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
             await streamToFileSystem();
 
             // Close the writable stream once done
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             await writableStream.close();
 
+            // eslint-disable-next-line no-console
             console.log(`Successfully saved ${filename}`);
         }
     } catch (error) {
@@ -390,6 +397,7 @@ const colorPalette = [
 ];
 
 export function hashUUIDtoColor(uuid: string): string {
+    // eslint-disable-next-line @typescript-eslint/no-misused-spread
     const hash = [...uuid].reduce(
         (accumulator, char) => accumulator + (char.codePointAt(0) ?? 0),
         0,

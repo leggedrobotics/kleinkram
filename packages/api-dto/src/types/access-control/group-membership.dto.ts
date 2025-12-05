@@ -22,6 +22,7 @@ export class GroupMembershipDto {
     createdAt!: Date;
 
     @ValidateIf((_, value) => {
+        // eslint-disable-next-line no-console
         console.log(value, typeof value);
         return true;
     })
@@ -30,6 +31,7 @@ export class GroupMembershipDto {
     updatedAt!: Date;
 
     @ValidateIf((_, value) => {
+        // eslint-disable-next-line no-console
         console.log(value, typeof value);
         return value !== null;
     })

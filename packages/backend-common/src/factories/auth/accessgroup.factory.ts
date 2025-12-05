@@ -17,6 +17,7 @@ define(AccessGroupEntity, (_, context: AccessGroupFactoryContext) => {
     const accessGroup = new AccessGroupEntity();
 
     if (context.isPersonal) {
+        // eslint-disable-next-line no-console
         console.assert(
             context.user,
             'No user provided for personal access group',
@@ -32,6 +33,7 @@ define(AccessGroupEntity, (_, context: AccessGroupFactoryContext) => {
             } as GroupMembershipEntity,
         ];
     } else {
+        // eslint-disable-next-line no-console
         console.assert(
             context.allUsers.length > 0,
             'No users provided for access group',

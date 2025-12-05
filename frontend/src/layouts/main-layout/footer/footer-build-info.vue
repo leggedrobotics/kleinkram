@@ -47,6 +47,8 @@
 <script setup lang="ts">
 // @ts-ignore (build.ts is only available at runtime)
 import { kleinkramVersion } from 'src/api/axios';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 import BUILD_INFO from 'src/build';
 import FooterSeparator from './footer-separator.vue';
 </script>

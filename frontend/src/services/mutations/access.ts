@@ -12,6 +12,7 @@ export const addUsersToProject = async (
         uuid: projectUUID,
         rights,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -19,6 +20,7 @@ export const createAccessGroup = async (name: string) => {
     const response = await axios.post('/access/create', {
         name,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -30,6 +32,7 @@ export const addUserToAccessGroup = async (
         userUUID,
         uuid: accessGroupUUID,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -43,6 +46,7 @@ export const addAccessGroupToProject = async (
         accessGroupUUID,
         rights,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -54,6 +58,7 @@ export const updateProjectAccessRights = async (
         `/projects/${projectUuid}/access`,
         accessRights,
     );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -65,6 +70,7 @@ export const removeAccessGroupFromProject = async (
         uuid: projectUUID,
         accessGroupUUID,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -76,11 +82,13 @@ export const removeUserFromAccessGroup = async (
         userUUID,
         uuid: accessGroupUUID,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const deleteAccessGroup = async (accessGroupUUID: string) => {
     const response = await axios.delete(`/access/${accessGroupUUID}`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -94,5 +102,6 @@ export const setAccessGroupExpiry = async (
         userUuid,
         expireDate: expiryDate ?? 'never',
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

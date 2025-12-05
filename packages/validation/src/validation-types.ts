@@ -15,27 +15,32 @@ import { IsTake } from './take-validation';
 
 export class RecordStringStringValidate {
     @IsRecordStringString()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any;
 }
 
 export class SkipValidate {
     @IsSkip()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any;
 }
 
 export class TakeValidate {
     @IsTake()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any;
 }
 
 export class UUIDValidate {
     @IsUUID()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any;
 }
 
 export class StringValidate {
     @IsString()
     @IsNotEmpty()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any;
 }
 
@@ -43,6 +48,7 @@ import { FileSource } from '@kleinkram/shared';
 
 export class OptionalStringValidate {
     @IsString()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any;
 }
 

@@ -122,10 +122,12 @@ const dockerHubUrl = computed(() => {
     const parts = image.split('/');
     if (parts.length === 1 && parts[0]) {
         // Official image, e.g. "ubuntu" -> https://hub.docker.com/_/ubuntu
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `https://hub.docker.com/_/${parts[0].split(':')[0]}`;
     }
     if (parts.length === 2 && parts[0] && parts[1]) {
         // User image, e.g. "rslethz/kleinkram" -> https://hub.docker.com/r/rslethz/kleinkram
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `https://hub.docker.com/r/${parts[0]}/${parts[1].split(':')[0]}`;
     }
     return '';

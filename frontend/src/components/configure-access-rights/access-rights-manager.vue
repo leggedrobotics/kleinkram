@@ -109,7 +109,10 @@ const { data: foundAccessGroups } = useSearchAccessGroup(searchQuery);
 const searchResults = computed<AccessGroupDto[]>(() => {
     return (
         foundAccessGroups.value?.data.map((r) => ({
+            // eslint-disable-next-line @typescript-eslint/no-misused-spread
             ...r,
+
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             memberCount: r.memberships?.length ?? 0,
         })) ?? []
     );
@@ -130,6 +133,7 @@ const handleSearchFilter = (
 };
 
 const getExistingRight = (uuid: string): AccessGroupRights | undefined => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return accessRights.value?.find((g) => g.uuid === uuid)?.rights;
 };
 
@@ -167,6 +171,7 @@ const onUpdateRights = (
     if (index === -1) return;
 
     const updatedList = [...accessRights.value];
+    // eslint-disable-next-line @typescript-eslint/no-misused-spread
     updatedList[index] = { ...group, rights: newRight };
 
     accessRights.value = updatedList;

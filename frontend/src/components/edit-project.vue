@@ -101,6 +101,7 @@ watch(
     { immediate: true },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 async function save_changes(): Promise<void> {
     // resolve immediately if no changes
     if (
@@ -176,6 +177,7 @@ async function save_changes(): Promise<void> {
 }
 
 defineExpose({
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     save_changes,
 });
 

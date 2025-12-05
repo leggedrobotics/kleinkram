@@ -78,6 +78,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed } from 'vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -89,18 +90,22 @@ const isLoading = computed(
 
 const duration = computed(() => {
     if (properties.messages.length < 2) return 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const start = properties.messages[0].logTime;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = properties.messages.at(-1).logTime;
     return Number(end - start) / 1_000_000_000;
 });
 
 const latestMessage = computed(() => {
     if (properties.messages.length === 0) return null;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return properties.messages.at(-1).data;
 });
 
 const statusText = computed(() => {
     if (!latestMessage.value) return 'Unknown';
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const status = latestMessage.value.status.status;
     switch (status) {
         case -1: {
@@ -116,6 +121,7 @@ const statusText = computed(() => {
             return 'GBAS_FIX';
         }
         default: {
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             return `Unknown (${status})`;
         }
     }
@@ -123,6 +129,7 @@ const statusText = computed(() => {
 
 const statusColor = computed(() => {
     if (!latestMessage.value) return 'grey';
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const status = latestMessage.value.status.status;
     switch (status) {
         case -1: {
@@ -145,6 +152,7 @@ const statusColor = computed(() => {
 
 const covarianceType = computed(() => {
     if (!latestMessage.value) return 'Unknown';
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const type = latestMessage.value.position_covariance_type;
     switch (type) {
         case 0: {
@@ -160,6 +168,7 @@ const covarianceType = computed(() => {
             return 'KNOWN';
         }
         default: {
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             return `Unknown (${type})`;
         }
     }

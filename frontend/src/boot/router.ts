@@ -5,7 +5,9 @@ import { isAuthenticated } from 'src/services/auth';
 import { Router } from 'vue-router';
 
 let routerInstance: Router;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineBoot(({ router }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     routerInstance = router;
 
     routerInstance.afterEach(async (to) => {

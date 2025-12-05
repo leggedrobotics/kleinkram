@@ -48,11 +48,14 @@ export class RosbagStrategy extends DecodingStrategy {
             start = { sec, nsec };
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const options: any = { topics: [topic] };
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (start) options.startTime = start;
 
         // Prefetch chunks
         const chunkInfos = this.bag.chunkInfos;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (chunkInfos) {
             // Helper to compare ros times
             const compareTime = (
@@ -101,6 +104,7 @@ export class RosbagStrategy extends DecodingStrategy {
             }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const iterator = this.bag.messageIterator(options);
 
         for await (const result of iterator) {

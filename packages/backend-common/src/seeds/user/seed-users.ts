@@ -14,8 +14,10 @@ export interface SeededUsers {
 
 export const seedUsers = async (
     factory: Factory,
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     conn: Connection,
 ): Promise<SeededUsers> => {
+    // eslint-disable-next-line no-console
     console.log('1. Creating Users...');
     let adminUser: UserEntity;
     let internalUser: UserEntity;
@@ -37,15 +39,19 @@ export const seedUsers = async (
             .getRepository(UserEntity)
             .findOne({ where: { email: 'external-user@example.com' } });
     } catch {
+        // eslint-disable-next-line no-console
         console.log('Database tables not found, will create users');
     }
 
     if (existingAdmin && existingInternal && existingExternal) {
+        // eslint-disable-next-line no-console
         console.log('Seed users already exist, skipping user creation');
         adminUser = existingAdmin;
+
         internalUser = existingInternal;
         externalUser = existingExternal;
     } else {
+        // eslint-disable-next-line no-console
         console.log('Creating seed users...');
         adminUser = await factory(UserEntity)({
             mail: 'admin@kleinkram.dev',

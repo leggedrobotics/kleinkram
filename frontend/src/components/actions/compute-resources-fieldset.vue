@@ -84,6 +84,7 @@ const model = defineModel<{
     gpuMemory: number;
 }>({ required: true });
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 const hasGpu = computed(() => (model.value.gpuMemory ?? -1) > -1);
 const gpuEnabled = ref(hasGpu.value);
 

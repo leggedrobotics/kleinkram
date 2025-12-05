@@ -16,10 +16,12 @@ export interface SeededProjects {
 
 export const seedProjects = async (
     factory: Factory,
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     conn: Connection,
     adminUser: UserEntity,
     internalUser: UserEntity,
 ): Promise<SeededProjects> => {
+    // eslint-disable-next-line no-console
     console.log('2. Creating Projects and Missions...');
 
     // 1.5 Create Tag Types
@@ -30,13 +32,16 @@ export const seedProjects = async (
     try {
         existingTagTypes = await conn.getRepository(TagTypeEntity).find();
     } catch {
+        // eslint-disable-next-line no-console
         console.log('TagType table not found, will create tag types');
     }
 
     if (existingTagTypes.length >= TAG_TYPE_COUNT) {
+        // eslint-disable-next-line no-console
         console.log('Tag types already exist, skipping tag type creation');
         tagTypes = existingTagTypes.slice(0, TAG_TYPE_COUNT);
     } else {
+        // eslint-disable-next-line no-console
         console.log('Creating tag types...');
         tagTypes = await factory(TagTypeEntity)().createMany(TAG_TYPE_COUNT);
     }
@@ -67,16 +72,19 @@ export const seedProjects = async (
     const createdMissions: MissionEntity[] = [];
 
     // Check if projects already exist
+
     let existingProjects: ProjectEntity[] = [];
     try {
         existingProjects = await conn.getRepository(ProjectEntity).find();
     } catch {
+        // eslint-disable-next-line no-console
         console.log('Project table not found, will create projects');
     }
     const existingProjectNames = new Set(existingProjects.map((p) => p.name));
 
     for (const projectDefinition of projectDefinitions) {
         if (existingProjectNames.has(projectDefinition.name)) {
+            // eslint-disable-next-line no-console
             console.log(
                 `Project "${projectDefinition.name}" already exists, skipping`,
             );
@@ -92,18 +100,21 @@ export const seedProjects = async (
                     where: { project: { uuid: project.uuid } },
                     relations: ['project'],
                 });
+
                 createdProjects.push(project);
                 createdMissions.push(...missions);
             }
             continue;
         }
 
+        // eslint-disable-next-line no-console
         console.log(`Creating project "${projectDefinition.name}"...`);
         const project = await factory(ProjectEntity)({
             name: projectDefinition.name,
             description: projectDefinition.description,
             creator: adminUser,
             tagTypes: tagTypes,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any).create();
         createdProjects.push(project);
 
@@ -128,6 +139,7 @@ export const seedProjects = async (
             const mission = await factory(MissionEntity)({
                 project: project,
                 user: adminUser,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any).create({
                 name: missionName,
             });

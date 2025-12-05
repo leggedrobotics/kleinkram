@@ -10,5 +10,6 @@ export const currentQueue = async (
         stateFilter: stateFilter.length > 0 ? stateFilter.join(',') : undefined,
     };
     const response = await axios.get('/queue/active', { params: parameters });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

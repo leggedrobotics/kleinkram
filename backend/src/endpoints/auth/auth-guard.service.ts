@@ -20,6 +20,7 @@ export class AuthGuardService {
         user: UserEntity,
         projectAccessUUID: string,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user || !projectAccessUUID) {
             logger.error(
                 `AuthGuard: projectAccessUUID (${projectAccessUUID}) or User (${user.uuid}) not provided.`,
@@ -31,6 +32,7 @@ export class AuthGuardService {
         }
         return await this.accessGroupRepository.exists({
             where: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 project_accesses: { uuid: projectAccessUUID },
                 creator: { uuid: user.uuid },
             },
@@ -41,6 +43,7 @@ export class AuthGuardService {
         user: UserEntity,
         uuid: string,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user || !uuid) {
             logger.error(
                 `AuthGuard: aguUUID (${uuid}) or User (${user.uuid}) not provided.`,

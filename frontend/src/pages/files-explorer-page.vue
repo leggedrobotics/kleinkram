@@ -472,6 +472,7 @@ registerNoPermissionErrorHandler(
     missionError,
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const { data: all_categories } = useCategories(
     projectUuid.value ?? '',
     ref(''),
@@ -482,6 +483,7 @@ const allCategories: Ref<CategoryDto[]> = computed(() =>
 
 const selectedCategories = computed({
     get: () => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!handler.value.categories) return [];
         return handler.value.categories
             .map((catUUID) =>
@@ -490,6 +492,7 @@ const selectedCategories = computed({
             .filter((cat) => cat !== undefined);
     },
     set: (value: CategoryDto[]) => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!value) {
             handler.value.setCategories([]);
             return;

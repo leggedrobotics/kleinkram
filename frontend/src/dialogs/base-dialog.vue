@@ -65,7 +65,9 @@ export default {
         contentStyle: ComputedRef<CSSProperties>;
     } {
         const contentStyle = computed<CSSProperties>(() => ({
-            height: properties.contentHeight || 'auto',
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            height: properties.contentHeight ?? 'auto',
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             overflowY: properties.contentHeight ? 'hidden' : 'visible',
         }));
         const dialogPlugin = useDialogPluginComponent();

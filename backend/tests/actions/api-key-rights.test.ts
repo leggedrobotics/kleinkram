@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="../global.d.ts" />
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import {
@@ -36,9 +37,11 @@ const createTemplateViaApi = async (
 
     if (response.status >= 300) {
         throw new Error(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `Failed to create template: ${response.status} ${response.statusText}`,
         );
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.json();
 };
 
@@ -50,7 +53,9 @@ describe('Verify Action Access Rights', () => {
         // Create internal user (Creator)
         ({
             user: globalThis.creator,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             token: globalThis.creator.token,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             response: globalThis.creator.Response,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
     });
@@ -60,6 +65,7 @@ describe('Verify Action Access Rights', () => {
         const accessGroupRepository =
             database.getRepository<AccessGroupEntity>(AccessGroupEntity);
         const accessGroupCreator = await accessGroupRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             where: { name: globalThis.creator.name },
         });
 
@@ -76,6 +82,7 @@ describe('Verify Action Access Rights', () => {
                     },
                 ],
             },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
         );
 
@@ -91,11 +98,14 @@ describe('Verify Action Access Rights', () => {
             maxRuntime: 1,
             accessRights: AccessGroupRights.READ,
         };
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const createdTemplate = await createTemplateViaApi(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
             templateDto,
         );
         console.log('DEBUG: createdTemplate', createdTemplate);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         globalThis.templateUuid = createdTemplate.uuid;
 
         // 4. Create Mission
@@ -106,6 +116,7 @@ describe('Verify Action Access Rights', () => {
                 tags: {},
                 ignoreTags: true,
             },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
         );
     });
@@ -150,6 +161,7 @@ describe('Verify Action Access Rights', () => {
         const actionRepo = database.getRepository(ActionEntity);
         const action = actionRepo.create({
             mission: mission,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             creator: globalThis.creator,
             state: ActionState.PROCESSING,
             template: template,
@@ -158,10 +170,12 @@ describe('Verify Action Access Rights', () => {
 
         const apiKeyRepo = database.getRepository(ApikeyEntity);
         const apiKeyEntity = apiKeyRepo.create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.ACTION,
             mission: mission,
             action: action,
             rights: AccessGroupRights.READ,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             user: globalThis.creator,
         });
         await apiKeyRepo.save(apiKeyEntity);
@@ -172,8 +186,11 @@ describe('Verify Action Access Rights', () => {
             `${DEFAULT_URL}/mission/${globalThis.missionUuid}`,
             {
                 method: 'DELETE',
+
                 headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'x-api-key': apiKey,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'kleinkram-client-version': '0.56.0',
                 },
             },
@@ -198,6 +215,7 @@ describe('Verify Action Access Rights', () => {
         const actionRepo = database.getRepository(ActionEntity);
         const action = actionRepo.create({
             mission: mission,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             creator: globalThis.creator,
             state: ActionState.PROCESSING,
             template: template,
@@ -206,10 +224,12 @@ describe('Verify Action Access Rights', () => {
 
         const apiKeyRepo = database.getRepository(ApikeyEntity);
         const apiKeyEntity = apiKeyRepo.create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.ACTION,
             mission: mission,
             action: action,
             rights: AccessGroupRights.READ,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             user: globalThis.creator,
         });
         await apiKeyRepo.save(apiKeyEntity);
@@ -218,10 +238,13 @@ describe('Verify Action Access Rights', () => {
         // 2. Try to GET the mission using the Action API Key
         const getResponse = await fetch(
             `${DEFAULT_URL}/mission/one?uuid=${globalThis.missionUuid}`,
+
             {
                 method: 'GET',
                 headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'x-api-key': apiKey,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'kleinkram-client-version': '0.56.0',
                 },
             },

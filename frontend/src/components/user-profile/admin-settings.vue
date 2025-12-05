@@ -88,9 +88,11 @@ async function resetFileSizes(): Promise<void> {
 }
 
 async function recalculateHashes(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { data } = await axios.post('queue/recalculateHashes');
 
     $q.notify({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
         message: `Recalculating hashes started. ${data.fileCount} files to process`,
         color: 'positive',
         position: 'bottom',
@@ -99,9 +101,11 @@ async function recalculateHashes(): Promise<void> {
 }
 
 async function reextractTopics(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { data } = await axios.post('file/reextractTopics');
 
     $q.notify({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
         message: `Topic extraction started. ${data.count} files queued.`,
         color: 'positive',
         position: 'bottom',

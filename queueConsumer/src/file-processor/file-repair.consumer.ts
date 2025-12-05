@@ -57,9 +57,9 @@ export class FileRepairProcessor {
             logger.debug(
                 `[Repair] Successfully extracted topics for ${filename} via streaming`,
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(
-                `[Repair] Failed to extract topics for ${filename}: ${error}`,
+                `[Repair] Failed to extract topics for ${filename}: ${String(error)}`,
             );
         }
     }

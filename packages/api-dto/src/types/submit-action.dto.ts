@@ -68,5 +68,7 @@ export class ActionQuery {
 
 export class ActionDetailsQuery {
     @IsUUID()
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     action_uuid!: string;
 }

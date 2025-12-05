@@ -9,6 +9,7 @@ import { formatPayload } from './rosmsg-utilities.ts';
 export function useRosmsgPreview(): {
     isReaderReady: Ref<boolean, boolean>;
     readerError: Ref<string | null, string | null>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     topicPreviews: Record<string, any[]>;
     topicLoadingState: Record<string, boolean>;
     topicErrors: Record<string, string | null>;
@@ -21,6 +22,7 @@ export function useRosmsgPreview(): {
         topicName: string,
         options?: { limit?: number; append?: boolean },
     ) => Promise<void>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     formatPayload: (data: any) => string;
     cancelTopic: (topicName: string) => void;
     reset: () => void;
@@ -28,6 +30,7 @@ export function useRosmsgPreview(): {
 } {
     const isReaderReady = ref(false);
     const readerError = ref<string | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const topicPreviews = reactive<Record<string, any[]>>({});
     const topicLoadingState = reactive<Record<string, boolean>>({});
 
@@ -90,8 +93,10 @@ export function useRosmsgPreview(): {
 
             strategy.value = impl;
             isReaderReady.value = true;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('Preview init failed:', error);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             readerError.value = error.message;
         }
     }
@@ -124,8 +129,10 @@ export function useRosmsgPreview(): {
             // Calculate start time from the last message
             const currentMessages = topicPreviews[topicName];
             if (currentMessages && currentMessages.length > 0) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const lastMessage = currentMessages.at(-1);
                 // Add 1ns to avoid duplicate of the last message
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                 startTime = BigInt(lastMessage.logTime) + 1n;
             }
         } else {
@@ -152,6 +159,7 @@ export function useRosmsgPreview(): {
 
             console.error(`Error reading ${topicName}`, error);
             // Don't necessarily clear previews on error, we might have partial data
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
             if (!topicPreviews[topicName]) topicPreviews[topicName] = [];
 
             topicErrors[topicName] =

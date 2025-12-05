@@ -78,10 +78,13 @@ const clear = () => {
 const { data: _categories } = useCategories(properties.projectUuid, filter);
 
 const categories: Ref<CategoryDto[]> = computed(() =>
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     _categories.value ? _categories.value.data || [] : [],
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onInputChange = ($event: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     filter.value = $event;
 };
 </script>

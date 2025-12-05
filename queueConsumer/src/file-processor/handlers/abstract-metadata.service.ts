@@ -87,9 +87,9 @@ export abstract class AbstractMetadataService {
                     },
                 }),
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(
-                `Metadata extraction finalize failed for ${targetEntity.filename}: ${error}`,
+                `Metadata extraction finalize failed for ${targetEntity.filename}: ${String(error)}`,
             );
             targetEntity.state = FileState.CONVERSION_ERROR;
             await this.fileRepo.save(targetEntity);

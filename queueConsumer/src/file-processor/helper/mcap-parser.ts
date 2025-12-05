@@ -12,12 +12,12 @@ export interface McapMetadata {
     size: number;
 }
 
-export class McapParser {
+export const McapParser = {
     /**
      * Parses an MCAP file to extract topic statistics and recording date.
      * Uses 'await using' to guarantee file closure.
      */
-    static async extractMetadata(filePath: string): Promise<McapMetadata> {
+    async extractMetadata(filePath: string): Promise<McapMetadata> {
         const fileHandle = await open(filePath, 'r');
 
         const { size } = await fileHandle.stat();
@@ -34,48 +34,47 @@ export class McapParser {
         }
 
         return {
-            topics: this.mapChannelsToTopics(reader),
+            topics: mapChannelsToTopics(reader),
             date: new Date(
                 Number(reader.statistics.messageStartTime / 1_000_000n),
             ), // nanoseconds to millis
             size,
         };
+    },
+};
+
+function mapChannelsToTopics(
+    reader: McapIndexedReader,
+): Partial<TopicEntity>[] {
+    const stats = reader.statistics;
+
+    if (!stats) {
+        return [];
     }
 
-    private static mapChannelsToTopics(
-        reader: McapIndexedReader,
-    ): Partial<TopicEntity>[] {
-        const stats = reader.statistics;
+    const durationNs = stats.messageEndTime - stats.messageStartTime;
+    const durationSec = Number(durationNs) / 1_000_000_000;
 
-        if (!stats) {
-            return [];
-        }
+    const topics: Partial<TopicEntity>[] = [];
 
-        const durationNs = stats.messageEndTime - stats.messageStartTime;
-        const durationSec = Number(durationNs) / 1_000_000_000;
+    for (const [, channel] of reader.channelsById) {
+        const schema = reader.schemasById.get(channel.schemaId);
+        if (!schema) continue;
 
-        const topics: Partial<TopicEntity>[] = [];
+        const messageCount = stats.channelMessageCounts.get(channel.id) ?? 0n;
 
-        for (const [, channel] of reader.channelsById) {
-            const schema = reader.schemasById.get(channel.schemaId);
-            if (!schema) continue;
+        // Calculate frequency safely avoiding divide by zero
+        const frequency =
+            durationSec > 0 ? Number(messageCount) / durationSec : 0;
 
-            const messageCount =
-                stats.channelMessageCounts.get(channel.id) ?? 0n;
-
-            // Calculate frequency safely avoiding divide by zero
-            const frequency =
-                durationSec > 0 ? Number(messageCount) / durationSec : 0;
-
-            topics.push({
-                name: channel.topic,
-                type: schema.name,
-                nrMessages: messageCount,
-                messageEncoding: channel.messageEncoding,
-                frequency,
-            });
-        }
-
-        return topics;
+        topics.push({
+            name: channel.topic,
+            type: schema.name,
+            nrMessages: messageCount,
+            messageEncoding: channel.messageEncoding,
+            frequency,
+        });
     }
+
+    return topics;
 }

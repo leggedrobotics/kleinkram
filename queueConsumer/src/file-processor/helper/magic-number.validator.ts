@@ -2,19 +2,16 @@ import { FileType } from '@kleinkram/shared';
 import * as fs from 'node:fs/promises';
 import logger from '../../logger';
 
-export class MagicNumberValidator {
-    private static readonly MAGIC_NUMBERS: Partial<Record<FileType, Buffer>> = {
-        [FileType.MCAP]: Buffer.from([
-            0x89, 0x4d, 0x43, 0x41, 0x50, 0x30, 0x0d, 0x0a,
-        ]), // \x89MCAP\x30\r\n
-        [FileType.BAG]: Buffer.from('#ROSBAG V2.0\n'),
-        [FileType.DB3]: Buffer.from('SQLite format 3\0'),
-    };
+const MAGIC_NUMBERS: Partial<Record<FileType, Buffer>> = {
+    [FileType.MCAP]: Buffer.from([
+        0x89, 0x4d, 0x43, 0x41, 0x50, 0x30, 0x0d, 0x0a,
+    ]), // \x89MCAP\x30\r\n
+    [FileType.BAG]: Buffer.from('#ROSBAG V2.0\n'),
+    [FileType.DB3]: Buffer.from('SQLite format 3\0'),
+};
 
-    static async validate(
-        filePath: string,
-        fileType: FileType,
-    ): Promise<boolean> {
+export const MagicNumberValidator = {
+    async validate(filePath: string, fileType: FileType): Promise<boolean> {
         try {
             const handle = await fs.open(filePath, 'r');
             try {
@@ -64,7 +61,7 @@ export class MagicNumberValidator {
                     return true;
                 }
 
-                const magic = this.MAGIC_NUMBERS[fileType];
+                const magic = MAGIC_NUMBERS[fileType];
                 if (!magic) {
                     logger.warn(
                         `No magic number defined for file type ${fileType}, skipping validation.`,
@@ -88,11 +85,11 @@ export class MagicNumberValidator {
             } finally {
                 await handle.close();
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(
-                `Failed to validate magic number for ${filePath}: ${error}`,
+                `Failed to validate magic number for ${filePath}: ${String(error)}`,
             );
             return false;
         }
-    }
-}
+    },
+};

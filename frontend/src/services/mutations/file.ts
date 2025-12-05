@@ -25,6 +25,7 @@ export const updateFile = async ({ file }: { file: FileWithTopicDto }) => {
             (category: CategoryDto) => category.uuid,
         ),
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -33,11 +34,13 @@ export const moveFiles = async (fileUUIDs: string[], missionUUID: string) => {
         fileUUIDs,
         missionUUID,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const deleteFile = async (file: FileWithTopicDto) => {
     const response = await axios.delete(`/files/${file.uuid}`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -56,6 +59,7 @@ export const cancelUploads = async (
         uuids: fileUuids,
         missionUuid: missionUuid,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -64,5 +68,6 @@ export const deleteFiles = async (fileUUIDs: string[], missionUUID: string) => {
         uuids: fileUUIDs,
         missionUUID,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

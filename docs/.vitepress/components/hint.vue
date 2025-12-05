@@ -1,3 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+// eslint-disable-next-line vue/multi-word-component-names
+// eslint-disable-next-line unicorn/filename-case
+// eslint-disable-next-line vue/multi-word-component-names
+// eslint-disable-next-line unicorn/filename-case
 <template>
     <div
         class="access-badge table-cell"
@@ -19,6 +24,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const props = defineProps<{
     hint?: string;
 }>();

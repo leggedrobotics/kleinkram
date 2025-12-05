@@ -48,7 +48,7 @@ export class RosBagHandler implements FileHandler {
         const autoConvert = job.mission?.project?.autoConvert !== false;
 
         logger.debug(
-            `Starting ROS Bag pipeline for ${primaryFile.filename} (AutoConvert: ${autoConvert})`,
+            `Starting ROS Bag pipeline for ${primaryFile.filename} (AutoConvert: ${String(autoConvert)})`,
         );
 
         // Update state to indicate we are working
@@ -76,8 +76,8 @@ export class RosBagHandler implements FileHandler {
                     mcapOutputPath,
                     mcapFilename,
                 );
-            } catch (error) {
-                logger.error(`RosBag Conversion failed: ${error}`);
+            } catch (error: unknown) {
+                logger.error(`RosBag Conversion failed: ${String(error)}`);
                 primaryFile.state = FileState.CONVERSION_ERROR;
                 await this.fileRepo.save(primaryFile);
                 throw error;
@@ -86,8 +86,8 @@ export class RosBagHandler implements FileHandler {
             try {
                 // --- Path B: Extraction Only (Stream directly from Bag) ---
                 await this.handleExtractionOnly(primaryFile, filePath);
-            } catch (error) {
-                logger.error(`RosBag Extraction failed: ${error}`);
+            } catch (error: unknown) {
+                logger.error(`RosBag Extraction failed: ${String(error)}`);
                 primaryFile.state = FileState.CORRUPTED;
                 await this.fileRepo.save(primaryFile);
                 throw error;
@@ -160,11 +160,11 @@ export class RosBagHandler implements FileHandler {
                     filename: mcapFilename,
                 })
                 .catch((error: unknown) =>
-                    logger.warn(`Tagging failed: ${error}`),
+                    logger.warn(`Tagging failed: ${String(error)}`),
                 );
 
             // Update Primary Bag File (inherit date from conversion result)
-            primaryFile.date = savedMcapEntity.date ?? primaryFile.date;
+            primaryFile.date = savedMcapEntity.date;
             primaryFile.state = FileState.OK;
             await this.fileRepo.save(primaryFile);
 

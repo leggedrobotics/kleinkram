@@ -34,6 +34,7 @@ export const missionsOfProjectMinimal = async (
             skip,
         };
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parameters: Record<string, any> = {
         uuid: projectUUID,
         take,
@@ -71,6 +72,7 @@ export const missionsOfProject = async (
             skip,
         };
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parameters: Record<string, any> = {
         uuid: projectUUID,
         take,

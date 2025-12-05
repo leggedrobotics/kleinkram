@@ -8,6 +8,8 @@ import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 @Unique('unique_versioned_action_name', ['name', 'version'])
 export class ActionTemplateEntity extends BaseEntity {
     @Column()
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     image_name!: string;
 
     @Column()

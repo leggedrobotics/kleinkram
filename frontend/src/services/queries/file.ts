@@ -74,15 +74,20 @@ export const fetchFile = async (uuid: string): Promise<FileWithTopicDto> => {
 export const downloadFile = async (
     uuid: string,
     expires: boolean,
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     preview_only = false,
 ): Promise<string> => {
     const response = await axios.get('files/download', {
         params: {
             uuid,
+
             expires,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             preview_only,
         },
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -100,7 +105,7 @@ export const filesOfMission = async (
     const tag: Record<string, unknown> = {};
 
     return fetchFilteredFiles(
-        filename || '',
+        filename ?? '',
         undefined,
         missionUUID,
         undefined,

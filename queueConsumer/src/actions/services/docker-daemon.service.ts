@@ -21,34 +21,52 @@ export interface ContainerLimits {
     /**
      * The maximum runtime of the container in milliseconds.
      */
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     max_runtime: number;
     /**
      * The maximum memory the container can use in bytes.
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      */
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     memory_limit: number;
     /**
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      * The maximum number of CPU cores.
      */
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     n_cpu: number;
+
     /**
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      * The maximum disk space the container can use in bytes.
      */
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     disk_quota: number;
 }
 
 const defaultContainerLimitations: ContainerLimits = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     max_runtime: 60 * 60 * 1000, // 1 hour
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     memory_limit: 1024 * 1024 * 1024, // 1GB
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     n_cpu: 2, // CPU limit in nano CPUs
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     disk_quota: 40_737_418_240,
 };
 
 export type ContainerEnvironment = Record<string, string>;
 
 export interface ContainerStartOptions {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     docker_image: string; // the docker image to run
     name: string; // a unique identifier for the container
     limits?: Partial<ContainerLimits>;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     needs_gpu?: boolean;
     environment?: ContainerEnvironment;
     command?: string;
@@ -108,7 +126,7 @@ export class DockerDaemon {
         remoteCreatedAt: Date | undefined;
     }> {
         // merge the given container limitations with the default ones
-        if (!containerOptions) containerOptions = {};
+        containerOptions ??= {};
         containerOptions = {
             ...containerOptions,
             limits: {
@@ -141,7 +159,7 @@ export class DockerDaemon {
         }
         const repoDigests = details.RepoDigests;
         const sha = details.Id;
-        const needsGpu = containerOptions.needs_gpu || false;
+        const needsGpu = containerOptions.needs_gpu ?? false;
         const addGpuCapabilities = {
             DeviceRequests: [
                 {
@@ -176,6 +194,7 @@ export class DockerDaemon {
                 CapDrop,
                 SecurityOpt,
                 PidsLimit,
+
                 // Define a unique volume
                 Mounts: [
                     {
@@ -186,6 +205,7 @@ export class DockerDaemon {
                 ],
             },
             Volumes: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 '/tmp_disk': {},
             },
         };
@@ -196,10 +216,6 @@ export class DockerDaemon {
         const container = await this.docker
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
-
-        if (!container) {
-            throw new Error('Failed to create container');
-        }
 
         logger.info('Container created! Starting container...');
         await container.start();
@@ -321,6 +337,7 @@ export class DockerDaemon {
         localCreatedAt: Date | undefined;
         remoteCreatedAt: Date | undefined;
     }> {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         const dockerhub_namespace = process.env.VITE_DOCKER_HUB_NAMESPACE;
         // assert that we only run images from a specified namespace
         if (
@@ -333,7 +350,7 @@ export class DockerDaemon {
         }
 
         // check if docker socket is available
-        if (!this.docker || !(await this.docker.ping())) {
+        if (!(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
 
@@ -379,11 +396,7 @@ export class DockerDaemon {
 
     removeContainer(containerId: string, clearVolume = false): void {
         const container = this.docker.getContainer(containerId);
-        if (container) {
-            container
-                .remove({ v: clearVolume })
-                .catch(dockerDaemonErrorHandler);
-        }
+        container.remove({ v: clearVolume }).catch(dockerDaemonErrorHandler);
     }
 
     async removeVolume(containerId: string): Promise<void> {
@@ -413,7 +426,7 @@ export class DockerDaemon {
         line: string,
         sanitizeCallback?: (string_: string) => string,
     ): ContainerLog {
-        const logLevel = [...line][0]?.charCodeAt(0) ?? 0;
+        const logLevel = line.codePointAt(0) ?? 0;
 
         // Strip ANSI codes first
 
@@ -484,8 +497,8 @@ export class DockerDaemon {
         });
 
         return new Observable<ContainerLog>((observer) => {
-            dockerodeLogStream.on('data', (chunk) => {
-                for (const logEntry of chunk
+            dockerodeLogStream.on('data', (chunk: Buffer) => {
+                const lines = chunk
                     .toString()
                     .split(/[\r\n]+/)
                     .filter((line: string) => line !== '')
@@ -494,7 +507,8 @@ export class DockerDaemon {
                             line,
                             sanitizeCallback,
                         ),
-                    )) {
+                    );
+                for (const logEntry of lines) {
                     observer.next(logEntry);
                 }
             });
@@ -521,7 +535,7 @@ export class DockerDaemon {
         );
 
         // check if docker socket is available
-        if (!this.docker || !(await this.docker.ping())) {
+        if (!(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
 
@@ -574,10 +588,6 @@ export class DockerDaemon {
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
 
-        if (!container) {
-            throw new Error('Failed to create container');
-        }
-
         logger.info('Container created! Starting container...');
         await container.start();
         logger.info(`Container started with id: ${container.id}`);
@@ -610,11 +620,16 @@ export class DockerDaemon {
                                     .split('ARTIFACT_METADATA:')[1]
                                     ?.trim();
                                 if (jsonString) {
-                                    artifactMetadata = JSON.parse(jsonString);
+                                    artifactMetadata = JSON.parse(
+                                        jsonString,
+                                    ) as {
+                                        size: number;
+                                        files: string[];
+                                    };
                                 }
-                            } catch (error) {
+                            } catch (error: unknown) {
                                 logger.error(
-                                    `Failed to parse artifact metadata: ${error}`,
+                                    `Failed to parse artifact metadata: ${String(error)}`,
                                 );
                             }
                         }
@@ -641,11 +656,14 @@ export class DockerDaemon {
                                 .split('ARTIFACT_METADATA:')[1]
                                 ?.trim();
                             if (jsonString) {
-                                artifactMetadata = JSON.parse(jsonString);
+                                artifactMetadata = JSON.parse(jsonString) as {
+                                    size: number;
+                                    files: string[];
+                                };
                             }
-                        } catch (error) {
+                        } catch (error: unknown) {
                             logger.error(
-                                `Failed to parse artifact metadata: ${error}`,
+                                `Failed to parse artifact metadata: ${String(error)}`,
                             );
                         }
                     }
@@ -655,10 +673,11 @@ export class DockerDaemon {
 
             stream.on('error', reject);
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             container.modem.demuxStream(
                 stream,
-                stdoutWritable as any,
-                stderrWritable as any,
+                stdoutWritable as unknown as NodeJS.WritableStream,
+                stderrWritable as unknown as NodeJS.WritableStream,
             );
         });
 

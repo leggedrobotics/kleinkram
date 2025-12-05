@@ -35,9 +35,12 @@ describe('Verify project manipulation endpoints', () => {
         // Create internal user
         ({
             user: globalThis.creator as UserEntity,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             token: globalThis.creator.token,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             response: globalThis.creator.Response,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
         console.log(`[DEBUG]: Global creator: ${globalThis.creator.name}`);
 
         // Create 2nd internal user
@@ -46,6 +49,7 @@ describe('Verify project manipulation endpoints', () => {
             token: globalThis.userToken,
             response: globalThis.userResponse,
         } = await generateAndFetchDatabaseUser('internal', 'user'));
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
         console.log(`[DEBUG]: Global user: ${globalThis.user.name}`);
     });
 
@@ -54,11 +58,13 @@ describe('Verify project manipulation endpoints', () => {
         const accessGroupRepository =
             database.getRepository<AccessGroupEntity>(AccessGroupEntity);
         const accessGroupCreator = await accessGroupRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             where: { name: globalThis.creator.name },
         });
 
         // get access group for user
         const accessGroupUser = await accessGroupRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             where: { name: globalThis.user.name },
         });
 
@@ -68,6 +74,7 @@ describe('Verify project manipulation endpoints', () => {
                 type: DataType.STRING,
                 name: globalThis.tagName,
             },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
         );
 
@@ -98,6 +105,7 @@ describe('Verify project manipulation endpoints', () => {
                     },
                 ],
             },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
         );
 
@@ -120,7 +128,9 @@ describe('Verify project manipulation endpoints', () => {
 
         // Ensure only the four users created in beforeAll are present
         const expectedUserUuids = [
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             globalThis.creator.uuid,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             globalThis.user.uuid,
         ];
         const actualUserUuids = users.map((user) => user.uuid);
@@ -133,6 +143,7 @@ describe('Verify project manipulation endpoints', () => {
         const responseMission = await missionRepository.remove(allMissions);
         const remainingMissions = await missionRepository.find();
         expect(remainingMissions.length).toBe(0);
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions
         console.log(`[DEBUG]: All Missions removed: ${responseMission}`);
 
         // delete project
@@ -143,6 +154,7 @@ describe('Verify project manipulation endpoints', () => {
         const remainingProjects = await projectRepository.find();
 
         expect(remainingProjects.length).toBe(0);
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions
         console.log(`[DEBUG]: All Projects removed: ${response}`);
 
         // delete tags
@@ -153,6 +165,7 @@ describe('Verify project manipulation endpoints', () => {
         const remainingTags = await tagsRepository.find();
 
         expect(remainingTags.length).toBe(0);
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions
         console.log(`[DEBUG]: All Metadata removed: ${metadataResponse}`);
     });
 
@@ -184,9 +197,11 @@ describe('Verify project manipulation endpoints', () => {
                 type: DataType.STRING,
                 name: name,
             },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.user,
         );
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const headersBuilder = new HeaderCreator(globalThis.creator);
         headersBuilder.addHeader('Content-Type', 'application/json');
 
@@ -217,9 +232,11 @@ describe('Verify project manipulation endpoints', () => {
         const accessGroupRepository =
             database.getRepository<AccessGroupEntity>(AccessGroupEntity);
         const accessGroupUser = await accessGroupRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             where: { name: globalThis.user.name },
         });
         const accessGroupCreator = await accessGroupRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             where: { name: globalThis.creator.name },
         });
 
@@ -251,6 +268,7 @@ describe('Verify project manipulation endpoints', () => {
         expect(projectCreatorAccess.rights).toBe(AccessGroupRights.DELETE);
 
         // edit access rights for access group
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const headersBuilder = new HeaderCreator(globalThis.creator);
 
         // check first if not all access groups with delete access can be deleted
@@ -299,6 +317,7 @@ describe('Verify project manipulation endpoints', () => {
                 ]),
             },
         );
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const json = await response.json();
         console.log('[DEBUG]: Response status:', json);
         expect(response.status).toBe(201);

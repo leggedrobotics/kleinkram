@@ -66,6 +66,7 @@ const selectedDataType = computed({
     },
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 const error = computed(() => properties.error ?? false);
 const errorMessage = computed(() => properties.errorMessage ?? '');
 

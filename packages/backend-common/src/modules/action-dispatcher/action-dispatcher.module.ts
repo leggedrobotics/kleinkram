@@ -54,4 +54,5 @@ import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
     ],
     exports: [ActionDispatcherService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ActionDispatcherModule {}

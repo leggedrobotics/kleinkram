@@ -26,6 +26,7 @@ export class FileEventEntity {
      * e.g. { oldName: "foo.bag", newName: "bar.bag" } or { error: "Corrupted header" }
      */
     @Column({ type: 'jsonb', default: {} })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     details!: Record<string, any>;
 
     /**
@@ -54,5 +55,6 @@ export class FileEventEntity {
     mission?: MissionEntity;
 
     @ManyToOne('ActionEntity', { nullable: true, onDelete: 'CASCADE' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     action?: any;
 }

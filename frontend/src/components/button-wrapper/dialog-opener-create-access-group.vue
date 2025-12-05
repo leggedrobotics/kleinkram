@@ -24,6 +24,7 @@ const canCreate = computed(() => canCreateProject(permissions.value));
 const queryClient = useQueryClient();
 
 const $q = useQuasar();
+
 const { mutate: _createAccessGroup } = useMutation({
     mutationFn: (name: string) => createAccessGroup(unref(name)),
     onSuccess: async () => {

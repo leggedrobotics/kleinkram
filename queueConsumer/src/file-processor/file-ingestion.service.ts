@@ -97,8 +97,8 @@ export class FileIngestionService {
                         queueItem,
                         QueueState.COMPLETED,
                     );
-                } catch (error) {
-                    logger.error(`Failed to ingest file: ${error}`);
+                } catch (error: unknown) {
+                    logger.error(`Failed to ingest file: ${String(error)}`);
                     await this.updateQueueState(queueItem, QueueState.ERROR);
                     throw error;
                 }
@@ -127,7 +127,9 @@ export class FileIngestionService {
                 logger.debug(`File Tags added for ${queueItem.identifier}`),
             )
             .catch((error: unknown) =>
-                logger.warn(`Failed to add tags during download: ${error}`),
+                logger.warn(
+                    `Failed to add tags during download: ${String(error)}`,
+                ),
             );
 
         const { stream: hashStream, getHash } = createHashingStream();
@@ -264,9 +266,9 @@ export class FileIngestionService {
                 if (fs.existsSync(workDirectory)) {
                     fs.rmSync(workDirectory, { recursive: true, force: true });
                 }
-            } catch (cleanupError) {
+            } catch (cleanupError: unknown) {
                 logger.warn(
-                    `Failed to clean up temp dir ${workDirectory}: ${cleanupError}`,
+                    `Failed to clean up temp dir ${workDirectory}: ${String(cleanupError)}`,
                 );
             }
         }

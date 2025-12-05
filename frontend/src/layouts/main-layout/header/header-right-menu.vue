@@ -160,34 +160,45 @@ watch(isUploading, () =>
     }),
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
 const uploads: any = inject('uploads');
 
 const uploadsWithoutCompleted = computed(() =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     uploads.value.filter((upload: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         return upload.value.uploaded / upload.value.size < 1;
     }),
 );
 
 const uncompletedUploads = computed(() =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     uploads.value.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         (upload: any) => !upload.value.completed && upload.value.uploaded > 0,
     ),
 );
 
 const totalToUpload = computed(() =>
     // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     uploads.value.reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (accumulator: number, upload: any) =>
             accumulator +
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             (upload.value.canceled ? 0 : (upload.value.size as number)),
         0,
     ),
 );
 const totalUploaded = computed(() =>
     // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     uploads.value.reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (accumulator: number, upload: any) =>
             accumulator +
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             (upload.value.canceled ? 0 : (upload.value.uploaded as number)),
         0,
     ),
@@ -199,12 +210,17 @@ const progress = computed(() =>
 );
 
 const averageUploadSpeed = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (uncompletedUploads.value.length === 0) return 0;
     return (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         uncompletedUploads.value.reduce(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (accumulator: number, upload: any) =>
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 accumulator + (upload.value.speed as number),
             0,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ) / uncompletedUploads.value.length
     );
 });

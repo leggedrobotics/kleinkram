@@ -166,6 +166,7 @@ export class AccessService {
                 rights: rights,
             })
             .andWhere('projectAccesses.useruuid = :user_uuid', {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 user_uuid: auth.user.uuid,
             })
             .getExists();
@@ -233,6 +234,7 @@ export class AccessService {
             });
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!personalAccessGroup) {
             throw new ConflictException('User has no personal access group');
         }

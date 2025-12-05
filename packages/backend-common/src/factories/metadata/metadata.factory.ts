@@ -8,10 +8,13 @@ export interface MetadataContext {
     mission: MissionEntity;
     tagType: TagTypeEntity;
     creator: UserEntity;
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     value_string?: string;
 }
 
 define(MetadataEntity, (_, context: Partial<MetadataContext> = {}) => {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     const { mission, tagType, creator, value_string } = context;
 
     if (!mission) {

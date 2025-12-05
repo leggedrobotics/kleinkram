@@ -22,6 +22,7 @@ export const stringToBoolean = (value: string): boolean | undefined => {
             return false;
         }
     }
+    return undefined;
 };
 
 export const stringToNumber = (value: string): number | undefined => {
@@ -33,6 +34,7 @@ export const stringToNumber = (value: string): number | undefined => {
     if (!Number.isNaN(number)) {
         return number;
     }
+    return undefined;
 };
 
 export const stringToDate = (value: string): Date | undefined => {
@@ -41,6 +43,7 @@ export const stringToDate = (value: string): Date | undefined => {
     if (isValid(date)) {
         return date;
     }
+    return undefined;
 };
 
 export const stringToLocation = (value: string): string | undefined => {
@@ -99,6 +102,7 @@ const metadataMatchesKeyValuePair = (
      * to the same query
      * */
 
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     if (tok === undefined) {
         tok = uuidv4().replaceAll('-', '');
     }

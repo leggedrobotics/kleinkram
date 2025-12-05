@@ -28,4 +28,5 @@ import { MissionController } from './mission.controller';
     controllers: [MissionController],
     exports: [MissionService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class MissionModule {}

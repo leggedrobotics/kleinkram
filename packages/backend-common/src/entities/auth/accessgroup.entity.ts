@@ -32,6 +32,8 @@ export class AccessGroupEntity extends BaseEntity {
         () => ProjectAccessEntity,
         (projectAccess) => projectAccess.accessGroup,
     )
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     project_accesses?: ProjectAccessEntity[];
 
     @OneToMany(
@@ -39,6 +41,7 @@ export class AccessGroupEntity extends BaseEntity {
         (missionAccess) => missionAccess.accessGroup,
     )
     @JoinTable()
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_accesses?: MissionAccessEntity[];
 
     @Column({

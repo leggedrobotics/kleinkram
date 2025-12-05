@@ -51,6 +51,7 @@ export class AdaptiveChunkOptimizer {
         const rtt = this.rttEstimate.toFixed(1);
         const optimalSizeKB = (this.getOptimalRequestSize(0) / 1024).toFixed(0);
 
+        // eslint-disable-next-line no-console
         console.log(
             `[AdaptiveChunkOptimizer] ${context}: BW=${bwMbps} Mbps, RTT=${rtt}ms, OptimalChunk=${optimalSizeKB} KB`,
         );

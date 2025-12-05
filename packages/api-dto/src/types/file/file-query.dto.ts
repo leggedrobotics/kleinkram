@@ -11,6 +11,7 @@ import {
 
 export class FileQueryDto extends MissionQueryDto {
     @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
     @ArrayNotEmpty()
@@ -19,6 +20,7 @@ export class FileQueryDto extends MissionQueryDto {
     fileUuids?: string[];
 
     @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
     @ArrayNotEmpty()
@@ -27,6 +29,7 @@ export class FileQueryDto extends MissionQueryDto {
     filePatterns?: string[];
 
     @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
     @ArrayNotEmpty()
@@ -35,6 +38,7 @@ export class FileQueryDto extends MissionQueryDto {
     fileExtensions?: string[];
 
     @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
     @ArrayNotEmpty()
@@ -43,6 +47,7 @@ export class FileQueryDto extends MissionQueryDto {
     topicPatterns?: string[];
 
     @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
     @IsArray()
     @ArrayNotEmpty()

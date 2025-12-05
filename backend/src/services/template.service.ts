@@ -38,8 +38,11 @@ export class TemplateService {
         this.validateDockerNamespace(data.dockerImage);
 
         const template = this.actionTemplateRepository.create({
+            // eslint-disable-next-line @typescript-eslint/no-misused-spread
             ...data,
             creator: { uuid: auth.user.uuid },
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             image_name: data.dockerImage,
             command: data.command ?? '',
             entrypoint: data.entrypoint ?? '',
@@ -58,6 +61,7 @@ export class TemplateService {
         } catch (error) {
             if (
                 error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 error.driverError?.code === '23505'
             ) {
                 throw new ConflictException(
@@ -75,12 +79,16 @@ export class TemplateService {
     ): Promise<ActionTemplateDto> {
         const nextVersion = await this.calculateNextVersion(data.name);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         delete (data as any).uuid;
         this.validateDockerNamespace(data.dockerImage);
 
         const newTemplate = this.actionTemplateRepository.create({
+            // eslint-disable-next-line @typescript-eslint/no-misused-spread
             ...data,
+
             description: data.description,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             image_name: data.dockerImage,
             creator: { uuid: auth.user.uuid },
             version: nextVersion,
@@ -141,9 +149,11 @@ export class TemplateService {
         const count = await qb.getCount();
 
         const data = entities.map((entity) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const rawRow = raw.find((r) => r.template_uuid === entity.uuid);
             const execCount = rawRow
-                ? Number.parseInt(rawRow.executionCount, 10)
+                ? // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                  Number.parseInt(rawRow.executionCount, 10)
                 : 0;
 
             return actionTemplateEntityToDto(entity, execCount);
@@ -225,7 +235,7 @@ export class TemplateService {
         const data = entities.map((entity) => {
             return actionTemplateEntityToDto(
                 entity,
-                entity.executionCount || 0,
+                entity.executionCount ?? 0,
             );
         });
 

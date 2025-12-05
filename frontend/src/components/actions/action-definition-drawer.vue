@@ -318,6 +318,7 @@ const defaultTemplate: CreateTemplateDto = {
     accessRights: AccessGroupRights.READ,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-misused-spread
 const localTemplate = ref<Partial<ActionTemplateDto>>({ ...defaultTemplate });
 
 // Access Rights Options
@@ -402,12 +403,14 @@ watch(
 
             // eslint-disable-next-line unicorn/prefer-ternary
             if (props.initialTemplate) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 localTemplate.value = {
                     // eslint-disable-next-line unicorn/prefer-structured-clone
                     ...JSON.parse(JSON.stringify(props.initialTemplate)),
                     imageName: props.initialTemplate.imageName,
                 };
             } else {
+                // eslint-disable-next-line @typescript-eslint/no-misused-spread
                 localTemplate.value = { ...defaultTemplate };
             }
 
@@ -441,6 +444,7 @@ watch(
 
 // --- Saving Logic ---
 
+// eslint-disable-next-line complexity
 async function saveTemplate(): Promise<void> {
     // Client side guard
     if (!isEditing.value && !isNameAvailable.value) {
@@ -466,12 +470,15 @@ async function saveTemplate(): Promise<void> {
         };
 
         // 2. Validate Namespace
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
         if (
             dockerhubNamespace &&
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             !basePayload.dockerImage.startsWith(`${dockerhubNamespace}`)
         ) {
             throw new Error(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Image name must start with "${dockerhubNamespace}/"`,
             );
         }
@@ -497,9 +504,11 @@ async function saveTemplate(): Promise<void> {
 
         emits('saved');
         closeDrawer();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         Notify.create({
-            message: error.message || 'Error saving template',
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            message: error.message ?? 'Error saving template',
             color: 'negative',
         });
     } finally {

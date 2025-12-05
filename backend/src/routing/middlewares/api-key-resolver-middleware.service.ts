@@ -17,6 +17,7 @@ export class APIKeyResolverMiddleware implements NestMiddleware {
         _: Response,
         next: NextFunction,
     ): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (request.cookies !== undefined) {
             const key = request.cookies[CookieNames.CLI_KEY] as
                 | string

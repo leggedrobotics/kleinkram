@@ -28,6 +28,7 @@ export async function uploadFileMultipart(
 
         // Step 2: Upload Parts
         const partSize = 50 * 1024 * 1024; // 5 MB per part (adjust as needed)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const parts: any[] = [];
         for (
             let partNumber = 1, start = 0;
@@ -35,6 +36,7 @@ export async function uploadFileMultipart(
             partNumber++, start += partSize
         ) {
             const end = Math.min(start + partSize, file.length);
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             const partBlob = file.slice(start, end);
             const uploadPartCommand = new UploadPartCommand({
                 Bucket: bucket,

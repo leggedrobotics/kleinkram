@@ -167,6 +167,7 @@ const emits = defineEmits(['close', 'create-action']);
 // --- State ---
 const queryClient = useQueryClient();
 const router = useRouter();
+
 const _open = ref(false);
 const runtimeCommand = ref('');
 const addedMissions = ref<string[]>([]);
@@ -179,7 +180,7 @@ const { selectedProject, selectedMission, setMission } = useScopeSelection();
 
 // --- Computed Helpers ---
 const allMissionUUIDs = computed(() => [
-    ...(props.missionUuids || []),
+    ...(props.missionUuids ?? []),
     ...addedMissions.value,
 ]);
 const hasMissionUUIDs = computed(() => allMissionUUIDs.value.length > 0);
@@ -261,6 +262,7 @@ async function submitAnalysis(): Promise<void> {
         if (props.template.accessRights === AccessGroupRights.DELETE) {
             detailMessage =
                 'DELETE permissions allow this action to delete ANY file within the project it is run in.';
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         } else if (props.template.accessRights === AccessGroupRights.WRITE) {
             detailMessage =
                 'WRITE permissions allow this action to modify or overwrite files within the project it is run in.';

@@ -57,6 +57,7 @@ export function useImageDecoder(
         const targetWidth = 600;
         const targetHeight = 400;
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         renderMessageToCanvas(messageData.value, canvas, () => {
             // Callback after rendering (async for compressed images)
             const aspectRatio = canvas.width / canvas.height;

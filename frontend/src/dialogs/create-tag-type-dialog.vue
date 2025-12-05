@@ -28,7 +28,9 @@ const tagType = ref();
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 const createTagTypeAction = async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     if (!(await tagType.value.createTagTypeAction())) {
+        // eslint-disable-next-line no-console
         console.log('Error creating Metadata');
         return;
     }

@@ -8,6 +8,7 @@ interface CachedBlock {
 
 export class UniversalHttpReader implements IReadable {
     private url: string;
+
     private _size: number | undefined;
     private additionalHeaders: Record<string, string>;
 
@@ -76,6 +77,7 @@ export class UniversalHttpReader implements IReadable {
 
         const response = await fetch(this.url, {
             headers: {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 Range: `bytes=${start}-${end}`,
                 ...this.additionalHeaders,
             },
@@ -124,6 +126,7 @@ export class UniversalHttpReader implements IReadable {
         // Align fetch to start at requested offset (or slightly before if we wanted to be fancy, but let's keep it simple)
         // We fetch [offset, offset + fetchLength)
 
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         const key = `${offset}-${fetchLength}`;
         let promise = this.activeRequests.get(key);
 
@@ -166,6 +169,7 @@ export class UniversalHttpReader implements IReadable {
         // We want `length` bytes from it.
         if (data.length < Number(length)) {
             throw new Error(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Fetched data smaller than requested: ${data.length} < ${length}`,
             );
         }

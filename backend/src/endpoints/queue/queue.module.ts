@@ -62,4 +62,5 @@ import { QueueController } from './queue.controller';
     controllers: [QueueController],
     exports: [QueueService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class QueueModule {}

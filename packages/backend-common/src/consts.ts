@@ -1,7 +1,7 @@
 import { UserRole } from '@kleinkram/shared';
 
 export const redis = {
-    host: process.env.REDIS_HOST || 'localhost',
+    host: process.env.REDIS_HOST ?? 'localhost',
     port: 6379,
 };
 

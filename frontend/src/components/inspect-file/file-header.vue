@@ -197,12 +197,15 @@ const emit = defineEmits([
 
 const isDownloadDisabled = computed(() =>
     [FileState.LOST, FileState.UPLOADING].includes(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         properties.file?.state ?? FileState.LOST,
     ),
 );
 const isInvalid = computed(
     () =>
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         properties.file?.state === FileState.LOST ||
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         properties.file?.state === FileState.ERROR,
 );
 

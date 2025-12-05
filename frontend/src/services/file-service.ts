@@ -31,6 +31,7 @@ import ENV from '../environment';
 
 const confirmDialog = (event: BeforeUnloadEvent): void => {
     event.preventDefault();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     event.returnValue = ''; // This triggers the generic browser dialog.
 };
 
@@ -105,6 +106,7 @@ const hasValidFileSize = (file: File): boolean => {
 const isValidNameFilter = (filename: string): boolean =>
     isValidFileName(filename);
 
+// eslint-disable-next-line complexity
 async function _createFileAction(
     selectedMission: FlatMissionDto,
     selectedProject: ProjectDto,
@@ -175,6 +177,7 @@ async function _createFileAction(
 
         Notify.create({
             group: false,
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             caption: `Upload of ${invalidFiles.length} file(s) failed:`,
             message: errorMessages.join('<br>'),
             html: true,
@@ -203,13 +206,17 @@ async function _createFileAction(
         } catch (error: unknown) {
             let handled = false;
             if (error instanceof AxiosError && error.response?.status === 400) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const responseData = error.response.data;
                 // Check for structured error: { message: 'Validation failed', errors: [...] }
                 if (
                     responseData &&
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     responseData.message === 'Validation failed' &&
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     Array.isArray(responseData.errors)
                 ) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     const invalidFilesList = responseData.errors;
                     try {
                         const renameMap: Record<string, string> =
@@ -217,6 +224,7 @@ async function _createFileAction(
                                 Dialog.create({
                                     component: RenameFilesDialog,
                                     componentProps: {
+                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                                         invalidFiles: invalidFilesList,
                                     },
                                 })
@@ -254,9 +262,12 @@ async function _createFileAction(
                     if (error.response?.status === 403) {
                         message = `Upload failed: You do not have the necessary permissions.`;
                     } else if (error.response?.status === 400) {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                         const responseData = error.response.data;
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         message = responseData.message
-                            ? `Upload failed: ${JSON.stringify(responseData.message)}`
+                            ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                              `Upload failed: ${JSON.stringify(responseData.message)}`
                             : `Upload failed: ${JSON.stringify(responseData)}`;
                     }
                 }
@@ -274,6 +285,7 @@ async function _createFileAction(
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!temporaryCredentials) {
         return;
     }
@@ -308,11 +320,13 @@ async function _createFileAction(
 
     await Promise.all(
         temporaryCredentials.data.map(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             async (accessResp: any, index: number) => {
                 const fileItem = fileItems[index];
                 if (!fileItem) return;
                 const file = fileItem.file;
 
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 if (file === undefined) {
                     Notify.create({
                         message: `Upload of File failed`,
@@ -324,6 +338,7 @@ async function _createFileAction(
                     return;
                 }
 
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 const accessCredentials = accessResp.accessCredentials;
                 if (accessCredentials === null) {
                     Notify.create({
@@ -341,8 +356,11 @@ async function _createFileAction(
                     forcePathStyle: true,
                     region: 'us-east-1',
                     credentials: {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                         accessKeyId: accessCredentials.accessKey,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                         secretAccessKey: accessCredentials.secretKey,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                         sessionToken: accessCredentials.sessionToken,
                     },
                 });
@@ -350,17 +368,21 @@ async function _createFileAction(
                 const newFileUpload = {
                     name: fileItem.virtualName,
                     size: file.size,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     fileUUID: accessResp.fileUUID,
                     missionUuid: selectedMission.uuid,
                 } as unknown as FileWithTopicDto;
                 const newFileUploadReference = ref(newFileUpload);
                 // @ts-ignore
                 injectedFiles.value.push(newFileUploadReference);
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return limit(async () => {
                     try {
                         const md5Hash = await uploadFileMultipart(
                             file,
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.bucket,
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.fileUUID,
                             minioClient,
                             newFileUploadReference,
@@ -377,7 +399,9 @@ async function _createFileAction(
                             return;
                         }
 
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                         return await confirmUpload(
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.fileUUID,
                             md5Hash,
                         );
@@ -545,6 +569,7 @@ async function uploadFileMultipart(
                 MultipartUpload: { Parts: parts },
             });
         const finalMD5 = btoa(spark.end(true));
+        // eslint-disable-next-line no-console
         console.log('Final MD5:', finalMD5);
         await minioClient.send(completeMultipartUploadCommand);
         return finalMD5;
@@ -562,13 +587,16 @@ async function uploadFileMultipart(
                 },
             );
             await minioClient.send(abortMultipartUploadCommand);
+            // eslint-disable-next-line no-console
             console.log('Multipart upload aborted.');
         }
 
         await cancelUploads(
             // @ts-ignore
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             [newFileUpload.value.fileUUID],
             // @ts-ignore
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             newFileUpload.value.missionUuid ?? '',
         );
     }

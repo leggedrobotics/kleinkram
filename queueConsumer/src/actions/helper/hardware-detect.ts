@@ -48,7 +48,10 @@ export async function createWorker(
     let hostname = name;
     try {
         const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-        const info = await docker.info();
+        interface DockerInfo {
+            Name: string;
+        }
+        const info = (await docker.info()) as DockerInfo;
         hostname = info.Name;
     } catch (error: unknown) {
         const errorMessage =
@@ -87,10 +90,15 @@ const getGpuModels = async () => {
         // verify if docker socket has nvidia runtime
         // if not, return empty array
         const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-        const info = await docker.info();
+        interface DockerInfoWithRuntimes {
+            Runtimes?: {
+                nvidia?: unknown;
+            };
+        }
+        const info = (await docker.info()) as DockerInfoWithRuntimes;
         const runtimes = info.Runtimes;
         const hasNvidiaRuntime =
-            Boolean(runtimes) && runtimes.nvidia !== undefined;
+            Boolean(runtimes) && runtimes?.nvidia !== undefined;
         if (!hasNvidiaRuntime) {
             logger.debug('No NVIDIA runtime found in Docker');
             return [];

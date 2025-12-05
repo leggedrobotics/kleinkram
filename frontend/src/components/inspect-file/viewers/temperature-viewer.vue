@@ -53,6 +53,7 @@ import SimpleTimeChart, { type ChartSeries } from './simple-time-chart.vue';
 import SkeletonTimeChart from './skeleton-time-chart.vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -61,15 +62,18 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0)
         emit('load-required');
 });
 
 // --- Data Processing ---
-const startTime = computed(() => properties.messages[0]?.logTime || 0n);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+const startTime = computed(() => properties.messages[0]?.logTime ?? 0n);
 
 const duration = computed(() => {
     if (properties.messages.length < 2) return 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = properties.messages.at(-1).logTime;
     return Number(end - startTime.value) / 1_000_000_000;
 });
@@ -77,14 +81,17 @@ const duration = computed(() => {
 const temperatureSeries = shallowRef<ChartSeries[]>([]);
 
 watch(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     () => properties.messages,
     () => {
         const data = [];
         for (const message of properties.messages) {
             if (!message) continue;
             data.push({
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 time: Number(message.logTime - startTime.value) / 1_000_000_000,
-                value: message.data.temperature || 0,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                value: message.data.temperature ?? 0,
             });
         }
 

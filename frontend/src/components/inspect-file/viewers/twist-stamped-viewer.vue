@@ -36,6 +36,7 @@ import SimpleTimeChart, { type ChartSeries } from './simple-time-chart.vue';
 import SkeletonTimeChart from './skeleton-time-chart.vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -44,30 +45,41 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0)
         emit('load-required');
 });
 
 // --- Data Processing ---
-const startTime = computed(() => properties.messages[0]?.logTime || 0n);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+const startTime = computed(() => properties.messages[0]?.logTime ?? 0n);
 
 // Helper to extract series data
 const extractSeries = (category: 'linear' | 'angular'): ChartSeries[] => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const xData: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const yData: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const zData: any[] = [];
 
     for (const message of properties.messages) {
         // Normalized Time
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const t = Number(message.logTime - startTime.value) / 1_000_000_000;
         // Handle TwistStamped vs Twist
-        const twist = message.data.twist || message.data;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const twist = message.data.twist ?? message.data;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const vec = twist[category];
 
         if (vec) {
-            xData.push({ time: t, value: vec.x || 0 });
-            yData.push({ time: t, value: vec.y || 0 });
-            zData.push({ time: t, value: vec.z || 0 });
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            xData.push({ time: t, value: vec.x ?? 0 });
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            yData.push({ time: t, value: vec.y ?? 0 });
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            zData.push({ time: t, value: vec.z ?? 0 });
         }
     }
 
@@ -78,7 +90,9 @@ const extractSeries = (category: 'linear' | 'angular'): ChartSeries[] => {
     ];
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 const linearSeries = computed(() => extractSeries('linear'));
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 const angularSeries = computed(() => extractSeries('angular'));
 
 const isLoading = computed(

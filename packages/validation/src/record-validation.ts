@@ -5,6 +5,7 @@ export function isRecordStringString(value: unknown): boolean {
         return false;
     }
     return Object.entries(value).every(
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         ([key, value_]) =>
             typeof key === 'string' && typeof value_ === 'string',
     );

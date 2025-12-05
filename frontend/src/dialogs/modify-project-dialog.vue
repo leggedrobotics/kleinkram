@@ -40,10 +40,14 @@ if (projectUuid === '') throw new Error('Project UUID is required');
 
 const saveProjects = (): void => {
     if (editProjectReference.value === undefined) return;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (editProjectReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         editProjectReference.value
             .save_changes()
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             .then(onDialogOK)
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             .catch(() => {
                 console.error('Error saving project');
             });

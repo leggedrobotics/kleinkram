@@ -105,6 +105,7 @@ export const getPermissionForProject = (
         (p: ProjectPermissions) => p.uuid === projectUuid,
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const projectPermission = (project?.access as number) ?? 0;
     return Math.max(defaultPermission, projectPermission);
 };
@@ -121,6 +122,7 @@ export const getPermissionForMission = (
         (m: { uuid: string; access: number }) => m.uuid === missionUuid,
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const missionPermission = (mission?.access as number) ?? 0;
     return Math.max(defaultPermission, missionPermission);
 };
@@ -139,6 +141,7 @@ export const canCreateMission = (
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (projectUuid === null) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.CREATE;
@@ -148,6 +151,7 @@ export const canModifyProject = (
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (projectUuid === null) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.WRITE;
@@ -205,6 +209,7 @@ export const canDeleteProject = (
     projectUuid: string | undefined,
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (projectUuid === null) return false;
     if (!permissions) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
@@ -239,6 +244,7 @@ export const useMission = (
           >
         | undefined = undefined,
     retryDelay = 1000,
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 ): UseQueryReturnType<MissionWithFilesDto | undefined, Error> => {
     if (typeof missionUuid === 'string') {
         missionUuid = ref(missionUuid);
@@ -257,12 +263,15 @@ export const useMission = (
 };
 
 export const useManyMissions = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     missionUuid: ComputedRef<(string | any[])[]>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     allMissionUUIDs: ComputedRef<any[]>,
     hasMissionUUIDs: ComputedRef<boolean>,
 ): UseQueryReturnType<MissionsDto | undefined, Error> => {
     return useQuery<MissionsDto>({
         queryKey: missionUuid,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         queryFn: () => getMissions(allMissionUUIDs.value),
         enabled: hasMissionUUIDs,
     });
@@ -290,6 +299,7 @@ export const registerNoPermissionErrorHandler = (
     watch([isLoadingError], async () => {
         if (error.value instanceof AxiosError) {
             const statusCode =
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 Boolean(error.value.response?.data?.statusCode) ||
                 `Could not load the ${resourceName}`;
 
@@ -403,12 +413,15 @@ export const useFilteredProjects = (
         queryKey: ['projects', take, skip, sortBy, descending, searchParameter],
         queryFn: () => {
             const _take = typeof take === 'number' ? take : take.value;
+
             const _skip = typeof skip === 'number' ? skip : skip.value;
             const _sortBy = typeof sortBy === 'string' ? sortBy : sortBy.value;
+
             const _descending =
                 typeof descending === 'boolean' ? descending : descending.value;
 
             const _searchParameter: Record<string, string> =
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 (typeof searchParameter?.value === 'object'
                     ? searchParameter.value
                     : (searchParameter as Record<string, string>)) ?? {};

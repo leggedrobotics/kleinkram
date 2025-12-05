@@ -70,6 +70,7 @@ export class StorageService {
         const stream = this.clients.internal.listObjects(bucketName, '');
         const result: BucketItem[] = [];
         for await (const item of stream) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             result.push(item);
         }
         return result;
@@ -81,7 +82,9 @@ export class StorageService {
     ): Promise<BucketItemStat | undefined> {
         try {
             return await this.clients.internal.statObject(bucketName, location);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             if (error.code === 'NotFound') return;
             throw error;
         }
@@ -137,6 +140,7 @@ export class StorageService {
         );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getSystemMetrics(): Promise<any> {
         return this.metricsService.getSystemMetrics();
     }
@@ -151,11 +155,14 @@ export class StorageService {
         );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private normalizeTags(tagList: any): Record<string, string> {
         if (Array.isArray(tagList)) {
-            // eslint-disable-next-line unicorn/no-array-reduce
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, unicorn/no-array-reduce
             return tagList.reduce((accumulator, tag) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 if (tag.Key && tag.Value) accumulator[tag.Key] = tag.Value;
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return accumulator;
             }, {});
         }

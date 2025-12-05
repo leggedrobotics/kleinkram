@@ -48,6 +48,7 @@ export const userEntityToCurrentAPIUserDto = (
     user: UserEntity,
 ): CurrentAPIUserDto => {
     return {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         ...userEntityToDto(user, true),
         role: user.role ?? UserRole.USER,
         memberships:
@@ -63,10 +64,11 @@ export const missionEntityToDto = (mission: MissionEntity): MissionDto => {
     }
 
     return {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         ...missionEntityToMinimumDto(mission),
         project: projectEntityToDto(mission.project),
         createdAt: mission.createdAt,
-        tags: mission.tags?.map(tagEntityToDto) || [],
+        tags: mission.tags?.map(tagEntityToDto) ?? [],
         updatedAt: mission.updatedAt,
     };
 };
@@ -79,6 +81,7 @@ export const missionEntityToDtoWithCreator = (
     }
 
     return {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         ...missionEntityToDto(mission),
         creator: userEntityToDto(mission.creator),
     };
@@ -88,6 +91,7 @@ export const missionEntityToFlatDto = (
     mission: MissionEntity,
 ): FlatMissionDto => {
     return {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         ...missionEntityToDtoWithCreator(mission),
         filesCount: mission.fileCount ?? 0,
         size: mission.size ?? 0,
@@ -106,6 +110,7 @@ export const missionEntityToDtoWithFiles = (
     }
 
     return {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         ...(missionEntityToDtoWithCreator(mission) as MissionWithFilesDto),
         files: mission.files.map((element) => fileEntityToDto(element)),
         tags: mission.tags.map((element) => tagEntityToDto(element)),
@@ -184,9 +189,11 @@ export const fileEntityToDtoWithTopic = (
         topics = file.parent.topics;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!topics) topics = [];
 
     return {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         ...(fileEntityToDto(file) as FileWithTopicDto),
         topics: topics.map((element) => topicEntityToDto(element)),
     };
@@ -260,6 +267,7 @@ export const projectEntityToDtoWithRequiredTags = (
     }
 
     return {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         ...(projectEntityToDto(project) as ProjectWithMissionsDto),
         creator: userEntityToDto(project.creator),
         missionCount: missionCount,
@@ -277,9 +285,12 @@ export const projectEntityToDtoWithMissionCountAndTags = (
     }
 
     return {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread
         ...(projectEntityToDto(project) as ProjectWithRequiredTagsDto),
         creator: userEntityToDto(project.creator),
         missionCount: project.missionCount ?? 0,
+
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         requiredTags: project.requiredTags?.map(tagTypeEntityToDto) ?? [],
     };
 };

@@ -17,10 +17,10 @@ define(UserEntity, (_, context: Partial<UserContext> = {}) => {
     const role =
         context.role ??
         extendedFaker.helpers.arrayElement([UserRole.ADMIN, UserRole.USER]);
-    const firstName = context.firstName || extendedFaker.person.firstName();
-    const lastName = context.lastName || extendedFaker.person.lastName();
+    const firstName = context.firstName ?? extendedFaker.person.firstName();
+    const lastName = context.lastName ?? extendedFaker.person.lastName();
     const mail =
-        context.mail || extendedFaker.internet.email({ firstName, lastName });
+        context.mail ?? extendedFaker.internet.email({ firstName, lastName });
 
     const user = new UserEntity();
     user.name = `${firstName} ${lastName}`;

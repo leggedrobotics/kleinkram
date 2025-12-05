@@ -47,6 +47,7 @@ export const setupTestEnvironment = async (
 export const createMockWorker = async (identifier = 'test-worker') => {
     const workerRepo = database.getRepository(WorkerEntity);
     const worker = workerRepo.create({
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         identifier: `${identifier}-${Date.now()}`,
         hostname: 'test-host',
         cpuCores: 8,

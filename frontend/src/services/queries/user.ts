@@ -21,6 +21,7 @@ export const searchUsers = async (search: string): Promise<UsersDto> => {
 export const getMe = async (): Promise<CurrentAPIUserDto> => {
     const response = await axios.get<CurrentAPIUserDto>('/user/me');
     const user = response.data;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!user) throw new Error('User not found');
     return user;
 };

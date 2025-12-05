@@ -21,6 +21,7 @@ export class WorkerService {
         const workerMap = workers.reduce(
             (accumulator: Record<string, WorkerEntity>, worker) => {
                 if (
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     !accumulator[worker.hostname] ||
                     accumulator[worker.hostname].lastSeen < worker.lastSeen
                 ) {
@@ -35,6 +36,7 @@ export class WorkerService {
         const result = {
             count,
             data: Object.values(workerMap).map((worker) => ({
+                // eslint-disable-next-line @typescript-eslint/no-misused-spread
                 ...worker,
                 gpuModel: worker.gpuModel ?? null,
             })),

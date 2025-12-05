@@ -10,6 +10,7 @@ export interface FileEventContext {
     mission: MissionEntity;
     actor: UserEntity;
     type: FileEventType;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     details?: Record<string, any>;
 }
 

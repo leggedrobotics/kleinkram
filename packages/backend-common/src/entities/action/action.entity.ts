@@ -35,6 +35,7 @@ export interface SubmittedAction {
     uuid: string;
     state: ActionState;
 
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     runtime_requirements: RuntimeDescription;
     image: Image;
     command: string;
@@ -54,6 +55,7 @@ export class ActionEntity extends BaseEntity {
     creator?: UserEntity;
 
     @Column({ nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     state_cause?: string;
 
     @Column({ nullable: true })
@@ -75,9 +77,12 @@ export class ActionEntity extends BaseEntity {
     auditLogs?: unknown[];
 
     @Column({ nullable: true })
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     exit_code?: number;
 
     @Column({ nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     artifact_path?: string;
 
     @Column({
@@ -89,9 +94,11 @@ export class ActionEntity extends BaseEntity {
     artifacts!: ArtifactState;
 
     @Column({ nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     artifact_size?: number;
 
     @Column({ type: 'json', nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     artifact_files?: string[];
 
     @OneToOne(() => ApikeyEntity, (apikey) => apikey.action)

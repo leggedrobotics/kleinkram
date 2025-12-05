@@ -48,4 +48,5 @@ import { FileController } from './file.controller';
     controllers: [FileController],
     exports: [FileService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class FileModule {}

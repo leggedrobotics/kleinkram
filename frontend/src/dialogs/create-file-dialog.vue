@@ -46,7 +46,9 @@ defineProps<{
 
 const createFileAction = (): void => {
     if (createFileReference.value === undefined) return;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (createFileReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         (createFileReference.value as any).createFileAction();
     }
     onDialogOK();

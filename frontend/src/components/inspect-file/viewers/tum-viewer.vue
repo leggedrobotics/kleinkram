@@ -70,6 +70,7 @@ interface Pose {
     qw: number;
 }
 
+// eslint-disable-next-line complexity
 const poses = computed(() => {
     const lines = properties.content.split('\n');
     const parsed: Pose[] = [];

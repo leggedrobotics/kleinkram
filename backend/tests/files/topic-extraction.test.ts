@@ -51,14 +51,20 @@ describe('Topic Extraction Tests', () => {
                 headers: getAuthHeaders(user),
             },
         );
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         console.log(`[DEBUG] API response status: ${response.status}`);
         expect(response.status).toBe(200);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const json = await response.json();
         console.log('[DEBUG] API response json received');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(json.data).toBeDefined();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(json.data.length).toBeGreaterThan(0);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
         const foundTopic = json.data.find((t: any) => t.name === '/test/topic');
         expect(foundTopic).toBeDefined();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(foundTopic.type).toBe('std_msgs/String');
     }, 30_000);
 });

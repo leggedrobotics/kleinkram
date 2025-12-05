@@ -71,4 +71,5 @@ import { Db3Handler } from './handlers/db3.handler';
         },
     ],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class FileProcessorModule {}

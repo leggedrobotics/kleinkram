@@ -35,6 +35,7 @@ export class MissionGuardService {
             return false;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user) {
             return false;
         }
@@ -50,6 +51,7 @@ export class MissionGuardService {
         projectUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!missionName || !user) {
             logger.error(
                 `MissionGuard: missionName (${missionName}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -69,6 +71,7 @@ export class MissionGuardService {
         tagUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!tagUUID || !user) {
             logger.error(
                 `MissionGuard: tagUUID (${tagUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -116,12 +119,14 @@ export class MissionGuardService {
         missionUUIDs: string[],
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!missionUUIDs || !user) {
             logger.error(
                 `MissionGuard: missionUUIDs (${missionUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting READ access.`,
             );
             return false;
         }
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user) {
             return false;
         }

@@ -16,12 +16,14 @@ export interface ProjectContext {
 
 define(ProjectEntity, (_, context: Partial<ProjectContext> = {}) => {
     const creator =
-        context.creator || faker.helpers.arrayElement(context.allUsers ?? []);
+        context.creator ?? faker.helpers.arrayElement(context.allUsers ?? []);
+
+    // eslint-disable-next-line no-console
     console.assert(creator, 'No creator provided for project');
 
     const project = new ProjectEntity();
     project.uuid = extendedFaker.string.uuid();
-    project.name = context.name || extendedFaker.project.name();
+    project.name = context.name ?? extendedFaker.project.name();
     project.creator = creator;
     project.description = extendedFaker.lorem.paragraph();
 

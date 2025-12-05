@@ -87,6 +87,7 @@ import {
 const properties = defineProps<{
     topicName: string;
     messageType: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     isLoading: boolean;
@@ -98,11 +99,13 @@ const properties = defineProps<{
 const emit = defineEmits(['load-more', 'load-required', 'pause-preview']);
 
 const hasData = computed(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     () => properties.messages && properties.messages.length > 0,
 );
 
 // --- Type Detection ---
 const currentPreviewType = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-condition
     const sample = properties.messages?.[0]?.data;
     return detectPreviewType(properties.messageType, sample);
 });

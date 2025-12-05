@@ -137,6 +137,7 @@ export class UserService implements OnModuleInit {
         take: number,
     ): Promise<UsersDto> {
         // Ensure the search string is not empty or null or less than 3 characters
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (search === null || search === '' || search.length < 3) {
             return {
                 users: [],
@@ -255,6 +256,7 @@ export class UserService implements OnModuleInit {
         apikey: string,
     ): Promise<{ apiKey: ApikeyEntity; user: UserEntity }> {
         const user = await this.userRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
             select: ['uuid', 'name', 'role'],

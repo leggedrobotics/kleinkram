@@ -32,6 +32,7 @@ const route = useRoute();
 const router = useRouter();
 
 const deleteMissionAction = async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (missionNameCheck.value === properties.mission.name) {
         await deleteMission(properties.mission)
             .then(async () => {
@@ -39,6 +40,7 @@ const deleteMissionAction = async (): Promise<void> => {
                     predicate: (query) =>
                         query.queryKey[0] === 'missions' ||
                         (query.queryKey[0] === 'mission' &&
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             query.queryKey[1] === properties.mission.uuid),
                 });
 
@@ -47,6 +49,7 @@ const deleteMissionAction = async (): Promise<void> => {
                         query.queryKey[0] === 'projects' ||
                         (query.queryKey[0] === 'project' &&
                             query.queryKey[1] ===
+                                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                                 properties.mission.project.uuid),
                 });
 
@@ -77,6 +80,7 @@ const deleteMissionAction = async (): Promise<void> => {
                         } else if (status === 409) {
                             errorMessage = 'Mission may contain files.';
                         } else {
+                            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                             errorMessage = `Server responded with status: ${status}`;
                         }
                     } else if (error.request) {
@@ -101,6 +105,8 @@ const deleteMissionAction = async (): Promise<void> => {
 
 defineExpose({
     deleteMissionAction,
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_name_check: missionNameCheck,
 });
 </script>

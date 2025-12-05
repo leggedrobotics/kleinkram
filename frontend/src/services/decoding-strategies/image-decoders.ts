@@ -6,6 +6,7 @@ export function renderCompressed(
     canvas: HTMLCanvasElement,
     onRender?: () => void,
 ): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const blob = new Blob([bytes as any]);
     const url = URL.createObjectURL(blob);
     const img = new Image();

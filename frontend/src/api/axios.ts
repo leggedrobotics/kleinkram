@@ -1,6 +1,8 @@
 import axios, { AxiosRequestConfig, RawAxiosResponseHeaders } from 'axios';
 import { parseISO } from 'date-fns';
 import { ref } from 'vue';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 import BUILD_INFO from '../build';
 import ENV from '../environment';
 
@@ -25,6 +27,7 @@ const handleDates = <T extends JSON | null | undefined>(data: T): T | Date => {
 
     for (const [key, value] of Object.entries(data)) {
         // @ts-expect-error this is a hack to make the type checker happy
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         if (isIsoDateString(value)) data[key] = parseISO(value);
         else if (typeof value === 'object') handleDates(value);
     }

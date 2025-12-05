@@ -167,6 +167,7 @@ import { computed } from 'vue';
 import ViewerLayout from './common/viewer-layout.vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -178,6 +179,7 @@ const isLoading = computed(
 
 const latestMessage = computed(() => {
     if (properties.messages.length === 0) return null;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return properties.messages.at(-1).data;
 });
 </script>

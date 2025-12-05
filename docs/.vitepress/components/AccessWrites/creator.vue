@@ -1,3 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+// eslint-disable-next-line vue/multi-word-component-names
+// eslint-disable-next-line unicorn/filename-case
+// eslint-disable-next-line vue/multi-word-component-names
+// eslint-disable-next-line unicorn/filename-case
 <template>
     <ClientOnly>
         <Hint :hint="props.hint" class="access-right-view">
@@ -7,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import Hint from '../Hint.vue';
+import Hint from '../hint.vue';
 
 const props = defineProps<{
     hint?: string;

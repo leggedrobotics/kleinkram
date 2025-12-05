@@ -29,6 +29,7 @@ export function useActionList(
 ): UseQueryReturnType<ActionsDto, Error> {
     return useQuery({
         queryKey: computed(() => actionKeys.list(unref(filters))),
+
         queryFn: ({ queryKey }) => {
             const _filters = queryKey[2];
             return ActionService.getAll(_filters as ActionQuery);

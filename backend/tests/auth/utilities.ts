@@ -10,8 +10,7 @@ import {
 } from '../utils/database-utilities';
 
 // DEFAUL_URL for backend
-export const DEFAULT_URL =
-    process.env['DEFAULT_URL'] ?? 'http://localhost:3000';
+export const DEFAULT_URL = process.env.DEFAULT_URL ?? 'http://localhost:3000';
 export const DEFAULT_GROUP_UUIDS: [string] = [
     '00000000-0000-0000-0000-000000000000',
 ] as const;
@@ -62,6 +61,7 @@ export const getAccessGroupForEmail = (
     accessGroups: AccessGroupEntity[],
 ): AccessGroupEntity => {
     const group: AccessGroupEntity[] =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         accessGroups.filter((_group: AccessGroupEntity) =>
             _group.memberships?.some(
                 (accessGroupUser) =>
@@ -105,6 +105,7 @@ export const generateAndFetchDatabaseUser = async (
         const userRepository = database.getRepository(UserEntity);
 
         // Check if user already exists and find an available email and username
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (true) {
             try {
                 await userRepository.findOneOrFail({
@@ -112,7 +113,9 @@ export const generateAndFetchDatabaseUser = async (
                 });
                 // If the user exists, modify the email and username
                 const [name, domain] = baseEmail.split('@');
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 userEmail = `${name}${counter}@${domain}`;
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 username = `${name}${counter}`;
                 counter++;
             } catch {
@@ -138,6 +141,7 @@ export const generateAndFetchDatabaseUser = async (
 
         if (!response.ok) {
             throw new Error(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Failed to fetch data: ${response.status} ${response.statusText}`,
             );
         }

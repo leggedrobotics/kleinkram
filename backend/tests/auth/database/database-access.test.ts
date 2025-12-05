@@ -16,6 +16,7 @@ describe('Verify Project Level Access', () => {
     });
 
     // descrition
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user ...', async () => {
         // TODO: implement this test
         expect(true).toBe(true);

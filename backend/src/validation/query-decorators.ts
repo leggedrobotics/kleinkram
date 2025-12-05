@@ -23,8 +23,12 @@ export const QueryUUID = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<string> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(UUIDValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -32,7 +36,7 @@ export const QueryUUID = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
@@ -51,13 +55,17 @@ export const QueryOptionalUUID = (
     createParamDecorator(
         // TODO: what type should this be? string | undefined or string
         async (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined) {
                 return;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(UUIDValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -65,7 +73,7 @@ export const QueryOptionalUUID = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
@@ -82,9 +90,13 @@ export const QueryString = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<string> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(StringValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -92,7 +104,7 @@ export const QueryString = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
@@ -109,13 +121,17 @@ export const QueryOptionalString = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<string> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined || value === '') {
                 return '';
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(StringValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -123,7 +139,7 @@ export const QueryOptionalString = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
@@ -140,7 +156,10 @@ export const QueryStringArray = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<string[]> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const raw_value = request.query[data];
 
             if (raw_value === undefined) {
@@ -149,6 +168,7 @@ export const QueryStringArray = (
 
             let value = [];
             try {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
                 value = JSON.parse(raw_value);
             } catch {
                 throw new BadRequestException(
@@ -156,6 +176,7 @@ export const QueryStringArray = (
                 );
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(StringArrayValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -163,7 +184,7 @@ export const QueryStringArray = (
                 );
             });
 
-            return value;
+            return value as string[];
         },
         metadataApplier(
             parameterName,
@@ -180,7 +201,10 @@ export const QueryOptionalStringArray = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<string[]> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const raw_value = request.query[data];
 
             if (raw_value === undefined) {
@@ -189,6 +213,7 @@ export const QueryOptionalStringArray = (
 
             let value = [];
             try {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
                 value = JSON.parse(raw_value);
             } catch {
                 throw new BadRequestException(
@@ -196,6 +221,7 @@ export const QueryOptionalStringArray = (
                 );
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(StringArrayValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -203,7 +229,7 @@ export const QueryOptionalStringArray = (
                 );
             });
 
-            return value;
+            return value as string[];
         },
         metadataApplier(
             parameterName,
@@ -220,7 +246,10 @@ export const QueryOptionalUUIDArray = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<string[]> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const raw_value = request.query[data];
 
             if (raw_value === undefined) {
@@ -229,6 +258,7 @@ export const QueryOptionalUUIDArray = (
 
             let value = [];
             try {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
                 value = JSON.parse(raw_value);
             } catch {
                 throw new BadRequestException(
@@ -236,6 +266,7 @@ export const QueryOptionalUUIDArray = (
                 );
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(UUIDArrayValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -243,7 +274,7 @@ export const QueryOptionalUUIDArray = (
                 );
             });
 
-            return value;
+            return value as string[];
         },
         metadataApplier(
             parameterName,
@@ -260,7 +291,10 @@ export const QueryUUIDArray = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<string[]> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const raw_value = request.query[data];
 
             if (raw_value === undefined) {
@@ -269,6 +303,7 @@ export const QueryUUIDArray = (
 
             let value = [];
             try {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
                 value = JSON.parse(raw_value);
             } catch {
                 throw new BadRequestException(
@@ -276,6 +311,7 @@ export const QueryUUIDArray = (
                 );
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(UUIDArrayValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -283,7 +319,7 @@ export const QueryUUIDArray = (
                 );
             });
 
-            return value;
+            return value as string[];
         },
         metadataApplier(
             parameterName,
@@ -300,7 +336,10 @@ export const QueryBoolean = (
 ) =>
     createParamDecorator(
         (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             // Handle string "true" or "false" conversion first
@@ -319,6 +358,7 @@ export const QueryBoolean = (
             // throw an error or attempt validation with the original value
             if (booleanValue === undefined) {
                 throw new BadRequestException(
+                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     `Parameter ${data} is not a valid Boolean. Received: "${value}"`,
                 );
             }
@@ -341,11 +381,15 @@ export const QueryOptionalBoolean = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
             if (value === undefined) {
                 return;
             }
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(BooleanValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -379,13 +423,17 @@ export const QueryDate = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined) {
                 return new Date(0);
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(DateStringValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -393,7 +441,7 @@ export const QueryDate = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
@@ -410,7 +458,10 @@ export const QuerySortBy = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === '' || value === undefined) {
@@ -437,10 +488,12 @@ export const QuerySortBy = (
                 'state_cause',
             ];
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             if (!fields.includes(value)) {
                 throw new BadRequestException('Parameter is not a valid field');
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(StringValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -448,11 +501,11 @@ export const QuerySortBy = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
-            parameterDescription || 'Sort response by',
+            parameterDescription ?? 'Sort response by',
             'query',
             'string (sortable field)',
             true,
@@ -465,13 +518,17 @@ export const QuerySortDirection = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             let value = request.query[data];
 
             if (value === '' || value === undefined) {
                 return 'ASC'; // default value
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             value = value.toUpperCase();
             if (value !== 'ASC' && value !== 'DESC') {
                 throw new BadRequestException(
@@ -479,6 +536,7 @@ export const QuerySortDirection = (
                 );
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(StringValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -486,11 +544,11 @@ export const QuerySortDirection = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
-            parameterDescription || 'Sort response direction',
+            parameterDescription ?? 'Sort response direction',
             'query',
             'boolean',
             false,
@@ -503,7 +561,10 @@ export const QueryProjectSearchParameters = (
 ) =>
     createParamDecorator(
         (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined) {
@@ -512,21 +573,28 @@ export const QueryProjectSearchParameters = (
 
             // check if it is a valid key
             const validKeys = ['name', 'creator.uuid'];
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             const key = Object.keys(value)[0] ?? '';
             if (!validKeys.includes(key)) {
                 throw new BadRequestException('Parameter is not a valid key');
             }
 
             // remove empty values
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             for (const _key of Object.keys(value)) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 if (value[_key] === '') {
-                    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete, @typescript-eslint/no-unsafe-member-access
                     delete value[_key];
                 }
             }
 
             // check if every value is a string
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             for (const _key of Object.keys(value)) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 if (typeof value[_key] !== 'string') {
                     throw new BadRequestException(
                         'Parameter is not a valid value',
@@ -534,7 +602,7 @@ export const QueryProjectSearchParameters = (
                 }
             }
 
-            return value;
+            return value as Record<string, string>;
         },
         metadataApplier(
             parameterName,
@@ -551,12 +619,16 @@ export const QueryOptionalDate = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined) {
                 return;
             }
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(DateStringValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -564,7 +636,7 @@ export const QueryOptionalDate = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
@@ -581,13 +653,17 @@ export const QueryOptionalNumber = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined) {
                 return;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(NumberValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException(
@@ -595,7 +671,7 @@ export const QueryOptionalNumber = (
                 );
             });
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
@@ -615,7 +691,10 @@ export const QueryOptionalAccessGroupType = (
             data: string,
             context: ExecutionContext,
         ): AccessGroupType | undefined => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined) {
@@ -623,6 +702,7 @@ export const QueryOptionalAccessGroupType = (
             }
 
             // validate if value is a valid AccessGroupType
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             if (!Object.values(AccessGroupType).includes(value)) {
                 throw new BadRequestException(
                     'Parameter is not a valid AccessGroupType',
@@ -646,7 +726,10 @@ export const QuerySkip = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<number> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-member-access
             const value_raw = request.query[data] as string | undefined;
 
             if (value_raw === undefined) {
@@ -677,7 +760,7 @@ export const QuerySkip = (
         },
         metadataApplier(
             parameterName,
-            parameterDescription || 'Pagination Skip',
+            parameterDescription ?? 'Pagination Skip',
             'query',
             'number',
             false,
@@ -689,11 +772,15 @@ const DEFAULT_TAKE = 100;
 
 export const QueryTake = (
     parameterName: string,
+
     parameterDescription?: string,
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext): Promise<number> => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-member-access
             const raw_value = request.query[data] as string | undefined;
 
             if (raw_value === undefined) {
@@ -726,7 +813,7 @@ export const QueryTake = (
         },
         metadataApplier(
             parameterName,
-            parameterDescription || 'Pagination Take',
+            parameterDescription ?? 'Pagination Take',
             'query',
             'number',
             false,
@@ -739,14 +826,17 @@ export const QueryOptional = (
 ) =>
     createParamDecorator(
         (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined) {
                 return;
             }
 
-            return value;
+            return value as string;
         },
         metadataApplier(
             parameterName,
@@ -763,13 +853,17 @@ export const QueryOptionalRecord = (
 ) =>
     createParamDecorator(
         (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.query[data];
 
             if (value === undefined) {
                 return;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             return JSON.parse(value.replaceAll("'", '"'));
         },
         metadataApplier(

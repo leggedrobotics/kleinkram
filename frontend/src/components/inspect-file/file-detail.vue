@@ -161,6 +161,7 @@ const tumContent = ref<string | undefined>(undefined);
 const svo2Url = ref<string | undefined>(undefined);
 
 const fileExtension = computed(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     () => file.value?.filename?.split('.').pop()?.toLowerCase() ?? '',
 );
 const isYaml = computed(
@@ -170,11 +171,13 @@ const isYaml = computed(
 );
 const isTum = computed(
     () =>
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         file.value?.type === FileType.TUM && file.value?.state === FileState.OK,
 );
 const isSvo2 = computed(
     () =>
         file.value?.type === FileType.SVO2 &&
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         file.value?.state === FileState.OK,
 );
 const isSupportedBinary = computed(() => {

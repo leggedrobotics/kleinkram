@@ -26,4 +26,5 @@ import { TagController } from './tag.controller';
     controllers: [TagController],
     exports: [TagService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class TagModule {}

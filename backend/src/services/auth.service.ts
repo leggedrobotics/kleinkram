@@ -34,8 +34,10 @@ export class AuthService implements OnModuleInit {
         private groupMembershipRepository: Repository<GroupMembershipEntity>,
         private configService: ConfigService,
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const config = this.configService.get('accessConfig');
         if (config === undefined) throw new Error('Access config not found');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         this.config = config;
     }
 
@@ -43,11 +45,16 @@ export class AuthService implements OnModuleInit {
         await createAccessGroups(this.accessGroupRepository, this.config);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async validateAndCreateUserByGitHub(profile: any): Promise<UserEntity> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { id, emails, displayName, photos } = profile;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const email = emails[0].value;
 
         const account = await this.accountRepository.findOne({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.GITHUB },
             relations: ['user'],
         });
@@ -64,18 +71,26 @@ export class AuthService implements OnModuleInit {
         }
 
         return this.create(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             id,
             Providers.GITHUB,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             email,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             displayName,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
             photos[0].value,
         );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async validateAndCreateUserByFakeOAuth(profile: any): Promise<UserEntity> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { id, email, displayName, photo } = profile;
 
         const account = await this.accountRepository.findOne({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.FakeOAuth },
             relations: ['user'],
         });
@@ -91,14 +106,20 @@ export class AuthService implements OnModuleInit {
             return account.user;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return this.create(id, Providers.FakeOAuth, email, displayName, photo);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async validateAndCreateUserByGoogle(profile: any): Promise<UserEntity> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { id, emails, displayName, photos } = profile;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const email = emails[0].value;
 
         const account = await this.accountRepository.findOne({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.GOOGLE },
             relations: ['user'],
         });
@@ -115,10 +136,15 @@ export class AuthService implements OnModuleInit {
         }
 
         return this.create(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             id,
             Providers.GOOGLE,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             email,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             displayName,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
             photos[0].value,
         );
     }
@@ -198,6 +224,7 @@ export const createAccessGroups = async (
                 });
                 return accessGroupRepository.save(newGroup);
             }
+            return;
         }),
     );
 };
@@ -275,6 +302,7 @@ async function addToAffiliationGroups(
                     }),
                 );
             }
+            return;
         }),
     );
 }

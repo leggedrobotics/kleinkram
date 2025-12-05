@@ -23,6 +23,7 @@ export class ActionGuardService {
         actionUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!actionUuid || !user) {
             logger.error(
                 `ActionGuard: actionUUID (${actionUuid}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,

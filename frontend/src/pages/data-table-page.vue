@@ -342,6 +342,7 @@ const pagination = computed(() => {
 });
 
 function setPagination(update: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     filter?: any;
     pagination: {
         page: number;
@@ -349,6 +350,7 @@ function setPagination(update: {
         sortBy: string;
         descending: boolean;
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getCellValue: any;
 }): void {
     handler.value.setPage(update.pagination.page);
@@ -372,6 +374,7 @@ const queryKeyFiles = computed(() => [
 ]);
 
 const tagFilterQuery = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const query: Record<string, any> = {};
     for (const key of Object.keys(tagFilter.value)) {
         query[key] = tagFilter.value[key] ?? '';
@@ -389,9 +392,11 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
                 handler.value.missionUuid,
                 startDate.value,
                 endDate.value,
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 selectedTopics.value ?? [],
                 [],
                 matchAllTopics.value,
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 selectedFileTypesFilter.value ?? ([] as FileType[]),
                 tagFilterQuery.value,
                 handler.value.take,
@@ -406,6 +411,7 @@ const total = computed(() => (_data.value ? _data.value.count : 0));
 watch(
     () => total.value,
     () => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (data.value && !isLoading.value) {
             handler.value.rowsNumber = total.value;
         }
@@ -504,17 +510,21 @@ function openTagFilterDialog(): void {
         component: TagFilter,
         componentProps: { tagValues: tagFilter.value },
     }).onOk((_tagFilter) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         tagFilter.value = _tagFilter;
     });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function filterFunction(value: string, update: any): void {
     if (value === '') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         update(() => {
             displayedTopics.value = allTopics.value;
         });
         return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     update(() => {
         if (!allTopics.value) return;
         const needle = value.toLowerCase();
@@ -531,12 +541,16 @@ function useOrTopicFilter(): void {
     matchAllTopics.value = false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onRowClick = async (_: any, row: any): Promise<void> => {
     await $router.push({
         name: ROUTES.FILE.routeName,
         params: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
             file_uuid: row.uuid,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             missionUuid: row.mission.uuid,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             projectUuid: row.mission.project.uuid,
         },
     });

@@ -77,11 +77,20 @@ const FIND_MANY_SORT_KEYS = {
     size: 'file.size',
     state: 'file.state',
     date: 'file.date',
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.filename': 'file.filename',
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.createdAt': 'file.createdAt',
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.updatedAt': 'file.updatedAt',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.size': 'file.size',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.state': 'file.state',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.date': 'file.date',
 };
 
@@ -271,10 +280,12 @@ export class FileService implements OnModuleInit {
         exactMatch = false,
     ): Promise<void> {
         logger.debug(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `Checking resource access by name for user ${userUuid}. Projects: ${projectNamePatterns}, Missions: ${missionNamePatterns}, Exact: ${exactMatch}`,
         );
 
         // We use addProjectFilters which supports exactMatch natively
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (projectNamePatterns && projectNamePatterns.length > 0) {
             const missingPatterns: string[] = [];
 
@@ -304,6 +315,7 @@ export class FileService implements OnModuleInit {
             }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (missionNamePatterns && missionNamePatterns.length > 0) {
             const missingPatterns: string[] = [];
 
@@ -361,6 +373,7 @@ export class FileService implements OnModuleInit {
         categories: string,
         matchAllTopics: boolean,
         fileTypes: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tags: Record<string, any>,
         userUUID: string,
         take: number,
@@ -383,6 +396,7 @@ export class FileService implements OnModuleInit {
 
         // ADMIN users see all, others are constrained
         if (user.role !== UserRole.ADMIN) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             idQuery = addAccessConstraints(idQuery, userUUID);
         }
 
@@ -418,6 +432,7 @@ export class FileService implements OnModuleInit {
         this._applyFileTypeFilter(idQuery, fileTypes);
         this._applyTopicFilter(idQuery, topics, matchAllTopics);
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (health) {
             logger.debug(`Filtering files by health: ${health}`);
             switch (health) {
@@ -458,6 +473,7 @@ export class FileService implements OnModuleInit {
         }
 
         // The tag filter is async, so it must be awaited
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (tags && Object.keys(tags).length > 0) {
             await this._applyTagFilter(idQuery, tags);
         }
@@ -557,6 +573,7 @@ export class FileService implements OnModuleInit {
         } else {
             // No valid types were provided (e.g., "garbage,foo")
             logger.warn(`No valid file types found in filter: ${fileTypes}`);
+
             query.andWhere('1 = 0'); // Force query to return no results
         }
     }
@@ -604,6 +621,7 @@ export class FileService implements OnModuleInit {
      */
     private async _applyTagFilter(
         query: SelectQueryBuilder<FileEntity>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tags: Record<string, any>,
     ): Promise<void> {
         const tagTypeUUIDs = Object.keys(tags);
@@ -622,6 +640,7 @@ export class FileService implements OnModuleInit {
             .leftJoin('tag.tagType', 'tagtype');
 
         const tagWhereClauses: string[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tagParameters: Record<string, any> = {};
         let validTagCount = 0;
 
@@ -632,7 +651,9 @@ export class FileService implements OnModuleInit {
                 continue;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const value = tags[uuid];
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const [column, processedValue] = this._getTagColumnAndValue(
                 tagtype.datatype,
                 value,
@@ -644,7 +665,9 @@ export class FileService implements OnModuleInit {
             }
 
             // Create unique parameter names for this condition
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             const uuidParameter = `tagtype${validTagCount}`;
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             const valueParameter = `tagval${validTagCount}`;
 
             // Build the clause: (tagtype.uuid = :uuid AND tag.VALUE_COLUMN = :value)
@@ -652,6 +675,7 @@ export class FileService implements OnModuleInit {
                 `(tagtype.uuid = :${uuidParameter} AND tag.${column} = :${valueParameter})`,
             );
             tagParameters[uuidParameter] = uuid;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             tagParameters[valueParameter] = processedValue;
 
             validTagCount++;
@@ -740,6 +764,7 @@ export class FileService implements OnModuleInit {
         return {
             count: events.length,
             data:
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 events.map((event) => ({
                     uuid: event.uuid,
                     type: event.type,
@@ -755,11 +780,18 @@ export class FileService implements OnModuleInit {
                         : undefined,
                     action: event.action
                         ? {
+                              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                               uuid: event.action.uuid,
+
+                              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                               name: event.action.template?.name,
+                              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                               creator: event.action.creator
                                   ? {
+                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                                         uuid: event.action.creator.uuid,
+
+                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                                         name: event.action.creator.name,
                                         avatarUrl: null,
                                         email: null,
@@ -790,6 +822,7 @@ export class FileService implements OnModuleInit {
         return {
             count: events.length,
             data:
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 events.map((event) => ({
                     uuid: event.uuid,
                     type: event.type,
@@ -805,7 +838,10 @@ export class FileService implements OnModuleInit {
                         : undefined,
                     action: event.action
                         ? {
+                              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                               uuid: event.action.uuid,
+
+                              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                               name: event.action.template?.name,
                           }
                         : undefined,
@@ -874,9 +910,11 @@ export class FileService implements OnModuleInit {
                 where: { uuid: file.missionUuid },
                 relations: ['project'],
             });
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (newMission) databaseFile.mission = newMission;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (file.categories) {
             databaseFile.categories = await this.categoryRepository.find({
                 where: { uuid: In(file.categories) },
@@ -947,12 +985,14 @@ export class FileService implements OnModuleInit {
      * Generate a download link for a file with the given uuid.
      * The link will expire after 1 week if expires is set to true.
      *
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      * @param uuid The unique identifier of the file
      * @param expires Whether the download link should expire
      */
     async generateDownload(
         uuid: string,
         expires: boolean,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         preview_only: boolean,
         actor?: UserEntity,
         action?: ActionEntity,
@@ -967,6 +1007,7 @@ export class FileService implements OnModuleInit {
         });
 
         // verify that the file exists in DB
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (file.uuid === undefined || file.uuid !== uuid)
             throw new BadRequestException('File not found');
 
@@ -1001,6 +1042,7 @@ export class FileService implements OnModuleInit {
             expires ? 4 * 60 * 60 : 604_800,
             {
                 // set filename in response headers
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'response-content-disposition': `attachment; filename ="${file.filename}"`,
             },
         );
@@ -1067,6 +1109,7 @@ export class FileService implements OnModuleInit {
                         },
                     );
                 } catch (error) {
+                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     logger.error(`Error moving file ${uuid}: ${error}`);
                 }
             }),
@@ -1133,13 +1176,21 @@ export class FileService implements OnModuleInit {
     }
 
     async getStorage(): Promise<StorageOverviewDto> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const metrics = await this.storageService.getSystemMetrics();
 
         return {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             usedBytes: metrics.minio_system_drive_used_bytes?.[0]?.value ?? 0,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             totalBytes: metrics.minio_system_drive_total_bytes?.[0]?.value ?? 0,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             usedInodes: metrics.minio_system_drive_used_inodes?.[0]?.value ?? 0,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             totalInodes:
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 metrics.minio_system_drive_total_inodes?.[0]?.value ?? 0,
         } as StorageOverviewDto;
     }
@@ -1185,6 +1236,7 @@ export class FileService implements OnModuleInit {
         });
 
         return await this.dataSource.transaction(async (manager) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const credentials: any[] = [];
             const invalidFiles: { filename: string; error: string }[] = [];
 
@@ -1226,6 +1278,7 @@ export class FileService implements OnModuleInit {
                     FileType
                 > = new Map([
                     ['.bag', FileType.BAG],
+
                     ['.mcap', FileType.MCAP],
                     ['.yaml', FileType.YAML],
                     ['.yml', FileType.YAML],
@@ -1234,6 +1287,7 @@ export class FileService implements OnModuleInit {
                     ['.db3', FileType.DB3],
                 ]);
 
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 const supported_file_endings = [
                     ...fileExtensionToFileTypeMap.keys(),
                 ];
@@ -1307,9 +1361,11 @@ export class FileService implements OnModuleInit {
                                 env.MINIO_DATA_BUCKET_NAME,
                             ),
                     });
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (error: any) {
                     if (
                         error instanceof QueryFailedError &&
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         error.driverError.code === '23505'
                     ) {
                         invalidFiles.push({
@@ -1461,6 +1517,7 @@ export class FileService implements OnModuleInit {
                 if (stats) {
                     file.size = stats.size;
                     logger.debug(
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                         `Updated size for ${file.filename}: ${file.size?.toString()}`,
                     );
                 } else {
@@ -1484,6 +1541,7 @@ export class FileService implements OnModuleInit {
             .select(['file.uuid', 'file.filename'])
             .getMany();
 
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         logger.debug(`Found ${filesToFix.length} bag files missing topics.`);
 
         for (const file of filesToFix) {

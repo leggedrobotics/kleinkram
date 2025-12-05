@@ -78,5 +78,6 @@ const handler = useHandler();
 
 // we need to set the creator.uuid search param in order to fetch the correct projects
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 handler.value.searchParams = { 'creator.uuid': user.value?.uuid ?? '' };
 </script>

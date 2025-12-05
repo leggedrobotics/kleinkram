@@ -25,6 +25,7 @@ interface BagReader {
 class LocalBagReader implements BagReader {
     constructor(
         private handle: fsPromises.FileHandle,
+
         private _size: number,
     ) {}
     async read(offset: number, length: number): Promise<Uint8Array> {
@@ -128,31 +129,31 @@ export class RosBagMetadataService extends AbstractMetadataService {
         const connectionCounts = new Map<number, number>();
 
         // Sum counts from ChunkInfos (Efficient count extraction)
-        if (bag.chunkInfos) {
-            for (const chunk of bag.chunkInfos) {
-                for (const { conn, count } of chunk.connections) {
-                    const current = connectionCounts.get(conn) || 0;
-                    connectionCounts.set(conn, current + count);
-                }
+        for (const chunk of bag.chunkInfos) {
+            for (const { conn, count } of chunk.connections) {
+                const current = connectionCounts.get(conn) ?? 0;
+                connectionCounts.set(conn, current + count);
             }
         }
 
         // Iterate Connections (Extract topic names and types)
-        const connections =
+        interface BagConnection {
+            conn: number;
+            topic: string;
+            type?: string;
+        }
+        const connections: Iterable<BagConnection> =
             bag.connections instanceof Map
                 ? bag.connections.values()
-                : Object.values(bag.connections as any);
+                : Object.values(bag.connections);
 
         for (const connection of connections) {
-            // @ts-ignore
             const connId = connection.conn;
-            const count = connectionCounts.get(connId) || 0;
+            const count = connectionCounts.get(connId) ?? 0;
 
             rawTopics.push({
-                // @ts-ignore
                 name: connection.topic,
-                // @ts-ignore
-                type: connection.type || 'unknown',
+                type: connection.type ?? 'unknown',
                 nrMessages: BigInt(count),
             });
         }

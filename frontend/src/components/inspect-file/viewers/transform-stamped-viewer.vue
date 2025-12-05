@@ -93,6 +93,7 @@ import SimpleTimeChart, { ChartSeries } from './simple-time-chart.vue';
 import SkeletonTimeChart from './skeleton-time-chart.vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -101,6 +102,7 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required']);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0)
         emit('load-required');
 });
@@ -111,21 +113,26 @@ const isLoading = computed(
 
 const duration = computed(() => {
     if (properties.messages.length < 2) return 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const start = properties.messages[0].logTime;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = properties.messages.at(-1).logTime;
     return Number(end - start) / 1_000_000_000;
 });
 
 const startTime = computed(() => {
     if (properties.messages.length === 0) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return properties.messages[0].logTime;
 });
 
 const frameId = computed(
-    () => properties.messages[0]?.data?.header?.frame_id || '-',
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    () => properties.messages[0]?.data?.header?.frame_id ?? '-',
 );
 const childFrameId = computed(
-    () => properties.messages[0]?.data?.child_frame_id || '-',
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    () => properties.messages[0]?.data?.child_frame_id ?? '-',
 );
 
 const translationSeries = shallowRef<ChartSeries[]>([]);
@@ -138,7 +145,10 @@ const updateCharts = debounce(() => {
         return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const logStartTime = properties.messages[0].logTime;
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     const length_ = properties.messages.length;
 
     const t = new Float32Array(length_);
@@ -152,26 +162,39 @@ const updateCharts = debounce(() => {
     const rw = new Float32Array(length_);
 
     for (let index = 0; index < length_; index++) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const message = properties.messages[index];
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         t[index] = Number(message.logTime - logStartTime) / 1_000_000_000;
 
-        const trans = message.data.transform?.translation || {};
-        tx[index] = trans.x || 0;
-        ty[index] = trans.y || 0;
-        tz[index] = trans.z || 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const trans = message.data.transform?.translation ?? {};
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        tx[index] = trans.x ?? 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        ty[index] = trans.y ?? 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        tz[index] = trans.z ?? 0;
 
-        const rot = message.data.transform?.rotation || {};
-        rx[index] = rot.x || 0;
-        ry[index] = rot.y || 0;
-        rz[index] = rot.z || 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const rot = message.data.transform?.rotation ?? {};
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        rx[index] = rot.x ?? 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        ry[index] = rot.y ?? 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        rz[index] = rot.z ?? 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         rw[index] = rot.w === undefined ? 1 : rot.w;
     }
 
     const makeData = (values: Float32Array) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result: any[] = Array.from({ length: length_ });
         for (let index = 0; index < length_; index++) {
             result[index] = { time: t[index], value: values[index] };
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return result;
     };
 
@@ -193,7 +216,9 @@ watch(() => properties.messages.length, updateCharts, { immediate: true });
 
 async function copyRaw(): Promise<void> {
     if (properties.messages.length === 0) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const last = properties.messages.at(-1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     await quasarCopy(JSON.stringify(last.data, null, 2));
     Notify.create({
         message: 'Latest message copied',

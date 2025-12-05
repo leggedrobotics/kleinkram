@@ -31,6 +31,8 @@ export class FileQueueEntryDto {
 
     @ApiProperty()
     @IsString()
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     display_name!: string;
 
     @ApiProperty()

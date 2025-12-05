@@ -18,4 +18,5 @@ import { TemplatesController } from './templates.controller';
     controllers: [TemplatesController],
     exports: [TemplateService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class TemplatesModule {}

@@ -39,24 +39,32 @@ const queryClient = useQueryClient();
 
 const tagValues: Ref<Record<string, string>> = ref({});
 watch(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     () => properties.mission,
     (newMission) => {
         if (newMission) {
             tagValues.value = {};
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             for (const tag of newMission.tags) {
                 // @ts-ignore
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 tagValues.value[tag.type.uuid] =
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     tag.type.datatype === DataType.BOOLEAN
-                        ? tag.value
-                        : tag.valueAsString;
+                        ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                          tag.value
+                        : // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                          tag.valueAsString;
             }
         }
     },
     { immediate: true },
 );
+
 const { mutate: _updateMissionTags } = useMutation({
     mutationFn: () => {
         return updateMissionTags(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
             properties.mission?.uuid ?? '',
             tagValues.value,
         );
@@ -68,6 +76,7 @@ const { mutate: _updateMissionTags } = useMutation({
             position: 'bottom',
         });
         await queryClient.invalidateQueries({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             queryKey: ['mission', properties.mission?.uuid],
         });
         await queryClient.invalidateQueries({

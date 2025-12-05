@@ -16,11 +16,21 @@ import { GlobalResponseValidationInterceptor } from './routing/interceptors/outp
 import { AddVersionInterceptor } from './routing/interceptors/version-injector';
 
 function saveEndpointsAsJson(app: INestApplication, filename: string): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const server = app.getHttpServer();
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const endpoints = server._events.request._router.stack
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
         .filter((r: any) => r.route)
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
         .map((r: any) => ({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             url: r.route.path,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             method: r.route.stack[0].method,
         }));
 
@@ -101,15 +111,21 @@ async function bootstrap(): Promise<void> {
     saveEndpointsAsJson(app, '.endpoints/__generated__endpoints.json');
     logger.debug('Endpoints saved');
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (module.hot) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         module.hot.accept();
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         module.hot.dispose(() => {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             app.close();
             register.clear();
         });
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const module: any;
 
 // eslint-disable-next-line unicorn/prefer-top-level-await

@@ -54,6 +54,7 @@ const properties = defineProps<{
 const queryClient = useQueryClient();
 
 const selectedProjectUuid = ref<string | undefined>(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     properties.mission?.project?.uuid,
 );
 
@@ -72,6 +73,7 @@ async function onOk(): Promise<void> {
 
     const creating = Notify.create({
         group: false,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
         message: `Moving mission ${properties.mission.name} to project ${targetProjectName}`,
         color: 'grey',
         spinner: true,
@@ -80,9 +82,11 @@ async function onOk(): Promise<void> {
     });
 
     try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         await moveMission(properties.mission.uuid, selectedProjectUuid.value);
 
         creating({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
             message: `Mission ${properties.mission.name} moved to project ${targetProjectName}`,
             color: 'positive',
             spinner: false,
@@ -109,6 +113,7 @@ async function onOk(): Promise<void> {
         onDialogOK(selectedProjectUuid.value);
     } catch (error: unknown) {
         creating({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
             message: `Error moving mission ${properties.mission.name} to project ${targetProjectName}`,
             color: 'negative',
             spinner: false,

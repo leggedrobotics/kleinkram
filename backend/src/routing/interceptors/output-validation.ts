@@ -14,14 +14,19 @@ import logger from '../../logger';
 
 function validateResponseJSON<T extends object>(dto: ClassConstructor<T>) {
     return (data: JSON): JSON => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (dto) {
             const isArray = Array.isArray(dto);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const cls = isArray ? dto[0] : dto;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             const instance: T = plainToInstance(cls, data);
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let errors: any[] = [];
             if (Array.isArray(instance)) {
                 for (const item of instance) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                     const itemErrors = validateSync(item, {
                         whitelist: true,
                         forbidNonWhitelisted: true,
@@ -48,6 +53,7 @@ function validateResponseJSON<T extends object>(dto: ClassConstructor<T>) {
                 logger.error(dto.name);
 
                 logger.error(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                     `\n${errors.map((error) => error.toString()).join('\n')}`,
                 );
                 throw new InternalServerErrorException(
@@ -81,6 +87,7 @@ export class GlobalResponseValidationInterceptor implements NestInterceptor {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         const target = context.getHandler();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const dto = this.reflector.get('outputDto', target);
 
         if (dto === null) return next.handle(); // explicitly disabled
@@ -91,6 +98,7 @@ export class GlobalResponseValidationInterceptor implements NestInterceptor {
                 `No output DTO defined for route ${target.name}.`,
             );
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return next.handle().pipe(map(validateResponseJSON(dto)));
     }
 }

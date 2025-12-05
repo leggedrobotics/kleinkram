@@ -85,12 +85,16 @@ export class GlobalErrorFilter implements ExceptionFilter {
         }
 
         if (exception instanceof BadRequestException) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const resp: any = exception.getResponse();
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             if (typeof resp === 'object' && resp.hasOwnProperty('message')) {
                 response.status(400).json({
                     statusCode: 400,
                     ...resp,
+
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                     message: resp.message.toString(),
                 });
                 return;

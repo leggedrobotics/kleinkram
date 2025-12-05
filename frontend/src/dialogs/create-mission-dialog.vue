@@ -176,6 +176,8 @@ const MISSION_NAME_INPUT_VALIDATION: ((value: string) => boolean | string)[] = [
 ];
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const tab_selection = ref('meta_data');
 const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
     undefined,
@@ -197,6 +199,7 @@ const missionName = ref('');
 const isValidMissionName = ref(true);
 const errorMessage = ref('');
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const { data: all_projects } = useQuery<ProjectsDto>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
@@ -227,6 +230,7 @@ const submitNewMission = async (): Promise<void> => {
     if (!project.value) {
         return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const resp = await createMission(
         missionName.value,
         project.value.uuid,
@@ -235,11 +239,13 @@ const submitNewMission = async (): Promise<void> => {
         tab_selection.value = 'meta_data';
         isValidMissionName.value = false;
         // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         errorMessage.value = error.response.data.message[0];
     });
 
     // exit if the request failed
     if (!resp) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     newMission.value = resp;
     // @ts-ignore
     newMission.value.project = project.value;
@@ -251,8 +257,10 @@ const submitNewMission = async (): Promise<void> => {
                 query.queryKey[0] === 'missions' &&
                 query.queryKey[1] === project.value?.uuid,
         );
+
     await Promise.all(
         filtered.map((query) => {
+            // eslint-disable-next-line no-console
             console.log('Invalidating query', query.queryKey);
             return queryClient.invalidateQueries({
                 queryKey: query.queryKey,
@@ -277,6 +285,7 @@ const updateTagValue = (update: Record<string, string>): void => {
 
 const uploadEventHandler = (): void => {
     if (createFileReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         (createFileReference.value as any).createFileAction();
     }
     onDialogOK();

@@ -111,6 +111,7 @@ const activeTab = computed({
     },
     set: (value: string) => {
         const tabSlug =
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             TAB_MAPPING[value as keyof typeof TAB_MAPPING] || 'templates';
         void router.replace({
             params: { ...route.params, tab: tabSlug },

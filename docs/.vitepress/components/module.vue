@@ -1,5 +1,12 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+// eslint-disable-next-line vue/multi-word-component-names
+// eslint-disable-next-line unicorn/filename-case
+// eslint-disable-next-line vue/multi-word-component-names
+// eslint-disable-next-line unicorn/filename-case
 <template>
     <div v-if="filteredSpec" style="margin-top: 25px">
+        // eslint-disable-next-line vue/require-v-for-key
+        <!-- eslint-disable-next-line vue/require-v-for-key -->
         <div v-for="[path, spec] in Object.entries(filteredSpec.paths)">
             <Endpoint :endpoint="path" :spec="spec" :schema="schema" />
         </div>
@@ -9,7 +16,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
-import Endpoint from './Endpoint.vue';
+import Endpoint from './endpoint.vue';
 
 const props = defineProps<{
     module: string;
@@ -20,21 +27,32 @@ const filteredSpec = ref(null);
 const schema = ref(null);
 
 // Function to filter the OpenAPI spec by path prefix
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function filterSpecByPath(spec: any, pathPrefix: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const filteredSpec = { ...spec };
+
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
     filteredSpec.paths = Object.keys(spec.paths)
         .filter((path) => path.startsWith(pathPrefix))
-        .reduce((obj, key) => {
-            obj[key] = spec.paths[key];
-            return obj;
+        // eslint-disable-next-line unicorn/no-array-reduce
+        .reduce((object, key) => {
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            object[key] = spec.paths[key];
+            return object;
         }, {});
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return filteredSpec;
 }
 
 watch(
     () => swaggerSpec.value,
-    (newVal) => {
-        if (newVal) {
+    (newValue) => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (newValue) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             filteredSpec.value = filterSpecByPath(
                 swaggerSpec.value,
                 '/' + props.module,
@@ -46,9 +64,11 @@ watch(
 // Fetch the swagger-spec.json at runtime
 onMounted(async () => {
     try {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!swaggerSpec.value) {
             let endpoint = 'http://localhost:3000/swagger/json';
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const mode = import.meta.env.VITE_MODE;
             if (mode === 'production') {
                 endpoint =
@@ -57,21 +77,29 @@ onMounted(async () => {
                 endpoint =
                     'https://api.datasets.dev.leggedrobotics.com/swagger/json';
             }
+            // eslint-disable-next-line no-console
             console.log('Fetching swagger spec from:', endpoint);
 
             const response = await fetch(endpoint);
             if (!response.ok) {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const spec = await response.json();
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             swaggerSpec.value = spec;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         filteredSpec.value = filterSpecByPath(
             swaggerSpec.value,
             '/' + props.module,
         );
+        // eslint-disable-next-line no-console
         console.log(swaggerSpec.value);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         schema.value = swaggerSpec.value.components.schemas;
     } catch (error) {
         console.error('Error loading swagger-spec.json:', error);

@@ -71,6 +71,7 @@ const createTagTypeAction = async (): Promise<boolean> => {
     }
 
     // Validate tag type
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!selectedDataType.value && selectedDataType.value !== DataType.ANY) {
         dataTypeError.value = 'Please select a Metadata Type';
         return false;
@@ -81,6 +82,7 @@ const createTagTypeAction = async (): Promise<boolean> => {
     try {
         await createTagType(
             tagName.value,
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             selectedDataType.value ?? DataType.STRING,
         );
 

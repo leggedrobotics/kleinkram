@@ -105,6 +105,8 @@ export class UserEntity extends BaseEntity {
     tags?: MetadataEntity[];
 
     @OneToMany(() => ApikeyEntity, (apikey) => apikey.user)
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     api_keys?: ApikeyEntity[];
 
     @OneToMany(() => CategoryEntity, (category) => category.creator)

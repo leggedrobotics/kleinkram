@@ -155,7 +155,7 @@ export class FileController {
             'Returned File needs all specified topics (true) or any specified topics (false)',
         )
         matchAllTopics: boolean,
-        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
+        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value') // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
@@ -199,6 +199,7 @@ export class FileController {
         )
         expires: boolean,
 
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         @QueryBoolean(
             'preview_only',
             'Whether the download link is for preview only (true) or full download (false)',

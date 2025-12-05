@@ -106,6 +106,7 @@ const resolvedCrumbs = computed(() => {
                 .replace(':file_uuid', fileUuid.value ?? ''),
             displayName: crumb.displayName
                 .replace(':project_name', project.value?.name ?? '')
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                 .replace(':mission_name', mission.value?.name ?? '')
                 .replace(':file_name', file.value?.filename ?? '')
                 .replace(':tab_name', tabName),
@@ -123,6 +124,7 @@ const resolvedCrumbs = computed(() => {
             : _crumbs.slice(0, firstUndefinedIndex);
 
     // remove link of crumb if it is the only crumb
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (_crumbs !== undefined && _crumbs.length === 1) {
         // @ts-ignore
         _crumbs[0].to = undefined;

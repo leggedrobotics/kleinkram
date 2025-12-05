@@ -127,6 +127,7 @@ watch(
 // Sort Descending (Newest first)
 const sortedVersions = computed(() => {
     return [...props.versions.data].sort(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         (a, b) => Number(b.version ?? 0) - Number(a.version ?? 0),
     );
 });

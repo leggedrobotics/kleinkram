@@ -64,6 +64,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed } from 'vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -75,13 +76,16 @@ const isLoading = computed(
 
 const duration = computed(() => {
     if (properties.messages.length < 2) return 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const start = properties.messages[0].logTime;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = properties.messages.at(-1).logTime;
     return Number(end - start) / 1_000_000_000;
 });
 
 const latestMessage = computed(() => {
     if (properties.messages.length === 0) return null;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return properties.messages.at(-1).data;
 });
 

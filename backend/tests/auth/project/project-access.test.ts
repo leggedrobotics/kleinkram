@@ -17,41 +17,49 @@ describe('Verify Project Groups Access', () => {
     });
 
     // access Group Tests
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user can add project with read access to existing access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user can add project with create access to existing access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user can add project with write access to existing access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user can add project with delete access to existing access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user can add multiple projects with read rights to existing access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user can add multiple projects with create rights to existing access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user can add multiple projects with write rights to existing access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user can add multiple projects with delete rights to existing access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);

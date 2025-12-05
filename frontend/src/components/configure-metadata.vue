@@ -26,6 +26,8 @@
                 <template #option="{ itemProps, opt }">
                     <q-item v-bind="itemProps">
                         <q-item-section>
+                            <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
+                            <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
                             <q-item-label v-html="opt.name" />
                         </q-item-section>
                         <q-item-section side>

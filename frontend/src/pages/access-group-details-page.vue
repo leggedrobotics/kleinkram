@@ -335,16 +335,21 @@ const openAddProject = (): void => {
 };
 
 const renameColumns = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cols: any[],
     oldLabel: string,
     newLabel: string,
 ): void => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     for (const col of cols.filter((c) => c.label === oldLabel)) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         col.label = newLabel;
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const dropColumns = (cols: any[], label: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return cols.filter((col) => col.label !== label);
 };
 
@@ -404,6 +409,7 @@ const projectCols = computed(() => {
         let defaultCols = [...projectAccessColumns];
         renameColumns(defaultCols, 'Creator', 'Project Creator');
         renameColumns(defaultCols, 'Description', 'Project Description');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         defaultCols = dropColumns(defaultCols, 'Created');
 
         // add as the second to last column
@@ -413,6 +419,7 @@ const projectCols = computed(() => {
             label: 'Group Rights',
             style: 'max-width: 100px',
             align: 'left',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
             field: (row: any) => AccessGroupRights[row.rights],
         });
         return defaultCols;

@@ -1,9 +1,11 @@
 export interface LogMessage {
     logTime: bigint;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any;
 }
 
 export const STANDARD_ROS2_DEFINITIONS: Record<string, string> = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'sensor_msgs/msg/Image': `
 std_msgs/Header header
 uint32 height
@@ -22,7 +24,9 @@ string frame_id
 MSG: builtin_interfaces/Time
 int32 sec
 uint32 nanosec
+// eslint-disable-next-line @typescript-eslint/naming-convention
 `,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'sensor_msgs/msg/CompressedImage': `
 std_msgs/Header header
 string format
@@ -36,8 +40,10 @@ string frame_id
 ================================================================================
 MSG: builtin_interfaces/Time
 int32 sec
+// eslint-disable-next-line @typescript-eslint/naming-convention
 uint32 nanosec
 `,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'sensor_msgs/msg/PointCloud2': `
 std_msgs/Header header
 uint32 height

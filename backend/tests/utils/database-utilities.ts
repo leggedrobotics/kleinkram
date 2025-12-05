@@ -9,6 +9,7 @@ import { Providers, UserRole } from '@kleinkram/shared';
 import jwt from 'jsonwebtoken';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
+// eslint-disable-next-line unicorn/import-style
 import * as path from 'node:path';
 import process from 'node:process';
 import { DataSource } from 'typeorm';
@@ -17,16 +18,16 @@ import {
     createNewUser,
 } from '../../src/services/auth.service';
 
-const databasePort = process.env['DB_PORT'];
+const databasePort = process.env.DB_PORT;
 
 export const database = new DataSource({
     type: 'postgres',
     host: 'localhost',
     port: Number.parseInt(databasePort ?? '5432', 10),
-    ssl: process.env['DB_SSL'] === 'true',
-    username: process.env['DB_USER'] ?? '',
-    password: process.env['DB_PASSWORD'] ?? '',
-    database: process.env['DB_DATABASE'] ?? '',
+    ssl: process.env.DB_SSL === 'true',
+    username: process.env.DB_USER ?? '',
+    password: process.env.DB_PASSWORD ?? '',
+    database: process.env.DB_DATABASE ?? '',
     synchronize: false,
     entities: ALL_ENTITIES,
 });
@@ -37,6 +38,7 @@ export const clearAllData = async () => {
 
         // filter out the tables that should not be cleared (e.g. views)
         const tablesToClear = entities
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             .filter((entity) => entity.tableName !== undefined)
             .filter((entity) => !entity.tableName.includes('view'))
             .filter((entity) => !entity.tableName.includes('materialized'))
@@ -45,7 +47,9 @@ export const clearAllData = async () => {
             .join(', ');
 
         await database.query(`TRUNCATE ${tablesToClear} CASCADE;`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         throw new Error(`ERROR: Cleaning test database: ${error.toString()}`);
     }
 };
@@ -56,12 +60,15 @@ export const mockDatabaseUser = async (
     role: UserRole = UserRole.USER,
 ): Promise<string> => {
     // read config from access_config.json
+    // eslint-disable-next-line unicorn/prefer-module
     const configPath = path.join(__dirname, '../../src/access_config.json');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     const accessGroupRepository = database.getRepository(AccessGroupEntity);
     const groupMembershipRepository = database.getRepository(
         GroupMembershipEntity,
     );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await createAccessGroups(accessGroupRepository, config);
 
     const userRepository = database.getRepository(UserEntity);
@@ -73,6 +80,7 @@ export const mockDatabaseUser = async (
     const oauthID = hash.digest('hex');
 
     await createNewUser(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         config,
         userRepository,
         accountRepository,
@@ -87,6 +95,7 @@ export const mockDatabaseUser = async (
         },
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (role) {
         const user = await userRepository.findOneOrFail({
             where: { email: email },
@@ -103,7 +112,7 @@ export const mockDatabaseUser = async (
 };
 
 export const getJwtToken = (user: UserEntity): string => {
-    const jwtSecret = process.env['JWT_SECRET'];
+    const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
         throw new Error(
             'JWT_SECRET is not defined in the environment variables.',

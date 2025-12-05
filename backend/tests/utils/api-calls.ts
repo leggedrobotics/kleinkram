@@ -15,10 +15,11 @@ import { uploadFileMultipart } from './multipart-upload';
 
 export const getAuthHeaders = (user?: UserEntity): Record<string, string> => {
     const headers: Record<string, string> = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         'kleinkram-client-version': appVersion,
     };
     if (user) {
-        headers['cookie'] = `authtoken=${getJwtToken(user)}`;
+        headers.cookie = `authtoken=${getJwtToken(user)}`;
     }
     return headers;
 };
@@ -85,9 +86,11 @@ export const createProjectUsingPost = async (
         credentials: 'include',
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     console.log(`['DEBUG'] Created project:`, json);
     expect(response.status).toBeLessThan(300);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;
 };
 
@@ -112,8 +115,10 @@ export const createMissionUsingPost = async (
 
     // check if the request was successful
     expect(response.status).toBeLessThan(300);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     console.log(`['DEBUG'] Created mission:`, json);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;
 };
 
@@ -136,9 +141,14 @@ export async function uploadFile(
 ): Promise<ArrayBuffer> {
     const response = await fetch(`${DEFAULT_URL}/files/temporaryAccess`, {
         method: 'POST',
+
         headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
+
+            // eslint-disable-next-line @typescript-eslint/await-thenable
             cookie: `authtoken=${await getJwtToken(user)}`,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'kleinkram-client-version': appVersion,
         },
         body: JSON.stringify({
@@ -148,13 +158,17 @@ export async function uploadFile(
     });
 
     expect(response.status).toBe(201);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     expect(json).toBeDefined();
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const fileresponseponse = json.data[0];
 
     expect(fileresponseponse).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(fileresponseponse.bucket).toBe('data');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(fileresponseponse.fileUUID).toBeDefined();
 
     // open file from fixtures
@@ -179,15 +193,20 @@ export async function uploadFile(
         forcePathStyle: true,
         region: 'us-east-1',
         credentials: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             accessKeyId: fileresponseponse.accessCredentials.accessKey,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             secretAccessKey: fileresponseponse.accessCredentials.secretKey,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             sessionToken: fileresponseponse.accessCredentials.sessionToken,
         },
     });
 
     const responsei = await uploadFileMultipart(
         fileFile,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         fileresponseponse.bucket,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         fileresponseponse.fileUUID,
         minioClient,
     );
@@ -195,14 +214,19 @@ export async function uploadFile(
 
     // confirm upload
     // http://localhost:3000/queue/confirmUpload
+
     const responseConfirm = await fetch(`${DEFAULT_URL}/queue/confirmUpload`, {
         method: 'POST',
         headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
+            // eslint-disable-next-line @typescript-eslint/await-thenable
             cookie: `authtoken=${await getJwtToken(user)}`,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'kleinkram-client-version': appVersion,
         },
         body: JSON.stringify({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             uuid: fileresponseponse.fileUUID,
             md5: hash.digest('base64'),
         }),
@@ -228,9 +252,11 @@ export const createMetadataUsingPost = async (
         }),
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     console.log(`['DEBUG'] Created tag:`, json);
     expect(response.status).toBeLessThan(300);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;
 };
 
@@ -256,6 +282,7 @@ export const createAccessGroupUsingPost = async (
         .getRepository<AccessGroupEntity>('AccessGroup')
         .findOneOrFail({ where: { name: accessGroup.name } });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const groupJson = await response.json();
     expect(response.status).toBeLessThan(300);
     console.log(`['DEBUG'] Created access group:`, testAccesGroup.uuid);
@@ -275,6 +302,7 @@ export const createAccessGroupUsingPost = async (
                 },
             );
             expect(groupResponse.status).toBeLessThan(300);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const json = await groupResponse.json();
             console.log(
                 `['DEBUG'] Added user ${user.uuid} to access group:`,
@@ -303,8 +331,10 @@ export const createActionUsingPost = async (
         credentials: 'include',
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     console.log(`['DEBUG'] Created action:`, json);
     expect(response.status).toBeLessThan(300);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;
 };

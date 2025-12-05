@@ -1,3 +1,12 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+
+// eslint-disable-next-line vue/multi-word-component-names
+
+// eslint-disable-next-line unicorn/filename-case
+
+// eslint-disable-next-line vue/multi-word-component-names
+
+// eslint-disable-next-line unicorn/filename-case
 
 <template>
     <div :class="`${props.paramtype}-param base`" >

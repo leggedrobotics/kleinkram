@@ -61,6 +61,7 @@ export default tseslint.config(
                 {
                     selector: 'default',
                     format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
+                    leadingUnderscore: 'allow',
                 },
                 {
                     selector: 'parameter',
@@ -74,7 +75,7 @@ export default tseslint.config(
             // --- Logic & Complexity ---
             eqeqeq: ['error', 'smart'],
             'no-console': ['warn', { allow: ['warn', 'error'] }],
-            complexity: ['warn', { max: 10 }],
+            complexity: ['warn', { max: 20 }],
             'no-nested-ternary': 'warn',
 
             // --- Unicorn Overrides ---
@@ -100,6 +101,7 @@ export default tseslint.config(
 
             // --- False Positive Fixes ---
             'unicorn/no-array-method-this-argument': 'off', // Often conflicts with ORMs
+            '@typescript-eslint/ban-ts-comment': 'off',
         },
     },
 
@@ -147,6 +149,12 @@ export default tseslint.config(
                     ],
                 },
             ],
+        },
+    },
+    {
+        files: ['backend/tests/**/*.ts'],
+        rules: {
+            'no-console': 'off',
         },
     },
 

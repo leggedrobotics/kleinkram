@@ -18,10 +18,12 @@ export const actionTemplateEntityToDto = (
         gpuMemory: actionTemplate.gpuMemory,
         imageName: actionTemplate.image_name,
         maxRuntime: actionTemplate.maxRuntime,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         createdAt: actionTemplate.createdAt ?? new Date(),
         name: actionTemplate.name,
         version: actionTemplate.version.toString(),
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         creator: actionTemplate.creator
             ? userEntityToDto(actionTemplate.creator)
             : undefined,

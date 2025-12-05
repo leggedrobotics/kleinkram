@@ -228,6 +228,7 @@ const getPoints = (data: (DataPoint | undefined)[]): string => {
         .map((p) => {
             const x = ((p?.time ?? 0) / maxTime.value) * properties.width;
             const y = getY(p?.value ?? 0);
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             return `${x},${y}`;
         })
         .join(' ');

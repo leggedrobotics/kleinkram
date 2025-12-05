@@ -43,6 +43,8 @@ export class TopicService {
 
         return {
             count,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
             data: topics.map((topic) => topic.name),
             take: count,
             skip: 0,
@@ -81,6 +83,7 @@ export class TopicService {
         ).getManyAndCount();
 
         return {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             data: topics.map((element) => topicEntityToDto(element)),
             count,
             take,

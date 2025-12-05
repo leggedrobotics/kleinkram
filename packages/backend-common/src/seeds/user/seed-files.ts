@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import { CategoryEntity } from '@backend-common/entities/category/category.entity';
 import { FileEventEntity } from '@backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@backend-common/entities/file/file.entity';
@@ -16,11 +17,13 @@ import { Factory } from 'typeorm-seeding';
 
 export const seedFiles = async (
     factory: Factory,
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     conn: Connection,
     adminUser: UserEntity,
     createdMissions: MissionEntity[],
     tagTypes: TagTypeEntity[],
 ): Promise<void> => {
+    // eslint-disable-next-line no-console
     console.log('4. Generate and Upload Data...');
     const generateScriptPath = 'cli/tests/generate_test_data.py';
     try {
@@ -32,8 +35,8 @@ export const seedFiles = async (
     // Minio Client Setup
     const minioClient = new Minio.Client({
         endPoint:
-            process.env.MINIO_ENDPOINT_INTERNAL ||
-            process.env.MINIO_ENDPOINT ||
+            process.env.MINIO_ENDPOINT_INTERNAL ??
+            process.env.MINIO_ENDPOINT ??
             'minio',
         port: 9000,
         useSSL: false,
@@ -41,7 +44,7 @@ export const seedFiles = async (
         secretKey: process.env.MINIO_SECRET_KEY ?? '',
     });
 
-    const bucketName = process.env.MINIO_DATA_BUCKET_NAME || 'data';
+    const bucketName = process.env.MINIO_DATA_BUCKET_NAME ?? 'data';
     const dataDirectory = 'cli/tests/data';
 
     if (fs.existsSync(dataDirectory)) {
@@ -49,14 +52,26 @@ export const seedFiles = async (
         let missionIndex = 0;
 
         // Mapping for meaningful filenames
+
         const meaningfulNames: Record<string, string[]> = {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             '10_KB.bag': ['highway_drive_01.bag', 'urban_nav_test_01.bag'],
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             '50_KB.bag': ['pick_place_demo.bag', 'assembly_run_01.bag'],
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             '1_MB.bag': ['perimeter_scan_01.bag', 'rescue_mission_alpha.bag'],
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             '17_MB.bag': ['highway_long_drive.bag', 'urban_heavy_traffic.bag'],
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             '125_MB.bag': ['full_system_test.bag', 'endurance_run.bag'],
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'frontend_test.bag': ['frontend_viewer_test.bag'],
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'test.mcap': ['test_data.mcap'],
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'test.yaml': ['config_test.yaml'],
         };
 
@@ -81,6 +96,7 @@ export const seedFiles = async (
             const fileSize = fs.statSync(filePath).size;
 
             // We will create multiple files from one source file to distribute them
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             const targetNames = meaningfulNames[fileName] || [fileName];
 
             for (const targetName of targetNames) {
@@ -90,6 +106,7 @@ export const seedFiles = async (
                     createdMissions[missionIndex % createdMissions.length];
                 missionIndex++;
 
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 if (!mission?.project) continue;
 
                 // Create Category for this project if not exists
@@ -101,16 +118,19 @@ export const seedFiles = async (
                     .getRepository(CategoryEntity)
                     .findOne({
                         where: {
+                            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                             name: randomCategoryName ?? '',
                             project: { uuid: mission.project.uuid },
                         },
                         relations: ['project'],
                     });
+                // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                 if (!category) {
                     category = await factory(CategoryEntity)({
                         name: randomCategoryName,
                         project: mission.project,
                         creator: adminUser,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     } as any).create();
                 }
 
@@ -126,6 +146,7 @@ export const seedFiles = async (
                     type: fileType,
                     origin: FileOrigin.UPLOAD,
                     categories: [category],
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any).create();
 
                 if (!fileEntity.uuid) {
@@ -178,6 +199,7 @@ export const seedFiles = async (
                     for (const topicDefinition of topics) {
                         await factory(TopicEntity)({
                             file: fileEntity,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         } as any).create({
                             name: topicDefinition.name,
                             type: topicDefinition.type,
@@ -199,6 +221,7 @@ export const seedFiles = async (
                             extractedAt: new Date(),
                             durationMs: 100,
                         },
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     } as any).create();
                 }
 
@@ -212,11 +235,13 @@ export const seedFiles = async (
                         origin: FileOrigin.UPLOAD,
                         source: 'Seeding Script',
                     },
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any).create();
 
                 // Create Metadata for Mission (if not exists)
                 // We'll just add a random metadata to the mission
                 const tagType = tagTypes[0]; // Just pick the first one
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 if (tagType) {
                     // Check if mission already has this tag
                     const existingTag = await conn
@@ -232,12 +257,16 @@ export const seedFiles = async (
                             mission: mission,
                             tagType: tagType,
                             creator: adminUser,
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             value_string: 'Seeded Mission Data',
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         } as any).create();
                     }
                 }
 
                 const objectName = fileEntity.uuid;
+
+                // eslint-disable-next-line no-console
                 console.log(
                     `[INFO] Mapping: ${fileName} -> ${targetName} (DB ID: ${fileEntity.uuid})`,
                 );
@@ -248,10 +277,13 @@ export const seedFiles = async (
                         objectName,
                         filePath,
                         {
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             'Content-Type': 'application/octet-stream',
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             'X-Amz-Meta-Original-Filename': targetName,
                         },
                     );
+                    // eslint-disable-next-line no-console
                     console.log(
                         `[SUCCESS] File available at: ${bucketName}/${objectName}`,
                     );

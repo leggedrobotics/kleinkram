@@ -41,6 +41,8 @@ const changeRights = (): void => {
         component: ChangeAccessRightsDialog,
         componentProps: {
             projectUuid: properties.projectUuid,
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             project_access_uuid: properties.projectAccessUuid,
         },
     });

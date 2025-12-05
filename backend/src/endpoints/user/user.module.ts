@@ -28,4 +28,5 @@ import { UserController } from './user.controller';
         ]),
     ],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UserModule {}

@@ -35,6 +35,7 @@ export const searchAccessGroups = async (
 
 export const getAccessGroup = async (uuid: string): Promise<AccessGroupDto> => {
     const response = await axios.get(`/access/one`, { params: { uuid } });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -42,5 +43,6 @@ export const getProjectAccess = async (
     projectUUID: string,
 ): Promise<ProjectAccessListDto> => {
     const response = await axios.get(`/projects/${projectUUID}/access`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

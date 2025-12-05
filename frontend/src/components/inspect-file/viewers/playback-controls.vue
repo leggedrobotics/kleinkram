@@ -61,6 +61,7 @@ const onNext = (): void => {
 };
 
 // Quasar sliders can emit null, so we type 'value' loosely or as number | null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onUpdateModelValue = (value: any): void => {
     emit('update:modelValue', value);
 };

@@ -14,4 +14,5 @@ import { CategoryController } from './category.controller';
     controllers: [CategoryController],
     exports: [CategoryService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class CategoryModule {}

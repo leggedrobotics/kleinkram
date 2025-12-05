@@ -49,7 +49,9 @@ const props = defineProps<{
     hideActionAttribution?: boolean;
 }>();
 
+// eslint-disable-next-line complexity
 const groupedEvents = computed<GroupedFileEvent[]>(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!props.events?.data) return [];
     const grouped: GroupedFileEvent[] = [];
     for (const event of props.events.data) {
@@ -76,6 +78,7 @@ const groupedEvents = computed<GroupedFileEvent[]>(() => {
             last.events.push(event);
             last.isUploadGroup = true;
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-misused-spread
             grouped.push({ ...event, count: 1, events: [event] });
         }
     }

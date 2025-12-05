@@ -90,6 +90,8 @@ class QueueService implements OnModuleInit {
         const queueEntry = await this.queueRepository.save(
             this.queueRepository.create({
                 identifier: fileId,
+
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 display_name: `GoogleDrive Object (no id=${fileId})`,
                 state: QueueState.AWAITING_PROCESSING,
                 location: FileLocation.DRIVE,
@@ -118,13 +120,16 @@ class QueueService implements OnModuleInit {
             relations: ['mission', 'mission.project'],
         });
 
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         logger.debug(`Add ${files.length} files to queue for hash calculation`);
 
         for (const file of files) {
             try {
                 await this.fileQueue.add('extractHashFromMinio', {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     file_uuid: file.uuid,
                 });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 logger.error(error);
             }
@@ -157,6 +162,7 @@ class QueueService implements OnModuleInit {
             job = await this.queueRepository.save(
                 this.queueRepository.create({
                     identifier: file.uuid,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     display_name: file.filename,
                     state: QueueState.AWAITING_UPLOAD,
                     location: FileLocation.MINIO,
@@ -172,6 +178,7 @@ class QueueService implements OnModuleInit {
         ) {
             if (job.state >= QueueState.PROCESSING) return;
             logger.warn(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Resuming upload for job ${job.uuid} in state ${job.state}`,
             );
         }
@@ -210,6 +217,7 @@ class QueueService implements OnModuleInit {
                 fileUuid: file.uuid,
                 filename: file.filename,
                 ...(job.mission?.uuid ? { missionUuid: job.mission.uuid } : {}),
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 ...(actor ? { actor } : {}),
                 details: { origin: FileOrigin.UPLOAD, source },
             },
@@ -223,6 +231,7 @@ class QueueService implements OnModuleInit {
         userUUID: string,
         skip: number,
         take: number,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any[]> {
         // @ts-ignore
         const user = await this.userService.findOneByUUID(userUUID);
@@ -286,6 +295,7 @@ class QueueService implements OnModuleInit {
 
         const waitingJobs = await this.fileQueue.getWaiting();
         const jobToRemove = waitingJobs.find(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             (job) => job.data.queueUuid === queueUUID,
         );
         if (jobToRemove) await jobToRemove.remove();
@@ -335,6 +345,7 @@ class QueueService implements OnModuleInit {
 
         const waitingJobs = await this.fileQueue.getWaiting();
         const jobToRemove = waitingJobs.find(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             (job) => job.data.queueUuid === queueUUID,
         );
         if (jobToRemove) await jobToRemove.remove();

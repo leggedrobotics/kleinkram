@@ -10,6 +10,7 @@ export const MinioClientFactory = {
     provide: 'MINIO_CLIENTS',
     useFactory: (): MinioClientContainer => {
         const baseConfig = {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             endPoint: environment.MINIO_ENDPOINT ?? 'minio',
             accessKey: environment.MINIO_ACCESS_KEY,
             secretKey: environment.MINIO_SECRET_KEY,

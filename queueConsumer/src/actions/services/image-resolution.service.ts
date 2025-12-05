@@ -35,7 +35,7 @@ export class ImageResolutionService {
             );
 
             logger.debug(
-                `Local RepoDigests: ${localRepoDigests.join(', ')}. Remote Digest: ${remoteDigest} `,
+                `Local RepoDigests: ${localRepoDigests.join(', ')}. Remote Digest: ${remoteDigest ?? 'undefined'} `,
             );
 
             const result = await this.determineImageSource(
@@ -47,9 +47,9 @@ export class ImageResolutionService {
             source = result.source;
             shouldPull = result.shouldPull;
             remoteCreatedAt = result.remoteCreatedAt;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn(
-                `Failed to check remote image: ${error}. Falling back to local if available.`,
+                `Failed to check remote image: ${String(error)}. Falling back to local if available.`,
             );
             if (localCreatedAt) {
                 // Fallback to local
@@ -73,7 +73,7 @@ export class ImageResolutionService {
             const localDetails = await image.inspect();
             return {
                 localCreatedAt: new Date(localDetails.Created),
-                localRepoDigests: localDetails.RepoDigests || [],
+                localRepoDigests: localDetails.RepoDigests,
             };
         } catch {
             return { localRepoDigests: [] };
@@ -86,24 +86,42 @@ export class ImageResolutionService {
     ): Promise<string | undefined> {
         // Use Docker Engine API to get distribution info (manifest digest)
         // This avoids using the docker CLI and works with the existing dockerode connection
-        const distributionInspect = await new Promise<any>(
+        interface DistributionInspect {
+            Descriptor?: {
+                digest?: string;
+            };
+        }
+        const distributionInspect = await new Promise<DistributionInspect>(
             (resolve, reject) => {
                 const options = {
                     path: `/ distribution / ${dockerImage}/json`,
                     method: 'GET',
                     statusCodes: {
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         200: true,
+
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         401: true,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         403: true,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         500: false,
                     },
                 };
-                docker.modem.dial(options, (error, data) => {
+                docker.modem.dial(options, (error: unknown, data: unknown) => {
                     if (error) {
-                        reject(error);
+                        reject(
+                            error instanceof Error
+                                ? error
+                                : new Error(
+                                      typeof error === 'string'
+                                          ? error
+                                          : 'Unknown error',
+                                  ),
+                        );
                         return;
                     }
-                    resolve(data);
+                    resolve(data as DistributionInspect);
                 });
             },
         );
@@ -183,13 +201,13 @@ export class ImageResolutionService {
         try {
             // Use crane config to get the config json which contains the creation date
             const { stdout } = await execAsync(`crane config ${dockerImage}`);
-            const config = JSON.parse(stdout);
+            const config = JSON.parse(stdout) as { created?: string };
             if (config.created) {
                 return new Date(config.created);
             }
             return undefined;
-        } catch (error) {
-            logger.warn(`Failed to get remote creation date: ${error}`);
+        } catch (error: unknown) {
+            logger.warn(`Failed to get remote creation date: ${String(error)}`);
             return undefined;
         }
     }

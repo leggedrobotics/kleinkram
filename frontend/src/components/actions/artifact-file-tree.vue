@@ -53,6 +53,7 @@ const buildFileTree = (paths: string[]): FileNode[] => {
             }
 
             if (!isFile) {
+                // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                 if (!existingNode.children) {
                     existingNode.children = [];
                 }
@@ -65,6 +66,7 @@ const buildFileTree = (paths: string[]): FileNode[] => {
 };
 
 const artifactFileTree = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!props.files) return [];
     return buildFileTree(props.files);
 });

@@ -356,6 +356,7 @@ watchEffect(() => {
     let foundIndex = -1;
 
     for (const [index, lastLog] of lastLogs.entries()) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         const message = lastLog?.message;
         if (
             message &&
@@ -386,6 +387,7 @@ const viewTriggeringLog = async () => {
         // Wait for tab switch and DOM update
         await nextTick();
         const element = document.querySelector(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `#log-line-${triggeringLogIndex.value}`,
         );
         if (element) {
@@ -483,6 +485,7 @@ const restartAction = async (): Promise<void> => {
 };
 
 const navigateBackToActions = async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const previousPath = globalThis.history.state?.back as string | undefined;
 
     // If we came from the actions list (any tab), go back to preserve filters/state

@@ -82,6 +82,8 @@ const properties = defineProps<{
 
 defineExpose({
     deleteFileAction,
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     file_name_check: fileNameCheck,
 });
 </script>

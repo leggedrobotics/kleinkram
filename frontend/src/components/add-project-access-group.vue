@@ -67,6 +67,7 @@ const selected: Ref<UserDto[]> = ref([]);
 const { data: foundProjects } = useFilteredProjects(100, 0, 'name', true, {
     name: search.value,
 });
+
 const _foundProjects = computed(() =>
     foundProjects.value ? foundProjects.value.data : [],
 );
@@ -87,6 +88,7 @@ const { mutate } = useMutation({
     mutationFn: () => {
         return Promise.all(
             selected.value.map(async (project) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return addAccessGroupToProject(
                     project.uuid,
                     properties.accessGroupUuid,

@@ -114,6 +114,7 @@ describe('Verification project endpoint', () => {
         const missionRepository =
             database.getRepository<MissionEntity>(MissionEntity);
         const allMissions = await missionRepository.find();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const responseMission = await missionRepository.remove(allMissions);
         const remainingMissions = await missionRepository.find();
         expect(remainingMissions.length).toBe(0);
@@ -123,6 +124,7 @@ describe('Verification project endpoint', () => {
         const projectRepository =
             database.getRepository<ProjectEntity>(ProjectEntity);
         const allProjects = await projectRepository.find();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const response = await projectRepository.remove(allProjects);
         const remainingProjects = await projectRepository.find();
 
@@ -163,7 +165,9 @@ describe('Verification project endpoint', () => {
             headers: header.getHeaders(),
         });
         expect(response.status).toBe(200);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const projectResponse = await response.json();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(projectResponse.name).toBe('test_project');
 
         // check denied modification access with user2

@@ -10,18 +10,26 @@ import { Column, Entity, ManyToOne } from 'typeorm';
 @Entity({ name: 'tag' })
 export class MetadataEntity extends BaseEntity {
     @Column({ nullable: true, name: 'STRING' })
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     value_string?: string;
 
     @Column({ nullable: true, type: 'double precision', name: 'NUMBER' })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     value_number?: number;
 
     @Column({ nullable: true, name: 'BOOLEAN' })
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     value_boolean?: boolean;
 
     @Column({ nullable: true, name: 'DATE' })
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     value_date?: Date;
 
     @Column({ nullable: true, name: 'LOCATION' })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     value_location?: string;
 
     @ManyToOne(() => MissionEntity, (mission) => mission.tags, {

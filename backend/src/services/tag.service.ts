@@ -83,6 +83,8 @@ export class TagService {
                     }
                     tag = this.tagRepository.create({
                         tagType,
+
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         value_number: value as number,
                         mission,
                     });
@@ -102,6 +104,7 @@ export class TagService {
                 }
                 tag = this.tagRepository.create({
                     tagType,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_string: value,
                     mission,
                 });
@@ -113,8 +116,10 @@ export class TagService {
                         'Value must be a string',
                     );
                 }
+
                 tag = this.tagRepository.create({
                     tagType,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_location: value,
                     mission,
                 });
@@ -127,6 +132,7 @@ export class TagService {
                     }
                     tag = this.tagRepository.create({
                         tagType,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         value_boolean: value as boolean,
                         mission,
                     });
@@ -145,6 +151,7 @@ export class TagService {
                 }
                 tag = this.tagRepository.create({
                     tagType,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_date: new Date(value),
                     mission,
                 });
@@ -187,6 +194,8 @@ export class TagService {
                     if (isString) {
                         value = Number.parseInt(value as string);
                     }
+
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
                     (exsitingTag as any)[tagType.datatype] = value as number;
                     break;
                 }
@@ -202,6 +211,8 @@ export class TagService {
                         'Value must be a string',
                     );
                 }
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
                 (exsitingTag as any)[tagType.datatype] = value;
                 break;
             }
@@ -211,6 +222,8 @@ export class TagService {
                     if (isString) {
                         value = value === 'true';
                     }
+
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
                     (exsitingTag as any)[tagType.datatype] = value as boolean;
                     break;
                 }
@@ -225,6 +238,8 @@ export class TagService {
                         'Value must be a string',
                     );
                 }
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
                 (exsitingTag as any)[tagType.datatype] = new Date(value);
                 break;
             }
@@ -288,6 +303,7 @@ export class TagService {
         if (
             type !== undefined &&
             type !== DataType.ANY &&
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (type as any) !== ''
         ) {
             where.datatype = type;

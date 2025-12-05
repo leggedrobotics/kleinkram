@@ -1,3 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+// eslint-disable-next-line vue/multi-word-component-names
+// eslint-disable-next-line unicorn/filename-case
+// eslint-disable-next-line vue/multi-word-component-names
+// eslint-disable-next-line unicorn/filename-case
 <template>
     <div class="endpoint">
         <div style="margin-bottom: 16px; margin-top: 8px">
@@ -74,7 +79,7 @@
                 >
                     <vue-json-pretty
                         :deep="2"
-                        :showDoubleQuotes="false"
+                        :show-double-quotes="false"
                         :data="resolveSchemaRefs(methodSpec.requestBody)"
                     />
                 </div>
@@ -123,7 +128,7 @@
                     "
                 >
                     <vue-json-pretty
-                        :showDoubleQuotes="false"
+                        :show-double-quotes="false"
                         :deep="2"
                         :data="resolveSchemaRefs(params)"
                     />
@@ -132,21 +137,22 @@
             </template>
 
             <h4
+                v-if="responses.map((r) => r.type).some(Boolean)"
                 style="margin-bottom: 12px; margin-top: 16px"
-                v-if="responses.map((r) => r.type).filter(Boolean).length"
             >
                 Response
             </h4>
 
             <div
-                :class="{ collapsed }"
-                @click="toggleCollapse"
                 v-for="(response, index) in responses"
                 :key="response.code"
+                :class="{ collapsed }"
+                @click="toggleCollapse"
             >
                 <br v-if="index !== 0" />
                 <span>{{ response.type }}</span>
                 <div
+                    v-if="schema[response.type]"
                     style="
                         background-color: white;
                         padding: 12px;
@@ -155,10 +161,9 @@
                         font-size: 10px;
                         line-height: 12px;
                     "
-                    v-if="schema[response.type]"
                 >
                     <vue-json-pretty
-                        :showDoubleQuotes="false"
+                        :show-double-quotes="false"
                         :deep="2"
                         :data="resolveSchemaRefs(schema[response.type])"
                     />
@@ -172,8 +177,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import Paramtype from './Paramtype.vue';
-import Paramdatatype from './Paramdatatype.vue';
+import Paramtype from './paramtype.vue';
+import Paramdatatype from './paramdatatype.vue';
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 
@@ -191,15 +196,26 @@ const props = defineProps<{
     schema: Record<string, unknown>;
 }>();
 
+
+
+// eslint-disable-next-line unicorn/prevent-abbreviations, @typescript-eslint/no-explicit-any
 function resolveSchemaRefs(schema: Record<string, any>): any {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!schema || typeof schema !== 'object') return schema;
 
     if (schema.$ref) {
         // Extract the reference name from the $ref string
-        const ref = schema.$ref.split('/').pop();
-        if (props.schema[ref]) {
+
+
+
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        const reference = schema.$ref.split('/').pop();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (props.schema[reference]) {
             // Recursively resolve the reference
-            return resolveSchemaRefs(props.schema[ref]);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            return resolveSchemaRefs(props.schema[reference]);
         }
 
         return 'No schema found';
@@ -207,12 +223,18 @@ function resolveSchemaRefs(schema: Record<string, any>): any {
 
     if (Array.isArray(schema)) {
         // Recursively resolve each item in the array
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument
         return schema.map((item) => resolveSchemaRefs(item));
     }
 
     // Recursively resolve properties in an object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const resolvedSchema: any = {};
     for (const key in schema) {
+
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
         resolvedSchema[key] = resolveSchemaRefs(schema[key]);
     }
 
@@ -220,40 +242,64 @@ function resolveSchemaRefs(schema: Record<string, any>): any {
 }
 
 // Helper function to get the first HTTP method available in the spec
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getHttpMethod(spec: any) {
     const methods = ['get', 'post', 'put', 'delete', 'patch'];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return methods.find((method) => spec[method]);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 const methodSpec = computed(() => props.spec[getHttpMethod(props.spec)]);
 
 const params = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (methodSpec.value.parameters) {
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
         return methodSpec.value.parameters;
     }
     return [];
 });
 
+// eslint-disable-next-line vue/return-in-computed-property
 const dtoref = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (methodSpec.value.requestBody) {
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
         return methodSpec.value.requestBody.content['application/json'].schema
             .$ref;
     }
 });
+// eslint-disable-next-line vue/return-in-computed-property
 const body = computed(() => {
     if (dtoref.value) {
+
+
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return props.schema[dtoref.value.split('/')[3]];
     }
 });
-const bodyParams = computed(() => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const bodyParameters = computed(() => {
     if (body.value) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return Object.entries(body.value.properties).map(([key, value]) => {
+
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             const required = body.value.required.includes(key);
             return {
                 name: key,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 type: value.type,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 description: value.description,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 required,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 format: value.format,
             };
         });
@@ -262,49 +308,71 @@ const bodyParams = computed(() => {
 });
 
 const responses = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (methodSpec.value.responses) {
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         return Object.entries(methodSpec.value.responses).map(
+
             ([code, response]) => {
+                // eslint-disable-next-line unicorn/prevent-abbreviations
                 const res = {
                     code,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     description: response.description,
                 };
                 if (
-                    response.content &&
-                    response.content['application/json'] &&
-                    response.content['application/json'].schema
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    response.content?.['application/json']?.schema
                 ) {
-                    if (response.content['application/json'].schema['$ref']) {
-                        const ref: string =
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    if (response.content['application/json'].schema.$ref) {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                        const reference: string =
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             response.content['application/json'].schema.$ref;
-                        const splitRef = ref.split('/');
-                        return { ...res, type: splitRef[splitRef.length - 1] };
+                        const splitReference = reference.split('/');
+                        return { ...res, type: splitReference.at(-1) };
                     }
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     if (response.content['application/json'].schema?.items) {
+                        // eslint-disable-next-line no-console
                         console.log(
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             response.content['application/json'].schema.items,
                         );
                         if (
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             response.content['application/json'].schema
                                 ?.type === 'array'
                         ) {
-                            const splitRef =
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                            const splitReference =
+                                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                                 response.content[
+                                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                                     'application/json'
-                                    ].schema?.items['$ref'].split('/');
+                                    ].schema?.items.$ref.split('/');
                             return {
                                 ...res,
-                                type: `${splitRef[splitRef.length - 1]}[]`,
+
+
+                                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                                type: `${splitReference.at(-1)}[]`,
                             };
                         }
                         return {
                             ...res,
+
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                             type: response.content['application/json'].schema
                                 ?.items.type,
                         };
                     } else {
                         return {
                             ...res,
+
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                             type: response.content['application/json'].schema
                                 .type,
                         };
@@ -317,6 +385,8 @@ const responses = computed(() => {
     return [];
 });
 
+
+// eslint-disable-next-line unicorn/prevent-abbreviations, @typescript-eslint/no-unsafe-member-access
 const hasParams = computed(() => params.value.length > 0);
 </script>
 

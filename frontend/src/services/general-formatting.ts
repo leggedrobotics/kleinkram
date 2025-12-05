@@ -14,5 +14,6 @@ export function formatGenericNumber(
         value /= step;
         unitIndex++;
     }
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return `${value.toFixed(precision)} ${units[unitIndex]}`;
 }

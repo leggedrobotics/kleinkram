@@ -49,9 +49,11 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         artifacts: action.artifacts,
         artifactSize: action.artifact_size,
         artifactFiles: action.artifact_files,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         auditLogs: (action.auditLogs as unknown as AuditLogDto[]) ?? [],
         createdAt: action.createdAt,
         creator: userEntityToDto(action.creator),
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         image: (action.image as DockerImageDto) ?? { repoDigests: [] },
 
         mission: missionEntityToDto(action.mission),
@@ -60,6 +62,7 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         template: actionTemplateEntityToDto(action.template),
         updatedAt: action.updatedAt,
         uuid: action.uuid,
-        worker: workerEntityToDto(action.worker) as ActionWorkerDto,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        worker: workerEntityToDto(action.worker)!,
     };
 };

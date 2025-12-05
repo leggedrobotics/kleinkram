@@ -30,7 +30,9 @@ const properties = defineProps<{
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         properties.mission.uuid,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         properties.mission.project.uuid,
         permissions.value,
     ),
@@ -41,6 +43,7 @@ const openTagsDialog = (): void => {
     $q.dialog({
         component: ModifyMissionTagsDialog,
         componentProps: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             mission: properties.mission,
         },
     });

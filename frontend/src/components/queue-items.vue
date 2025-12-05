@@ -241,6 +241,7 @@ const clearSelection = (): void => {
 };
 
 watch(fileStateFilter, () => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (fileStateFilter.value) {
         fileStateFilter.value = fileStateFilter.value.sort((a, b) =>
             // @ts-ignore
@@ -250,14 +251,17 @@ watch(fileStateFilter, () => {
 });
 
 const fileStateFilterEnums = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!fileStateFilter.value) return [];
     // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return fileStateFilter.value.map((state) => QueueState[state]);
 });
 
 const { data: queueEntries, isLoading } = useQuery<ProjectWithMissionsDto[]>({
     queryKey: queueKey,
     queryFn: () =>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         currentQueue(parseDate(startDate.value), fileStateFilterEnums.value),
     refetchInterval: 1000,
 });
@@ -337,6 +341,7 @@ async function refresh(): Promise<void> {
     });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
     const isFile =
         row.display_name.endsWith('.bag') || row.display_name.endsWith('.mcap');
@@ -346,7 +351,9 @@ async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
             async (file: FileWithTopicDto) => {
                 await $router.push({
                     name: ROUTES.FILE.routeName,
+
                     params: {
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         file_uuid: file.uuid,
                         missionUuid: row.mission.uuid,
                         projectUuid: row.mission.project.uuid,
@@ -429,6 +436,7 @@ const columns = [
         label: 'Last status update',
         align: 'left',
         field: (row: FileQueueEntryDto): string =>
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             row.updatedAt ? formatDate(row.updatedAt, true) : 'error',
     },
     {

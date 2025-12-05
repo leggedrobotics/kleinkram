@@ -124,7 +124,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     }
 
     @OnQueueFailed()
-    async onFailed(job: Job<SubmittedAction>, error: any): Promise<void> {
+    async onFailed(job: Job<SubmittedAction>, error: unknown): Promise<void> {
         logger.error(
             `Error processing job ${job.id.toString()} of type ${job.name}. Error handled by ${os.hostname()}`,
         );
@@ -133,7 +133,9 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             return;
         }
 
-        await this.handleUnexpectedError(job, error);
+        const normalizedError =
+            error instanceof Error ? error : new Error(String(error));
+        await this.handleUnexpectedError(job, normalizedError);
     }
 
     /**

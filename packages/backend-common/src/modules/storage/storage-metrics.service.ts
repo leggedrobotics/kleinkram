@@ -25,6 +25,7 @@ export class StorageMetricsService {
             const response = await axios.get(this.METRICS_ENDPOINT, {
                 headers: { Authorization: `Bearer ${token}` },
             });
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             return this.parsePrometheusMetrics(response.data);
         } catch (error) {
             throw new InternalServerErrorException(
@@ -75,11 +76,13 @@ export class StorageMetricsService {
                     if (parts.length === 2) {
                         const [key, rawValue] = parts;
                         if (key) {
+                            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                             labels[key] = rawValue?.replaceAll('"', '') ?? '';
                         }
                     }
                 }
 
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 if (!result[metricName]) {
                     result[metricName] = [];
                 }

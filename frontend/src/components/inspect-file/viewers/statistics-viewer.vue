@@ -56,6 +56,7 @@ import SimpleTimeChart from './simple-time-chart.vue';
 import SkeletonTimeChart from './skeleton-time-chart.vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -68,6 +69,7 @@ const averageFps = computed(() => {
     let count = 0;
 
     for (const message of properties.messages) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const fps = message.data?.pointcloud_process_fps;
         if (typeof fps === 'number' && !Number.isNaN(fps)) {
             sum += fps;
@@ -87,9 +89,11 @@ const isLoading = computed(() => {
 
 const startTime = computed(() => {
     if (properties.messages.length === 0) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return properties.messages[0].logTime;
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fpsSeries = shallowRef<any[]>([]);
 
 watch(
@@ -100,10 +104,13 @@ watch(
             return;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const logStartTime = properties.messages[0].logTime;
         const data = properties.messages.map((message) => ({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             time: Number(message.logTime - logStartTime) / 1_000_000_000,
-            value: message.data.pointcloud_process_fps || 0,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            value: message.data.pointcloud_process_fps ?? 0,
         }));
 
         fpsSeries.value = markRaw([

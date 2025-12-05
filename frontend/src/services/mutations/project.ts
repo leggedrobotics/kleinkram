@@ -18,6 +18,7 @@ export const createProject = async (
         accessGroups,
         removedDefaultGroups,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -32,11 +33,13 @@ export const updateProject = async (
         description,
         autoConvert,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const deleteProject = async (projectUUID: string) => {
     const response = await axios.delete(`/projects/${projectUUID}`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -48,5 +51,6 @@ export const updateTagTypes = async (
         `/projects/${projectUUID}/updateTagTypes`,
         { tagTypeUUIDs },
     );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

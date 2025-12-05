@@ -154,6 +154,8 @@ const properties = defineProps<{
 }>();
 
 const emit = defineEmits(['update:tagValues']);
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const ddr_open2 = ref(false);
 
 // Create a shallow copy of tagValues to make it editable locally
@@ -213,6 +215,7 @@ const availableAdditionalTags: Ref<TagTypeDto[]> = computed(() => {
             !addedTagUUIDs.has(metadataType.uuid),
     );
 });
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const DataType_InputType = {
     [DataType.STRING]: 'text',
     [DataType.NUMBER]: 'number',

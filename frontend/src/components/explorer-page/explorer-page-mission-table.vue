@@ -228,6 +228,7 @@ const total = computed(() => (rawData.value ? rawData.value.count : 0));
 watch(
     () => total.value,
     () => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (data.value && !isLoading.value) {
             queryHandler.value.rowsNumber = total.value;
         }
@@ -236,11 +237,13 @@ watch(
 );
 const $router = useRouter();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onRowClick = async (_: Event, row: any) => {
     await $router.push({
         name: ROUTES.FILES.routeName,
         params: {
             projectUuid: projectUuid.value,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             missionUuid: row.uuid as string,
         },
     });
@@ -248,7 +251,9 @@ const onRowClick = async (_: Event, row: any) => {
 
 const missingTags = (row: MissionWithFilesDto): TagDto[] => {
     const mapped = project.value?.requiredTags.map((tagType) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
         const setTypes = row.tags.map((tag) => tag.type);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         if (!setTypes.some((setType) => setType.uuid === tagType.uuid)) {
             return tagType;
         }

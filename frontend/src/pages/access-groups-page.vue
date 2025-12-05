@@ -218,6 +218,7 @@ const accessGroupsTable = computed(() =>
     foundAccessGroups.value ? foundAccessGroups.value.data : [],
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function rowClick(event: any, row: AccessGroupDto) {
     await $router.push({
         name: ROUTES.ACCESS_GROUP.routeName,

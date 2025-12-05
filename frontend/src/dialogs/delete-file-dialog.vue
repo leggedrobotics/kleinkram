@@ -38,7 +38,9 @@ const { file } = defineProps<{
 
 const deleteFileAction = (): void => {
     if (deleteFileReference.value === undefined) return;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (deleteFileReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         (deleteFileReference.value as any).deleteFileAction();
     }
     onDialogOK();

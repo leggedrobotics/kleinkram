@@ -376,13 +376,16 @@ const formatBytes = (bytes: number, decimals = 2) => {
 
     const index = Math.floor(Math.log(bytes) / Math.log(k));
 
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return `${Number.parseFloat((bytes / Math.pow(k, index)).toFixed(dm))} ${sizes[index]}`;
 };
 
 const runtimeString = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!props.action.createdAt || !props.action.updatedAt) return 'N/A';
     const start = new Date(props.action.createdAt).getTime();
     const end = new Date(props.action.updatedAt).getTime();
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return `${(end - start) / 1000} seconds`;
 });
 
@@ -408,6 +411,7 @@ const artifactStateText = computed(() => {
 });
 
 const isExpired = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!props.action.createdAt) return false;
     const created = new Date(props.action.createdAt);
     const now = new Date();
@@ -450,10 +454,12 @@ const dockerHubUrl = computed(() => {
     const parts = image.split('/');
     if (parts.length === 1 && parts[0]) {
         // Official image, e.g. "ubuntu" -> https://hub.docker.com/_/ubuntu
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `https://hub.docker.com/_/${parts[0].split(':')[0]}`;
     }
     if (parts.length === 2 && parts[0] && parts[1]) {
         // User image, e.g. "rslethz/kleinkram" -> https://hub.docker.com/r/rslethz/kleinkram
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `https://hub.docker.com/r/${parts[0]}/${parts[1].split(':')[0]}`;
     }
     return '';
@@ -464,6 +470,7 @@ const copyImageSha = () => {
 };
 
 const copyRepoDigest = () => {
-    void copyToClipboard(props.action.image.repoDigests?.[0] || '');
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    void copyToClipboard(props.action.image.repoDigests?.[0] ?? '');
 };
 </script>

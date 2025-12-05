@@ -130,6 +130,7 @@ const columns: QTableColumn<{
 ];
 
 const formatMemberCount = (count: number): string =>
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     `${count} member${count === 1 ? '' : 's'}`;
 
 /**

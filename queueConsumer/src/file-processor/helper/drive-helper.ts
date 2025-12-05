@@ -36,7 +36,7 @@ export async function downloadDriveFile(
                 logger.debug('File downloaded successfully.');
                 resolve(fileHash);
             })
-            .on('data', (chunk) => {
+            .on('data', (chunk: Buffer) => {
                 hash.update(chunk);
             })
             .on('error', (error) => {

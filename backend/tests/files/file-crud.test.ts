@@ -38,6 +38,7 @@ describe('File Management Tests', () => {
 
         // Download
         const downloadResponse = await fetch(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `${DEFAULT_URL}/files/download?uuid=${file?.uuid}&expires=false&preview_only=false`,
             {
                 method: 'GET',
@@ -98,6 +99,7 @@ describe('File Management Tests', () => {
             {
                 method: 'POST',
                 headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'Content-Type': 'application/json',
                     ...getAuthHeaders(user),
                 },
@@ -143,11 +145,14 @@ describe('File Management Tests', () => {
             where: { filename: 'move_me.bag' },
             relations: ['mission'],
         });
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(file?.mission?.uuid).toBe(mission1Uuid);
 
         const moveResponse = await fetch(`${DEFAULT_URL}/files/moveFiles`, {
             method: 'POST',
+
             headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'Content-Type': 'application/json',
                 ...getAuthHeaders(user),
             },
@@ -162,6 +167,7 @@ describe('File Management Tests', () => {
             where: { uuid: file.uuid },
             relations: ['mission'],
         });
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(movedFile?.mission?.uuid).toBe(mission2Uuid);
     }, 30_000);
 });

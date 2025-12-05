@@ -13,6 +13,8 @@ export class ProjectAccessEntity extends BaseEntity {
 
     @ManyToOne(
         () =>
+            // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/auth/accessgroup.entity')
                 .AccessGroupEntity as typeof AccessGroupEntity,
         (group) => group.project_accesses,
@@ -24,6 +26,8 @@ export class ProjectAccessEntity extends BaseEntity {
 
     @ManyToOne(
         () =>
+            // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/project/project.entity')
                 .ProjectEntity as typeof ProjectEntity,
         (project) => project.project_accesses,

@@ -168,6 +168,7 @@ const total = computed(() => (rawData.value ? rawData.value.count : 0));
 watch(
     () => total.value,
     () => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (data.value && !isLoading.value) {
             // eslint-disable-next-line vue/no-mutating-props
             properties.handler.rowsNumber = total.value;
@@ -190,6 +191,7 @@ const columns = [
         label: 'Docker Image',
         align: 'left',
         sortable: true,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         field: (row: ActionDto) => row.template.imageName ?? 'N/A',
     },
     {
@@ -219,6 +221,7 @@ const columns = [
             'overflow:hidden;' +
             'whitespace:nowrap;' +
             'text-overflow: ellipsis',
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         field: (row: ActionDto) => row.stateCause ?? '',
     },
     {
@@ -227,6 +230,7 @@ const columns = [
         align: 'left',
         sortable: true,
         field: (row: ActionDto) =>
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             row.updatedAt ? formatDate(row.updatedAt, true) : 'N/A',
     },
     {
@@ -235,12 +239,14 @@ const columns = [
         align: 'left',
         sortable: true,
         field: (row: ActionDto) =>
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             row.createdAt ? formatDate(row.createdAt, true) : 'N/A',
     },
     {
         name: 'creator.name',
         label: 'Submitted By',
         align: 'left',
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         field: (row: ActionDto) => row.creator.name ?? 'N/A',
         sortable: true,
     },
@@ -253,9 +259,11 @@ const columns = [
     },
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const handleRowClick = async (_: Event, row: any): Promise<void> => {
     await router.push({
         name: ROUTES.ANALYSIS_DETAILS.routeName,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         params: { id: row.uuid },
     });
 };

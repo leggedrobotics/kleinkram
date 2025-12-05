@@ -202,6 +202,7 @@ const submitNewProject = async () => {
         newProjectName.value,
         newProjectDescription.value,
         selected.value.map((tag) => tag.uuid),
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         accessGroups.value.map((r) => ({
             accessGroupUUID: r.uuid,
             rights: r.rights,

@@ -13,18 +13,23 @@ export const ParameterUuid = (
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const request = context.switchToHttp().getRequest();
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const value = request.params[data];
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const object = plainToInstance(UUIDValidate, { value });
             await validateOrReject(object).catch(() => {
                 throw new BadRequestException('Parameter is not a valid UUID!');
             });
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return value;
         },
         metadataApplier(
             parameterName,
-            parameterDescription || 'UUID',
+            parameterDescription ?? 'UUID',
             'path',
             'string',
             true,

@@ -55,10 +55,12 @@ await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
     for (const element of document.querySelectorAll('.rotating-element')) {
         const randomDuration = Math.random() * 10_000 + 200; // Random duration between 1s and 5s
         // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         element.style['-webkit-animation-duration'] =
             `${randomDuration.toString()}s`;
         if (Math.random() > 0.5) {
             // @ts-ignore
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             element.style['-webkit-animation-direction'] = `reverse`;
         }
     }
@@ -86,6 +88,7 @@ const { mutate: removeTagCallback } = useMutation({
         }
     },
     onError(error: unknown) {
+        // eslint-disable-next-line no-console
         console.log(error);
     },
 });

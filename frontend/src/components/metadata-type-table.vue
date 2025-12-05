@@ -15,6 +15,7 @@
 import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { defineEmits, defineProps } from 'vue';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 defineProps<{ rows: TagTypeDto[]; columns: any[]; filter: string }>();
 
 const emit = defineEmits(['row-selected']);

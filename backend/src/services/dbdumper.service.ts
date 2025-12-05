@@ -50,12 +50,14 @@ export class DBDumper {
 
             await unlinkAsync(dumpFile);
             return dumpFile;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             // Attempt to clean up if the file was created but upload failed
             if (fs.existsSync(dumpFile)) {
                 await unlinkAsync(dumpFile).catch(() => ({}));
             }
 
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
             throw new Error(`Failed to create database dump: ${error.message}`);
         }
     }

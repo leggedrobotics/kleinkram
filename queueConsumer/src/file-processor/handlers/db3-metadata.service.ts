@@ -42,6 +42,8 @@ export class Db3MetadataService extends AbstractMetadataService {
                 .prepare(
                     'SELECT topic_id, COUNT(*) as count FROM messages GROUP BY topic_id',
                 )
+
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 .all() as { topic_id: number; count: number }[];
 
             const countMap = new Map<number, number>();

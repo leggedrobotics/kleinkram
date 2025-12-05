@@ -44,11 +44,14 @@ const deleteActionReference = ref<
     InstanceType<typeof DeleteActionTemplate> | undefined
 >(undefined);
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 const isArchiving = computed(() => (props.template?.executionCount ?? 0) > 0);
 
 const onConfirm = async (): Promise<void> => {
     if (!deleteActionReference.value) return;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (deleteActionReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         await (deleteActionReference.value as any).executeAction();
     }
     onDialogOK();

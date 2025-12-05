@@ -272,6 +272,7 @@ export class ActionService {
                 `${action.uuid}.tar.gz`,
                 4 * 60 * 60,
                 {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'response-content-disposition': `attachment; filename="${friendlyFilename}"`,
                 },
             );

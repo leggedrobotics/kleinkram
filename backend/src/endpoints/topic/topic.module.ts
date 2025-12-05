@@ -10,4 +10,5 @@ import { TopicController } from './topic.controller';
     controllers: [TopicController],
     exports: [TopicService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class TopicModule {}

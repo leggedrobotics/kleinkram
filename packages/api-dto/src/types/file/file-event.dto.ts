@@ -59,6 +59,7 @@ export class FileEventDto {
     createdAt!: Date;
 
     @IsObject()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     details!: Record<string, any>;
 
     @IsOptional()

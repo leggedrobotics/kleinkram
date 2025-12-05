@@ -28,6 +28,7 @@ export class ProjectGuardService {
         projectUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!projectUuid || !user) {
             return false;
         }
@@ -55,6 +56,7 @@ export class ProjectGuardService {
         projectName: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!projectName || !user) {
             return false;
         }
@@ -68,6 +70,7 @@ export class ProjectGuardService {
     }
 
     async canCreate(user: UserEntity): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user) {
             return false;
         }

@@ -12,14 +12,16 @@ import { AuthFlowException } from '../../types/auth-flow-exception';
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     constructor(private authService: AuthService) {
         super({
-            clientID: env.GOOGLE_CLIENT_ID || 'dummy',
-            clientSecret: env.GOOGLE_CLIENT_SECRET || 'dummy',
+            clientID: env.GOOGLE_CLIENT_ID ?? 'dummy',
+            clientSecret: env.GOOGLE_CLIENT_SECRET ?? 'dummy',
             callbackURL: `${env.ENDPOINT}/auth/google/callback`,
             scope: ['email', 'profile'],
         });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     authenticate(request: e.Request, options?: any) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         options.state = request.query.state;
         super.authenticate(request, options);
     }
@@ -27,9 +29,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     async validate(
         accessToken: string,
         refreshToken: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         profile: any,
         callback: VerifyCallback,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { provider } = profile;
 
         // currently only google is supported
@@ -42,6 +47,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         const user =
             await this.authService.validateAndCreateUserByGoogle(profile);
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (user) {
             logger.debug(`Login successful for ${user.uuid}`);
             callback(null, user);

@@ -54,6 +54,8 @@ async function deleteActionAction(): Promise<void> {
 
 defineExpose({
     deleteActionAction,
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     action_name_check: actionNameCheck,
 });
 </script>

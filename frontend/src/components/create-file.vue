@@ -69,6 +69,7 @@ const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 const queryClient = useQueryClient();
 
 const selectedProjectUuid = ref<string | undefined>(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     props.mission?.project?.uuid,
 );
 const selectedMissionUuid = ref<string | undefined>(props.mission?.uuid);

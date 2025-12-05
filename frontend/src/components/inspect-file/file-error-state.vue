@@ -48,6 +48,7 @@ const props = defineProps<{
 }>();
 
 const fileExtension = computed(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     () => props.file.filename?.split('.').pop()?.toLowerCase() ?? '',
 );
 </script>

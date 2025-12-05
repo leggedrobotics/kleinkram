@@ -107,7 +107,7 @@ const emit =
 const instance = getCurrentInstance();
 
 const isGlobalMode = computed(() => {
-    const vNodeProperties = instance?.vnode.props || {};
+    const vNodeProperties = instance?.vnode.props ?? {};
     const hasProjectBinding = 'onUpdate:projectUuid' in vNodeProperties;
     const hasFixedProject = !!props.fixedProjectUuid;
     return !hasProjectBinding && !hasFixedProject;
@@ -178,6 +178,7 @@ const projectRules = computed(() => {
 });
 
 const missionRules = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (props.customMissionRules && props.customMissionRules.length > 0)
         return props.customMissionRules;
     return props.required

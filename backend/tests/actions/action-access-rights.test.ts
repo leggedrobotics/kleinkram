@@ -77,6 +77,7 @@ describe('Action Access Rights', () => {
             );
         }
         expect(writeTemplateResponse.status).toBe(201);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { uuid: writeTemplateUUID } = await writeTemplateResponse.json();
 
         // 5. Create Action Template requiring READ rights
@@ -97,6 +98,7 @@ describe('Action Access Rights', () => {
             } as CreateTemplateDto),
         });
         expect(readTemplateResponse.status).toBe(201);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { uuid: readTemplateUUID } = await readTemplateResponse.json();
 
         // 6. Try to submit WRITE action as limitedUser (should fail 403)
@@ -107,6 +109,7 @@ describe('Action Access Rights', () => {
             headers: limitedHeaders.getHeaders(),
             body: JSON.stringify({
                 missionUUID: missionUUID,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 templateUUID: writeTemplateUUID,
             } as SubmitActionDto),
         });
@@ -118,6 +121,7 @@ describe('Action Access Rights', () => {
             headers: limitedHeaders.getHeaders(),
             body: JSON.stringify({
                 missionUUID: missionUUID,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 templateUUID: readTemplateUUID,
             } as SubmitActionDto),
         });

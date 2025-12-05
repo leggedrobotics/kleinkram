@@ -11,10 +11,13 @@ export interface ProjectColumnType {
     required?: boolean;
     label: string;
     align: string;
-    field?:
+    field?: // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithMissionCountDto) => any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithAccessRightsDto) => any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: FlatMissionDto) => any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: FileWithTopicDto) => any);
     format?: ((value: string) => string) | ((value: number) => string);
     sortable?: boolean;

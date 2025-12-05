@@ -187,7 +187,8 @@ const {
     computed(() => ({
         ...urlHandler.value.searchParams,
         ...(myProjects
-            ? ({ 'creator.uuid': user.value?.uuid ?? '' } as Record<
+            ? // eslint-disable-next-line @typescript-eslint/naming-convention
+              ({ 'creator.uuid': user.value?.uuid ?? '' } as Record<
                   string,
                   string
               >)
@@ -201,6 +202,7 @@ const total = computed(() => (rawData.value ? rawData.value.count : 0));
 watch(
     () => total.value,
     () => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (data.value && !isLoading.value) {
             urlHandler.value.rowsNumber = total.value;
         }
@@ -210,10 +212,12 @@ watch(
 
 const $router = useRouter();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onRowClick = async (_: Event, row: any): Promise<void> => {
     await $router.push({
         name: ROUTES.MISSIONS.routeName,
         params: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             projectUuid: row.uuid,
         },
     });

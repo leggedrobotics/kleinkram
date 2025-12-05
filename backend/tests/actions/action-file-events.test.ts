@@ -121,6 +121,7 @@ describe('Action File Events', () => {
         // 5. Create Action API Key
         const apikeyRepo = database.getRepository(ApikeyEntity);
         const apikeyEntity = apikeyRepo.create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.ACTION,
             mission: mission,
             action: action,
@@ -129,6 +130,7 @@ describe('Action File Events', () => {
         });
         await apikeyRepo.save(apikeyEntity);
         const actionKey = apikeyEntity.apikey;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const apiKey = actionKey;
 
         // 4. Create a File directly in DB
@@ -178,6 +180,7 @@ describe('Action File Events', () => {
                 method: 'GET',
                 headers: {
                     cookie: `${CookieNames.CLI_KEY}=${actionKey}`,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'kleinkram-client-version': appVersion,
                 },
             },
@@ -193,11 +196,13 @@ describe('Action File Events', () => {
             },
         );
         expect(eventsResponse.status).toBe(200);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const events: FileEventsDto = await eventsResponse.json();
 
         expect(events.count).toBeGreaterThan(0);
 
         const downloadEvent = events.data.find(
+            // eslint-disable-next-line unicorn/prevent-abbreviations
             (e) => e.type === FileEventType.DOWNLOADED,
         );
         expect(downloadEvent).toBeDefined();

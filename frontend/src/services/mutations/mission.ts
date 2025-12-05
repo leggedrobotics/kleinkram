@@ -11,6 +11,7 @@ export const createMission = async (
         projectUUID,
         tags,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -20,11 +21,14 @@ export const moveMission = async (missionUUID: string, projectUUID: string) => {
         {},
         { params: { missionUUID, projectUUID } },
     );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const deleteMission = async (mission: MissionWithFilesDto) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
     const response = await axios.delete(`/mission/${mission.uuid}`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -33,6 +37,7 @@ export const updateMissionTags = async (
     tags: Record<string, string>,
 ) => {
     const response = await axios.post('/mission/tags', { missionUUID, tags });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -41,5 +46,6 @@ export const updateMissionName = async (missionUUID: string, name: string) => {
         missionUUID,
         name,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

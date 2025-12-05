@@ -78,6 +78,7 @@ export function useScopeSelection(
     const setProject = (uuid: string | undefined | null): void => {
         const value = uuid ?? undefined;
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (isLocalMode && localProjectUuid) {
             localProjectUuid.value = value;
             if (localMissionUuid) localMissionUuid.value = undefined;

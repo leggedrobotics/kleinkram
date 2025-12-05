@@ -19,9 +19,12 @@ define(ProjectAccessEntity, (_, context: ProjectAccessFactoryContext) => {
         0, 10, 20, 30,
     ]) as AccessGroupRights;
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (context?.projects) {
         projectAccess.project = faker.helpers.arrayElement(context.projects);
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (context?.accessGroups) {
         projectAccess.accessGroup = faker.helpers.arrayElement(
             context.accessGroups,

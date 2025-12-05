@@ -29,6 +29,7 @@ const createNewTageType = (): DialogChainObject =>
         title: 'Create new mission',
         component: CreateFileDialog,
         componentProps: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             mission: properties.mission,
             uploads,
         },

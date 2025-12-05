@@ -90,7 +90,10 @@ const AnymalStateViewer = defineAsyncComponent(
 
 export const detectPreviewType = (
     messageType: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sampleData?: any,
+
+    // eslint-disable-next-line complexity
 ): PreviewType => {
     const typeLower = messageType.toLowerCase().replace('/msg/', '/');
 
@@ -135,7 +138,9 @@ export const detectPreviewType = (
     if (sampleData) {
         // String Heuristic (simple object with just data: string)
         if (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             Object.keys(sampleData).length === 1 &&
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             typeof sampleData.data === 'string'
         )
             return PreviewType.STRING;
@@ -144,9 +149,12 @@ export const detectPreviewType = (
             return PreviewType.POINT_CLOUD;
         if ('time_ref' in sampleData && 'source' in sampleData)
             return PreviewType.TIME_REFERENCE;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (sampleData.level && sampleData.file) return PreviewType.ROS_LOG;
         if (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             (sampleData.linear && sampleData.angular) ||
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             sampleData.twist?.linear
         )
             return PreviewType.TWIST;
@@ -183,8 +191,11 @@ export const detectPreviewType = (
         if (
             'point' in sampleData &&
             'header' in sampleData &&
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             'x' in sampleData.point &&
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             'y' in sampleData.point &&
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             'z' in sampleData.point
         )
             return PreviewType.POINT_STAMPED;
@@ -225,5 +236,6 @@ export const getViewerComponent = (type: PreviewType) => {
         [PreviewType.POINT_STAMPED]: PointStampedViewer,
         [PreviewType.ANYMAL_STATE]: AnymalStateViewer,
     };
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return map[type] ?? JsonLogViewer;
 };

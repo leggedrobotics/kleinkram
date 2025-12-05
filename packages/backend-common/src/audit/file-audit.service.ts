@@ -59,7 +59,8 @@ export class FileAuditService {
                 type: action, // Ensure this matches your FileEventType enum
                 file: file,
                 filenameSnapshot:
-                    context.filename || file?.filename || 'UNKNOWN',
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    context.filename ?? file?.filename ?? 'UNKNOWN',
                 details: {
                     ...context.details,
                     success: isSuccess,
@@ -74,6 +75,7 @@ export class FileAuditService {
         } catch (databaseError) {
             // Fail-safe: Don't crash the main request if audit logging fails
             this.logger.error(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Failed to save audit log for ${action}: ${databaseError}`,
             );
         }

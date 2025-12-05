@@ -7,6 +7,7 @@ import { appVersion } from './app-version';
 
 const messageOnly = winston.format.printf(
     ({ level, message }: TransformableInfo): string => {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `[${level.toUpperCase()}]: ${message}`;
     },
 );
@@ -33,6 +34,8 @@ const logger = winston.createLogger({
             interval: 5,
             labels: {
                 job: 'backend',
+
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 container_id: process.env.HOSTNAME,
                 version: appVersion,
             },

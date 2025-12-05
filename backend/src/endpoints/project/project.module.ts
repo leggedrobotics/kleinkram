@@ -23,4 +23,5 @@ import { OldProjectController, ProjectController } from './project.controller';
     exports: [ProjectService],
     controllers: [ProjectController, OldProjectController],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ProjectModule {}

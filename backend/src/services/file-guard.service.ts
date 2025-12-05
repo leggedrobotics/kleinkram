@@ -23,6 +23,7 @@ export class FileGuardService {
         fileUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!fileUUID || !user) {
             logger.error(
                 `FileGuard: File UUID (${fileUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -68,6 +69,7 @@ export class FileGuardService {
         filename: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!filename || !user) {
             logger.error(
                 `FileGuard: Filename (${filename}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -120,6 +122,7 @@ export class FileGuardService {
         fileUUIDs: string[],
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!fileUUIDs || !user) {
             logger.error(
                 `FileGuard: File UUIDs (${fileUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,

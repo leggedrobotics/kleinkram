@@ -2,9 +2,11 @@ import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { Connection } from 'typeorm';
 
 export const seedActionTemplates = async (
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     conn: Connection,
     adminUser: UserEntity,
 ): Promise<void> => {
+    // eslint-disable-next-line no-console
     console.log('3. Creating Action Templates...');
     const tag = 'latest';
 
@@ -24,6 +26,7 @@ export const seedActionTemplates = async (
     // Dynamic import or string repo access
     const ActionTemplateRepo = conn.getRepository('ActionTemplateEntity');
 
+    // eslint-disable-next-line no-console
     console.log('Checking action templates...');
     for (const templateDefinition of actionTemplates) {
         const existing = await ActionTemplateRepo.findOne({
@@ -34,6 +37,8 @@ export const seedActionTemplates = async (
             const template = ActionTemplateRepo.create({
                 name: templateDefinition.name,
                 description: templateDefinition.description,
+
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 image_name: `rslethz/action:${templateDefinition.name}-${tag}`,
                 version: 1,
                 creator: adminUser,

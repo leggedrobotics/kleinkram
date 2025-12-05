@@ -4,7 +4,9 @@
 export const LogConfig = {
     Type: 'json-file',
     Config: {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         'max-size': '10m',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         'max-file': '1',
     },
 };

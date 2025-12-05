@@ -41,11 +41,11 @@ use([
 
 const { data: storage } = useStorageOverview();
 
-const usedBytes = computed(() => storage.value?.usedBytes || 0);
-const totalBytes = computed(() => storage.value?.totalBytes || 0);
+const usedBytes = computed(() => storage.value?.usedBytes ?? 0);
+const totalBytes = computed(() => storage.value?.totalBytes ?? 0);
 const freeBytes = computed(() => totalBytes.value - usedBytes.value);
-const usedInodes = computed(() => storage.value?.usedInodes || 0);
-const totalInodes = computed(() => storage.value?.totalInodes || 0);
+const usedInodes = computed(() => storage.value?.usedInodes ?? 0);
+const totalInodes = computed(() => storage.value?.totalInodes ?? 0);
 const freeInodes = computed(() => totalInodes.value - usedInodes.value);
 
 const option = computed(() => {
@@ -58,7 +58,9 @@ const option = computed(() => {
         },
         tooltip: {
             trigger: 'item',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter: (parameters: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
                 return `${parameters.name}: ${parameters.data.formatted}`;
             },
         },

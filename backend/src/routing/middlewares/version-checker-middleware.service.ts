@@ -45,6 +45,7 @@ export class VersionCheckerMiddlewareService implements NestMiddleware {
         }
 
         logger.debug(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `Check Client Version for call to endpoint: ${requestPath} is: ${clientVersion}`,
         );
 

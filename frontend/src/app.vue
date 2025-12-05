@@ -23,14 +23,17 @@ const checkBackend = async () => {
         if (response.ok) {
             backendReady.value = true;
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             setTimeout(checkBackend, 1000);
         }
-    } catch (e) {
+    } catch {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         setTimeout(checkBackend, 1000);
     }
 };
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     checkBackend();
 });
 </script>

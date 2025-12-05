@@ -9,6 +9,7 @@ import { Brackets, SelectQueryBuilder } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
 export const projectAccessUUIDQuery = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query: SelectQueryBuilder<any>,
     userUUID: string,
     tok: string | undefined = undefined,
@@ -16,6 +17,7 @@ export const projectAccessUUIDQuery = (
     // we us randomized tokens to creat a signature for the subquery parameters
     // in this way we avoid conflicts with other subqueries or the main query
     // would be nice if typeorm did this out of the box, but it doesnt
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     if (tok === undefined) tok = uuidv4().replaceAll('-', '');
 
     const projectIdsQuery = query
@@ -30,6 +32,7 @@ export const projectAccessUUIDQuery = (
 };
 
 export const missionAccessUUIDQuery = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query: SelectQueryBuilder<any>,
     userUUID: string,
     tok: string | undefined = undefined,
@@ -37,6 +40,7 @@ export const missionAccessUUIDQuery = (
     // we us randomized tokens to creat a signature for the subquery parameters
     // in this way we avoid conflicts with other subqueries or the main query
     // would be nice if typeorm did this out of the box, but it doesnt
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     if (tok === undefined) tok = uuidv4().replaceAll('-', '');
 
     return query
@@ -49,13 +53,16 @@ export const missionAccessUUIDQuery = (
 };
 
 export const getUserIsAdminSubQuery = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query: SelectQueryBuilder<any>,
     userUUID: string,
     tok: string | undefined = undefined,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): SelectQueryBuilder<any> => {
     // we us randomized tokens to creat a signature for the subquery parameters
     // in this way we avoid conflicts with other subqueries or the main query
     // would be nice if typeorm did this out of the box, but it doesnt
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     if (tok === undefined) tok = uuidv4().replaceAll('-', '');
 
     const subQuery = query
@@ -149,8 +156,10 @@ export const addAccessConstraintsToFileQuery = (
 
 // TODO: deprecate this in favor of the above functions
 export function addAccessConstraints(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     qb: SelectQueryBuilder<any>,
     userUUID: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): SelectQueryBuilder<any> {
     // Add project access join
     qb.leftJoin(

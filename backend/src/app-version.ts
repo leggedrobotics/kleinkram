@@ -24,6 +24,7 @@ function readFileIfExists(filePath: string): PackageJson | null {
 export const appVersion = (() => {
     let packageJson = readFileIfExists(path);
 
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     if (!packageJson) {
         packageJson = readFileIfExists('./package.json');
     }

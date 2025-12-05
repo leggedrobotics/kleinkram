@@ -21,7 +21,14 @@
         },
         "resolveJsonModule": true
     },
-    "include": ["src/**/*", "src/**/*.json", "../packages/**/*"],
+    "include": [
+        "src/**/*",
+        "src/**/*.json",
+        "../packages/**/*",
+        "check-version.ts",
+        "migration/**/*.ts",
+        "tests/**/*.ts"
+    ],
     "exclude": ["node_modules", "dist"],
     "references": [
         {

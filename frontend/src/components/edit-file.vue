@@ -124,7 +124,7 @@ watch(
         // Initialize ScopeSelector
         projectUuid.value = newValue.mission.project.uuid;
         missionUuid.value = newValue.mission.uuid;
-        // eslint-disable-next-line unicorn/prefer-structured-clone
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, unicorn/prefer-structured-clone
         editableFile.value = JSON.parse(JSON.stringify(newValue));
         dateTime.value = formatDate(new Date(newValue.date));
     },
@@ -134,8 +134,10 @@ watch(
 watch(selectedMission, (newMission) => {
     if (editableFile.value && newMission) {
         editableFile.value.mission = {
+            // eslint-disable-next-line @typescript-eslint/no-misused-spread
             ...newMission,
             project:
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 selectedProject.value ?? editableFile.value.mission?.project,
         };
     }
@@ -171,13 +173,16 @@ const { mutate: updateFileMutation } = useMutation({
     },
     onError(error: unknown) {
         console.error(error);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const message =
             (isAxiosError(error)
-                ? error.response?.data?.message
+                ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                  error.response?.data?.message
                 : (error as Error).message) ?? 'Unknown error occurred';
 
         Notify.create({
             group: false,
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             message: `Error updating file: ${message}`,
             color: 'negative',
             spinner: false,
@@ -192,6 +197,7 @@ function _updateMission(): void {
 
     if (
         editableFile.value &&
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         convertedDate &&
         !Number.isNaN(convertedDate.getTime())
     ) {

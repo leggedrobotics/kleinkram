@@ -16,6 +16,7 @@ describe('Verify Access Groups External', () => {
     });
 
     // user: external
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('Non "kleinkram.dev" email is not added to default group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
@@ -79,6 +80,7 @@ describe('Verify Access Groups Internal', () => {
     });
 
     // user: internal
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if leggedrobotics email is added to default group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
@@ -242,6 +244,7 @@ describe('Verify Access Groups Internal User Access', () => {
         await database.destroy();
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if a user with create rights can generate a access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);

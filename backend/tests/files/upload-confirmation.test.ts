@@ -41,6 +41,7 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
     let fileRepository: Repository<FileEntity>;
     let queueRepository: Repository<IngestionJobEntity>;
     let missionRepository: Repository<MissionEntity>;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let userRepository: Repository<UserEntity>;
     let user: UserEntity;
     let missionUuid: string;
@@ -84,12 +85,19 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
             queueRepository,
             missionRepository,
             fileRepository,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             { findOneByUUID: jest.fn() } as any, // UserService
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             mockStorageService as any,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             mockFileAuditService as any,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             mockGauge as any, // pendingJobs
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             mockGauge as any, // activeJobs
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             mockGauge as any, // completedJobs
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             mockGauge as any, // failedJobs
         );
 
@@ -135,6 +143,7 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
             FileEventType.UPLOAD_COMPLETED,
             expect.objectContaining({
                 fileUuid: file.uuid,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 details: expect.objectContaining({
                     origin: FileOrigin.UPLOAD,
                     source: testSource,
@@ -167,6 +176,7 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
             FileEventType.UPLOAD_COMPLETED,
             expect.objectContaining({
                 fileUuid: file.uuid,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 details: expect.objectContaining({
                     origin: FileOrigin.UPLOAD,
                     source: 'Web Interface',

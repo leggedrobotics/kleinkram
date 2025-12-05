@@ -7,8 +7,10 @@ import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 
 export default class CreateUsers implements Seeder {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     public async run(factory: Factory, conn: Connection): Promise<void> {
         if (!process.env.SEED || process.env.SEED !== 'true') {
+            // eslint-disable-next-line no-console
             console.log('Skipping seeding (SEED env var not set to true)');
             return;
         }
@@ -19,10 +21,12 @@ export default class CreateUsers implements Seeder {
         });
 
         if (existingAdmin) {
+            // eslint-disable-next-line no-console
             console.log('Seeding already done, skipping...');
             return;
         }
 
+        // eslint-disable-next-line no-console
         console.log('\n\n »» Seeding Users and Data...\n\n');
 
         const { adminUser, internalUser } = await seedUsers(factory, conn);

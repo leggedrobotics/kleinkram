@@ -44,7 +44,9 @@ const { action } = defineProps<{
 
 const deleteActionAction = (): void => {
     if (deleteActionReference.value === undefined) return;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (deleteActionReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         (deleteActionReference.value as any).deleteActionAction();
     }
     onDialogOK();

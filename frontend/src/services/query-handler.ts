@@ -322,6 +322,7 @@ export class QueryURLHandler extends QueryHandler {
             searchParameters.name = route.query.name as string;
         if (route.query.health)
             searchParameters.health = route.query.health as string;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         this.searchParams = searchParameters ?? DEFAULT_SEARCH;
 
         const queryFileTypes = route.query.file_type as string | undefined;
@@ -348,6 +349,7 @@ export class QueryURLHandler extends QueryHandler {
         // Logic to determine if fileTypes is in its default state
         const allFileTypesCount = Object.values(FileType).length;
         const isDefaultFileTypes =
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             !this.fileTypes ||
             this.fileTypes.length === 0 ||
             this.fileTypes.length === allFileTypesCount;
@@ -375,6 +377,8 @@ export class QueryURLHandler extends QueryHandler {
             ...this.searchParams,
 
             // Join the array into a single comma-separated string
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             file_type: isDefaultFileTypes
                 ? undefined
                 : this.fileTypes.join(','),
@@ -388,6 +392,7 @@ export class QueryURLHandler extends QueryHandler {
         const hasQueries = Object.keys(queries).length > 0;
 
         // Filter out undefined values from newQuery before pushing/replacing
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const finalQuery: Record<string, any> = {};
         for (const [key, value] of Object.entries(newQuery)) {
             if (value !== undefined) {
@@ -411,7 +416,9 @@ export interface Pagination {
 }
 
 export interface TableRequest {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     filter?: any;
     pagination: Pagination;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getCellValue: any;
 }
