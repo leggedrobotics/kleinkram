@@ -23,4 +23,4 @@ jobs:
                   BACKEND_URL: ${{ vars.BACKEND_URL_DEV }}
             - working-directory: .
               name: push the docker image
-              run: docker compose -f docker-compose.dev.yml push
+              run: docker compose -f docker-compose.dev.yml push api-server frontend queue-consumer documentation artifact-uploader
