@@ -13,7 +13,7 @@
     Move
 </template>
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQuasar } from 'quasar';
 import MoveFiles from 'src/dialogs/modify-file-location-dialog.vue';
 import { canDeleteMission, usePermissionsQuery } from 'src/hooks/query-hooks';
@@ -23,7 +23,6 @@ import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 const $q = useQuasar();
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const { mission, files } = defineProps<{
     mission: MissionWithFilesDto;
     files: FileWithTopicDto[];
@@ -33,9 +32,8 @@ const { data: permissions } = usePermissionsQuery();
 
 const canModify = computed(() => {
     return canDeleteMission(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         mission.uuid,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+
         mission.project.uuid,
         permissions.value,
     );
@@ -46,7 +44,6 @@ const moveFiles = (): void => {
     $q.dialog({
         component: MoveFiles,
         componentProps: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             mission: mission,
             files: files,
         },

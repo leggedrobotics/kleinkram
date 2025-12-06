@@ -13,7 +13,7 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
 import { Notify } from 'quasar';
@@ -32,7 +32,6 @@ const route = useRoute();
 const router = useRouter();
 
 const deleteMissionAction = async (): Promise<void> => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (missionNameCheck.value === properties.mission.name) {
         await deleteMission(properties.mission)
             .then(async () => {
@@ -40,7 +39,6 @@ const deleteMissionAction = async (): Promise<void> => {
                     predicate: (query) =>
                         query.queryKey[0] === 'missions' ||
                         (query.queryKey[0] === 'mission' &&
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             query.queryKey[1] === properties.mission.uuid),
                 });
 
@@ -49,7 +47,6 @@ const deleteMissionAction = async (): Promise<void> => {
                         query.queryKey[0] === 'projects' ||
                         (query.queryKey[0] === 'project' &&
                             query.queryKey[1] ===
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                                 properties.mission.project.uuid),
                 });
 

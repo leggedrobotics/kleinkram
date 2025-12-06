@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQuasar } from 'quasar';
 import MoveMission from 'src/dialogs/modify-mission-location-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
@@ -24,14 +24,13 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const $q = useQuasar();
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 const { mission } = defineProps<{
     mission: MissionWithFilesDto;
 }>();
 const urlMissionUUID = useMissionUUID();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     canModifyMission(mission.uuid, mission.project.uuid, permissions.value),
 );
 const $router = useRouter();
@@ -43,7 +42,7 @@ const moveMission = (): void => {
         component: MoveMission,
         persistent: false,
         style: 'max-width: 1500px',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         componentProps: { mission: mission },
     }).onOk((newProjectUUID: string) => {
         if (urlMissionUUID.value) {

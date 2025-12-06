@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { DialogChainObject, useQuasar } from 'quasar';
 import CreateFileDialog from 'src/dialogs/create-file-dialog.vue';
@@ -29,7 +29,6 @@ const createNewTageType = (): DialogChainObject =>
         title: 'Create new mission',
         component: CreateFileDialog,
         componentProps: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             mission: properties.mission,
             uploads,
         },

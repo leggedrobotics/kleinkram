@@ -8,7 +8,7 @@ on:
             - 'cli/**'
 
 jobs:
-    lint:
+    python-lint:
         runs-on: [self-hosted, linux]
         steps:
             - uses: actions/checkout@v4

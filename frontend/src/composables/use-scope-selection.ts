@@ -62,7 +62,9 @@ export function useScopeSelection(
     });
 
     const selectedMission = computed(() => {
-        return missions.value.find((m) => m.uuid === selectedMissionUuid.value);
+        return missions.value.find(
+            (m: FlatMissionDto) => m.uuid === selectedMissionUuid.value,
+        );
     });
 
     // Missions (Reactive to whichever Project is selected) ---

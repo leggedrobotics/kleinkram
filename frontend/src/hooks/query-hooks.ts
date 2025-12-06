@@ -1,3 +1,4 @@
+import { MissionsDto } from '@kleinkram/api-dto';
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
@@ -7,10 +8,7 @@ import type { ActionWorkersDto } from '@kleinkram/api-dto/types/action-workers.d
 import type { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
 import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import {
-    MissionsDto,
-    MissionWithFilesDto,
-} from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import {
     PermissionsDto,
     ProjectPermissions,
@@ -244,7 +242,6 @@ export const useMission = (
           >
         | undefined = undefined,
     retryDelay = 1000,
-    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 ): UseQueryReturnType<MissionWithFilesDto | undefined, Error> => {
     if (typeof missionUuid === 'string') {
         missionUuid = ref(missionUuid);

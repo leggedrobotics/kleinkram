@@ -43,10 +43,16 @@ gh act -l
 
 ### Run a specific job
 
-To run the eslint job (as defined in .github/workflows/eslint.yml):
+To run a specific job (e.g. `python-lint` from `.github/workflows/python-lint.yml`):
 
 ```bash
-gh act -j eslint
+gh act -j python-lint
+```
+
+To capture the logs of an action into a file use:
+
+```bash
+gh act -j python-lint > python-lint.log 2>&1
 ```
 
 ### Troubleshooting

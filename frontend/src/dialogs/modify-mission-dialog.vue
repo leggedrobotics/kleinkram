@@ -27,7 +27,7 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
@@ -43,11 +43,9 @@ const properties = defineProps<{
     mission: MissionWithFilesDto;
 }>();
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
 const missionName = ref(properties.mission.name);
 
 const saveMissionName = async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     await updateMissionName(properties.mission.uuid, missionName.value)
         .then(async () => {
             $q.notify({
@@ -58,14 +56,12 @@ const saveMissionName = async () => {
             // clear mission and missions cache
             // to force a refetch of the missions
             await queryClient.invalidateQueries({
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 queryKey: ['project', properties.mission.project.uuid],
             });
             await queryClient.invalidateQueries({
                 queryKey: ['missions'],
             });
             await queryClient.invalidateQueries({
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 queryKey: ['mission', properties.mission.uuid],
             });
             dialogRef.value?.hide();

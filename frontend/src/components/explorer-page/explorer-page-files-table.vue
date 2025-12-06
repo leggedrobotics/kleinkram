@@ -247,8 +247,7 @@ const missionUuid = useMissionUUID();
 const { data: missionData } = useMission(missionUuid);
 
 const isMissionEmpty = computed(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-    return missionData.value && missionData.value.files?.length === 0;
+    return missionData.value && missionData.value.files.length === 0;
 });
 
 const hasActiveFilters = computed(() => {

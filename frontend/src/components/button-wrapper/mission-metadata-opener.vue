@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQuasar } from 'quasar';
 import ModifyMissionTagsDialog from 'src/dialogs/modify-mission-tags-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
@@ -30,9 +30,8 @@ const properties = defineProps<{
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         properties.mission.uuid,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+
         properties.mission.project.uuid,
         permissions.value,
     ),
@@ -43,7 +42,6 @@ const openTagsDialog = (): void => {
     $q.dialog({
         component: ModifyMissionTagsDialog,
         componentProps: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             mission: properties.mission,
         },
     });

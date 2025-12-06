@@ -148,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { useQuery } from '@tanstack/vue-query';
 import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
@@ -251,9 +251,8 @@ const onRowClick = async (_: Event, row: any) => {
 
 const missingTags = (row: MissionWithFilesDto): TagDto[] => {
     const mapped = project.value?.requiredTags.map((tagType) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
         const setTypes = row.tags.map((tag) => tag.type);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
         if (!setTypes.some((setType) => setType.uuid === tagType.uuid)) {
             return tagType;
         }

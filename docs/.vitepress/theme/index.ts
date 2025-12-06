@@ -8,33 +8,18 @@ import Delete from '../components/AccessWrites/delete.vue';
 import Any from '../components/AccessWrites/any.vue';
 import Read from '../components/AccessWrites/read.vue';
 import Creator from '../components/AccessWrites/creator.vue';
+import { EnhanceAppContext } from 'vitepress';
 
 export default {
-    enhanceApp({ app }) {
+    enhanceApp({ app }: EnhanceAppContext): void {
         // Register the Redoc component globally
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         app.component('Module', Module);
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         app.component('Create', Create);
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         app.component('Read', Read);
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         app.component('Modify', Modify);
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         app.component('Delete', Delete);
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         app.component('Any', Any);
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         app.component('Creator', Creator);
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         app.component('CanEdit', CanEdit);
     },
     extends: DefaultTheme,

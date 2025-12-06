@@ -17,7 +17,9 @@
         "vue-json-pretty": "^2.6.0"
     },
     "devDependencies": {
+        "@types/node": "^24.10.1",
         "mermaid": "^11.12.1",
+        "vite": "^7.2.6",
         "vitepress-plugin-mermaid": "2.0.17",
         "vue": "^3.5.25"
     }

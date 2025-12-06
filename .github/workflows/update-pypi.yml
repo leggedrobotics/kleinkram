@@ -10,7 +10,7 @@ on:
             - '.github/workflows/updatePypi.yml'
 
 jobs:
-    build_and_deploy:
+    update-pypi:
         runs-on: ubuntu-latest
         permissions:
             contents: read
@@ -63,4 +63,4 @@ jobs:
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  gh workflow run build_sample_actions.yml -f kleinkram_version=$VERSION --ref ${{ github.ref }}
+                  gh workflow run build-sample-actions.yml -f kleinkram_version=$VERSION --ref ${{ github.ref }}

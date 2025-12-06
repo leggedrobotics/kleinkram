@@ -3,6 +3,7 @@ packages:
   - backend
   - frontend
   - queueConsumer
+  - docs
 
 onlyBuiltDependencies:
   - '@nestjs/core'

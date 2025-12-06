@@ -273,7 +273,8 @@ describe('Verify Action (Templates & Runs)', () => {
             } as SubmitActionDto),
         });
         if (submitResponse.status !== 201) {
-            console.log('[DEBUG] Submit error:', await submitResponse.text());
+            const errorText = await submitResponse.text();
+            console.log('[DEBUG] Submit error:', errorText);
         }
         expect(submitResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -458,7 +459,8 @@ describe('Verify Action (Templates & Runs)', () => {
             } as SubmitActionDto),
         });
         if (submitResponse.status !== 201) {
-            console.log('[DEBUG] Submit error:', await submitResponse.text());
+            const errorText = await submitResponse.text();
+            console.log('[DEBUG] Submit error:', errorText);
         }
         expect(submitResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

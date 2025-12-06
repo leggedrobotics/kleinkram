@@ -27,7 +27,6 @@ jobs:
               run: bash create_build_info.sh
               working-directory: frontend
 
-            # for eslint we may need to install the dependencies
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 

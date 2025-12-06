@@ -32,15 +32,13 @@
 </template>
 
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const { mission } = defineProps<{
     mission: MissionWithFilesDto;
 }>();
 
 const copyCommandAction = async (): Promise<void> => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
     const text = `klein download --dest=. -m ${mission.uuid}`;
     await navigator.clipboard.writeText(text);
 };

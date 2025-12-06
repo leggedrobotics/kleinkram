@@ -250,7 +250,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import ActionSelector from 'components/action-selector.vue';
@@ -590,10 +590,8 @@ function selectTemplate(template: ActionTemplateDto): void {
 
 function missionSelected(mission: MissionWithFilesDto): void {
     if (hasMissionUUIDs.value) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         addedMissions.value.push(mission.uuid);
     } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         handler.value.setMissionUUID(mission.uuid);
     }
 }

@@ -1,4 +1,4 @@
-exclude: 'yarn\.lock'
+exclude: 'yarn\.lock|pnpm-lock\.yaml|frontend/src/build\.ts'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -33,6 +33,6 @@ repos:
     hooks:
       - id: prettier
         name: prettier
-        entry: node_modules/.bin/prettier --write
+        entry: node_modules/.bin/prettier --write --cache --experimental-cli
         language: system
         types_or: [css, javascript, ts, tsx, json, yaml, markdown, vue]

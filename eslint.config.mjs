@@ -22,6 +22,7 @@ export default tseslint.config(
             '**/.quasar/**',
             '**/.venv/**',
             '**/generated/**',
+            '**/src/build.ts',
             '**/*.js',
             '**/*.d.ts',
             'backend/migration/**',

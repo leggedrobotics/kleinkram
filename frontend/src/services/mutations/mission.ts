@@ -1,4 +1,4 @@
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import axios from 'src/api/axios';
 
 export const createMission = async (
@@ -26,7 +26,6 @@ export const moveMission = async (missionUUID: string, projectUUID: string) => {
 };
 
 export const deleteMission = async (mission: MissionWithFilesDto) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
     const response = await axios.delete(`/mission/${mission.uuid}`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;

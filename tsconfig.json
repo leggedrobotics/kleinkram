@@ -18,6 +18,12 @@
         },
         {
             "path": "./queueConsumer"
+        },
+        {
+            "path": "./frontend"
+        },
+        {
+            "path": "./docs"
         }
     ]
 }

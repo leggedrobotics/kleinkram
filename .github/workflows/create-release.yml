@@ -7,8 +7,7 @@ on:
             - main
 
 jobs:
-    create_release_tag:
-        name: Create Release
+    create-release:
         runs-on: ubuntu-latest
 
         steps:

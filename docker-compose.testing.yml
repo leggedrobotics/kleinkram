@@ -12,14 +12,17 @@ services:
         container_name: kleinkram-api-server-test
         build:
             context: .
-            dockerfile: ./backend/prod.Dockerfile
+            dockerfile: docker/backend.Dockerfile
+            target: production
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         volumes:
-            - ./backend/.endpoints:/usr/src/app/backend/.endpoints
+            - ./backend/.endpoints:/app/backend/.endpoints
         environment:
             SEED: 'false'
+
             DEVBUILD: 'false'
+            REDIS_HOST: 'redis'
         env_file:
             - .env
         networks:
@@ -39,8 +42,10 @@ services:
             POSTGRES_DB: ${DB_DATABASE}
             POSTGRES_USER: ${DB_USER}
             POSTGRES_PASSWORD: ${DB_PASSWORD}
+        command: postgres -c hba_file=/etc/postgresql/pg_hba.conf
         volumes:
             - db_data_test:/var/lib/postgresql/data
+            - ./docker/testing-pg_hba.conf:/etc/postgresql/pg_hba.conf
 
     minio:
         image: minio/minio
@@ -73,7 +78,7 @@ services:
 
         build:
             context: .
-            dockerfile: ./frontend/Dockerfile
+            dockerfile: docker/frontend.Dockerfile
             args:
                 - BACKEND_URL=${BACKEND_URL}
         ports:
@@ -99,64 +104,19 @@ services:
         hostname: 'DO_NOT_CHANGE'
         build:
             context: .
-            dockerfile: queueConsumer/prod.Dockerfile
+            dockerfile: docker/queue-consumer.Dockerfile
+            target: production
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+        environment:
+            REDIS_HOST: 'redis'
         env_file:
             - .env
         networks:
             - privatenet
         depends_on:
             - database
-            - loki
-
-    prometheus:
-        image: prom/prometheus
-        container_name: kleinkram-prometheus-test
-        volumes:
-            - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-            - logging-prometheus-storage:/prometheus
-        command:
-            - '--config.file=/etc/prometheus/prometheus.yml'
-            - '--storage.tsdb.path=/prometheus'
-            - '--web.enable-remote-write-receiver'
-            - '--enable-feature=exemplar-storage'
-            - '--enable-feature=native-histograms'
-        ports:
-            - '9090:9090'
-        networks:
-            - privatenet
-            - webnet
-
-    tempo:
-        user: '0:0'
-        image: grafana/tempo:latest
-        container_name: kleinkram-tempo-test
-        command: ['-config.file=/etc/tempo/tempo.yml']
-        volumes:
-            - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
-            - logging-tempo-data:/tmp/tempo
-        ports:
-            - '3200' # tempo
-            - '4317' # otlp grpc
-            - '4318' # otlp http
-        networks:
-            - privatenet
-            - webnet
-
-    loki:
-        image: grafana/loki
-        container_name: kleinkram-loki-test
-        ports:
-            - '3100:3100'
-        command:
-            - --config.file=/mnt/config/loki-config.yml
-        volumes:
-            - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
-        networks:
-            - privatenet
-            - webnet
 
     fake-oauth:
         build: dev-oauth

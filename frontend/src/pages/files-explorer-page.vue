@@ -359,7 +359,7 @@ import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';

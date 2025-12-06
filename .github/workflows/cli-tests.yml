@@ -8,7 +8,7 @@ on:
             - dev
 
 jobs:
-    test_CLI:
+    cli-tests:
         runs-on: [self-hosted, linux]
 
         permissions:
@@ -27,11 +27,6 @@ jobs:
 
             - name: Clear previous volumes
               run: docker compose -f docker-compose.testing.yml down -v
-
-            - name: Start fake-oauth service
-              run: |
-                  # Start fake-oauth separately since it's not in testing compose
-                  docker compose up -d fake-oauth
 
             - name: Launch Docker stack
               run: |

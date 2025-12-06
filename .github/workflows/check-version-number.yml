@@ -8,7 +8,6 @@ on:
 
 jobs:
     check-version-number:
-        name: check-version-number
         runs-on: ubuntu-latest
 
         steps:

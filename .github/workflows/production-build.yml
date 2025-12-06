@@ -5,7 +5,7 @@ on:
         branches: ['main']
 
 jobs:
-    GrandTourBuild:
+    production-build:
         environment: 'BuildEnv'
         runs-on: ubuntu-latest
 

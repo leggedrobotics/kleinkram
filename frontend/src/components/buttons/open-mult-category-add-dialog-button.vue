@@ -18,10 +18,10 @@ import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 
 const $q = useQuasar();
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 const { mission, files } = defineProps<{
     mission: MissionWithFilesDto;
     files: FileWithTopicDto[];
@@ -29,7 +29,6 @@ const { mission, files } = defineProps<{
 const { data: permissions } = usePermissionsQuery();
 
 const canModify = computed(() =>
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     canModifyMission(mission.uuid, mission.project.uuid, permissions.value),
 );
 
@@ -39,9 +38,8 @@ const addCategories = (): void => {
     $q.dialog({
         component: AddMultiCategory,
         componentProps: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             projectUuid: mission.project.uuid,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+
             missionUuid: mission.uuid,
             files: files,
         },
