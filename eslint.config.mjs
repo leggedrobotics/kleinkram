@@ -24,6 +24,7 @@ export default tseslint.config(
             '**/generated/**',
             '**/*.js',
             '**/*.d.ts',
+            'backend/migration/**',
         ],
     },
 
