@@ -11,7 +11,10 @@ jobs:
     lint:
         runs-on: [self-hosted, linux]
         steps:
-            - uses: actions/checkout@v6
-            - name: Install python3-venv
-              run: sudo apt update && sudo apt install -y python3.10-venv
-            - uses: psf/black@stable
+            - uses: actions/checkout@v4
+            - name: Install and run Black
+              run: |
+                  sudo apt update
+                  sudo apt install -y python3-pip
+                  python3 -m pip install black --break-system-packages
+                  black --check .

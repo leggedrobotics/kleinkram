@@ -18,17 +18,18 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
+            - uses: pnpm/action-setup@v4
+              with:
+                  run_install: false
+
             - name: Use Node.js
               uses: actions/setup-node@v6
               with:
                   node-version: '22'
-                  package-manager-cache: false
-
-            - name: Install yarn
-              run: npm install -g yarn
+                  cache: 'pnpm'
 
             - name: install dependencies
-              run: yarn install --immutable
+              run: pnpm install --frozen-lockfile
 
             - name: Set up Python
               uses: actions/setup-python@v5
@@ -64,13 +65,13 @@ jobs:
                   echo "Endpoints found. Running tests..."
 
                   # This will now cause the step to fail immediately if tests fail.
-                  yarn test --ci
+                  pnpm test --ci
 
                   echo "Tests passed successfully."
 
             - name: Clean up
               if: always()
-              run: npm uninstall -g yarn
+              run: echo "Cleanup done"
 
             - name: Stop Docker stack
               if: always()

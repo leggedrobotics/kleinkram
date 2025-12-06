@@ -18,4 +18,3 @@ packages/*/dist/
 
 # Lockfiles for npm and pnpm, we are using yarn
 **/package-lock.json
-**/pnpm-lock.yaml
