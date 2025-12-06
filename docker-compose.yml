@@ -412,6 +412,7 @@ services:
             - vitepress_dist:/app/src/.vitepress/dist
             - node_modules:/app/src/node_modules
             - ./backend/docs:/app/src/docs/
+            - ./tsconfig.base.json:/app/tsconfig.base.json
 
     artifactUploader:
         container_name: kleinkram-artifact-uploader
