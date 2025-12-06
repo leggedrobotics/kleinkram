@@ -20,7 +20,7 @@ jobs:
               name: Build the Docker compose
               run: docker compose -f docker-compose.prod.yml build
               env:
-                  QUASAR_ENDPOINT: ${{ vars.QUASAR_ENDPOINT }}
+                  BACKEND_URL: ${{ vars.BACKEND_URL }}
             - working-directory: .
               name: push the docker -f docker-compose.prod.yml image
               run: docker compose -f docker-compose.prod.yml push

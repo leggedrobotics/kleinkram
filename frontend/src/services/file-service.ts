@@ -306,7 +306,7 @@ async function _createFileAction(
         (item) => item.virtualName,
     ) as unknown as Record<string, Record<string, string>>;
 
-    const api = ENV.ENDPOINT;
+    const api = ENV.BACKEND_URL;
     let minioEndpoint = api.replace('api', 'minio');
     if (api === 'http://localhost:3000') {
         minioEndpoint = 'http://localhost:9000';

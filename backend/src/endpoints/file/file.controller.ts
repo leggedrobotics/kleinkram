@@ -199,19 +199,18 @@ export class FileController {
         )
         expires: boolean,
 
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         @QueryBoolean(
             'preview_only',
             'Whether the download link is for preview only (true) or full download (false)',
         )
-        preview_only = false,
+        previewOnly = false,
         @AddUser() auth: AuthHeader,
     ): Promise<string> {
         logger.debug(`download ${uuid}: expires=${expires.toString()}`);
         return this.fileService.generateDownload(
             uuid,
             expires,
-            preview_only,
+            previewOnly,
             auth.user,
             auth.apiKey?.action,
         );

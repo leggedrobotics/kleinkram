@@ -30,7 +30,7 @@ export class FakeOauthStrategy extends PassportStrategy(
             // this is used for local development and testing purposes only
             clientID: 'some-random-string-it-does-not-matter',
             clientSecret: 'some-random-string-it-does-not-matter',
-            callbackURL: `${env.ENDPOINT}/auth/fake-oauth/callback`,
+            callbackURL: `${env.BACKEND_URL}/auth/fake-oauth/callback`,
             scope: [],
         } as StrategyOptions);
     }

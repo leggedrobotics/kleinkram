@@ -72,10 +72,10 @@ export default {
      * @returns Url of graphql backend endpoint
      * @example http://localhost:3000/graphql
      */
-    get ENDPOINT(): string {
+    get BACKEND_URL(): string {
         return asString(
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            import.meta.env.VITE_QUASAR_ENDPOINT ?? 'http://localhost:3000',
+            import.meta.env.BACKEND_URL ?? 'http://localhost:3000',
         );
     },
 

@@ -97,7 +97,13 @@ export default defineConfig((/* ctx */) => {
             // polyfillModulePreload: true,
             // distDir
 
-            extendViteConf(viteConfig) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            extendViteConf(viteConfig: any) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/prefer-module
+                viteConfig.envDir = path.resolve(__dirname, '..');
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                viteConfig.envPrefix = ['VITE_', 'BACKEND_URL'];
+
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 viteConfig.optimizeDeps = viteConfig.optimizeDeps ?? {};
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access

@@ -53,7 +53,7 @@ export function logout() {
 }
 
 export const login = (provider: string): void => {
-    globalThis.location.href = `${ENV.ENDPOINT}/auth/${provider}`;
+    globalThis.location.href = `${ENV.BACKEND_URL}/auth/${provider}`;
 };
 
 export const getAvailableProviders =

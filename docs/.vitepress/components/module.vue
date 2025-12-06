@@ -21,10 +21,12 @@ import Endpoint from './endpoint.vue';
 const props = defineProps<{
     module: string;
 }>();
-const swaggerSpec = ref(null);
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const swaggerSpec = ref<any>(null);
 
-const filteredSpec = ref(null);
-const schema = ref(null);
+const filteredSpec = ref<any>(null);
+const schema = ref<any>(null);
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // Function to filter the OpenAPI spec by path prefix
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,9 +50,10 @@ function filterSpecByPath(spec: any, pathPrefix: string) {
 }
 
 watch(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     () => swaggerSpec.value,
     (newValue) => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
         if (newValue) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             filteredSpec.value = filterSpecByPath(
@@ -64,19 +67,14 @@ watch(
 // Fetch the swagger-spec.json at runtime
 onMounted(async () => {
     try {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!swaggerSpec.value) {
-            let endpoint = 'http://localhost:3000/swagger/json';
 
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const mode = import.meta.env.VITE_MODE;
-            if (mode === 'production') {
-                endpoint =
-                    'https://api.datasets.leggedrobotics.com/swagger/json';
-            } else if (mode === 'staging') {
-                endpoint =
-                    'https://api.datasets.dev.leggedrobotics.com/swagger/json';
-            }
+        if (!swaggerSpec.value) {
+
+
+            // @ts-ignore
+            const baseUrl = (import.meta.env.BACKEND_URL as string | undefined) ?? 'http://localhost:3000';
+            const endpoint = `${baseUrl}/swagger/json`;
+
             // eslint-disable-next-line no-console
             console.log('Fetching swagger spec from:', endpoint);
 

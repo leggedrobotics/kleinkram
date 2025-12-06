@@ -63,7 +63,6 @@
         "systeminformation": "^5.27.11",
         "typeorm": "^0.3.27",
         "util": "^0.12.5",
-        "webpack-node-externals": "^3.0.0",
         "winston": "3.18.3",
         "winston-loki": "^6.1.3"
     },

@@ -13,9 +13,8 @@ export class CategoryEntity extends BaseEntity {
     @ManyToOne(
         () =>
             // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/project/project.entity')
-                .ProjectEntity as typeof ProjectEntity,
+                .ProjectEntity as typeof ProjectEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         (project) => project.categories,
         {
             onDelete: 'CASCADE',
@@ -26,9 +25,8 @@ export class CategoryEntity extends BaseEntity {
     @ManyToMany(
         () =>
             // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/file/file.entity')
-                .FileEntity as typeof FileEntity,
+                .FileEntity as typeof FileEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         (file) => file.categories,
     )
     files?: FileEntity[];
@@ -36,9 +34,8 @@ export class CategoryEntity extends BaseEntity {
     @ManyToOne(
         () =>
             // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/user/user.entity')
-                .UserEntity as typeof UserEntity,
+                .UserEntity as typeof UserEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         (user) => user.categories,
     )
     creator?: UserEntity;

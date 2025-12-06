@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
     base:
         image: kleinkram-base
@@ -9,7 +7,7 @@ services:
 
     api-server:
         image: rslethz/kleinkram:api-server-latest
-        container_name: kleinkram-api-server
+        container_name: kleinkram-api-server-prod
 
         build:
             context: .
@@ -29,6 +27,8 @@ services:
             SEED: 'false'
             DEVBUILD: 'false'
             REDIS_HOST: redis
+            DB_HOST: postgres
+            DATA_SOURCE_NAME: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE}?sslmode=disable
 
         depends_on:
             - postgres
@@ -36,7 +36,7 @@ services:
 
     postgres:
         image: postgres:17
-        container_name: kleinkram-postgres
+        container_name: kleinkram-postgres-prod
 
         ports:
             - '5432:5432'
@@ -54,7 +54,7 @@ services:
 
     minio:
         image: minio/minio
-        container_name: kleinkram-minio
+        container_name: kleinkram-minio-prod
 
         volumes:
             - minio_data:/data
@@ -81,14 +81,14 @@ services:
 
     frontend:
         image: rslethz/kleinkram:frontend-latest
-        container_name: kleinkram-frontend
+        container_name: kleinkram-frontend-prod
 
         build:
             context: .
             dockerfile: docker/frontend.Dockerfile
             target: production
             args:
-                - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
+                - BACKEND_URL=${BACKEND_URL}
 
         ports:
             - '8003:80'
@@ -98,7 +98,7 @@ services:
 
     redis:
         image: redis:latest
-        container_name: kleinkram-redis
+        container_name: kleinkram-redis-prod
         ports:
             - '6379:6379'
         networks:
@@ -106,13 +106,18 @@ services:
 
     queue-consumer:
         image: rslethz/kleinkram:queue-consumer-latest
-        container_name: kleinkram-queue-consumer
+        container_name: kleinkram-queue-consumer-prod
         build:
             context: .
             dockerfile: docker/queue-consumer.Dockerfile
             target: production
         env_file:
             - .env
+        environment:
+            DB_HOST: postgres
+            DATA_SOURCE_NAME: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE}?sslmode=disable
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
         networks:
             - privatenet
         depends_on:
@@ -127,7 +132,7 @@ services:
 
     prometheus:
         image: prom/prometheus
-        container_name: kleinkram-prometheus
+        container_name: kleinkram-prometheus-prod
         volumes:
             - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
             - logging-prometheus-storage:/prometheus
@@ -145,7 +150,7 @@ services:
     tempo:
         user: '0:0'
         image: grafana/tempo:latest
-        container_name: kleinkram-tempo
+        container_name: kleinkram-tempo-prod
         command: ['-config.file=/etc/tempo/tempo.yml']
         volumes:
             - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
@@ -159,11 +164,12 @@ services:
 
     loki:
         image: grafana/loki
-        container_name: kleinkram-loki
+        container_name: kleinkram-loki-prod
         ports:
             - '3100:3100'
         command:
             - --config.file=/mnt/config/loki-config.yml
+            - -log.level=error
         volumes:
             - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
         networks:
@@ -171,13 +177,13 @@ services:
 
     grafana:
         image: grafana/grafana
-        container_name: kleinkram-grafana
+        container_name: kleinkram-grafana-prod
         volumes:
             - logging-grafana-storage:/var/lib/grafana
             - ./observability/grafana/provisioning:/etc/grafana/provisioning
 
         environment:
-            - GF_LOG_LEVEL=debug
+            - GF_LOG_LEVEL=critical
         ports:
             - '9050:3000' # localhost:9050 for accessing grafana
         networks:
@@ -185,7 +191,7 @@ services:
 
     documentation:
         image: rslethz/kleinkram:docs-latest
-        container_name: kleinkram-documentation
+        container_name: kleinkram-documentation-prod
         build:
             context: .
             dockerfile: docker/docs.Dockerfile

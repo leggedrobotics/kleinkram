@@ -13,22 +13,24 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+                  run_install: false
+
             - name: Use Node.js
               uses: actions/setup-node@v6
               with:
                   node-version: '22'
-                  package-manager-cache: false
+                  cache: 'pnpm'
 
             - name: Generate Build Info
               run: bash create_build_info.sh
               working-directory: frontend
 
-            - name: Install yarn
-              run: npm install -g yarn
-
             # for eslint we may need to install the dependencies
             - name: Install dependencies
-              run: yarn install --immutable
+              run: pnpm install --frozen-lockfile
 
             - name: Set up Python
               uses: actions/setup-python@v5
@@ -42,17 +44,14 @@ jobs:
               run: pre-commit run --all-files --show-diff-on-failure
 
             - name: Prepare Quasar
-              run: yarn quasar prepare
+              run: pnpm exec quasar prepare
               working-directory: frontend
 
-            - name: Run ESLint
-              run: |
-                  if ! yarn eslint-full:check; then
-                      echo "ESLint check failed. Run 'yarn eslint-full' locally to reproduce."
-                      exit 1 # Explicitly fail the step
-                  fi
+            - name: Type Check
+              run: pnpm run type-check
 
-            # Uninstall when you're done
-            - name: Clean up
-              if: always()
-              run: npm uninstall -g yarn
+            - name: Lint Check
+              run: pnpm run lint:check
+
+            - name: Run Prettier Check
+              run: pnpm run prettier:check

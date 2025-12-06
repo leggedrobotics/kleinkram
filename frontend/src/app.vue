@@ -19,7 +19,7 @@ const backendReady = ref(false);
 
 const checkBackend = async () => {
     try {
-        const response = await fetch(`${environment.ENDPOINT}/api/health`);
+        const response = await fetch(`${environment.BACKEND_URL}/api/health`);
         if (response.ok) {
             backendReady.value = true;
         } else {

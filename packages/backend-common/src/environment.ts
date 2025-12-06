@@ -1,12 +1,13 @@
 /**
  * Ensures extracted environment variable is a string
  *
- * @param value - extracted environment variable
+ * @param key - environment variable name
  * @returns environment variable as string
  */
-function asString(value: string | undefined): string {
+function asString(key: string): string {
+    const value = process.env[key];
     if (value === undefined) {
-        const message = 'The environment variable cannot be "undefined".';
+        const message = `The environment variable "${key}" cannot be "undefined".`;
         throw new Error(message);
     }
 
@@ -16,15 +17,15 @@ function asString(value: string | undefined): string {
 /**
  * Ensures extracted environment variable is a number
  *
- * @param value - extracted environment variable
+ * @param key - environment variable name
  * @returns environment variable as integer
  */
-function asNumber(value: string | undefined): number {
-    const stringValue = asString(value);
+function asNumber(key: string): number {
+    const stringValue = asString(key);
     const numberValue = Number.parseFloat(stringValue);
 
     if (Number.isNaN(numberValue)) {
-        const message = `The environment variable has to hold a stringified number value - not ${stringValue}`;
+        const message = `The environment variable "${key}" has to hold a stringified number value - not ${stringValue}`;
         throw new Error(message);
     }
 
@@ -34,13 +35,13 @@ function asNumber(value: string | undefined): number {
 /**
  * Ensures extracted environment variable is a boolean
  *
- * @param value - extracted environment variable
+ * @param key - environment variable name
  * @returns environment variable as boolean
  */
-function asBoolean(value: string | undefined): boolean {
-    const stringVariable = asString(value);
+function asBoolean(key: string): boolean {
+    const stringVariable = asString(key);
     if (!(stringVariable === 'true' || stringVariable === 'false')) {
-        const message = `The environment variable has to hold a stringified boolean value - not ${stringVariable}`;
+        const message = `The environment variable "${key}" has to hold a stringified boolean value - not ${stringVariable}`;
         throw new Error(message);
     }
     return stringVariable === 'true';
@@ -49,10 +50,11 @@ function asBoolean(value: string | undefined): boolean {
 /**
  * Returns environment variable as string or undefined if not set
  *
- * @param value - extracted environment variable
+ * @param key - environment variable name
  * @returns environment variable as string or undefined
  */
-function asOptionalString(value: string | undefined): string | undefined {
+function asOptionalString(key: string): string | undefined {
+    const value = process.env[key];
     if (value === undefined || value === '') {
         return undefined;
     }
@@ -64,44 +66,44 @@ export default {
      * @returns database name
      */
     get DB_DATABASE(): string {
-        return asString(process.env.DB_DATABASE);
+        return asString('DB_DATABASE');
     },
     /**
      * @returns database admin user
      */
     get DB_USER(): string {
-        return asString(process.env.DB_USER);
+        return asString('DB_USER');
     },
     /**
      * @returns database admin password
      */
     get DB_PASSWORD(): string {
-        return asString(process.env.DB_PASSWORD);
+        return asString('DB_PASSWORD');
     },
     /**
      * @returns database port
      */
     get DB_PORT(): number {
-        return asNumber(process.env.DB_PORT);
+        return asNumber('DB_PORT');
     },
     /**
      * @returns database host name
      * @example database
      */
     get DB_HOST(): string {
-        return asString(process.env.DB_HOST);
+        return asString('DB_HOST');
     },
     get SEED(): boolean {
         if (process.env.SEED === undefined) {
             return false;
         }
-        return asBoolean(process.env.SEED);
+        return asBoolean('SEED');
     },
     /**
      * @returns whether application runs in development mode
      */
     get DEV(): boolean {
-        return asBoolean(process.env.DEV);
+        return asBoolean('DEV');
     },
 
     /**
@@ -109,90 +111,86 @@ export default {
      * @example dist/entities/*.entities.js
      */
     get ENTITIES(): string {
-        return asString(process.env.ENTITIES);
+        return asString('ENTITIES');
     },
     /**
      * @returns backend port for lambda functions
      */
     get SERVER_PORT(): number {
-        return asNumber(process.env.SERVER_PORT);
+        return asNumber('SERVER_PORT');
     },
 
     get MINIO_ACCESS_KEY(): string {
-        return asString(process.env.MINIO_ACCESS_KEY);
+        return asString('MINIO_ACCESS_KEY');
     },
 
     get MINIO_SECRET_KEY(): string {
-        return asString(process.env.MINIO_SECRET_KEY);
+        return asString('MINIO_SECRET_KEY');
     },
 
     get MINIO_DATA_BUCKET_NAME(): string {
-        return asString(process.env.MINIO_DATA_BUCKET_NAME);
+        return asString('MINIO_DATA_BUCKET_NAME');
     },
     get MINIO_DB_BUCKET_NAME(): string {
-        return asString(process.env.MINIO_DB_BUCKET_NAME);
+        return asString('MINIO_DB_BUCKET_NAME');
     },
     get MINIO_ENDPOINT(): string {
-        return asString(process.env.MINIO_ENDPOINT);
+        return asString('MINIO_ENDPOINT');
     },
 
     get MINIO_USER(): string {
-        return asString(process.env.MINIO_USER);
+        return asString('MINIO_USER');
     },
 
     get MINIO_PASSWORD(): string {
-        return asString(process.env.MINIO_PASSWORD);
+        return asString('MINIO_PASSWORD');
     },
 
     get GOOGLE_CLIENT_ID(): string | undefined {
-        return asOptionalString(process.env.GOOGLE_CLIENT_ID);
+        return asOptionalString('GOOGLE_CLIENT_ID');
     },
     get GOOGLE_CLIENT_SECRET(): string | undefined {
-        return asOptionalString(process.env.GOOGLE_CLIENT_SECRET);
+        return asOptionalString('GOOGLE_CLIENT_SECRET');
     },
 
     get GITHUB_CLIENT_ID(): string | undefined {
-        return asOptionalString(process.env.GITHUB_CLIENT_ID);
+        return asOptionalString('GITHUB_CLIENT_ID');
     },
 
     get GITHUB_CLIENT_SECRET(): string | undefined {
-        return asOptionalString(process.env.GITHUB_CLIENT_SECRET);
+        return asOptionalString('GITHUB_CLIENT_SECRET');
     },
 
     get JWT_SECRET(): string {
-        return asString(process.env.JWT_SECRET);
-    },
-
-    get ENDPOINT(): string {
-        return asString(process.env.QUASAR_ENDPOINT);
+        return asString('JWT_SECRET');
     },
 
     get FRONTEND_URL(): string {
-        return asString(process.env.FRONTEND_URL);
+        return asString('FRONTEND_URL');
     },
 
     get BACKEND_URL(): string {
-        return asString(process.env.BACKEND_URL);
+        return asString('BACKEND_URL');
     },
 
     get GOOGLE_KEY_FILE(): string {
-        return asString(process.env.GOOGLE_KEY_FILE);
+        return asString('GOOGLE_KEY_FILE');
     },
 
     get ARTIFACTS_UPLOADER_IMAGE(): string {
-        return asString(process.env.ARTIFACTS_UPLOADER_IMAGE);
+        return asString('ARTIFACTS_UPLOADER_IMAGE');
     },
 
     get MINIO_ARTIFACTS_BUCKET_NAME(): string {
-        return asString(process.env.MINIO_ARTIFACTS_BUCKET_NAME);
+        return asString('MINIO_ARTIFACTS_BUCKET_NAME');
     },
 
     get DOCS_URL(): string {
-        return asString(process.env.DOCS_URL);
+        return asString('DOCS_URL');
     },
 
     get VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT(): boolean {
-        return asBoolean(process.env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT);
+        return asBoolean('VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT');
     },
 
     /**

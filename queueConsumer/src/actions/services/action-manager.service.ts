@@ -111,7 +111,7 @@ export class ActionManagerService {
                 KLEINKRAM_PROJECT_UUID: action.mission.project.uuid,
                 KLEINKRAM_MISSION_UUID: action.mission.uuid,
                 KLEINKRAM_ACTION_UUID: action.uuid,
-                KLEINKRAM_API_ENDPOINT: environment.ENDPOINT,
+                KLEINKRAM_API_ENDPOINT: environment.BACKEND_URL,
                 KLEINKRAM_S3_ENDPOINT: `https://${environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
             };
             const needsGpu = action.template.gpuMemory > 0;

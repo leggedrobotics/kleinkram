@@ -14,9 +14,8 @@ export class MissionAccessEntity extends BaseEntity {
     @ManyToOne(
         () =>
             // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/auth/accessgroup.entity')
-                .AccessGroupEntity as typeof AccessGroupEntity,
+                .AccessGroupEntity as typeof AccessGroupEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         (group) => group.project_accesses,
         {
             nullable: false,
@@ -27,9 +26,8 @@ export class MissionAccessEntity extends BaseEntity {
     @ManyToOne(
         () =>
             // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/mission/mission.entity')
-                .MissionEntity as typeof MissionEntity,
+                .MissionEntity as typeof MissionEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         (mission) => mission.mission_accesses,
         {
             nullable: false,

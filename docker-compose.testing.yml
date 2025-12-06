@@ -1,7 +1,7 @@
 services:
     action_test_file_hash:
         image: rslethz/kleinkram_actions:file-hash-latest
-        container_name: kleinkram-action-test-file-hash
+        container_name: kleinkram-action-test-file-hash-test
         build:
             context: ./
             dockerfile: backend/tests/actions/file-hash/Dockerfile
@@ -9,7 +9,7 @@ services:
 
     api-server:
         image: rslethz/kleinkram:api-server-latest
-        container_name: kleinkram-api-server
+        container_name: kleinkram-api-server-test
         build:
             context: .
             dockerfile: ./backend/prod.Dockerfile
@@ -30,7 +30,7 @@ services:
 
     database:
         image: postgres:17
-        container_name: kleinkram-postgres
+        container_name: kleinkram-postgres-test
         ports:
             - '5432:5432'
         networks:
@@ -44,7 +44,7 @@ services:
 
     minio:
         image: minio/minio
-        container_name: kleinkram-minio
+        container_name: kleinkram-minio-test
         volumes:
             - minio_data_test:/data
             - ./docker/minio-entrypoint.sh:/docker-entrypoint.sh:ro
@@ -69,13 +69,13 @@ services:
 
     frontend:
         image: rslethz/kleinkram:frontend-dev
-        container_name: kleinkram-frontend
+        container_name: kleinkram-frontend-test
 
         build:
             context: .
             dockerfile: ./frontend/Dockerfile
             args:
-                - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
+                - BACKEND_URL=${BACKEND_URL}
         ports:
             - '8003:8003'
 
@@ -87,7 +87,7 @@ services:
 
     redis:
         image: redis:latest
-        container_name: kleinkram-redis
+        container_name: kleinkram-redis-test
         ports:
             - '6379:6379'
         networks:
@@ -95,7 +95,7 @@ services:
 
     queue-consumer:
         image: rslethz/kleinkram:queue-consumer-latest
-        container_name: kleinkram-queue-consumer
+        container_name: kleinkram-queue-consumer-test
         hostname: 'DO_NOT_CHANGE'
         build:
             context: .
@@ -113,7 +113,7 @@ services:
 
     prometheus:
         image: prom/prometheus
-        container_name: kleinkram-prometheus
+        container_name: kleinkram-prometheus-test
         volumes:
             - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
             - logging-prometheus-storage:/prometheus
@@ -132,7 +132,7 @@ services:
     tempo:
         user: '0:0'
         image: grafana/tempo:latest
-        container_name: kleinkram-tempo
+        container_name: kleinkram-tempo-test
         command: ['-config.file=/etc/tempo/tempo.yml']
         volumes:
             - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
@@ -147,7 +147,7 @@ services:
 
     loki:
         image: grafana/loki
-        container_name: kleinkram-loki
+        container_name: kleinkram-loki-test
         ports:
             - '3100:3100'
         command:

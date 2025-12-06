@@ -7,7 +7,7 @@
     "license": "MIT",
     "private": true,
     "scripts": {
-        "start": "docker compose up --build -d",
+        "start": "docker compose build base && docker compose up --build -d",
         "start:infra": "docker compose up -d database minio redis",
         "stop:infra": "docker compose stop database minio redis",
         "dev": "pnpm start:infra && dotenv -e .env -- pnpm --parallel --filter \"./backend\" --filter \"./frontend\" --filter \"./queueConsumer\" run start:dev",
@@ -18,7 +18,7 @@
         "eslint:check": "NODE_OPTIONS='--max-old-space-size=8192' pnpm run type-check && pnpm run lint:check",
         "tsc:check": "pnpm run type-check",
         "count-lint-ignores": "./scripts/count-lint-ignores.sh",
-        "prettier": "prettier --write .",
+        "prettier": "prettier --write --cache --experimental-cli .",
         "prettier:check": "prettier --check .",
         "bump": "grunt bumpVersion",
         "bump:patch": "grunt bumpVersion:patch",

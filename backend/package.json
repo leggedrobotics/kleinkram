@@ -44,8 +44,6 @@
         "@opentelemetry/instrumentation-winston": "^0.53.0",
         "@opentelemetry/sdk-node": "^0.208.0",
         "@opentelemetry/sdk-trace-base": "^2.0.0",
-        "@swc/core": "^1.13.5",
-        "@swc/jest": "^0.2.39",
         "@willsoto/nestjs-prometheus": "^6.0.2",
         "aws4": "^1.13.2",
         "axios": "^1.13.2",
@@ -75,7 +73,6 @@
         "uuid": "^13.0.0",
         "vue": "^3.5.21",
         "vue-json-pretty": "^2.6.0",
-        "webpack": "^5.102.1",
         "winston": "^3.18.3",
         "winston-loki": "^6.0.7"
     },
@@ -115,6 +112,9 @@
         "ts-node": "^10.9.1",
         "tsconfig-paths": "^4.2.0",
         "typescript": "5.8.3",
-        "webpack-node-externals": "^3.0.0"
+        "webpack-node-externals": "^3.0.0",
+        "@swc/core": "^1.13.5",
+        "@swc/jest": "^0.2.39",
+        "webpack": "^5.102.1"
     }
 }

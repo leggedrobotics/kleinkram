@@ -11,6 +11,10 @@ export default withMermaid({
     mermaidPlugin: {
         class: 'mermaid',
     },
+    vite: {
+        envDir: '..',
+        envPrefix: ['VITE_', 'BACKEND_URL'],
+    },
     head: [
         [
             'link',
@@ -224,6 +228,10 @@ export default withMermaid({
                         {
                             text: 'Cronjobs',
                             link: '/development/cron/CronJobs',
+                        },
+                        {
+                            text: 'Environment Variables',
+                            link: '/development/environment-variables.md',
                         },
                         {
                             text: 'GitHub Actions',

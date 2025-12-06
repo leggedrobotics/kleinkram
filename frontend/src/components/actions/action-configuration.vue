@@ -247,6 +247,7 @@
 </template>
 
 <script setup lang="ts">
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
@@ -373,7 +374,6 @@ watch(
     () => selectedAccessRights.value,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     (newValue_) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         editingTemplate.value.accessRights = newValue_.value;
     },
 );
@@ -431,7 +431,6 @@ async function saveAsTemplate(): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const payload = { ...editingTemplate.value };
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (isModified.value && editingTemplate.value.uuid) {
             // Update Existing
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -457,7 +456,7 @@ async function saveAsTemplate(): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         Notify.create({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             message: `Error: ${error.response?.data?.message ?? 'Unknown'}`,
             color: 'negative',
         });
@@ -481,7 +480,7 @@ async function submitAnalysis(): Promise<void> {
     const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
     if (
         dockerhubNamespace &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/restrict-template-expressions
         !editingTemplate.value.imageName.startsWith(`${dockerhubNamespace}`)
     ) {
         Notify.create({
@@ -498,11 +497,10 @@ async function submitAnalysis(): Promise<void> {
         let template = editingTemplate.value;
 
         // We reuse the mutation logic, but we must await it here
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
         if (isModified.value && editingTemplate.value.uuid) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             template = await updateTemplate(editingTemplate.value);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         } else if (!editingTemplate.value.uuid) {
             template = await createTemplate(
                 editingTemplate.value as CreateTemplateDto,
@@ -516,7 +514,7 @@ async function submitAnalysis(): Promise<void> {
 
         // 3. Execution Logic (Using new composable)
         await runAction({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             templateUUID: template.uuid,
             missionUUID: hasMissionUUIDs.value
                 ? undefined
@@ -531,7 +529,7 @@ async function submitAnalysis(): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         Notify.create({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             message: `Error: ${error.message ?? error.response?.data?.message ?? 'Unknown'}`,
             color: 'negative',
         });
@@ -546,26 +544,15 @@ const isModified = computed(() => {
     const template = editingTemplate.value;
 
     return !(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        (
-            template.name === t.name &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            template.imageName === t.imageName &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            template.command === t.command &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            template.gpuMemory === t.gpuMemory &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            template.cpuMemory === t.cpuMemory &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            template.cpuCores === t.cpuCores &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            template.maxRuntime === t.maxRuntime &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            template.entrypoint === t.entrypoint &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            template.accessRights === t.accessRights
-        )
+        template.name === t.name &&
+        template.imageName === t.imageName &&
+        template.command === t.command &&
+        template.gpuMemory === t.gpuMemory &&
+        template.cpuMemory === t.cpuMemory &&
+        template.cpuCores === t.cpuCores &&
+        template.maxRuntime === t.maxRuntime &&
+        template.entrypoint === t.entrypoint &&
+        template.accessRights === t.accessRights
     );
 });
 
@@ -576,7 +563,6 @@ function newValue(value: string, done: any): void {
         editingTemplate.value = structuredClone(existing);
         selectedTemplate.value = existing;
     } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         editingTemplate.value.name = value;
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -604,10 +590,10 @@ function selectTemplate(template: ActionTemplateDto): void {
 
 function missionSelected(mission: MissionWithFilesDto): void {
     if (hasMissionUUIDs.value) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         addedMissions.value.push(mission.uuid);
     } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         handler.value.setMissionUUID(mission.uuid);
     }
 }

@@ -36,7 +36,7 @@ const handleDates = <T extends JSON | null | undefined>(data: T): T | Date => {
 };
 
 const axiosInstance = axios.create({
-    baseURL: ENV.ENDPOINT,
+    baseURL: ENV.BACKEND_URL,
     withCredentials: true,
     timeout: 1000 * 60 * 30,
 });
@@ -88,7 +88,7 @@ const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
     originalRequest.isRetryWithRefreshedToken = true;
 
     await axios.post(
-        `${ENV.ENDPOINT}/auth/refresh-token`,
+        `${ENV.BACKEND_URL}/auth/refresh-token`,
         {},
         { withCredentials: true },
     );

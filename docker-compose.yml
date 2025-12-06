@@ -162,7 +162,7 @@ services:
             dockerfile: docker/frontend.Dockerfile
             target: development
             args:
-                - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
+                - BACKEND_URL=${BACKEND_URL}
                 - USER_ID=${USER_ID:-1000}
                 - GROUP_ID=${GROUP_ID:-1000}
 
@@ -178,7 +178,7 @@ services:
             - .env
 
         environment:
-            VITE_QUASAR_ENDPOINT: ${QUASAR_ENDPOINT}
+            BACKEND_URL: ${BACKEND_URL}
 
         develop:
             watch:

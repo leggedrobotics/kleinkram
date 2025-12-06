@@ -150,7 +150,7 @@ More info about actions can be found in the [actions](/usage/actions/usage) sect
 
 ### Configuration
 
-The application can be configured using environment variables.
+The application can be configured using environment variables. For a complete list of available variables, see usage [Environment Variables](./environment-variables.md).
 
 - `VITE_DOCKER_HUB_NAMESPACE`: This variable restricts which Docker Hub namespaces can be used for actions. If set, only images starting with this namespace (e.g., `my-org/`) will be allowed. If left empty, any image can be used. This is important for security in production environments.
 

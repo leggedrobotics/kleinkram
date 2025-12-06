@@ -19,9 +19,8 @@ export class ApikeyEntity extends BaseEntity {
     @ManyToOne(
         () =>
             // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/mission/mission.entity')
-                .MissionEntity as typeof MissionEntity,
+                .MissionEntity as typeof MissionEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         (mission) => mission.api_keys,
         {
             onDelete: 'CASCADE',
@@ -33,9 +32,8 @@ export class ApikeyEntity extends BaseEntity {
     @OneToOne(
         () =>
             // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/action/action.entity')
-                .ActionEntity as typeof ActionEntity,
+                .ActionEntity as typeof ActionEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         (action) => action.key,
         {
             onDelete: 'CASCADE',
@@ -47,9 +45,8 @@ export class ApikeyEntity extends BaseEntity {
     @ManyToOne(
         () =>
             // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             require('@backend-common/entities/user/user.entity')
-                .UserEntity as typeof UserEntity,
+                .UserEntity as typeof UserEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         (user) => user.api_keys,
         {
             onDelete: 'CASCADE',
