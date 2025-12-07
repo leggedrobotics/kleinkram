@@ -8,21 +8,54 @@
         />
 
         <label>Upload File from Device</label>
-        <q-file
-            v-model="files"
-            outlined
-            multiple
-            :accept="acceptedFileTypes"
-            style="min-width: 300px"
+        <div
+            class="drop-zone"
+            :class="{ 'drop-active': isDragging }"
+            @dragover.prevent="onDragOver"
+            @dragleave.prevent="onDragLeave"
+            @drop.prevent="onDrop"
         >
-            <template #prepend>
-                <q-icon name="sym_o_attach_file" />
-            </template>
+            <div
+                v-if="files.length === 0"
+                class="column items-center justify-center full-height"
+            >
+                <q-btn
+                    unelevated
+                    color="grey-3"
+                    text-color="black"
+                    label="Add Files"
+                    icon-right="sym_o_add"
+                    class="q-mb-sm"
+                    @click="triggerFileInput"
+                />
+                <div class="text-grey-5">Accepts .bag or .mcap</div>
+            </div>
+            <div v-else class="column justify-center q-pa-md full-height">
+                <div class="text-h6 q-mb-sm">
+                    {{ files.length }} file{{ files.length > 1 ? 's' : '' }}
+                    selected
+                </div>
+                <div class="row q-gutter-sm">
+                    <q-chip
+                        v-for="(file, index) in files"
+                        :key="index"
+                        removable
+                        @remove="removeFile(index)"
+                    >
+                        {{ file.name }}
+                    </q-chip>
+                </div>
+            </div>
+        </div>
 
-            <template #append>
-                <q-icon name="sym_o_cancel" @click="resetFiles" />
-            </template>
-        </q-file>
+        <input
+            ref="fileInputRef"
+            type="file"
+            multiple
+            style="display: none"
+            :accept="acceptedFileTypes"
+            @change="handleFileChange"
+        />
 
         <br />
 
@@ -138,10 +171,78 @@ defineExpose({
     createFileAction: createFile,
 });
 
+const isDragging = ref(false);
+const fileInputRef = ref<HTMLInputElement>();
+
+const triggerFileInput = () => {
+    fileInputRef.value?.click();
+};
+
+const handleFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files) {
+        addFiles(target.files);
+    }
+    // Reset to allow re-selection
+    target.value = '';
+};
+
+const onDragOver = () => {
+    isDragging.value = true;
+};
+
+const onDragLeave = () => {
+    isDragging.value = false;
+};
+
+const onDrop = (event: DragEvent) => {
+    isDragging.value = false;
+    const dt = event.dataTransfer;
+    if (dt && dt.files) {
+        addFiles(dt.files);
+    }
+};
+
+const addFiles = (fileList: FileList) => {
+    const newFiles = Array.from(fileList);
+    // Simple validation could be done here if needed
+    if (newFiles.length > 0) {
+        files.value = [...files.value, ...newFiles];
+    }
+};
+
+const removeFile = (index: number) => {
+    files.value.splice(index, 1);
+};
+
 const resetFiles = (): void => {
     files.value = [];
 };
 </script>
+
+<style scoped>
+.drop-zone {
+    border: 2px dashed #e0e0e0;
+    border-radius: 4px;
+    background-color: #fafafa;
+    min-height: 200px;
+    transition:
+        background-color 0.2s,
+        border-color 0.2s;
+    margin-bottom: 20px;
+    margin-top: 10px;
+}
+
+.drop-zone.drop-active {
+    background-color: #f0f0f0;
+    border-color: #bdbdbd;
+}
+
+.full-height {
+    height: 100%;
+    min-height: 200px;
+}
+</style>
 
 <style lang="scss">
 .q-field__prepend {
