@@ -1,4 +1,7 @@
 import { withMermaid } from 'vitepress-plugin-mermaid';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 export default withMermaid({
     lang: 'en-US',
@@ -14,6 +17,17 @@ export default withMermaid({
     vite: {
         envDir: '..',
         envPrefix: ['VITE_', 'BACKEND_URL'],
+        // force use of esm version of dayjs
+        resolve: {
+            alias: {
+                // legacy alias to force esm version of dayjs for main entry only
+                // using exact match to allow plugins (which are files in root) to resolve correctly
+                '^dayjs$': require.resolve('dayjs/esm/index.js'),
+            },
+        },
+        optimizeDeps: {
+            include: ['mermaid'],
+        },
     },
     head: [
         [
