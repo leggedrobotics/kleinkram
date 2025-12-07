@@ -95,6 +95,7 @@ services:
             - ./backend:/app/backend
             - backend_node_modules:/app/backend/node_modules
             - ./packages:/app/packages
+            - ./cli:/app/cli
             - ./cli/tests/generate_test_data.py:/app/common/cli/tests/generate_test_data.py
 
     database:

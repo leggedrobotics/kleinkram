@@ -10,9 +10,9 @@ export default {
     database: process.env.DB_DATABASE,
     synchronize: false,
     entities: [
-        'entities/**/*.entity{.ts,.js}',
-        'viewEntities/**/*.entity{.ts,.js}',
+        'src/entities/**/*.entity{.ts,.js}',
+        'src/viewEntities/**/*.entity{.ts,.js}',
     ],
-    seeds: ['seeds/**/*.seed{.ts,.js}'],
-    factories: ['factories/**/*.factory{.ts,.js}'],
+    seeds: ['src/seeds/**/*.seed{.ts,.js}'],
+    factories: ['src/factories/**/*.factory{.ts,.js}'],
 };

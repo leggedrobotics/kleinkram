@@ -1,8 +1,14 @@
 FROM kleinkram-base AS development
 
+# Install runtime dependencies for Python (rosbags)
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pip && rm -rf /var/lib/apt/lists/*
+RUN pip3 install rosbags --break-system-packages --no-cache-dir
+USER node
+
 WORKDIR /app/backend
 
-CMD ["pnpm", "start:dev"]
+CMD ["./entrypoint.sh"]
 
 
 FROM node:22-slim AS build
@@ -30,8 +36,10 @@ FROM node:22-slim AS production
 WORKDIR /app
 
 # Install runtime dependencies for Python (rosbags)
+USER root
 RUN apt-get update && apt-get install -y --no-install-recommends python3-pip && rm -rf /var/lib/apt/lists/*
 RUN pip3 install rosbags --break-system-packages --no-cache-dir
+USER node
 
 COPY --from=build /prod/backend ./backend
 COPY --from=build /app/backend/dist ./backend/dist

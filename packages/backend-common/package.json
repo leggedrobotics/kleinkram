@@ -6,7 +6,7 @@
     "license": "MIT",
     "scripts": {
         "build": "tsc -b && tsc-alias -p tsconfig.json",
-        "seed:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm-seeding/dist/cli.js seed"
+        "seed:run": "ts-node --project tsconfig.json -r tsconfig-paths/register $(node -p \"require.resolve('typeorm-seeding/dist/cli.js')\") seed --configName src/ormconfig.ts"
     },
     "exports": {
         ".": {
