@@ -36,11 +36,19 @@ For a detailed list of what is seeded, see [Enable Database Seeding](./getting-s
 
 4. **Open the application**
 
-You can now access the frontend at `http://localhost:8003`.
+Wait until you see a log line that says `kleinkram-api-server | 👍 Finished Seeding`. This indicates that the seeding process has completed successfully and the application is fully started. You can now access the frontend at `http://localhost:8003`.
 
 ::: tip Browser Compatibility
-Make sure to use Chrome or Firefox for the best experience with
-the local development server. There are some known iessues related to Safari when running Kleinkram locally.
+Make sure to use Chrome or Firefox for the best experience with the local development server.
+There are some known iessues related to Safari when running Kleinkram locally.
+:::
+
+::: details Can I Sign-In using GitHub or Google OAuth?
+By default we only offer fake-oauth for local development (this mocks the oauth flow) and allows you to choose between different users with
+different permissions.
+
+If you want to sign-in using GitHub or Google OAuth, you need to set the correspoding env variables in your `.env` file.
+This is however not recommended for local development.
 :::
 
 5. **Configure CLI (Optional)**
