@@ -235,7 +235,7 @@ import ActionConfiguration from 'components/actions/action-configuration.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
-import CreateMissionDialogOpener from 'components/button-wrapper/dilaog-opener-create-mission.vue';
+import CreateMissionDialogOpener from 'components/button-wrapper/dialog-opener-create-mission.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
 import ButtonGroupOverlay from 'components/buttons/button-group-overlay.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
