@@ -45,9 +45,9 @@ const hideTooltip = () => {
 
 .tooltip {
     position: absolute;
-    background-color: #ffffff;
-    color: #000000;
-    outline: black solid 1px;
+    background-color: var(--vp-c-bg);
+    color: var(--vp-c-text-1);
+    outline: var(--vp-c-divider) solid 1px;
     padding: 5px;
     border-radius: 4px;
     font-size: 12px;

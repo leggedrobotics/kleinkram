@@ -68,14 +68,7 @@
 
             <div :class="{ collapsed }" @click="toggleCollapse">
                 <div
-                    style="
-                        background-color: white;
-                        padding: 12px;
-                        border: 1px solid #ddd;
-                        margin-top: 2px;
-                        font-size: 10px;
-                        line-height: 12px;
-                    "
+                    class="json-box"
                 >
                     <vue-json-pretty
                         :deep="2"
@@ -118,14 +111,7 @@
                 @click="toggleCollapse"
             >
                 <div
-                    style="
-                        background-color: white;
-                        padding: 12px;
-                        border: 1px solid #ddd;
-                        margin-top: 2px;
-                        font-size: 10px;
-                        line-height: 12px;
-                    "
+                    class="json-box"
                 >
                     <vue-json-pretty
                         :show-double-quotes="false"
@@ -153,14 +139,7 @@
                 <span>{{ response.type }}</span>
                 <div
                     v-if="schema[response.type]"
-                    style="
-                        background-color: white;
-                        padding: 12px;
-                        border: 1px solid #ddd;
-                        margin-top: 2px;
-                        font-size: 10px;
-                        line-height: 12px;
-                    "
+                    class="json-box"
                 >
                     <vue-json-pretty
                         :show-double-quotes="false"
@@ -392,15 +371,15 @@ const hasParams = computed(() => params.value.length > 0);
 
 <style scoped>
 .endpoint {
-    border: 1px solid #ddd;
+    border: 1px solid var(--vp-c-divider);
     padding: 16px;
     margin-bottom: 24px;
-    background-color: #f9f9f9;
+    background-color: var(--vp-c-bg-soft);
     border-radius: 8px;
 }
 
 h3 {
-    color: #333;
+    color: var(--vp-c-text-1);
 }
 
 table {
@@ -411,22 +390,28 @@ table {
 
 th,
 td {
-    border: 1px solid #ddd;
+    border: 1px solid var(--vp-c-divider);
     padding: 8px;
     text-align: left;
 }
 
 th {
-    background-color: #f4f4f4;
+    background-color: var(--vp-c-bg-soft);
+    color: var(--vp-c-text-1);
+}
+
+td {
+    color: var(--vp-c-text-1);
 }
 
 p {
     margin: 4px 0;
+    color: var(--vp-c-text-1);
 }
 
 h4 {
     margin-top: 16px;
-    color: #666;
+    color: var(--vp-c-text-2);
 }
 
 .param-col-1 {
@@ -451,5 +436,19 @@ h4 {
 
 .res-col-3 {
     width: 70%;
+}
+
+.json-box {
+    background-color: var(--vp-c-bg-mute);
+    padding: 12px;
+    border: 1px solid var(--vp-c-divider);
+    margin-top: 2px;
+    font-size: 10px;
+    line-height: 12px;
+    color: var(--vp-c-text-1);
+}
+
+:deep(.vjs-tree-node:hover) {
+    background-color: var(--vp-c-bg-soft) !important;
 }
 </style>
