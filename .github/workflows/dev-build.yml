@@ -21,6 +21,8 @@ jobs:
               run: docker compose -f docker-compose.dev.yml build
               env:
                   BACKEND_URL: ${{ vars.BACKEND_URL_DEV }}
+                  GIT_BRANCH: ${{ github.ref_name }}
+                  GIT_COMMIT: ${{ github.sha }}
             - working-directory: .
               name: push the docker image
               run: docker compose -f docker-compose.dev.yml push api-server frontend queue-consumer documentation artifact-uploader

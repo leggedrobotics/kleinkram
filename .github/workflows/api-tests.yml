@@ -45,6 +45,10 @@ jobs:
 
             - name: build_stack
               run: docker compose -f docker-compose.testing.yml build
+              env:
+                  BACKEND_URL: 'http://localhost:3000'
+                  GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+                  GIT_COMMIT: ${{ github.sha }}
 
             - name: clear previous volumes
               run: docker compose -f docker-compose.testing.yml down -v

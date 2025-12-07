@@ -90,6 +90,8 @@ services:
             target: production
             args:
                 - BACKEND_URL=${BACKEND_URL}
+                - GIT_BRANCH=${GIT_BRANCH}
+                - GIT_COMMIT=${GIT_COMMIT}
 
         ports:
             - '8003:80'

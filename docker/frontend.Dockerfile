@@ -13,6 +13,12 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 ARG BACKEND_URL
 ENV BACKEND_URL=$BACKEND_URL
 
+ARG GIT_BRANCH
+ENV GIT_BRANCH=$GIT_BRANCH
+
+ARG GIT_COMMIT
+ENV GIT_COMMIT=$GIT_COMMIT
+
 
 WORKDIR /app
 

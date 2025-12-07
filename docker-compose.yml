@@ -172,6 +172,7 @@ services:
 
         volumes:
             - ./frontend:/app/frontend
+            - ./.git:/app/.git:ro
             - frontend_node_modules:/app/frontend/node_modules
             - ./packages:/app/packages
 

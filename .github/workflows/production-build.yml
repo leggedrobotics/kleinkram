@@ -21,6 +21,8 @@ jobs:
               run: docker compose -f docker-compose.prod.yml build
               env:
                   BACKEND_URL: ${{ vars.BACKEND_URL }}
+                  GIT_BRANCH: ${{ github.ref_name }}
+                  GIT_COMMIT: ${{ github.sha }}
             - working-directory: .
               name: push the docker -f docker-compose.prod.yml image
               run: docker compose -f docker-compose.prod.yml push api-server frontend queue-consumer documentation artifact-uploader
