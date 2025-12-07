@@ -101,7 +101,7 @@ import {
 import { useQuery } from '@tanstack/vue-query';
 import { formatDistanceToNow } from 'date-fns';
 import { recentProjects } from 'src/services/queries/project';
-import { computed, ComputedRef, nextTick, ref } from 'vue';
+import { computed, ComputedRef, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -152,8 +152,6 @@ function checkScroll(): void {
     }
 }
 
-checkScroll();
-
 async function goToProject(uuid: string): Promise<void> {
     await router.push(`/project/${uuid}/missions`);
 }
@@ -162,8 +160,8 @@ const timeAgo = (project: ResentProjectDto): string => {
     return formatDistanceToNow(project.updatedAt, { addSuffix: true });
 };
 
-// Use nextTick to ensure that the DOM is fully rendered and the ref is set
-await nextTick(() => {
+onMounted(() => {
+    checkScroll();
     if (cardWrapper.value) {
         cardWrapper.value.style.scrollBehavior = 'smooth';
     }

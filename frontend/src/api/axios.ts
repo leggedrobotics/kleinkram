@@ -80,6 +80,10 @@ const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
     // as refreshing the token is not necessary
     if (error.response?.status !== 401) throw error as Error;
 
+    // Do not retry calls to the refresh-token endpoint itself
+    if (originalRequest.url?.includes('auth/refresh-token'))
+        throw error as Error;
+
     // throw if the original request has already been retried
     if (originalRequest.isRetryWithRefreshedToken) throw error as Error;
 

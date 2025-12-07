@@ -34,13 +34,15 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { getUser } from 'src/services/auth';
 import { deleteAccessGroup } from 'src/services/mutations/access';
-import { computed, Ref, ref } from 'vue';
+import { computed, onMounted, Ref, ref } from 'vue';
 
 const { accessGroup } = defineProps<{ accessGroup: AccessGroupDto }>();
 
 const me: Ref<CurrentAPIUserDto | undefined> = ref(undefined);
-await getUser().then((user) => {
-    me.value = user ?? undefined;
+onMounted(async () => {
+    await getUser().then((user) => {
+        me.value = user ?? undefined;
+    });
 });
 
 const canModify = computed(() => {

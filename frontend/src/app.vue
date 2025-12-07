@@ -1,41 +1,14 @@
 <template>
-    <div v-if="!backendReady" class="fullscreen-loader">
-        <div class="spinner"></div>
-        <div class="message">Waiting for Backend...</div>
-    </div>
-    <router-view v-else />
+    <router-view />
 </template>
 
 <script setup lang="ts">
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
-import { onMounted, provide, Ref, ref } from 'vue';
-import environment from './environment';
+import { provide, Ref, ref } from 'vue';
 
 const uploads: Ref<Ref<FileUploadDto>[]> = ref([]);
 // Provide the globalState object
 provide('uploads', uploads);
-
-const backendReady = ref(false);
-
-const checkBackend = async () => {
-    try {
-        const response = await fetch(`${environment.BACKEND_URL}/api/health`);
-        if (response.ok) {
-            backendReady.value = true;
-        } else {
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
-            setTimeout(checkBackend, 1000);
-        }
-    } catch {
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        setTimeout(checkBackend, 1000);
-    }
-};
-
-onMounted(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    checkBackend();
-});
 </script>
 
 <style scoped>

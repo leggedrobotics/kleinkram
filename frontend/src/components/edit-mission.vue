@@ -32,6 +32,7 @@ import { Notify, useQuasar } from 'quasar';
 import AddTagDialog from 'src/dialogs/add-tag-dialog.vue';
 import { useMission } from 'src/hooks/query-hooks';
 import { removeTag } from 'src/services/mutations/tag';
+import { onMounted } from 'vue';
 
 const queryClient = useQueryClient();
 const $q = useQuasar();
@@ -50,20 +51,22 @@ const icons = {
 
 const { data } = useMission(properties.missionUuid);
 
-await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
-    // @ts-ignore
-    for (const element of document.querySelectorAll('.rotating-element')) {
-        const randomDuration = Math.random() * 10_000 + 200; // Random duration between 1s and 5s
+onMounted(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20)).then(() => {
         // @ts-ignore
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        element.style['-webkit-animation-duration'] =
-            `${randomDuration.toString()}s`;
-        if (Math.random() > 0.5) {
+        for (const element of document.querySelectorAll('.rotating-element')) {
+            const randomDuration = Math.random() * 10_000 + 200; // Random duration between 1s and 5s
             // @ts-ignore
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            element.style['-webkit-animation-direction'] = `reverse`;
+            element.style['-webkit-animation-duration'] =
+                `${randomDuration.toString()}s`;
+            if (Math.random() > 0.5) {
+                // @ts-ignore
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                element.style['-webkit-animation-direction'] = `reverse`;
+            }
         }
-    }
+    });
 });
 const { mutate: removeTagCallback } = useMutation({
     mutationFn: (tag: TagDto) => removeTag(tag.uuid),
