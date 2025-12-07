@@ -21,6 +21,17 @@
                         {{ filenames.slice(-1)[0] }}
                     </li>
                 </ul>
+                <p class="q-mt-md">
+                    Please confirm by entering:
+                    <b>delete {{ filenames.length }} files</b>
+                </p>
+                <q-input
+                    v-model="confirmationInput"
+                    outlined
+                    :placeholder="`delete ${filenames.length} files`"
+                    autofocus
+                    dense
+                />
             </div>
         </template>
 
@@ -29,6 +40,9 @@
                 <q-btn flat label="Cancel" @click="onDialogCancel" />
                 <q-btn
                     unelevated
+                    :disable="
+                        confirmationInput !== `delete ${filenames.length} files`
+                    "
                     label="Delete"
                     color="negative"
                     icon="sym_o_delete"
@@ -41,12 +55,15 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { ref } from 'vue';
 
 const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
 const { filenames } = defineProps<{
     filenames: string[];
 }>();
+
+const confirmationInput = ref('');
 </script>
 
 <style scoped></style>

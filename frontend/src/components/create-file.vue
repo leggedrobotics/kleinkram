@@ -40,7 +40,7 @@
                         v-for="(file, index) in files"
                         :key="index"
                         removable
-                        @remove="removeFile(index)"
+                        @remove="() => removeFile(index)"
                     >
                         {{ file.name }}
                     </q-chip>
@@ -49,7 +49,7 @@
         </div>
 
         <input
-            ref="fileInputRef"
+            ref="fileInputReference"
             type="file"
             multiple
             style="display: none"
@@ -172,10 +172,10 @@ defineExpose({
 });
 
 const isDragging = ref(false);
-const fileInputRef = ref<HTMLInputElement>();
+const fileInputReference = ref<HTMLInputElement>();
 
 const triggerFileInput = () => {
-    fileInputRef.value?.click();
+    fileInputReference.value?.click();
 };
 
 const handleFileChange = (event: Event) => {
@@ -198,13 +198,13 @@ const onDragLeave = () => {
 const onDrop = (event: DragEvent) => {
     isDragging.value = false;
     const dt = event.dataTransfer;
-    if (dt && dt.files) {
+    if (dt?.files) {
         addFiles(dt.files);
     }
 };
 
 const addFiles = (fileList: FileList) => {
-    const newFiles = Array.from(fileList);
+    const newFiles = [...fileList];
     // Simple validation could be done here if needed
     if (newFiles.length > 0) {
         files.value = [...files.value, ...newFiles];
@@ -213,10 +213,6 @@ const addFiles = (fileList: FileList) => {
 
 const removeFile = (index: number) => {
     files.value.splice(index, 1);
-};
-
-const resetFiles = (): void => {
-    files.value = [];
 };
 </script>
 
