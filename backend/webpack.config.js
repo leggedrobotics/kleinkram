@@ -80,6 +80,9 @@ module.exports = function (options, webpackOptions) {
                 ),
             },
         },
+        watchOptions: {
+            ignored: /node_modules/,
+        },
     };
 
     return config;
