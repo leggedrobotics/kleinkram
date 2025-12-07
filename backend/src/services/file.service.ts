@@ -1,6 +1,7 @@
 import { SortOrder, UpdateFile } from '@kleinkram/api-dto';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import env from '@kleinkram/backend-common/environment';
@@ -51,7 +52,7 @@ import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.ser
 import { redis } from '@kleinkram/backend-common/consts';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
-import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
@@ -1413,6 +1414,8 @@ export class FileService implements OnModuleInit {
         fileUUIDs: string[],
         missionUUID: string,
     ): Promise<void> {
+        if (fileUUIDs.length === 0) return;
+
         const uniqueFilesUuids = [...new Set(fileUUIDs)];
 
         await this.fileRepository.manager.transaction(
@@ -1438,6 +1441,14 @@ export class FileService implements OnModuleInit {
                     );
                 }
 
+                // Delete potentially running ingestion jobs
+                await transactionalEntityManager.softDelete(
+                    IngestionJobEntity,
+                    {
+                        identifier: In(uniqueDatabaseFilesUuids),
+                    },
+                );
+
                 await Promise.all(
                     files.map(async (file) => {
                         const bucket = env.MINIO_DATA_BUCKET_NAME;
@@ -1451,7 +1462,10 @@ export class FileService implements OnModuleInit {
                     }),
                 );
 
-                await transactionalEntityManager.remove(files);
+                await transactionalEntityManager.softDelete(
+                    FileEntity,
+                    uniqueDatabaseFilesUuids,
+                );
             },
         );
     }
