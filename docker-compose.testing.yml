@@ -20,7 +20,6 @@ services:
             - ./backend/.endpoints:/app/backend/.endpoints
         environment:
             SEED: 'false'
-
             DEVBUILD: 'false'
             REDIS_HOST: 'redis'
         env_file:
