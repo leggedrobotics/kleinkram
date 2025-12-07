@@ -1237,14 +1237,17 @@ export class FileService implements OnModuleInit {
         });
 
         return await this.dataSource.transaction(async (manager) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // Deduplicate filenames to avoid self-collisions
+            const uniqueFilenames = [...new Set(filenames)];
             const credentials: any[] = [];
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const invalidFiles: { filename: string; error: string }[] = [];
 
             // Check for existing files first to avoid transaction abortion on duplicate key error
             const existingFiles = await manager.find(FileEntity, {
                 where: {
-                    filename: In(filenames),
+                    filename: In(uniqueFilenames),
                     mission: {
                         uuid: missionUUID,
                     },
@@ -1255,7 +1258,7 @@ export class FileService implements OnModuleInit {
                 existingFiles.map((f) => f.filename),
             );
 
-            for (const filename of filenames) {
+            for (const filename of uniqueFilenames) {
                 const emptyCredentials: {
                     bucket: string | null;
                     fileName: string;
@@ -1322,45 +1325,51 @@ export class FileService implements OnModuleInit {
                 }
 
                 try {
-                    const file = await manager.save(
-                        FileEntity,
-                        manager.create(FileEntity, {
-                            date: new Date(),
-                            size: 0,
-                            filename,
-                            mission,
-                            creator: user,
-                            type: fileType,
-                            state: FileState.UPLOADING,
-                            origin: FileOrigin.UPLOAD,
-                        }),
-                    );
-
-                    await this.auditService.log(
-                        FileEventType.UPLOAD_STARTED,
-                        {
-                            fileUuid: file.uuid,
-                            filename: file.filename,
-                            missionUuid: missionUUID,
-                            actor: user,
-                            ...(action ? { action } : {}),
-                            details: {
+                    // Use a nested transaction (savepoint) for each file
+                    await manager.transaction(async (nestedManager) => {
+                        const file = await nestedManager.save(
+                            FileEntity,
+                            nestedManager.create(FileEntity, {
+                                date: new Date(),
+                                size: 0,
+                                filename,
+                                mission,
+                                creator: user,
+                                type: fileType,
+                                state: FileState.UPLOADING,
                                 origin: FileOrigin.UPLOAD,
-                                source: uploadSource,
-                            },
-                        },
-                        true,
-                    );
+                            }),
+                        );
 
-                    credentials.push({
-                        bucket: env.MINIO_DATA_BUCKET_NAME,
-                        fileUUID: file.uuid,
-                        fileName: filename,
-                        accessCredentials:
-                            await this.storageService.generateTemporaryCredential(
-                                file.uuid,
-                                env.MINIO_DATA_BUCKET_NAME,
-                            ),
+                        await this.auditService.log(
+                            FileEventType.UPLOAD_STARTED,
+                            {
+                                fileUuid: file.uuid,
+                                filename: file.filename,
+                                missionUuid: missionUUID,
+                                actor: user,
+                                ...(action ? { action } : {}),
+                                details: {
+                                    origin: FileOrigin.UPLOAD,
+                                    source: uploadSource,
+                                },
+                            },
+                            true,
+                        );
+
+                        credentials.push({
+                            bucket: env.MINIO_DATA_BUCKET_NAME,
+                            fileUUID: file.uuid,
+                            fileName: filename,
+                            accessCredentials:
+                                await this.storageService.generateTemporaryCredential(
+                                    file.uuid,
+                                    env.MINIO_DATA_BUCKET_NAME,
+                                ),
+                        });
+
+                        // Add to local set to catch duplicates in the same batch
+                        existingFilenames.add(filename);
                     });
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (error: any) {
@@ -1373,6 +1382,8 @@ export class FileService implements OnModuleInit {
                             filename,
                             error: 'File already exists',
                         });
+                        // Also add to set so we don't try again if it appears again in list (though deduplication handles this)
+                        existingFilenames.add(filename);
                     } else {
                         throw error;
                     }
@@ -1380,6 +1391,9 @@ export class FileService implements OnModuleInit {
             }
 
             if (invalidFiles.length > 0) {
+                // If we have some valid credentials and some errors, we might want to return partial success?
+                // The current API contract seems to throw BadRequest if ANY file is invalid.
+                // We'll stick to that behavior for now.
                 throw new BadRequestException({
                     message: 'Validation failed',
                     errors: invalidFiles,
