@@ -40,7 +40,7 @@
             BUILD_INFO.git.hash
         "
     >
-        {{ BUILD_INFO.git.hash }}
+        {{ BUILD_INFO.git.hash.slice(0, 7) }}
     </a>
 </template>
 
