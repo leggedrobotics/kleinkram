@@ -271,6 +271,18 @@ export class ActionManagerService {
             );
 
             return true; // Mark the job as completed
+        } catch (error: unknown) {
+            logger.error(`Failed to process action: ${String(error)}`);
+            await this.actionRepository.update(
+                { uuid: action.uuid },
+                {
+                    state: ActionState.FAILED,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    state_cause:
+                        error instanceof Error ? error.message : String(error),
+                },
+            );
+            throw error;
         } finally {
             await apikey[Symbol.asyncDispose]();
         }

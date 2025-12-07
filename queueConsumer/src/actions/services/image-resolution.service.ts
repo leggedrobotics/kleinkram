@@ -94,12 +94,11 @@ export class ImageResolutionService {
         const distributionInspect = await new Promise<DistributionInspect>(
             (resolve, reject) => {
                 const options = {
-                    path: `/ distribution / ${dockerImage}/json`,
+                    path: `/distribution/${dockerImage}/json`,
                     method: 'GET',
                     statusCodes: {
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         200: true,
-
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         401: true,
                         // eslint-disable-next-line @typescript-eslint/naming-convention
