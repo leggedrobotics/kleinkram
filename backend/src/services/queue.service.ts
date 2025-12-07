@@ -21,12 +21,18 @@ import {
     QueueState,
     UserRole,
 } from '@kleinkram/shared';
-import { extractGoogleDriveId } from '@kleinkram/validation';
-import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+import { getGoogleDriveInfo } from '@kleinkram/validation';
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    OnModuleInit,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
+import * as fs from 'node:fs';
 import { Gauge } from 'prom-client';
 import { FindOptionsWhere, In, IsNull, MoreThan, Repository } from 'typeorm';
 import { addAccessConstraints } from '../endpoints/auth/auth-helper';
@@ -73,8 +79,22 @@ export class QueueService implements OnModuleInit {
         });
         const creator = await this.userService.findOneByUUID(user.uuid, {}, {});
 
-        const fileId = extractGoogleDriveId(driveCreate.driveURL);
+        const { id: fileId, isFolder } = getGoogleDriveInfo(
+            driveCreate.driveURL,
+        );
         if (fileId === null) throw new ConflictException('Invalid Drive URL');
+
+        if (
+            isFolder && // Check if backend has Service Account Key configured
+            // We use fs.existsSync to be robust
+            (!env.GOOGLE_KEY_FILE ||
+                !fs.existsSync(env.GOOGLE_KEY_FILE) ||
+                !fs.statSync(env.GOOGLE_KEY_FILE).isFile())
+        ) {
+            throw new BadRequestException(
+                'Google Drive Folder ingestion requires a configured Service Account on the server.',
+            );
+        }
 
         const queueEntry = await this.queueRepository.save(
             this.queueRepository.create({

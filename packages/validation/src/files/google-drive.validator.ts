@@ -90,3 +90,22 @@ export function extractGoogleDriveId(
 
     return null;
 }
+
+/**
+ * Extracts ID and type information from a Google Drive URL.
+ */
+export function getGoogleDriveInfo(url: string | undefined | null): {
+    id: string | null;
+    isFolder: boolean;
+} {
+    const id = extractGoogleDriveId(url);
+    if (!id || !url) return { id, isFolder: false };
+
+    // Check for folder patterns
+    const folderPattern = /\/drive(?:\/u\/\d+)?\/folders\/([a-zA-Z0-9_-]+)/;
+    if (folderPattern.test(url)) {
+        return { id, isFolder: true };
+    }
+
+    return { id, isFolder: false };
+}

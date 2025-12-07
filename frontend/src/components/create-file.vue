@@ -165,29 +165,31 @@ const createFile = async (): Promise<void> => {
     if (!selectedMission.value || !selectedProject.value) return;
 
     if (driveUrl.value !== '') {
-        await driveUpload(selectedMission.value, driveUrl);
-        quasar.notify({
-            message:
-                'Google Drive upload started. check the progress in the Upload page.',
-            color: 'positive',
-            timeout: 0,
-            actions: [
-                {
-                    label: 'Go to Uploads',
-                    color: 'white',
-                    handler: () => {
-                        void router.push('/upload');
+        const success = await driveUpload(selectedMission.value, driveUrl);
+        if (success) {
+            quasar.notify({
+                message:
+                    'Google Drive upload started. check the progress in the Upload page.',
+                color: 'positive',
+                timeout: 0,
+                actions: [
+                    {
+                        label: 'Go to Uploads',
+                        color: 'white',
+                        handler: () => {
+                            void router.push('/upload');
+                        },
                     },
-                },
-                {
-                    label: 'Dismiss',
-                    color: 'white',
-                    handler: () => {
-                        /* dismiss */
+                    {
+                        label: 'Dismiss',
+                        color: 'white',
+                        handler: () => {
+                            /* dismiss */
+                        },
                     },
-                },
-            ],
-        });
+                ],
+            });
+        }
         return;
     }
 

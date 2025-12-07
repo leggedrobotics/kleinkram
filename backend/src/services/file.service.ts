@@ -1239,9 +1239,14 @@ export class FileService implements OnModuleInit {
         return await this.dataSource.transaction(async (manager) => {
             // Deduplicate filenames to avoid self-collisions
             const uniqueFilenames = [...new Set(filenames)];
-            const credentials: any[] = [];
+            const credentials: {
+                bucket: string | null;
+                fileName: string;
+                fileUUID: string | null;
+                accessCredentials: Credentials | null;
+                error?: string | null;
+            }[] = [];
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const invalidFiles: { filename: string; error: string }[] = [];
 
             // Check for existing files first to avoid transaction abortion on duplicate key error

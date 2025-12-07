@@ -457,26 +457,45 @@ async function _createFileAction(
 export async function driveUpload(
     selectedMission: MissionDto | undefined,
     driveUrl: Ref<string>,
-): Promise<void> {
+): Promise<boolean> {
     // abort if no mission is selected
-    if (selectedMission === undefined) return;
+    if (selectedMission === undefined) return false;
 
-    await createDrive(selectedMission.uuid, driveUrl.value).catch(
-        (error: unknown) => {
+    return await createDrive(selectedMission.uuid, driveUrl.value)
+        .then(() => true)
+        .catch((error: unknown) => {
             let errorMessage = '';
             if (error instanceof Error) {
                 errorMessage = error.message;
             }
 
+            if (error instanceof AxiosError && error.response?.data) {
+                const serverMessage = (
+                    error.response.data as { message?: string }
+                ).message;
+                if (serverMessage) {
+                    errorMessage = serverMessage;
+                    if (
+                        errorMessage.includes(
+                            'Google Drive Folder ingestion requires',
+                        )
+                    ) {
+                        errorMessage =
+                            'Uploading from Google Drive Folder requires a service account';
+                    }
+                }
+            }
+
             Notify.create({
-                message: `Upload of Files for Mission ${selectedMission.name} failed: ${errorMessage}`,
+                message: `Upload failed: ${errorMessage}`,
                 color: 'negative',
                 spinner: false,
                 timeout: 0,
                 closeBtn: true,
+                html: true,
             });
-        },
-    );
+            return false;
+        });
 }
 
 async function uploadFileMultipart(

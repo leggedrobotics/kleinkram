@@ -134,4 +134,56 @@ export class GoogleDriveStrategy implements FileSourceStrategy {
             mimeType,
         };
     }
+
+    async getMetadata(
+        fileId: string,
+    ): Promise<{ mimeType?: string; name?: string }> {
+        if (this.drive) {
+            try {
+                const meta = await this.drive.files.get({
+                    fileId,
+                    fields: 'name,mimeType',
+                    supportsAllDrives: true,
+                });
+                return {
+                    mimeType: meta.data.mimeType ?? undefined,
+                    name: meta.data.name ?? undefined,
+                };
+            } catch (error) {
+                logger.debug(
+                    `Failed to get metadata via API: ${String(error)}`,
+                );
+            }
+        }
+        return {};
+    }
+
+    async listFiles(
+        folderId: string,
+    ): Promise<{ id: string; name: string; mimeType: string }[]> {
+        if (!this.drive) {
+            throw new Error(
+                'Google Drive API is not initialized. Cannot list folder contents without a Service Account.',
+            );
+        }
+
+        try {
+            const response = await this.drive.files.list({
+                q: `'${folderId}' in parents and trashed = false`,
+                fields: 'files(id, name, mimeType)',
+                supportsAllDrives: true,
+                includeItemsFromAllDrives: true,
+            });
+
+            return (response.data.files ?? [])
+                .filter((f) => f.id && f.name && f.mimeType)
+                .map((f) => ({
+                    id: f.id ?? '',
+                    name: f.name ?? '',
+                    mimeType: f.mimeType ?? '',
+                }));
+        } catch (error) {
+            throw new Error(`Failed to list folder contents: ${String(error)}`);
+        }
+    }
 }
