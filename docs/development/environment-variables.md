@@ -61,15 +61,15 @@ Configuration for the PostgreSQL database.
 
 ## Authentication Configuration
 
-| Variable                              | Description                                                    | Default                               |
-| :------------------------------------ | :------------------------------------------------------------- | :------------------------------------ |
-| `VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT` | Set to `true` to enable the mock OAuth provider for local dev. | `true`                                |
-| `GOOGLE_KEY_FILE`                     | Path to the Google Cloud service account key file.             | `grandtourdatasets-5295745f7fab.json` |
-| `GOOGLE_CLIENT_ID`                    | Google OAuth Client ID.                                        | -                                     |
-| `GOOGLE_CLIENT_SECRET`                | Google OAuth Client Secret.                                    | -                                     |
-| `GITHUB_CLIENT_ID`                    | GitHub OAuth Client ID.                                        | -                                     |
-| `GITHUB_CLIENT_SECRET`                | GitHub OAuth Client Secret.                                    | -                                     |
-| `JWT_SECRET`                          | Secret key used to sign and verify JWT tokens.                 | `SECRET`                              |
+| Variable                              | Description                                                    | Default                       |
+| :------------------------------------ | :------------------------------------------------------------- | :---------------------------- |
+| `VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT` | Set to `true` to enable the mock OAuth provider for local dev. | `true`                        |
+| `GOOGLE_KEY_FILE`                     | Path to the Google Cloud service account key file.             | `google-service-account.json` |
+| `GOOGLE_CLIENT_ID`                    | Google OAuth Client ID.                                        | -                             |
+| `GOOGLE_CLIENT_SECRET`                | Google OAuth Client Secret.                                    | -                             |
+| `GITHUB_CLIENT_ID`                    | GitHub OAuth Client ID.                                        | -                             |
+| `GITHUB_CLIENT_SECRET`                | GitHub OAuth Client Secret.                                    | -                             |
+| `JWT_SECRET`                          | Secret key used to sign and verify JWT tokens.                 | `SECRET`                      |
 
 ## Docker & Registry Configuration
 

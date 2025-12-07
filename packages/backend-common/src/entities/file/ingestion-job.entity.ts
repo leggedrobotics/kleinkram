@@ -48,6 +48,12 @@ export class IngestionJobEntity extends BaseEntity {
     @Column({ nullable: true, default: null })
     processingDuration?: number;
 
+    /**
+     * Error message if the ingestion failed.
+     */
+    @Column({ nullable: true, default: null })
+    errorMessage?: string;
+
     @ManyToOne(() => UserEntity, (user) => user.queues)
     creator?: UserEntity;
 

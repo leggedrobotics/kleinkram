@@ -18,6 +18,7 @@ import { MissionService } from '../../services/mission.service';
 import { TagService } from '../../services/tag.service';
 import { TopicService } from '../../services/topic.service';
 import { FoxgloveModule } from '../integrations/foxglove.module';
+import { QueueModule } from '../queue/queue.module';
 import { FileController } from './file.controller';
 
 @Module({
@@ -37,6 +38,7 @@ import { FileController } from './file.controller';
         ]),
         StorageModule,
         FoxgloveModule,
+        QueueModule,
     ],
     providers: [
         FileService,

@@ -128,6 +128,7 @@ services:
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+            - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
         # Add docker group to allow access to docker socket
         group_add:
             - ${DOCKER_GID:-999}

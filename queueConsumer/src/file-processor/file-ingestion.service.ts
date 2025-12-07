@@ -98,8 +98,13 @@ export class FileIngestionService {
                         QueueState.COMPLETED,
                     );
                 } catch (error: unknown) {
-                    logger.error(`Failed to ingest file: ${String(error)}`);
-                    await this.updateQueueState(queueItem, QueueState.ERROR);
+                    const errorMessage = String(error);
+                    logger.error(`Failed to ingest file: ${errorMessage}`);
+                    await this.updateQueueState(
+                        queueItem,
+                        QueueState.ERROR,
+                        errorMessage,
+                    );
                     throw error;
                 }
             },
@@ -114,6 +119,10 @@ export class FileIngestionService {
         await this.updateQueueState(queueItem, QueueState.DOWNLOADING);
 
         const source = await strategy.fetch(queueItem.identifier);
+
+        queueItem.display_name = source.filename;
+        await this.queueRepo.save(queueItem);
+
         const downloadPath = path.join(workDirectory, source.filename);
 
         // Start Tagging in the Background
@@ -157,9 +166,15 @@ export class FileIngestionService {
         queueItem: IngestionJobEntity,
         data: DownloadResult,
     ): Promise<FileEntity> {
-        const existingFile = await this.fileRepo.findOne({
-            where: { uuid: queueItem.identifier },
-        });
+        let existingFile;
+
+        // Drive Files do not have a UUID identifier, so we cannot verify existence by UUID.
+        // For standard uploads, the identifier IS the UUID.
+        if (queueItem.location !== FileLocation.DRIVE) {
+            existingFile = await this.fileRepo.findOne({
+                where: { uuid: queueItem.identifier },
+            });
+        }
 
         if (existingFile) {
             return existingFile;
@@ -242,10 +257,14 @@ export class FileIngestionService {
     private async updateQueueState(
         queueItem: IngestionJobEntity,
         state: QueueState,
+        errorMessage?: string,
     ): Promise<void> {
         queueItem.state = state;
         if (state === QueueState.COMPLETED) {
             queueItem.processingDuration = 0; // You might want to calculate real duration here
+        }
+        if (errorMessage) {
+            queueItem.errorMessage = errorMessage.slice(0, 1000); // Truncate to avoid DB errors
         }
         await this.queueRepo.save(queueItem);
     }

@@ -34,6 +34,7 @@ export * from '@api-dto/create-pre-signed-url.dto';
 export * from '@api-dto/create-project.dto';
 export * from '@api-dto/delete-mission-response.dto';
 export * from '@api-dto/drive-create.dto';
+export * from '@api-dto/drive-import-response.dto';
 export * from '@api-dto/exceptions/unauthorized-exception.dto';
 export * from '@api-dto/file/access.dto';
 export * from '@api-dto/file/delete-file-response.dto';

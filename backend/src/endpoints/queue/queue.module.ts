@@ -13,7 +13,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
 import QueueService from '../../services/queue.service';
-import { QueueController } from './queue.controller';
 
 @Module({
     imports: [
@@ -59,7 +58,7 @@ import { QueueController } from './queue.controller';
             labelNames: ['queue'],
         }),
     ],
-    controllers: [QueueController],
+    controllers: [],
     exports: [QueueService],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

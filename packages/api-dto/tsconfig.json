@@ -8,6 +8,7 @@
             "@api-dto/*": ["src/types/*"]
         }
     },
+    "include": ["src/**/*"],
     "references": [
         {
             "path": "../shared"

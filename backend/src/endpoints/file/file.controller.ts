@@ -1,9 +1,19 @@
 import {
+    CancelFileUploadDto,
+    CancelProcessingResponseDto,
+    ConfirmUploadDto,
+    DeleteMissionResponseDto,
+    DriveCreate,
+    DriveImportResponseDto,
+    FileEventsDto,
     FileExistsResponseDto,
-    FilesDto,
+    FileQueryDto,
     FileWithTopicDto,
+    FilesDto,
+    FoxgloveLinkResponseDto,
     IsUploadingDto,
     NoQueryParametersDto,
+    QueueActiveDto,
     StorageOverviewDto,
     TemporaryAccessRequestDto,
     TemporaryFileAccessesDto,
@@ -11,6 +21,8 @@ import {
 } from '@kleinkram/api-dto';
 import env from '@kleinkram/backend-common/environment';
 import {
+    BodyOptionalSource,
+    BodyString,
     BodyUUID,
     BodyUUIDArray,
     isValidFileName,
@@ -28,9 +40,11 @@ import {
 import { ApiOkResponse, OutputDto } from '../../decorators';
 import logger from '../../logger';
 import { FileService } from '../../services/file.service';
+import { QueueService } from '../../services/queue.service';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
     QueryBoolean,
+    QueryDate,
     QueryOptionalDate,
     QueryOptionalRecord,
     QueryOptionalString,
@@ -56,12 +70,6 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 
-import {
-    CancelFileUploadDto,
-    FileEventsDto,
-    FileQueryDto,
-    FoxgloveLinkResponseDto,
-} from '@kleinkram/api-dto';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { FileSource, HealthStatus } from '@kleinkram/shared';
 import { FoxgloveService } from '../../services/foxglove.service';
@@ -70,6 +78,7 @@ import { FoxgloveService } from '../../services/foxglove.service';
 export class FileController {
     constructor(
         private readonly fileService: FileService,
+        private readonly queueService: QueueService,
         private readonly foxgloveService: FoxgloveService,
     ) {}
 
@@ -449,5 +458,117 @@ export class FileController {
             auth.user,
         );
         return { url };
+    }
+
+    @Post('import/drive')
+    @CanCreateInMissionByBody()
+    @OutputDto(DriveImportResponseDto)
+    async importFromDrive(
+        @Body() body: DriveCreate,
+        @AddUser() authHeader: AuthHeader,
+    ): Promise<DriveImportResponseDto> {
+        await this.queueService.importFromDrive(body, authHeader.user);
+        return {
+            success: true,
+        };
+    }
+
+    @Post('upload/confirm')
+    @LoggedIn()
+    @ApiOkResponse({
+        type: ConfirmUploadDto,
+    })
+    async confirmUpload(
+        @BodyUUID('uuid', 'File UUID of file that successfully uploaded')
+        uuid: string,
+        @BodyString('md5', 'MD5 hash to validate uncorrupted upload')
+        md5: string,
+        @BodyOptionalSource(
+            'source',
+            'Source of the upload (CLI, Web Interface, etc.)',
+        )
+        source: FileSource | undefined,
+        @AddUser() auth: AuthHeader,
+    ): Promise<ConfirmUploadDto> {
+        let _source = source;
+        if (!_source) {
+            _source = FileSource.WEB_INTERFACE;
+            if (auth.apiKey) {
+                _source = auth.apiKey.action
+                    ? FileSource.ACTION
+                    : FileSource.CLI;
+            }
+        }
+        await this.queueService.confirmUpload(uuid, md5, auth.user, _source);
+        return {
+            success: true,
+        };
+    }
+
+    @Post('maintenance/recalculate-hashes')
+    @AdminOnly()
+    @OutputDto(null)
+    async recalculateHashes(): Promise<{
+        success: boolean;
+        fileCount: number;
+    }> {
+        return await this.queueService.recalculateHashes();
+    }
+
+    @Get('queue')
+    @LoggedIn()
+    @OutputDto(null)
+    async active(
+        @QueryDate('startDate', 'Start of time range to filter queue by')
+        startDate: string,
+        @QueryOptionalString('stateFilter', 'State of QueueEntity to filter by')
+        stateFilter: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @AddUser() user: AuthHeader,
+    ): Promise<QueueActiveDto> {
+        const date = new Date(startDate);
+
+        return this.queueService.active(
+            date,
+            stateFilter,
+            user.user.uuid,
+            skip,
+            take,
+        );
+    }
+
+    @Delete('queue/:uuid')
+    @CanDeleteMission()
+    @ApiOkResponse({
+        type: DeleteMissionResponseDto,
+    })
+    async deleteQueueItem(
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<DeleteMissionResponseDto> {
+        return this.queueService.delete(missionUUID, uuid);
+    }
+
+    @Post('queue/:uuid/cancel')
+    @CanDeleteMission()
+    @ApiOkResponse({
+        type: CancelProcessingResponseDto,
+    })
+    async cancelProcessing(
+        @ParameterUID('uuid') queueUUID: string,
+        @BodyUUID('missionUUID', 'Mission UUID of Queue') missionUUID: string,
+    ): Promise<CancelProcessingResponseDto> {
+        return this.queueService.cancelProcessing(queueUUID, missionUUID);
+    }
+
+    @Post('queue/:uuid/stop')
+    @CanDeleteMission()
+    @OutputDto(null)
+    async stopJob(
+        @ParameterUID('uuid') queueUUID: string,
+    ): Promise<{ success: boolean }> {
+        await this.queueService.stopJob(queueUUID);
+        return { success: true };
     }
 }

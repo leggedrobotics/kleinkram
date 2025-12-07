@@ -22,9 +22,10 @@ import SparkMD5 from 'spark-md5';
 import RenameFilesDialog from 'src/components/rename-files-dialog.vue';
 import {
     cancelUploads,
+    confirmUpload,
+    importFromDrive as createDrive,
     generateTemporaryCredentials,
 } from 'src/services/mutations/file';
-import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
 import { ref, Ref } from 'vue';
 import ENV from '../environment';
@@ -460,38 +461,22 @@ export async function driveUpload(
     // abort if no mission is selected
     if (selectedMission === undefined) return;
 
-    const notification = Notify.create({
-        group: false,
-        message: 'Processing files...',
-        color: 'positive',
-        spinner: true,
-        position: 'bottom',
-        timeout: 0,
-    });
-
-    await createDrive(selectedMission.uuid, driveUrl.value)
-        .then(() => {
-            notification({
-                message: `Files for Mission ${selectedMission.name} are now importing...`,
-                color: 'positive',
-                spinner: false,
-                timeout: 5000,
-            });
-        })
-        .catch((error: unknown) => {
+    await createDrive(selectedMission.uuid, driveUrl.value).catch(
+        (error: unknown) => {
             let errorMessage = '';
             if (error instanceof Error) {
                 errorMessage = error.message;
             }
 
-            notification({
+            Notify.create({
                 message: `Upload of Files for Mission ${selectedMission.name} failed: ${errorMessage}`,
                 color: 'negative',
                 spinner: false,
                 timeout: 0,
                 closeBtn: true,
             });
-        });
+        },
+    );
 }
 
 async function uploadFileMultipart(

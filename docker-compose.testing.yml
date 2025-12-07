@@ -110,6 +110,7 @@ services:
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+            - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
         environment:
             REDIS_HOST: 'redis'
         env_file:

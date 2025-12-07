@@ -215,7 +215,7 @@ export async function uploadFile(
     // confirm upload
     // http://localhost:3000/queue/confirmUpload
 
-    const responseConfirm = await fetch(`${DEFAULT_URL}/queue/confirmUpload`, {
+    const responseConfirm = await fetch(`${DEFAULT_URL}/files/upload/confirm`, {
         method: 'POST',
         headers: {
             // eslint-disable-next-line @typescript-eslint/naming-convention

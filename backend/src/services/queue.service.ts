@@ -2,7 +2,6 @@ import {
     CancelProcessingResponseDto,
     DeleteMissionResponseDto,
     DriveCreate,
-    UpdateTagTypeDto,
 } from '@kleinkram/api-dto';
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
 import { redis } from '@kleinkram/backend-common/consts';
@@ -22,6 +21,7 @@ import {
     QueueState,
     UserRole,
 } from '@kleinkram/shared';
+import { extractGoogleDriveId } from '@kleinkram/validation';
 import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -33,18 +33,8 @@ import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import logger from '../logger';
 import { UserService } from './user.service';
 
-function extractFileIdFromUrl(url: string): string | undefined {
-    const filePattern = /\/file(?:\/u\/\d+)?\/d\/([a-zA-Z0-9_-]+)/;
-    const folderPattern = /\/drive(?:\/u\/\d+)?\/folders\/([a-zA-Z0-9_-]+)/;
-    let match = filePattern.exec(url);
-    if (match?.[1]) return match[1];
-    match = folderPattern.exec(url);
-    if (match?.[1]) return match[1];
-    return undefined;
-}
-
 @Injectable()
-class QueueService implements OnModuleInit {
+export class QueueService implements OnModuleInit {
     private fileQueue!: Queue.Queue;
 
     constructor(
@@ -77,22 +67,20 @@ class QueueService implements OnModuleInit {
     async importFromDrive(
         driveCreate: DriveCreate,
         user: UserEntity,
-    ): Promise<UpdateTagTypeDto> {
+    ): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
         const creator = await this.userService.findOneByUUID(user.uuid, {}, {});
 
-        const fileId = extractFileIdFromUrl(driveCreate.driveURL);
-        if (fileId === undefined)
-            throw new ConflictException('Invalid Drive URL');
+        const fileId = extractGoogleDriveId(driveCreate.driveURL);
+        if (fileId === null) throw new ConflictException('Invalid Drive URL');
 
         const queueEntry = await this.queueRepository.save(
             this.queueRepository.create({
                 identifier: fileId,
-
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                display_name: `GoogleDrive Object (no id=${fileId})`,
+                display_name: `Google Drive File (${fileId})`,
                 state: QueueState.AWAITING_PROCESSING,
                 location: FileLocation.DRIVE,
                 mission,
@@ -105,7 +93,6 @@ class QueueService implements OnModuleInit {
             .catch((error: unknown) => logger.error(error));
 
         logger.debug('Added drive file to queue');
-        return {};
     }
 
     async recalculateHashes(): Promise<{
@@ -151,7 +138,7 @@ class QueueService implements OnModuleInit {
 
         if (!job) {
             logger.warn(
-                `confirmUpload: Job missing for file ${uuid}. Recreating...`,
+                `confirmUpload: Job missing for file ${uuid}.Recreating...`,
             );
 
             const file = await this.fileRepository.findOneOrFail({
@@ -179,7 +166,7 @@ class QueueService implements OnModuleInit {
             if (job.state >= QueueState.PROCESSING) return;
             logger.warn(
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                `Resuming upload for job ${job.uuid} in state ${job.state}`,
+                `Resuming upload for job ${job.uuid} in state ${job.state} `,
             );
         }
 
@@ -354,6 +341,35 @@ class QueueService implements OnModuleInit {
         await this.queueRepository.save(queue);
 
         return {};
+    }
+
+    async stopJob(queueUUID: string): Promise<void> {
+        const queue = await this.queueRepository.findOneOrFail({
+            where: { uuid: queueUUID },
+        });
+
+        // We can only stop active jobs
+        if (queue.state !== QueueState.PROCESSING) {
+            throw new ConflictException('Job is not processing');
+        }
+
+        // To stop a job we need to find the active job in the queue
+        const activeJobs = await this.fileQueue.getActive();
+        const jobToStop = activeJobs.find(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            (job) => job.data.queueUuid === queueUUID,
+        );
+
+        if (jobToStop) {
+            // This moves the job to failed
+            await jobToStop.moveToFailed({ message: 'Stopped by user' });
+            queue.state = QueueState.ERROR;
+            await this.queueRepository.save(queue);
+        } else {
+            throw new ConflictException(
+                'Job not found in active queue, state might be desynced',
+            );
+        }
     }
 
     /**

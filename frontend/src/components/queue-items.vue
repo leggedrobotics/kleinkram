@@ -165,7 +165,13 @@
                                     props.row.state !==
                                     QueueState.AWAITING_PROCESSING
                                 "
-                                @click="() => _cancelProcessing(props.row)"
+                                @click="
+                                    () =>
+                                        _cancelProcessing({
+                                            missionUUID: props.row.mission.uuid,
+                                            queueUUID: props.row.uuid,
+                                        })
+                                "
                             >
                                 <q-item-section>
                                     Cancel Processing
@@ -182,26 +188,29 @@
 <script setup lang="ts">
 import type { FileQueueEntryDto } from '@kleinkram/api-dto/types/file/file-queue-entry.dto';
 import { FileLocation, QueueState } from '@kleinkram/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { Notify, QTable, useQuasar } from 'quasar';
+import { useQueryClient } from '@tanstack/vue-query';
+import { QTable, useQuasar } from 'quasar';
 import ConfirmDeleteFile from 'src/dialogs/confirm-delete-file-dialog.vue';
 import ROUTES from 'src/router/routes';
-import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
+import { dateMask, formatDate } from 'src/services/date-formating';
 import {
     _downloadFile,
     getColor,
     getDetailedFileState,
     getSimpleFileStateName,
 } from 'src/services/generic';
-import { cancelProcessing, deleteFile } from 'src/services/mutations/queue';
 import { findOneByNameAndMission } from 'src/services/queries/file';
-import { currentQueue } from 'src/services/queries/queue';
 import { computed, ref, Ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import type { ProjectWithMissionsDto } from '@kleinkram/api-dto/types/project/project-with-missions.dto';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
+
+import {
+    useCancelProcessing,
+    useDeleteQueueItem,
+    useQueue,
+} from 'src/composables/use-file-queue';
 
 const $router = useRouter();
 const queryClient = useQueryClient();
@@ -217,11 +226,11 @@ const pagination = ref({
     rowsPerPage: 10,
 });
 
-const queueKey = computed(() => [
-    'queue',
-    startDate.value,
-    fileStateFilterEnums.value,
-]);
+const queryPagination = computed(() => ({
+    skip: (pagination.value.page - 1) * pagination.value.rowsPerPage,
+    take: pagination.value.rowsPerPage,
+}));
+
 const selected = ref<FileQueueEntryDto[]>([]);
 
 const fileStateFilter = ref<string[]>([]);
@@ -258,70 +267,17 @@ const fileStateFilterEnums = computed(() => {
     return fileStateFilter.value.map((state) => QueueState[state]);
 });
 
-const { data: queueEntries, isLoading } = useQuery<ProjectWithMissionsDto[]>({
-    queryKey: queueKey,
-    queryFn: () =>
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        currentQueue(parseDate(startDate.value), fileStateFilterEnums.value),
-    refetchInterval: 1000,
-});
+// Use Composable
+// @ts-ignore
+const { data: queueEntries, isLoading } = useQueue(
+    startDate,
+    // @ts-ignore
+    fileStateFilterEnums,
+    queryPagination,
+);
 
-const { mutate: removeFile } = useMutation({
-    mutationFn: (queueEntry: FileQueueEntryDto) =>
-        deleteFile(queueEntry.mission.uuid, queueEntry.uuid),
-    onSuccess: async () => {
-        Notify.create({
-            message: 'File deleted',
-            color: 'positive',
-            timeout: 2000,
-            position: 'bottom',
-        });
-        await queryClient.invalidateQueries({
-            predicate: (query) => query.queryKey[0] === 'queue',
-        });
-    },
-    onError: (error: unknown) => {
-        Notify.create({
-            message: `Error deleting file: ${
-                (
-                    error as {
-                        response?: { data?: { message?: string } };
-                    }
-                ).response?.data?.message ??
-                (error as { message: string }).message
-            }`,
-            color: 'negative',
-            timeout: 4000,
-            position: 'bottom',
-        });
-    },
-});
-
-const { mutate: _cancelProcessing } = useMutation({
-    mutationFn: (queueEntry: FileQueueEntryDto) =>
-        cancelProcessing(queueEntry.uuid, queueEntry.mission.uuid),
-    onSuccess: async () => {
-        await queryClient.invalidateQueries({
-            predicate: (query) => query.queryKey[0] === 'queue',
-        });
-    },
-    onError: (error: unknown) => {
-        Notify.create({
-            message: `Error canceling processing: ${
-                (
-                    error as {
-                        response?: { data?: { message?: string } };
-                    }
-                ).response?.data?.message ??
-                (error as { message?: string }).message ??
-                ''
-            }`,
-            color: 'negative',
-            timeout: 4000,
-            position: 'bottom',
-        });
-    },
-});
+const { mutate: removeFile } = useDeleteQueueItem();
+const { mutate: _cancelProcessing } = useCancelProcessing();
 
 const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
     $q.dialog({
@@ -330,7 +286,10 @@ const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
             filename: queueEntry.display_name,
         },
     }).onOk(() => {
-        removeFile(queueEntry);
+        removeFile({
+            missionUUID: queueEntry.mission.uuid,
+            queueUUID: queueEntry.uuid,
+        });
     });
 };
 

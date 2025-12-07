@@ -68,6 +68,7 @@
             clearable
             placeholder="Google Drive Link"
             style="min-width: 300px"
+            :rules="driveUrlRules"
         />
     </q-card-section>
 </template>
@@ -77,11 +78,14 @@ import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dt
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { FileType } from '@kleinkram/shared';
+import { isValidGoogleDriveUrl } from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
-import { useScopeSelection } from 'src/composables/use-scope-selection'; // Import Composable
+import { useQuasar } from 'quasar';
+import { useScopeSelection } from 'src/composables/use-scope-selection';
 import { createFileAction, driveUpload } from 'src/services/file-service';
 import { computed, Ref, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 const emit = defineEmits(['update:ready']);
 
@@ -98,8 +102,17 @@ const props = withDefaults(
 
 const files = ref<File[]>([]);
 const driveUrl = ref('');
+
+const driveUrlRules = computed(() => [
+    (value: string) =>
+        isValidGoogleDriveUrl(value) ||
+        'Invalid Google Drive Link (must be a file/folder link or ID)',
+]);
+
 const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 const queryClient = useQueryClient();
+const router = useRouter();
+const quasar = useQuasar();
 
 const selectedProjectUuid = ref<string | undefined>(
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -153,6 +166,28 @@ const createFile = async (): Promise<void> => {
 
     if (driveUrl.value !== '') {
         await driveUpload(selectedMission.value, driveUrl);
+        quasar.notify({
+            message:
+                'Google Drive upload started. check the progress in the Upload page.',
+            color: 'positive',
+            timeout: 0,
+            actions: [
+                {
+                    label: 'Go to Uploads',
+                    color: 'white',
+                    handler: () => {
+                        void router.push('/upload');
+                    },
+                },
+                {
+                    label: 'Dismiss',
+                    color: 'white',
+                    handler: () => {
+                        /* dismiss */
+                    },
+                },
+            ],
+        });
         return;
     }
 
