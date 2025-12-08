@@ -68,15 +68,15 @@ export class FileQueueProcessorProvider {
     }
 
     @Process({ name: 'extractHashFromMinio' })
-    async extractHashFromMinio(job: Job<{ file_uuid: string }>): Promise<void> {
-        const { file_uuid } = job.data;
-        logger.debug(`Extracting hash for file ${file_uuid}`);
+    async extractHashFromMinio(job: Job<{ fileUuid: string }>): Promise<void> {
+        const { fileUuid } = job.data;
+        logger.debug(`Extracting hash for file ${fileUuid}`);
 
         const file = await this.fileRepo.findOne({
-            where: { uuid: file_uuid },
+            where: { uuid: fileUuid },
         });
         if (!file) {
-            logger.error(`File ${file_uuid} not found for hash extraction`);
+            logger.error(`File ${fileUuid} not found for hash extraction`);
             return;
         }
 
@@ -86,6 +86,7 @@ export class FileQueueProcessorProvider {
                 file.uuid,
             );
             // ETag is often surrounded by quotes in S3/Minio, e.g. "5b3...c6"
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             let hash = stat?.etag?.replace(/"/g, '');
 
             // Valid MD5 is 32 hex chars. S3 multipart ETag has -N suffix.
@@ -93,13 +94,13 @@ export class FileQueueProcessorProvider {
 
             if (hash && ismd5) {
                 logger.debug(
-                    `Found MD5 hash in Minio metadata for ${file_uuid}: ${hash}`,
+                    `Found MD5 hash in Minio metadata for ${fileUuid}: ${hash}`,
                 );
                 // Convert Hex MD5 to Base64 to match CLI/Frontend expectation
                 hash = Buffer.from(hash, 'hex').toString('base64');
             } else {
                 logger.debug(
-                    `Calculating hash for ${file_uuid} (ETag: ${String(hash)})`,
+                    `Calculating hash for ${fileUuid} (ETag: ${String(hash)})`,
                 );
                 const stream = await this.storageService.getFileStream(
                     env.MINIO_DATA_BUCKET_NAME,
@@ -112,10 +113,10 @@ export class FileQueueProcessorProvider {
             // Ensure state is OK if it was somehow different
             file.state = FileState.OK;
             await this.fileRepo.save(file);
-            logger.debug(`Updated hash for ${file_uuid}`);
+            logger.debug(`Updated hash for ${fileUuid}`);
         } catch (error) {
             logger.error(
-                `Failed to extract hash for ${file_uuid}: ${String(error)}`,
+                `Failed to extract hash for ${fileUuid}: ${String(error)}`,
             );
             throw error;
         }
@@ -124,9 +125,16 @@ export class FileQueueProcessorProvider {
     private calculateHash(stream: NodeJS.ReadableStream): Promise<string> {
         return new Promise((resolve, reject) => {
             const hash = createHash('md5');
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             stream.on('data', (data) => hash.update(data));
-            stream.on('end', () => resolve(hash.digest('base64')));
-            stream.on('error', (error) => reject(error));
+            stream.on('end', () => {
+                resolve(hash.digest('base64'));
+            });
+            stream.on('error', (error) => {
+                reject(
+                    error instanceof Error ? error : new Error(String(error)),
+                );
+            });
         });
     }
 

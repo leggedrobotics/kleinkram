@@ -94,7 +94,7 @@ async function recalculateHashes(): Promise<void> {
     );
 
     $q.notify({
-        message: `Recalculating hashes started. ${data.fileCount} files to process`,
+        message: `Recalculating hashes started. ${String(data.fileCount)} files to process`,
         color: 'positive',
         position: 'bottom',
         timeout: 2000,

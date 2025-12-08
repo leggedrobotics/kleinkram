@@ -23,7 +23,8 @@
                 :rows="actions?.data"
                 :columns="columns as any"
                 hide-pagination
-                class="q-pa-md"
+                class="q-pa-md cursor-pointer"
+                @row-click="handleRowClick"
             >
                 <template #body-cell-state="props">
                     <q-td :props="props">
@@ -73,6 +74,7 @@ import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import { ActionState } from '@kleinkram/shared';
 import ActionBadge from 'components/action-badge.vue';
 import { useRunningActions } from 'src/composables/use-actions-queries';
+import ROUTES from 'src/router/routes';
 import { getActionColor } from 'src/services/generic';
 import { useRouter } from 'vue-router';
 
@@ -123,7 +125,16 @@ const columns = [
 ];
 
 const toActions = async (): Promise<void> => {
-    await router.push('actions');
+    await router.push('/actions/runs');
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const handleRowClick = async (_: Event, row: any): Promise<void> => {
+    await router.push({
+        name: ROUTES.ANALYSIS_DETAILS.routeName,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        params: { id: row.uuid },
+    });
 };
 </script>
 

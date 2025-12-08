@@ -376,7 +376,7 @@ async function _createFileAction(
                 const newFileUploadReference = ref(newFileUpload);
                 // @ts-ignore
                 injectedFiles.value.push(newFileUploadReference);
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
                 return limit(async () => {
                     try {
                         const md5Hash = await uploadFileMultipart(
@@ -400,7 +400,6 @@ async function _createFileAction(
                             return;
                         }
 
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                         return await confirmUpload(
                             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.fileUUID,

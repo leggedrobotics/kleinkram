@@ -132,8 +132,7 @@ export class QueueService implements OnModuleInit {
         for (const file of files) {
             try {
                 await this.fileQueue.add('extractHashFromMinio', {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    file_uuid: file.uuid,
+                    fileUuid: file.uuid,
                 });
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
