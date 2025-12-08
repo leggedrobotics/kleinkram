@@ -40,13 +40,13 @@ export default defineConfig((/* ctx */) => {
                 '@kleinkram/shared': path.resolve(
                     // eslint-disable-next-line unicorn/prefer-module
                     __dirname,
-                    '../packages/shared/src/index.ts',
+                    '../packages/shared/src',
                 ),
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 '@kleinkram/api-dto': path.resolve(
                     // eslint-disable-next-line unicorn/prefer-module
                     __dirname,
-                    '../packages/api-dto/src/index.ts',
+                    '../packages/api-dto/src',
                 ),
                 // Use frontend-safe validation (no @nestjs dependencies)
                 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -59,7 +59,7 @@ export default defineConfig((/* ctx */) => {
                 '@kleinkram/backend-common': path.resolve(
                     // eslint-disable-next-line unicorn/prefer-module
                     __dirname,
-                    '../packages/backend-common/src/index.ts',
+                    '../packages/backend-common/src',
                 ),
                 // Alias to resolve class-transformer/storage issue
                 // eslint-disable-next-line @typescript-eslint/naming-convention
