@@ -6,7 +6,9 @@
         "baseUrl": ".",
         "types": ["vite/client", "node"],
         "allowJs": true,
-        "jsx": "preserve"
+        "jsx": "preserve",
+        "module": "esnext",
+        "moduleResolution": "bundler"
     },
     "include": [
         ".vitepress/**/*.ts",
