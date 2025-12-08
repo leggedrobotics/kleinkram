@@ -28,6 +28,11 @@ RUN pnpm fetch
 COPY . .
 RUN pnpm install -r
 
+# Generate build info explicitly to ensure it captures build-time ARGs
+WORKDIR /app/frontend
+RUN sh ./create_build_info.sh
+WORKDIR /app
+
 RUN pnpm --filter @kleinkram/shared build
 RUN pnpm --filter @kleinkram/validation build
 RUN pnpm --filter @kleinkram/api-dto build

@@ -87,7 +87,7 @@ services:
         build:
             context: .
             dockerfile: docker/frontend.Dockerfile
-            target: development
+            target: production
             args:
                 - BACKEND_URL=${BACKEND_URL}
                 - GIT_BRANCH=${GIT_BRANCH}

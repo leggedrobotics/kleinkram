@@ -76,4 +76,5 @@ export default build;
 "
 
 # Write to file
+mkdir -p ./src
 echo "${build_info}" > ./src/build.ts
