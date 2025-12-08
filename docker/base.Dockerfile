@@ -30,5 +30,6 @@ COPY --chown=node:node packages/backend-common/package.json ./packages/backend-c
 COPY --chown=node:node backend/package.json ./backend/
 COPY --chown=node:node queueConsumer/package.json ./queueConsumer/
 COPY --chown=node:node frontend/package.json ./frontend/
+COPY --chown=node:node frontend/create_build_info.sh ./frontend/
 
 RUN pnpm install -r
