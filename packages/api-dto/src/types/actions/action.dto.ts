@@ -80,7 +80,8 @@ export class ActionDto {
     creator!: UserDto;
 
     @ApiProperty()
+    @IsOptional()
     @ValidateNested()
     @Type(() => ActionWorkerDto)
-    worker!: ActionWorkerDto;
+    worker!: ActionWorkerDto | null;
 }
