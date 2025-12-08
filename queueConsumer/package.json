@@ -37,7 +37,7 @@
         "bull": "^4.16.4",
         "dockerode": "^4.0.9",
         "googleapis": "^166.0.0",
-        "jsonwebtoken": "^9.0.2",
+        "jsonwebtoken": "^9.0.3",
         "minio": "^8.0.6",
         "pg": "^8.16.3",
         "prom-client": "^15.1.3",
