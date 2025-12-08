@@ -64,6 +64,12 @@ export class ActionEntity extends BaseEntity {
     @Column({ nullable: true })
     executionEndedAt?: Date;
 
+    @Column({ nullable: true })
+    actionContainerStartedAt?: Date;
+
+    @Column({ nullable: true })
+    actionContainerExitedAt?: Date;
+
     @ManyToOne(() => MissionEntity, (mission) => mission.actions, {
         onDelete: 'CASCADE',
         nullable: false,

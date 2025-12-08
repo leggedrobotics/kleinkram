@@ -44,6 +44,14 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         throw new Error('Action must have a template');
     }
 
+    let runtime: number | undefined;
+    if (action.actionContainerStartedAt) {
+        const end = action.actionContainerExitedAt
+            ? action.actionContainerExitedAt.getTime()
+            : Date.now();
+        runtime = (end - action.actionContainerStartedAt.getTime()) / 1000;
+    }
+
     return {
         artifactUrl: action.artifact_path ?? '',
         artifacts: action.artifacts,
@@ -55,6 +63,7 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         creator: userEntityToDto(action.creator),
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         image: (action.image as DockerImageDto) ?? { repoDigests: [] },
+        runtime,
 
         mission: missionEntityToDto(action.mission),
         state: action.state,

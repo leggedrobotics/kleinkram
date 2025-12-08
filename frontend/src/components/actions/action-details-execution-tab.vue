@@ -50,11 +50,7 @@
                 />
             </div>
             <div class="col-6">
-                <AppInput
-                    label="Runtime"
-                    :model-value="runtimeString"
-                    readonly
-                />
+                <ActionRuntime :action="action" />
             </div>
             <div class="col-6">
                 <AppInput
@@ -345,6 +341,7 @@
 <script setup lang="ts">
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import { ActionState, ArtifactState, ImageSource } from '@kleinkram/shared';
+import ActionRuntime from 'components/actions/action-runtime.vue';
 import ArtifactFileTree from 'components/actions/artifact-file-tree.vue';
 import AppInput from 'components/common/app-input.vue';
 import { copyToClipboard } from 'quasar';
@@ -379,15 +376,6 @@ const formatBytes = (bytes: number, decimals = 2) => {
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return `${Number.parseFloat((bytes / Math.pow(k, index)).toFixed(dm))} ${sizes[index]}`;
 };
-
-const runtimeString = computed(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!props.action.createdAt || !props.action.updatedAt) return 'N/A';
-    const start = new Date(props.action.createdAt).getTime();
-    const end = new Date(props.action.updatedAt).getTime();
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    return `${(end - start) / 1000} seconds`;
-});
 
 const artifactStateText = computed(() => {
     if (props.action.state === ActionState.UNPROCESSABLE) {

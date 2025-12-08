@@ -46,6 +46,10 @@ export class ActionDto {
     @IsDate()
     updatedAt!: Date;
 
+    @ApiProperty({ required: false })
+    @IsOptional()
+    runtime?: number;
+
     @ApiProperty()
     @ValidateNested({ each: true })
     @Type(() => AuditLogDto)

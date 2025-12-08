@@ -172,6 +172,7 @@ export class ActionManagerService {
 
                 {
                     executionStartedAt,
+                    actionContainerStartedAt: executionStartedAt,
                     container: actionContainer,
                     image: actionImage,
                 },
@@ -222,6 +223,7 @@ export class ActionManagerService {
                 { uuid: action.uuid },
                 {
                     executionEndedAt: new Date(),
+                    actionContainerExitedAt: new Date(),
                     artifacts: ArtifactState.UPLOADING,
                 },
             );
