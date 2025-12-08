@@ -1,11 +1,13 @@
 <template>
-    <title-section :title="`${greeting}, ${user?.name}`" />
+    <div>
+        <title-section :title="`${greeting}, ${user?.name}`" />
 
-    <div class="q-mt-lg q-mb-lg dashboard-grid">
-        <DashboardRecentProjects />
-        <DashboardStorageIndicator />
-        <DashboardWorkerLists />
-        <RunningActions />
+        <div class="q-mt-lg q-mb-lg dashboard-grid">
+            <DashboardRecentProjects />
+            <DashboardStorageIndicator />
+            <DashboardWorkerLists />
+            <RunningActions />
+        </div>
     </div>
 </template>
 

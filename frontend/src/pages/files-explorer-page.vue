@@ -1,340 +1,347 @@
 <template>
-    <title-section :title="mission?.name">
-        <template #subtitle>
-            <div>
-                <div class="flex justify-between items-center">
-                    <div>
-                        <div class="flex">
-                            <span
-                                v-for="tag in mission?.tags ?? ([] as TagDto[])"
-                                :key="tag.uuid"
-                                class="q-mr-xs"
-                            >
-                                <q-chip
-                                    square
-                                    :style="[
-                                        tag.type.datatype == 'LINK'
-                                            ? { cursor: 'pointer' }
-                                            : {},
-                                    ]"
-                                    color="gray"
-                                    @mouseup="() => openLink(tag)"
+    <div>
+        <title-section :title="mission?.name">
+            <template #subtitle>
+                <div>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="flex">
+                                <span
+                                    v-for="tag in mission?.tags ??
+                                    ([] as TagDto[])"
+                                    :key="tag.uuid"
+                                    class="q-mr-xs"
                                 >
-                                    {{ tag.type.name }}:
-                                    {{ tag.value }}
-                                </q-chip>
-                            </span>
+                                    <q-chip
+                                        square
+                                        :style="[
+                                            tag.type.datatype == 'LINK'
+                                                ? { cursor: 'pointer' }
+                                                : {},
+                                        ]"
+                                        color="gray"
+                                        @mouseup="() => openLink(tag)"
+                                    >
+                                        {{ tag.type.name }}:
+                                        {{ tag.value }}
+                                    </q-chip>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </template>
+            </template>
 
-        <template #buttons>
-            <button-group>
-                <q-btn
-                    class="button-border"
-                    flat
-                    style="height: 100%"
-                    color="primary"
-                    icon="sym_o_analytics"
-                    label="Actions"
-                    @click="onActionsClick"
-                >
-                    <q-tooltip> Analyze Actions</q-tooltip>
-                </q-btn>
-
-                <MissionMetadataOpener v-if="mission" :mission="mission">
+            <template #buttons>
+                <button-group>
                     <q-btn
                         class="button-border"
                         flat
                         style="height: 100%"
                         color="primary"
-                        icon="sym_o_sell"
-                        label="Edit Metadata"
+                        icon="sym_o_analytics"
+                        label="Actions"
+                        @click="onActionsClick"
                     >
-                        <q-tooltip> Manage Metadata</q-tooltip>
+                        <q-tooltip> Analyze Actions</q-tooltip>
                     </q-btn>
-                </MissionMetadataOpener>
 
-                <q-btn
-                    icon="sym_o_more_vert"
-                    class="button-border"
-                    flat
-                    style="height: 100%"
-                >
-                    <q-tooltip> More Actions</q-tooltip>
+                    <MissionMetadataOpener v-if="mission" :mission="mission">
+                        <q-btn
+                            class="button-border"
+                            flat
+                            style="height: 100%"
+                            color="primary"
+                            icon="sym_o_sell"
+                            label="Edit Metadata"
+                        >
+                            <q-tooltip> Manage Metadata</q-tooltip>
+                        </q-btn>
+                    </MissionMetadataOpener>
 
-                    <q-menu v-if="mission" auto-close style="width: 320px">
-                        <q-list>
-                            <klein-download-mission
-                                v-if="mission"
-                                :mission="mission"
-                            />
-                            <q-separator class="q-ma-sm" />
-                            <MoveMissionDialogOpener
-                                v-if="mission"
-                                :mission="mission"
-                            >
-                                <q-item v-close-popup clickable>
+                    <q-btn
+                        icon="sym_o_more_vert"
+                        class="button-border"
+                        flat
+                        style="height: 100%"
+                    >
+                        <q-tooltip> More Actions</q-tooltip>
+
+                        <q-menu v-if="mission" auto-close style="width: 320px">
+                            <q-list>
+                                <klein-download-mission
+                                    v-if="mission"
+                                    :mission="mission"
+                                />
+                                <q-separator class="q-ma-sm" />
+                                <MoveMissionDialogOpener
+                                    v-if="mission"
+                                    :mission="mission"
+                                >
+                                    <q-item v-close-popup clickable>
+                                        <q-item-section avatar>
+                                            <q-icon name="sym_o_move_down" />
+                                        </q-item-section>
+                                        <q-item-section>
+                                            Move Mission
+                                        </q-item-section>
+                                    </q-item>
+                                </MoveMissionDialogOpener>
+
+                                <q-item v-close-popup clickable disable>
                                     <q-item-section avatar>
-                                        <q-icon name="sym_o_move_down" />
-                                    </q-item-section>
-                                    <q-item-section>
-                                        Move Mission
-                                    </q-item-section>
-                                </q-item>
-                            </MoveMissionDialogOpener>
-
-                            <q-item v-close-popup clickable disable>
-                                <q-item-section avatar>
-                                    <q-icon name="sym_o_lock" />
-                                </q-item-section>
-                                <q-item-section>
-                                    <q-item-section>
-                                        Manage Access
-                                    </q-item-section>
-                                </q-item-section>
-                                <q-tooltip>
-                                    Manage Access on Mission Level is not
-                                    supported yet
-                                </q-tooltip>
-                            </q-item>
-
-                            <EditMissionDialogOpener
-                                v-if="mission"
-                                :mission="mission"
-                            >
-                                <q-item v-close-popup clickable>
-                                    <q-item-section avatar>
-                                        <q-icon name="sym_o_edit" />
+                                        <q-icon name="sym_o_lock" />
                                     </q-item-section>
                                     <q-item-section>
                                         <q-item-section>
-                                            Edit Mission
+                                            Manage Access
                                         </q-item-section>
                                     </q-item-section>
+                                    <q-tooltip>
+                                        Manage Access on Mission Level is not
+                                        supported yet
+                                    </q-tooltip>
                                 </q-item>
-                            </EditMissionDialogOpener>
 
+                                <EditMissionDialogOpener
+                                    v-if="mission"
+                                    :mission="mission"
+                                >
+                                    <q-item v-close-popup clickable>
+                                        <q-item-section avatar>
+                                            <q-icon name="sym_o_edit" />
+                                        </q-item-section>
+                                        <q-item-section>
+                                            <q-item-section>
+                                                Edit Mission
+                                            </q-item-section>
+                                        </q-item-section>
+                                    </q-item>
+                                </EditMissionDialogOpener>
+
+                                <q-item
+                                    v-ripple
+                                    clickable
+                                    @click="copyMissionUuidToClipboard"
+                                >
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_fingerprint" />
+                                    </q-item-section>
+                                    <q-item-section> Copy UUID</q-item-section>
+                                </q-item>
+
+                                <delete-mission-dialog-opener
+                                    v-if="mission"
+                                    :mission="mission"
+                                >
+                                    <q-item
+                                        v-close-popup
+                                        clickable
+                                        style="color: red"
+                                    >
+                                        <q-item-section avatar>
+                                            <q-icon name="sym_o_delete" />
+                                        </q-item-section>
+                                        <q-item-section>
+                                            <q-item-section>
+                                                Delete Mission
+                                            </q-item-section>
+                                        </q-item-section>
+                                    </q-item>
+                                </delete-mission-dialog-opener>
+                            </q-list>
+                        </q-menu>
+                    </q-btn>
+                </button-group>
+            </template>
+        </title-section>
+
+        <div>
+            <div
+                v-if="selectedFiles.length === 0"
+                class="q-my-lg flex justify-between items-center"
+            >
+                <Suspense>
+                    <ExplorerPageTableHeader
+                        v-if="handler"
+                        :url-handler="handler"
+                    />
+
+                    <template #fallback>
+                        <div style="width: 550px; height: 67px">
+                            <q-skeleton
+                                class="q-mr-md q-mb-sm q-mt-sm"
+                                style="width: 300px; height: 20px"
+                            />
+                            <q-skeleton
+                                class="q-mr-md"
+                                style="width: 200px; height: 18px"
+                            />
+                        </div>
+                    </template>
+                </Suspense>
+                <ButtonGroup>
+                    <q-select
+                        v-model="selectedFileHealth"
+                        :options="fileHealthOptions"
+                        style="min-width: 160px; height: 36px !important"
+                        clearable
+                        dense
+                        outlined
+                        hide-bottom-space
+                        class="self-stretch"
+                        label="File Health"
+                        @clear="clearSelectedFileState"
+                    >
+                        <template #selected-item="props">
+                            <q-chip
+                                v-if="props.opt"
+                                :color="fileHealthColor(props.opt)"
+                                :style="`color: ${fileHealthTextColor(props.opt)}; font-size: smaller`"
+                            >
+                                {{ props.opt }}
+                            </q-chip>
+                        </template>
+                        <template #option="props">
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="copyMissionUuidToClipboard"
+                                v-bind="props.itemProps"
+                                dense
+                                @click="() => props.toggleOption(props.opt)"
                             >
-                                <q-item-section avatar>
-                                    <q-icon name="sym_o_fingerprint" />
+                                <q-item-section>
+                                    <div>
+                                        <q-chip
+                                            dense
+                                            :color="fileHealthColor(props.opt)"
+                                            :style="`color: ${fileHealthTextColor(props.opt)}`"
+                                            class="full-width"
+                                        >
+                                            {{ props.opt }}
+                                        </q-chip>
+                                    </div>
                                 </q-item-section>
-                                <q-item-section> Copy UUID</q-item-section>
                             </q-item>
-
-                            <delete-mission-dialog-opener
-                                v-if="mission"
-                                :mission="mission"
-                            >
-                                <q-item
-                                    v-close-popup
-                                    clickable
-                                    style="color: red"
-                                >
-                                    <q-item-section avatar>
-                                        <q-icon name="sym_o_delete" />
-                                    </q-item-section>
-                                    <q-item-section>
-                                        <q-item-section>
-                                            Delete Mission
-                                        </q-item-section>
-                                    </q-item-section>
-                                </q-item>
-                            </delete-mission-dialog-opener>
-                        </q-list>
-                    </q-menu>
-                </q-btn>
-            </button-group>
-        </template>
-    </title-section>
-
-    <div>
-        <div
-            v-if="selectedFiles.length === 0"
-            class="q-my-lg flex justify-between items-center"
-        >
-            <Suspense>
-                <ExplorerPageTableHeader
-                    v-if="handler"
-                    :url-handler="handler"
-                />
-
-                <template #fallback>
-                    <div style="width: 550px; height: 67px">
-                        <q-skeleton
-                            class="q-mr-md q-mb-sm q-mt-sm"
-                            style="width: 300px; height: 20px"
-                        />
-                        <q-skeleton
-                            class="q-mr-md"
-                            style="width: 200px; height: 18px"
-                        />
-                    </div>
-                </template>
-            </Suspense>
-            <ButtonGroup>
-                <q-select
-                    v-model="selectedFileHealth"
-                    :options="fileHealthOptions"
-                    style="min-width: 160px; height: 36px !important"
-                    clearable
-                    dense
-                    outlined
-                    hide-bottom-space
-                    class="self-stretch"
-                    label="File Health"
-                    @clear="clearSelectedFileState"
-                >
-                    <template #selected-item="props">
-                        <q-chip
-                            v-if="props.opt"
-                            :color="fileHealthColor(props.opt)"
-                            :style="`color: ${fileHealthTextColor(props.opt)}; font-size: smaller`"
-                        >
-                            {{ props.opt }}
-                        </q-chip>
-                    </template>
-                    <template #option="props">
-                        <q-item
-                            v-ripple
-                            clickable
-                            v-bind="props.itemProps"
-                            dense
-                            @click="() => props.toggleOption(props.opt)"
-                        >
-                            <q-item-section>
-                                <div>
-                                    <q-chip
-                                        dense
-                                        :color="fileHealthColor(props.opt)"
-                                        :style="`color: ${fileHealthTextColor(props.opt)}`"
-                                        class="full-width"
-                                    >
-                                        {{ props.opt }}
-                                    </q-chip>
-                                </div>
-                            </q-item-section>
-                        </q-item>
-                    </template>
-                </q-select>
-                <CategorySelector
-                    v-if="projectUuid"
-                    :selected="selectedCategories"
-                    :project-uuid="projectUuid"
-                    class="self-stretch"
-                    style="height: 36px !important"
-                    @update:selected="updateSelected"
-                />
-
-                <div
-                    class="button-border"
-                    style="min-width: 220px; height: 36px"
-                >
-                    <file-type-selector v-model="fileTypeFilter" />
-                </div>
-
-                <app-search-bar
-                    v-model="search"
-                    placeholder="Search by Filename"
-                />
-
-                <app-refresh-button @click="refresh" />
-
-                <create-file-dialog-opener
-                    :mission="mission as MissionWithFilesDto"
-                >
-                    <app-create-button
-                        label="Upload File"
-                        icon="sym_o_upload"
-                    />
-                </create-file-dialog-opener>
-            </ButtonGroup>
-        </div>
-        <div v-else class="q-py-lg" style="background: #0f62fe">
-            <ButtonGroupOverlay>
-                <template #start>
-                    <div style="margin: 0; font-size: 14pt; color: white">
-                        {{ selectedFiles.length }}
-                        {{ selectedFiles.length === 1 ? 'file' : 'files' }}
-                        selected
-                    </div>
-                </template>
-                <template v-if="mission" #end>
-                    <klein-download-files
-                        :files="selectedFiles"
-                        style="max-width: 300px"
-                    />
-                    <OpenMultCategoryAdd
-                        :mission="mission"
-                        :files="selectedFiles"
-                    />
-                    <OpenMultiFileMoveDialog
-                        :mission="mission"
-                        :files="selectedFiles"
+                        </template>
+                    </q-select>
+                    <CategorySelector
+                        v-if="projectUuid"
+                        :selected="selectedCategories"
+                        :project-uuid="projectUuid"
+                        class="self-stretch"
+                        style="height: 36px !important"
+                        @update:selected="updateSelected"
                     />
 
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_download"
-                        color="white"
-                        @click="downloadCallback"
+                    <div
+                        class="button-border"
+                        style="min-width: 220px; height: 36px"
                     >
-                        Download
-                    </q-btn>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_delete"
-                        color="white"
-                        @click="deleteFilesCallback"
-                    >
-                        Delete
-                    </q-btn>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_close"
-                        color="white"
-                        @click="deselect"
+                        <file-type-selector v-model="fileTypeFilter" />
+                    </div>
+
+                    <app-search-bar
+                        v-model="search"
+                        placeholder="Search by Filename"
                     />
-                </template>
-            </ButtonGroupOverlay>
-        </div>
-        <div>
-            <Suspense>
-                <explorer-page-files-table
-                    v-if="handler"
-                    v-model:selected="selectedFiles"
-                    :url-handler="handler"
-                    @reset-filter="resetFilter"
-                />
 
-                <template #fallback>
-                    <div style="width: 100%; height: 645px">
-                        <q-skeleton
-                            class="q-mr-md q-mb-sm q-mt-sm"
-                            style="width: 100%; height: 40px"
+                    <app-refresh-button @click="refresh" />
+
+                    <create-file-dialog-opener
+                        :mission="mission as MissionWithFilesDto"
+                    >
+                        <app-create-button
+                            label="Upload File"
+                            icon="sym_o_upload"
                         />
-
-                        <div v-for="i in 20" :key="i" class="q-mt-sm">
-                            <q-skeleton
-                                class="q-mr-md q-mb-sm"
-                                style="width: 100%; height: 20px; opacity: 0.5"
-                            />
+                    </create-file-dialog-opener>
+                </ButtonGroup>
+            </div>
+            <div v-else class="q-py-lg" style="background: #0f62fe">
+                <ButtonGroupOverlay>
+                    <template #start>
+                        <div style="margin: 0; font-size: 14pt; color: white">
+                            {{ selectedFiles.length }}
+                            {{ selectedFiles.length === 1 ? 'file' : 'files' }}
+                            selected
                         </div>
-                    </div>
-                </template>
-            </Suspense>
+                    </template>
+                    <template v-if="mission" #end>
+                        <klein-download-files
+                            :files="selectedFiles"
+                            style="max-width: 300px"
+                        />
+                        <OpenMultCategoryAdd
+                            :mission="mission"
+                            :files="selectedFiles"
+                        />
+                        <OpenMultiFileMoveDialog
+                            :mission="mission"
+                            :files="selectedFiles"
+                        />
+
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            icon="sym_o_download"
+                            color="white"
+                            @click="downloadCallback"
+                        >
+                            Download
+                        </q-btn>
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            icon="sym_o_delete"
+                            color="white"
+                            @click="deleteFilesCallback"
+                        >
+                            Delete
+                        </q-btn>
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            icon="sym_o_close"
+                            color="white"
+                            @click="deselect"
+                        />
+                    </template>
+                </ButtonGroupOverlay>
+            </div>
+            <div>
+                <Suspense>
+                    <explorer-page-files-table
+                        v-if="handler"
+                        v-model:selected="selectedFiles"
+                        :url-handler="handler"
+                        @reset-filter="resetFilter"
+                    />
+
+                    <template #fallback>
+                        <div style="width: 100%; height: 645px">
+                            <q-skeleton
+                                class="q-mr-md q-mb-sm q-mt-sm"
+                                style="width: 100%; height: 40px"
+                            />
+
+                            <div v-for="i in 20" :key="i" class="q-mt-sm">
+                                <q-skeleton
+                                    class="q-mr-md q-mb-sm"
+                                    style="
+                                        width: 100%;
+                                        height: 20px;
+                                        opacity: 0.5;
+                                    "
+                                />
+                            </div>
+                        </div>
+                    </template>
+                </Suspense>
+            </div>
         </div>
     </div>
 </template>

@@ -1,7 +1,7 @@
 <template>
-    <Suspense>
+    <div>
         <dashboard-component />
-    </Suspense>
+    </div>
 </template>
 
 <script setup lang="ts">
