@@ -120,7 +120,7 @@ export class FileIngestionService {
 
         const source = await strategy.fetch(queueItem.identifier);
 
-        queueItem.display_name = source.filename;
+        queueItem.displayName = source.filename;
         await this.queueRepo.save(queueItem);
 
         const downloadPath = path.join(workDirectory, source.filename);

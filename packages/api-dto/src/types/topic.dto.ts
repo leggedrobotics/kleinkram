@@ -1,24 +1,29 @@
 import { Paginated } from '@api-dto/pagination';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { IsArray, IsNumber, IsString, ValidateNested } from 'class-validator';
 
+@Expose()
 export class TopicDto {
     @ApiProperty()
     @IsString()
+    @Expose()
     name!: string;
 
     @ApiProperty()
     @IsString()
+    @Expose()
     type!: string;
 
     @ApiProperty()
     @IsNumber()
+    @Expose()
     nrMessages?: bigint;
 
     @ApiProperty()
     @IsNumber()
+    @Expose()
     frequency!: number;
 }
 

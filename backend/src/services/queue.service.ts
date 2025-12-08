@@ -99,8 +99,7 @@ export class QueueService implements OnModuleInit {
         const queueEntry = await this.queueRepository.save(
             this.queueRepository.create({
                 identifier: fileId,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                display_name: `Google Drive File (${fileId})`,
+                displayName: `Google Drive File (${fileId})`,
                 state: QueueState.AWAITING_PROCESSING,
                 location: FileLocation.DRIVE,
                 mission,
@@ -169,8 +168,8 @@ export class QueueService implements OnModuleInit {
             job = await this.queueRepository.save(
                 this.queueRepository.create({
                     identifier: file.uuid,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    display_name: file.filename,
+
+                    displayName: file.filename,
                     state: QueueState.AWAITING_UPLOAD,
                     location: FileLocation.MINIO,
                     mission: file.mission,
@@ -238,8 +237,7 @@ export class QueueService implements OnModuleInit {
         userUUID: string,
         skip: number,
         take: number,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ): Promise<any[]> {
+    ): Promise<IngestionJobEntity[]> {
         // @ts-ignore
         const user = await this.userService.findOneByUUID(userUUID);
         const where: FindOptionsWhere<IngestionJobEntity> = {
@@ -281,7 +279,7 @@ export class QueueService implements OnModuleInit {
                 .map((state) => Number.parseInt(state));
             query.andWhere('ingestion_job.state IN (:...filter)', { filter });
         }
-        return query.getMany();
+        return (await query.getMany()) as IngestionJobEntity[];
     }
 
     async delete(

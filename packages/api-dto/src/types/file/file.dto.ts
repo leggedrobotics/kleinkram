@@ -4,7 +4,7 @@ import { TopicDto } from '@api-dto/topic.dto';
 import { UserDto } from '@api-dto/user/user.dto';
 import { FileState, FileType } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import {
     IsBoolean,
     IsDate,
@@ -15,33 +15,40 @@ import {
     ValidateNested,
 } from 'class-validator';
 
+@Expose()
 export class FileDto {
     @ApiProperty()
     @IsString()
+    @Expose()
     uuid!: string;
 
     @ApiProperty()
     @IsString()
+    @Expose()
     filename!: string;
 
     @ApiProperty()
     @IsDate()
+    @Expose()
     date!: Date;
 
     @ApiProperty()
     @IsDate()
+    @Expose()
     createdAt!: Date;
 
     @ApiProperty()
     @IsDate()
+    @Expose()
     updatedAt!: Date;
 
     @ApiProperty({
         description: 'The mission the file belongs to',
-        type: () => [MissionDto],
+        type: () => MissionDto,
     })
     @ValidateNested()
     @Type(() => MissionDto)
+    @Expose()
     mission!: MissionDto;
 
     @ApiProperty({
@@ -50,10 +57,12 @@ export class FileDto {
     })
     @ValidateNested()
     @Type(() => CategoryDto)
+    @Expose()
     categories!: CategoryDto[];
 
     @ApiProperty()
     @IsNumber()
+    @Expose()
     size!: number;
 
     @ApiProperty({
@@ -62,6 +71,7 @@ export class FileDto {
         enum: FileState,
     })
     @IsEnum(FileState)
+    @Expose()
     state!: FileState;
 
     @ApiProperty({
@@ -70,6 +80,7 @@ export class FileDto {
     })
     @ValidateNested()
     @Type(() => UserDto)
+    @Expose()
     creator!: UserDto;
 
     @ApiProperty({
@@ -78,15 +89,19 @@ export class FileDto {
         enum: FileType,
     })
     @IsEnum(FileType)
+    @Expose()
     type!: FileType;
 
     @ApiProperty()
     @IsString()
-    hash!: string;
+    @IsOptional()
+    @Expose()
+    hash!: string | null;
 
     @ApiProperty()
     @IsString()
     @IsOptional()
+    @Expose()
     relatedFileUuid?: string | undefined;
 }
 
@@ -97,6 +112,7 @@ export class FileWithTopicDto extends FileDto {
     })
     @ValidateNested()
     @Type(() => TopicDto)
+    @Expose()
     topics!: TopicDto[];
 
     // additional properties only used in frontend
@@ -104,15 +120,18 @@ export class FileWithTopicDto extends FileDto {
     @ApiProperty()
     @IsOptional()
     @IsNumber()
+    @Expose()
     uploaded?: number;
 
     @ApiProperty()
     @IsOptional()
     @IsBoolean()
+    @Expose()
     canceled?: boolean;
 
     @ApiProperty()
     @IsOptional()
     @IsString()
+    @Expose()
     missionUUID?: string;
 }

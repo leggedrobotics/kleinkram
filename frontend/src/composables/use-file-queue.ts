@@ -1,7 +1,7 @@
 import type {
     CancelProcessingResponseDto,
     DeleteMissionResponseDto,
-    FileQueueEntryDto,
+    FileQueueEntriesDto,
 } from '@kleinkram/api-dto';
 import {
     useMutation,
@@ -23,20 +23,20 @@ export function useQueue(
     startDate: MaybeRef<string>,
     stateFilter: MaybeRef<string[]>,
     pagination: MaybeRef<{ skip: number; take: number }>,
-): UseQueryReturnType<FileQueueEntryDto[], Error> {
+): UseQueryReturnType<FileQueueEntriesDto, Error> {
     const queryKey = computed(() =>
         fileKeys.queue.list(startDate, stateFilter, pagination),
     );
     const enabled = computed(() => !!unref(startDate));
 
-    return useQuery<FileQueueEntryDto[]>({
+    return useQuery<FileQueueEntriesDto>({
         queryKey,
         queryFn: async () =>
-            (await getQueue(
+            await getQueue(
                 unref(startDate),
                 unref(stateFilter),
                 unref(pagination),
-            )) as FileQueueEntryDto[],
+            ),
         refetchInterval: 1000,
         enabled,
     });

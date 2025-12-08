@@ -5,6 +5,7 @@ import { Type } from 'class-transformer';
 import {
     IsBoolean,
     IsNumber,
+    IsOptional,
     IsString,
     IsUUID,
     ValidateNested,
@@ -21,17 +22,20 @@ export class AccessCredentialsDto {
 
     @ApiProperty()
     @IsString()
-    sessionToken!: string;
+    @IsOptional()
+    sessionToken?: string;
 }
 
 export class TemporaryFileAccessDto {
     @ApiProperty()
     @IsString()
-    bucket!: string;
+    @IsOptional()
+    bucket!: string | null;
 
     @ApiProperty()
     @IsUUID()
-    fileUUID!: string;
+    @IsOptional()
+    fileUUID!: string | null;
 
     @ApiProperty()
     @IsString()
@@ -40,7 +44,13 @@ export class TemporaryFileAccessDto {
     @ApiProperty()
     @ValidateNested()
     @Type(() => AccessCredentialsDto)
-    accessCredentials!: AccessCredentialsDto;
+    @IsOptional()
+    accessCredentials!: AccessCredentialsDto | null;
+
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    error?: string | null;
 }
 
 export class TemporaryFileAccessesDto implements Paginated<TemporaryFileAccessDto> {

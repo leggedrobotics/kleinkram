@@ -96,7 +96,7 @@
         ref="tableReference"
         v-model:pagination="pagination"
         v-model:selected="selected"
-        :rows="queueEntries || []"
+        :rows="queueEntries?.data || []"
         :columns="columns as any"
         row-key="uuid"
         flat
@@ -224,6 +224,7 @@ const pagination = ref({
     descending: false,
     page: 1,
     rowsPerPage: 10,
+    rowsNumber: 0,
 });
 
 const queryPagination = computed(() => ({
@@ -276,6 +277,12 @@ const { data: queueEntries, isLoading } = useQueue(
     queryPagination,
 );
 
+watch(queueEntries, (newValue) => {
+    if (newValue) {
+        pagination.value.rowsNumber = newValue.count;
+    }
+});
+
 const { mutate: removeFile } = useDeleteQueueItem();
 const { mutate: _cancelProcessing } = useCancelProcessing();
 
@@ -283,7 +290,7 @@ const openDeleteFileDialog = (queueEntry: FileQueueEntryDto): void => {
     $q.dialog({
         component: ConfirmDeleteFile,
         componentProps: {
-            filename: queueEntry.display_name,
+            filename: queueEntry.displayName,
         },
     }).onOk(() => {
         removeFile({
@@ -303,10 +310,10 @@ async function refresh(): Promise<void> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
     const isFile =
-        row.display_name.endsWith('.bag') || row.display_name.endsWith('.mcap');
+        row.displayName.endsWith('.bag') || row.displayName.endsWith('.mcap');
     const isCompleted = row.state === QueueState.COMPLETED;
     if (isFile && isCompleted) {
-        await findOneByNameAndMission(row.display_name, row.mission.uuid).then(
+        await findOneByNameAndMission(row.displayName, row.mission.uuid).then(
             async (file: FileWithTopicDto) => {
                 await $router.push({
                     name: ROUTES.FILE.routeName,
@@ -345,7 +352,7 @@ function canDelete(row: FileQueueEntryDto): boolean {
 }
 
 async function downloadFile(row: FileQueueEntryDto): Promise<void> {
-    await findOneByNameAndMission(row.display_name, row.mission.uuid).then(
+    await findOneByNameAndMission(row.displayName, row.mission.uuid).then(
         async (file: FileWithTopicDto) => {
             await _downloadFile(file.uuid, file.filename);
         },
@@ -382,11 +389,11 @@ const columns = [
         align: 'left',
         field: (row: FileQueueEntryDto): string => {
             if (
-                row.display_name === row.identifier &&
+                row.displayName === row.identifier &&
                 row.location === FileLocation.DRIVE
             )
                 return 'Not available';
-            return row.display_name;
+            return row.displayName;
         },
     },
     {

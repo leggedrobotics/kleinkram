@@ -21,10 +21,8 @@ export class IngestionJobEntity extends BaseEntity {
      * The name of the file as displayed to the user in the queue list
      *
      */
-    @Column({ default: '' })
-
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    display_name!: string;
+    @Column({ default: '', name: 'display_name' })
+    displayName!: string;
 
     @Column({
         type: 'enum',

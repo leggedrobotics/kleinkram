@@ -101,8 +101,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
                 const queue = await this.queueRepository.findOneOrFail({
                     where: {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        display_name: file.filename,
+                        displayName: file.filename,
                         mission: { uuid: file.mission.uuid },
                     },
                 });
@@ -198,8 +197,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
                         const queue = await this.queueRepository.findOne({
                             where: {
-                                // eslint-disable-next-line @typescript-eslint/naming-convention
-                                display_name: file.filename,
+                                displayName: file.filename,
                                 mission: { uuid: file.mission.uuid },
                             },
                         });

@@ -19,6 +19,7 @@ import {
 export class FileEntity extends BaseEntity {
     @ManyToOne(() => MissionEntity, (mission) => mission.files, {
         nullable: false,
+        onDelete: 'CASCADE',
     })
     mission?: MissionEntity;
 

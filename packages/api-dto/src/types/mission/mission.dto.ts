@@ -4,7 +4,7 @@ import { TagDto } from '@api-dto/tags/tags.dto';
 import { UserDto } from '@api-dto/user/user.dto';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import {
     IsDate,
     IsInt,
@@ -14,16 +14,20 @@ import {
     ValidateNested,
 } from 'class-validator';
 
+@Expose()
 export class MinimumMissionDto {
     @ApiProperty()
     @IsUUID()
+    @Expose()
     uuid!: string;
 
     @ApiProperty()
     @IsString()
+    @Expose()
     name!: string;
 }
 
+@Expose()
 export class MissionDto extends MinimumMissionDto {
     @ApiProperty({
         description: 'The project the mission belongs to',
@@ -31,14 +35,17 @@ export class MissionDto extends MinimumMissionDto {
     })
     @ValidateNested()
     @Type(() => ProjectDto)
+    @Expose()
     project!: ProjectDto;
 
     @ApiProperty()
     @IsDate()
+    @Expose()
     createdAt!: Date;
 
     @ApiProperty()
     @IsDate()
+    @Expose()
     updatedAt!: Date;
 
     @ApiProperty({
@@ -47,9 +54,11 @@ export class MissionDto extends MinimumMissionDto {
     })
     @ValidateNested()
     @Type(() => TagDto)
+    @Expose()
     tags!: TagDto[];
 }
 
+@Expose()
 export class MissionWithCreatorDto extends MissionDto {
     @ApiProperty({
         description: 'The creator of the mission',
@@ -57,6 +66,7 @@ export class MissionWithCreatorDto extends MissionDto {
     })
     @ValidateNested()
     @Type(() => UserDto)
+    @Expose()
     creator!: UserDto;
 }
 

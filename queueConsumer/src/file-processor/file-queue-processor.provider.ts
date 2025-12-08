@@ -39,7 +39,7 @@ export class FileQueueProcessorProvider {
 
             if (metadata.mimeType === 'application/vnd.google-apps.folder') {
                 logger.debug(
-                    `Found Google Drive Folder: ${queueItem.display_name}. EXPANDING...`,
+                    `Found Google Drive Folder: ${queueItem.displayName}. EXPANDING...`,
                 );
                 await this.expandDriveFolder(queueItem);
                 return;
@@ -74,8 +74,7 @@ export class FileQueueProcessorProvider {
                 // We basically clone the parent job but change identifier/name
                 const newJob = this.queueRepo.create({
                     identifier: file.id,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    display_name: file.name,
+                    displayName: file.name,
                     state: QueueState.AWAITING_PROCESSING,
                     mission: parentJob.mission,
                     creator: parentJob.creator,

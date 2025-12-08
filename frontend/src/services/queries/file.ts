@@ -1,4 +1,5 @@
 import type { FileExistsResponseDto } from '@kleinkram/api-dto/types/file/access.dto';
+import type { DownloadResponseDto } from '@kleinkram/api-dto/types/file/download-response.dto';
 import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
@@ -78,7 +79,7 @@ export const downloadFile = async (
     // eslint-disable-next-line @typescript-eslint/naming-convention
     preview_only = false,
 ): Promise<string> => {
-    const response = await axios.get('files/download', {
+    const response = await axios.get<DownloadResponseDto>('files/download', {
         params: {
             uuid,
 
@@ -87,8 +88,7 @@ export const downloadFile = async (
             preview_only,
         },
     });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    return response.data.url;
 };
 
 export const filesOfMission = async (

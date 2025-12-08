@@ -31,6 +31,7 @@ export class MissionAccessEntity extends BaseEntity {
         (mission) => mission.mission_accesses,
         {
             nullable: false,
+            onDelete: 'CASCADE',
         },
     )
     mission?: MissionEntity;
