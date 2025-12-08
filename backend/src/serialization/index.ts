@@ -1,3 +1,4 @@
+import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
@@ -8,6 +9,7 @@ import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-ty
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 
 import {
+    AccessGroupDto,
     CurrentAPIUserDto,
     FileDto,
     FileWithTopicDto,
@@ -53,7 +55,7 @@ export const userEntityToCurrentAPIUserDto = (
         role: user.role ?? UserRole.USER,
         memberships:
             user.memberships?.map((m) =>
-                groupMembershipEntityToDto(m, false, user),
+                groupMembershipEntityToDto(m, false, user, true),
             ) ?? [],
     };
 };
@@ -225,11 +227,12 @@ export const projectAccessEntityToDto = (
     };
 };
 
-export const groupMembershipEntityToDto = (
+export function groupMembershipEntityToDto(
     groupMembership: GroupMembershipEntity,
     includeEmail = false,
     userOverride?: UserEntity,
-): GroupMembershipDto => {
+    includeAccessGroup = false,
+): GroupMembershipDto {
     const user = groupMembership.user ?? userOverride;
 
     if (user === undefined) {
@@ -239,13 +242,16 @@ export const groupMembershipEntityToDto = (
     return {
         uuid: groupMembership.uuid,
         canEditGroup: groupMembership.canEditGroup,
-        accessGroup: null, // we don't want to return the access group
+        accessGroup:
+            includeAccessGroup && groupMembership.accessGroup
+                ? accessGroupEntityToDto(groupMembership.accessGroup)
+                : null,
         createdAt: groupMembership.createdAt,
         updatedAt: groupMembership.updatedAt,
         expirationDate: groupMembership.expirationDate ?? null,
         user: userEntityToDto(user, includeEmail),
     };
-};
+}
 
 export const projectEntityToDto = (project: ProjectEntity): ProjectDto => {
     return {
@@ -328,3 +334,24 @@ export const tagEntityToDto = (tag: MetadataEntity): TagDto => {
         uuid: tag.uuid,
     };
 };
+
+export function accessGroupEntityToDto(
+    accessGroup: AccessGroupEntity,
+): AccessGroupDto {
+    return {
+        uuid: accessGroup.uuid,
+        name: accessGroup.name,
+        createdAt: accessGroup.createdAt,
+        updatedAt: accessGroup.updatedAt,
+        type: accessGroup.type,
+        hidden: accessGroup.hidden,
+        creator: accessGroup.creator
+            ? userEntityToDto(accessGroup.creator)
+            : null,
+        memberships:
+            accessGroup.memberships?.map((m) =>
+                groupMembershipEntityToDto(m, false, undefined, false),
+            ) ?? [],
+        projectAccesses: [],
+    };
+}

@@ -77,7 +77,9 @@ export class UserEntity extends BaseEntity {
     @JoinColumn({ name: 'account_uuid' })
     account?: AccountEntity;
 
-    @OneToMany(() => GroupMembershipEntity, (membership) => membership.user)
+    @OneToMany(() => GroupMembershipEntity, (membership) => membership.user, {
+        cascade: ['insert'],
+    })
     memberships?: GroupMembershipEntity[];
 
     @OneToMany(() => ProjectEntity, (project) => project.creator)

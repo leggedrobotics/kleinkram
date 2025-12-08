@@ -3,6 +3,8 @@ import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membe
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { UserRole } from '@kleinkram/shared';
+import * as fs from 'node:fs';
+import path from 'node:path';
 import { define } from 'typeorm-seeding';
 
 export interface UserContext {
@@ -11,6 +13,13 @@ export interface UserContext {
     mail: string;
     role: UserRole;
     defaultGroupIds: string[];
+}
+
+interface AccessGroupConfig {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    emails: { email: string; access_groups: string[] }[];
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    access_groups: { name: string; uuid: string; rights: number }[];
 }
 
 define(UserEntity, (_, context: Partial<UserContext> = {}) => {
@@ -29,13 +38,38 @@ define(UserEntity, (_, context: Partial<UserContext> = {}) => {
     user.avatarUrl = extendedFaker.image.avatarGitHub();
     user.uuid = extendedFaker.string.uuid();
 
-    if (context.defaultGroupIds) {
-        // TODO: fix...
-        user.memberships = context.defaultGroupIds.map((id) => {
-            const accessGroup = new AccessGroupEntity();
-            accessGroup.uuid = id;
-            return accessGroup;
-        }) as unknown as GroupMembershipEntity[];
+    let groupIds: string[] = context.defaultGroupIds ?? [];
+
+    try {
+        const configPath = path.resolve(
+            // eslint-disable-next-line unicorn/prefer-module
+            __dirname,
+            '../../../../../backend/src/access_config.json',
+        );
+
+        if (fs.existsSync(configPath)) {
+            const configContent = fs.readFileSync(configPath, 'utf8');
+            const config = JSON.parse(configContent) as AccessGroupConfig;
+
+            for (const emailConfig of config.emails) {
+                if (user.email.endsWith(emailConfig.email)) {
+                    groupIds = [...groupIds, ...emailConfig.access_groups];
+                }
+            }
+        }
+    } catch {
+        // ignore
+    }
+
+    // Deduplicate
+    groupIds = [...new Set(groupIds)];
+
+    if (groupIds.length > 0) {
+        user.memberships = groupIds.map((id) => {
+            const membership = new GroupMembershipEntity();
+            membership.accessGroup = { uuid: id } as AccessGroupEntity;
+            return membership;
+        });
     }
 
     return user;
