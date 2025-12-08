@@ -253,7 +253,7 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
 
     resp.raise_for_status()
 
-    return resp.text
+    return resp.json()["url"]
 
 
 def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False, verbose: bool = False) -> None:
