@@ -1,5 +1,8 @@
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
-import { FileLocation, QueueState } from '@kleinkram/shared';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { FileLocation, FileState, QueueState } from '@kleinkram/shared';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,12 +13,17 @@ import { FileIngestionService } from './file-ingestion.service';
 import { GoogleDriveStrategy } from './strategies/google-drive.strategy';
 import { MinioStrategy } from './strategies/minio.strategy';
 
+import { createHash } from 'node:crypto';
+
 @Processor('file-queue')
 @Injectable()
 export class FileQueueProcessorProvider {
     constructor(
         @InjectRepository(IngestionJobEntity)
         private queueRepo: Repository<IngestionJobEntity>,
+        @InjectRepository(FileEntity)
+        private fileRepo: Repository<FileEntity>,
+        private readonly storageService: StorageService,
         private readonly fileIngestionService: FileIngestionService,
         private readonly driveStrategy: GoogleDriveStrategy,
         private readonly minioStrategy: MinioStrategy,
@@ -57,6 +65,69 @@ export class FileQueueProcessorProvider {
             relations: ['mission', 'creator', 'mission.project'],
         });
         return this.runPipeline(queueItem);
+    }
+
+    @Process({ name: 'extractHashFromMinio' })
+    async extractHashFromMinio(job: Job<{ file_uuid: string }>): Promise<void> {
+        const { file_uuid } = job.data;
+        logger.debug(`Extracting hash for file ${file_uuid}`);
+
+        const file = await this.fileRepo.findOne({
+            where: { uuid: file_uuid },
+        });
+        if (!file) {
+            logger.error(`File ${file_uuid} not found for hash extraction`);
+            return;
+        }
+
+        try {
+            const stat = await this.storageService.getFileInfo(
+                env.MINIO_DATA_BUCKET_NAME,
+                file.uuid,
+            );
+            // ETag is often surrounded by quotes in S3/Minio, e.g. "5b3...c6"
+            let hash = stat?.etag?.replace(/"/g, '');
+
+            // Valid MD5 is 32 hex chars. S3 multipart ETag has -N suffix.
+            const ismd5 = /^[\da-f]{32}$/i.test(hash ?? '');
+
+            if (hash && ismd5) {
+                logger.debug(
+                    `Found MD5 hash in Minio metadata for ${file_uuid}: ${hash}`,
+                );
+                // Convert Hex MD5 to Base64 to match CLI/Frontend expectation
+                hash = Buffer.from(hash, 'hex').toString('base64');
+            } else {
+                logger.debug(
+                    `Calculating hash for ${file_uuid} (ETag: ${String(hash)})`,
+                );
+                const stream = await this.storageService.getFileStream(
+                    env.MINIO_DATA_BUCKET_NAME,
+                    file.uuid,
+                );
+                hash = await this.calculateHash(stream);
+            }
+
+            file.hash = hash;
+            // Ensure state is OK if it was somehow different
+            file.state = FileState.OK;
+            await this.fileRepo.save(file);
+            logger.debug(`Updated hash for ${file_uuid}`);
+        } catch (error) {
+            logger.error(
+                `Failed to extract hash for ${file_uuid}: ${String(error)}`,
+            );
+            throw error;
+        }
+    }
+
+    private calculateHash(stream: NodeJS.ReadableStream): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const hash = createHash('md5');
+            stream.on('data', (data) => hash.update(data));
+            stream.on('end', () => resolve(hash.digest('base64')));
+            stream.on('error', (error) => reject(error));
+        });
     }
 
     private async expandDriveFolder(parentJob: IngestionJobEntity) {
