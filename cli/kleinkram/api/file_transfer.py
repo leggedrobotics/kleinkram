@@ -495,7 +495,7 @@ def upload_files(
         unit="files",
         desc="Uploading files",
         disable=not verbose,
-        leave=False,
+        leave=True,
     ) as pbar:
         start = monotonic()
         futures: Dict[Future[Tuple[UploadState, int]], Path] = {}
@@ -533,24 +533,25 @@ def upload_files(
                 total_uploaded_bytes += uploaded_bytes
                 pbar.update()
 
-        end = monotonic()
-        elapsed_time = end - start
+    end = monotonic()
+    elapsed_time = end - start
 
-        avg_speed_bps = total_uploaded_bytes / elapsed_time if elapsed_time > 0 else 0
+    avg_speed_bps = total_uploaded_bytes / elapsed_time if elapsed_time > 0 else 0
 
-        if verbose:
-            console.print(f"Upload took {elapsed_time:.2f} seconds")
-            console.print(f"Total uploaded: {format_bytes(total_uploaded_bytes)}")
-            console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
+    if verbose:
+        console.print()
+        console.print(f"Upload took {elapsed_time:.2f} seconds")
+        console.print(f"Total uploaded: {format_bytes(total_uploaded_bytes)}")
+        console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
 
-            if failed_files > 0:
-                console.print(
-                    f"\nUploaded {len(files) - failed_files - skipped_files} files, "
-                    f"{skipped_files} skipped, {failed_files} uploads failed",
-                    style="red",
-                )
-            else:
-                console.print(f"\nUploaded {len(files) - skipped_files} files, {skipped_files} skipped")
+        if failed_files > 0:
+            console.print(
+                f"\nUploaded {len(files) - failed_files - skipped_files} files, "
+                f"{skipped_files} skipped, {failed_files} uploads failed",
+                style="red",
+            )
+        else:
+            console.print(f"\nUploaded {len(files) - skipped_files} files, {skipped_files} skipped")
 
 
 def download_files(
@@ -567,7 +568,7 @@ def download_files(
         unit="files",
         desc="Downloading files",
         disable=not verbose,
-        leave=False,
+        leave=True,
     ) as pbar:
 
         start = monotonic()
@@ -591,10 +592,11 @@ def download_files(
                 total_downloaded_bytes += downloaded_bytes
                 pbar.update()
 
-        end = monotonic()
-        elapsed_time = end - start
-        avg_speed_bps = total_downloaded_bytes / elapsed_time if elapsed_time > 0 else 0
+    end = monotonic()
+    elapsed_time = end - start
+    avg_speed_bps = total_downloaded_bytes / elapsed_time if elapsed_time > 0 else 0
 
-        console.print(f"Download took {elapsed_time:.2f} seconds")
-        console.print(f"Total downloaded/verified: {format_bytes(total_downloaded_bytes)}")
-        console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
+    console.print()
+    console.print(f"Download took {elapsed_time:.2f} seconds")
+    console.print(f"Total downloaded/verified: {format_bytes(total_downloaded_bytes)}")
+    console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
