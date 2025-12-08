@@ -3,7 +3,7 @@ import { FileEntity } from '@backend-common/entities/file/file.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
-import { FileState, FileType } from '@kleinkram/shared';
+import { FileOrigin, FileState, FileType } from '@kleinkram/shared';
 import { define } from 'typeorm-seeding';
 
 export interface FileContext {
@@ -13,6 +13,8 @@ export interface FileContext {
     size?: number;
     type?: FileType;
     categories?: CategoryEntity[];
+    origin?: FileOrigin;
+    hash?: string;
 }
 
 define(FileEntity, (_, context: Partial<FileContext> = {}) => {
@@ -43,6 +45,8 @@ define(FileEntity, (_, context: Partial<FileContext> = {}) => {
 
     file.creator = context.user;
     file.state = FileState.OK;
+    file.origin = context.origin;
+    file.hash = context.hash;
     file.topics = [];
     if (context.categories) {
         file.categories = context.categories;

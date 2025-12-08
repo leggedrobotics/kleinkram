@@ -7,10 +7,13 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
+import { FileContext } from '@backend-common/factories/file/file.factory';
 import { FileEventType, FileOrigin, FileType } from '@kleinkram/shared';
 import * as Minio from 'minio';
 import { execSync } from 'node:child_process';
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
+
 import path from 'node:path';
 import { Connection } from 'typeorm';
 import { Factory } from 'typeorm-seeding';
@@ -94,6 +97,11 @@ export const seedFiles = async (
 
             const filePath = path.join(dataDirectory, fileName);
             const fileSize = fs.statSync(filePath).size;
+            const fileBuffer = fs.readFileSync(filePath);
+            const fileHash = crypto
+                .createHash('md5')
+                .update(fileBuffer)
+                .digest('base64');
 
             // We will create multiple files from one source file to distribute them
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -145,9 +153,9 @@ export const seedFiles = async (
                     size: fileSize,
                     type: fileType,
                     origin: FileOrigin.UPLOAD,
+                    hash: fileHash,
                     categories: [category],
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any).create();
+                } as FileContext).create();
 
                 if (!fileEntity.uuid) {
                     console.error(
