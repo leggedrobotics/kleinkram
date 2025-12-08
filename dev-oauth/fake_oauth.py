@@ -16,7 +16,7 @@ FAKE_USERS = [
         "email": "internal-user@kleinkram.dev",
         "displayName": "Kleinkram User Nr. 2",
         "photo": "https://randomuser.me/api/portraits/women/71.jpg",
-        "comment": "This user is an internal user of Kleinkram. She is part of an affiliation group and can create projects. This user sees no seeded projects.",
+        "comment": "This user is an internal user of Kleinkram. She is part of an affiliation group and can create projects. This user sees the seeded projects.",
     },
     {
         "id": "3",
