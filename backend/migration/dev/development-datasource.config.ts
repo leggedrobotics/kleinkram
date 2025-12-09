@@ -16,10 +16,10 @@ export function getConfig(): DataSourceOptions {
         password: process.env.dev_dbpassword,
         database: process.env.dev_dbname,
         synchronize: false,
-        migrations: ['migration/dev/migrations/*.ts'],
+        migrations: ['migration/migrations/*.ts'],
         entities: [
-            '../common/entities/**/*.entity{.ts,.js}',
-            '../common/viewEntities/**/*.entity{.ts,.js}',
+            '../packages/backend-common/src/entities/**/*.entity{.ts,.js}',
+            '../packages/backend-common/src/viewEntities/**/*.entity{.ts,.js}',
         ],
     } as DataSourceOptions;
 }

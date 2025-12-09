@@ -1,3 +1,4 @@
+import 'tsconfig-paths/register';
 import { DataSource } from 'typeorm';
 import { getConfig } from './production-datasource.config';
 

@@ -1,0 +1,32 @@
+name: Check Migrations
+
+on:
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    check-migrations:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v2
+              with:
+                  version: 8
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'pnpm'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+              working-directory: backend
+
+            - name: Check migrations
+              run: pnpm run migration:check
+              working-directory: backend

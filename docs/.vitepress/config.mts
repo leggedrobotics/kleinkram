@@ -233,7 +233,7 @@ export default withMermaid({
                         },
                         {
                             text: 'Database Migrations',
-                            link: '/development/migrations/Readme',
+                            link: '/development/migrations/migrations',
                         },
                         {
                             text: 'Testing',
