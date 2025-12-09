@@ -99,6 +99,11 @@ services:
             - ./packages:/app/packages
             - ./cli:/app/cli
             - ./cli/tests/generate_test_data.py:/app/common/cli/tests/generate_test_data.py
+            # Mask host node_modules with anonymous volumes to avoid broken symlinks
+            - /app/packages/api-dto/node_modules
+            - /app/packages/backend-common/node_modules
+            - /app/packages/shared/node_modules
+            - /app/packages/validation/node_modules
 
     database:
         image: postgres:17
@@ -269,6 +274,11 @@ services:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
             - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
+            # Mask host node_modules with anonymous volumes to avoid broken symlinks
+            - /app/packages/api-dto/node_modules
+            - /app/packages/backend-common/node_modules
+            - /app/packages/shared/node_modules
+            - /app/packages/validation/node_modules
 
         # Add docker group to allow access to docker socket
         group_add:
