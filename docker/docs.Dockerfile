@@ -19,24 +19,30 @@ ARG MODE="production"
 # Copy all docs source
 COPY docs ./src
 
+# build postgres entity documentation
+COPY packages/backend-common/src ./packages/backend-common/src
+
+# Run the locally installed tsx binary directly to avoid pnpm exec lookup issues
+RUN mkdir -p src/development/application-structure && \
+    cd src && \
+    ../node_modules/.bin/tsx scripts/generate-entity-documentation.ts && \
+    test -f development/application-structure/postgres.md
+
 # Build the docs
 RUN pnpm run docs:build:${MODE} -- src
 
 FROM debian:bookworm-slim AS nginx-base
-RUN apt-get update && \
-    apt-get install -y nginx && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm -rf /etc/nginx/sites-enabled/default
+RUN apt-get update && apt-get install -y nginx
+RUN rm -rf /var/lib/apt/lists/*
+RUN rm -rf /etc/nginx/sites-enabled/default
 
 # Configure nginx for non-root execution
-RUN sed -i 's/user www-data;//g' /etc/nginx/nginx.conf && \
-    sed -i 's/pid \/run\/nginx.pid;/pid \/tmp\/nginx.pid;/g' /etc/nginx/nginx.conf && \
-    # Forward logs to stdout/stderr
-    ln -sf /dev/stdout /var/log/nginx/access.log && \
-    ln -sf /dev/stderr /var/log/nginx/error.log && \
-    # Create temp directory for nginx runtime files corresponding to default config
-    mkdir -p /var/lib/nginx/body /var/lib/nginx/fastcgi /var/lib/nginx/proxy /var/lib/nginx/scgi /var/lib/nginx/uwsgi && \
-    chmod -R 777 /var/lib/nginx /var/log/nginx
+RUN sed -i 's/user www-data;//g' /etc/nginx/nginx.conf
+RUN sed -i 's/pid \/run\/nginx.pid;/pid \/tmp\/nginx.pid;/g' /etc/nginx/nginx.conf
+RUN ln -sf /dev/stdout /var/log/nginx/access.log
+RUN ln -sf /dev/stderr /var/log/nginx/error.log
+RUN mkdir -p /var/lib/nginx/body /var/lib/nginx/fastcgi /var/lib/nginx/proxy /var/lib/nginx/scgi /var/lib/nginx/uwsgi
+RUN chmod -R 777 /var/lib/nginx /var/log/nginx
 
 # Production Stage
 FROM gcr.io/distroless/base-debian12 AS production

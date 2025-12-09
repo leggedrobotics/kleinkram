@@ -120,6 +120,7 @@ function slugify(text: string): string {
         .replaceAll(/[^\w-]/g, '');
 }
 
+// eslint-disable-next-line complexity
 function generateMarkdown(entities: ClassDeclaration[]): string {
     let md =
         '# Postgres\n\nAuto-generated documentation from TypeORM entities.\n\n';
@@ -179,7 +180,10 @@ function generateMarkdown(entities: ClassDeclaration[]): string {
         const safeName = name ?? 'Unknown';
         const safeTableName = tableName ?? 'Unknown';
 
-        md += `## ${safeName} (${safeTableName})\n\n`;
+        const anchor =
+            entityAnchors.get(name ?? '') ??
+            slugify(`${safeName} (${safeTableName})`);
+        md += `<h2 id="${anchor}">${safeName} (${safeTableName})</h2>\n\n`;
         md += `Defined in: \`${sourcePath}\`\n\n`;
 
         // Indices
@@ -209,17 +213,31 @@ function generateMarkdown(entities: ClassDeclaration[]): string {
             let type = getColumnType(property);
             const constr = getConstraints(property);
 
-            // Linkify types if they match an entity
-            // Using regex to match whole words corresponding to entity names
             for (const [entName, anchor] of entityAnchors) {
-                // Check if type contains the entity name
-                // e.g. "UserEntity" or "UserEntity[]" or "Promise<UserEntity>"
-                if (type.includes(entName)) {
-                    // Replace all occurrences of EntName with [EntName](#anchor)
-                    // Using regex with word boundary to avoid partial matches if any
-                    const regex = new RegExp(`\\b${entName}\\b`, 'g');
-                    type = type.replace(regex, `[${entName}](#${anchor})`);
-                }
+                if (!type.includes(entName)) continue;
+
+                // Escape entity name for regex (it may contain $ or other chars)
+                // eslint-disable-next-line unicorn/consistent-function-scoping
+                const escapeRegExp = (s: string) =>
+                    s.replaceAll(/[.*+?^${}()|[\\]\\]/g, String.raw`\\$&`);
+                const escName = escapeRegExp(entName);
+
+                // Match direct usages like "Entity", "Entity[]", "Entity[][]" and capture trailing [] pairs
+                // Use proper escaping for \b and square brackets in the RegExp string
+                const entityRegex = new RegExp(`${escName}([]*)`, 'g');
+                type = type.replace(entityRegex, (_match, bracketPart = '') => {
+                    return `[${entName satisfies string}${String(bracketPart)}](#${anchor satisfies string})`;
+                });
+
+                // Also handle Array<Entity> forms, convert to link with [] inside the link
+                const arrayRegex = new RegExp(
+                    `Array<s*${escName}s*>([]*)`,
+                    'g',
+                );
+                type = type.replace(arrayRegex, (_match, bracketPart = '') => {
+                    // Represent Array<Entity> as Entity[] inside the link
+                    return `[${entName satisfies string}[]](#${anchor satisfies string})${String(bracketPart)}`;
+                });
             }
 
             // Extract JSDoc description
@@ -229,7 +247,17 @@ function generateMarkdown(entities: ClassDeclaration[]): string {
                 .join(' ')
                 .replaceAll('\n', ' ');
 
-            md += `| \`${colName}\` | \`${type}\` | ${constr} | ${jsDocumentation} |\n`;
+            const containsLink = /]\(#[^)]+\)/.test(type);
+            // eslint-disable-next-line unicorn/consistent-function-scoping
+            const escapePipes = (s: string) =>
+                s.replaceAll('|', String.raw`\|`);
+            const formattedType = containsLink
+                ? escapePipes(type)
+                : `\`${escapePipes(type)}\``;
+            const formattedColName = `\`${escapePipes(colName)}\``;
+            const formattedJsDocument = escapePipes(jsDocumentation);
+
+            md += `| ${formattedColName} | ${formattedType} | ${constr} | ${formattedJsDocument} |\n`;
         }
         md += '\n---\n\n';
     }
