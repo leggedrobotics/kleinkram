@@ -205,6 +205,8 @@ services:
             target: production
             args:
                 - MODE=staging
+        ports:
+            - '4000:80'
 
     artifact-uploader:
         image: rslethz/kleinkram:artifact-uploader-dev

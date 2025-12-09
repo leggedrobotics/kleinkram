@@ -208,6 +208,8 @@ services:
             context: .
             dockerfile: docker/docs.Dockerfile
             target: production
+        ports:
+            - '4000:80'
 
     artifact-uploader:
         image: rslethz/kleinkram:artifact-uploader-latest
