@@ -15,7 +15,8 @@
         ".vitepress/**/*.vue",
         ".vitepress/**/*.mts",
         "**/*.md",
-        "**/*.vue"
+        "**/*.vue",
+        "scripts/**/*.ts"
     ],
     "exclude": ["node_modules", "dist", "cache"]
 }
