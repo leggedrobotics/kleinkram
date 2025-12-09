@@ -18,9 +18,7 @@ jobs:
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
             - working-directory: .
               name: Build the Docker compose
-              run: |
-                  docker compose -f docker-compose.dev.yml build base
-                  docker compose -f docker-compose.dev.yml build
+              run: docker compose -f docker-compose.dev.yml build
               env:
                   BACKEND_URL: ${{ vars.BACKEND_URL_DEV }}
                   GIT_BRANCH: ${{ github.ref_name }}

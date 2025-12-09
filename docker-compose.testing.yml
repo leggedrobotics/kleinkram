@@ -1,4 +1,10 @@
 services:
+    base:
+        image: kleinkram-base
+        build:
+            context: .
+            dockerfile: docker/base.Dockerfile
+
     action_test_file_hash:
         image: rslethz/kleinkram_actions:file-hash-latest
         container_name: kleinkram-action-test-file-hash-test
@@ -14,6 +20,9 @@ services:
             context: .
             dockerfile: docker/backend.Dockerfile
             target: production
+            additional_contexts:
+                kleinkram-base: service:base
+                action-test-file-hash: service:action_test_file_hash
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         volumes:
@@ -82,6 +91,8 @@ services:
                 - BACKEND_URL=${BACKEND_URL}
                 - GIT_BRANCH=${GIT_BRANCH}
                 - GIT_COMMIT=${GIT_COMMIT}
+            additional_contexts:
+                kleinkram-base: service:base
         ports:
             - '8003:8003'
 
@@ -107,6 +118,9 @@ services:
             context: .
             dockerfile: docker/queue-consumer.Dockerfile
             target: production
+            additional_contexts:
+                kleinkram-base: service:base
+                artifact-uploader: service:artifact-uploader
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock

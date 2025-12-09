@@ -13,6 +13,8 @@ services:
             context: .
             dockerfile: docker/backend.Dockerfile
             target: production
+            additional_contexts:
+                kleinkram-base: service:base
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -91,6 +93,8 @@ services:
                 - BACKEND_URL=${BACKEND_URL}
                 - GIT_BRANCH=${GIT_BRANCH}
                 - GIT_COMMIT=${GIT_COMMIT}
+            additional_contexts:
+                kleinkram-base: service:base
 
         ports:
             - '8003:80'
@@ -113,6 +117,11 @@ services:
             context: .
             dockerfile: docker/queue-consumer.Dockerfile
             target: production
+            additional_contexts:
+                kleinkram-base: service:base
+                artifact-uploader: service:artifact-uploader
+        ports:
+            - '127.0.0.1:8080:8080'
         env_file:
             - .env
         environment:

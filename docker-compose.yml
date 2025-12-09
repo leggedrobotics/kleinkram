@@ -18,6 +18,8 @@ services:
             args:
                 USER_ID: ${USER_ID:-1000}
                 GROUP_ID: ${GROUP_ID:-1000}
+            additional_contexts:
+                kleinkram-base: service:base
 
         develop:
             watch:
@@ -166,6 +168,8 @@ services:
                 - BACKEND_URL=${BACKEND_URL}
                 - USER_ID=${USER_ID:-1000}
                 - GROUP_ID=${GROUP_ID:-1000}
+            additional_contexts:
+                kleinkram-base: service:base
 
         ports:
             - '8003:8003'
@@ -227,7 +231,6 @@ services:
 
         depends_on:
             - minio
-            - base
 
         networks:
             - public-network
@@ -255,6 +258,9 @@ services:
             args:
                 USER_ID: ${USER_ID:-1000}
                 GROUP_ID: ${GROUP_ID:-1000}
+            additional_contexts:
+                kleinkram-base: service:base
+                artifact-uploader: service:artifact-uploader
 
         volumes:
             - ./queueConsumer:/app/queueConsumer
@@ -417,7 +423,7 @@ services:
             - ./backend/docs:/app/src/docs/
             - ./tsconfig.base.json:/app/tsconfig.base.json
 
-    artifactUploader:
+    artifact-uploader:
         container_name: kleinkram-artifact-uploader
         image: rslethz/kleinkram:artifact-uploader-latest
         build:
