@@ -2,8 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ClassDeclaration, Project, PropertyDeclaration } from 'ts-morph';
 
+import { fileURLToPath } from 'node:url';
+
 // Configuration
-const ROOT_DIR = process.cwd(); // Should be 'docs/'
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(fs.realpathSync(__dirname), '..'); // Should be 'docs/' root
 const ENTITIES_DIR = path.resolve(
     ROOT_DIR,
     '../packages/backend-common/src/entities',

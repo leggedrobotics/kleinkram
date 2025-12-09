@@ -5,7 +5,6 @@
 // eslint-disable-next-line unicorn/filename-case
 <template>
     <div v-if="filteredSpec" style="margin-top: 25px">
-        // eslint-disable-next-line vue/require-v-for-key
         <!-- eslint-disable-next-line vue/require-v-for-key -->
         <div v-for="[path, spec] in Object.entries(filteredSpec.paths)">
             <Endpoint :endpoint="path" :spec="spec" :schema="schema" />
@@ -73,10 +72,14 @@ onMounted(async () => {
 
             // @ts-ignore
             const baseUrl = (import.meta.env.BACKEND_URL as string | undefined) ?? 'http://localhost:3000';
-            const endpoint = `${baseUrl}/swagger/json`;
+
+            // Check VITE_MODE specifically as PROD might be flaky or behave unexpectedly in some setups
+            const isProduction = import.meta.env.VITE_MODE === 'production' || import.meta.env.PROD;
+
+            const endpoint = isProduction ? '/swagger.json' : `${baseUrl}/swagger/json`;
 
             // eslint-disable-next-line no-console
-            console.log('Fetching swagger spec from:', endpoint);
+            console.log('Fetching swagger spec from:', endpoint, 'Mode:', import.meta.env.VITE_MODE, 'PROD:', import.meta.env.PROD);
 
             const response = await fetch(endpoint);
             if (!response.ok) {

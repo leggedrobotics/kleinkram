@@ -4,7 +4,7 @@
     "license": "MIT",
     "target": "es2022",
     "scripts": {
-        "docs:dev": "VITE_MODE=localhost vitepress dev --port 4000 --host 0.0.0.0",
+        "docs:dev": "npm run gen:entities && VITE_MODE=localhost vitepress dev --port 4000 --host 0.0.0.0",
         "docs:build:staging": "VITE_MODE=staging vitepress build",
         "docs:build:production": "VITE_MODE=production vitepress build",
         "docs:build": "vitepress build",

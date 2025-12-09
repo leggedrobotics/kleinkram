@@ -104,6 +104,9 @@ services:
             - /app/packages/backend-common/node_modules
             - /app/packages/shared/node_modules
             - /app/packages/validation/node_modules
+            - ./docs:/app/docs
+
+        command: sh -c "npm run gen:docs /app/docs/development/api/generated & npm run start:dev"
 
     database:
         image: postgres:17
@@ -432,6 +435,9 @@ services:
             - node_modules:/app/src/node_modules
             - ./backend/docs:/app/src/docs/
             - ./tsconfig.base.json:/app/tsconfig.base.json
+            - ./packages:/app/packages
+
+        command: sh -c "ln -sf /app/src/scripts /app/scripts && npm run docs:dev /app/src"
 
     artifact-uploader:
         container_name: kleinkram-artifact-uploader

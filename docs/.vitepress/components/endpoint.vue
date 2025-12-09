@@ -46,8 +46,9 @@
                         <Paramdatatype
                             v-else
                             :datatype="
-                                    parameter.schema?.format ??
-                                    parameter.schema.type
+                                    (parameter.schema?.format ??
+                                    parameter.schema?.type) ||
+                                    'N/A'
                                 "
                             :required="parameter.required"
                         />
@@ -73,7 +74,7 @@
                     <vue-json-pretty
                         :deep="2"
                         :show-double-quotes="false"
-                        :data="resolveSchemaRefs(methodSpec.requestBody)"
+                        :data="resolveSchemaReferences(methodSpec.requestBody)"
                     />
                 </div>
             </div>
@@ -116,7 +117,7 @@
                     <vue-json-pretty
                         :show-double-quotes="false"
                         :deep="2"
-                        :data="resolveSchemaRefs(params)"
+                        :data="resolveSchemaReferences(params)"
                     />
                 </div>
             </div>
@@ -138,13 +139,13 @@
                 <br v-if="index !== 0" />
                 <span>{{ response.type }}</span>
                 <div
-                    v-if="schema[response.type]"
+                    v-if="response.type && schema[response.type]"
                     class="json-box"
                 >
                     <vue-json-pretty
                         :show-double-quotes="false"
                         :deep="2"
-                        :data="resolveSchemaRefs(schema[response.type])"
+                        :data="resolveSchemaReferences(schema[response.type]) as any"
                     />
                 </div>
             </div>
@@ -177,24 +178,62 @@ const props = defineProps<{
 
 
 
-// eslint-disable-next-line unicorn/prevent-abbreviations, @typescript-eslint/no-explicit-any
-function resolveSchemaRefs(schema: Record<string, any>): any {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+interface ResponseSpec {
+    description?: string;
+    content?: Record<string, { schema?: { $ref?: string; items?: { $ref: string, type?: string }; type?: string } }>;
+}
+
+interface MethodSpec {
+    summary?: string;
+    description?: string;
+    parameters?: {
+        name: string;
+        in: string;
+        required: boolean;
+        description?: string;
+        schema?: { type?: string; format?: string; items?: { type?: string } };
+    }[];
+    requestBody?: {
+        content: Record<string, { schema: { $ref: string } }>;
+    };
+    responses?: Record<string, ResponseSpec>;
+}
+
+
+
+
+function resolveSchemaReferences(
+    schema: unknown,
+    visitedReferences = new Set<string>(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
+
     if (!schema || typeof schema !== 'object') return schema;
 
-    if (schema.$ref) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const schemaObject = schema as Record<string, any>;
+
+    if (typeof schemaObject.$ref === 'string') {
         // Extract the reference name from the $ref string
 
+        const reference = schemaObject.$ref.split('/').pop();
 
 
+        if (!reference) return schema;
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        const reference = schema.$ref.split('/').pop();
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (visitedReferences.has(reference)) {
+            return {
+                type: 'object',
+                description: `Circular reference to ${reference}`,
+            };
+        }
+
+        const newVisitedReferences = new Set(visitedReferences);
+        newVisitedReferences.add(reference);
+
         if (props.schema[reference]) {
             // Recursively resolve the reference
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            return resolveSchemaRefs(props.schema[reference]);
+            return resolveSchemaReferences(props.schema[reference], newVisitedReferences);
         }
 
         return 'No schema found';
@@ -203,82 +242,73 @@ function resolveSchemaRefs(schema: Record<string, any>): any {
     if (Array.isArray(schema)) {
         // Recursively resolve each item in the array
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument
-        return schema.map((item) => resolveSchemaRefs(item));
+        // Recursively resolve each item in the array
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return (schema).map((item) => resolveSchemaReferences(item, visitedReferences));
     }
 
     // Recursively resolve properties in an object
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resolvedSchema: any = {};
-    for (const key in schema) {
-
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
-        resolvedSchema[key] = resolveSchemaRefs(schema[key]);
+    const resolvedSchema: Record<string, any> = {};
+    for (const key in schemaObject) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        resolvedSchema[key] = resolveSchemaReferences(schemaObject[key], visitedReferences);
     }
 
     return resolvedSchema;
 }
 
 // Helper function to get the first HTTP method available in the spec
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getHttpMethod(spec: any) {
+function getHttpMethod(spec: unknown) {
     const methods = ['get', 'post', 'put', 'delete', 'patch'];
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    return methods.find((method) => spec[method]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const specObject = spec as Record<string, any>;
+    return methods.find((method) => specObject[method]) ?? '';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-const methodSpec = computed(() => props.spec[getHttpMethod(props.spec)]);
+
+const methodSpec = computed(() => ((props.spec as Record<string, unknown>)[getHttpMethod(props.spec)] ?? {}) as MethodSpec);
 
 const params = computed(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (methodSpec.value.parameters) {
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-        return methodSpec.value.parameters;
+    if ((methodSpec.value).parameters) {
+
+
+        return (methodSpec.value).parameters;
     }
     return [];
 });
 
-// eslint-disable-next-line vue/return-in-computed-property
+
 const dtoref = computed(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (methodSpec.value.requestBody) {
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-        return methodSpec.value.requestBody.content['application/json'].schema
-            .$ref;
-    }
+    return methodSpec.value.requestBody
+        ? methodSpec.value.requestBody.content['application/json'].schema.$ref
+        : undefined;
 });
-// eslint-disable-next-line vue/return-in-computed-property
+
 const body = computed(() => {
-    if (dtoref.value) {
 
-
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        return props.schema[dtoref.value.split('/')[3]];
-    }
+    return dtoref.value ? props.schema[dtoref.value.split('/')[3]] : undefined;
 });
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const bodyParameters = computed(() => {
     if (body.value) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        return Object.entries(body.value.properties).map(([key, value]) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+        return Object.entries((body.value as any).properties).map(([key, value]: [string, any]) => {
 
 
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            const required = body.value.required.includes(key);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+            const required = (body.value as any).required.includes(key);
             return {
                 name: key,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 type: value.type,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 description: value.description,
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 required,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 format: value.format,
             };
         });
@@ -287,77 +317,54 @@ const bodyParameters = computed(() => {
 });
 
 const responses = computed(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (methodSpec.value.responses) {
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         return Object.entries(methodSpec.value.responses).map(
-
             ([code, response]) => {
-                // eslint-disable-next-line unicorn/prevent-abbreviations
-                const res = {
+
+                const responseResult: { code: string; description: string | undefined; type?: string } = {
                     code,
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     description: response.description,
                 };
                 if (
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     response.content?.['application/json']?.schema
                 ) {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     if (response.content['application/json'].schema.$ref) {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                         const reference: string =
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             response.content['application/json'].schema.$ref;
                         const splitReference = reference.split('/');
-                        return { ...res, type: splitReference.at(-1) };
+                        return { ...responseResult, type: splitReference.at(-1) };
                     }
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    if (response.content['application/json'].schema?.items) {
-                        // eslint-disable-next-line no-console
-                        console.log(
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                            response.content['application/json'].schema.items,
-                        );
+                    if (response.content['application/json'].schema.items) {
                         if (
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             response.content['application/json'].schema
-                                ?.type === 'array'
+                                .type === 'array'
                         ) {
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
                             const splitReference =
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                                 response.content[
-                                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                                     'application/json'
-                                    ].schema?.items.$ref.split('/');
+                                    ].schema.items.$ref.split('/');
                             return {
-                                ...res,
-
-
-                                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                                type: `${splitReference.at(-1)}[]`,
+                                ...responseResult,
+                                type: `${String(splitReference.at(-1))}[]`,
                             };
                         }
                         return {
-                            ...res,
+                            ...responseResult,
 
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                             type: response.content['application/json'].schema
-                                ?.items.type,
+                                .items.type,
                         };
                     } else {
                         return {
-                            ...res,
+                            ...responseResult,
 
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                             type: response.content['application/json'].schema
                                 .type,
                         };
                     }
                 }
-                return res;
+                return responseResult;
             },
         );
     }
@@ -365,7 +372,7 @@ const responses = computed(() => {
 });
 
 
-// eslint-disable-next-line unicorn/prevent-abbreviations, @typescript-eslint/no-unsafe-member-access
+// eslint-disable-next-line unicorn/prevent-abbreviations
 const hasParams = computed(() => params.value.length > 0);
 </script>
 

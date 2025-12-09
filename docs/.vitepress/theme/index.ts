@@ -8,6 +8,7 @@ import Delete from '../components/AccessWrites/delete.vue';
 import Any from '../components/AccessWrites/any.vue';
 import Read from '../components/AccessWrites/read.vue';
 import Creator from '../components/AccessWrites/creator.vue';
+import ApiModulesTable from './components/api-modules-table.vue';
 import { EnhanceAppContext } from 'vitepress';
 
 export default {
@@ -21,6 +22,7 @@ export default {
         app.component('Any', Any);
         app.component('Creator', Creator);
         app.component('CanEdit', CanEdit);
+        app.component('ApiModulesTable', ApiModulesTable);
     },
     extends: DefaultTheme,
 };

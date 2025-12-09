@@ -16,7 +16,9 @@
         "test:verbose": "jest --silent=false",
         "typeorm": "typeorm-ts-node-commonjs",
         "migration:generate:clean": "./migration/scripts/generate-clean-migration.sh",
-        "migration:check": "./migration/scripts/generate-clean-migration.sh --check"
+        "migration:check": "./migration/scripts/generate-clean-migration.sh --check",
+        "generate-openapi": "node -r ts-node/register ./scripts/generate-openapi.ts",
+        "gen:docs": "node -r ts-node/register -r tsconfig-paths/register ./scripts/generate-openapi.ts"
     },
     "dependencies": {
         "@aws-sdk/client-sts": "3.939.0",
@@ -93,7 +95,7 @@
         "@types/jest": "^29.5.2",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/multer": "^2.0.0",
-        "@types/node": "^24.9.1",
+        "@types/node": "^24.10.1",
         "@types/passport-github": "^1.1.13",
         "@types/passport-github2": "^1.2.0",
         "@types/passport-google-oauth20": "^2.0.16",

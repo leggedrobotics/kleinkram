@@ -27,7 +27,8 @@
         "../packages/**/*",
         "check-version.ts",
         "migration/**/*.ts",
-        "tests/**/*.ts"
+        "tests/**/*.ts",
+        "scripts/**/*.ts"
     ],
     "exclude": ["node_modules", "dist"],
     "references": [

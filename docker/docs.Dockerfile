@@ -12,12 +12,66 @@ RUN pnpm install --frozen-lockfile
 FROM base AS development
 CMD ["npm", "run", "docs:dev", "/app/src"]
 
+# Swagger Stage
+FROM node:22-slim AS swagger-builder
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy root configs
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json ./
+
+# Copy backend and packages manifests to install dependencies efficiently
+COPY backend/package.json ./backend/
+COPY packages/api-dto/package.json ./packages/api-dto/
+COPY packages/backend-common/package.json ./packages/backend-common/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/validation/package.json ./packages/validation/
+
+# Install dependencies (including devDependencies for ts-node)
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY backend ./backend
+COPY packages ./packages
+
+# Generate Swagger
+WORKDIR /app/backend
+RUN SERVER_PORT=3000 \
+    DB_HOST=localhost \
+    DB_PORT=5432 \
+    DB_USER=test \
+    DB_PASSWORD=test \
+    DB_DATABASE=test \
+    DEV=false \
+    ENTITIES="src/**/*.entity.ts" \
+    REDIS_HOST=localhost \
+    JWT_SECRET=secret \
+    MINIO_ACCESS_KEY=test \
+    MINIO_SECRET_KEY=test \
+    MINIO_DATA_BUCKET_NAME=test \
+    MINIO_DB_BUCKET_NAME=test \
+    MINIO_ARTIFACTS_BUCKET_NAME=test \
+    MINIO_ENDPOINT=localhost \
+    MINIO_USER=test \
+    MINIO_PASSWORD=test \
+    FRONTEND_URL=http://localhost:8000 \
+    BACKEND_URL=http://localhost:3000 \
+    DOCS_URL=http://localhost:4000 \
+    GOOGLE_KEY_FILE=test.json \
+    ARTIFACTS_UPLOADER_IMAGE=test \
+    VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT=true \
+    node -r ts-node/register -r tsconfig-paths/register ./scripts/generate-openapi.ts
+
 # Builder Stage
 FROM base AS builder
 ARG MODE="production"
 
 # Copy all docs source
 COPY docs ./src
+RUN mkdir -p ./src/development/api/generated
+
+# Copy generated markdown files
+COPY --from=swagger-builder /app/backend/*.md ./src/development/api/generated/
 
 # build postgres entity documentation
 COPY packages/backend-common/src ./packages/backend-common/src
@@ -60,6 +114,10 @@ COPY --from=nginx-base /lib/x86_64-linux-gnu/libz.so.1 /lib/x86_64-linux-gnu/lib
 
 # Copy the built docs
 COPY --from=builder /app/src/.vitepress/dist /usr/share/nginx/html
+COPY --from=swagger-builder /app/backend/swagger.json /usr/share/nginx/html/swagger.json
+# Copy generated markdown files
+COPY --from=swagger-builder /app/backend/*.md /usr/share/nginx/html/development/api/generated/
+COPY --from=swagger-builder /app/backend/api-modules.json /usr/share/nginx/html/development/api/generated/api-modules.json
 
 # Copy the nginx config
 COPY docs/nginx.conf /etc/nginx/conf.d/default.conf

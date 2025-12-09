@@ -18,3 +18,6 @@ packages/*/dist/
 
 # Lockfiles for npm and pnpm, we are using yarn
 **/package-lock.json
+docs/development/api/generated/
+docs/development/application-structure/postgres.md
+docs/development/application-structure/postgres.md
