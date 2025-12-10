@@ -9,6 +9,7 @@ dist
 
 # Tests
 backend/tests
+!backend/tests/actions/file-hash
 packages/*/tests
 **/*.test.ts
 **/*.spec.ts

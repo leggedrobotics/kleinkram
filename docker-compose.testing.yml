@@ -142,6 +142,12 @@ services:
             - privatenet
             - webnet
 
+    artifact-uploader:
+        image: rslethz/kleinkram:artifact-uploader-latest
+        build:
+            context: queueConsumer/src/artifactUpload
+            dockerfile: Dockerfile
+
 volumes:
     db_data_test:
     minio_data_test:
