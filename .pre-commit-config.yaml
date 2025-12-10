@@ -31,7 +31,7 @@ repos:
 
   - repo: local
     hooks:
-      - id: eslinthe
+      - id: eslint
         name: eslint
         entry: env NODE_OPTIONS='--max-old-space-size=8192' node_modules/.bin/eslint --fix --cache --config eslint.config.mjs
         language: system

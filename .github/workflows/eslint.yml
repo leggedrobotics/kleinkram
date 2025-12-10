@@ -40,6 +40,8 @@ jobs:
 
             - name: Run pre-commit
               run: pre-commit run --all-files --show-diff-on-failure
+              env:
+                  SKIP: eslint,prettier
 
             - name: Prepare Quasar
               run: pnpm exec quasar prepare
