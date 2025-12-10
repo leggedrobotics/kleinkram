@@ -1,4 +1,4 @@
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import {
     AccessGroupRights,
     ActionState,
@@ -525,8 +525,8 @@ export class CanDeleteMissionGuard extends BaseGuard {
 export class AddTagGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
-        @InjectRepository(ApikeyEntity)
-        private apikeyRepository: Repository<ApikeyEntity>,
+        @InjectRepository(ApiKeyEntity)
+        private apikeyRepository: Repository<ApiKeyEntity>,
         private reflector: Reflector,
     ) {
         super();

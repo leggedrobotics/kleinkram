@@ -4,16 +4,15 @@ import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-templ
 import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
 import {
     AccessGroupEntity,
-    AccessGroupRights,
     ActionEntity,
     ActionTemplateEntity,
-    ApikeyEntity,
-    KeyTypes,
+    ApiKeyEntity,
     MissionEntity,
     ProjectEntity,
     UserEntity,
     WorkerEntity,
 } from '@kleinkram/backend-common';
+import { AccessGroupRights, KeyTypes } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -149,7 +148,7 @@ describe('Verify Action API Key Scope', () => {
             { name: 'Templates', entity: ActionTemplateEntity },
             { name: 'Missions', entity: MissionEntity },
             { name: 'Projects', entity: ProjectEntity },
-            { name: 'ApiKeys', entity: ApikeyEntity },
+            { name: 'ApiKeys', entity: ApiKeyEntity },
             { name: 'Workers', entity: WorkerEntity },
         ];
 
@@ -194,7 +193,7 @@ describe('Verify Action API Key Scope', () => {
             where: { uuid },
         });
 
-        const apiKeyRepo = database.getRepository(ApikeyEntity);
+        const apiKeyRepo = database.getRepository(ApiKeyEntity);
         const apiKeyEntity = apiKeyRepo.create({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.ACTION,
@@ -266,7 +265,7 @@ describe('Verify Action API Key Scope', () => {
             where: { uuid },
         });
 
-        const apiKeyRepo = database.getRepository(ApikeyEntity);
+        const apiKeyRepo = database.getRepository(ApiKeyEntity);
         const apiKeyEntity = apiKeyRepo.create({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.ACTION,

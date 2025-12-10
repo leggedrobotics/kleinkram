@@ -1,10 +1,10 @@
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { seedActionTemplates } from '@backend-common/seeds/user/seed-action-templates';
-import { seedFiles } from '@backend-common/seeds/user/seed-files';
-import { seedProjects } from '@backend-common/seeds/user/seed-projects';
-import { seedUsers } from '@backend-common/seeds/user/seed-users';
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
+import { seedActionTemplates } from './seed-action-templates';
+import { seedFiles } from './seed-files';
+import { seedProjects } from './seed-projects';
+import { seedUsers } from './seed-users';
 
 export default class CreateUsers implements Seeder {
     // eslint-disable-next-line @typescript-eslint/no-deprecated

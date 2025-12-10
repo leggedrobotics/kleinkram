@@ -1,14 +1,16 @@
-import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { Column, Entity, ManyToOne, Unique } from 'typeorm';
+import { AccessGroupEntity } from './access-group.entity';
 
 @Unique('no_duplicated_user_in_access_group', ['accessGroup', 'user'])
 @Entity({ name: 'group_membership' })
 export class GroupMembershipEntity extends BaseEntity {
-    @ManyToOne(() => AccessGroupEntity, (group) => group.project_accesses, {
-        onDelete: 'CASCADE',
-    })
+    @ManyToOne(
+        () => AccessGroupEntity,
+        (group: AccessGroupEntity) => group.project_accesses,
+        { onDelete: 'CASCADE' },
+    )
     accessGroup?: AccessGroupEntity;
 
     @ManyToOne(() => UserEntity, (user) => user.memberships, {

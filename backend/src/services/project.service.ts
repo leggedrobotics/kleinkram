@@ -1,6 +1,5 @@
+import { addAccessConstraintsToProjectQuery } from '@/endpoints/auth/auth-helper';
 import { CreateProject } from '@kleinkram/api-dto';
-import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     BadRequestException,
     ConflictException,
@@ -9,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
-import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
 import { UserService } from './user.service';
 
 import {
@@ -19,6 +17,13 @@ import {
     addSort,
 } from './utilities';
 
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
+import {
+    projectEntityToDto,
+    projectEntityToDtoWithMissionCountAndTags,
+    projectEntityToDtoWithRequiredTags,
+} from '@/serialization';
+import { AccessGroupConfig } from '@/types/access-group-config';
 import {
     DefaultRightDto,
     DefaultRights,
@@ -28,23 +33,20 @@ import {
     ResentProjectDto,
     SortOrder,
 } from '@kleinkram/api-dto';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
-import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
-import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import {
+    AccessGroupEntity,
+    MissionEntity,
+    ProjectAccessEntity,
+    ProjectEntity,
+    TagTypeEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
-import {
-    projectEntityToDto,
-    projectEntityToDtoWithMissionCountAndTags,
-    projectEntityToDtoWithRequiredTags,
-} from '../serialization';
-import { AccessGroupConfig } from '../types/access-group-config';
 
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',

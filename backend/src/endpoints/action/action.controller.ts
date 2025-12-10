@@ -1,3 +1,7 @@
+import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ActionService } from '@/services/action.service';
+import { FileService } from '@/services/file.service';
+import { ParameterUuid } from '@/validation/parameter-decorators';
 import {
     ActionDto,
     ActionLogsDto,
@@ -11,10 +15,6 @@ import {
 } from '@kleinkram/api-dto';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiOkResponse, OutputDto } from '../../decorators';
-import { ActionService } from '../../services/action.service';
-import { FileService } from '../../services/file.service';
-import { ParameterUuid } from '../../validation/parameter-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreateAction,

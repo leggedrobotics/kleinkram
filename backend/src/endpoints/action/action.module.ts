@@ -1,6 +1,7 @@
+import { ActionService } from '@/services/action.service';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
@@ -9,7 +10,6 @@ import { ActionDispatcherModule } from '@kleinkram/backend-common/modules/action
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ActionService } from '../../services/action.service';
 import { ActionGuardService } from '../auth/action-guard.service';
 import { FileModule } from '../file/file.module';
 import { QueueModule } from '../queue/queue.module';

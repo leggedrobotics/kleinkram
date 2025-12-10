@@ -1,5 +1,5 @@
 import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
-import { ApikeyEntity } from '@backend-common/entities/auth/apikey.entity';
+import { ApiKeyEntity } from '@backend-common/entities/auth/api-key.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
@@ -49,7 +49,7 @@ export class ActionEntity extends BaseEntity {
     @Column({ type: 'json', nullable: true })
     container?: Container;
 
-    @ManyToOne(() => UserEntity, (user) => user.submittedActions, {
+    @ManyToOne(() => UserEntity, (user: UserEntity) => user.submittedActions, {
         nullable: false,
     })
     creator?: UserEntity;
@@ -107,9 +107,9 @@ export class ActionEntity extends BaseEntity {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     artifact_files?: string[];
 
-    @OneToOne(() => ApikeyEntity, (apikey) => apikey.action)
+    @OneToOne(() => ApiKeyEntity, (apikey) => apikey.action)
     @JoinColumn()
-    key?: ApikeyEntity;
+    key?: ApiKeyEntity;
 
     @ManyToOne(
         () => ActionTemplateEntity,

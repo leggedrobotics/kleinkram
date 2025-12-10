@@ -1,4 +1,4 @@
-import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';

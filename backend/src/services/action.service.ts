@@ -1,3 +1,6 @@
+import { addAccessConstraints } from '@/endpoints/auth/auth-helper';
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
+import { actionEntityToDto } from '@/serialization/action';
 import {
     ActionDto,
     ActionLogsDto,
@@ -8,8 +11,8 @@ import {
     SubmitActionDto,
     SubmitActionMulti,
 } from '@kleinkram/api-dto';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
@@ -24,10 +27,7 @@ import {
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import logger from '../logger';
-import { actionEntityToDto } from '../serialization/action';
 
 @Injectable()
 export class ActionService {
@@ -36,8 +36,8 @@ export class ActionService {
         private actionRepository: Repository<ActionEntity>,
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
-        @InjectRepository(ApikeyEntity)
-        private apikeyRepository: Repository<ApikeyEntity>,
+        @InjectRepository(ApiKeyEntity)
+        private apikeyRepository: Repository<ApiKeyEntity>,
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
         private readonly actionDispatcher: ActionDispatcherService,
@@ -207,8 +207,8 @@ export class ActionService {
     ): Promise<void> {
         await this.apikeyRepository.manager.transaction(
             async (manager: EntityManager): Promise<void> => {
-                const key: ApikeyEntity = await manager.findOneOrFail(
-                    ApikeyEntity,
+                const key: ApiKeyEntity = await manager.findOneOrFail(
+                    ApiKeyEntity,
                     {
                         where: { apikey: apiKey },
                         relations: ['action'],

@@ -2,6 +2,7 @@ import environment from '@kleinkram/backend-common/environment';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import 'reflect-metadata';
 import { AppModule } from './app.module';
 import { AuthFlowExceptionRedirectFilter } from './routing/filters/auth-flow-exception';
 import tracer from './tracing';
@@ -34,7 +35,13 @@ function saveEndpointsAsJson(app: INestApplication, filename: string): void {
             method: r.route.stack[0].method,
         }));
 
-    fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
+    try {
+        fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
+    } catch (error) {
+        logger.warn(
+            `Failed to save endpoints to ${filename}: ${String(error)}`,
+        );
+    }
 }
 
 async function bootstrap(): Promise<void> {

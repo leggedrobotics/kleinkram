@@ -1,3 +1,4 @@
+import { appVersion } from '@/app-version';
 import {
     CallHandler,
     ExecutionContext,
@@ -5,7 +6,6 @@ import {
     NestInterceptor,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { appVersion } from '../../app-version';
 
 @Injectable()
 export class AddVersionInterceptor implements NestInterceptor {

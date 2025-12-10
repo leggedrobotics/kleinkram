@@ -1,6 +1,3 @@
-import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
-import { MissionAccessEntity } from '@backend-common/entities/auth/mission-access.entity';
-import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupType } from '@kleinkram/shared';
@@ -12,6 +9,9 @@ import {
     OneToMany,
     Unique,
 } from 'typeorm';
+import { GroupMembershipEntity } from './group-membership.entity';
+import { MissionAccessEntity } from './mission-access.entity';
+import { ProjectAccessEntity } from './project-access.entity';
 
 @Unique('unique_access_group_name', ['name'])
 @Entity({ name: 'access_group' })
@@ -21,16 +21,14 @@ export class AccessGroupEntity extends BaseEntity {
 
     @OneToMany(
         () => GroupMembershipEntity,
-        (membership) => membership.accessGroup,
-        {
-            cascade: true,
-        },
+        (membership: GroupMembershipEntity) => membership.accessGroup,
+        { cascade: true },
     )
     memberships?: GroupMembershipEntity[];
 
     @OneToMany(
         () => ProjectAccessEntity,
-        (projectAccess) => projectAccess.accessGroup,
+        (projectAccess: ProjectAccessEntity) => projectAccess.accessGroup,
     )
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -38,7 +36,7 @@ export class AccessGroupEntity extends BaseEntity {
 
     @OneToMany(
         () => MissionAccessEntity,
-        (missionAccess) => missionAccess.accessGroup,
+        (missionAccess: MissionAccessEntity) => missionAccess.accessGroup,
     )
     @JoinTable()
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -51,7 +49,9 @@ export class AccessGroupEntity extends BaseEntity {
     })
     type!: AccessGroupType;
 
-    @ManyToOne(() => UserEntity, (user) => user.files, { nullable: true })
+    @ManyToOne(() => UserEntity, (user: UserEntity) => user.files, {
+        nullable: true,
+    })
     creator?: UserEntity;
 
     /**

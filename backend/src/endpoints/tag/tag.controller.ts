@@ -1,3 +1,10 @@
+import { ApiOkResponse } from '@/decorators';
+import { TagService } from '@/services/tag.service';
+import {
+    QueryOptionalString,
+    QuerySkip,
+    QueryTake,
+} from '@/validation/query-decorators';
 import {
     AddTagsDto,
     CreateTagTypeDto,
@@ -8,14 +15,7 @@ import {
 import { DataType } from '@kleinkram/shared';
 import { BodyNotNull, BodyUUID } from '@kleinkram/validation';
 import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
-import { ApiOkResponse } from '../../decorators';
-import { TagService } from '../../services/tag.service';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import {
-    QueryOptionalString,
-    QuerySkip,
-    QueryTake,
-} from '../../validation/query-decorators';
 import {
     CanAddTag,
     CanCreate,

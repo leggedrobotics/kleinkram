@@ -100,9 +100,6 @@ importers:
       '@aws-sdk/client-sts':
         specifier: 3.939.0
         version: 3.939.0
-      '@google-cloud/local-auth':
-        specifier: ^3.0.1
-        version: 3.0.1
       '@kleinkram/api-dto':
         specifier: workspace:*
         version: link:../packages/api-dto
@@ -211,9 +208,6 @@ importers:
       form-data:
         specifier: ^4.0.4
         version: 4.0.5
-      googleapis:
-        specifier: ^165.0.0
-        version: 165.0.0
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
@@ -262,12 +256,6 @@ importers:
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
-      vue:
-        specifier: ^3.5.21
-        version: 3.5.25(typescript@5.8.3)
-      vue-json-pretty:
-        specifier: ^2.6.0
-        version: 2.6.0(vue@3.5.25(typescript@5.8.3))
       winston:
         specifier: ^3.18.3
         version: 3.18.3
@@ -389,6 +377,12 @@ importers:
       typescript:
         specifier: 5.8.3
         version: 5.8.3
+      vue:
+        specifier: ^3.5.25
+        version: 3.5.25(typescript@5.8.3)
+      vue-json-pretty:
+        specifier: ^2.6.0
+        version: 2.6.0(vue@3.5.25(typescript@5.8.3))
       webpack:
         specifier: ^5.102.1
         version: 5.103.0(@swc/core@1.15.3)
@@ -605,9 +599,6 @@ importers:
 
   packages/backend-common:
     dependencies:
-      '@faker-js/faker':
-        specifier: ^10.1.0
-        version: 10.1.0
       '@kleinkram/api-dto':
         specifier: workspace:*
         version: link:../api-dto
@@ -617,18 +608,9 @@ importers:
       '@kleinkram/validation':
         specifier: workspace:*
         version: link:../validation
-      '@nestjs/common':
-        specifier: '>=10.4.16'
-        version: 11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core':
-        specifier: ^10.0.0
-        version: 10.4.6(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.20)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/schedule':
         specifier: ^6.0.1
         version: 6.0.1(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.6)
-      '@nestjs/typeorm':
-        specifier: ^10.0.0
-        version: 10.0.2(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.28(better-sqlite3@12.5.0)(ioredis@5.8.2)(pg@8.16.3)(sql.js@1.13.0)(ts-node@10.9.2(@swc/core@1.15.3)(@swc/wasm@1.15.2)(@types/node@24.10.1)(typescript@5.9.3)))
       '@willsoto/nestjs-prometheus':
         specifier: ^6.0.2
         version: 6.0.2(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(prom-client@15.1.3)
@@ -662,13 +644,19 @@ importers:
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
-      typeorm:
-        specifier: ^0.3.27
-        version: 0.3.28(better-sqlite3@12.5.0)(ioredis@5.8.2)(pg@8.16.3)(sql.js@1.13.0)(ts-node@10.9.2(@swc/core@1.15.3)(@swc/wasm@1.15.2)(@types/node@24.10.1)(typescript@5.9.3))
-      typeorm-seeding:
-        specifier: ^1.6.1
-        version: 1.6.1(typeorm@0.3.28(better-sqlite3@12.5.0)(ioredis@5.8.2)(pg@8.16.3)(sql.js@1.13.0)(ts-node@10.9.2(@swc/core@1.15.3)(@swc/wasm@1.15.2)(@types/node@24.10.1)(typescript@5.9.3)))
     devDependencies:
+      '@faker-js/faker':
+        specifier: ^10.1.0
+        version: 10.1.0
+      '@nestjs/common':
+        specifier: '>=10.4.16'
+        version: 11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^10.0.0
+        version: 10.4.6(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.20)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/typeorm':
+        specifier: ^10.0.0
+        version: 10.0.2(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.28(better-sqlite3@12.5.0)(ioredis@5.8.2)(pg@8.16.3)(sql.js@1.13.0)(ts-node@10.9.2(@swc/core@1.15.3)(@swc/wasm@1.15.2)(@types/node@24.10.1)(typescript@5.9.3)))
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
@@ -684,6 +672,12 @@ importers:
       tsconfig-paths:
         specifier: ^4.2.0
         version: 4.2.0
+      typeorm:
+        specifier: ^0.3.27
+        version: 0.3.28(better-sqlite3@12.5.0)(ioredis@5.8.2)(pg@8.16.3)(sql.js@1.13.0)(ts-node@10.9.2(@swc/core@1.15.3)(@swc/wasm@1.15.2)(@types/node@24.10.1)(typescript@5.9.3))
+      typeorm-seeding:
+        specifier: ^1.6.1
+        version: 1.6.1(typeorm@0.3.28(better-sqlite3@12.5.0)(ioredis@5.8.2)(pg@8.16.3)(sql.js@1.13.0)(ts-node@10.9.2(@swc/core@1.15.3)(@swc/wasm@1.15.2)(@types/node@24.10.1)(typescript@5.9.3)))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -1949,10 +1943,6 @@ packages:
 
   '@foxglove/wasm-zstd@1.0.1':
     resolution: {integrity: sha512-hqKTO45Sl+kSq9SDqM9xi5L+GncjFEZIJgYEkGTlpJXTfhy1Gf+a+3epWMcE0tLUKmzM77dtu8snape/J+7ueQ==}
-
-  '@google-cloud/local-auth@3.0.1':
-    resolution: {integrity: sha512-YJ3GFbksfHyEarbVHPSCzhKpjbnlAhdzg2SEf79l6ODukrSM1qUOqfopY232Xkw26huKSndyzmJz+A6b2WYn7Q==}
-    engines: {node: '>=14.0.0'}
 
   '@grpc/grpc-js@1.14.2':
     resolution: {integrity: sha512-QzVUtEFyu05UNx2xr0fCQmStUO17uVQhGNowtxs00IgTZT6/W2PBLfUkj30s0FKJ29VtTa3ArVNIhNP6akQhqA==}
@@ -4541,10 +4531,6 @@ packages:
     resolution: {integrity: sha512-3CYzex9M9FGQjCGMGyi6/31c8GJbgb0qGyrx5HWxPd0aCwh4cB2YjMb2Xf9UuoogrMrlO9cTqnB5rI5GHZTcUA==}
     engines: {node: '>=0.10.0'}
 
-  arrify@2.0.1:
-    resolution: {integrity: sha512-3duEwti880xqi4eAMN8AyR4a0ByT90zoYdLlevfrvU43vb0YZwZVfxOgxWrLXXXpyugL0hNZc9G6BiB5B3nUug==}
-    engines: {node: '>=8'}
-
   asap@2.0.6:
     resolution: {integrity: sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==}
 
@@ -6212,17 +6198,9 @@ packages:
   fzstd@0.1.1:
     resolution: {integrity: sha512-dkuVSOKKwh3eas5VkJy1AW1vFpet8TA/fGmVA5krThl8YcOVE/8ZIoEA1+U1vEn5ckxxhLirSdY837azmbaNHA==}
 
-  gaxios@6.7.1:
-    resolution: {integrity: sha512-LDODD4TMYx7XXdpwxAVRAIAuB0bzv0s+ywFonY46k126qzQHT9ygyoa9tncmOiQmmDrik65UYsEkv3lbfqQ3yQ==}
-    engines: {node: '>=14'}
-
   gaxios@7.1.3:
     resolution: {integrity: sha512-YGGyuEdVIjqxkxVH1pUTMY/XtmmsApXrCVv5EU25iX6inEPbV+VakJfLealkBtJN69AQmh1eGOdCl9Sm1UP6XQ==}
     engines: {node: '>=18'}
-
-  gcp-metadata@6.1.1:
-    resolution: {integrity: sha512-a4tiq7E0/5fTjxPAaH4jpjkSv/uCaU2p5KC6HVGrvl0cDjA8iBZv4vv1gyzlmK0ZUKqwpOyQMKzZQe3lTit77A==}
-    engines: {node: '>=14'}
 
   gcp-metadata@8.1.2:
     resolution: {integrity: sha512-zV/5HKTfCeKWnxG0Dmrw51hEWFGfcF2xiXqcA3+J90WDuP0SvoiSO5ORvcBsifmx/FoIjgQN3oNOGaQ5PhLFkg==}
@@ -6344,14 +6322,6 @@ packages:
     resolution: {integrity: sha512-7ABviyMOlX5hIVD60YOfHw4/CxOfBhyduaYB+wbFWCWoni4N7SLcV46hrVRktuBbZjFC9ONyqamZITN7q3n32w==}
     engines: {node: '>=18'}
 
-  google-auth-library@9.15.1:
-    resolution: {integrity: sha512-Jb6Z0+nvECVz+2lzSMt9u98UsoakXxA2HGHMCxh+so3n90XgYWkq5dur19JAJV7ONiJY22yBTyJB1TSkvPq9Ng==}
-    engines: {node: '>=14'}
-
-  google-logging-utils@0.0.2:
-    resolution: {integrity: sha512-NEgUnEcBiP5HrPzufUkBzJOD/Sxsco3rLNo1F1TNf7ieU8ryUzBhqba8r756CjLX7rn3fHl6iLEwPYuqpoKgQQ==}
-    engines: {node: '>=14'}
-
   google-logging-utils@1.1.3:
     resolution: {integrity: sha512-eAmLkjDjAFCVXg7A1unxHsLf961m6y17QFqXqAXGj/gVkKFrEICfStRfwUlGNfeCEjNRa32JEWOUTlYXPyyKvA==}
     engines: {node: '>=14'}
@@ -6359,10 +6329,6 @@ packages:
   googleapis-common@8.0.1:
     resolution: {integrity: sha512-eCzNACUXPb1PW5l0ULTzMHaL/ltPRADoPgjBlT8jWsTbxkCp6siv+qKJ/1ldaybCthGwsYFYallF7u9AkU4L+A==}
     engines: {node: '>=18.0.0'}
-
-  googleapis@165.0.0:
-    resolution: {integrity: sha512-uXA/Z779zTkW7NUNZqjJz6878inQyU1PIpxisZDezJaR7wfKPP3d/BNeGLDNbO2wnkMpZ6bmpeshWNRR/fjqmw==}
-    engines: {node: '>=18'}
 
   googleapis@166.0.0:
     resolution: {integrity: sha512-Xz7yG+ihVvYMwSULKIMeTp6vDX95rrSbsaR3xUmgYjwQdAkchMQ5ndFeG5QZwcBOIyvJFvG7ZLIZE7mKW2X/hw==}
@@ -6413,10 +6379,6 @@ packages:
     resolution: {integrity: sha512-/ABUy3gYWu5iBmrUSRBP97JLpQUm0GgVveDCp6t3yRNIoltIYw7rEj3g5y1o2PGPR2vfTRGa7WC/LZHLTXnEzA==}
     engines: {node: '>=16'}
     hasBin: true
-
-  gtoken@7.1.0:
-    resolution: {integrity: sha512-pCcEwRi+TKpMlxAQObHDQ56KawURgyAf6jtIY046fJ5tIv3zDe/LEIubckAO8fj6JnAxLdmWkUfNyulQ2iKdEw==}
-    engines: {node: '>=14.0.0'}
 
   gtoken@8.0.0:
     resolution: {integrity: sha512-+CqsMbHPiSTdtSO14O51eMNlrp9N79gmeqmXeouJOhfucAedHw9noVe/n5uJk3tbKE6a+6ZCQg3RPhVhHByAIw==}
@@ -8789,9 +8751,6 @@ packages:
   serve-static@1.16.2:
     resolution: {integrity: sha512-VqpjJZKadQB/PEbEwvFdO43Ax5dFBZ2UECszz8bQ7pi7wt//PWe1P6MN7eCnjsatYtBT6EuiClbjSWP2WrIoTw==}
     engines: {node: '>= 0.8.0'}
-
-  server-destroy@1.0.1:
-    resolution: {integrity: sha512-rb+9B5YBIEzYcD6x2VKidaa+cqYBJQKnU4oe4E3ANwRRN56yk/ua1YCJT1n21NTS8w6CcOclAKNP3PhdCXKYtQ==}
 
   set-blocking@2.0.0:
     resolution: {integrity: sha512-KiKBS8AnWGEyLzofFfmvKwpdPzqiy16LvQfK3yv/fVH7Bj13/wl3JSR1J+rfgRE9q7xUJK4qvgS8raSOeLUehw==}
@@ -11656,16 +11615,6 @@ snapshots:
   '@foxglove/wasm-lz4@1.0.2': {}
 
   '@foxglove/wasm-zstd@1.0.1': {}
-
-  '@google-cloud/local-auth@3.0.1':
-    dependencies:
-      arrify: 2.0.1
-      google-auth-library: 9.15.1
-      open: 7.4.2
-      server-destroy: 1.0.1
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
 
   '@grpc/grpc-js@1.14.2':
     dependencies:
@@ -14913,8 +14862,6 @@ snapshots:
   arrify@1.0.1:
     optional: true
 
-  arrify@2.0.1: {}
-
   asap@2.0.6: {}
 
   asn1.js@4.10.1:
@@ -16918,17 +16865,6 @@ snapshots:
 
   fzstd@0.1.1: {}
 
-  gaxios@6.7.1:
-    dependencies:
-      extend: 3.0.2
-      https-proxy-agent: 7.0.6
-      is-stream: 2.0.1
-      node-fetch: 2.7.0
-      uuid: 9.0.1
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
-
   gaxios@7.1.3:
     dependencies:
       extend: 3.0.2
@@ -16936,15 +16872,6 @@ snapshots:
       node-fetch: 3.3.2
       rimraf: 5.0.10
     transitivePeerDependencies:
-      - supports-color
-
-  gcp-metadata@6.1.1:
-    dependencies:
-      gaxios: 6.7.1
-      google-logging-utils: 0.0.2
-      json-bigint: 1.0.0
-    transitivePeerDependencies:
-      - encoding
       - supports-color
 
   gcp-metadata@8.1.2:
@@ -17107,20 +17034,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  google-auth-library@9.15.1:
-    dependencies:
-      base64-js: 1.5.1
-      ecdsa-sig-formatter: 1.0.11
-      gaxios: 6.7.1
-      gcp-metadata: 6.1.1
-      gtoken: 7.1.0
-      jws: 4.0.1
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
-
-  google-logging-utils@0.0.2: {}
-
   google-logging-utils@1.1.3: {}
 
   googleapis-common@8.0.1:
@@ -17130,13 +17043,6 @@ snapshots:
       google-auth-library: 10.5.0
       qs: 6.14.0
       url-template: 2.0.8
-    transitivePeerDependencies:
-      - supports-color
-
-  googleapis@165.0.0:
-    dependencies:
-      google-auth-library: 10.5.0
-      googleapis-common: 8.0.1
     transitivePeerDependencies:
       - supports-color
 
@@ -17221,14 +17127,6 @@ snapshots:
       js-yaml: 3.14.2
       minimatch: 3.0.8
       nopt: 3.0.6
-
-  gtoken@7.1.0:
-    dependencies:
-      gaxios: 6.7.1
-      jws: 4.0.1
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
 
   gtoken@8.0.0:
     dependencies:
@@ -19087,6 +18985,7 @@ snapshots:
     dependencies:
       is-docker: 2.2.1
       is-wsl: 2.2.0
+    optional: true
 
   open@8.4.2:
     dependencies:
@@ -20097,8 +19996,6 @@ snapshots:
       send: 0.19.0
     transitivePeerDependencies:
       - supports-color
-
-  server-destroy@1.0.1: {}
 
   set-blocking@2.0.0: {}
 

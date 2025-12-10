@@ -1,4 +1,5 @@
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { ProjectGuardService } from '@/services/project-guard.service';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
@@ -9,7 +10,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import logger from '../../logger';
-import { ProjectGuardService } from '../../services/project-guard.service';
 
 @Injectable()
 export class MissionGuardService {
@@ -98,7 +98,7 @@ export class MissionGuardService {
     }
 
     async canKeyTagMission(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         tagUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
@@ -176,7 +176,7 @@ export class MissionGuardService {
     }
 
     canKeyAccessMission(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): boolean {
@@ -184,7 +184,7 @@ export class MissionGuardService {
     }
 
     async canKeyAccessMissionByName(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         missionName: string,
         projectUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,

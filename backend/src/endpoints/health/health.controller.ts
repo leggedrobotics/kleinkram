@@ -1,6 +1,6 @@
+import { OutputDto } from '@/decorators';
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { OutputDto } from '../../decorators';
 
 @ApiTags('health')
 @Controller('api/health')

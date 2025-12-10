@@ -17,7 +17,7 @@ import {
 @Entity({ name: 'file_entity' })
 @Unique('unique_file_name_per_mission', ['filename', 'mission'])
 export class FileEntity extends BaseEntity {
-    @ManyToOne(() => MissionEntity, (mission) => mission.files, {
+    @ManyToOne(() => MissionEntity, (mission: MissionEntity) => mission.files, {
         nullable: false,
         onDelete: 'CASCADE',
     })
@@ -26,7 +26,7 @@ export class FileEntity extends BaseEntity {
     @Column()
     date!: Date;
 
-    @OneToMany(() => TopicEntity, (topic) => topic.file)
+    @OneToMany(() => TopicEntity, (topic: TopicEntity) => topic.file)
     topics?: TopicEntity[];
 
     @Column()
@@ -44,7 +44,9 @@ export class FileEntity extends BaseEntity {
     /**
      * The user who uploaded the file.
      */
-    @ManyToOne(() => UserEntity, (user) => user.files, { nullable: false })
+    @ManyToOne(() => UserEntity, (user: UserEntity) => user.files, {
+        nullable: false,
+    })
     creator?: UserEntity;
 
     @Column({ type: 'enum', enum: FileType })
@@ -56,7 +58,10 @@ export class FileEntity extends BaseEntity {
     @Column({ nullable: true })
     hash?: string;
 
-    @ManyToMany(() => CategoryEntity, (category) => category.files)
+    @ManyToMany(
+        () => CategoryEntity,
+        (category: CategoryEntity) => category.files,
+    )
     @JoinTable()
     categories?: CategoryEntity[];
 
@@ -64,7 +69,7 @@ export class FileEntity extends BaseEntity {
      * The parent file this file was derived from.
      * e.g., If this is a .mcap converted from a .bag, the .bag is the parent.
      */
-    @ManyToOne(() => FileEntity, (file) => file.derivedFiles, {
+    @ManyToOne(() => FileEntity, (file: FileEntity) => file.derivedFiles, {
         nullable: true,
         onDelete: 'SET NULL',
     })
@@ -73,7 +78,7 @@ export class FileEntity extends BaseEntity {
     /**
      * Files derived from this file.
      */
-    @OneToMany(() => FileEntity, (file) => file.parent)
+    @OneToMany(() => FileEntity, (file: FileEntity) => file.parent)
     derivedFiles?: FileEntity[];
 
     @Column({ type: 'enum', enum: FileOrigin, nullable: true })

@@ -1,3 +1,5 @@
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
+import { actionTemplateEntityToDto } from '@/serialization/action-template';
 import {
     ActionTemplateDto,
     ActionTemplatesDto,
@@ -15,8 +17,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, QueryFailedError, Repository } from 'typeorm';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
-import { actionTemplateEntityToDto } from '../serialization/action-template';
 
 @Injectable()
 export class TemplateService {

@@ -1,14 +1,21 @@
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
+import {
+    userEntityToCurrentAPIUserDto,
+    userEntityToDto,
+} from '@/serialization';
 import {
     CurrentAPIUserDto,
     PermissionsDto,
     UserDto,
     UsersDto,
 } from '@kleinkram/api-dto';
+import {
+    ApiKeyEntity,
+    MissionAccessViewEntity,
+    ProjectAccessViewEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
 import { systemUser } from '@kleinkram/backend-common/consts';
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
-import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
@@ -17,11 +24,6 @@ import {
 import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
-import {
-    userEntityToCurrentAPIUserDto,
-    userEntityToDto,
-} from '../serialization';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -30,8 +32,8 @@ export class UserService implements OnModuleInit {
         private userRepository: Repository<UserEntity>,
         @InjectRepository(ProjectAccessViewEntity)
         private projectAccessView: Repository<ProjectAccessViewEntity>,
-        @InjectRepository(ApikeyEntity)
-        private apikeyRepository: Repository<ApikeyEntity>,
+        @InjectRepository(ApiKeyEntity)
+        private apikeyRepository: Repository<ApiKeyEntity>,
         @InjectRepository(MissionAccessViewEntity)
         private missionAccessView: Repository<MissionAccessViewEntity>,
     ) {}
@@ -254,7 +256,7 @@ export class UserService implements OnModuleInit {
      */
     async findUserByAPIKey(
         apikey: string,
-    ): Promise<{ apiKey: ApikeyEntity; user: UserEntity }> {
+    ): Promise<{ apiKey: ApiKeyEntity; user: UserEntity }> {
         const user = await this.userRepository.findOneOrFail({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             where: { api_keys: { apikey } },

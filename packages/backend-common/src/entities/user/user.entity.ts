@@ -1,7 +1,7 @@
 import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@backend-common/entities/action/action.entity';
 import { AccountEntity } from '@backend-common/entities/auth/account.entity';
-import { ApikeyEntity } from '@backend-common/entities/auth/apikey.entity';
+import { ApiKeyEntity } from '@backend-common/entities/auth/api-key.entity';
 import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { CategoryEntity } from '@backend-common/entities/category/category.entity';
@@ -73,44 +73,54 @@ export class UserEntity extends BaseEntity {
     @Column({ nullable: true })
     avatarUrl?: string;
 
-    @OneToOne(() => AccountEntity, (account) => account.user)
+    @OneToOne(() => AccountEntity, (account: AccountEntity) => account.user)
     @JoinColumn({ name: 'account_uuid' })
     account?: AccountEntity;
 
-    @OneToMany(() => GroupMembershipEntity, (membership) => membership.user, {
-        cascade: ['insert'],
-    })
+    @OneToMany(
+        () => GroupMembershipEntity,
+        (membership: GroupMembershipEntity) => membership.user,
+        {
+            cascade: ['insert'],
+        },
+    )
     memberships?: GroupMembershipEntity[];
 
-    @OneToMany(() => ProjectEntity, (project) => project.creator)
+    @OneToMany(() => ProjectEntity, (project: ProjectEntity) => project.creator)
     projects?: ProjectEntity[];
 
-    @OneToMany(() => MissionEntity, (mission) => mission.creator)
+    @OneToMany(() => MissionEntity, (mission: MissionEntity) => mission.creator)
     missions?: MissionEntity[];
 
-    @OneToMany(() => FileEntity, (file) => file.creator)
+    @OneToMany(() => FileEntity, (file: FileEntity) => file.creator)
     files?: FileEntity[];
 
-    @OneToMany(() => IngestionJobEntity, (queue) => queue.creator)
+    @OneToMany(
+        () => IngestionJobEntity,
+        (queue: IngestionJobEntity) => queue.creator,
+    )
     queues?: IngestionJobEntity[];
 
-    @OneToMany(() => ActionEntity, (action) => action.mission)
+    @OneToMany(() => ActionEntity, (action: ActionEntity) => action.mission)
     submittedActions?: ActionEntity[];
 
     @OneToMany(
         () => ActionTemplateEntity,
-        (actionTemplate) => actionTemplate.creator,
+        (actionTemplate: ActionTemplateEntity) => actionTemplate.creator,
     )
     templates?: ActionTemplateEntity[];
 
-    @OneToMany(() => MetadataEntity, (tag) => tag.creator)
+    @OneToMany(() => MetadataEntity, (tag: MetadataEntity) => tag.creator)
     tags?: MetadataEntity[];
 
-    @OneToMany(() => ApikeyEntity, (apikey) => apikey.user)
+    @OneToMany(() => ApiKeyEntity, (apikey: ApiKeyEntity) => apikey.user)
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    api_keys?: ApikeyEntity[];
+    api_keys?: ApiKeyEntity[];
 
-    @OneToMany(() => CategoryEntity, (category) => category.creator)
+    @OneToMany(
+        () => CategoryEntity,
+        (category: CategoryEntity) => category.creator,
+    )
     categories?: CategoryEntity[];
 }

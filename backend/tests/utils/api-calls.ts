@@ -1,14 +1,14 @@
+import { appVersion } from '@/app-version';
 import { S3Client } from '@aws-sdk/client-s3';
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import { CreateAccessGroupDto } from '@kleinkram/api-dto/types/create-access-group.dto';
 import { CreateMission } from '@kleinkram/api-dto/types/create-mission.dto';
 import { CreateProject } from '@kleinkram/api-dto/types/create-project.dto';
 import { CreateTagTypeDto } from '@kleinkram/api-dto/types/tags/create-tag-type.dto';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import crypto from 'node:crypto';
 import * as fs from 'node:fs';
-import { appVersion } from '../../src/app-version';
 import { DEFAULT_URL } from '../auth/utilities';
 import { database, getJwtToken } from './database-utilities';
 import { uploadFileMultipart } from './multipart-upload';
@@ -278,14 +278,14 @@ export const createAccessGroupUsingPost = async (
     });
 
     // get access group
-    const testAccesGroup = await database
+    const testAccessGroup = await database
         .getRepository<AccessGroupEntity>('AccessGroup')
         .findOneOrFail({ where: { name: accessGroup.name } });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const groupJson = await response.json();
     expect(response.status).toBeLessThan(300);
-    console.log(`['DEBUG'] Created access group:`, testAccesGroup.uuid);
+    console.log(`['DEBUG'] Created access group:`, testAccessGroup.uuid);
 
     // add users to access group
     await Promise.all(
@@ -297,7 +297,7 @@ export const createAccessGroupUsingPost = async (
                     headers: headersBuilder.getHeaders(),
                     body: JSON.stringify({
                         userUUID: user.uuid,
-                        uuid: testAccesGroup.uuid,
+                        uuid: testAccessGroup.uuid,
                     }),
                 },
             );
@@ -313,7 +313,7 @@ export const createAccessGroupUsingPost = async (
 
     console.log(`['DEBUG'] Users added to access group:`, groupJson);
 
-    return testAccesGroup.uuid;
+    return testAccessGroup.uuid;
 };
 
 export const createActionUsingPost = async (

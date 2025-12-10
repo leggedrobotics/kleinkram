@@ -31,9 +31,13 @@ export class IngestionJobEntity extends BaseEntity {
     })
     state!: QueueState;
 
-    @ManyToOne(() => MissionEntity, (project) => project.ingestionJobs, {
-        onDelete: 'CASCADE',
-    })
+    @ManyToOne(
+        () => MissionEntity,
+        (mission: MissionEntity) => mission.ingestionJobs,
+        {
+            onDelete: 'CASCADE',
+        },
+    )
     mission?: MissionEntity;
 
     @Column({
@@ -52,7 +56,7 @@ export class IngestionJobEntity extends BaseEntity {
     @Column({ nullable: true, default: null })
     errorMessage?: string;
 
-    @ManyToOne(() => UserEntity, (user) => user.queues)
+    @ManyToOne(() => UserEntity, (user: UserEntity) => user.queues)
     creator?: UserEntity;
 
     /**

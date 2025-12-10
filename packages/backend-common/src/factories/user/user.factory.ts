@@ -1,4 +1,4 @@
-import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
@@ -44,7 +44,7 @@ define(UserEntity, (_, context: Partial<UserContext> = {}) => {
         const configPath = path.resolve(
             // eslint-disable-next-line unicorn/prefer-module
             __dirname,
-            '../../../../../backend/src/access_config.json',
+            '@backend-common/../../../backend/src/access_config.json',
         );
 
         if (fs.existsSync(configPath)) {

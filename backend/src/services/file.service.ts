@@ -781,18 +781,14 @@ export class FileService implements OnModuleInit {
                         : undefined,
                     action: event.action
                         ? {
-                              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                               uuid: event.action.uuid,
 
-                              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                               name: event.action.template?.name,
-                              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
                               creator: event.action.creator
                                   ? {
-                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                                         uuid: event.action.creator.uuid,
 
-                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                                         name: event.action.creator.name,
                                         avatarUrl: null,
                                         email: null,
@@ -839,10 +835,8 @@ export class FileService implements OnModuleInit {
                         : undefined,
                     action: event.action
                         ? {
-                              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                               uuid: event.action.uuid,
 
-                              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                               name: event.action.template?.name,
                           }
                         : undefined,

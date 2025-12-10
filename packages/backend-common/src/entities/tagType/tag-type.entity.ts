@@ -15,10 +15,13 @@ export class TagTypeEntity extends BaseEntity {
     @Column({ type: 'enum', enum: DataType })
     datatype!: DataType;
 
-    @ManyToMany(() => ProjectEntity, (project) => project.requiredTags)
+    @ManyToMany(
+        () => ProjectEntity,
+        (project: ProjectEntity) => project.requiredTags,
+    )
     @JoinTable()
     project?: ProjectEntity[];
 
-    @OneToMany(() => MetadataEntity, (tag) => tag.tagType)
+    @OneToMany(() => MetadataEntity, (tag: MetadataEntity) => tag.tagType)
     tags?: MetadataEntity[];
 }

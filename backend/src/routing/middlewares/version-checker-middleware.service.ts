@@ -1,7 +1,7 @@
+import { appVersion } from '@/app-version';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { NextFunction, Request, Response } from 'express';
-import { appVersion } from '../../app-version';
 import logger from '../../logger';
 
 /**

@@ -1,4 +1,4 @@
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
@@ -23,5 +23,5 @@ export const AddUser = createParamDecorator((_, context: ExecutionContext) => {
 
 export interface AuthHeader {
     user: UserEntity;
-    apiKey?: ApikeyEntity;
+    apiKey?: ApiKeyEntity;
 }

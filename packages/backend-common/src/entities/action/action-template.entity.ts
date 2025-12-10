@@ -1,8 +1,8 @@
-import { ActionEntity } from '@backend-common/entities/action/action.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupRights } from '@kleinkram/shared';
 import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
+import { ActionEntity } from './action.entity';
 
 @Entity({ name: 'action_template' })
 @Unique('unique_versioned_action_name', ['name', 'version'])

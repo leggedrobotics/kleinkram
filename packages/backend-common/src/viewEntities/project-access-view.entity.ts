@@ -1,29 +1,19 @@
-import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { AccessGroupRights } from '@kleinkram/shared';
-import type { DataSource, SelectQueryBuilder } from 'typeorm';
 import { ViewColumn, ViewEntity } from 'typeorm';
 
 @ViewEntity({
-    expression: (datasource: DataSource): SelectQueryBuilder<ProjectEntity> =>
-        datasource
-            .createQueryBuilder(ProjectEntity, 'project')
-            .innerJoin('project.project_accesses', 'projectAccesses')
-            .innerJoin('projectAccesses.accessGroup', 'accessGroup')
-            .innerJoin(
-                'accessGroup.memberships',
-                'memberships',
-                'memberships.expirationDate IS NULL OR memberships.expirationDate > NOW()',
-            )
-            .innerJoin('memberships.user', 'user')
-            .select([
-                'project.uuid as projectUUID',
-                'user.uuid as userUUID',
-                // Use MAX() to find the highest right for this user/project pair
-                'MAX(projectAccesses.rights) as rights',
-            ])
-            // Group by user and project to get one row per pair
-            .groupBy('project.uuid')
-            .addGroupBy('user.uuid'),
+    expression: `
+        SELECT
+            "project"."uuid" AS "projectuuid",
+            "user"."uuid" AS "useruuid",
+            MAX("projectAccesses"."rights") AS "rights"
+        FROM "project" "project"
+        INNER JOIN "project_access" "projectAccesses" ON "projectAccesses"."projectUuid" = "project"."uuid"
+        INNER JOIN "access_group" "accessGroup" ON "accessGroup"."uuid" = "projectAccesses"."accessGroupUuid"
+        INNER JOIN "group_membership" "memberships" ON "memberships"."accessGroupUuid" = "accessGroup"."uuid" AND ("memberships"."expirationDate" IS NULL OR "memberships"."expirationDate" > NOW())
+        INNER JOIN "user" "user" ON "user"."uuid" = "memberships"."userUuid"
+        GROUP BY "project"."uuid", "user"."uuid"
+    `,
 })
 export class ProjectAccessViewEntity {
     @ViewColumn({ name: 'projectuuid' })

@@ -16,11 +16,11 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { ApiOkResponse, OutputDto } from '@/decorators';
+import { TemplateService } from '@/services/template.service';
+import { ParameterUuid } from '@/validation/parameter-decorators';
+import { QuerySkip, QueryTake } from '@/validation/query-decorators';
 import { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto';
-import { ApiOkResponse, OutputDto } from '../../decorators';
-import { TemplateService } from '../../services/template.service';
-import { ParameterUuid } from '../../validation/parameter-decorators';
-import { QuerySkip, QueryTake } from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { CanCreate, LoggedIn } from '../auth/roles.decorator';
 

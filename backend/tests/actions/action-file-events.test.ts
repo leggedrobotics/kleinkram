@@ -2,25 +2,15 @@ import { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import {
     ActionEntity,
     ActionTemplateEntity,
+    ApiKeyEntity,
     FileEntity,
     MissionEntity,
-} from '@kleinkram/backend-common';
-
-import {
-    AccessGroupRights,
-    ActionState,
-    ApikeyEntity,
-    ArtifactState,
-    CookieNames,
-    FileEventType,
-    FileState,
-    FileType,
-    KeyTypes,
     UserEntity,
 } from '@kleinkram/backend-common';
+
+import { appVersion } from '@/app-version';
 import environment from '@kleinkram/backend-common/environment';
 import * as Minio from 'minio';
-import { appVersion } from '../../src/app-version';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createActionUsingPost,
@@ -29,6 +19,16 @@ import {
     getAuthHeaders,
 } from '../utils/api-calls';
 
+import {
+    AccessGroupRights,
+    ActionState,
+    ArtifactState,
+    CookieNames,
+    FileEventType,
+    FileState,
+    FileType,
+    KeyTypes,
+} from '@kleinkram/shared';
 import { database } from '../utils/database-utilities';
 import { setupDatabaseHooks } from '../utils/test-helpers';
 
@@ -119,7 +119,7 @@ describe('Action File Events', () => {
         const actionUUID = action.uuid;
 
         // 5. Create Action API Key
-        const apikeyRepo = database.getRepository(ApikeyEntity);
+        const apikeyRepo = database.getRepository(ApiKeyEntity);
         const apikeyEntity = apikeyRepo.create({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.ACTION,

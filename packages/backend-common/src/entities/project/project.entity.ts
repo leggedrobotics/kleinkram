@@ -15,13 +15,13 @@ export class ProjectEntity extends BaseEntity {
     @Column({ unique: true })
     name!: string;
 
-    @OneToMany(() => MissionEntity, (mission) => mission.project)
+    @OneToMany(() => MissionEntity, (mission: MissionEntity) => mission.project)
     missions?: MissionEntity[];
     readonly missionCount?: number;
 
     @OneToMany(
         () => ProjectAccessEntity,
-        (projectAccess) => projectAccess.project,
+        (projectAccess: ProjectAccessEntity) => projectAccess.project,
         {
             cascade: true,
         },
@@ -33,16 +33,21 @@ export class ProjectEntity extends BaseEntity {
     @Column()
     description!: string;
 
-    @ManyToOne(() => UserEntity, (user) => user.projects, { nullable: false })
+    @ManyToOne(() => UserEntity, (user: UserEntity) => user.projects, {
+        nullable: false,
+    })
     creator?: UserEntity;
 
-    @ManyToMany(() => TagTypeEntity, (tag) => tag.project, {
+    @ManyToMany(() => TagTypeEntity, (tag: TagTypeEntity) => tag.project, {
         onDelete: 'CASCADE',
         nullable: false,
     })
     requiredTags!: TagTypeEntity[];
 
-    @OneToMany(() => CategoryEntity, (category) => category.project)
+    @OneToMany(
+        () => CategoryEntity,
+        (category: CategoryEntity) => category.project,
+    )
     categories?: CategoryEntity[];
 
     @Column({ default: false })

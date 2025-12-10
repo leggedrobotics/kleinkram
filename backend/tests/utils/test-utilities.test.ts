@@ -1,4 +1,4 @@
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { UserRole } from '@kleinkram/shared';

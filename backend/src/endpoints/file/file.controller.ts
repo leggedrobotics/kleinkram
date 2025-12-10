@@ -1,3 +1,20 @@
+import { ApiOkResponse, OutputDto } from '@/decorators';
+import { FileService } from '@/services/file.service';
+import { QueueService } from '@/services/queue.service';
+import {
+    QueryBoolean,
+    QueryDate,
+    QueryOptionalDate,
+    QueryOptionalRecord,
+    QueryOptionalString,
+    QueryOptionalUUID,
+    QuerySkip,
+    QuerySortBy,
+    QuerySortDirection,
+    QueryString,
+    QueryTake,
+    QueryUUID,
+} from '@/validation/query-decorators';
 import {
     CancelFileUploadDto,
     CancelProcessingResponseDto,
@@ -47,25 +64,8 @@ import {
     Query,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import { ApiOkResponse, OutputDto } from '../../decorators';
 import logger from '../../logger';
-import { FileService } from '../../services/file.service';
-import { QueueService } from '../../services/queue.service';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import {
-    QueryBoolean,
-    QueryDate,
-    QueryOptionalDate,
-    QueryOptionalRecord,
-    QueryOptionalString,
-    QueryOptionalUUID,
-    QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
-    QueryString,
-    QueryTake,
-    QueryUUID,
-} from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     AdminOnly,
@@ -80,8 +80,8 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 
+import { FoxgloveService } from '@/services/foxglove.service';
 import { FileSource, HealthStatus } from '@kleinkram/shared';
-import { FoxgloveService } from '../../services/foxglove.service';
 
 @Controller(['files'])
 export class FileController {

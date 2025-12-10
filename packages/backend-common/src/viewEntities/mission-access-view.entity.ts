@@ -1,25 +1,19 @@
-import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { AccessGroupRights } from '@kleinkram/shared';
-import type { DataSource } from 'typeorm';
 import { ViewColumn, ViewEntity } from 'typeorm';
 
 @ViewEntity({
-    expression: (datasource: DataSource) =>
-        datasource
-            .createQueryBuilder(MissionEntity, 'mission')
-            .innerJoin('mission.mission_accesses', 'missionAccesses')
-            .innerJoin('missionAccesses.accessGroup', 'accessGroup')
-            .innerJoin('accessGroup.memberships', 'memberships')
-            .innerJoin('memberships.user', 'user')
-            .select([
-                'mission.uuid as missionUUID',
-                'user.uuid as userUUID',
-                // Aggregate to find the highest level of rights
-                'MAX(missionAccesses.rights) as rights',
-            ])
-            // Group by user and mission to get one row per pair
-            .groupBy('mission.uuid')
-            .addGroupBy('user.uuid'),
+    expression: `
+        SELECT
+            "mission"."uuid" AS "missionuuid",
+            "user"."uuid" AS "useruuid",
+            MAX("missionAccesses"."rights") AS "rights"
+        FROM "mission" "mission"
+        INNER JOIN "mission_access" "missionAccesses" ON "missionAccesses"."missionUuid" = "mission"."uuid"
+        INNER JOIN "access_group" "accessGroup" ON "accessGroup"."uuid" = "missionAccesses"."accessGroupUuid"
+        INNER JOIN "group_membership" "memberships" ON "memberships"."accessGroupUuid" = "accessGroup"."uuid"
+        INNER JOIN "user" "user" ON "user"."uuid" = "memberships"."userUuid"
+        GROUP BY "mission"."uuid", "user"."uuid"
+    `,
 })
 export class MissionAccessViewEntity {
     @ViewColumn({ name: 'missionuuid' })

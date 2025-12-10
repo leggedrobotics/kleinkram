@@ -1,3 +1,8 @@
+import { ApiOkResponse, ApiResponse, OutputDto } from '@/decorators';
+import { AccessService } from '@/services/access.service';
+import { ProjectService } from '@/services/project.service';
+import { ParameterUuid as ParameterUID } from '@/validation/parameter-decorators';
+import { QueryTake, QueryUUID } from '@/validation/query-decorators';
 import {
     AddTagTypeDto,
     CreateProject,
@@ -25,11 +30,6 @@ import {
     Query,
 } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
-import { ApiOkResponse, ApiResponse, OutputDto } from '../../decorators';
-import { AccessService } from '../../services/access.service';
-import { ProjectService } from '../../services/project.service';
-import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import { QueryTake, QueryUUID } from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreate,

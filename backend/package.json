@@ -22,7 +22,6 @@
     },
     "dependencies": {
         "@aws-sdk/client-sts": "3.939.0",
-        "@google-cloud/local-auth": "^3.0.1",
         "@kleinkram/api-dto": "workspace:*",
         "@kleinkram/backend-common": "workspace:*",
         "@kleinkram/shared": "workspace:*",
@@ -59,7 +58,6 @@
         "dotenv": "^17.2.3",
         "express": "^4.21.2",
         "form-data": "^4.0.4",
-        "googleapis": "^165.0.0",
         "jsonwebtoken": "^9.0.2",
         "logform": "^2.7.0",
         "minio": "8.0.6",
@@ -76,8 +74,6 @@
         "rxjs": "^7.8.2",
         "typeorm": "^0.3.27",
         "uuid": "^13.0.0",
-        "vue": "^3.5.21",
-        "vue-json-pretty": "^2.6.0",
         "winston": "^3.18.3",
         "winston-loki": "^6.0.7"
     },
@@ -120,6 +116,8 @@
         "ts-node": "^10.9.1",
         "tsconfig-paths": "^4.2.0",
         "typescript": "5.8.3",
+        "vue": "^3.5.25",
+        "vue-json-pretty": "^2.6.0",
         "webpack": "^5.102.1",
         "webpack-node-externals": "^3.0.0"
     }

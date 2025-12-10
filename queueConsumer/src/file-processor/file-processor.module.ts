@@ -9,9 +9,9 @@ import { McapHandler } from './handlers/mcap.handler';
 import { GoogleDriveStrategy } from './strategies/google-drive.strategy';
 import { MinioStrategy } from './strategies/minio.strategy';
 
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
@@ -38,7 +38,7 @@ import { Db3Handler } from './handlers/db3.handler';
             ActionTemplateEntity,
             FileEventEntity,
             WorkerEntity,
-            ApikeyEntity,
+            ApiKeyEntity,
         ]),
         BullModule.registerQueue({ name: 'file-queue' }),
         StorageModule,

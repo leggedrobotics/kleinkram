@@ -1,8 +1,8 @@
-import { ActionEntity } from '@backend-common/entities/action/action.entity';
-import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
-import { RuntimeDescription } from '@backend-common/types';
 import { ActionState } from '@kleinkram/shared';
 import { MoreThanOrEqual, Repository } from 'typeorm';
+import { ActionEntity } from './entities/action/action.entity';
+import { WorkerEntity } from './entities/worker/worker.entity';
+import { RuntimeDescription } from './types';
 
 export async function findWorkerForAction(
     runtimeRequirements: RuntimeDescription,

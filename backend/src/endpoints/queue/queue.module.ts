@@ -1,5 +1,6 @@
+import QueueService from '@/services/queue.service';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
@@ -12,7 +13,6 @@ import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
-import QueueService from '../../services/queue.service';
 
 @Module({
     imports: [

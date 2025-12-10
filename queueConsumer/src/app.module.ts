@@ -1,9 +1,8 @@
+import { AccessGroupEntity, ApiKeyEntity } from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { MissionAccessEntity } from '@kleinkram/backend-common/entities/auth/mission-access.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
@@ -88,7 +87,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
                         ActionTemplateEntity,
                         ProjectEntity,
                         UserEntity,
-                        ApikeyEntity,
+                        ApiKeyEntity,
                         AccountEntity,
                         AccessGroupEntity,
                         TagTypeEntity,
@@ -116,7 +115,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
             ActionTemplateEntity,
             ProjectEntity,
             UserEntity,
-            ApikeyEntity,
+            ApiKeyEntity,
             TagTypeEntity,
             MetadataEntity,
             ProjectAccessEntity,
@@ -126,6 +125,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
             WorkerEntity,
             CategoryEntity,
             GroupMembershipEntity,
+            AccessGroupEntity,
         ]),
         ScheduleModule.forRoot(),
         StorageModule,

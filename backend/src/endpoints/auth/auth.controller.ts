@@ -1,3 +1,6 @@
+import { OutputDto } from '@/decorators';
+import { AuthService } from '@/services/auth.service';
+import { UserService } from '@/services/user.service';
 import { AvailableProvidersDto } from '@kleinkram/api-dto';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
@@ -14,9 +17,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
-import { OutputDto } from '../../decorators';
-import { AuthService } from '../../services/auth.service';
-import { UserService } from '../../services/user.service';
 import { InvalidJwtTokenException } from './jwt.strategy';
 import { UserOnly } from './roles.decorator';
 

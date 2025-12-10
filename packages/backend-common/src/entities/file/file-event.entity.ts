@@ -1,3 +1,4 @@
+import { ActionEntity } from '@backend-common/entities/action/action.entity';
 import { FileEntity } from '@backend-common/entities/file/file.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
@@ -54,7 +55,6 @@ export class FileEventEntity {
     @Index()
     mission?: MissionEntity;
 
-    @ManyToOne('ActionEntity', { nullable: true, onDelete: 'CASCADE' })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    action?: any;
+    @ManyToOne(() => ActionEntity, { nullable: true, onDelete: 'CASCADE' })
+    action?: ActionEntity;
 }

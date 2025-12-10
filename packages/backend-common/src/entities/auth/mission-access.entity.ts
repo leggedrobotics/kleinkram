@@ -1,7 +1,7 @@
-import type { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
-import type { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { Column, Entity, ManyToOne, Unique } from 'typeorm';
+import { AccessGroupEntity } from './access-group.entity';
 
 import { AccessGroupRights } from '@kleinkram/shared';
 
@@ -11,28 +11,14 @@ export class MissionAccessEntity extends BaseEntity {
     @Column({ type: 'enum', enum: AccessGroupRights })
     rights!: AccessGroupRights;
 
-    @ManyToOne(
-        () =>
-            // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            require('@backend-common/entities/auth/accessgroup.entity')
-                .AccessGroupEntity as typeof AccessGroupEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
-        (group) => group.project_accesses,
-        {
-            nullable: false,
-        },
-    )
+    @ManyToOne(() => AccessGroupEntity, (group) => group.mission_accesses, {
+        nullable: false,
+    })
     accessGroup?: AccessGroupEntity;
 
-    @ManyToOne(
-        () =>
-            // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
-            require('@backend-common/entities/mission/mission.entity')
-                .MissionEntity as typeof MissionEntity, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
-        (mission) => mission.mission_accesses,
-        {
-            nullable: false,
-            onDelete: 'CASCADE',
-        },
-    )
+    @ManyToOne(() => MissionEntity, (mission) => mission.mission_accesses, {
+        nullable: false,
+        onDelete: 'CASCADE',
+    })
     mission?: MissionEntity;
 }

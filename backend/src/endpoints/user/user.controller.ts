@@ -1,3 +1,10 @@
+import { ApiOkResponse, OutputDto } from '@/decorators';
+import { UserService } from '@/services/user.service';
+import {
+    QuerySkip,
+    QueryString,
+    QueryTake,
+} from '@/validation/query-decorators';
 import {
     CurrentAPIUserDto,
     NoQueryParametersDto,
@@ -7,13 +14,6 @@ import {
 } from '@kleinkram/api-dto';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
-import { ApiOkResponse, OutputDto } from '../../decorators';
-import { UserService } from '../../services/user.service';
-import {
-    QuerySkip,
-    QueryString,
-    QueryTake,
-} from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
 

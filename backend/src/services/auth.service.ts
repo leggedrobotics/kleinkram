@@ -1,4 +1,6 @@
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupConfig } from '@/types/access-group-config';
+import { AuthFlowException } from '@/types/auth-flow-exception';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
@@ -15,8 +17,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { JwtPayload } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import logger from '../logger';
-import { AccessGroupConfig } from '../types/access-group-config';
-import { AuthFlowException } from '../types/auth-flow-exception';
 
 @Injectable()
 export class AuthService implements OnModuleInit {

@@ -1,4 +1,4 @@
-import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';

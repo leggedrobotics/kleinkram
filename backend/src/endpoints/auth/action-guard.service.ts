@@ -1,12 +1,12 @@
+import { ProjectGuardService } from '@/services/project-guard.service';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
-import { ProjectGuardService } from '../../services/project-guard.service';
 import { MissionGuardService } from './mission-guard.service';
 
 @Injectable()
@@ -62,7 +62,7 @@ export class ActionGuardService {
     }
 
     async canKeyAccessAction(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         actionUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {

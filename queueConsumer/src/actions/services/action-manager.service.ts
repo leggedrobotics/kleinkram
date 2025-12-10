@@ -1,9 +1,10 @@
+import { tracing } from '@/tracing';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import {
     ActionEntity,
     ContainerLog,
     Image,
 } from '@kleinkram/backend-common/entities/action/action.entity';
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { ActionState, ArtifactState, KeyTypes } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
@@ -13,7 +14,6 @@ import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
-import { tracing } from '../../tracing';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
 import {
     ContainerEnvironment,
@@ -31,8 +31,8 @@ export class ActionManagerService {
         private containerDaemon: DockerDaemon,
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
-        @InjectRepository(ApikeyEntity)
-        private apikeyRepository: Repository<ApikeyEntity>,
+        @InjectRepository(ApiKeyEntity)
+        private apikeyRepository: Repository<ApiKeyEntity>,
     ) {}
 
     /**

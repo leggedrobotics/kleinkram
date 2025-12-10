@@ -3,17 +3,17 @@
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import {
     AccessGroupEntity,
-    AccessGroupRights,
     ActionEntity,
-    ActionState,
     ActionTemplateEntity,
-    ApikeyEntity,
-    KeyTypes,
+    ApiKeyEntity,
     MissionEntity,
     ProjectEntity,
     UserEntity,
     WorkerEntity,
 } from '@kleinkram/backend-common';
+
+import { AccessGroupRights, ActionState, KeyTypes } from '@kleinkram/shared';
+
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -127,7 +127,7 @@ describe('Verify Action Access Rights', () => {
             { name: 'Templates', entity: ActionTemplateEntity },
             { name: 'Missions', entity: MissionEntity },
             { name: 'Projects', entity: ProjectEntity },
-            { name: 'ApiKeys', entity: ApikeyEntity },
+            { name: 'ApiKeys', entity: ApiKeyEntity },
             { name: 'Workers', entity: WorkerEntity },
         ];
 
@@ -168,7 +168,7 @@ describe('Verify Action Access Rights', () => {
         });
         await actionRepo.save(action);
 
-        const apiKeyRepo = database.getRepository(ApikeyEntity);
+        const apiKeyRepo = database.getRepository(ApiKeyEntity);
         const apiKeyEntity = apiKeyRepo.create({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.ACTION,
@@ -222,7 +222,7 @@ describe('Verify Action Access Rights', () => {
         });
         await actionRepo.save(action);
 
-        const apiKeyRepo = database.getRepository(ApikeyEntity);
+        const apiKeyRepo = database.getRepository(ApiKeyEntity);
         const apiKeyEntity = apiKeyRepo.create({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             key_type: KeyTypes.ACTION,

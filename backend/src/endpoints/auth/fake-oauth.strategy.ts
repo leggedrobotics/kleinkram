@@ -1,3 +1,4 @@
+import { AuthService } from '@/services/auth.service';
 import env from '@kleinkram/backend-common/environment';
 import { Providers } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
@@ -9,7 +10,6 @@ import {
     VerifyCallback,
 } from 'passport-oauth2';
 import logger from '../../logger';
-import { AuthService } from '../../services/auth.service';
 
 /**
  *

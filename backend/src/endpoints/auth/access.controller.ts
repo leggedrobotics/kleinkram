@@ -1,3 +1,6 @@
+import { ApiOkResponse, ApiResponse, OutputDto } from '@/decorators';
+import { AccessService } from '@/services/access.service';
+import { QueryUUID } from '@/validation/query-decorators';
 import {
     AccessGroupDto,
     AccessGroupsDto,
@@ -11,7 +14,7 @@ import {
     RemoveAccessGroupFromProjectDto,
     SetAccessGroupUserExpirationDto,
 } from '@kleinkram/api-dto';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import {
     Body,
@@ -25,10 +28,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { EntityNotFoundError } from 'typeorm';
-import { ApiOkResponse, ApiResponse, OutputDto } from '../../decorators';
-import { AccessService } from '../../services/access.service';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import { QueryUUID } from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from './parameter-decorator';
 import {
     CanCreate,

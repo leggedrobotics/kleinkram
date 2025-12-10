@@ -1,5 +1,5 @@
 import { ActionEntity } from '@backend-common/entities/action/action.entity';
-import { ApikeyEntity } from '@backend-common/entities/auth/apikey.entity';
+import { ApiKeyEntity } from '@backend-common/entities/auth/api-key.entity';
 import { MissionAccessEntity } from '@backend-common/entities/auth/mission-access.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { FileEntity } from '@backend-common/entities/file/file.entity';
@@ -15,36 +15,45 @@ export class MissionEntity extends BaseEntity {
     @Column()
     name!: string;
 
-    @ManyToOne(() => ProjectEntity, (project) => project.missions, {
-        nullable: false,
-    })
+    @ManyToOne(
+        () => ProjectEntity,
+        (project: ProjectEntity) => project.missions,
+        {
+            nullable: false,
+        },
+    )
     project?: ProjectEntity;
 
-    @OneToMany(() => FileEntity, (file) => file.mission)
+    @OneToMany(() => FileEntity, (file: FileEntity) => file.mission)
     files?: FileEntity[];
 
-    @OneToMany(() => ActionEntity, (action) => action.mission)
+    @OneToMany(() => ActionEntity, (action: ActionEntity) => action.mission)
     actions?: ActionEntity[];
 
-    @OneToMany(() => IngestionJobEntity, (queue) => queue.mission)
+    @OneToMany(
+        () => IngestionJobEntity,
+        (queue: IngestionJobEntity) => queue.mission,
+    )
     ingestionJobs?: IngestionJobEntity[];
 
-    @ManyToOne(() => UserEntity, (user) => user.missions, { nullable: false })
+    @ManyToOne(() => UserEntity, (user: UserEntity) => user.missions, {
+        nullable: false,
+    })
     creator?: UserEntity;
 
-    @OneToMany(() => ApikeyEntity, (apiKey) => apiKey.mission)
+    @OneToMany(() => ApiKeyEntity, (apiKey: ApiKeyEntity) => apiKey.mission)
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    api_keys?: ApikeyEntity[];
+    api_keys?: ApiKeyEntity[];
 
     @OneToMany(
         () => MissionAccessEntity,
-        (missionAccess) => missionAccess.mission,
+        (missionAccess: MissionAccessEntity) => missionAccess.mission,
     )
     // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_accesses?: MissionAccessEntity[];
 
-    @OneToMany(() => MetadataEntity, (tag) => tag.mission)
+    @OneToMany(() => MetadataEntity, (tag: MetadataEntity) => tag.mission)
     tags?: MetadataEntity[];
 
     fileCount?: number;

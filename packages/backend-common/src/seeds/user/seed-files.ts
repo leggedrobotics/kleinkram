@@ -28,7 +28,7 @@ export const seedFiles = async (
 ): Promise<void> => {
     // eslint-disable-next-line no-console
     console.log('4. Generate and Upload Data...');
-    const generateScriptPath = '../../cli/tests/generate_test_data.py';
+    const generateScriptPath = '/app/cli/tests/generate_test_data.py';
     try {
         execSync(`python3 ${generateScriptPath}`);
     } catch (error) {
@@ -48,7 +48,7 @@ export const seedFiles = async (
     });
 
     const bucketName = process.env.MINIO_DATA_BUCKET_NAME ?? 'data';
-    const dataDirectory = '../../cli/tests/data';
+    const dataDirectory = '/app/cli/tests/data';
 
     if (fs.existsSync(dataDirectory)) {
         const files = fs.readdirSync(dataDirectory);

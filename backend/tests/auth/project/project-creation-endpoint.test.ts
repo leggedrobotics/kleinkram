@@ -1,10 +1,10 @@
 import { database } from '../../utils/database-utilities';
 import { setupDatabaseHooks } from '../../utils/test-helpers';
 
-import { AccessGroupRights, ProjectEntity } from '@kleinkram/backend-common';
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupEntity, ProjectEntity } from '@kleinkram/backend-common';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { AccessGroupRights } from '@kleinkram/shared';
 import {
     createMissionUsingPost,
     createProjectUsingPost,

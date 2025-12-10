@@ -1,4 +1,4 @@
-import { AccessGroupEntity } from '@backend-common/entities/auth/accessgroup.entity';
+import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { faker } from '@faker-js/faker';

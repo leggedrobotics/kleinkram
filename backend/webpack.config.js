@@ -4,22 +4,25 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = function (options, webpackOptions) {
-    const isProd = webpackOptions.mode === 'production';
+    const isProd =
+        webpackOptions.mode === 'production' ||
+        process.env.NODE_ENV === 'production';
 
-    const config = {
+    return {
         ...options,
         entry: isProd
             ? path.resolve(__dirname, 'src/main.ts')
             : ['webpack/hot/poll?100', path.resolve(__dirname, 'src/main.ts')],
         externals: [
-            nodeExternals({
-                allowlist: [
-                    'webpack/hot/poll?100',
-                    /^@kleinkram/,
-                    /^@backend-common/,
-                ],
-            }),
-        ],
+            !isProd &&
+                nodeExternals({
+                    allowlist: [
+                        'webpack/hot/poll?100',
+                        /^@kleinkram/,
+                        /^@backend-common/,
+                    ],
+                }),
+        ].filter(Boolean),
         module: {
             ...options.module,
             rules: [
@@ -66,6 +69,10 @@ module.exports = function (options, webpackOptions) {
                     __dirname,
                     '../packages/backend-common/src',
                 ),
+                '@kleinkram/backend-common': path.resolve(
+                    __dirname,
+                    '../packages/backend-common/src',
+                ),
                 '@kleinkram/shared': path.resolve(
                     __dirname,
                     '../packages/shared/src/index.ts',
@@ -78,12 +85,26 @@ module.exports = function (options, webpackOptions) {
                     __dirname,
                     '../packages/api-dto/src/index.ts',
                 ),
+                typeorm: path.resolve(__dirname, 'node_modules/typeorm'),
+                '@nestjs/typeorm': path.resolve(
+                    __dirname,
+                    'node_modules/@nestjs/typeorm',
+                ),
+                '@nestjs/common': path.resolve(
+                    __dirname,
+                    'node_modules/@nestjs/common',
+                ),
+                '@nestjs/core': path.resolve(
+                    __dirname,
+                    'node_modules/@nestjs/core',
+                ),
             },
         },
         watchOptions: {
             ignored: /node_modules/,
         },
+        optimization: {
+            minimize: false,
+        },
     };
-
-    return config;
 };

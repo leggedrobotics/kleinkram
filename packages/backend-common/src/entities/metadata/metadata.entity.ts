@@ -32,15 +32,17 @@ export class MetadataEntity extends BaseEntity {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     value_location?: string;
 
-    @ManyToOne(() => MissionEntity, (mission) => mission.tags, {
+    @ManyToOne(() => MissionEntity, (mission: MissionEntity) => mission.tags, {
         onDelete: 'CASCADE',
     })
     mission?: MissionEntity;
 
-    @ManyToOne(() => TagTypeEntity, (tagType) => tagType.tags, { eager: true })
+    @ManyToOne(() => TagTypeEntity, (tagType: TagTypeEntity) => tagType.tags, {
+        eager: true,
+    })
     tagType?: TagTypeEntity;
 
-    @ManyToOne(() => UserEntity, (user) => user.tags, {
+    @ManyToOne(() => UserEntity, (user: UserEntity) => user.tags, {
         onDelete: 'SET NULL',
         nullable: true,
     })

@@ -1,5 +1,5 @@
-import environment from '@backend-common/environment';
-import { ALL_ENTITIES } from '@backend-common/index';
+import environment from './environment';
+import { ALL_ENTITIES } from './index';
 
 interface DatabaseConfig {
     host: string;

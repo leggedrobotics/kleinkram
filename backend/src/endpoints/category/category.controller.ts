@@ -1,12 +1,9 @@
+import { ApiOkResponse, OutputDto } from '@/decorators';
+import { CategoryService } from '@/services/category.service';
+import { QueryOptionalString, QueryUUID } from '@/validation/query-decorators';
 import { CategoriesDto } from '@kleinkram/api-dto';
 import { BodyString, BodyUUID, BodyUUIDArray } from '@kleinkram/validation';
 import { Controller, Get, Post } from '@nestjs/common';
-import { ApiOkResponse, OutputDto } from '../../decorators';
-import { CategoryService } from '../../services/category.service';
-import {
-    QueryOptionalString,
-    QueryUUID,
-} from '../../validation/query-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreateInProjectByBody,

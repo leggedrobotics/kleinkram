@@ -1,4 +1,9 @@
-import { AccessGroupEntity } from '@kleinkram/backend-common/entities/auth/accessgroup.entity';
+import { FileGuardService } from '@/services/file-guard.service';
+import { FileService } from '@/services/file.service';
+import { MissionService } from '@/services/mission.service';
+import { TagService } from '@/services/tag.service';
+import { TopicService } from '@/services/topic.service';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
@@ -12,11 +17,6 @@ import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.enti
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FileGuardService } from '../../services/file-guard.service';
-import { FileService } from '../../services/file.service';
-import { MissionService } from '../../services/mission.service';
-import { TagService } from '../../services/tag.service';
-import { TopicService } from '../../services/topic.service';
 import { FoxgloveModule } from '../integrations/foxglove.module';
 import { QueueModule } from '../queue/queue.module';
 import { FileController } from './file.controller';

@@ -1,6 +1,6 @@
+import { ActionEntity } from '@backend-common/entities/action/action.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
-import { ActionEntity } from '../action/action.entity';
 
 @Entity({ name: 'worker' })
 export class WorkerEntity extends BaseEntity {

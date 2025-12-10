@@ -1,3 +1,5 @@
+import { AuthService } from '@/services/auth.service';
+import { AuthFlowException } from '@/types/auth-flow-exception';
 import env from '@kleinkram/backend-common/environment';
 import { Providers } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
@@ -5,8 +7,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
 import { Strategy } from 'passport-github2';
 import logger from '../../logger';
-import { AuthService } from '../../services/auth.service';
-import { AuthFlowException } from '../../types/auth-flow-exception';
 
 @Injectable()
 export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {

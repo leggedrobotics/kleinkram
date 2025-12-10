@@ -1,11 +1,11 @@
-import { ApikeyEntity } from '@kleinkram/backend-common/entities/auth/apikey.entity';
+import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MissionGuardService } from '../endpoints/auth/mission-guard.service';
 import logger from '../logger';
 import { ProjectGuardService } from './project-guard.service';
 
@@ -83,7 +83,7 @@ export class FileGuardService {
     }
 
     async canKeyAccessFileByName(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         filename: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
@@ -100,7 +100,7 @@ export class FileGuardService {
     }
 
     async canKeyAccessFile(
-        apiKey: ApikeyEntity,
+        apiKey: ApiKeyEntity,
         fileUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
