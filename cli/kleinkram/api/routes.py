@@ -487,9 +487,17 @@ def _get_api_version() -> Tuple[int, int, int]:
     client = httpx.Client()
 
     resp = client.get(f"{config.endpoint.api}{GET_STATUS}", headers={CLI_VERSION_HEADER: __version__})
-    vers = resp.headers["kleinkram-version"].split(".")
+    vers_str = resp.headers.get("kleinkram-version")
 
-    return tuple(map(int, vers))  # type: ignore
+    if not vers_str:
+        return (0, 0, 0)
+
+    vers = vers_str.split(".")
+
+    try:
+        return tuple(map(int, vers))  # type: ignore
+    except ValueError:
+        return (0, 0, 0)
 
 
 def _claim_admin(client: AuthenticatedClient) -> None:
