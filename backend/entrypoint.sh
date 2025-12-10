@@ -2,6 +2,7 @@
 echo "Start Backend"
 if [ "$DEVBUILD" = "true" ]; then
   echo "Development Build"
+  npm run gen:docs /app/docs/development/api/generated &
   pnpm start:dev &
   sleep 10
 
@@ -14,6 +15,11 @@ if [ "$DEVBUILD" = "true" ]; then
   else
     echo "Not Seeding Database"
   fi
+
+  echo "----------------------------------------"
+  echo "Backend API ready on http://localhost:3000"
+  echo "----------------------------------------"
+
 else
   echo "Production Build"
   node dist/main.js &

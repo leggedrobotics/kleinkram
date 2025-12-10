@@ -106,8 +106,6 @@ services:
             - /app/packages/validation/node_modules
             - ./docs:/app/docs
 
-        command: sh -c "npm run gen:docs /app/docs/development/api/generated & npm run start:dev"
-
     database:
         image: postgres:17
 
