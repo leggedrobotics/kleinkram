@@ -53,28 +53,31 @@ jobs:
             - name: clear previous volumes
               run: docker compose -f docker-compose.testing.yml down -v
 
+            - name: Pre-generate endpoints
+              working-directory: ./backend
+              run: |
+                  mkdir -p .endpoints
+                  npm run gen:docs -- .endpoints
+
             - name: launch_stack
               working-directory: ./backend
               run: |
-                  rm -f ./.endpoints/__generated__endpoints.json
                   docker compose -f ../docker-compose.testing.yml up -d
                   SECONDS=0
                   TIMEOUT=180
-                  # wait for the file to be generated inside the container
-                  while ! docker exec kleinkram-api-server-test ls /app/backend/.endpoints/__generated__endpoints.json >/dev/null 2>&1; do
+                  # wait for the api to be reachable
+                  while ! curl -s http://localhost:3000/ > /dev/null; do
                     if [ $SECONDS -ge $TIMEOUT ]; then
-                        echo "Timeout reached: __generated__endpoints.json not found inside container"
+                        echo "Timeout reached: API not reachable"
                         docker logs kleinkram-api-server-test
                         docker compose -f ../docker-compose.testing.yml down
                         exit 1
                     fi
                     sleep 1
-                    echo "waiting for endpoints inside container"
+                    echo "waiting for API to be reachable..."
                   done
 
-                  # copy the file to the host
-                  docker cp kleinkram-api-server-test:/app/backend/.endpoints/__generated__endpoints.json ./.endpoints/__generated__endpoints.json
-                  echo "Endpoints found. Running tests..."
+                  echo "API is up. Running tests..."
 
                   # This will now cause the step to fail immediately if tests fail.
                   pnpm test --ci

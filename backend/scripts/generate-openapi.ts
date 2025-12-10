@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import { INestApplication, Type } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
 import * as fs from 'node:fs';
@@ -131,6 +131,13 @@ async function generateOpenApi() {
     // eslint-disable-next-line no-console
     console.log('swagger.json generated successfully.');
 
+    // Initialize the app to generate the router stack
+    await app.init();
+    saveEndpointsAsJson(
+        app,
+        path.join(outputDirectory, '__generated__endpoints.json'),
+    );
+
     // Generate api-modules.md
     console.warn('Generating api-modules.md...');
     let mdContent = '| Module | Path | Description |\n| :--- | :--- | :--- |\n';
@@ -161,7 +168,7 @@ async function generateOpenApi() {
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         pathB = String(pathB || '');
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return pathA.localeCompare(pathB);
     });
 
@@ -221,6 +228,35 @@ aside: false
     await app.close();
     // eslint-disable-next-line unicorn/no-process-exit
     process.exit(0);
+}
+
+function saveEndpointsAsJson(app: INestApplication, filename: string): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const server = app.getHttpServer();
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const endpoints = server._events.request._router.stack
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+        .filter((r: any) => r.route)
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+        .map((r: any) => ({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            url: r.route.path,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            method: r.route.stack[0].method,
+        }));
+
+    try {
+        fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
+        console.warn(`Endpoints saved to ${filename}`);
+    } catch (error) {
+        console.warn(
+            `Failed to save endpoints to ${filename}: ${String(error)}`,
+        );
+    }
 }
 
 // eslint-disable-next-line unicorn/prefer-top-level-await
