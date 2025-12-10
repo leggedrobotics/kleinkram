@@ -6,14 +6,16 @@ jest.mock('uuid', () => ({
 
 import {
     FileEntity,
-    FileEventType,
-    FileOrigin,
-    FileState,
-    FileType,
     IngestionJobEntity,
     MissionEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
+import {
+    FileEventType,
+    FileOrigin,
+    FileState,
+    FileType,
+} from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import QueueService from '../../src/services/queue.service';
 import {

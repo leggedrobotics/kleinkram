@@ -1,4 +1,4 @@
-import { AccessGroupRights } from '@kleinkram/backend-common';
+import { AccessGroupRights } from '@kleinkram/shared';
 import { database } from '../utils/database-utilities';
 
 import { createActionUsingPost, getAuthHeaders } from '../utils/api-calls';

@@ -1,4 +1,5 @@
-import { FileEntity, FileState, UserRole } from '@kleinkram/backend-common';
+import { FileEntity } from '@kleinkram/backend-common';
+import { FileState, UserRole } from '@kleinkram/shared';
 import { DEFAULT_URL } from '../auth/utilities';
 import {
     createMissionUsingPost,

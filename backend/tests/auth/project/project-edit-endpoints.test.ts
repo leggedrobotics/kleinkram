@@ -1,13 +1,12 @@
 import {
     AccessGroupEntity,
-    AccessGroupRights,
-    DataType,
     MissionEntity,
     ProjectAccessEntity,
     ProjectEntity,
     TagTypeEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
+import { AccessGroupRights, DataType } from '@kleinkram/shared';
 import {
     createMetadataUsingPost,
     createProjectUsingPost,

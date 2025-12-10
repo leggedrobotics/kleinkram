@@ -1,10 +1,10 @@
 import {
     AccessGroupEntity,
-    AccessGroupRights,
     MissionEntity,
     ProjectEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
+import { AccessGroupRights } from '@kleinkram/shared';
 import { HeaderCreator } from '../../utils/api-calls';
 import { clearAllData, database } from '../../utils/database-utilities';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';

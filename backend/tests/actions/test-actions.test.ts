@@ -3,15 +3,14 @@ import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-templ
 import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
 import {
     AccessGroupEntity,
-    AccessGroupRights,
     ActionEntity,
-    ActionState,
     ActionTemplateEntity,
     MissionEntity,
     ProjectEntity,
     UserEntity,
     WorkerEntity,
 } from '@kleinkram/backend-common';
+import { AccessGroupRights, ActionState } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
