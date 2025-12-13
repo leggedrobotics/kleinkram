@@ -1,5 +1,13 @@
+import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
+import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { Connection } from 'typeorm';
+import { AffiliationGroupService } from '@backend-common/services/affiliation-group.service';
+import { AccessGroupConfig } from '@kleinkram/shared';
+import * as fs from 'node:fs';
+
+import { systemUser } from '@backend-common/consts';
+import path from 'node:path';
+import { Connection, Not } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
 import { seedActionTemplates } from './seed-action-templates';
 import { seedFiles } from './seed-files';
@@ -15,21 +23,57 @@ export default class CreateUsers implements Seeder {
             return;
         }
 
-        // Check if admin user already exists
-        const existingAdmin = await conn.getRepository(UserEntity).findOne({
-            where: { email: 'admin@kleinkram.dev' },
+        const userCount = await conn.getRepository(UserEntity).count({
+            where: { uuid: Not(systemUser.uuid) },
         });
-
-        if (existingAdmin) {
+        if (userCount > 0) {
             // eslint-disable-next-line no-console
-            console.log('Seeding already done, skipping...');
+            console.log('Users exist in DB, skipping seeding.');
             return;
         }
 
         // eslint-disable-next-line no-console
         console.log('\n\n »» Seeding Users and Data...\n\n');
 
-        const { adminUser, internalUser } = await seedUsers(factory, conn);
+        // Create Access Groups first
+        const accessGroupRepository = conn.getRepository(AccessGroupEntity);
+        const groupMembershipRepository = conn.getRepository(
+            GroupMembershipEntity,
+        );
+        const affiliationGroupService = new AffiliationGroupService(
+            accessGroupRepository,
+            groupMembershipRepository,
+        );
+
+        // Load config
+        const configPath = path.resolve(
+            // eslint-disable-next-line unicorn/prefer-module
+            __dirname,
+            '../../../../../backend/src/access_config.json',
+        );
+        let config: AccessGroupConfig | undefined;
+
+        if (fs.existsSync(configPath)) {
+            try {
+                const configContent = fs.readFileSync(configPath, 'utf8');
+                config = JSON.parse(configContent) as AccessGroupConfig;
+                await affiliationGroupService.createAccessGroups(config);
+            } catch (error: unknown) {
+                console.error(
+                    'Error loading or parsing access_config.json:',
+                    error,
+                );
+            }
+        } else {
+            console.warn(`Access config not found at ${configPath}`);
+        }
+
+        const { adminUser, internalUser } = await seedUsers(
+            factory,
+            conn,
+            affiliationGroupService,
+            config,
+        );
 
         const { createdMissions, tagTypes } = await seedProjects(
             factory,

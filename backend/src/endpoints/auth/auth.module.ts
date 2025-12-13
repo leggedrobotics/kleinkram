@@ -13,6 +13,7 @@ import { ProjectGuardService } from '@/services/project-guard.service';
 import {
     AccessGroupEntity,
     AccountEntity,
+    AffiliationGroupService,
     GroupMembershipEntity,
     MissionAccessEntity,
     ProjectAccessEntity,
@@ -56,6 +57,7 @@ import { MissionGuardService } from './mission-guard.service';
     ],
     providers: [
         AuthService,
+        AffiliationGroupService,
         AccessService,
         GoogleStrategy,
         GitHubStrategy,

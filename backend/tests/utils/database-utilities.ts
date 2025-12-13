@@ -1,6 +1,7 @@
 import {
     AccessGroupEntity,
     AccountEntity,
+    AffiliationGroupService,
     ALL_ENTITIES,
     GroupMembershipEntity,
     UserEntity,
@@ -9,14 +10,11 @@ import { Providers, UserRole } from '@kleinkram/shared';
 import jwt from 'jsonwebtoken';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
-// eslint-disable-next-line unicorn/import-style
-import * as path from 'node:path';
+
+import { createNewUser } from '@/services/auth.service';
+import path from 'node:path';
 import process from 'node:process';
 import { DataSource } from 'typeorm';
-import {
-    createAccessGroups,
-    createNewUser,
-} from '../../src/services/auth.service';
 
 const databasePort = process.env.DB_PORT;
 
@@ -68,8 +66,12 @@ export const mockDatabaseUser = async (
     const groupMembershipRepository = database.getRepository(
         GroupMembershipEntity,
     );
+    const affiliationGroupService = new AffiliationGroupService(
+        accessGroupRepository,
+        groupMembershipRepository,
+    );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    await createAccessGroups(accessGroupRepository, config);
+    await affiliationGroupService.createAccessGroups(config);
 
     const userRepository = database.getRepository(UserEntity);
     const accountRepository = database.getRepository(AccountEntity);
@@ -84,8 +86,7 @@ export const mockDatabaseUser = async (
         config,
         userRepository,
         accountRepository,
-        accessGroupRepository,
-        groupMembershipRepository,
+        affiliationGroupService,
         {
             oauthID,
             provider: Providers.GOOGLE,

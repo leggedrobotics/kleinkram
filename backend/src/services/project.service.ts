@@ -1,5 +1,14 @@
 import { addAccessConstraintsToProjectQuery } from '@/endpoints/auth/auth-helper';
-import { CreateProject } from '@kleinkram/api-dto';
+import {
+    CreateProject,
+    DefaultRightDto,
+    DefaultRights,
+    ProjectDto,
+    ProjectsDto,
+    ProjectWithRequiredTagsDto,
+    ResentProjectDto,
+    SortOrder,
+} from '@kleinkram/api-dto';
 import {
     BadRequestException,
     ConflictException,
@@ -23,16 +32,6 @@ import {
     projectEntityToDtoWithMissionCountAndTags,
     projectEntityToDtoWithRequiredTags,
 } from '@/serialization';
-import { AccessGroupConfig } from '@/types/access-group-config';
-import {
-    DefaultRightDto,
-    DefaultRights,
-    ProjectDto,
-    ProjectsDto,
-    ProjectWithRequiredTagsDto,
-    ResentProjectDto,
-    SortOrder,
-} from '@kleinkram/api-dto';
 import {
     AccessGroupEntity,
     MissionEntity,
@@ -42,6 +41,7 @@ import {
     UserEntity,
 } from '@kleinkram/backend-common';
 import {
+    AccessGroupConfig,
     AccessGroupRights,
     AccessGroupType,
     UserRole,

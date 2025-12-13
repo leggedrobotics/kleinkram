@@ -1,11 +1,9 @@
-import { AccessGroupConfig } from '@/types/access-group-config';
 import { AuthFlowException } from '@/types/auth-flow-exception';
-import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { AffiliationGroupService } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
-import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
-    AccessGroupType,
+    AccessGroupConfig,
     CookieNames,
     Providers,
     UserRole,
@@ -28,10 +26,7 @@ export class AuthService implements OnModuleInit {
         private accountRepository: Repository<AccountEntity>,
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
-        @InjectRepository(AccessGroupEntity)
-        private accessGroupRepository: Repository<AccessGroupEntity>,
-        @InjectRepository(GroupMembershipEntity)
-        private groupMembershipRepository: Repository<GroupMembershipEntity>,
+        private affiliationGroupService: AffiliationGroupService,
         private configService: ConfigService,
     ) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -42,7 +37,7 @@ export class AuthService implements OnModuleInit {
     }
 
     async onModuleInit(): Promise<void> {
-        await createAccessGroups(this.accessGroupRepository, this.config);
+        await this.affiliationGroupService.createAccessGroups(this.config);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -181,13 +176,12 @@ export class AuthService implements OnModuleInit {
         email: string,
         username: string,
         picture: string,
-    ) {
+    ): Promise<UserEntity> {
         return createNewUser(
             this.config,
             this.userRepository,
             this.accountRepository,
-            this.accessGroupRepository,
-            this.groupMembershipRepository,
+            this.affiliationGroupService,
             {
                 oauthID,
                 provider,
@@ -202,117 +196,17 @@ export class AuthService implements OnModuleInit {
 /**
  * Create access groups from the access group config.
  *
- * @param accessGroupRepository
  * @param config
+ * @param userRepository
+ * @param accountRepository
+ * @param affiliationGroupService
+ * @param options
  */
-export const createAccessGroups = async (
-    accessGroupRepository: Repository<AccessGroupEntity>,
-    config: AccessGroupConfig,
-) => {
-    // Read access_config/*.json and create access groups
-    await Promise.all(
-        config.access_groups.map(async (group) => {
-            const databaseGroup = await accessGroupRepository.findOne({
-                where: { uuid: group.uuid },
-            });
-            if (!databaseGroup) {
-                const newGroup = accessGroupRepository.create({
-                    name: group.name,
-                    uuid: group.uuid,
-                    type: AccessGroupType.AFFILIATION,
-                    creator: {},
-                });
-                return accessGroupRepository.save(newGroup);
-            }
-            return;
-        }),
-    );
-};
-
-/**
- * Create a primary access group for the user.
- *
- * @param user
- * @param accessGroupRepository
- */
-async function createPrimaryGroup(
-    user: UserEntity,
-    accessGroupRepository: Repository<AccessGroupEntity>,
-) {
-    logger.debug(`Add user ${user.uuid} to primary access group`);
-
-    let primaryGroupName = user.name;
-
-    const exists = await accessGroupRepository.exists({
-        where: { name: primaryGroupName },
-    });
-
-    if (exists) {
-        const randomSuffix = Math.random().toString(36).slice(7);
-        primaryGroupName = `${user.name} ${randomSuffix}`;
-        logger.debug(
-            `Primary group name already exists, using ${primaryGroupName}`,
-        );
-    }
-
-    const primaryGroup = accessGroupRepository.create({
-        name: primaryGroupName,
-        type: AccessGroupType.PRIMARY,
-        hidden: false,
-        memberships: [
-            {
-                canEditGroup: false,
-                user: { uuid: user.uuid },
-            },
-        ],
-    });
-    await accessGroupRepository.save(primaryGroup);
-}
-
-/**
- * Add user to affiliation groups based on their email address.
- *
- * @param config
- * @param user
- * @param accessGroupRepository
- * @param groupMembershipRepository
- */
-async function addToAffiliationGroups(
-    config: AccessGroupConfig,
-    user: UserEntity,
-    accessGroupRepository: Repository<AccessGroupEntity>,
-    groupMembershipRepository: Repository<GroupMembershipEntity>,
-) {
-    await Promise.all(
-        config.emails.map((_config) => {
-            if (user.email?.endsWith(_config.email)) {
-                return Promise.all(
-                    _config.access_groups.map(async (uuid) => {
-                        const group = await accessGroupRepository.findOneOrFail(
-                            {
-                                where: { uuid },
-                            },
-                        );
-                        const affiliationGroup =
-                            groupMembershipRepository.create({
-                                user: { uuid: user.uuid },
-                                accessGroup: { uuid: group.uuid },
-                            });
-                        return groupMembershipRepository.save(affiliationGroup);
-                    }),
-                );
-            }
-            return;
-        }),
-    );
-}
-
 export const createNewUser = async (
     config: AccessGroupConfig,
     userRepository: Repository<UserEntity>,
     accountRepository: Repository<AccountEntity>,
-    accessGroupRepository: Repository<AccessGroupEntity>,
-    groupMembershipRepository: Repository<GroupMembershipEntity>,
+    affiliationGroupService: AffiliationGroupService,
     options: {
         oauthID: string;
         provider: Providers;
@@ -372,14 +266,9 @@ export const createNewUser = async (
     // Create and Link Access Groups
     /////////////////////////////////////////////////////////
 
-    await createPrimaryGroup(user, accessGroupRepository);
+    await affiliationGroupService.createPrimaryGroup(user);
 
-    await addToAffiliationGroups(
-        config,
-        user,
-        accessGroupRepository,
-        groupMembershipRepository,
-    );
+    await affiliationGroupService.addToAffiliationGroups(config, user);
 
     return await userRepository.findOneOrFail({
         where: { uuid: user.uuid },

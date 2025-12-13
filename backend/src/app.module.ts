@@ -1,6 +1,7 @@
 import env from '@kleinkram/backend-common/environment';
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import configuration from '@kleinkram/backend-common/typeorm-config';
+import { AccessGroupConfig } from '@kleinkram/shared';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
@@ -28,7 +29,6 @@ import { APIKeyResolverMiddleware } from './routing/middlewares/api-key-resolver
 import { AuditLoggerMiddleware } from './routing/middlewares/audit-logger-middleware.service';
 import { VersionCheckerMiddlewareService } from './routing/middlewares/version-checker-middleware.service';
 import { DBDumper } from './services/dbdumper.service';
-import { AccessGroupConfig } from './types/access-group-config';
 
 @Module({
     imports: [
