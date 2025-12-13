@@ -1,5 +1,4 @@
 #!/bin/sh
-echo "Start Backend"
 if [ "$DEVBUILD" = "true" ]; then
   echo "Development Build"
   npm run gen:docs /app/docs/development/api/generated &

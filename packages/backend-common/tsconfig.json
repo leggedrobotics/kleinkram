@@ -5,7 +5,13 @@
         "baseUrl": ".",
         "outDir": "dist",
         "paths": {
-            "@backend-common/*": ["src/*"]
+            "@backend-common/*": ["src/*"],
+            "@kleinkram/api-dto": ["../api-dto/src/index.ts"],
+            "@kleinkram/api-dto/*": ["../api-dto/src/*"],
+            "@kleinkram/shared": ["../shared/src/index.ts"],
+            "@kleinkram/shared/*": ["../shared/src/*"],
+            "@kleinkram/validation": ["../validation/src/index.ts"],
+            "@kleinkram/validation/*": ["../validation/src/*"]
         }
     },
     "include": ["src/**/*"],
