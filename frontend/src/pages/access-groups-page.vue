@@ -95,7 +95,10 @@
 
                                 <q-item v-ripple clickable disabled>
                                     <q-tooltip
-                                        v-if="prefilter?.value === 'personal'"
+                                        v-if="
+                                            prefilter?.value ===
+                                            AccessGroupType.PRIMARY
+                                        "
                                     >
                                         You can't edit personal access groups
                                     </q-tooltip>
@@ -137,9 +140,9 @@ import { useRouter } from 'vue-router';
 
 const $router = useRouter();
 const prefilterOptions = [
-    { label: 'Groups', value: 'all', spacerAfter: true },
-    { label: 'Affiliation Groups', value: 'affiliation' },
-    { label: 'All Users', value: 'personal' },
+    { label: 'Groups', value: AccessGroupType.CUSTOM, spacerAfter: true },
+    { label: 'Affiliation Groups', value: AccessGroupType.AFFILIATION },
+    { label: 'All Users', value: AccessGroupType.PRIMARY },
 ];
 const prefilter = ref(prefilterOptions[0]);
 
@@ -161,25 +164,22 @@ watch(
     () => prefilter.value,
     (newValue) => {
         switch (newValue?.value) {
-            case 'all': {
+            case AccessGroupType.CUSTOM: {
                 filterOptions.value.type = AccessGroupType.CUSTOM;
                 filterOptions.value.creator = false;
                 filterOptions.value.member = false;
-
                 break;
             }
-            case 'affiliation': {
+            case AccessGroupType.AFFILIATION: {
                 filterOptions.value.creator = true;
                 filterOptions.value.member = false;
                 filterOptions.value.type = AccessGroupType.AFFILIATION;
-
                 break;
             }
-            case 'personal': {
+            case AccessGroupType.PRIMARY: {
                 filterOptions.value.type = AccessGroupType.PRIMARY;
                 filterOptions.value.creator = false;
                 filterOptions.value.member = false;
-
                 break;
             }
             // No default
