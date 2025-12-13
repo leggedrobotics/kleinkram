@@ -87,6 +87,10 @@ export default tseslint.config(
                 { cases: { kebabCase: true } },
             ],
             'unicorn/no-null': 'off',
+            'unicorn/import-style': [
+                'error',
+                { styles: { 'node:path': { namespace: true } } },
+            ],
             'unicorn/prevent-abbreviations': [
                 'error',
                 {
