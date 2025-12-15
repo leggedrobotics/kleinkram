@@ -5,6 +5,7 @@ const require = createRequire(import.meta.url);
 
 export default withMermaid({
     lang: 'en-US',
+    cleanUrls: true,
 
     title: 'Kleinkram',
     description: 'A structured bag and mcap dataset storage.',

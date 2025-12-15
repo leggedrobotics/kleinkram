@@ -211,7 +211,7 @@ aside: false
         modules.push({
             name: name,
             path: `/${String(controllerPath)}`,
-            link: `generated/${name}.html`,
+            link: `generated/${name}`,
             description: `Docs for ${name} module`,
         });
     }
