@@ -82,7 +82,7 @@
         "@jest/globals": "^30.2.0",
         "@nestjs/cli": "^11.0.10",
         "@nestjs/schematics": "^11.0.9",
-        "@nestjs/testing": "^10.0.0",
+        "@nestjs/testing": "^11.1.9",
         "@swc/core": "^1.13.5",
         "@swc/jest": "^0.2.39",
         "@types/cookie-parser": "^1.4.9",
