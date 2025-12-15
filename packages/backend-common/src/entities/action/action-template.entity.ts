@@ -33,16 +33,16 @@ export class ActionTemplateEntity extends BaseEntity {
     @Column({ default: false })
     isArchived!: boolean;
 
-    @Column()
+    @Column({ type: 'float' })
     cpuCores!: number;
 
-    @Column()
+    @Column({ type: 'float' })
     cpuMemory!: number;
 
-    @Column()
+    @Column({ type: 'float' })
     gpuMemory!: number;
 
-    @Column()
+    @Column({ type: 'float' })
     maxRuntime!: number; // in hours
 
     @Column({ nullable: true })

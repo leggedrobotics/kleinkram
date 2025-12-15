@@ -143,11 +143,12 @@ export class ActionManagerService {
                         n_cpu: action.template.cpuCores || 1,
 
                         // eslint-disable-next-line @typescript-eslint/naming-convention
-                        memory_limit:
+                        memory_limit: Math.ceil(
                             (action.template.cpuMemory || 2) *
-                            1024 *
-                            1024 *
-                            1024, // min 2 GB
+                                1024 *
+                                1024 *
+                                1024,
+                        ), // min 2 GB
                     },
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     needs_gpu: needsGpu,
@@ -191,6 +192,23 @@ export class ActionManagerService {
                 });
 
             if (!logsObservable) {
+                const containerInfo = await container
+                    .inspect()
+                    .catch(() => null);
+
+                if (containerInfo) {
+                    if (containerInfo.State.OOMKilled) {
+                        throw new Error(
+                            'Container was killed due to memory constraints (OOMKilled). Container logs are not available.',
+                        );
+                    }
+                    if (containerInfo.State.ExitCode === 137) {
+                        throw new Error(
+                            'Container was killed (Exit Code 137). Likely due to memory constraints or manual termination. Logs are not available.',
+                        );
+                    }
+                }
+
                 throw new Error(
                     'Container logs are not available. Container might never have been started correctly.',
                 );
