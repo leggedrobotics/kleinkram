@@ -7,6 +7,7 @@ import { appVersion } from './app-version';
 
 const messageOnly = winston.format.printf(
     ({ level, message }: TransformableInfo): string => {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         return `[${level.toUpperCase()}]: ${message}`;
     },
 );
@@ -14,7 +15,7 @@ const messageOnly = winston.format.printf(
 const traceIdFormat = winston.format((info) => {
     const currentSpan = trace.getSpan(context.active());
     if (currentSpan) {
-        info['trace_id'] = currentSpan.spanContext().traceId;
+        info.trace_id = currentSpan.spanContext().traceId;
     }
     return info;
 });
@@ -33,7 +34,9 @@ const logger = winston.createLogger({
             interval: 5,
             labels: {
                 job: 'backend',
-                container_id: process.env['HOSTNAME'],
+
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                container_id: process.env.HOSTNAME,
                 version: appVersion,
             },
             json: true,
@@ -45,8 +48,20 @@ const logger = winston.createLogger({
 
 @Injectable()
 export class NestLoggerWrapper implements LoggerService {
+    // Messages to filter out from console logs (reduce initialization spam)
+    private shouldFilterMessage(message: string): boolean {
+        const filters = [
+            'dependencies initialized',
+            'Mapped {/', // Route mapping logs
+        ];
+        return filters.some((filter) => message.includes(filter));
+    }
+
     log(message: never, ...optionalParameters: never[]): void {
-        logger.info(message, ...optionalParameters);
+        // Filter out module initialization spam
+        if (!this.shouldFilterMessage(String(message))) {
+            logger.info(message, ...optionalParameters);
+        }
     }
 
     fatal(message: never, ...optionalParameters: never[]): void {

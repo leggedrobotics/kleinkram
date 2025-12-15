@@ -52,7 +52,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { UserDto } from '@api/types/user.dto';
+import type { UserDto } from '@kleinkram/api-dto/types/user/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
 import { useUserSearch } from 'src/hooks/query-hooks';
@@ -74,6 +74,7 @@ const { mutate } = useMutation({
     mutationFn: () => {
         return Promise.all(
             selected.value.map(async (user) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return addUserToAccessGroup(
                     user.uuid,
                     properties.accessGroupUuid,
@@ -103,6 +104,7 @@ const { mutate } = useMutation({
 const onInputUpdate = (value: string) => {
     search.value = value;
     if (value.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         userSelect.value?.showPopup(); // Ensure dropdown opens again
     }
 };

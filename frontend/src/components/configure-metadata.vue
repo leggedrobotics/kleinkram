@@ -26,6 +26,8 @@
                 <template #option="{ itemProps, opt }">
                     <q-item v-bind="itemProps">
                         <q-item-section>
+                            <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
+                            <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
                             <q-item-label v-html="opt.name" />
                         </q-item-section>
                         <q-item-section side>
@@ -75,8 +77,8 @@
 </template>
 
 <script setup lang="ts">
-import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { DataType } from '@common/enum';
+import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import { DataType } from '@kleinkram/shared';
 import { QSelect } from 'quasar';
 import { useFilteredTag } from 'src/hooks/query-hooks';
 import { icon } from 'src/services/generic';

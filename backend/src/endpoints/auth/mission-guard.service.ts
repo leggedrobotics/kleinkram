@@ -1,15 +1,15 @@
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import MetadataEntity from '@common/entities/metadata/metadata.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
+import { ProjectGuardService } from '@/services/project-guard.service';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
+import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
+import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import logger from '../../logger';
-import { ProjectGuardService } from '../../services/project-guard.service';
 
 @Injectable()
 export class MissionGuardService {
@@ -35,6 +35,7 @@ export class MissionGuardService {
             return false;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user) {
             return false;
         }
@@ -50,6 +51,7 @@ export class MissionGuardService {
         projectUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!missionName || !user) {
             logger.error(
                 `MissionGuard: missionName (${missionName}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -69,6 +71,7 @@ export class MissionGuardService {
         tagUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!tagUUID || !user) {
             logger.error(
                 `MissionGuard: tagUUID (${tagUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -95,7 +98,7 @@ export class MissionGuardService {
     }
 
     async canKeyTagMission(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         tagUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
@@ -116,12 +119,14 @@ export class MissionGuardService {
         missionUUIDs: string[],
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!missionUUIDs || !user) {
             logger.error(
                 `MissionGuard: missionUUIDs (${missionUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting READ access.`,
             );
             return false;
         }
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user) {
             return false;
         }
@@ -171,7 +176,7 @@ export class MissionGuardService {
     }
 
     canKeyAccessMission(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         missionUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): boolean {
@@ -179,7 +184,7 @@ export class MissionGuardService {
     }
 
     async canKeyAccessMissionByName(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         missionName: string,
         projectUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,

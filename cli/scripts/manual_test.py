@@ -15,13 +15,9 @@ CLI = "klein"
 
 def upload_files(mission_name: str) -> None:
     console = Console()
-    console.print(
-        f"testing upload of files for mission {mission_name}...", style="bold green"
-    )
+    console.print(f"testing upload of files for mission {mission_name}...", style="bold green")
 
-    cmd = (
-        f"{CLI} upload -p {TESTING_PROJECT} -m {mission_name} --create {TESTING_FILES}"
-    )
+    cmd = f"{CLI} upload -p {TESTING_PROJECT} -m {mission_name} --create {TESTING_FILES}"
     console.print(f"running command: {cmd}", style="bold green")
     os.system(cmd)
 

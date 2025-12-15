@@ -1,256 +1,197 @@
 <template>
-    <title-section title="Kleinkram Actions" />
-
-    <ActionConfiguration :open="createAction" @close="closeHandler" />
-
-    <div class="q-my-lg">
-        <div class="flex justify-between items-center">
-            <button-group>
-                <q-btn-dropdown
-                    v-model="dropdownNewFileProject"
-                    :label="selectedProject?.name || 'Select a Project'"
-                    flat
-                    class="q-uploader--bordered"
-                    clearable
-                    required
-                >
-                    <q-list>
-                        <q-item
-                            v-for="project in projects"
-                            :key="project.uuid"
-                            clickable
-                            @click="() => handler.setProjectUUID(project.uuid)"
-                        >
-                            <q-item-section>
-                                <q-item-label>
-                                    {{ project.name }}
-                                </q-item-label>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-btn-dropdown>
-                <q-btn-dropdown
-                    v-model="dropdownNewFileMission"
-                    :label="selectedMission?.name || 'Select a Mission'"
-                    class="q-uploader--bordered"
-                    flat
-                    required
-                >
-                    <q-list>
-                        <q-item
-                            v-for="mission in missions"
-                            :key="mission.uuid"
-                            clickable
-                            @click="() => handler.setMissionUUID(mission.uuid)"
-                        >
-                            <q-item-section>
-                                <q-item-label>
-                                    {{ mission.name }}
-                                </q-item-label>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-btn-dropdown>
-            </button-group>
-
-            <button-group>
-                <q-input
-                    v-model="search"
-                    debounce="300"
-                    placeholder="Search"
-                    dense
-                    disabled
-                    outlined
-                >
-                    <template #append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
-
-                <q-btn
-                    flat
-                    dense
-                    padding="6px"
-                    color="icon-secondary"
-                    class="button-border"
-                    icon="sym_o_loop"
-                    @click="refetchData"
-                >
-                    <q-tooltip> Refetch the Data</q-tooltip>
-                </q-btn>
-
-                <q-btn
-                    flat
-                    class="bg-button-secondary text-on-color"
-                    label="Create Action"
-                    :disable="!canCreate"
-                    icon="sym_o_add"
-                    @click="createActionEvent"
-                >
-                    <q-tooltip v-if="!canCreate">
-                        Creating Actions requires Create rights on the mission.
-                    </q-tooltip>
-                </q-btn>
-            </button-group>
-        </div>
-    </div>
-
-    <div>
-        <template v-if="selectedProject && selectedMission">
-            <ActionsTable :handler="handler" />
+    <title-section title="Kleinkram Actions">
+        <template #tabs>
+            <q-tabs
+                v-model="activeTab"
+                align="left"
+                active-color="primary"
+                dense
+                class="text-grey"
+            >
+                <q-tab
+                    name="store"
+                    label="Action Templates"
+                    style="color: #222"
+                />
+                <q-tab
+                    name="executions"
+                    label="Executions"
+                    style="color: #222"
+                />
+            </q-tabs>
         </template>
+    </title-section>
 
-        <!-- Empty State -->
-        <div v-else class="empty-state-wrapper">
-            <div class="empty-state-content">
-                <q-icon name="sym_o_analytics" size="lg" color="grey-6" />
-                <span class="text-h6 text-grey-7 q-mt-md">
-                    No running actions
-                </span>
-                <span class="text-body1 text-grey-6 q-mt-sm">
-                    Your running actions will appear here.
-                </span>
-            </div>
-        </div>
-    </div>
-    <BullQueue v-if="showBullQueue" />
+    <q-tab-panels
+        v-model="activeTab"
+        class="q-mt-lg"
+        style="background: transparent"
+    >
+        <q-tab-panel name="store" class="q-pa-none">
+            <ActionStore
+                @select="openLaunchConfiguration"
+                @create="openCreateConfiguration"
+                @edit="openEditConfiguration"
+                @revisions="openHistoryDrawer"
+            />
+        </q-tab-panel>
+
+        <q-tab-panel name="executions" class="q-pa-none">
+            <ActionExecutions />
+        </q-tab-panel>
+    </q-tab-panels>
+
+    <ActionLaunchDrawer
+        :open="isLaunchOpen"
+        :template="selectedTemplate"
+        @create-action="openCreateConfiguration"
+        @close="closeDrawers"
+    />
+
+    <ActionDefinitionDrawer
+        :open="isCreateOpen"
+        :mode="drawerMode"
+        :initial-template="selectedTemplate"
+        @saved="onTemplateSaved"
+        @close="closeDrawers"
+    />
+
+    <ActionRevisionsDrawer
+        :open="isHistoryOpen"
+        :versions="selectedHistoryVersions"
+        @restore="onRestoreVersion"
+        @close="closeHistoryDrawer"
+    />
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
+import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
 
-import { FlatMissionDto, MissionsDto } from '@api/types/mission/mission.dto';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import {
-    canLaunchInMission,
-    useHandler,
-    usePermissionsQuery,
-} from 'src/hooks/query-hooks';
-import { missionsOfProjectMinimal } from 'src/services/queries/mission';
-import { filteredProjects } from 'src/services/queries/project';
+import { computed, ref } from 'vue';
 
-import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import { UserRole } from '@common/enum';
-import ActionConfiguration from 'components/action-configuration.vue';
-import ActionsTable from 'components/actions-table.vue';
-import BullQueue from 'components/bull-queue.vue';
-import ButtonGroup from 'components/buttons/button-group.vue';
+// Components
+import { useQueryClient } from '@tanstack/vue-query';
+import ActionDefinitionDrawer from 'components/actions/action-definition-drawer.vue';
+import ActionExecutions from 'components/actions/action-executions.vue';
+import ActionLaunchDrawer from 'components/actions/action-launch-drawer.vue';
+import ActionRevisionsDrawer from 'components/actions/action-revisions-drawer.vue';
+import ActionStore from 'components/actions/action-store.vue';
+
 import TitleSection from 'components/title-section.vue';
+import { Notify } from 'quasar';
+import { actionKeys } from 'src/api/keys/action-keys';
+import { ActionService } from 'src/api/services/action.service';
 
-const createAction = ref(false);
+import { useRoute, useRouter } from 'vue-router';
+
+// State
+const route = useRoute();
+const router = useRouter();
+
+const TAB_MAPPING = {
+    store: 'templates',
+    executions: 'runs',
+} as const;
+
+const REVERSE_TAB_MAPPING = {
+    templates: 'store',
+    runs: 'executions',
+} as const;
+
+const activeTab = computed({
+    get: () => {
+        const tabParameter = route.params.tab as string | undefined;
+        if (tabParameter && tabParameter in REVERSE_TAB_MAPPING) {
+            return REVERSE_TAB_MAPPING[
+                tabParameter as keyof typeof REVERSE_TAB_MAPPING
+            ];
+        }
+        return 'store';
+    },
+    set: (value: string) => {
+        const tabSlug =
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            TAB_MAPPING[value as keyof typeof TAB_MAPPING] || 'templates';
+        void router.replace({
+            params: { ...route.params, tab: tabSlug },
+            query: route.query,
+        });
+    },
+});
+const isLaunchOpen = ref(false);
+const isCreateOpen = ref(false);
+const drawerMode = ref<'create' | 'edit' | 'restore'>('create');
+const selectedTemplate = ref<ActionTemplateDto | undefined>(undefined);
+
+const isHistoryOpen = ref(false);
+const selectedHistoryVersions = ref<ActionTemplatesDto>({
+    data: [],
+    count: 0,
+    skip: 0,
+    take: 0,
+} as ActionTemplatesDto);
 
 const queryClient = useQueryClient();
 
-const dropdownNewFileProject = ref(false);
-const dropdownNewFileMission = ref(false);
+// --- Handlers ---
+const openHistoryDrawer = async (
+    template: ActionTemplateDto,
+): Promise<void> => {
+    try {
+        selectedHistoryVersions.value = await queryClient.fetchQuery({
+            queryKey: actionKeys.templates.revisions(template.uuid),
+            queryFn: () => ActionService.getTemplateRevisions(template.uuid),
+        });
 
-const handler = useHandler();
-
-const showBullQueue = computed(
-    () => permissions.value?.role === UserRole.ADMIN,
-);
-
-const { data: permissions } = usePermissionsQuery();
-
-// Fetch projects
-const projectsReturn = useQuery<ProjectsDto>({
-    queryKey: ['projects', 500, 0, 'name', false],
-    queryFn: () => filteredProjects(500, 0, 'name', false),
-});
-const projects = computed(() =>
-    projectsReturn.data.value ? projectsReturn.data.value.data : [],
-);
-
-// Fetch missions
-const queryKeyMissions = computed(() => [
-    'missions',
-    handler.value.projectUuid,
-]);
-const { data: _missions } = useQuery<MissionsDto>({
-    queryKey: queryKeyMissions,
-    queryFn: () =>
-        missionsOfProjectMinimal(handler.value.projectUuid ?? '', 500, 0),
-});
-const missions = computed(() =>
-    _missions.value === undefined ? [] : _missions.value.data,
-);
-
-const selectedProject = computed(() =>
-    projects.value.find(
-        (project: ProjectWithMissionCountDto) =>
-            project.uuid === handler.value.projectUuid,
-    ),
-);
-
-const selectedMission = computed(() =>
-    missions.value.find(
-        (mission: FlatMissionDto) => mission.uuid === handler.value.missionUuid,
-    ),
-);
-
-watch(selectedMission, async () => {
-    await queryClient.invalidateQueries({
-        queryKey: ['action_mission'],
-    });
-});
-
-watch(selectedProject, async () => {
-    await queryClient.invalidateQueries({
-        queryKey: ['action_mission'],
-    });
-});
-
-const search = computed({
-    get: () => handler.value.searchParams.name,
-    set: (value) => {
-        // @ts-ignore
-        handler.value.setSearch({ name: value });
-    },
-});
-
-const canCreate = computed(() =>
-    selectedMission.value
-        ? canLaunchInMission(
-              selectedMission.value.uuid,
-              selectedProject.value?.uuid,
-              permissions.value,
-          )
-        : true,
-);
-
-const createActionEvent = (): void => {
-    createAction.value = true;
+        isHistoryOpen.value = true;
+    } catch {
+        Notify.create({
+            message: 'Failed to load version history',
+            color: 'negative',
+        });
+    }
 };
 
-const refetchData = async (): Promise<void> => {
-    await queryClient.invalidateQueries({
-        queryKey: ['action_mission'],
-    });
+const onRestoreVersion = (oldVersion: ActionTemplateDto): void => {
+    selectedTemplate.value = oldVersion;
+    drawerMode.value = 'restore';
+    isHistoryOpen.value = false;
+    isCreateOpen.value = true;
 };
 
-const closeHandler = (): void => {
-    createAction.value = false;
+const openEditConfiguration = (template: ActionTemplateDto): void => {
+    selectedTemplate.value = template;
+    drawerMode.value = 'edit';
+    isCreateOpen.value = true;
+};
+
+const openLaunchConfiguration = (template: ActionTemplateDto): void => {
+    selectedTemplate.value = template;
+    isLaunchOpen.value = true;
+    isCreateOpen.value = false;
+};
+
+const openCreateConfiguration = (): void => {
+    selectedTemplate.value = undefined;
+    drawerMode.value = 'create';
+    isCreateOpen.value = true;
+    isLaunchOpen.value = false;
+};
+
+const closeDrawers = (): void => {
+    isLaunchOpen.value = false;
+    isCreateOpen.value = false;
+    selectedTemplate.value = undefined;
+};
+
+const onTemplateSaved = (): void => {
+    activeTab.value = 'store';
+};
+
+const closeHistoryDrawer = (): void => {
+    isHistoryOpen.value = false;
 };
 </script>
 
-<style scoped lang="scss">
-.empty-state-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 300px;
-    border: 1px dashed #e0e0e0;
-    border-radius: 4px;
-    background-color: #fafafa;
-    margin-top: 16px;
-}
-
-.empty-state-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 24px;
-}
-</style>
+<style scoped></style>

@@ -20,8 +20,8 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import { DataType } from '@common/enum';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
+import { DataType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import SelectMissionTags from 'components/select-mission-tags.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
@@ -43,8 +43,10 @@ watch(
     (newMission) => {
         if (newMission) {
             tagValues.value = {};
+
             for (const tag of newMission.tags) {
                 // @ts-ignore
+
                 tagValues.value[tag.type.uuid] =
                     tag.type.datatype === DataType.BOOLEAN
                         ? tag.value
@@ -54,6 +56,7 @@ watch(
     },
     { immediate: true },
 );
+
 const { mutate: _updateMissionTags } = useMutation({
     mutationFn: () => {
         return updateMissionTags(

@@ -1,5 +1,6 @@
-import { ContainerLog } from '@common/entities/action/action.entity';
-import environment from '@common/environment';
+import { ContainerLog } from '@kleinkram/backend-common/entities/action/action.entity';
+import environment from '@kleinkram/backend-common/environment';
+import { ImageSource, LogType } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import Dockerode, { Image } from 'dockerode';
 import process from 'node:process';
@@ -14,39 +15,58 @@ import {
     PidsLimit,
     SecurityOpt,
 } from '../helper/container-configs';
+import { ImageResolutionService } from './image-resolution.service';
 
 export interface ContainerLimits {
     /**
      * The maximum runtime of the container in milliseconds.
      */
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     max_runtime: number;
     /**
      * The maximum memory the container can use in bytes.
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      */
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     memory_limit: number;
     /**
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      * The maximum number of CPU cores.
      */
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     n_cpu: number;
+
     /**
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      * The maximum disk space the container can use in bytes.
      */
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     disk_quota: number;
 }
 
 const defaultContainerLimitations: ContainerLimits = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     max_runtime: 60 * 60 * 1000, // 1 hour
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     memory_limit: 1024 * 1024 * 1024, // 1GB
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     n_cpu: 2, // CPU limit in nano CPUs
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     disk_quota: 40_737_418_240,
 };
 
 export type ContainerEnvironment = Record<string, string>;
 
 export interface ContainerStartOptions {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     docker_image: string; // the docker image to run
     name: string; // a unique identifier for the container
     limits?: Partial<ContainerLimits>;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     needs_gpu?: boolean;
     environment?: ContainerEnvironment;
     command?: string;
@@ -59,7 +79,7 @@ export const dockerDaemonErrorHandler = (error: unknown): void => {
 
 const artifactUploaderImage =
     environment.ARTIFACTS_UPLOADER_IMAGE ||
-    'rslethz/grandtour-datasets:artifact-uploader-latest';
+    'rslethz/kleinkram:artifact-uploader-latest';
 
 /**
  * The DockerDaemon class is responsible for managing the Docker daemon.
@@ -72,7 +92,9 @@ export class DockerDaemon {
 
     static readonly CONTAINER_PREFIX = 'kleinkram-user-action-';
 
-    constructor() {
+    constructor(
+        private readonly imageResolutionService: ImageResolutionService,
+    ) {
         this.docker = new Dockerode({ socketPath: '/var/run/docker.sock' });
     }
 
@@ -99,9 +121,12 @@ export class DockerDaemon {
         container: Dockerode.Container;
         repoDigests: string[];
         sha: string;
+        source: ImageSource;
+        localCreatedAt: Date | undefined;
+        remoteCreatedAt: Date | undefined;
     }> {
         // merge the given container limitations with the default ones
-        if (!containerOptions) containerOptions = {};
+        containerOptions ??= {};
         containerOptions = {
             ...containerOptions,
             limits: {
@@ -123,7 +148,8 @@ export class DockerDaemon {
             throw new Error('No name specified');
         }
 
-        const image = await this.getImage(containerOptions.docker_image);
+        const { image, source, localCreatedAt, remoteCreatedAt } =
+            await this.getImage(containerOptions.docker_image);
         // get image details
         const details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
@@ -132,8 +158,8 @@ export class DockerDaemon {
             );
         }
         const repoDigests = details.RepoDigests;
-        const sha = '';
-        const needsGpu = containerOptions.needs_gpu || false;
+        const sha = details.Id;
+        const needsGpu = containerOptions.needs_gpu ?? false;
         const addGpuCapabilities = {
             DeviceRequests: [
                 {
@@ -168,6 +194,7 @@ export class DockerDaemon {
                 CapDrop,
                 SecurityOpt,
                 PidsLimit,
+
                 // Define a unique volume
                 Mounts: [
                     {
@@ -178,6 +205,7 @@ export class DockerDaemon {
                 ],
             },
             Volumes: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 '/tmp_disk': {},
             },
         };
@@ -189,10 +217,6 @@ export class DockerDaemon {
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
 
-        if (!container) {
-            throw new Error('Failed to create container');
-        }
-
         logger.info('Container created! Starting container...');
         await container.start();
         logger.info(`Container started wit id: ${container.id}`);
@@ -203,7 +227,14 @@ export class DockerDaemon {
             containerOptions.limits?.max_runtime ?? 0,
         );
 
-        return { container, repoDigests: repoDigests, sha };
+        return {
+            container,
+            repoDigests: repoDigests,
+            sha,
+            source,
+            localCreatedAt,
+            remoteCreatedAt,
+        };
     }
 
     private errorHandling() {
@@ -274,8 +305,8 @@ export class DockerDaemon {
             throw new Error('No docker image specified');
         }
 
-        const DOCKER_HUB_PASSWORD = process.env['DOCKER_HUB_PASSWORD'];
-        const DOCKER_HUB_USERNAME = process.env['DOCKER_HUB_USERNAME'];
+        const DOCKER_HUB_PASSWORD = process.env.DOCKER_HUB_PASSWORD;
+        const DOCKER_HUB_USERNAME = process.env.DOCKER_HUB_USERNAME;
 
         if (
             DOCKER_HUB_PASSWORD === undefined ||
@@ -300,8 +331,14 @@ export class DockerDaemon {
     }
 
     @tracing()
-    private async getImage(dockerImage: string): Promise<Image> {
-        const dockerhub_namespace = process.env['VITE_DOCKER_HUB_NAMESPACE'];
+    private async getImage(dockerImage: string): Promise<{
+        image: Image;
+        source: ImageSource;
+        localCreatedAt: Date | undefined;
+        remoteCreatedAt: Date | undefined;
+    }> {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        const dockerhub_namespace = process.env.VITE_DOCKER_HUB_NAMESPACE;
         // assert that we only run images from a specified namespace
         if (
             dockerhub_namespace !== undefined &&
@@ -313,15 +350,26 @@ export class DockerDaemon {
         }
 
         // check if docker socket is available
-        if (!this.docker || !(await this.docker.ping())) {
+        if (!(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
 
-        await this.pullImage(dockerImage)
-            // ignore errors, image might already exist locally
-            .catch(() => ({}));
+        const { source, localCreatedAt, remoteCreatedAt, shouldPull } =
+            await this.imageResolutionService.resolveImage(
+                this.docker,
+                dockerImage,
+            );
 
-        return this.docker.getImage(dockerImage);
+        if (shouldPull) {
+            await this.pullImage(dockerImage);
+        }
+
+        return {
+            image: this.docker.getImage(dockerImage),
+            source,
+            localCreatedAt,
+            remoteCreatedAt,
+        };
     }
 
     async stopContainer(containerId: string): Promise<void> {
@@ -348,11 +396,7 @@ export class DockerDaemon {
 
     removeContainer(containerId: string, clearVolume = false): void {
         const container = this.docker.getContainer(containerId);
-        if (container) {
-            container
-                .remove({ v: clearVolume })
-                .catch(dockerDaemonErrorHandler);
-        }
+        container.remove({ v: clearVolume }).catch(dockerDaemonErrorHandler);
     }
 
     async removeVolume(containerId: string): Promise<void> {
@@ -382,19 +426,40 @@ export class DockerDaemon {
         line: string,
         sanitizeCallback?: (string_: string) => string,
     ): ContainerLog {
-        const logLevel = [...line][0]?.charCodeAt(0) ?? 0;
+        const logLevel = line.codePointAt(0) ?? 0;
+
+        // Strip ANSI codes first
+
+        const ansiRegex =
+            /[\u001B\u009B][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
+        line = line.replaceAll(ansiRegex, '');
 
         // remove all non-printable characters
+
         line = line.replace(/[\u0000-\u001F\u007F]/u, '');
 
         const dateStartIndex = line.indexOf('20');
-        let dateEndIndex = line.indexOf(' ', dateStartIndex);
-        dateEndIndex = dateEndIndex === -1 ? line.length : dateEndIndex;
 
-        const dateString = line.slice(dateStartIndex, dateEndIndex);
-        const timestamp = new Date(dateString).toISOString();
+        let timestamp: string;
+        let message: string;
 
-        let message = line.slice(Math.max(0, dateEndIndex));
+        if (dateStartIndex === -1) {
+            timestamp = new Date().toISOString();
+            message = line;
+        } else {
+            let dateEndIndex = line.indexOf(' ', dateStartIndex);
+            dateEndIndex = dateEndIndex === -1 ? line.length : dateEndIndex;
+
+            const dateString = line.slice(dateStartIndex, dateEndIndex);
+            try {
+                timestamp = new Date(dateString).toISOString();
+            } catch {
+                timestamp = new Date().toISOString();
+            }
+
+            message = line.slice(Math.max(0, dateEndIndex));
+        }
+
         if (sanitizeCallback && message !== '') {
             message = sanitizeCallback(message);
         }
@@ -402,7 +467,7 @@ export class DockerDaemon {
         return {
             timestamp: timestamp,
             message: message,
-            type: logLevel === 2 ? 'stderr' : 'stdout',
+            type: logLevel === 2 ? LogType.STDERR : LogType.STDOUT,
         };
     }
 
@@ -432,17 +497,18 @@ export class DockerDaemon {
         });
 
         return new Observable<ContainerLog>((observer) => {
-            dockerodeLogStream.on('data', (chunk) => {
-                for (const logEntry of chunk
+            dockerodeLogStream.on('data', (chunk: Buffer) => {
+                const lines = chunk
                     .toString()
-                    .split('\n')
-                    .filter((line) => line !== '')
-                    .map((line) =>
+                    .split(/[\r\n]+/)
+                    .filter((line: string) => line !== '')
+                    .map((line: string) =>
                         DockerDaemon.parseContainerLogLine(
                             line,
                             sanitizeCallback,
                         ),
-                    )) {
+                    );
+                for (const logEntry of lines) {
                     observer.next(logEntry);
                 }
             });
@@ -460,6 +526,7 @@ export class DockerDaemon {
     async launchArtifactUploadContainer(containerId: string): Promise<{
         container: Dockerode.Container;
         repoDigests: string[];
+        artifactMetadata?: { size: number; files: string[] } | undefined;
     }> {
         const containerOptions = { limits: defaultContainerLimitations };
 
@@ -468,26 +535,14 @@ export class DockerDaemon {
         );
 
         // check if docker socket is available
-        if (!this.docker || !(await this.docker.ping())) {
+        if (!(await this.docker.ping())) {
             throw new Error('Docker socket not available or not responding');
         }
 
-        let image = this.docker.getImage(artifactUploaderImage);
-        let details = await image.inspect().catch(dockerDaemonErrorHandler);
-        logger.info(`Checking if image ${artifactUploaderImage} exists...`);
-
-        if (!details) {
-            logger.info('Image does not exist, pulling image...');
-            const pullResult = await this.pullImage(
-                artifactUploaderImage,
-            ).catch(this.errorHandling());
-
-            logger.info(`Image pulled: ${pullResult}. Starting container...`);
-            image = this.docker.getImage(artifactUploaderImage);
-        }
+        const { image } = await this.getImage(artifactUploaderImage);
 
         // get image details
-        details = await image.inspect().catch(dockerDaemonErrorHandler);
+        const details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
             throw new Error(
                 `Crashed during Artifacts upload. Image ${artifactUploaderImage} not found!`,
@@ -495,16 +550,18 @@ export class DockerDaemon {
         }
         const repoDigests = details.RepoDigests;
 
-        logger.info('Creating artifact uploader container...');
+        logger.info(
+            `Creating artifact uploader container from image: ${artifactUploaderImage} with options: ${JSON.stringify(containerOptions)}`,
+        );
 
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: artifactUploaderImage,
             name: `kleinkram-artifact-uploader-${containerId}`,
             Env: [
                 `KLEINKRAM_ACTION_UUID=${containerId}`,
-                `MINIO_ENDPOINT=${environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
-                `MINIO_ACCESS_KEY=${environment.MINIO_USER}`,
-                `MINIO_SECRET_KEY=${environment.MINIO_PASSWORD}`,
+                `MINIO_ENDPOINT=${environment.MINIO_ENDPOINT === 'localhost' ? '127.0.0.1' : environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+                `MINIO_ACCESS_KEY=${environment.MINIO_ACCESS_KEY}`,
+                `MINIO_SECRET_KEY=${environment.MINIO_SECRET_KEY}`,
                 `MINIO_ARTIFACTS_BUCKET_NAME=${environment.MINIO_ARTIFACTS_BUCKET_NAME}`,
             ],
 
@@ -531,13 +588,98 @@ export class DockerDaemon {
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
 
-        if (!container) {
-            throw new Error('Failed to create container');
-        }
-
         logger.info('Container created! Starting container...');
         await container.start();
         logger.info(`Container started with id: ${container.id}`);
+
+        // Stream logs to stdout/stderr for debugging and capture metadata
+        let artifactMetadata: { size: number; files: string[] } | undefined;
+
+        const stream = await container.logs({
+            follow: true,
+            stdout: true,
+            stderr: true,
+        });
+
+        const logPromise = new Promise<void>((resolve, reject) => {
+            let buffer = '';
+            const stdoutWritable = {
+                write: (chunk: Buffer) => {
+                    const chunkString = chunk.toString();
+                    buffer += chunkString;
+
+                    const lines = buffer.split('\n');
+                    // Keep the last part in the buffer as it might be an incomplete line
+                    buffer = lines.pop() ?? '';
+
+                    for (const line of lines) {
+                        logger.debug(`[ArtifactUpload] ${line}`);
+                        if (line.includes('ARTIFACT_METADATA:')) {
+                            try {
+                                const jsonString = line
+                                    .split('ARTIFACT_METADATA:')[1]
+                                    ?.trim();
+                                if (jsonString) {
+                                    artifactMetadata = JSON.parse(
+                                        jsonString,
+                                    ) as {
+                                        size: number;
+                                        files: string[];
+                                    };
+                                }
+                            } catch (error: unknown) {
+                                logger.error(
+                                    `Failed to parse artifact metadata: ${String(error)}`,
+                                );
+                            }
+                        }
+                    }
+                    return true;
+                },
+            };
+
+            const stderrWritable = {
+                write: (chunk: Buffer) => {
+                    logger.debug(
+                        `[ArtifactUpload STDERR] ${chunk.toString().trim()}`,
+                    );
+                    return true;
+                },
+            };
+
+            stream.on('end', () => {
+                if (buffer) {
+                    logger.debug(`[ArtifactUpload] ${buffer}`);
+                    if (buffer.includes('ARTIFACT_METADATA:')) {
+                        try {
+                            const jsonString = buffer
+                                .split('ARTIFACT_METADATA:')[1]
+                                ?.trim();
+                            if (jsonString) {
+                                artifactMetadata = JSON.parse(jsonString) as {
+                                    size: number;
+                                    files: string[];
+                                };
+                            }
+                        } catch (error: unknown) {
+                            logger.error(
+                                `Failed to parse artifact metadata: ${String(error)}`,
+                            );
+                        }
+                    }
+                }
+                resolve();
+            });
+
+            stream.on('error', reject);
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            container.modem.demuxStream(
+                stream,
+                stdoutWritable as unknown as NodeJS.WritableStream,
+                stderrWritable as unknown as NodeJS.WritableStream,
+            );
+        });
 
         // stop the container after max_runtime seconds
         await this.killContainerAfterMaxRuntime(
@@ -546,7 +688,8 @@ export class DockerDaemon {
             true,
         );
 
-        // 4. Update return type (removed parentFolder)
-        return { container, repoDigests };
+        await logPromise;
+
+        return { container, repoDigests, artifactMetadata };
     }
 }

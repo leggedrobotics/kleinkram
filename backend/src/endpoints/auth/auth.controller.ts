@@ -1,6 +1,10 @@
-import UserEntity from '@common/entities/user/user.entity';
-import env from '@common/environment';
-import { CookieNames, Providers } from '@common/frontend_shared/enum';
+import { OutputDto } from '@/decorators';
+import { AuthService } from '@/services/auth.service';
+import { UserService } from '@/services/user.service';
+import { AvailableProvidersDto } from '@kleinkram/api-dto';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import env from '@kleinkram/backend-common/environment';
+import { CookieNames, Providers } from '@kleinkram/shared';
 import {
     Controller,
     Get,
@@ -13,9 +17,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
-import { OutputDto } from '../../decarators';
-import { AuthService } from '../../services/auth.service';
-import { UserService } from '../../services/user.service';
 import { InvalidJwtTokenException } from './jwt.strategy';
 import { UserOnly } from './roles.decorator';
 
@@ -27,9 +28,20 @@ export class AuthController {
         private userService: UserService,
     ) {}
 
+    @Get('available-providers')
+    @OutputDto(null)
+    getAvailableProviders(): AvailableProvidersDto {
+        return {
+            google: !!env.GOOGLE_CLIENT_ID && !!env.GOOGLE_CLIENT_SECRET,
+            github: !!env.GITHUB_CLIENT_ID && !!env.GITHUB_CLIENT_SECRET,
+            fakeOauth: env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT,
+        };
+    }
+
     @Get('github')
     @UseGuards(AuthGuard('github'))
-    async githubAuth(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+    async githubAuth(@Req() request: any): Promise<void> {
         // Initiates the GitHub OAuth flow
         // OAuth is handled by the AuthGuard
     }
@@ -51,21 +63,33 @@ export class AuthController {
     @Get('github/callback')
     @UseGuards(AuthGuard('github'))
     @OutputDto(null) // TODO: type API response
-    githubAuthRedirect(@Req() request, @Res() response: Response): void {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async githubAuthCallback(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        @Req() request: any,
+        @Res() response: Response,
+    ): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         this.handleAuthRedirect(request, response);
     }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     @OutputDto(null) // TODO: type API response
-    googleAuthRedirect(@Req() request, @Res() response: Response): void {
+    googleAuthRedirect(
+        @Req() request: Request,
+        @Res() response: Response,
+    ): void {
         this.handleAuthRedirect(request, response);
     }
 
     @Get('fake-oauth/callback')
     @UseGuards(AuthGuard(Providers.FakeOAuth))
     @OutputDto(null) // TODO: type API response
-    fakeOAuthAuthRedirect(@Req() request, @Res() response: Response): void {
+    fakeOAuthAuthRedirect(
+        @Req() request: Request,
+        @Res() response: Response,
+    ): void {
         if (!env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT)
             throw new MethodNotAllowedException();
         this.handleAuthRedirect(request, response);
@@ -77,7 +101,7 @@ export class AuthController {
     ): void {
         const user = request.user;
         const token = this.authService.login(user as UserEntity);
-        const state = request.query['state'];
+        const state = request.query.state;
 
         if (state === 'cli') {
             response.redirect(
@@ -105,11 +129,11 @@ export class AuthController {
         <body>
             <h1>Authentication Successful</h1>
             <p>Please copy your tokens from below and paste them back into your application.</p>
-            
+
             <h2>Authentication Token</h2>
             <div class="token" id="authToken">${authToken}</div>
             <button onclick="copyToClipboard('authToken')">Copy Authentication Token</button>
-            
+
             <h2>Refresh Token</h2>
             <div class="token" id="refreshToken">${refreshToken}</div>
             <button onclick="copyToClipboard('refreshToken')">Copy Refresh Token</button>
@@ -160,6 +184,7 @@ export class AuthController {
     @Post('refresh-token')
     @OutputDto(null) // TODO: type API response
     async refreshToken(@Req() request: Request, @Res() response: Response) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const refreshToken = request.cookies[CookieNames.REFRESH_TOKEN];
         if (!refreshToken) {
             return response
@@ -168,15 +193,19 @@ export class AuthController {
         }
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
             const payload = this.jwtService.verify(refreshToken);
 
             // @ts-ignore
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
             const user = await this.userService.findOneByUUID(payload.uuid, {
                 uuid: true,
                 email: true,
                 role: true,
             });
 
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (!user) {
                 return response
                     .status(401)
@@ -192,7 +221,7 @@ export class AuthController {
                 secure: env.DEV,
                 sameSite: 'strict',
             });
-            response.status(200).json({ message: 'Token refreshed' });
+            return response.status(200).json({ message: 'Token refreshed' });
         } catch {
             throw InvalidJwtTokenException;
         }

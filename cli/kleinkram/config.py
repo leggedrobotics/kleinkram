@@ -120,13 +120,9 @@ def _get_default_credentials() -> Dict[str, Credentials]:
 @dataclass
 class Config:
     version: str = __version__
-    selected_endpoint: str = field(
-        default_factory=lambda: _get_default_selected_endpoint().name
-    )
+    selected_endpoint: str = field(default_factory=lambda: _get_default_selected_endpoint().name)
     endpoints: Dict[str, Endpoint] = field(default_factory=_get_default_endpoints)
-    endpoint_credentials: Dict[str, Credentials] = field(
-        default_factory=_get_default_credentials
-    )
+    endpoint_credentials: Dict[str, Credentials] = field(default_factory=_get_default_credentials)
 
     @property
     def endpoint(self) -> Endpoint:
@@ -149,9 +145,7 @@ def _config_to_dict(config: Config) -> Dict[str, Any]:
     return {
         "version": config.version,
         "endpoints": {key: value._asdict() for key, value in config.endpoints.items()},
-        "endpoint_credentials": {
-            key: value._asdict() for key, value in config.endpoint_credentials.items()
-        },
+        "endpoint_credentials": {key: value._asdict() for key, value in config.endpoint_credentials.items()},
         "selected_endpoint": config.endpoint.name,
     }
 
@@ -161,16 +155,11 @@ def _config_from_dict(dct: Dict[str, Any]) -> Config:
         dct["version"],
         dct["selected_endpoint"],
         {key: Endpoint(**value) for key, value in dct["endpoints"].items()},
-        {
-            key: Credentials(**value)
-            for key, value in dct["endpoint_credentials"].items()
-        },
+        {key: Credentials(**value) for key, value in dct["endpoint_credentials"].items()},
     )
 
 
-def _safe_config_write(
-    config: Config, path: Path, tmp_dir: Optional[Path] = None
-) -> None:
+def _safe_config_write(config: Config, path: Path, tmp_dir: Optional[Path] = None) -> None:
     fd, temp_path = tempfile.mkstemp(dir=tmp_dir)
     with os.fdopen(fd, "w") as f:
         json.dump(_config_to_dict(config), f)
@@ -248,11 +237,7 @@ def endpoint_table(config: Config) -> Table:
     table.add_column("S3", style="cyan")
 
     for name, endpoint in config.endpoints.items():
-        display_name = (
-            Text(f"* {name}", style="bold yellow")
-            if name == config.selected_endpoint
-            else Text(f"  {name}")
-        )
+        display_name = Text(f"* {name}", style="bold yellow") if name == config.selected_endpoint else Text(f"  {name}")
         table.add_row(display_name, endpoint.api, endpoint.s3)
     return table
 

@@ -19,33 +19,14 @@
             <div class="flex justify-between items-center q-mb-lg">
                 <div />
                 <button-group>
-                    <q-input
+                    <app-search-bar
                         v-model="search"
-                        outlined
-                        dense
                         placeholder="Search"
-                        class="q-mr-sm full-height"
-                    >
-                        <template #append>
-                            <q-icon name="sym_o_search" />
-                        </template>
-                    </q-input>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        color="icon-secondary"
-                        class="button-border"
-                        icon="sym_o_loop"
-                        @click="refetchOnClick"
-                    >
-                        <q-tooltip> Refetch the Data</q-tooltip>
-                    </q-btn>
-                    <q-btn
-                        flat
-                        class="bg-button-secondary text-on-color"
+                        class="q-mr-sm"
+                    />
+                    <app-refresh-button @click="refetchOnClick" />
+                    <app-create-button
                         label="Add Project"
-                        icon="sym_o_add"
                         @click="openAddProject"
                     />
                 </button-group>
@@ -131,39 +112,18 @@
             <div class="flex justify-between items-center q-mb-lg">
                 <div />
                 <button-group>
-                    <q-input
+                    <app-search-bar
                         v-model="search"
-                        outlined
-                        dense
                         placeholder="Search"
-                        class="q-mr-sm full-height"
-                    >
-                        <template #append>
-                            <q-icon name="sym_o_search" />
-                        </template>
-                    </q-input>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        color="icon-secondary"
-                        class="button-border"
-                        icon="sym_o_loop"
-                        @click="refetchOnClick"
-                    >
-                        <q-tooltip> Refetch the Data</q-tooltip>
-                    </q-btn>
+                        class="q-mr-sm"
+                    />
+                    <app-refresh-button @click="refetchOnClick" />
 
                     <DialogOpenerAddUser
                         v-if="accessGroup"
                         :access-group="accessGroup"
                     >
-                        <q-btn
-                            flat
-                            class="bg-button-secondary text-on-color full-height"
-                            label="Add User"
-                            icon="sym_o_add"
-                        />
+                        <app-create-button label="Add User" />
                     </DialogOpenerAddUser>
                 </button-group>
             </div>
@@ -263,16 +223,19 @@
     </q-tab-panels>
 </template>
 <script setup lang="ts">
-import { GroupMembershipDto } from '@api/types/user.dto';
-import { AccessGroupRights, AccessGroupType } from '@common/enum';
+import type { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
+import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import RemoveProjectDialogOpener from 'components/button-wrapper/remove-project-dialog-opener.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
-import { projectAccessColumns } from 'components/explorer-page/explorer-page-table-columns';
+import AppCreateButton from 'components/common/app-create-button.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import TitleSection from 'components/title-section.vue';
 import { Notify, QTable, useQuasar } from 'quasar';
+import { projectAccessColumns } from 'src/components/explorer-page/explorer-page-table-columns';
 import AddProjectToAccessGroupDialog from 'src/dialogs/add-project-access-group-dialog.vue';
 import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expiration-date-dialog.vue';
 import { useAccessGroup, useUser } from 'src/hooks/query-hooks';
@@ -372,16 +335,21 @@ const openAddProject = (): void => {
 };
 
 const renameColumns = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cols: any[],
     oldLabel: string,
     newLabel: string,
 ): void => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     for (const col of cols.filter((c) => c.label === oldLabel)) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         col.label = newLabel;
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const dropColumns = (cols: any[], label: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return cols.filter((col) => col.label !== label);
 };
 
@@ -441,6 +409,7 @@ const projectCols = computed(() => {
         let defaultCols = [...projectAccessColumns];
         renameColumns(defaultCols, 'Creator', 'Project Creator');
         renameColumns(defaultCols, 'Description', 'Project Description');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         defaultCols = dropColumns(defaultCols, 'Created');
 
         // add as the second to last column
@@ -450,6 +419,7 @@ const projectCols = computed(() => {
             label: 'Group Rights',
             style: 'max-width: 100px',
             align: 'left',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
             field: (row: any) => AccessGroupRights[row.rights],
         });
         return defaultCols;

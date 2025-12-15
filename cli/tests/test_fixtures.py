@@ -5,8 +5,8 @@ import pytest
 from kleinkram import list_files
 from kleinkram import list_missions
 from kleinkram import list_projects
-from testing.backend_fixtures import DATA_FILES
-from testing.backend_fixtures import PROJECT_DESCRIPTION
+from tests.backend_fixtures import DATA_FILES
+from tests.backend_fixtures import PROJECT_DESCRIPTION
 
 
 @pytest.mark.slow
@@ -22,9 +22,7 @@ def test_mission_fixture(mission, project):
 
     files = list_files(mission_ids=[mission.id])
 
-    assert set([file.name for file in files if file.name.endswith(".bag")]) == set(
-        [file.name for file in DATA_FILES]
-    )
+    assert set([file.name for file in files if file.name.endswith(".bag")]) == set([file.name for file in DATA_FILES])
 
 
 @pytest.mark.slow

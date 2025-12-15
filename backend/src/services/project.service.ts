@@ -1,6 +1,14 @@
-import { CreateProject } from '@common/api/types/create-project.dto';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
+import { addAccessConstraintsToProjectQuery } from '@/endpoints/auth/auth-helper';
+import {
+    CreateProject,
+    DefaultRightDto,
+    DefaultRights,
+    ProjectDto,
+    ProjectsDto,
+    ProjectWithRequiredTagsDto,
+    ResentProjectDto,
+    SortOrder,
+} from '@kleinkram/api-dto';
 import {
     BadRequestException,
     ConflictException,
@@ -9,7 +17,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
-import { addAccessConstraintsToProjectQuery } from '../endpoints/auth/auth-helper';
 import { UserService } from './user.service';
 
 import {
@@ -19,29 +26,27 @@ import {
     addSort,
 } from './utilities';
 
-import { DefaultRightDto } from '@common/api/types/access-control/default-right.dto';
-import { DefaultRights } from '@common/api/types/access-control/default-rights';
-import { SortOrder } from '@common/api/types/pagination';
-import { ProjectDto } from '@common/api/types/project/base-project.dto';
-import { ProjectWithRequiredTagsDto } from '@common/api/types/project/project-with-required-tags.dto';
-import { ProjectsDto } from '@common/api/types/project/projects.dto';
-import { ResentProjectDto } from '@common/api/types/project/recent-projects.dto';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
+    projectEntityToDto,
+    projectEntityToDtoWithMissionCountAndTags,
+    projectEntityToDtoWithRequiredTags,
+} from '@/serialization';
+import {
+    AccessGroupEntity,
+    MissionEntity,
+    ProjectAccessEntity,
+    ProjectEntity,
+    TagTypeEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
+import {
+    AccessGroupConfig,
     AccessGroupRights,
     AccessGroupType,
     UserRole,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
-import {
-    projectEntityToDtoWithMissionCountAndTags,
-    projectEntityToDtoWithRequiredTags,
-} from '../serialization';
-import { AccessGroupConfig } from '../types/access-group-config';
 
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',
@@ -69,8 +74,10 @@ export class ProjectService {
         private configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const config = this.configService.get('accessConfig');
         if (config === undefined) throw new Error('Access config not found');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         this.config = config;
     }
 
@@ -154,6 +161,7 @@ export class ProjectService {
             // Get all Projects and add the computed field latestUpdate
             // LatestUpdate is computed in the subquery by selecting the latest updatedAt of the project, missions and files
             // This is implemented in SQL as TypeORM does not support sorting by a computed field...
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             projects = await this.projectRepository.query(
                 'SELECT DISTINCT\n' +
                     '    "project"."uuid" AS "projectUuid",\n' +
@@ -205,6 +213,7 @@ export class ProjectService {
         }
 
         if (user.role !== UserRole.ADMIN) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             projects = await this.projectRepository.query(
                 'SELECT DISTINCT\n' +
                     '   "project"."uuid" AS "projectUuid",\n' +
@@ -258,20 +267,33 @@ export class ProjectService {
                 [AccessGroupRights.READ, user.uuid, take],
             );
         }
-        return projects
-            .map((project: any) => {
-                return {
-                    name: project.project_name as string,
-                    uuid: project.projectUuid as string,
-                    description: project.project_description as string,
-                    updatedAt: project.latestUpdate as Date,
-                    createdAt: project.project_createdAt as Date,
-                } as ResentProjectDto;
-            })
-            .sort(
-                (a: ResentProjectDto, b: ResentProjectDto) =>
-                    b.updatedAt.getTime() - a.updatedAt.getTime(),
-            );
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+            projects
+
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                .map((project: any) => {
+                    return {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        name: project.project_name as string,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        uuid: project.projectUuid as string,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        description: project.project_description as string,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        updatedAt: project.latestUpdate as Date,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        createdAt: project.project_createdAt as Date,
+                    } as ResentProjectDto;
+                })
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                .sort(
+                    (a: ResentProjectDto, b: ResentProjectDto) =>
+                        b.updatedAt.getTime() - a.updatedAt.getTime(),
+                )
+        );
     }
 
     async create(
@@ -322,6 +344,7 @@ export class ProjectService {
         const accessGroupsDefaultIds = new Set(
             defaultAccessGroups
                 .map((ag) => ag.uuid)
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 .filter((id) => id !== undefined),
         );
 
@@ -367,9 +390,10 @@ export class ProjectService {
             },
         );
 
-        return (await this.projectRepository.findOneOrFail({
+        const createdProject = await this.projectRepository.findOneOrFail({
             where: { uuid: transactedProject.uuid },
-        })) as unknown as ProjectDto;
+        });
+        return projectEntityToDto(createdProject);
     }
 
     async update(uuid: string, project: CreateProject): Promise<ProjectDto> {
@@ -389,9 +413,10 @@ export class ProjectService {
                 ? {}
                 : { autoConvert: project.autoConvert }),
         });
-        return (await this.projectRepository.findOneOrFail({
+        const updatedProject = await this.projectRepository.findOneOrFail({
             where: { uuid },
-        })) as unknown as ProjectDto;
+        });
+        return projectEntityToDto(updatedProject);
     }
 
     async addTagType(uuid: string, tagTypeUUID: string): Promise<void> {
@@ -441,6 +466,7 @@ export class ProjectService {
 
                 if (missionCount > 0) {
                     throw new ConflictException(
+                        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                         `Project has ${missionCount} missions. Please delete them first.`,
                     );
                 }
@@ -467,6 +493,7 @@ export class ProjectService {
         project: ProjectEntity,
         removedDefaultGroups?: string[],
     ): Promise<(ProjectAccessEntity | undefined)[]> {
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         if (!removedDefaultGroups) {
             removedDefaultGroups = [];
         }

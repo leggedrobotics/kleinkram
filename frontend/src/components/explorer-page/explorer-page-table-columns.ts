@@ -1,20 +1,23 @@
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import { formatDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 
-import { ProjectWithAccessRightsDto } from '@api/types/project/project-access.dto';
-import { ProjectWithMissionCountDto } from '@api/types/project/project-with-mission-count.dto';
+import type { ProjectWithAccessRightsDto } from '@kleinkram/api-dto/types/project/project-access.dto';
+import type { ProjectWithMissionCountDto } from '@kleinkram/api-dto/types/project/project-with-mission-count.dto';
 
 export interface ProjectColumnType {
     name: string;
     required?: boolean;
     label: string;
     align: string;
-    field?:
+    field?: // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithMissionCountDto) => any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithAccessRightsDto) => any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: FlatMissionDto) => any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: FileWithTopicDto) => any);
     format?: ((value: string) => string) | ((value: number) => string);
     sortable?: boolean;

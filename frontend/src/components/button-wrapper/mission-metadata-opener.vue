@@ -5,6 +5,7 @@
             'cursor-pointer': !canModify,
             'cursor-not-allowed': canModify,
         }"
+        style="height: 100%"
         @click="openTagsDialog"
     >
         <slot />
@@ -16,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQuasar } from 'quasar';
 import ModifyMissionTagsDialog from 'src/dialogs/modify-mission-tags-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
@@ -30,6 +31,7 @@ const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
         properties.mission.uuid,
+
         properties.mission.project.uuid,
         permissions.value,
     ),

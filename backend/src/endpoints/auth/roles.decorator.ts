@@ -1,11 +1,11 @@
-import { UnauthorizedExceptionDto } from '@common/api/types/exceptions/unauthorized-exception.dto';
+import { UnauthorizedExceptionDto } from '@kleinkram/api-dto';
 import {
     applyDecorators,
     ForbiddenException,
     SetMetadata,
     UseGuards,
 } from '@nestjs/common';
-import { ApiResponse } from '../../decarators';
+import { ApiResponse } from '../../decorators';
 import {
     AddTagGuard,
     AdminOnlyGuard,

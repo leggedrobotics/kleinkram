@@ -125,6 +125,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed, onMounted, ref, watch } from 'vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -133,8 +134,6 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 const canvasReference = ref<HTMLCanvasElement | null>(null);
 const currentIndex = ref(0);
-
-const CANVAS_SIZE = 600;
 
 const incrementIndex = (): void => {
     if (currentIndex.value < properties.messages.length - 1) {
@@ -156,15 +155,20 @@ const lastMouse = ref({ x: 0, y: 0 });
 
 // --- Computed Data Access ---
 const currentMessage = computed(
-    () => properties.messages[currentIndex.value] || null,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    () => properties.messages[currentIndex.value] ?? null,
 );
-const width = computed(() => currentMessage.value?.data?.width || 0);
-const height = computed(() => currentMessage.value?.data?.height || 0);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+const width = computed(() => currentMessage.value?.data?.width ?? 0);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+const height = computed(() => currentMessage.value?.data?.height ?? 0);
 const frameId = computed(
-    () => currentMessage.value?.data?.header?.frame_id || '',
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    () => currentMessage.value?.data?.header?.frame_id ?? '',
 );
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0) {
         emit('load-required');
     } else {
@@ -234,65 +238,124 @@ interface Point {
     z: number;
 }
 
+const renderError = ref<string | null>(null);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parsePoints(message: any): Point[] {
+    renderError.value = null;
     if (!message) return [];
 
-    const fields = message.fields as any[];
-    const data = message.data as Uint8Array | number[];
-    const pointStep = message.point_step as number;
-    const isBigEndian = message.is_bigendian;
-    const totalPoints = message.width * message.height;
-
-    const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-
-    const xField = fields.find((f: any) => f.name === 'x');
-    const yField = fields.find((f: any) => f.name === 'y');
-    const zField = fields.find((f: any) => f.name === 'z');
-
-    if (!xField || !yField) return [];
-
-    const xOff: number = xField.offset;
-    const yOff: number = yField.offset;
-    const zOff: number = zField ? zField.offset : -1;
-    const isFloat32 = xField.datatype === 7;
-
-    const points: Point[] = [];
-
-    for (let index = 0; index < totalPoints; index++) {
-        const base = index * pointStep;
-        if (base + pointStep > bytes.length) break;
-
-        let x,
-            y,
-            z = 0;
-        if (isFloat32) {
-            x = view.getFloat32(base + xOff, !isBigEndian);
-            y = view.getFloat32(base + yOff, !isBigEndian);
-            if (zOff >= 0) z = view.getFloat32(base + zOff, !isBigEndian);
-        } else {
-            x = view.getFloat64(base + xOff, !isBigEndian);
-            y = view.getFloat64(base + yOff, !isBigEndian);
-            if (zOff >= 0) z = view.getFloat64(base + zOff, !isBigEndian);
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+        const fields = message.fields as any[];
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!fields || !Array.isArray(fields)) {
+            throw new Error('Message missing "fields" array');
         }
 
-        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z))
-            continue;
-        points.push({ x, y, z });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const data = message.data as Uint8Array | number[];
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const pointStep = message.point_step as number;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const isBigEndian = message.is_bigendian;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const totalPoints = message.width * message.height;
+
+        const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+        const view = new DataView(
+            bytes.buffer,
+            bytes.byteOffset,
+            bytes.byteLength,
+        );
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const xField = fields.find((f: any) => f.name === 'x');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const yField = fields.find((f: any) => f.name === 'y');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const zField = fields.find((f: any) => f.name === 'z');
+
+        if (!xField || !yField) {
+            throw new Error('Missing x or y fields in PointCloud2');
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const xOff: number = xField.offset;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const yOff: number = yField.offset;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const zOff: number = zField ? zField.offset : -1;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const isFloat32 = xField.datatype === 7;
+
+        const points: Point[] = [];
+
+        for (let index = 0; index < totalPoints; index++) {
+            const base = index * pointStep;
+            if (base + pointStep > bytes.length) break;
+
+            let x,
+                y,
+                z = 0;
+            if (isFloat32) {
+                x = view.getFloat32(base + xOff, !isBigEndian);
+                y = view.getFloat32(base + yOff, !isBigEndian);
+                if (zOff >= 0) z = view.getFloat32(base + zOff, !isBigEndian);
+            } else {
+                x = view.getFloat64(base + xOff, !isBigEndian);
+                y = view.getFloat64(base + yOff, !isBigEndian);
+                if (zOff >= 0) z = view.getFloat64(base + zOff, !isBigEndian);
+            }
+
+            if (
+                !Number.isFinite(x) ||
+                !Number.isFinite(y) ||
+                !Number.isFinite(z)
+            )
+                continue;
+            points.push({ x, y, z });
+        }
+        return points;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+        console.error('Error parsing PointCloud2:', error);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        renderError.value = error.message;
+        return [];
     }
-    return points;
 }
 
 // --- Rendering Logic ---
+// --- Rendering Logic ---
+
+// eslint-disable-next-line complexity
 function renderCloud() {
     const canvas = canvasReference.value;
     if (!canvas || !currentMessage.value) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const points = parsePoints(currentMessage.value.data);
     if (points.length === 0) return;
 
-    canvas.width = CANVAS_SIZE;
-    canvas.height = CANVAS_SIZE;
+    // Use parent container dimensions or window-based max
+    // For now, let's set it to a reasonable large size or dynamic
+    // But to fill the area, we need to know the container size.
+    // Let's rely on the canvas's clientWidth/Height after CSS layout.
+
+    // We need to set the internal resolution to match display size for sharpness
+    // or keep it fixed. Let's try to match display size.
+    const displayWidth = canvas.clientWidth || 800;
+    const displayHeight = canvas.clientHeight || 600;
+
+    // Update resolution if changed
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+    }
+
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
     const context = canvas.getContext('2d');
     if (!context) return;
 
@@ -318,8 +381,10 @@ function renderCloud() {
     const rangeZ = maxZ - minZ || 1;
 
     // Base Scale (Auto-Fit)
-    const maxRange = Math.max(rangeX, rangeY);
-    const baseScale = (CANVAS_SIZE - 40) / maxRange;
+    // Fit to the smallest dimension
+    const scaleX = (canvasWidth - 40) / rangeX;
+    const scaleY = (canvasHeight - 40) / rangeY;
+    const baseScale = Math.min(scaleX, scaleY);
 
     // Apply User Zoom
     const finalScale = baseScale * userZoom.value;
@@ -331,24 +396,28 @@ function renderCloud() {
     // Center logic: (Canvas - Content) / 2
     // We subtract minX * scale to shift the local 0,0 to the start of the data
     const offsetX =
-        (CANVAS_SIZE - contentWidth) / 2 - minX * finalScale + userPan.value.x;
+        (canvasWidth - contentWidth) / 2 - minX * finalScale + userPan.value.x;
 
     // Y is inverted (Top-Down Map). Standard is Up=Y. Canvas is Down=Y.
     // We anchor to the bottom of the content area to flip it correctly?
     // Let's use standard flip logic: canvas_y = H - (world_y * scale + off_y)
+    // Wait, if we center it, we just need to flip the Y coordinate relative to the center.
+    // Let's stick to the previous logic but with dynamic height.
     const offsetY =
-        (CANVAS_SIZE - contentHeight) / 2 - minY * finalScale - userPan.value.y;
+        (canvasHeight - contentHeight) / 2 -
+        minY * finalScale -
+        userPan.value.y;
 
     // 2. Draw
-    const imgData = context.createImageData(CANVAS_SIZE, CANVAS_SIZE);
+    const imgData = context.createImageData(canvasWidth, canvasHeight);
     const data = imgData.data;
 
     for (const p of points) {
         const cx = Math.floor(p.x * finalScale + offsetX);
-        const cy = Math.floor(CANVAS_SIZE - (p.y * finalScale + offsetY));
+        const cy = Math.floor(canvasHeight - (p.y * finalScale + offsetY));
 
-        if (cx >= 0 && cx < CANVAS_SIZE && cy >= 0 && cy < CANVAS_SIZE) {
-            const index = (cy * CANVAS_SIZE + cx) * 4;
+        if (cx >= 0 && cx < canvasWidth && cy >= 0 && cy < canvasHeight) {
+            const index = (cy * canvasWidth + cx) * 4;
 
             // Z-Coloring
             const zn = (p.z - minZ) / rangeZ;
@@ -371,25 +440,27 @@ function renderCloud() {
     context.globalAlpha = 0.3;
 
     const originX = Math.floor(0 * finalScale + offsetX);
-    const originY = Math.floor(CANVAS_SIZE - (0 * finalScale + offsetY));
+    const originY = Math.floor(canvasHeight - (0 * finalScale + offsetY));
 
-    if (originX >= 0 && originX <= CANVAS_SIZE) {
+    if (originX >= 0 && originX <= canvasWidth) {
         context.beginPath();
         context.moveTo(originX, 0);
-        context.lineTo(originX, CANVAS_SIZE);
+        context.lineTo(originX, canvasHeight);
         context.stroke();
     }
-    if (originY >= 0 && originY <= CANVAS_SIZE) {
+    if (originY >= 0 && originY <= canvasHeight) {
         context.beginPath();
         context.moveTo(0, originY);
-        context.lineTo(CANVAS_SIZE, originY);
+        context.lineTo(canvasWidth, originY);
         context.stroke();
     }
 }
 
 async function copyRaw(): Promise<void> {
     if (!currentMessage.value) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const meta = {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ...currentMessage.value.data,
         data: '[Binary Blob Omitted]',
     };
@@ -413,8 +484,8 @@ const loadMore = (): void => {
 .pc-canvas {
     width: 100%;
     height: 100%;
-    max-width: 600px;
-    max-height: 600px;
+    /* max-width: 600px; */
+    /* max-height: 600px; */
     image-rendering: pixelated;
     cursor: move; /* Indicate draggable */
 }

@@ -11,7 +11,8 @@ import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
-from kleinkram.cli._file_validator import FileValidator, _report_skipped_files
+from kleinkram.cli._file_validator import FileValidator
+from kleinkram.cli._file_validator import _report_skipped_files
 from kleinkram.config import get_shared_state
 from kleinkram.errors import MissionNotFound
 from kleinkram.utils import load_metadata
@@ -49,29 +50,21 @@ def _handle_no_files_to_upload(original_count: int, uploaded_count: int) -> None
 
     if original_count > 0:
         typer.echo(
-            typer.style(
-                "All paths were skipped. No files to upload.", fg=typer.colors.RED
-            ),
+            typer.style("All paths were skipped. No files to upload.", fg=typer.colors.RED),
             err=True,
         )
     else:
-        typer.echo(
-            typer.style("No files provided to upload.", fg=typer.colors.RED), err=True
-        )
+        typer.echo(typer.style("No files provided to upload.", fg=typer.colors.RED), err=True)
     raise typer.Exit(code=1)
 
 
 @upload_typer.callback()
 def upload(
     files: List[str] = typer.Argument(help="files to upload"),
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="project id or name"
-    ),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
     create: bool = typer.Option(False, help="create mission if it does not exist"),
-    metadata: Optional[str] = typer.Option(
-        None, help="path to metadata file (json or yaml)"
-    ),
+    metadata: Optional[str] = typer.Option(None, help="path to metadata file (json or yaml)"),
     fix_filenames: bool = typer.Option(
         False,
         help="fix filenames before upload, this does not change the filenames locally",
@@ -82,9 +75,7 @@ def upload(
         "-s",
         help="skip unsupported file types, badly named files, or directories instead of erroring",
     ),
-    experimental_datatypes: bool = typer.Option(
-        False, help="allow experimental datatypes (yaml, svo2, db3, tum)"
-    ),
+    experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
 ) -> None:
     original_file_paths = [Path(file) for file in files]
@@ -100,9 +91,7 @@ def upload(
 
     _report_skipped_files(validator.skipped_files)
 
-    _handle_no_files_to_upload(
-        original_count=len(original_file_paths), uploaded_count=len(files_to_upload)
-    )
+    _handle_no_files_to_upload(original_count=len(original_file_paths), uploaded_count=len(files_to_upload))
 
     try:
         kleinkram.core.upload(

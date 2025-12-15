@@ -1,0 +1,70 @@
+# Try Kleinkram Locally
+
+You can easily run a local instance of Kleinkram to try it out.
+This has been tested on Ubuntu 24.04 and macOS.
+
+1. **Clone the repository**
+
+```bash
+git clone git@github.com:leggedrobotics/kleinkram.git
+cd kleinkram
+```
+
+2. **Clear Previous Data (Optional)**
+
+::: warning Clear Local Data if you have used Kleinkram before
+If you have used Kleinkram before, you should consider deleting all corresponding data including `~/.kleinkram.json` and running `docker compose down --volumes` inside the cloned repo directory to clear all docker related data.
+
+This ensures you start with a clean database and avoids the need to run migrations.
+:::
+
+3. **Start the application**
+
+```bash
+docker compose up --build
+```
+
+::: details Why `--build`?
+The `--build` flag ensures that the Docker images are built before starting. For more details on Docker Compose, see the [official docs](https://docs.docker.com/compose/).
+:::
+
+::: tip Seeding
+By default, the application is seeded with example data (users, projects, files, and action templates) to help you explore the features immediately. This is controlled by the `SEED` variable in your `.env` file (default: `true`). To start with an empty database, set `SEED=false`.
+
+For a detailed list of what is seeded, see [Enable Database Seeding](./getting-started.md#enable-database-seeding).
+:::
+
+4. **Open the application**
+
+Wait until you see a log line that says `kleinkram-api-server | 👍 Finished Seeding`. This indicates that the seeding process has completed successfully and the application is fully started. You can now access the frontend at `http://localhost:8003`.
+
+::: tip Browser Compatibility
+Make sure to use Chrome or Firefox for the best experience with the local development server.
+There are some known iessues related to Safari when running Kleinkram locally.
+:::
+
+::: details Can I Sign-In using GitHub or Google OAuth?
+By default we only offer fake-oauth for local development (this mocks the oauth flow) and allows you to choose between different users with
+different permissions.
+
+If you want to sign-in using GitHub or Google OAuth, you need to set the correspoding env variables in your `.env` file.
+This is however not recommended for local development.
+:::
+
+5. **Configure CLI (Optional)**
+
+If you want to use the CLI with your local instance, you need to set the endpoint to local:
+
+```bash
+klein endpoint local
+```
+
+::: details Start Developing
+For a deeper dive into the project structure and development workflow, see the [Application Structure](./application-structure.md) documentation.
+
+Your development environment is designed for Ubuntu 24.04.
+:::
+
+## Next Steps
+
+Now that you have Kleinkram running, check out the [User Documentation](../usage/getting-started.md) to learn how to use it!

@@ -38,7 +38,8 @@ describe('Verify JWT Handling', () => {
         // Use the already imported jwt module
         const token = jwt.sign(
             { user: { uuid: '' } },
-            process.env['JWT_SECRET'] || 'default-secret',
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+            process.env.JWT_SECRET || 'default-secret',
         );
 
         const headersBuilder = new HeaderCreator();

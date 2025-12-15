@@ -19,36 +19,42 @@ describe('Verify Mission Level Admin Access', () => {
 
     // admin: delete access by default
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can create a mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can view any mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can edit metadata of an mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can move any mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can delete any mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can view any files in a mission', async () => {
         //TODO: implement this test
 
@@ -57,36 +63,42 @@ describe('Verify Mission Level Admin Access', () => {
 
     // admin: file access
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can view any file in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can edit any file in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can download any file in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can upload any file to a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can move any file in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if admin can delete any file in a mission', async () => {
         //TODO: implement this test
 
@@ -107,36 +119,42 @@ describe('Verify Mission Level User Access', () => {
 
     // user: read/create access
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with create access on an project can create a mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on an project can view any mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on an project cannot edit a mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on an project cannot edit metadata of an mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on an project cannot move a mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on an project cannot delete a mission', async () => {
         // TODO: implement this test
 
@@ -144,24 +162,28 @@ describe('Verify Mission Level User Access', () => {
     });
 
     // user: modify access
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with modify/edit access on an project can edit a mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with modify/edit access on an project can edit metadata of an mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with modify/edit access on an project cannot move a mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with modify/edit access on an project cannot delete a mission', async () => {
         // TODO: implement this test
 
@@ -169,12 +191,14 @@ describe('Verify Mission Level User Access', () => {
     });
 
     // user: delete access
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with modify/edit access on an project can move a mission', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with delete access on an project can delete a mission', async () => {
         //TODO: implement this test
 
@@ -195,42 +219,49 @@ describe('Verify Mission File Level User Access', () => {
     // files in missions tests
 
     // user: read access
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on a mission can view files in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on a mission cannot edit files in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on a mission can download files in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on a mission can upload file from google drive into mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on a mission can upload file from local drive into mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on a mission cannot move files in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with read access on a mission cannot delete an file in a mission', async () => {
         //TODO: implement this test
 
@@ -239,18 +270,21 @@ describe('Verify Mission File Level User Access', () => {
 
     // user: edit access
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with edit access on a mission can edit files in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with edit access on a mission cannot move files in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with edit access on a mission cannot delete an file in a mission', async () => {
         //TODO: implement this test
 
@@ -258,12 +292,14 @@ describe('Verify Mission File Level User Access', () => {
     });
 
     // user: delete access
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with delete access on a mission can move files in a mission', async () => {
         //TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if user with delete access on a mission can delete an file in a mission', async () => {
         //TODO: implement this test
 

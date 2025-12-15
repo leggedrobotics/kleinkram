@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
 from typing import List
 
@@ -9,11 +10,9 @@ import typer
 from kleinkram.config import get_shared_state
 from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import FileNameNotSupported
-from kleinkram.utils import (
-    check_filename_is_sanatized,
-    EXPERIMENTAL_FILE_TYPES,
-    SUPPORT_FILE_TYPES,
-)
+from kleinkram.utils import EXPERIMENTAL_FILE_TYPES
+from kleinkram.utils import SUPPORT_FILE_TYPES
+from kleinkram.utils import check_filename_is_sanatized
 
 
 @dataclass
@@ -71,15 +70,11 @@ class FileValidator:
 
         # 2. Check if the datatype is known at all
         if not is_standard and not is_experimental:
-            raise DatatypeNotSupported(
-                f"Unsupported file type '{file_suffix}' on file {file}"
-            )
+            raise DatatypeNotSupported(f"Unsupported file type '{file_suffix}' on file {file}")
 
         # 3. Check if an experimental datatype is allowed
         if is_experimental and not self.experimental_datatypes:
-            raise DatatypeNotSupported(
-                f"Experimental datatype '{file_suffix}' not enabled for file {file}"
-            )
+            raise DatatypeNotSupported(f"Experimental datatype '{file_suffix}' not enabled for file {file}")
 
         # 4. Check filename
         is_bad_name = not check_filename_is_sanatized(file.stem)

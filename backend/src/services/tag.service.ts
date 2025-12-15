@@ -1,10 +1,14 @@
-import { AddTagDto, AddTagsDto } from '@common/api/types/tags/add-tags.dto';
-import { DeleteTagDto } from '@common/api/types/tags/delete-tag.dto';
-import { TagTypeDto, TagTypesDto } from '@common/api/types/tags/tags.dto';
-import MetadataEntity from '@common/entities/metadata/metadata.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import { DataType } from '@common/frontend_shared/enum';
+import {
+    AddTagDto,
+    AddTagsDto,
+    DeleteTagDto,
+    TagTypeDto,
+    TagTypesDto,
+} from '@kleinkram/api-dto';
+import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { DataType } from '@kleinkram/shared';
 import {
     ConflictException,
     Injectable,
@@ -79,6 +83,8 @@ export class TagService {
                     }
                     tag = this.tagRepository.create({
                         tagType,
+
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         value_number: value as number,
                         mission,
                     });
@@ -98,6 +104,7 @@ export class TagService {
                 }
                 tag = this.tagRepository.create({
                     tagType,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_string: value,
                     mission,
                 });
@@ -109,8 +116,10 @@ export class TagService {
                         'Value must be a string',
                     );
                 }
+
                 tag = this.tagRepository.create({
                     tagType,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_location: value,
                     mission,
                 });
@@ -123,6 +132,7 @@ export class TagService {
                     }
                     tag = this.tagRepository.create({
                         tagType,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         value_boolean: value as boolean,
                         mission,
                     });
@@ -141,6 +151,7 @@ export class TagService {
                 }
                 tag = this.tagRepository.create({
                     tagType,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_date: new Date(value),
                     mission,
                 });
@@ -183,7 +194,9 @@ export class TagService {
                     if (isString) {
                         value = Number.parseInt(value as string);
                     }
-                    exsitingTag[tagType.datatype] = value as number;
+
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+                    (exsitingTag as any)[tagType.datatype] = value as number;
                     break;
                 }
                 throw new UnprocessableEntityException(
@@ -198,17 +211,9 @@ export class TagService {
                         'Value must be a string',
                     );
                 }
-                exsitingTag[DataType.STRING] = value;
-                break;
-            }
 
-            case DataType.LOCATION: {
-                if (typeof value !== 'string') {
-                    throw new UnprocessableEntityException(
-                        'Value must be a string',
-                    );
-                }
-                exsitingTag[tagType.datatype] = value;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+                (exsitingTag as any)[tagType.datatype] = value;
                 break;
             }
 
@@ -217,7 +222,9 @@ export class TagService {
                     if (isString) {
                         value = value === 'true';
                     }
-                    exsitingTag[tagType.datatype] = value as boolean;
+
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+                    (exsitingTag as any)[tagType.datatype] = value as boolean;
                     break;
                 }
 
@@ -231,7 +238,9 @@ export class TagService {
                         'Value must be a string',
                     );
                 }
-                exsitingTag[tagType.datatype] = new Date(value);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+                (exsitingTag as any)[tagType.datatype] = new Date(value);
                 break;
             }
 
@@ -294,6 +303,7 @@ export class TagService {
         if (
             type !== undefined &&
             type !== DataType.ANY &&
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (type as any) !== ''
         ) {
             where.datatype = type;

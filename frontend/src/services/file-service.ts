@@ -1,6 +1,3 @@
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FlatMissionDto, MissionDto } from '@api/types/mission/mission.dto';
-import { ProjectDto } from '@api/types/project/base-project.dto';
 import {
     AbortMultipartUploadCommand,
     CompleteMultipartUploadCommand,
@@ -8,23 +5,34 @@ import {
     S3Client,
     UploadPartCommand,
 } from '@aws-sdk/client-s3';
-import { FileType } from '@common/enum';
+import type { TemporaryFileAccessesDto } from '@kleinkram/api-dto/types/file/access.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import {
+    FlatMissionDto,
+    MissionDto,
+} from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
+import { FileType } from '@kleinkram/shared';
+import { isValidFileName } from '@kleinkram/validation/frontend';
 import { QueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
 import pLimit from 'p-limit';
-import { Notify } from 'quasar';
+import { Dialog, Notify } from 'quasar';
 import SparkMD5 from 'spark-md5';
+import RenameFilesDialog from 'src/components/rename-files-dialog.vue';
 import {
     cancelUploads,
+    confirmUpload,
+    importFromDrive as createDrive,
     generateTemporaryCredentials,
 } from 'src/services/mutations/file';
-import { confirmUpload, createDrive } from 'src/services/mutations/queue';
 import { existsFile } from 'src/services/queries/file';
 import { ref, Ref } from 'vue';
 import ENV from '../environment';
 
 const confirmDialog = (event: BeforeUnloadEvent): void => {
     event.preventDefault();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     event.returnValue = ''; // This triggers the generic browser dialog.
 };
 
@@ -68,9 +76,12 @@ export const createFileAction = async (
     });
 };
 
-const VALID_EXTENSIONS = Object.values(FileType)
-    .filter((type) => type !== FileType.ALL)
-    .map((type) => `.${type.toLowerCase()}`);
+const VALID_EXTENSIONS = [
+    ...Object.values(FileType)
+        .filter((type) => type !== FileType.ALL)
+        .map((type) => `.${type.toLowerCase()}`),
+    '.yml',
+];
 
 const VALID_EXTENSION_SET = new Set(VALID_EXTENSIONS);
 
@@ -93,6 +104,10 @@ const hasValidFileSize = (file: File): boolean => {
     return file.size <= maxSizeInBytes && file.size > 0;
 };
 
+const isValidNameFilter = (filename: string): boolean =>
+    isValidFileName(filename);
+
+// eslint-disable-next-line complexity
 async function _createFileAction(
     selectedMission: FlatMissionDto,
     selectedProject: ProjectDto,
@@ -111,16 +126,8 @@ async function _createFileAction(
         return;
     }
 
-    const filenameRegex = /^[a-zA-Z0-9_\-. [\]()äöüÄÖÜ]+$/;
-    const isValidNameFilter = (filename: string): boolean =>
-        filenameRegex.test(filename);
-
     const validFiles = files.filter(
-        (file) =>
-            isValidFileTypeFilter(file.name) &&
-            isValidNameFilter(file.name) &&
-            hasValidFileSize(file) &&
-            file.name.length <= 50,
+        (file) => isValidFileTypeFilter(file.name) && hasValidFileSize(file),
     );
 
     ////////////////////////////////////////////////////////////////////////////
@@ -171,6 +178,7 @@ async function _createFileAction(
 
         Notify.create({
             group: false,
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             caption: `Upload of ${invalidFiles.length} file(s) failed:`,
             message: errorMessages.join('<br>'),
             html: true,
@@ -182,41 +190,103 @@ async function _createFileAction(
         });
     }
 
-    const fileNames = validFiles.map((file) => file.name);
-    const temporaryCredentials = await generateTemporaryCredentials(
-        fileNames,
-        selectedMission.uuid,
-    ).catch((error: unknown) => {
-        console.error('error', error);
+    const fileItems = validFiles.map((file) => ({
+        file,
+        virtualName: file.name,
+    }));
 
-        let errorMessage = '';
+    let temporaryCredentials: TemporaryFileAccessesDto | undefined;
 
-        if (error instanceof Error) {
-            errorMessage = error.message;
-        }
+    while (!temporaryCredentials) {
+        const filenames = fileItems.map((item) => item.virtualName);
+        try {
+            temporaryCredentials = await generateTemporaryCredentials({
+                filenames,
+                missionUUID: selectedMission.uuid,
+            });
+        } catch (error: unknown) {
+            let handled = false;
+            if (error instanceof AxiosError && error.response?.status === 400) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                const responseData = error.response.data;
+                // Check for structured error: { message: 'Validation failed', errors: [...] }
+                if (
+                    responseData &&
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    responseData.message === 'Validation failed' &&
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    Array.isArray(responseData.errors)
+                ) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                    const invalidFilesList = responseData.errors;
+                    try {
+                        const renameMap: Record<string, string> =
+                            await new Promise((resolve, reject) => {
+                                Dialog.create({
+                                    component: RenameFilesDialog,
+                                    componentProps: {
+                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                                        invalidFiles: invalidFilesList,
+                                    },
+                                })
+                                    .onOk(resolve)
+                                    .onCancel(reject)
+                                    .onDismiss(reject);
+                            });
 
-        let message = `Upload failed: ${errorMessage}`;
+                        // Update virtual names
+                        for (const item of fileItems) {
+                            if (renameMap[item.virtualName]) {
+                                item.virtualName =
+                                    renameMap[item.virtualName] ??
+                                    item.virtualName;
+                            }
+                        }
+                        handled = true;
+                        // Continue loop to retry
+                    } catch {
+                        // User cancelled
+                        return;
+                    }
+                }
+            }
 
-        // show special error for 403
-        if (error instanceof AxiosError) {
-            if (error.response?.status === 403) {
-                message = `Upload failed: You do not have the necessary permissions.`;
-            } else if (error.response?.status === 400) {
-                message = `Upload failed: ${error.response.data.message}`;
+            if (!handled) {
+                console.error('error', error);
+                let errorMessage = '';
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                }
+                let message = `Upload failed: ${errorMessage}`;
+
+                if (error instanceof AxiosError) {
+                    if (error.response?.status === 403) {
+                        message = `Upload failed: You do not have the necessary permissions.`;
+                    } else if (error.response?.status === 400) {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                        const responseData = error.response.data;
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        message = responseData.message
+                            ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                              `Upload failed: ${JSON.stringify(responseData.message)}`
+                            : `Upload failed: ${JSON.stringify(responseData)}`;
+                    }
+                }
+
+                Notify.create({
+                    message: message,
+                    color: 'negative',
+                    spinner: false,
+                    position: 'bottom',
+                    timeout: 30_000,
+                    closeBtn: true,
+                });
+                return;
             }
         }
+    }
 
-        // close the notification
-        Notify.create({
-            message: message,
-            color: 'negative',
-            spinner: false,
-            position: 'bottom',
-            timeout: 30_000,
-            closeBtn: true,
-        });
-    });
-
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!temporaryCredentials) {
         return;
     }
@@ -233,12 +303,11 @@ async function _createFileAction(
         timeout: 2000,
     });
 
-    uploadingFiles.value = fileNames as unknown as Record<
-        string,
-        Record<string, string>
-    >;
+    uploadingFiles.value = fileItems.map(
+        (item) => item.virtualName,
+    ) as unknown as Record<string, Record<string, string>>;
 
-    const api = ENV.ENDPOINT;
+    const api = ENV.BACKEND_URL;
     let minioEndpoint = api.replace('api', 'minio');
     if (api === 'http://localhost:3000') {
         minioEndpoint = 'http://localhost:9000';
@@ -252,9 +321,13 @@ async function _createFileAction(
 
     await Promise.all(
         temporaryCredentials.data.map(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             async (accessResp: any, index: number) => {
-                const file = validFiles[index];
+                const fileItem = fileItems[index];
+                if (!fileItem) return;
+                const file = fileItem.file;
 
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 if (file === undefined) {
                     Notify.create({
                         message: `Upload of File failed`,
@@ -266,6 +339,7 @@ async function _createFileAction(
                     return;
                 }
 
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 const accessCredentials = accessResp.accessCredentials;
                 if (accessCredentials === null) {
                     Notify.create({
@@ -283,26 +357,33 @@ async function _createFileAction(
                     forcePathStyle: true,
                     region: 'us-east-1',
                     credentials: {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                         accessKeyId: accessCredentials.accessKey,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                         secretAccessKey: accessCredentials.secretKey,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                         sessionToken: accessCredentials.sessionToken,
                     },
                 });
 
                 const newFileUpload = {
-                    name: file.name,
+                    name: fileItem.virtualName,
                     size: file.size,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     fileUUID: accessResp.fileUUID,
                     missionUuid: selectedMission.uuid,
                 } as unknown as FileWithTopicDto;
                 const newFileUploadReference = ref(newFileUpload);
                 // @ts-ignore
                 injectedFiles.value.push(newFileUploadReference);
+
                 return limit(async () => {
                     try {
                         const md5Hash = await uploadFileMultipart(
                             file,
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.bucket,
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.fileUUID,
                             minioClient,
                             newFileUploadReference,
@@ -320,6 +401,7 @@ async function _createFileAction(
                         }
 
                         return await confirmUpload(
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.fileUUID,
                             md5Hash,
                         );
@@ -374,41 +456,44 @@ async function _createFileAction(
 export async function driveUpload(
     selectedMission: MissionDto | undefined,
     driveUrl: Ref<string>,
-): Promise<void> {
+): Promise<boolean> {
     // abort if no mission is selected
-    if (selectedMission === undefined) return;
+    if (selectedMission === undefined) return false;
 
-    const notification = Notify.create({
-        group: false,
-        message: 'Processing files...',
-        color: 'positive',
-        spinner: true,
-        position: 'bottom',
-        timeout: 0,
-    });
-
-    await createDrive(selectedMission.uuid, driveUrl.value)
-        .then(() => {
-            notification({
-                message: `Files for Mission ${selectedMission.name} are now importing...`,
-                color: 'positive',
-                spinner: false,
-                timeout: 5000,
-            });
-        })
+    return await createDrive(selectedMission.uuid, driveUrl.value)
+        .then(() => true)
         .catch((error: unknown) => {
             let errorMessage = '';
             if (error instanceof Error) {
                 errorMessage = error.message;
             }
 
-            notification({
-                message: `Upload of Files for Mission ${selectedMission.name} failed: ${errorMessage}`,
+            if (error instanceof AxiosError && error.response?.data) {
+                const serverMessage = (
+                    error.response.data as { message?: string }
+                ).message;
+                if (serverMessage) {
+                    errorMessage = serverMessage;
+                    if (
+                        errorMessage.includes(
+                            'Google Drive Folder ingestion requires',
+                        )
+                    ) {
+                        errorMessage =
+                            'Uploading from Google Drive Folder requires a service account';
+                    }
+                }
+            }
+
+            Notify.create({
+                message: `Upload failed: ${errorMessage}`,
                 color: 'negative',
                 spinner: false,
                 timeout: 0,
                 closeBtn: true,
+                html: true,
             });
+            return false;
         });
 }
 
@@ -487,6 +572,7 @@ async function uploadFileMultipart(
                 MultipartUpload: { Parts: parts },
             });
         const finalMD5 = btoa(spark.end(true));
+        // eslint-disable-next-line no-console
         console.log('Final MD5:', finalMD5);
         await minioClient.send(completeMultipartUploadCommand);
         return finalMD5;
@@ -504,13 +590,16 @@ async function uploadFileMultipart(
                 },
             );
             await minioClient.send(abortMultipartUploadCommand);
+            // eslint-disable-next-line no-console
             console.log('Multipart upload aborted.');
         }
 
         await cancelUploads(
             // @ts-ignore
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             [newFileUpload.value.fileUUID],
             // @ts-ignore
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             newFileUpload.value.missionUuid ?? '',
         );
     }

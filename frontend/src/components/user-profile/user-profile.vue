@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserRole } from '@common/enum';
+import { UserRole } from '@kleinkram/shared';
 import ExplorerPageProjectTable from 'components/explorer-page/explorer-page-project-table.vue';
 import TitleSection from 'components/title-section.vue';
 import AdminSettings from 'components/user-profile/admin-settings.vue';
@@ -78,5 +78,6 @@ const handler = useHandler();
 
 // we need to set the creator.uuid search param in order to fetch the correct projects
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 handler.value.searchParams = { 'creator.uuid': user.value?.uuid ?? '' };
 </script>

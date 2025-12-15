@@ -30,13 +30,13 @@ These default groups can be configured in the configuration file: `backend/acces
 {
     "emails": [
         {
-            "email": "leggedrobotics.com",
+            "email": "kleinkram.dev",
             "access_groups": ["00000000-0000-0000-0000-000000000000"]
         }
     ],
     "access_groups": [
         {
-            "name": "Leggedrobotics",
+            "name": "Kleinkram Developers",
             "uuid": "00000000-0000-0000-0000-000000000000",
             // read only
             "rights": 0

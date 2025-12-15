@@ -1,5 +1,5 @@
-import FileEntity from '@common/entities/file/file.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 
 export interface FileProcessingContext {
     workDirectory: string;

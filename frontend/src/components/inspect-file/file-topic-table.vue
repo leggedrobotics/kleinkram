@@ -1,16 +1,25 @@
 <template>
     <div class="file-topic-table">
         <div class="flex justify-between items-center q-mb-md">
-            <h2 class="text-h4 q-my-none">Messages</h2>
-            <q-input
-                v-model="search"
-                dense
-                placeholder="Search topics..."
-                outlined
-                class="bg-white"
-            >
-                <template #append><q-icon name="sym_o_search" /></template>
-            </q-input>
+            <h2 class="text-h4 q-my-none flex items-center">
+                Messages
+                <q-badge
+                    color="orange-7"
+                    text-color="white"
+                    label="BETA"
+                    class="text-weight-bold cursor-help q-ml-sm"
+                    style="
+                        font-size: 10px;
+                        padding: 2px 6px;
+                        vertical-align: middle;
+                    "
+                >
+                    <q-tooltip>
+                        Preview functionality is currently in beta.
+                    </q-tooltip>
+                </q-badge>
+            </h2>
+            <app-search-bar v-model="search" placeholder="Search topics..." />
         </div>
 
         <q-table
@@ -25,8 +34,8 @@
             <template #body="props">
                 <q-tr
                     :props="props"
-                    @click="() => (props.expand = !props.expand)"
                     class="cursor-pointer hover:bg-grey-1"
+                    @click="() => toggleExpand(props)"
                 >
                     <q-td
                         v-for="col in props.cols"
@@ -44,9 +53,7 @@
                                         ? 'sym_o_expand_less'
                                         : 'sym_o_expand_more'
                                 "
-                                @click.stop="
-                                    () => (props.expand = !props.expand)
-                                "
+                                @click.stop="() => toggleExpand(props)"
                             />
                         </template>
 
@@ -56,7 +63,7 @@
                     </q-td>
                 </q-tr>
 
-                <q-tr v-show="props.expand" :props="props">
+                <q-tr v-if="props.expand" :props="props">
                     <q-td colspan="100%" class="q-pa-none">
                         <div class="q-pa-md bg-grey-1">
                             <MessageViewer
@@ -72,6 +79,9 @@
                                 :protocol="props.row.protocol"
                                 @load-required="() => loadSmart(props.row)"
                                 @load-more="() => loadMore(props.row.name)"
+                                @pause-preview="
+                                    () => emit('pause-preview', props.row.name)
+                                "
                             />
                         </div>
                     </q-td>
@@ -82,28 +92,35 @@
 </template>
 
 <script setup lang="ts">
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import type { QTableColumn } from 'quasar';
 import { computed, ref } from 'vue';
 import { detectPreviewType, PreviewType } from '../../services/message-factory';
 import MessageViewer from './message-viewer.vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     topics: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     previews: Record<string, any[]>;
     loadingState: Record<string, boolean>;
     topicErrors: Record<string, string | null>;
     isLoading: boolean;
 }>();
 
-const emit = defineEmits(['load-preview']);
+const emit = defineEmits(['load-preview', 'pause-preview', 'resume-preview']);
 const search = ref('');
 
 const filteredTopics = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     if (!search.value) return properties.topics;
     const s = search.value.toLowerCase();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return properties.topics.filter(
         (t) =>
-            t.name.toLowerCase().includes(s) ||
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            t.name.toLowerCase().includes(s) ??
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             t.type.toLowerCase().includes(s),
     );
 });
@@ -146,49 +163,99 @@ const columns: QTableColumn[] = [
     },
 ];
 
-// Directly load specific count (Base function)
-const loadData = (topic: string, count: number): void => {
-    emit('load-preview', topic, count);
-};
-
-// In file-topic-table.vue > script > loadSmart
-
-const loadSmart = (row: any): void => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getSmartLimit = (row: any): number => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     const type = detectPreviewType(row.type);
 
+    // 1. Full Load (Visual Plots / Images)
+    if (type === PreviewType.CAMERA_INFO) {
+        return 1;
+    }
     // 1. Full Load (Visual Plots / Images)
     if (
         type === PreviewType.IMAGE ||
         type === PreviewType.TWIST ||
-        type === PreviewType.TEMPERATURE
+        type === PreviewType.TEMPERATURE ||
+        type === PreviewType.IMU ||
+        type === PreviewType.STATISTICS ||
+        type === PreviewType.ODOMETRY ||
+        type === PreviewType.POSE_STAMPED ||
+        type === PreviewType.PATH ||
+        type === PreviewType.TRANSFORM_STAMPED
     ) {
-        loadData(row.name, row.nrMessages);
-        return;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+        return row.nrMessages;
     }
 
     // 2. Medium Load (Logs)
-    if (
-        type === PreviewType.ROS_LOG ||
-        type === PreviewType.TIME_REFERENCE ||
-        type === PreviewType.STRING
-    ) {
-        loadData(row.name, 100);
-        return;
+    if (type === PreviewType.ROS_LOG || type === PreviewType.STRING) {
+        return 100;
+    }
+
+    // 3. Light Load (TimeReference)
+    if (type === PreviewType.TIME_REFERENCE) {
+        return 20;
     }
 
     // 3. Strict Load (Heavy Binary)
-    if (type === PreviewType.POINT_CLOUD) {
-        loadData(row.name, 1);
-        return;
+    if (type === PreviewType.POINT_CLOUD || type === PreviewType.GRID_MAP) {
+        return 1;
     }
 
     // 4. Default
-    loadData(row.name, 5);
+    return 5;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toggleExpand = (props: any): void => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    props.expand = !props.expand;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (props.expand) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        const type = detectPreviewType(props.row.type);
+        const hasData =
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-condition
+            properties.previews?.[props.row.name] &&
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            (properties.previews[props.row.name]?.length ?? 0) > 0;
+
+        // Only resume fetching for video/image topics (buffering)
+        // For others, only fetch if no data exists (initial load)
+        if (type === PreviewType.IMAGE) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            const limit = getSmartLimit(props.row);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            emit('resume-preview', props.row.name, limit);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            if (!hasData) loadSmart(props.row);
+        } else if (!hasData) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            loadSmart(props.row);
+        }
+    } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        emit('pause-preview', props.row.name);
+    }
+};
+
+// Directly load specific count (Base function)
+const loadData = (topic: string, count: number, append = false): void => {
+    emit('load-preview', topic, { limit: count, append });
+};
+
+// In file-topic-table.vue > script > loadSmart
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const loadSmart = (row: any): void => {
+    const limit = getSmartLimit(row);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+    loadData(row.name, limit);
 };
 
 // Incremental Load (Load More button)
 const loadMore = (topicName: string): void => {
-    const currentCount = properties.previews[topicName]?.length || 0;
-    loadData(topicName, currentCount + 20);
+    loadData(topicName, 20, true);
 };
 </script>

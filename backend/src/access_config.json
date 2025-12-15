@@ -1,0 +1,15 @@
+{
+    "emails": [
+        {
+            "email": "kleinkram.dev",
+            "access_groups": ["00000000-0000-0000-0000-000000000000"]
+        }
+    ],
+    "access_groups": [
+        {
+            "name": "Kleinkram Developers",
+            "uuid": "00000000-0000-0000-0000-000000000000",
+            "rights": 10
+        }
+    ]
+}

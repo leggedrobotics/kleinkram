@@ -1,0 +1,97 @@
+name: Test The Application
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened]
+        branches:
+            - main
+            - dev
+
+jobs:
+    test-api:
+        runs-on: [self-hosted, linux]
+
+        permissions:
+            contents: read
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  run_install: false
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: '22'
+                  cache: 'pnpm'
+
+            - name: install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build workspace packages
+              run: pnpm -r run build
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.10'
+
+            - name: Generate test data
+              run: |
+                  pip install rosbags
+                  python3 cli/tests/generate_test_data.py
+
+            - name: build_stack
+              run: docker compose -f docker-compose.testing.yml build
+              env:
+                  BACKEND_URL: 'http://localhost:3000'
+                  GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+                  GIT_COMMIT: ${{ github.sha }}
+
+            - name: clear previous volumes
+              run: docker compose -f docker-compose.testing.yml down -v
+
+            - name: Pre-generate endpoints
+              working-directory: ./backend
+              run: |
+                  mkdir -p .endpoints
+                  npm run gen:docs -- .endpoints
+
+            - name: launch_stack
+              working-directory: ./backend
+              run: |
+                  docker compose -f ../docker-compose.testing.yml up -d
+                  SECONDS=0
+                  TIMEOUT=180
+                  # wait for the api to be reachable
+                  while ! curl -s http://localhost:3000/ > /dev/null; do
+                    if [ $SECONDS -ge $TIMEOUT ]; then
+                        echo "Timeout reached: API not reachable"
+                        docker logs kleinkram-api-server-test
+                        docker compose -f ../docker-compose.testing.yml down
+                        exit 1
+                    fi
+                    sleep 1
+                    echo "waiting for API to be reachable..."
+                  done
+
+                  echo "API is up. Running tests..."
+
+                  # This will now cause the step to fail immediately if tests fail.
+                  pnpm test --ci
+
+                  echo "Tests passed successfully."
+
+            - name: Clean up
+              if: always()
+              run: echo "Cleanup done"
+
+            - name: Stop Docker stack
+              if: always()
+              run: docker compose -f docker-compose.testing.yml down
+
+            - name: Delete Docker volumes
+              if: always()
+              run: docker volume prune -f

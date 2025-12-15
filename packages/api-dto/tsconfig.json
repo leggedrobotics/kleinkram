@@ -1,0 +1,20 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "rootDir": "src",
+        "outDir": "dist",
+        "paths": {
+            "@api-dto/*": ["src/types/*"]
+        }
+    },
+    "include": ["src/**/*"],
+    "references": [
+        {
+            "path": "../shared"
+        },
+        {
+            "path": "../validation"
+        }
+    ]
+}

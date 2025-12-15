@@ -1,5 +1,6 @@
-import env from '@common/environment';
-import { Providers } from '@common/frontend_shared/enum';
+import { AuthService } from '@/services/auth.service';
+import env from '@kleinkram/backend-common/environment';
+import { Providers } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
@@ -9,7 +10,6 @@ import {
     VerifyCallback,
 } from 'passport-oauth2';
 import logger from '../../logger';
-import { AuthService } from '../../services/auth.service';
 
 /**
  *
@@ -30,21 +30,30 @@ export class FakeOauthStrategy extends PassportStrategy(
             // this is used for local development and testing purposes only
             clientID: 'some-random-string-it-does-not-matter',
             clientSecret: 'some-random-string-it-does-not-matter',
-            callbackURL: `${env.ENDPOINT}/auth/fake-oauth/callback`,
+            callbackURL: `${env.BACKEND_URL}/auth/fake-oauth/callback`,
             scope: [],
         } as StrategyOptions);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     authenticate(request: e.Request, options?: any) {
-        options.state = request.query['state'];
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        options.state = request.query.state;
+        // Pass the user parameter to the OAuth provider for auto-login
+        if (request.query.user) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            options.user = request.query.user;
+        }
         super.authenticate(request, options);
     }
 
     async validate(
         accessToken: string,
         refreshToken: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         profile: any,
         callback: VerifyCallback,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> {
         // fetch profile from http://fake-oauth:5000/oauth/profile
 
@@ -57,12 +66,14 @@ export class FakeOauthStrategy extends PassportStrategy(
             },
         );
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const fetchedProfile = await fetchedProfileResponse.json();
         const user =
             await this.authService.validateAndCreateUserByFakeOAuth(
                 fetchedProfile,
             );
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (user) {
             logger.debug(`Login successful for ${user.uuid}`);
             callback(null, user);

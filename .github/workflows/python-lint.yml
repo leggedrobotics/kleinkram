@@ -1,0 +1,20 @@
+name: Lint
+
+on:
+    push:
+        branches:
+            - dev
+        paths:
+            - 'cli/**'
+
+jobs:
+    python-lint:
+        runs-on: [self-hosted, linux]
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install and run Black
+              run: |
+                  sudo apt update
+                  sudo apt install -y python3-pip
+                  python3 -m pip install black --break-system-packages
+                  black --check .

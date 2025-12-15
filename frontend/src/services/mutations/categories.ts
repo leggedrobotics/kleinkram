@@ -5,6 +5,7 @@ export const createCategory = async (name: string, projectUUID: string) => {
         name,
         projectUUID,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -18,5 +19,6 @@ export const addManyCategories = async (
         files,
         categories,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

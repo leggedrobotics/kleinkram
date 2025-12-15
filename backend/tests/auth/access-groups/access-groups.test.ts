@@ -16,7 +16,8 @@ describe('Verify Access Groups External', () => {
     });
 
     // user: external
-    test('Non "kleinkram.leggedrobotics.com" email is not added to default group', async () => {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    test('Non "kleinkram.dev" email is not added to default group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
 
@@ -79,11 +80,12 @@ describe('Verify Access Groups Internal', () => {
     });
 
     // user: internal
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if leggedrobotics email is added to default group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
 
-        // const mockEmail = 'internal-user@kleinkram.leggedrobotics.com';
+        // const mockEmail = 'internal-user@kleinkram.dev';
         // const internalUuid = await mockDatabaseUser(mockEmail);
 
         // const accessGroups = await getAllAccessGroups();
@@ -107,7 +109,7 @@ describe('Verify Access Groups Internal', () => {
         //     select: ['email'],
         // });
 
-        // expect(user.email).toBe('internal-user@kleinkram.leggedrobotics.com');
+        // expect(user.email).toBe('internal-user@kleinkram.dev');
     });
 
     test('if primary group cannot be deleted', () => {
@@ -242,6 +244,7 @@ describe('Verify Access Groups Internal User Access', () => {
         await database.destroy();
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if a user with create rights can generate a access group', async () => {
         // TODO: implement this test
         expect(true).toBe(true);

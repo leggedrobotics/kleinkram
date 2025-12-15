@@ -1,12 +1,12 @@
-import { TopicNamesDto, TopicsDto } from '@common/api/types/topic.dto';
-import TopicEntity from '@common/entities/topic/topic.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UserRole } from '@common/frontend_shared/enum';
+import { addAccessConstraints } from '@/endpoints/auth/auth-helper';
+import { topicEntityToDto } from '@/serialization';
+import { TopicNamesDto, TopicsDto } from '@kleinkram/api-dto';
+import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
-import { topicEntityToDto } from '../serialization';
 
 @Injectable()
 export class TopicService {
@@ -17,7 +17,7 @@ export class TopicService {
         private userRepository: Repository<UserEntity>,
     ) {}
 
-    async findAllNames(userUuid): Promise<TopicNamesDto> {
+    async findAllNames(userUuid: string): Promise<TopicNamesDto> {
         const baseQuery = this.topicRepository
             .createQueryBuilder('topic')
             .select('DISTINCT topic.name', 'name')
@@ -43,6 +43,8 @@ export class TopicService {
 
         return {
             count,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
             data: topics.map((topic) => topic.name),
             take: count,
             skip: 0,
@@ -81,6 +83,7 @@ export class TopicService {
         ).getManyAndCount();
 
         return {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             data: topics.map((element) => topicEntityToDto(element)),
             count,
             take,

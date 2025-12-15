@@ -27,7 +27,7 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';

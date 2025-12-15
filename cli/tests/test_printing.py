@@ -48,9 +48,7 @@ def test_parse_metadata_value():
     mv = MetadataValue(type_=MetadataValueType.BOOLEAN, value="false")
     assert parse_metadata_value(mv) is False  # noqa
     mv = MetadataValue(type_=MetadataValueType.DATE, value="2021-01-01T00:00:00Z")
-    assert parse_metadata_value(mv) == datetime.datetime(
-        2021, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc
-    )
+    assert parse_metadata_value(mv) == datetime.datetime(2021, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
 
 
 @pytest.mark.skip

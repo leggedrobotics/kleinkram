@@ -17,12 +17,14 @@ describe('Verify Project Level Access', () => {
 
     // define tests
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if viewer of a project cannot add any tag types', async () => {
         // TODO: implement this test
 
         expect(true).toBe(true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if viewer of a project cannot add any tag types', async () => {
         // TODO: implement this test
         expect(true).toBe(true);
@@ -55,6 +57,7 @@ describe('Verify tags/metadata type generation', () => {
         await database.destroy();
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if internal user can add string tags/metadata', async () => {
         // TODO: finish test
         expect(true).toBe(true);
@@ -75,6 +78,7 @@ describe('Verify tags/metadata type generation', () => {
         // });
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if internal user can add number tags/metadata', async () => {
         // TODO: finish test
         expect(true).toBe(true);
@@ -89,6 +93,7 @@ describe('Verify tags/metadata type generation', () => {
         // );
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if internal user can add boolean tags/metadata', async () => {
         // TODO: finish test
         expect(true).toBe(true);
@@ -103,6 +108,7 @@ describe('Verify tags/metadata type generation', () => {
         // );
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if internal user can add date tags/metadata', async () => {
         // TODO: finish test
         expect(true).toBe(true);
@@ -115,6 +121,7 @@ describe('Verify tags/metadata type generation', () => {
         // );
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if internal user can add location tags/metadata', async () => {
         // TODO: finish test
         expect(true).toBe(true);
@@ -127,6 +134,7 @@ describe('Verify tags/metadata type generation', () => {
         // );
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if internal user can add link tags/metadata', async () => {
         // TODO: finish test
         expect(true).toBe(true);
@@ -139,6 +147,7 @@ describe('Verify tags/metadata type generation', () => {
         // );
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if internal user can add any tags/metadata', async () => {
         // TODO: finish test
         expect(true).toBe(true);
@@ -151,6 +160,7 @@ describe('Verify tags/metadata type generation', () => {
         // );
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     test('if internal user can not create metadata with the same name AND datatype', async () => {
         // TODO: finish test
         expect(true).toBe(true);

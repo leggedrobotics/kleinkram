@@ -1,21 +1,28 @@
-import { AccessGroupsDto } from '@common/api/types/access-control/access-groups.dto';
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
+    groupMembershipEntityToDto,
+    projectAccessEntityToDto,
+    userEntityToDto,
+} from '@/serialization';
+import {
+    AccessGroupDto,
+    AccessGroupsDto,
+    GroupMembershipDto,
     ProjectAccessDto,
     ProjectAccessListDto,
-} from '@common/api/types/access-control/project-access.dto';
-import { ProjectWithAccessRightsDto } from '@common/api/types/project/project-access.dto';
-import { ProjectWithMissionsDto } from '@common/api/types/project/project-with-missions.dto';
-import { AccessGroupDto, GroupMembershipDto } from '@common/api/types/user.dto';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
-import ProjectAccessEntity from '@common/entities/auth/project-access.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
+    ProjectWithAccessRightsDto,
+    ProjectWithMissionsDto,
+} from '@kleinkram/api-dto';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -26,13 +33,7 @@ import {
     Not,
     Repository,
 } from 'typeorm';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import logger from '../logger';
-import {
-    groupMembershipEntityToDto,
-    projectAccessEntityToDto,
-    userEntityToDto,
-} from '../serialization';
 
 @Injectable()
 export class AccessService {
@@ -165,6 +166,7 @@ export class AccessService {
                 rights: rights,
             })
             .andWhere('projectAccesses.useruuid = :user_uuid', {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 user_uuid: auth.user.uuid,
             })
             .getExists();
@@ -232,6 +234,7 @@ export class AccessService {
             });
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!personalAccessGroup) {
             throw new ConflictException('User has no personal access group');
         }

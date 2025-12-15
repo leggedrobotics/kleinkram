@@ -1,5 +1,5 @@
 <template>
-    <div :class="classObject" @click="openAddUser">
+    <div :class="classObject" style="height: 100%" @click="openAddUser">
         <slot />
         <q-tooltip v-if="!canModify">
             You don't have permission to modify this group.
@@ -8,8 +8,8 @@
 </template>
 
 <script setup lang="ts">
-import { AccessGroupDto } from '@api/types/user.dto';
-import { UserRole } from '@common/enum';
+import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import { UserRole } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
 import AddUserToAccessGroupDialog from 'src/dialogs/add-user-access-group-dialog.vue';
 import { useUser } from 'src/hooks/query-hooks';
@@ -33,8 +33,10 @@ const canModify = computed(() => {
 const classObject = reactive({
     disabled: !canModify.value,
 
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'cursor-pointer': !canModify.value,
 
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'cursor-not-allowed': canModify.value,
 });
 

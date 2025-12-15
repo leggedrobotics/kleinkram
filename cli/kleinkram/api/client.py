@@ -39,15 +39,11 @@ ListData = Sequence[Data]
 QueryParams = Mapping[str, Union[Data, NestedData, ListData]]
 
 
-def _convert_nested_data_query_params_values(
-    key: str, values: NestedData
-) -> List[Tuple[str, Data]]:
+def _convert_nested_data_query_params_values(key: str, values: NestedData) -> List[Tuple[str, Data]]:
     return [(f"{key}[{k}]", v) for k, v in values.items()]
 
 
-def _convert_list_data_query_params_values(
-    key: str, values: ListData
-) -> List[Tuple[str, Data]]:
+def _convert_list_data_query_params_values(key: str, values: ListData) -> List[Tuple[str, Data]]:
     return [(key, value) for value in values]
 
 
@@ -71,9 +67,7 @@ class AuthenticatedClient(httpx.Client):
     _config: Config
     _config_lock: Lock
 
-    def __init__(
-        self, config_path: Path = CONFIG_PATH, *args: Any, **kwargs: Any
-    ) -> None:
+    def __init__(self, config_path: Path = CONFIG_PATH, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self._config = get_config(path=config_path)
@@ -116,9 +110,7 @@ class AuthenticatedClient(httpx.Client):
 
         self.cookies.set(COOKIE_AUTH_TOKEN, new_access_token)
 
-    def _send_request_with_kleinkram_headers(
-        self, *args: Any, **kwargs: Any
-    ) -> httpx.Response:
+    def _send_request_with_kleinkram_headers(self, *args: Any, **kwargs: Any) -> httpx.Response:
         # add the cli version to the headers
         headers = kwargs.get("headers") or {}
         headers.setdefault(CLI_VERSION_HEADER, __version__)
@@ -150,9 +142,7 @@ class AuthenticatedClient(httpx.Client):
         logger.info(f"requesting {method} {full_url}")
 
         httpx_params = _convert_query_params_to_httpx_format(params or {})
-        response = self._send_request_with_kleinkram_headers(
-            method, full_url, params=httpx_params, *args, **kwargs
-        )
+        response = self._send_request_with_kleinkram_headers(method, full_url, params=httpx_params, *args, **kwargs)
 
         logger.info(f"got response {response}")
 
@@ -170,9 +160,7 @@ class AuthenticatedClient(httpx.Client):
                 raise NotAuthenticated
 
             logger.info(f"retrying request {method} {full_url}")
-            response = self._send_request_with_kleinkram_headers(
-                method, full_url, params=httpx_params, *args, **kwargs
-            )
+            response = self._send_request_with_kleinkram_headers(method, full_url, params=httpx_params, *args, **kwargs)
             logger.info(f"got response {response}")
             return response
         else:

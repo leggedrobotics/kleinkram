@@ -5,6 +5,7 @@
             'cursor-pointer': !canModify,
             'cursor-not-allowed': !canModify,
         }"
+        style="height: 100%"
         @click="editMission"
     >
         <slot />
@@ -15,20 +16,23 @@
 </template>
 
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import { useQuasar } from 'quasar';
 import EditMissionDialog from 'src/dialogs/modify-mission-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
 const $q = useQuasar();
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const { mission } = defineProps<{
     mission: MissionWithFilesDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     return canModifyMission(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         mission.uuid,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         mission.project.uuid,
         permissions.value,
     );
@@ -39,6 +43,7 @@ const editMission = (): void => {
     $q.dialog({
         component: EditMissionDialog,
         componentProps: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             mission: mission,
         },
         persistent: true,

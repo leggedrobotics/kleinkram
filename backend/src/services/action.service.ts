@@ -1,74 +1,53 @@
+import { addAccessConstraints } from '@/endpoints/auth/auth-helper';
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
+import { actionEntityToDto } from '@/serialization/action';
 import {
-    ActionTemplateDto,
-    ActionTemplatesDto,
-} from '@common/api/types/actions/action-template.dto';
-import { ActionDto, ActionsDto } from '@common/api/types/actions/action.dto';
-import {
-    CreateTemplateDto,
-    UpdateTemplateDto,
-} from '@common/api/types/create-template.dto';
-import {
+    ActionDto,
+    ActionLogsDto,
+    ActionQuery,
+    ActionsDto,
     ActionSubmitResponseDto,
+    PaginatedQueryDto,
     SubmitActionDto,
-} from '@common/api/types/submit-action-response.dto';
-import { SubmitActionMulti } from '@common/api/types/submit-action.dto';
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import environment from '@common/environment';
-import {
-    ActionState,
-    ArtifactState,
-    UserRole,
-} from '@common/frontend_shared/enum';
-import { ActionDispatcherService } from '@common/modules/action-dispatcher/action-dispatcher.service';
-import { StorageService } from '@common/modules/storage/storage.service';
-import { ConflictException, Injectable } from '@nestjs/common';
+    SubmitActionMulti,
+} from '@kleinkram/api-dto';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import environment from '@kleinkram/backend-common/environment';
+import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { ArtifactState, UserRole } from '@kleinkram/shared';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     Brackets,
     EntityManager,
-    FindOptionsWhere,
-    ILike,
-    QueryFailedError,
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 import logger from '../logger';
-import { actionEntityToDto, actionTemplateEntityToDto } from '../serialization';
 
 @Injectable()
 export class ActionService {
-    private readonly DOCKER_NAMESPACE =
-        process.env['VITE_DOCKER_HUB_NAMESPACE'];
-
     constructor(
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
-        @InjectRepository(ActionTemplateEntity)
-        private actionTemplateRepository: Repository<ActionTemplateEntity>,
-        @InjectRepository(ApikeyEntity)
-        private apikeyRepository: Repository<ApikeyEntity>,
+        @InjectRepository(ApiKeyEntity)
+        private apikeyRepository: Repository<ApiKeyEntity>,
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
         private readonly actionDispatcher: ActionDispatcherService,
         private readonly storageService: StorageService,
     ) {}
 
-    /**
-     * Refactored submit: Delegates lifecycle management to the Dispatcher.
-     */
     async submit(
         data: SubmitActionDto,
         auth: AuthHeader,
     ): Promise<ActionSubmitResponseDto> {
-        // Resolve Entities (Dispatcher requires Entities, not UUIDs)
         const creator = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
         });
@@ -81,17 +60,10 @@ export class ActionService {
             data.templateUUID,
             mission,
             creator,
-            {}, // DTO doesn't currently support dynamic params, passing empty
+            {},
         );
 
         return { actionUUID };
-    }
-
-    async delete(actionUUID: string): Promise<boolean> {
-        // Note: If the action is running, you might want to call actionDispatcher.stopAction(actionUUID) first.
-        // For now, maintaining existing behavior of entity deletion.
-        await this.actionRepository.delete(actionUUID);
-        return true;
     }
 
     async multiSubmit(
@@ -108,136 +80,61 @@ export class ActionService {
         );
     }
 
-    async createTemplate(
-        data: CreateTemplateDto,
-        auth: AuthHeader,
-    ): Promise<ActionTemplateDto> {
-        this.validateDockerNamespace(data.dockerImage);
-
-        const template = this.actionTemplateRepository.create({
-            ...data,
-            creator: { uuid: auth.user.uuid },
-            image_name: data.dockerImage,
-            command: data.command ?? '',
-            entrypoint: data.entrypoint ?? '',
-        });
-
-        try {
-            const saved = await this.actionTemplateRepository.save(template);
-            return actionTemplateEntityToDto(saved);
-        } catch (error) {
-            // Postgres Error 23505 is Unique Violation
-            if (
-                error instanceof QueryFailedError &&
-                error.driverError?.code === '23505'
-            ) {
-                throw new ConflictException(
-                    'Template with this name already exists',
-                );
-            }
-            throw error;
-        }
-    }
-
-    async createNewVersion(
-        data: UpdateTemplateDto,
-        auth: AuthHeader,
-    ): Promise<ActionTemplateDto> {
-        const currentTemplate =
-            await this.actionTemplateRepository.findOneOrFail({
-                where: { uuid: data.uuid },
-            });
-
-        if (this.isMetadataUpdateOnly(currentTemplate, data)) {
-            currentTemplate.searchable = true;
-            return actionTemplateEntityToDto(
-                await this.actionTemplateRepository.save(currentTemplate),
-            );
-        }
-
-        const creator = await this.userRepository.findOneOrFail({
-            where: { uuid: auth.user.uuid },
-        });
-        const nextVersion = await this.calculateNextVersion(
-            data.name,
-            data.searchable,
-        );
-
-        const newTemplate = this.actionTemplateRepository.create({
-            ...data,
-            image_name: data.dockerImage,
-            creator,
-            version: nextVersion,
-            command: data.command ?? '',
-            entrypoint: data.entrypoint ?? '',
-        });
-
-        return actionTemplateEntityToDto(
-            await this.actionTemplateRepository.save(newTemplate),
-        );
-    }
-
-    async listTemplates(
-        skip: number,
-        take: number,
-        search: string,
-    ): Promise<ActionTemplatesDto> {
-        const where: FindOptionsWhere<ActionTemplateEntity> = {
-            searchable: true,
-        };
-        if (search !== '') {
-            where.name = ILike(`%${search}%`);
-        }
-        const [templates, count] =
-            await this.actionTemplateRepository.findAndCount({
-                where,
-                skip,
-                take,
-                relations: ['creator'],
-            });
-
-        return {
-            count,
-            data: templates.map((element) =>
-                actionTemplateEntityToDto(element),
-            ),
+    async findAll(query: ActionQuery, auth: AuthHeader): Promise<ActionsDto> {
+        const {
             skip,
             take,
-        };
-    }
-
-    async listActions(
-        projectUuid: string | undefined,
-        missionUuid: string | undefined,
-        userUUID: string,
-        skip: number,
-        take: number,
-        sortBy: string,
-        sortDirection: 'ASC' | 'DESC',
-        search: string,
-    ): Promise<ActionsDto> {
+            sortBy,
+            sortDirection,
+            search,
+            projectUuid,
+            missionUuid,
+            states,
+        } = query;
         const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
+            where: { uuid: auth.user.uuid },
         });
         const isAdmin = user.role === UserRole.ADMIN;
 
         const qb = this.buildBaseActionQuery();
 
-        // Apply Filters
+        // Standard Filters
         if (projectUuid)
             qb.andWhere('project.uuid = :projectUuid', { projectUuid });
         if (missionUuid)
             qb.andWhere('mission.uuid = :missionUuid', { missionUuid });
         if (search) this.applySearchFilter(qb, search);
 
-        // Apply Sorting
-        if (sortBy && ['ASC', 'DESC'].includes(sortDirection)) {
-            qb.orderBy(`action.${sortBy}`, sortDirection);
+        // State Filter (Replaces /running endpoint)
+        if (states) {
+            qb.andWhere('action.state IN (:...states)', { states });
         }
 
-        // Apply Security & Pagination
+        if (query.templateName) {
+            qb.andWhere('template.name ILIKE :templateName', {
+                templateName: `%${query.templateName}%`,
+            });
+        }
+
+        // Sorting
+        if (
+            sortBy &&
+            sortDirection &&
+            ['ASC', 'DESC'].includes(sortDirection)
+        ) {
+            if (sortBy.includes('.')) {
+                qb.orderBy(sortBy, sortDirection as 'ASC' | 'DESC');
+            } else {
+                qb.orderBy(`action.${sortBy}`, sortDirection as 'ASC' | 'DESC');
+            }
+        } else {
+            // Default sort: newest first
+            qb.orderBy('action.createdAt', 'DESC');
+        }
+
+        // Security
         if (!isAdmin) {
-            addAccessConstraints(qb, userUUID);
+            addAccessConstraints(qb, auth.user.uuid);
         }
 
         const [actions, count] = await qb
@@ -247,8 +144,8 @@ export class ActionService {
 
         return {
             count,
-            skip,
-            take,
+            skip: skip ?? 0,
+            take: take ?? count,
             data: actions.map((element) => actionEntityToDto(element)),
         };
     }
@@ -261,6 +158,7 @@ export class ActionService {
                 'mission.project',
                 'creator',
                 'template',
+                'template.creator',
                 'worker',
             ],
         });
@@ -277,47 +175,40 @@ export class ActionService {
         return dto;
     }
 
-    async runningActions(
-        userUUID: string,
-        skip: number,
-        take: number,
-    ): Promise<ActionsDto> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
+    async getLogs(
+        actionUuid: string,
+        query: PaginatedQueryDto,
+    ): Promise<ActionLogsDto> {
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: actionUuid },
+            select: ['uuid', 'logs'],
         });
 
-        const qb = this.buildBaseActionQuery();
-        qb.andWhere('action.state IN (:...states)', {
-            states: [ActionState.PENDING, ActionState.PROCESSING],
-        });
+        const logs = action.logs ?? [];
+        const count = logs.length;
+        const data = logs.slice(query.skip, query.skip + query.take);
 
-        if (user.role !== UserRole.ADMIN) {
-            addAccessConstraints(qb, userUUID);
-        }
-
-        const [actions, count] = await qb
-            .skip(skip)
-            .take(take)
-            .getManyAndCount();
         return {
             count,
-            data: actions.map((element) => actionEntityToDto(element)),
-            skip,
-            take,
+            skip: query.skip,
+            take: query.take,
+            data,
         };
+    }
+
+    async delete(actionUUID: string): Promise<boolean> {
+        await this.actionRepository.delete(actionUUID);
+        return true;
     }
 
     async writeAuditLog(
         apiKey: string,
-        auditLog: {
-            method: string;
-            url: string;
-        },
+        auditLog: { method: string; url: string },
     ): Promise<void> {
         await this.apikeyRepository.manager.transaction(
             async (manager: EntityManager): Promise<void> => {
-                const key: ApikeyEntity = await manager.findOneOrFail(
-                    ApikeyEntity,
+                const key: ApiKeyEntity = await manager.findOneOrFail(
+                    ApiKeyEntity,
                     {
                         where: { apikey: apiKey },
                         relations: ['action'],
@@ -334,60 +225,13 @@ export class ActionService {
         );
     }
 
-    private validateDockerNamespace(imageName: string): void {
-        if (
-            this.DOCKER_NAMESPACE &&
-            !imageName.startsWith(this.DOCKER_NAMESPACE)
-        ) {
-            throw new ConflictException(
-                `Only images from the ${this.DOCKER_NAMESPACE} namespace are allowed`,
-            );
-        }
-    }
-
-    private async calculateNextVersion(
-        name: string,
-        isSearchable: boolean,
-    ): Promise<number> {
-        const direction = isSearchable ? 'DESC' : 'ASC';
-        const lastVersionTemplate = await this.actionTemplateRepository.findOne(
-            {
-                where: { name },
-                order: { version: direction },
-            },
-        );
-
-        const currentVersion = lastVersionTemplate?.version ?? 0;
-        const change = isSearchable ? 1 : -1;
-
-        return currentVersion + change;
-    }
-
-    private isMetadataUpdateOnly(
-        current: ActionTemplateEntity,
-        incoming: UpdateTemplateDto,
-    ): boolean {
-        if (current.searchable) return false;
-        if (!incoming.searchable) return false;
-
-        return (
-            current.image_name === incoming.dockerImage &&
-            current.command === incoming.command &&
-            current.cpuCores === incoming.cpuCores &&
-            current.cpuMemory === incoming.cpuMemory &&
-            current.gpuMemory === incoming.gpuMemory &&
-            current.maxRuntime === incoming.maxRuntime &&
-            current.entrypoint === incoming.entrypoint &&
-            current.accessRights === incoming.accessRights
-        );
-    }
-
     private buildBaseActionQuery(): SelectQueryBuilder<ActionEntity> {
         return this.actionRepository
             .createQueryBuilder('action')
             .leftJoinAndSelect('action.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('action.template', 'template')
+            .leftJoinAndSelect('template.creator', 'templateCreator')
             .leftJoinAndSelect('action.creator', 'creator');
     }
 
@@ -428,6 +272,7 @@ export class ActionService {
                 `${action.uuid}.tar.gz`,
                 4 * 60 * 60,
                 {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'response-content-disposition': `attachment; filename="${friendlyFilename}"`,
                 },
             );

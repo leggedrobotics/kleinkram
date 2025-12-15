@@ -1,7 +1,7 @@
+import { AuthFlowException } from '@/types/auth-flow-exception';
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import { Response } from 'express';
 import logger from '../../logger';
-import { AuthFlowException } from '../../types/auth-flow-exception';
 
 @Catch(AuthFlowException)
 export class AuthFlowExceptionRedirectFilter implements ExceptionFilter {
@@ -10,7 +10,7 @@ export class AuthFlowExceptionRedirectFilter implements ExceptionFilter {
     constructor() {
         logger.debug('AuthFlowExceptionRedirectFilter created');
 
-        const frontendUrl = process.env['FRONTEND_URL'];
+        const frontendUrl = process.env.FRONTEND_URL;
         if (frontendUrl === undefined) {
             throw new Error('FRONTEND_URL env var not set');
         }

@@ -18,6 +18,7 @@ export function parseDate(date: string) {
         throw new Error('Invalid date format');
     const [day, month, year] = dayMonthYear.split('.');
     const [hours, minutes] = time.split(':');
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
 }
 

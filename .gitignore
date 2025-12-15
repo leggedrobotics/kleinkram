@@ -12,8 +12,12 @@ queueConsumer/src/artifactUpload/anymal-grand-tour-3b7a5d0c8ef4.json
 /.eslintcache
 
 
-/**/dist/tsconfig.tsbuildinfo
+*.tsbuildinfo
+dist/
+packages/*/dist/
 
 # Lockfiles for npm and pnpm, we are using yarn
 **/package-lock.json
-**/pnpm-lock.yaml
+docs/development/api/generated/
+docs/development/application-structure/postgres.md
+docs/development/application-structure/postgres.md

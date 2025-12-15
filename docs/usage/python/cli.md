@@ -1,57 +1,89 @@
 # Kleinkram CLI Usage
 
-Make sure to first read the [getting started](./getting-started.md) guide to install the CLI and authenticate yourself.
+Ensure you have installed the CLI and authenticated as described in the [Setup Guide](./setup.md).
 
-## General Concepts (Mission Spec)
+## Getting Started
 
-Most commands are based on you specifying a `mission` which you want to interact with. There are multiple ways to specify a mission.
-
-- Specify the mission by ID.
-- Specify a project (either by ID or name) and specify as mission name.
-
-This is achieved by specifying the options `-m` / `--mission` and `-p` / `--project` respectively. As an example consider the following:
+Here is a quick example of how to create a project, upload data, and run an action.
 
 ```bash
-klein mycommand -p myproject -m mymission
+# 1. Create a Project and Mission
+klein project create -p testProject -d "Just a Test Project for running actions"
+echo "123" > test.yml
+klein upload -p testProject -m testMission --create test.yml
+
+# 2. Build a test Action
+# (Assuming you have an action definition in the current directory)
+docker build -t <your-docker-hub-account>/test_action .
+docker push <your-docker-hub-account>/test_action
 ```
 
-Is telling `mycommand` to do something to the mission `mymission` inside the project `myproject`.
+## Common Commands
 
-## Uploading Files
+Most commands require you to specify the **Project** and **Mission** you want to interact with. You can do this using the `-p` (or `--project`) and `-m` (or `--mission`) flags.
 
-You can use the command `upload` to upload files to a specified mission as follows:
+### Uploading Files
+
+Use the `upload` command to send files to a mission.
 
 ```bash
-klein upload -p myproject -m mymission a.bag b.bag c.bag
+klein upload -p myproject -m mymission data.bag metadata.yaml
 ```
 
-You can also use unix wild cards to specify file patters. Be aware that any file you specify has to have the file suffix `.bag` or `.mcap`.
-
-::: details Creating Mission on Upload
-If you wish to create a mission on upload you can use the flag `--create`. Importantly this will only create the mission if the specified project already exists. Furthermore, in this case you need to specify the mission by name.
+You can also use wildcards:
 
 ```bash
-klein upload --create -p myproject -m mymission a.bag b.bag c.bag
+klein upload -p myproject -m mymission *.bag
+```
+
+::: tip Creating Mission on Upload
+To create a mission automatically during upload, use the `--create` flag. The project must already exist.
+
+```bash
+klein upload --create -p myproject -m mymission *.bag
 ```
 
 :::
 
-## Downloading Files
+### Downloading Files
 
-If you wish to download the files of a specific mission you can use the following command:
-
-```bash
-klein download -p myproject -m mymission --dest dest
-```
-
-where `dest` is the destination folder for the downloaded files. In case `dest` does not exist it is created and if it already contains files we will skip files that already exist.
-
-## Verifying Files
-
-If you wish to verify if you correctly uploaded files to a mission you can use the command
+Use the `download` command to retrieve files from a mission.
 
 ```bash
-klein verify -p myproject -m mymission a.bag b.bag c.bag
+klein download -p myproject -m mymission --dest ./downloaded_data
 ```
 
-It accepts similar commands to the `upload` command and check if all specified files were uploaded correctly. If you wish to skip file hash verification you can use the `--skip-hash` flag.
+### Verifying Files
+
+Use the `verify` command to check if files were uploaded correctly.
+
+```bash
+klein verify -p myproject -m mymission data.bag
+```
+
+### Listing Resources
+
+You can list projects, missions, and files using the `list` command.
+
+```bash
+# List all projects
+klein list projects
+
+# List missions in a project
+klein list missions -p myproject
+
+# List files in a mission
+klein list files -p myproject -m mymission
+```
+
+## Supported File Types
+
+The CLI supports uploading and verifying all supported file types. See the [Files documentation](../files/files.md) for a complete list of supported formats.
+
+## Other Commands
+
+For a full list of available commands and options, you can always use the `--help` flag:
+
+```bash
+klein --help
+```

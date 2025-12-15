@@ -108,8 +108,8 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import { FileUploadDto } from '@api/types/upload.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import SelectMissionTags from 'components/select-mission-tags.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
@@ -120,6 +120,8 @@ import { createMission } from 'src/services/mutations/mission';
 import { computed, ref, Ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const tab_selection = ref('meta_data');
 
 const properties = defineProps<{
@@ -155,7 +157,9 @@ const missionCreated = computed(() => {
     return !!newMission.value;
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const handle = (a: any): void => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     files.value = a.target.files;
     if (files.value.length > 0) {
         missionName.value =
@@ -163,8 +167,11 @@ const handle = (a: any): void => {
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function transferClick(event: any): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     event.preventDefault();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     HTMLinput.value.click();
 }
 
@@ -172,6 +179,7 @@ const submitNewMission = async () => {
     if (project.value === undefined) {
         return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const resp = await createMission(
         missionName.value,
         project.value.uuid,
@@ -189,6 +197,7 @@ const submitNewMission = async () => {
 
     // exit if the request failed
     if (resp === undefined) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     newMission.value = resp;
     // @ts-ignore
     newMission.value.project = project.value;
@@ -202,6 +211,7 @@ const submitNewMission = async () => {
         );
     await Promise.all(
         filtered.map((query) => {
+            // eslint-disable-next-line no-console
             console.log('Invalidating query', query.queryKey);
             return queryClient.invalidateQueries({
                 queryKey: query.queryKey,

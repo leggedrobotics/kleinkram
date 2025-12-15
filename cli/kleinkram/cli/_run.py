@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import tarfile
 import os
 import re
 import sys
+import tarfile
 import time
-from typing import Optional, List
+from typing import List
+from typing import Optional
 
 import requests
 import typer
@@ -14,8 +15,11 @@ import kleinkram.api.routes
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import RunQuery
 from kleinkram.config import get_shared_state
-from kleinkram.models import Run, LogEntry
-from kleinkram.printing import print_runs_table, print_run_info, print_run_logs
+from kleinkram.models import LogEntry
+from kleinkram.models import Run
+from kleinkram.printing import print_run_info
+from kleinkram.printing import print_run_logs
+from kleinkram.printing import print_runs_table
 from kleinkram.utils import split_args
 
 HELP = """\
@@ -41,12 +45,8 @@ DOWNLOAD_HELP = "Download artifacts for a specific action run."
 
 @run_typer.command(help=LIST_HELP, name="list")
 def list_runs(
-    mission: Optional[str] = typer.Option(
-        None, "--mission", "-m", help="Mission ID or name to filter by."
-    ),
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p", help="Project ID or name to filter by."
-    ),
+    mission: Optional[str] = typer.Option(None, "--mission", "-m", help="Mission ID or name to filter by."),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="Project ID or name to filter by."),
 ) -> None:
     """
     List action runs.
@@ -68,9 +68,7 @@ def list_runs(
 
 
 @run_typer.command(name="info", help=INFO_HELP)
-def get_info(
-    run_id: str = typer.Argument(..., help="The ID of the run to get information for.")
-) -> None:
+def get_info(run_id: str = typer.Argument(..., help="The ID of the run to get information for.")) -> None:
     """
     Get detailed information for a single run.
     """
@@ -82,9 +80,7 @@ def get_info(
 @run_typer.command(help=LOGS_HELP)
 def logs(
     run_id: str = typer.Argument(..., help="The ID of the run to fetch logs for."),
-    follow: bool = typer.Option(
-        False, "--follow", "-f", help="Follow the log output in real-time."
-    ),
+    follow: bool = typer.Option(False, "--follow", "-f", help="Follow the log output in real-time."),
 ) -> None:
     """
     Fetch and display logs for a specific run.
@@ -129,12 +125,8 @@ def _get_filename_from_cd(cd: str) -> Optional[str]:
 
 @run_typer.command(name="download", help=DOWNLOAD_HELP)
 def download_artifacts(
-    run_id: str = typer.Argument(
-        ..., help="The ID of the run to download artifacts for."
-    ),
-    output: Optional[str] = typer.Option(
-        None, "--output", "-o", help="Path or filename to save the artifacts to."
-    ),
+    run_id: str = typer.Argument(..., help="The ID of the run to download artifacts for."),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Path or filename to save the artifacts to."),
     extract: bool = typer.Option(
         False,
         "--extract",
@@ -180,25 +172,20 @@ def download_artifacts(
             if output and os.path.isdir(output):
                 filename = os.path.join(
                     output,
-                    _get_filename_from_cd(r.headers.get("content-disposition"))
-                    or f"{run_id}.tar.gz",
+                    _get_filename_from_cd(r.headers.get("content-disposition")) or f"{run_id}.tar.gz",
                 )
 
             total_length = int(r.headers.get("content-length", 0))
 
             # Write to file with Progress Bar
             with open(filename, "wb") as f:
-                with typer.progressbar(
-                    length=total_length, label=f"Saving to {filename}"
-                ) as progress:
+                with typer.progressbar(length=total_length, label=f"Saving to {filename}") as progress:
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
                             progress.update(len(chunk))
 
-            typer.secho(
-                f"\nSuccessfully downloaded to {filename}", fg=typer.colors.GREEN
-            )
+            typer.secho(f"\nSuccessfully downloaded to {filename}", fg=typer.colors.GREEN)
 
             # Extraction Logic
             if extract:
@@ -223,7 +210,7 @@ def download_artifacts(
                         else:
                             tar.extractall(path=extract_path)
 
-                    typer.secho(f"Successfully extracted.", fg=typer.colors.GREEN)
+                    typer.secho("Successfully extracted.", fg=typer.colors.GREEN)
 
                 except tarfile.TarError as e:
                     typer.secho(f"Failed to extract archive: {e}", fg=typer.colors.RED)

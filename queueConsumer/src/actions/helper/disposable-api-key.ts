@@ -1,6 +1,5 @@
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import { KeyTypes } from '@common/frontend_shared/enum';
+import { ApiKeyEntity, MissionEntity } from '@kleinkram/backend-common';
+import { KeyTypes } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 
@@ -11,8 +10,8 @@ export class DisposableAPIKey implements AsyncDisposable {
     apikey: string;
 
     constructor(
-        _apikey: ApikeyEntity,
-        private apikeyRepository: Repository<ApikeyEntity>,
+        _apikey: ApiKeyEntity,
+        private apikeyRepository: Repository<ApiKeyEntity>,
     ) {
         this.apikeyRepository = apikeyRepository;
         this.apikeyType = _apikey.key_type;

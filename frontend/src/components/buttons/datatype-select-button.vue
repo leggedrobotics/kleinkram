@@ -16,6 +16,8 @@
                 @click="() => select(value)"
             >
                 <q-item-section>
+                    <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
+                    <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
                     <q-item-label v-html="datatype" />
                 </q-item-section>
                 <q-item-section side>
@@ -33,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { DataType } from '@common/enum';
+import { DataType } from '@kleinkram/shared';
 import { icon } from 'src/services/generic';
 import { ref, watch } from 'vue';
 

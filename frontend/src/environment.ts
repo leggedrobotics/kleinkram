@@ -72,14 +72,16 @@ export default {
      * @returns Url of graphql backend endpoint
      * @example http://localhost:3000/graphql
      */
-    get ENDPOINT(): string {
+    get BACKEND_URL(): string {
         return asString(
-            import.meta.env.VITE_QUASAR_ENDPOINT || 'http://localhost:3000',
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            import.meta.env.BACKEND_URL ?? 'http://localhost:3000',
         );
     },
 
     get VERSION(): string {
-        return asString(import.meta.env.VITE_QUASAR_VERSION || '0.0.0');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        return asString(import.meta.env.VITE_QUASAR_VERSION ?? '0.0.0');
     },
 
     /**
@@ -97,7 +99,8 @@ export default {
 
     get USE_FAKE_OAUTH_FOR_DEVELOPMENT(): boolean {
         return asBoolean(
-            import.meta.env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT || 'false',
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            import.meta.env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT ?? 'false',
         );
     },
 };

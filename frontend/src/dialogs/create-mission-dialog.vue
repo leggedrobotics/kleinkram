@@ -50,33 +50,15 @@
                         projects exist yet.
                     </div>
                     <div v-else>
-                        <label for="projectDescription">Project*</label>
-                        <q-btn-dropdown
-                            v-model="ddr_open"
-                            :disable="!!_project_uuid"
-                            :label="project?.name || 'Select a Project'"
-                            class="q-uploader--bordered full-width full-height q-mb-lg"
-                            flat
-                            clearable
-                            required
-                        >
-                            <q-list>
-                                <q-item
-                                    v-for="_project in projectsWithCreateWrite"
-                                    :key="_project.uuid"
-                                    clickable
-                                    @click="() => onClick(_project)"
-                                >
-                                    <q-item-section>
-                                        <q-item-label>
-                                            {{ _project.name }}
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </q-list>
-                        </q-btn-dropdown>
+                        <ScopeSelector
+                            v-model:project-uuid="projectUuid"
+                            :custom-projects="projectsWithCreateWrite"
+                            :show-mission="false"
+                            :required="true"
+                            class="q-mb-md"
+                        />
 
-                        <template v-if="project">
+                        <template v-if="projectUuid">
                             <label for="missionName">Mission Name *</label>
                             <q-input
                                 ref="missionNameInput"
@@ -124,6 +106,7 @@
                         ref="createFileReference"
                         :mission="newMission"
                         :uploads="uploads"
+                        :disable-scope="true"
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -162,20 +145,17 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import { ProjectDto } from '@api/types/project/base-project.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import { FileUploadDto } from '@api/types/upload.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
+import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import ScopeSelector from 'components/common/scope-selector.vue';
 import CreateFile from 'components/create-file.vue';
 import SelectMissionTags from 'components/select-mission-tags.vue';
-import { Notify, QInput, useDialogPluginComponent } from 'quasar';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import { useScopeSelection } from 'src/composables/use-scope-selection';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import {
-    canCreateMission,
-    usePermissionsQuery,
-    useProjectQuery,
-} from 'src/hooks/query-hooks';
+import { canCreateMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { createMission } from 'src/services/mutations/mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { computed, ref, Ref } from 'vue';
@@ -183,41 +163,43 @@ import { computed, ref, Ref } from 'vue';
 const MIN_MISSION_NAME_LENGTH = 3;
 const MAX_MISSION_NAME_LENGTH = 50;
 const MISSION_NAME_INPUT_VALIDATION: ((value: string) => boolean | string)[] = [
-    (value) => !!value || 'Field is required',
-    (value) =>
+    (value): boolean | string => !!value || 'Field is required',
+    (value): boolean | string =>
         value.length >= MIN_MISSION_NAME_LENGTH ||
         `Name must be at least ${MIN_MISSION_NAME_LENGTH.toString()} characters`,
-    (value) =>
+    (value): boolean | string =>
         value.length <= MAX_MISSION_NAME_LENGTH ||
         `Name must be at most ${MAX_MISSION_NAME_LENGTH.toString()} characters`,
-    (value) =>
+    (value): boolean | string =>
         /^[\w\-_]+$/g.test(value) ||
         'Name must be alphanumeric and contain only - and _',
 ];
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const tab_selection = ref('meta_data');
 const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
     undefined,
 );
 
-const { projectUuid: _project_uuid, uploads } = defineProps<{
+const props = defineProps<{
     projectUuid: string | undefined;
     uploads: Ref<FileUploadDto[]>;
 }>();
 
-const projectUuid = ref(_project_uuid);
+const projectUuid = ref(props.projectUuid);
 
 const newMission: Ref<FlatMissionDto | undefined> = ref(undefined);
 const queryClient = useQueryClient();
 
-const { data: project } = useProjectQuery(projectUuid);
+const { selectedProject: project } = useScopeSelection(projectUuid);
 
 const missionName = ref('');
 const isValidMissionName = ref(true);
 const errorMessage = ref('');
-const ddr_open = ref(false);
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const { data: all_projects } = useQuery<ProjectsDto>({
     queryKey: ['projects'],
     queryFn: () => filteredProjects(500, 0, 'name'),
@@ -244,10 +226,11 @@ const missionCreated = computed(() => {
     return !!newMission.value;
 });
 
-const submitNewMission = async () => {
+const submitNewMission = async (): Promise<void> => {
     if (!project.value) {
         return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const resp = await createMission(
         missionName.value,
         project.value.uuid,
@@ -256,11 +239,13 @@ const submitNewMission = async () => {
         tab_selection.value = 'meta_data';
         isValidMissionName.value = false;
         // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         errorMessage.value = error.response.data.message[0];
     });
 
     // exit if the request failed
     if (!resp) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     newMission.value = resp;
     // @ts-ignore
     newMission.value.project = project.value;
@@ -270,10 +255,12 @@ const submitNewMission = async () => {
         .filter(
             (query) =>
                 query.queryKey[0] === 'missions' &&
-                query.queryKey[1] === project.value.uuid,
+                query.queryKey[1] === project.value?.uuid,
         );
+
     await Promise.all(
         filtered.map((query) => {
+            // eslint-disable-next-line no-console
             console.log('Invalidating query', query.queryKey);
             return queryClient.invalidateQueries({
                 queryKey: query.queryKey,
@@ -297,7 +284,10 @@ const updateTagValue = (update: Record<string, string>): void => {
 };
 
 const uploadEventHandler = (): void => {
-    createFileReference.value?.createFileAction();
+    if (createFileReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        (createFileReference.value as any).createFileAction();
+    }
     onDialogOK();
 };
 
@@ -313,9 +303,4 @@ function navigateToMetadataTab(): void {
 function clearMissionName(): void {
     missionName.value = '';
 }
-
-const onClick = (_project: ProjectDto) => {
-    projectUuid.value = _project.uuid;
-    ddr_open.value = false;
-};
 </script>

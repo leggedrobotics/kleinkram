@@ -1,11 +1,11 @@
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
+import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MissionGuardService } from '../endpoints/auth/mission-guard.service';
 import logger from '../logger';
 import { ProjectGuardService } from './project-guard.service';
 
@@ -23,6 +23,7 @@ export class FileGuardService {
         fileUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!fileUUID || !user) {
             logger.error(
                 `FileGuard: File UUID (${fileUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -68,6 +69,7 @@ export class FileGuardService {
         filename: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!filename || !user) {
             logger.error(
                 `FileGuard: Filename (${filename}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -81,7 +83,7 @@ export class FileGuardService {
     }
 
     async canKeyAccessFileByName(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         filename: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
@@ -98,7 +100,7 @@ export class FileGuardService {
     }
 
     async canKeyAccessFile(
-        apiKey: ApikeyEntity,
+        apiKey: ApiKeyEntity,
         fileUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
@@ -120,6 +122,7 @@ export class FileGuardService {
         fileUUIDs: string[],
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!fileUUIDs || !user) {
             logger.error(
                 `FileGuard: File UUIDs (${fileUUIDs.toString()}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,

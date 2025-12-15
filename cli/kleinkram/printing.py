@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from dataclasses import asdict
 from datetime import datetime
-import time
 from pathlib import Path
 from typing import List
 from typing import Mapping
@@ -24,12 +24,15 @@ import kleinkram
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
-from kleinkram.models import File, Run, LogEntry, ActionTemplate
+from kleinkram.models import ActionTemplate
+from kleinkram.models import File
 from kleinkram.models import FileState
+from kleinkram.models import LogEntry
 from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import Run
 
 FILE_STATE_COLOR = {
     FileState.OK: "green",
@@ -172,9 +175,7 @@ def missions_to_table(missions: Sequence[Mission]) -> Table:
     return table
 
 
-def files_to_table(
-    files: Sequence[File], *, title: str = "files", delimiters: bool = True
-) -> Table:
+def files_to_table(files: Sequence[File], *, title: str = "files", delimiters: bool = True) -> Table:
     table = Table(title=title)
     table.add_column("project")
     table.add_column("mission")
@@ -238,9 +239,7 @@ def file_info_table(file: File) -> Table:
     return table
 
 
-def mission_info_table(
-    mission: Mission, print_metadata: bool = True
-) -> Tuple[Table, ...]:
+def mission_info_table(mission: Mission, print_metadata: bool = True) -> Tuple[Table, ...]:
     table = Table("k", "v", title=f"mission info: {mission.name}", show_header=False)
 
     # TODO: add more fields as we store more information in the Mission object
@@ -257,9 +256,7 @@ def mission_info_table(
         return (table,)
 
     metadata_table = Table("k", "v", title="mission metadata", show_header=False)
-    kv_pairs_sorted = sorted(
-        [(k, v) for k, v in mission.metadata.items()], key=lambda x: x[0]
-    )
+    kv_pairs_sorted = sorted([(k, v) for k, v in mission.metadata.items()], key=lambda x: x[0])
     for k, v in kv_pairs_sorted:
         metadata_table.add_row(k, str(parse_metadata_value(v)))
 
@@ -291,9 +288,7 @@ def file_verification_status_table(
     return table
 
 
-def print_file_verification_status(
-    file_status: Mapping[Path, FileVerificationStatus], *, pprint: bool
-) -> None:
+def print_file_verification_status(file_status: Mapping[Path, FileVerificationStatus], *, pprint: bool) -> None:
     """\
     prints the file verification status to stdout / stderr
     either using pprint or as a list for piping
@@ -303,9 +298,7 @@ def print_file_verification_status(
         Console().print(table)
     else:
         for path, status in file_status.items():
-            stream = (
-                sys.stdout if status == FileVerificationStatus.UPLOADED else sys.stderr
-            )
+            stream = sys.stdout if status == FileVerificationStatus.UPLOADED else sys.stderr
             print(path, file=stream, flush=True)
 
 
@@ -529,9 +522,7 @@ def action_templates_to_table(templates: Sequence[ActionTemplate]) -> Table:
     return table
 
 
-def print_action_templates_table(
-    templates: Sequence[ActionTemplate], *, pprint: bool
-) -> None:
+def print_action_templates_table(templates: Sequence[ActionTemplate], *, pprint: bool) -> None:
     """
     Prints the action templates to stdout
     either using rich or as a simple list of IDs for piping.
@@ -576,11 +567,7 @@ def follow_run_logs(client: AuthenticatedClient, run_uuid: str) -> int:
                     printed_log_count = len(run_details.logs)
 
                 if current_run_state in TERMINAL_STATES:
-                    color = (
-                        typer.colors.GREEN
-                        if run_details.state.upper() == "DONE"
-                        else typer.colors.RED
-                    )
+                    color = typer.colors.GREEN if run_details.state.upper() == "DONE" else typer.colors.RED
                     typer.secho(
                         f"\nRun finished with state: {run_details.state} ({run_details.state_cause})",
                         fg=color,

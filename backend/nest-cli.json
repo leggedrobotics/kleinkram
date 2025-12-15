@@ -3,7 +3,9 @@
     "collection": "@nestjs/schematics",
     "sourceRoot": "src",
     "compilerOptions": {
-        "deleteOutDir": true
+        "deleteOutDir": true,
+        "webpack": true,
+        "webpackPath": "./webpack.config.js"
     },
-    "entryFile": "backend/src/main"
+    "entryFile": "main"
 }

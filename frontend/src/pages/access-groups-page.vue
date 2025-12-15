@@ -4,10 +4,11 @@
     <div class="q-my-lg">
         <div class="flex justify-between items-center">
             <button-group>
-                <div style="width: 200px">
+                <div style="width: 200px" class="self-stretch">
                     <q-btn-dropdown
                         :label="prefilter?.label"
-                        class="q-uploader--bordered full-width full-height"
+                        class="q-uploader--bordered full-width"
+                        style="height: 100%"
                         flat
                         auto-close
                     >
@@ -33,27 +34,12 @@
             </button-group>
 
             <button-group>
-                <q-input
+                <app-search-bar
                     v-model="filterOptions.search"
-                    dense
-                    outlined
                     placeholder="Search"
-                    debounce="200"
-                >
-                    <template #append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
-
-                <q-btn
-                    flat
-                    dense
-                    padding="6px"
-                    color="icon-secondary"
-                    class="button-border"
-                    icon="sym_o_loop"
-                    @click="refetchAccessGroup"
                 />
+
+                <app-refresh-button @click="refetchAccessGroup" />
 
                 <CreateAccessGroupDialogOpener />
             </button-group>
@@ -109,7 +95,10 @@
 
                                 <q-item v-ripple clickable disabled>
                                     <q-tooltip
-                                        v-if="prefilter?.value === 'personal'"
+                                        v-if="
+                                            prefilter?.value ===
+                                            AccessGroupType.PRIMARY
+                                        "
                                     >
                                         You can't edit personal access groups
                                     </q-tooltip>
@@ -134,13 +123,15 @@ import { useQuery } from '@tanstack/vue-query';
 import { formatDate } from 'src/services/date-formating';
 import { computed, Ref, ref, watch } from 'vue';
 
-import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import { ProjectWithMissionsDto } from '@api/types/project/project-with-missions.dto';
-import { AccessGroupDto } from '@api/types/user.dto';
-import { AccessGroupType } from '@common/enum';
+import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
+import type { ProjectWithMissionsDto } from '@kleinkram/api-dto/types/project/project-with-missions.dto';
+import { AccessGroupType } from '@kleinkram/shared';
 import DeleteAccessGroup from 'components/button-wrapper/delete-access-group.vue';
 import CreateAccessGroupDialogOpener from 'components/button-wrapper/dialog-opener-create-access-group.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable } from 'quasar';
 import ROUTES from 'src/router/routes';
@@ -149,9 +140,9 @@ import { useRouter } from 'vue-router';
 
 const $router = useRouter();
 const prefilterOptions = [
-    { label: 'Groups', value: 'all', spacerAfter: true },
-    { label: 'Affiliation Groups', value: 'affiliation' },
-    { label: 'All Users', value: 'personal' },
+    { label: 'Groups', value: AccessGroupType.CUSTOM, spacerAfter: true },
+    { label: 'Affiliation Groups', value: AccessGroupType.AFFILIATION },
+    { label: 'All Users', value: AccessGroupType.PRIMARY },
 ];
 const prefilter = ref(prefilterOptions[0]);
 
@@ -173,25 +164,22 @@ watch(
     () => prefilter.value,
     (newValue) => {
         switch (newValue?.value) {
-            case 'all': {
+            case AccessGroupType.CUSTOM: {
                 filterOptions.value.type = AccessGroupType.CUSTOM;
                 filterOptions.value.creator = false;
                 filterOptions.value.member = false;
-
                 break;
             }
-            case 'affiliation': {
+            case AccessGroupType.AFFILIATION: {
                 filterOptions.value.creator = true;
                 filterOptions.value.member = false;
                 filterOptions.value.type = AccessGroupType.AFFILIATION;
-
                 break;
             }
-            case 'personal': {
+            case AccessGroupType.PRIMARY: {
                 filterOptions.value.type = AccessGroupType.PRIMARY;
                 filterOptions.value.creator = false;
                 filterOptions.value.member = false;
-
                 break;
             }
             // No default
@@ -230,6 +218,7 @@ const accessGroupsTable = computed(() =>
     foundAccessGroups.value ? foundAccessGroups.value.data : [],
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function rowClick(event: any, row: AccessGroupDto) {
     await $router.push({
         name: ROUTES.ACCESS_GROUP.routeName,

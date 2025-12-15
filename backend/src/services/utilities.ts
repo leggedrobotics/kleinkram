@@ -1,7 +1,7 @@
-import { SortOrder } from '@common/api/types/pagination';
-import File from '@common/entities/file/file.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
+import { SortOrder } from '@kleinkram/api-dto';
+import { FileEntity as File } from '@kleinkram/backend-common/entities/file/file.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { MethodNotAllowedException } from '@nestjs/common';
 import { isValid, parseISO } from 'date-fns';
 import {
@@ -22,6 +22,7 @@ export const stringToBoolean = (value: string): boolean | undefined => {
             return false;
         }
     }
+    return undefined;
 };
 
 export const stringToNumber = (value: string): number | undefined => {
@@ -33,6 +34,7 @@ export const stringToNumber = (value: string): number | undefined => {
     if (!Number.isNaN(number)) {
         return number;
     }
+    return undefined;
 };
 
 export const stringToDate = (value: string): Date | undefined => {
@@ -41,6 +43,7 @@ export const stringToDate = (value: string): Date | undefined => {
     if (isValid(date)) {
         return date;
     }
+    return undefined;
 };
 
 export const stringToLocation = (value: string): string | undefined => {
@@ -99,6 +102,7 @@ const metadataMatchesKeyValuePair = (
      * to the same query
      * */
 
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     if (tok === undefined) {
         tok = uuidv4().replaceAll('-', '');
     }
@@ -338,8 +342,7 @@ export const addSort = <T extends ObjectLiteral>(
     }
 
     query.orderBy(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        allowedSortKeyMap[sortBy]!,
+        allowedSortKeyMap[sortBy],
         sortOrder === SortOrder.ASC ? 'ASC' : 'DESC',
     );
     return query;

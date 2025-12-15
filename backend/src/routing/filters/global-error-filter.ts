@@ -1,4 +1,6 @@
-import env from '@common/environment';
+import { appVersion } from '@/app-version';
+import { AuthFlowException } from '@/types/auth-flow-exception';
+import env from '@kleinkram/backend-common/environment';
 import {
     ArgumentsHost,
     BadRequestException,
@@ -9,10 +11,8 @@ import {
 } from '@nestjs/common';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { Response } from 'express';
-import { appVersion } from 'src/app-version';
 import { EntityNotFoundError } from 'typeorm';
 import logger from '../../logger';
-import { AuthFlowException } from '../../types/auth-flow-exception';
 
 /**
  * A global error filter that catches all errors and logs them.
@@ -85,11 +85,16 @@ export class GlobalErrorFilter implements ExceptionFilter {
         }
 
         if (exception instanceof BadRequestException) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const resp: any = exception.getResponse();
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             if (typeof resp === 'object' && resp.hasOwnProperty('message')) {
                 response.status(400).json({
                     statusCode: 400,
+                    ...resp,
+
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                     message: resp.message.toString(),
                 });
                 return;

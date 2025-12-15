@@ -12,7 +12,7 @@
                         {{ duration.toFixed(2) }}s
                     </q-badge>
                     <q-badge color="orange-1" text-color="orange-9">
-                        {{ messages.length }} samples
+                        {{ messages.length }} Messages
                     </q-badge>
                 </div>
                 <q-btn
@@ -28,22 +28,18 @@
                 </q-btn>
             </div>
 
-            <SimpleTimeChart title="Temperature (°C)" :series="tempSeries" />
-
-            <div
-                v-if="messages.length < totalCount"
-                class="text-center q-mt-md"
-            >
-                <div class="text-caption text-grey-7 q-mb-xs">
-                    Showing {{ messages.length }} / {{ totalCount }} points.
-                </div>
-                <q-btn
-                    label="Load All Data"
-                    icon="sym_o_download"
-                    size="sm"
-                    flat
-                    color="primary"
-                    @click="loadMore"
+            <div v-if="isLoading">
+                <SkeletonTimeChart
+                    title="Temperature (°C)"
+                    :current="messages.length"
+                    :total="totalCount"
+                />
+            </div>
+            <div v-else>
+                <SimpleTimeChart
+                    title="Temperature (°C)"
+                    :series="temperatureSeries"
+                    :start-time="startTime"
                 />
             </div>
         </div>
@@ -52,10 +48,12 @@
 
 <script setup lang="ts">
 import { Notify, copyToClipboard as quasarCopy } from 'quasar';
-import { computed, onMounted } from 'vue';
+import { computed, markRaw, onMounted, shallowRef, watch } from 'vue';
 import SimpleTimeChart, { type ChartSeries } from './simple-time-chart.vue';
+import SkeletonTimeChart from './skeleton-time-chart.vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -64,28 +62,45 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0)
         emit('load-required');
 });
 
 // --- Data Processing ---
-const startTime = computed(() => properties.messages[0]?.logTime || 0n);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+const startTime = computed(() => properties.messages[0]?.logTime ?? 0n);
 
 const duration = computed(() => {
     if (properties.messages.length < 2) return 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = properties.messages.at(-1).logTime;
     return Number(end - startTime.value) / 1_000_000_000;
 });
 
-// eslint-disable-next-line unicorn/prevent-abbreviations
-const tempSeries = computed((): ChartSeries[] => {
-    const data = properties.messages.map((message) => ({
-        time: Number(message.logTime - startTime.value) / 1_000_000_000,
-        value: message.data.temperature || 0,
-    }));
+const temperatureSeries = shallowRef<ChartSeries[]>([]);
 
-    return [{ name: 'Temp', color: '#F57C00', data }];
-});
+watch(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    () => properties.messages,
+    () => {
+        const data = [];
+        for (const message of properties.messages) {
+            if (!message) continue;
+            data.push({
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                time: Number(message.logTime - startTime.value) / 1_000_000_000,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                value: message.data.temperature ?? 0,
+            });
+        }
+
+        temperatureSeries.value = markRaw([
+            { name: 'Temp', color: '#F57C00', data },
+        ]);
+    },
+    { immediate: true },
+);
 
 async function copyRaw(): Promise<void> {
     await quasarCopy(JSON.stringify(properties.messages, null, 2));
@@ -96,9 +111,9 @@ async function copyRaw(): Promise<void> {
     });
 }
 
-const loadMore = (): void => {
-    emit('load-more');
-};
+const isLoading = computed(
+    () => properties.messages.length < properties.totalCount,
+);
 </script>
 
 <style scoped>

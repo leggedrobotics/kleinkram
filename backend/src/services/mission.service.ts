@@ -1,31 +1,31 @@
-import { CreateMission } from '@common/api/types/create-mission.dto';
-import {
-    FlatMissionDto,
-    MinimumMissionsDto,
-    MissionsDto,
-    MissionWithFilesDto,
-} from '@common/api/types/mission/mission.dto';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UserRole } from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
-import { ConflictException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Not, Repository } from 'typeorm';
 import {
     addAccessConstraints,
     addAccessConstraintsToMissionQuery,
-} from '../endpoints/auth/auth-helper';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
-import logger from '../logger';
+} from '@/endpoints/auth/auth-helper';
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     missionEntityToDtoWithCreator,
     missionEntityToDtoWithFiles,
     missionEntityToFlatDto,
     missionEntityToMinimumDto,
-} from '../serialization';
+} from '@/serialization';
+import {
+    CreateMission,
+    FlatMissionDto,
+    MinimumMissionsDto,
+    MissionsDto,
+    MissionWithFilesDto,
+} from '@kleinkram/api-dto';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { UserRole } from '@kleinkram/shared';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ILike, Not, Repository } from 'typeorm';
+import logger from '../logger';
 import { TagService } from './tag.service';
 import { UserService } from './user.service';
 import {
@@ -35,8 +35,8 @@ import {
     addSort,
 } from './utilities';
 
-import { SortOrder } from '@common/api/types/pagination';
-import env from '@common/environment';
+import { SortOrder } from '@kleinkram/api-dto';
+import env from '@kleinkram/backend-common/environment';
 
 const FIND_MANY_SORT_KEYS = {
     missionName: 'mission.name',
@@ -76,8 +76,10 @@ export class MissionService {
         if (!createMission.ignoreTags) {
             const missingTags = project.requiredTags.filter(
                 (tagType: TagTypeEntity) =>
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     createMission.tags[tagType.uuid] === undefined &&
                     createMission.tags[tagType.uuid] === '' &&
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     createMission.tags[tagType.uuid] === null,
             );
             if (missingTags.length > 0) {
@@ -220,6 +222,7 @@ export class MissionService {
             .leftJoinAndSelect('mission.tags', 'tag')
             .leftJoinAndSelect('tag.tagType', 'tagType')
             .where('mission.uuid IN (:...missionIds)', {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
                 missionIds: missionIds.map((m) => m.mission_uuid),
             });
 
@@ -244,10 +247,16 @@ export class MissionService {
             { fileCount: number; fileSize: number }
         >();
         for (const raw of rawResults) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const missionUuid = raw.mission_uuid;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             if (!statsMap.has(missionUuid)) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 statsMap.set(missionUuid, {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     fileCount: Number.parseInt(raw.fileCount) || 0,
+
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     fileSize: Number.parseInt(raw.fileSize) || 0,
                 });
             }
@@ -361,10 +370,12 @@ export class MissionService {
         const { raw, entities } = await query.getRawAndEntities();
 
         // this is necessary as raw and entities at not of the same length / order
-        // eslint-disable-next-line unicorn/no-array-reduce
+        // eslint-disable-next-line unicorn/no-array-reduce, @typescript-eslint/no-unsafe-assignment
         const rawLookup = raw.reduce(
             (
                 lookup: Record<string, unknown>,
+
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 rawEntry: { mission_uuid: string },
             ) => {
                 lookup[rawEntry.mission_uuid] = rawEntry;
@@ -375,10 +386,16 @@ export class MissionService {
 
         return {
             data: entities.map((m) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 const rawEntry = rawLookup[m.uuid];
                 return {
+                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
                     ...missionEntityToDtoWithCreator(m),
+
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     filesCount: rawEntry?.fileCount,
+
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     size: Number.parseInt(rawEntry?.totalSize),
                 };
             }),
@@ -409,7 +426,8 @@ export class MissionService {
         }
 
         await this.missionRepository.update(missionUUID, {
-            project: project,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+            project: { uuid: project.uuid } as any,
         });
 
         if (mission.files === undefined) throw new Error('Files not loaded');
@@ -496,6 +514,7 @@ export class MissionService {
                     4 * 60 * 60,
                     {
                         // set filename in response headers
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         'response-content-disposition': `attachment; filename ="${f.filename}"`,
                     },
                 ),

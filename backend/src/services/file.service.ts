@@ -1,9 +1,10 @@
-import { SortOrder } from '@common/api/types/pagination';
-import { UpdateFile } from '@common/api/types/update-file.dto';
-import FileEntity from '@common/entities/file/file.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import env from '@common/environment';
+import { SortOrder, UpdateFile } from '@kleinkram/api-dto';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import env from '@kleinkram/backend-common/environment';
 import {
     DataType,
     FileEventType,
@@ -12,7 +13,7 @@ import {
     FileType,
     HealthStatus,
     UserRole,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/shared';
 import {
     BadRequestException,
     Injectable,
@@ -26,6 +27,7 @@ import {
     DataSource,
     In,
     MoreThan,
+    QueryFailedError,
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
@@ -35,31 +37,35 @@ import {
     addMissionFilters,
     addProjectFilters,
     addSort,
+    convertGlobToLikePattern,
 } from './utilities';
 
 import {
+    FileEventsDto,
     FileExistsResponseDto,
-    TemporaryFileAccessDto,
+    FilesDto,
+    FileWithTopicDto,
+    StorageOverviewDto,
     TemporaryFileAccessesDto,
-} from '@common/api/types/file/access.dto';
-import { FileEventsDto } from '@common/api/types/file/file-event.dto';
-import { FileWithTopicDto } from '@common/api/types/file/file.dto';
-import { FilesDto } from '@common/api/types/file/files.dto';
-import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { FileAuditService } from '@common/audit/file-audit.service';
-import { redis } from '@common/consts';
-import CategoryEntity from '@common/entities/category/category.entity';
-import FileEventEntity from '@common/entities/file/file-event.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { StorageService } from '@common/modules/storage/storage.service';
+} from '@kleinkram/api-dto';
+import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
+import { redis } from '@kleinkram/backend-common/consts';
+import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import Queue from 'bull';
+// @ts-ignore
 import Credentials from 'minio/dist/main/Credentials';
+// @ts-ignore
 import { BucketItem } from 'minio/dist/main/internal/type';
 import {
     addAccessConstraints,
     addAccessConstraintsToFileQuery,
+    addAccessConstraintsToMissionQuery,
+    addAccessConstraintsToProjectQuery,
 } from '../endpoints/auth/auth-helper';
 import logger from '../logger';
 
@@ -69,6 +75,24 @@ const FIND_MANY_SORT_KEYS = {
     createdAt: 'file.createdAt',
     updatedAt: 'file.updatedAt',
     creator: 'user.name',
+    size: 'file.size',
+    state: 'file.state',
+    date: 'file.date',
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'file.filename': 'file.filename',
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'file.createdAt': 'file.createdAt',
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'file.updatedAt': 'file.updatedAt',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'file.size': 'file.size',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'file.state': 'file.state',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'file.date': 'file.date',
 };
 
 @Injectable()
@@ -165,6 +189,171 @@ export class FileService implements OnModuleInit {
     }
 
     /**
+     * Checks if the user has access to the specified missions and projects.
+     *
+     * This method is NOT intended for fine-grained access control, but rather
+     * to produce nice error messages when a user tries to access resources they
+     * should not.
+     */
+    async checkResourceAccess(
+        projectUuids: string[],
+        missionUuids: string[],
+        userUuid: string,
+    ): Promise<void> {
+        // Verify Projects
+        if (projectUuids.length > 0) {
+            const uniqueProjectUuids = [...new Set(projectUuids)];
+
+            let query = this.projectRepository.createQueryBuilder('project');
+
+            // Filter by the specific requested IDs
+            query.where('project.uuid IN (:...uuids)', {
+                uuids: uniqueProjectUuids,
+            });
+
+            // Apply standard security constraints (Admins see all; Users see their own)
+            query = addAccessConstraintsToProjectQuery(query, userUuid);
+
+            // Fetch allowed IDs
+            const foundProjects = await query.select('project.uuid').getMany();
+            const foundUuids = new Set(foundProjects.map((p) => p.uuid));
+
+            // Calculate missing
+            const missing = uniqueProjectUuids.filter(
+                (id) => !foundUuids.has(id),
+            );
+
+            if (missing.length > 0) {
+                throw new NotFoundException(
+                    `The following Project UUIDs do not exist or you do not have access: ${missing.join(', ')}`,
+                );
+            }
+        }
+
+        // Verify Missions
+        if (missionUuids.length > 0) {
+            const uniqueMissionUuids = [...new Set(missionUuids)];
+
+            let query = this.missionRepository
+                .createQueryBuilder('mission')
+                .select('mission.uuid')
+                .leftJoin('mission.project', 'project');
+
+            // Filter by the specific requested IDs
+            query.where('mission.uuid IN (:...uuids)', {
+                uuids: uniqueMissionUuids,
+            });
+
+            // Apply standard security constraints
+            query = addAccessConstraintsToMissionQuery(query, userUuid);
+
+            // Fetch allowed IDs
+            const foundMissions = await query.select('mission.uuid').getMany();
+            const foundUuids = new Set(foundMissions.map((m) => m.uuid));
+
+            // Calculate missing
+            const missing = uniqueMissionUuids.filter(
+                (id) => !foundUuids.has(id),
+            );
+
+            if (missing.length > 0) {
+                throw new NotFoundException(
+                    `The following Mission UUIDs do not exist or you do not have access: ${missing.join(', ')}`,
+                );
+            }
+        }
+    }
+
+    /**
+     *
+     * Checks if the user has access to the specified missions and projects by name patterns.
+     * This method supports exact matches as well as wildcard patterns.
+     *
+     * This method is NOT intended for fine-grained access control, but rather
+     * to produce nice error messages when a user tries to access resources they
+     * should not.
+     *
+     */
+    async checkResourceAccessByName(
+        projectNamePatterns: string[],
+        missionNamePatterns: string[],
+        userUuid: string,
+        exactMatch = false,
+    ): Promise<void> {
+        logger.debug(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            `Checking resource access by name for user ${userUuid}. Projects: ${projectNamePatterns}, Missions: ${missionNamePatterns}, Exact: ${exactMatch}`,
+        );
+
+        // We use addProjectFilters which supports exactMatch natively
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (projectNamePatterns && projectNamePatterns.length > 0) {
+            const missingPatterns: string[] = [];
+
+            for (const pattern of projectNamePatterns) {
+                let query =
+                    this.projectRepository.createQueryBuilder('project');
+
+                query = addAccessConstraintsToProjectQuery(query, userUuid);
+                query = addProjectFilters(
+                    query,
+                    this.projectRepository,
+                    [],
+                    [pattern],
+                    exactMatch,
+                );
+
+                const count = await query.getCount();
+                if (count === 0) {
+                    missingPatterns.push(pattern);
+                }
+            }
+
+            if (missingPatterns.length > 0) {
+                throw new NotFoundException(
+                    `The following Project patterns matched no accessible resources: ${missingPatterns.join(', ')}`,
+                );
+            }
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (missionNamePatterns && missionNamePatterns.length > 0) {
+            const missingPatterns: string[] = [];
+
+            for (const pattern of missionNamePatterns) {
+                let query = this.missionRepository
+                    .createQueryBuilder('mission')
+                    .leftJoin('mission.project', 'project');
+
+                query = addAccessConstraintsToMissionQuery(query, userUuid);
+
+                if (exactMatch) {
+                    query.andWhere('LOWER(mission.name) = LOWER(:pattern)', {
+                        pattern,
+                    });
+                } else {
+                    const likePattern = convertGlobToLikePattern(pattern);
+                    // Use standard wildcard match (case-insensitive)
+                    query.andWhere('LOWER(mission.name) LIKE :pattern', {
+                        pattern: `%${likePattern.toLowerCase()}%`,
+                    });
+                }
+
+                const count = await query.getCount();
+                if (count === 0) {
+                    missingPatterns.push(pattern);
+                }
+            }
+
+            if (missingPatterns.length > 0) {
+                throw new NotFoundException(
+                    `The following Mission patterns matched no accessible resources: ${missingPatterns.join(', ')}`,
+                );
+            }
+        }
+    }
+
+    /**
      * Finds and paginates files based on a comprehensive set of filters.
      *
      * This method uses a two-query approach to correctly handle pagination with
@@ -185,6 +374,7 @@ export class FileService implements OnModuleInit {
         categories: string,
         matchAllTopics: boolean,
         fileTypes: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tags: Record<string, any>,
         userUUID: string,
         take: number,
@@ -207,6 +397,7 @@ export class FileService implements OnModuleInit {
 
         // ADMIN users see all, others are constrained
         if (user.role !== UserRole.ADMIN) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             idQuery = addAccessConstraints(idQuery, userUUID);
         }
 
@@ -242,6 +433,7 @@ export class FileService implements OnModuleInit {
         this._applyFileTypeFilter(idQuery, fileTypes);
         this._applyTopicFilter(idQuery, topics, matchAllTopics);
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (health) {
             logger.debug(`Filtering files by health: ${health}`);
             switch (health) {
@@ -282,6 +474,7 @@ export class FileService implements OnModuleInit {
         }
 
         // The tag filter is async, so it must be awaited
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (tags && Object.keys(tags).length > 0) {
             await this._applyTagFilter(idQuery, tags);
         }
@@ -290,7 +483,10 @@ export class FileService implements OnModuleInit {
         // and allow 'HAVING' clauses for topics and tags
         idQuery.groupBy('file.uuid');
 
-        idQuery.orderBy(sort, sortOrder).offset(skip).limit(take);
+        const order = sortOrder === 'ASC' ? SortOrder.ASC : SortOrder.DESC;
+
+        idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sort, order);
+        idQuery.offset(skip).limit(take);
 
         const [fileIdObjects, count] = await idQuery.getManyAndCount();
 
@@ -307,16 +503,18 @@ export class FileService implements OnModuleInit {
         const fileIds = fileIdObjects.map((file) => file.uuid);
 
         // It must re-apply joins (for selection) and sorting.
-        const files = await this.fileRepository
+        let filesQuery = this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('file.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
             .leftJoinAndSelect('file.categories', 'category')
-            .where('file.uuid IN (:...fileIds)', { fileIds })
-            .orderBy(sort, sortOrder)
-            .getMany();
+            .where('file.uuid IN (:...fileIds)', { fileIds });
+
+        filesQuery = addSort(filesQuery, FIND_MANY_SORT_KEYS, sort, order);
+
+        const files = await filesQuery.getMany();
 
         return {
             count,
@@ -352,6 +550,8 @@ export class FileService implements OnModuleInit {
         )) {
             validTypesLookup.set(type.toLowerCase(), type);
         }
+        // Manually add 'yml' to map to YAML since we merged them
+        validTypesLookup.set('yml', FileType.YAML);
 
         // Map requested types to their valid, cased enum values and deduplicate
         const typesToFilter = [
@@ -374,6 +574,7 @@ export class FileService implements OnModuleInit {
         } else {
             // No valid types were provided (e.g., "garbage,foo")
             logger.warn(`No valid file types found in filter: ${fileTypes}`);
+
             query.andWhere('1 = 0'); // Force query to return no results
         }
     }
@@ -421,6 +622,7 @@ export class FileService implements OnModuleInit {
      */
     private async _applyTagFilter(
         query: SelectQueryBuilder<FileEntity>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tags: Record<string, any>,
     ): Promise<void> {
         const tagTypeUUIDs = Object.keys(tags);
@@ -439,7 +641,8 @@ export class FileService implements OnModuleInit {
             .leftJoin('tag.tagType', 'tagtype');
 
         const tagWhereClauses: string[] = [];
-        const tagParameters = {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tagParameters: Record<string, any> = {};
         let validTagCount = 0;
 
         for (const uuid of tagTypeUUIDs) {
@@ -449,7 +652,9 @@ export class FileService implements OnModuleInit {
                 continue;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const value = tags[uuid];
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const [column, processedValue] = this._getTagColumnAndValue(
                 tagtype.datatype,
                 value,
@@ -461,7 +666,9 @@ export class FileService implements OnModuleInit {
             }
 
             // Create unique parameter names for this condition
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             const uuidParameter = `tagtype${validTagCount}`;
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             const valueParameter = `tagval${validTagCount}`;
 
             // Build the clause: (tagtype.uuid = :uuid AND tag.VALUE_COLUMN = :value)
@@ -469,6 +676,7 @@ export class FileService implements OnModuleInit {
                 `(tagtype.uuid = :${uuidParameter} AND tag.${column} = :${valueParameter})`,
             );
             tagParameters[uuidParameter] = uuid;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             tagParameters[valueParameter] = processedValue;
 
             validTagCount++;
@@ -550,13 +758,14 @@ export class FileService implements OnModuleInit {
             where: {
                 file: { uuid: fileUuid },
             },
-            relations: ['actor'],
+            relations: ['actor', 'action', 'action.template', 'action.creator'],
             order: { createdAt: 'DESC' },
         });
 
         return {
             count: events.length,
             data:
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 events.map((event) => ({
                     uuid: event.uuid,
                     type: event.type,
@@ -566,6 +775,81 @@ export class FileService implements OnModuleInit {
                         ? {
                               uuid: event.actor.uuid,
                               name: event.actor.name,
+                              avatarUrl: null,
+                              email: null,
+                          }
+                        : undefined,
+                    action: event.action
+                        ? {
+                              uuid: event.action.uuid,
+
+                              name: event.action.template?.name,
+
+                              creator: event.action.creator
+                                  ? {
+                                        uuid: event.action.creator.uuid,
+
+                                        name: event.action.creator.name,
+                                        avatarUrl: null,
+                                        email: null,
+                                    }
+                                  : undefined,
+                          }
+                        : undefined,
+                })) ?? [],
+        } as FileEventsDto;
+    }
+
+    async getActionFileEvents(actionUuid: string): Promise<FileEventsDto> {
+        const events = await this.eventRepo.find({
+            where: {
+                action: { uuid: actionUuid },
+            },
+            relations: [
+                'actor',
+                'action',
+                'action.template',
+                'file',
+                'file.mission',
+                'file.mission.project',
+            ],
+            order: { createdAt: 'DESC' },
+        });
+
+        return {
+            count: events.length,
+            data:
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                events.map((event) => ({
+                    uuid: event.uuid,
+                    type: event.type,
+                    createdAt: event.createdAt,
+                    details: event.details,
+                    actor: event.actor
+                        ? {
+                              uuid: event.actor.uuid,
+                              name: event.actor.name,
+                              avatarUrl: null,
+                              email: null,
+                          }
+                        : undefined,
+                    action: event.action
+                        ? {
+                              uuid: event.action.uuid,
+
+                              name: event.action.template?.name,
+                          }
+                        : undefined,
+                    file: event.file
+                        ? {
+                              uuid: event.file.uuid,
+                              filename: event.file.filename,
+                              missionUuid: event.file.mission?.uuid ?? '',
+                              missionName: event.file.mission?.name ?? '',
+                              projectUuid:
+                                  event.file.mission?.project?.uuid ?? '',
+                              projectName:
+                                  event.file.mission?.project?.name ?? '',
                           }
                         : undefined,
                 })) ?? [],
@@ -584,6 +868,7 @@ export class FileService implements OnModuleInit {
         uuid: string,
         file: UpdateFile,
         actor?: UserEntity,
+        action?: ActionEntity,
     ): Promise<FileEntity | null> {
         logger.debug(`Updating file with uuid: ${uuid}`);
 
@@ -596,7 +881,6 @@ export class FileService implements OnModuleInit {
         if (!databaseFile.mission.project)
             throw new Error('Project not found!');
 
-        // [10x] Detect Rename
         const oldFilename = databaseFile.filename;
         const isRenamed = file.filename !== oldFilename;
 
@@ -621,9 +905,11 @@ export class FileService implements OnModuleInit {
                 where: { uuid: file.missionUuid },
                 relations: ['project'],
             });
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (newMission) databaseFile.mission = newMission;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (file.categories) {
             databaseFile.categories = await this.categoryRepository.find({
                 where: { uuid: In(file.categories) },
@@ -649,6 +935,7 @@ export class FileService implements OnModuleInit {
                     filename: databaseFile.filename,
                     missionUuid: databaseFile.mission.uuid,
                     ...(actor ? { actor } : {}),
+                    ...(action ? { action } : {}),
                     details: { oldFilename, newFilename: file.filename },
                 },
                 true,
@@ -693,14 +980,17 @@ export class FileService implements OnModuleInit {
      * Generate a download link for a file with the given uuid.
      * The link will expire after 1 week if expires is set to true.
      *
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      * @param uuid The unique identifier of the file
      * @param expires Whether the download link should expire
      */
     async generateDownload(
         uuid: string,
         expires: boolean,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         preview_only: boolean,
         actor?: UserEntity,
+        action?: ActionEntity,
     ): Promise<string> {
         // verify that an uuid is provided
         if (!uuid || uuid === '')
@@ -708,9 +998,11 @@ export class FileService implements OnModuleInit {
 
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
+            relations: ['mission'],
         });
 
         // verify that the file exists in DB
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (file.uuid === undefined || file.uuid !== uuid)
             throw new BadRequestException('File not found');
 
@@ -733,6 +1025,7 @@ export class FileService implements OnModuleInit {
                     missionUuid: file.mission?.uuid ?? '',
                     details: { expiresIn: expires ? '4 hours' : '1 week' },
                     ...(actor ? { actor } : {}),
+                    ...(action ? { action } : {}),
                 },
                 true,
             );
@@ -744,6 +1037,7 @@ export class FileService implements OnModuleInit {
             expires ? 4 * 60 * 60 : 604_800,
             {
                 // set filename in response headers
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'response-content-disposition': `attachment; filename ="${file.filename}"`,
             },
         );
@@ -763,6 +1057,7 @@ export class FileService implements OnModuleInit {
         fileUUIDs: string[],
         missionUUID: string,
         actor?: UserEntity,
+        action?: ActionEntity,
     ): Promise<void> {
         await Promise.all(
             fileUUIDs.map(async (uuid) => {
@@ -785,6 +1080,7 @@ export class FileService implements OnModuleInit {
                             filename: file.filename,
                             missionUuid: missionUUID,
                             ...(actor ? { actor } : {}),
+                            ...(action ? { action } : {}),
                             details: {
                                 fromMission: oldMissionUuid,
                                 toMission: missionUUID,
@@ -808,6 +1104,7 @@ export class FileService implements OnModuleInit {
                         },
                     );
                 } catch (error) {
+                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     logger.error(`Error moving file ${uuid}: ${error}`);
                 }
             }),
@@ -821,13 +1118,15 @@ export class FileService implements OnModuleInit {
      * @param uuid The unique identifier of the file
      * @param actor
      */
-    async deleteFile(uuid: string, actor?: UserEntity): Promise<void> {
+    async deleteFile(
+        uuid: string,
+        actor?: UserEntity,
+        action?: ActionEntity,
+    ): Promise<void> {
         if (!uuid) throw new BadRequestException('UUID is required');
 
         logger.debug(`Deleting file with uuid: ${uuid}`);
 
-        // [10x] Log Deletion Intent BEFORE strict deletion
-        // We need to fetch it first to have the metadata for the log
         const file = await this.fileRepository.findOne({
             where: { uuid },
             relations: ['mission'],
@@ -841,6 +1140,7 @@ export class FileService implements OnModuleInit {
                     filename: file.filename,
                     missionUuid: file.mission?.uuid ?? '',
                     ...(actor ? { actor } : {}),
+                    ...(action ? { action } : {}),
                     details: { snapshot: 'File deleted from DB and Storage' },
                 },
                 true,
@@ -871,13 +1171,22 @@ export class FileService implements OnModuleInit {
     }
 
     async getStorage(): Promise<StorageOverviewDto> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const metrics = await this.storageService.getSystemMetrics();
 
         return {
-            usedBytes: metrics.minio_system_drive_used_bytes[0].value,
-            totalBytes: metrics.minio_system_drive_total_bytes[0].value,
-            usedInodes: metrics.minio_system_drive_used_inodes[0].value,
-            totalInodes: metrics.minio_system_drive_total_inodes[0].value,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            usedBytes: metrics.minio_system_drive_used_bytes?.[0]?.value ?? 0,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            totalBytes: metrics.minio_system_drive_total_bytes?.[0]?.value ?? 0,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            usedInodes: metrics.minio_system_drive_used_inodes?.[0]?.value ?? 0,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            totalInodes:
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                metrics.minio_system_drive_total_inodes?.[0]?.value ?? 0,
         } as StorageOverviewDto;
     }
 
@@ -910,6 +1219,8 @@ export class FileService implements OnModuleInit {
         filenames: string[],
         missionUUID: string,
         userUUID: string,
+        action?: ActionEntity,
+        uploadSource = 'Web Interface',
     ): Promise<TemporaryFileAccessesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
@@ -919,8 +1230,34 @@ export class FileService implements OnModuleInit {
             where: { uuid: userUUID },
         });
 
-        const credentials = await Promise.all(
-            filenames.map(async (filename) => {
+        return await this.dataSource.transaction(async (manager) => {
+            // Deduplicate filenames to avoid self-collisions
+            const uniqueFilenames = [...new Set(filenames)];
+            const credentials: {
+                bucket: string | null;
+                fileName: string;
+                fileUUID: string | null;
+                accessCredentials: Credentials | null;
+                error?: string | null;
+            }[] = [];
+
+            const invalidFiles: { filename: string; error: string }[] = [];
+
+            // Check for existing files first to avoid transaction abortion on duplicate key error
+            const existingFiles = await manager.find(FileEntity, {
+                where: {
+                    filename: In(uniqueFilenames),
+                    mission: {
+                        uuid: missionUUID,
+                    },
+                },
+            });
+
+            const existingFilenames = new Set(
+                existingFiles.map((f) => f.filename),
+            );
+
+            for (const filename of uniqueFilenames) {
                 const emptyCredentials: {
                     bucket: string | null;
                     fileName: string;
@@ -929,14 +1266,13 @@ export class FileService implements OnModuleInit {
                     error: string | null;
                     queueUUID?: string;
                 } = {
-                    // eslint-disable-next-line unicorn/no-null
                     bucket: null,
                     fileName: filename,
-                    // eslint-disable-next-line unicorn/no-null
+
                     fileUUID: null,
-                    // eslint-disable-next-line unicorn/no-null
+
                     accessCredentials: null,
-                    // eslint-disable-next-line unicorn/no-null
+
                     error: null,
                 };
 
@@ -945,14 +1281,16 @@ export class FileService implements OnModuleInit {
                     FileType
                 > = new Map([
                     ['.bag', FileType.BAG],
+
                     ['.mcap', FileType.MCAP],
                     ['.yaml', FileType.YAML],
-                    ['.yml', FileType.YML],
+                    ['.yml', FileType.YAML],
                     ['.svo2', FileType.SVO2],
                     ['.tum', FileType.TUM],
                     ['.db3', FileType.DB3],
                 ]);
 
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 const supported_file_endings = [
                     ...fileExtensionToFileTypeMap.keys(),
                 ];
@@ -963,7 +1301,8 @@ export class FileService implements OnModuleInit {
                     )
                 ) {
                     emptyCredentials.error = 'Invalid file ending';
-                    return emptyCredentials;
+                    credentials.push(emptyCredentials);
+                    continue;
                 }
 
                 const matchingFileType = supported_file_endings.find((ending) =>
@@ -976,66 +1315,99 @@ export class FileService implements OnModuleInit {
                 if (fileType === undefined)
                     throw new UnsupportedMediaTypeException();
 
-                // check if file already exists
-                const existingFile = await this.fileRepository.exists({
-                    where: {
+                if (existingFilenames.has(filename)) {
+                    invalidFiles.push({
                         filename,
-                        mission: {
-                            uuid: missionUUID,
-                        },
-                    },
-                });
-                if (existingFile) {
-                    emptyCredentials.error = 'File already exists';
-                    emptyCredentials.fileName = filename;
-                    return emptyCredentials;
+                        error: 'File already exists',
+                    });
+                    continue;
                 }
 
-                const file = await this.fileRepository.save(
-                    this.fileRepository.create({
-                        date: new Date(),
-                        size: 0,
-                        filename,
-                        mission,
-                        creator: user,
-                        type: fileType,
-                        state: FileState.UPLOADING,
-                        origin: FileOrigin.UPLOAD,
-                    }),
-                );
+                try {
+                    // Use a nested transaction (savepoint) for each file
+                    await manager.transaction(async (nestedManager) => {
+                        const file = await nestedManager.save(
+                            FileEntity,
+                            nestedManager.create(FileEntity, {
+                                date: new Date(),
+                                size: 0,
+                                filename,
+                                mission,
+                                creator: user,
+                                type: fileType,
+                                state: FileState.UPLOADING,
+                                origin: FileOrigin.UPLOAD,
+                            }),
+                        );
 
-                await this.auditService.log(
-                    FileEventType.UPLOAD_STARTED,
-                    {
-                        fileUuid: file.uuid,
-                        filename: file.filename,
-                        missionUuid: missionUUID,
-                        actor: user,
-                        details: { origin: FileOrigin.UPLOAD },
-                    },
-                    true,
-                );
+                        await this.auditService.log(
+                            FileEventType.UPLOAD_STARTED,
+                            {
+                                fileUuid: file.uuid,
+                                filename: file.filename,
+                                missionUuid: missionUUID,
+                                actor: user,
+                                ...(action ? { action } : {}),
+                                details: {
+                                    origin: FileOrigin.UPLOAD,
+                                    source: uploadSource,
+                                },
+                            },
+                            true,
+                        );
 
-                return {
-                    bucket: env.MINIO_DATA_BUCKET_NAME,
-                    fileUUID: file.uuid,
-                    fileName: filename,
-                    accessCredentials:
-                        await this.storageService.generateTemporaryCredential(
-                            file.uuid,
-                            env.MINIO_DATA_BUCKET_NAME,
-                        ),
-                };
-            }),
-        );
+                        credentials.push({
+                            bucket: env.MINIO_DATA_BUCKET_NAME,
+                            fileUUID: file.uuid,
+                            fileName: filename,
+                            accessCredentials:
+                                await this.storageService.generateTemporaryCredential(
+                                    file.uuid,
+                                    env.MINIO_DATA_BUCKET_NAME,
+                                ),
+                        });
 
-        return {
-            // TODO: fix typing
-            data: credentials as unknown as TemporaryFileAccessDto[],
-            count: credentials.length,
-            skip: 0,
-            take: credentials.length,
-        };
+                        // Add to local set to catch duplicates in the same batch
+                        existingFilenames.add(filename);
+                    });
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } catch (error: any) {
+                    if (
+                        error instanceof QueryFailedError &&
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        error.driverError.code === '23505'
+                    ) {
+                        invalidFiles.push({
+                            filename,
+                            error: 'File already exists',
+                        });
+                        // Also add to set so we don't try again if it appears again in list (though deduplication handles this)
+                        existingFilenames.add(filename);
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+
+            if (invalidFiles.length > 0) {
+                // If we have some valid credentials and some errors, we might want to return partial success?
+                // The current API contract seems to throw BadRequest if ANY file is invalid.
+                // We'll stick to that behavior for now.
+                throw new BadRequestException({
+                    message: 'Validation failed',
+                    errors: invalidFiles,
+                });
+            }
+
+            return {
+                // TODO: fix typing
+                // @ts-ignore
+                data: credentials,
+                count: credentials.length,
+                skip: 0,
+                take: credentials.length,
+            };
+        });
     }
 
     async cancelUpload(
@@ -1055,6 +1427,8 @@ export class FileService implements OnModuleInit {
         fileUUIDs: string[],
         missionUUID: string,
     ): Promise<void> {
+        if (fileUUIDs.length === 0) return;
+
         const uniqueFilesUuids = [...new Set(fileUUIDs)];
 
         await this.fileRepository.manager.transaction(
@@ -1080,6 +1454,14 @@ export class FileService implements OnModuleInit {
                     );
                 }
 
+                // Delete potentially running ingestion jobs
+                await transactionalEntityManager.softDelete(
+                    IngestionJobEntity,
+                    {
+                        identifier: In(uniqueDatabaseFilesUuids),
+                    },
+                );
+
                 await Promise.all(
                     files.map(async (file) => {
                         const bucket = env.MINIO_DATA_BUCKET_NAME;
@@ -1093,7 +1475,10 @@ export class FileService implements OnModuleInit {
                     }),
                 );
 
-                await transactionalEntityManager.remove(files);
+                await transactionalEntityManager.softDelete(
+                    FileEntity,
+                    uniqueDatabaseFilesUuids,
+                );
             },
         );
     }
@@ -1159,6 +1544,7 @@ export class FileService implements OnModuleInit {
                 if (stats) {
                     file.size = stats.size;
                     logger.debug(
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                         `Updated size for ${file.filename}: ${file.size?.toString()}`,
                     );
                 } else {
@@ -1182,6 +1568,7 @@ export class FileService implements OnModuleInit {
             .select(['file.uuid', 'file.filename'])
             .getMany();
 
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         logger.debug(`Found ${filesToFix.length} bag files missing topics.`);
 
         for (const file of filesToFix) {

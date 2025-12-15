@@ -1,19 +1,21 @@
 <template>
-    <title-section :title="`${greeting}, ${user?.name}`" />
+    <div>
+        <title-section :title="`${greeting}, ${user?.name}`" />
 
-    <div class="q-mt-lg q-mb-lg dashboard-grid">
-        <DashboardRecentProjects />
-        <DashboardStorageIndicator />
-        <DashboardWorkerLists />
-        <RunningActions />
+        <div class="q-mt-lg q-mb-lg dashboard-grid">
+            <DashboardRecentProjects />
+            <DashboardStorageIndicator />
+            <DashboardWorkerLists />
+            <RunningActions />
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import RunningActions from 'components/actions/running-actions.vue';
 import DashboardRecentProjects from 'components/dashboard/dashboard-recent-projects.vue';
 import DashboardStorageIndicator from 'components/dashboard/dashboard-storage-indicator.vue';
-import DashboardWorkerLists from 'components/dashboard/dashborad-woker-list.vue';
-import RunningActions from 'components/running-actions.vue';
+import DashboardWorkerLists from 'components/dashboard/dashboard-worker-list.vue';
 import TitleSection from 'components/title-section.vue';
 import { useUser } from 'src/hooks/query-hooks';
 import { computed } from 'vue';

@@ -48,8 +48,8 @@
 </template>
 
 <script setup lang="ts">
-import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { DataType } from '@common/enum';
+import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import { DataType } from '@kleinkram/shared';
 import MetadataFilterInput from 'components/metadata-filter-input.vue';
 import MetadataTypeTable from 'components/metadata-type-table.vue';
 import { useDialogPluginComponent } from 'quasar';
@@ -59,24 +59,30 @@ import { computed, ref } from 'vue';
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tagValues?: Record<string, { value: any; name: string }>;
 }>();
 
 const tagtype = ref<string>('');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const tagValues = ref<Record<string, any>>({ ...properties.tagValues });
 
 const convertedTagValues = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const converted: Record<string, any> = {};
     for (const key of Object.keys(tagValues.value)) {
         const tagType = tagLookup.value[key];
 
         switch (tagType?.datatype) {
             case DataType.BOOLEAN: {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 if (tagValues.value[key].value === undefined) {
                     break;
                 }
                 converted[key] = {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     value: tagValues.value[key].value,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     name: tagValues.value[key].name,
                 };
 
@@ -84,32 +90,41 @@ const convertedTagValues = computed(() => {
             }
             case DataType.NUMBER: {
                 if (
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     Number.isNaN(Number.parseFloat(tagValues.value[key].value))
                 ) {
                     break;
                 }
                 converted[key] = {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     value: Number.parseFloat(tagValues.value[key].value),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     name: tagValues.value[key].name,
                 };
                 break;
             }
             case DataType.DATE: {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 if (!tagValues.value[key].value) {
                     break;
                 }
                 converted[key] = {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     value: new Date(tagValues.value[key].value),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     name: tagValues.value[key].name,
                 };
                 break;
             }
             default: {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 if (!tagValues.value[key].value) {
                     break;
                 }
                 converted[key] = {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     value: tagValues.value[key].value,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                     name: tagValues.value[key].name,
                 };
             }
@@ -151,6 +166,7 @@ const tagTypeSelected = (row: TagTypeDto): void => {
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const updateTagValues = (newTagValues: Record<string, any>): void => {
     tagValues.value = newTagValues;
 };

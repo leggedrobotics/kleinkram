@@ -1,7 +1,7 @@
-import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
-import { AccessGroupDto } from '@api/types/user.dto';
-import { AccessGroupType } from '@common/enum';
+import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
+import type { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
+import { AccessGroupType } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
@@ -35,6 +35,7 @@ export const searchAccessGroups = async (
 
 export const getAccessGroup = async (uuid: string): Promise<AccessGroupDto> => {
     const response = await axios.get(`/access/one`, { params: { uuid } });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -42,5 +43,6 @@ export const getProjectAccess = async (
     projectUUID: string,
 ): Promise<ProjectAccessListDto> => {
     const response = await axios.get(`/projects/${projectUUID}/access`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

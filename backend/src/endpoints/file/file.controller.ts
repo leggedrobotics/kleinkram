@@ -1,31 +1,9 @@
-import { CreatePreSignedURLSDto } from '@common/api/types/create-pre-signed-url.dto';
-import {
-    FileExistsResponseDto,
-    TemporaryFileAccessesDto,
-} from '@common/api/types/file/access.dto';
-import { FileWithTopicDto } from '@common/api/types/file/file.dto';
-import { FilesDto } from '@common/api/types/file/files.dto';
-import { IsUploadingDto } from '@common/api/types/file/is-uploading.dto';
-import { NoQueryParametersDto } from '@common/api/types/no-query-parameters.dto';
-import { StorageOverviewDto } from '@common/api/types/storage-overview.dto';
-import { UpdateFile } from '@common/api/types/update-file.dto';
-import env from '@common/environment';
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Post,
-    Put,
-    Query,
-} from '@nestjs/common';
-import { ApiOkResponse, OutputDto } from '../../decarators';
-import logger from '../../logger';
-import { FileService } from '../../services/file.service';
-import { BodyUUID, BodyUUIDArray } from '../../validation/body-decorators';
-import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
+import { ApiOkResponse, OutputDto } from '@/decorators';
+import { FileService } from '@/services/file.service';
+import { QueueService } from '@/services/queue.service';
 import {
     QueryBoolean,
+    QueryDate,
     QueryOptionalDate,
     QueryOptionalRecord,
     QueryOptionalString,
@@ -36,7 +14,58 @@ import {
     QueryString,
     QueryTake,
     QueryUUID,
-} from '../../validation/query-decorators';
+} from '@/validation/query-decorators';
+import {
+    CancelFileUploadDto,
+    CancelProcessingResponseDto,
+    CancelUploadResponseDto,
+    ConfirmUploadDto,
+    DeleteFileResponseDto,
+    DeleteMissionResponseDto,
+    DownloadResponseDto,
+    DriveCreate,
+    DriveImportResponseDto,
+    FileDto,
+    FileEventsDto,
+    FileExistsResponseDto,
+    FileQueryDto,
+    FileQueueEntriesDto,
+    FileQueueEntryDto,
+    FileWithTopicDto,
+    FilesDto,
+    FoxgloveLinkResponseDto,
+    IsUploadingDto,
+    MoveFilesResponseDto,
+    NoQueryParametersDto,
+    RecalculateHashesResponseDto,
+    ReextractTopicsResponseDto,
+    StopJobResponseDto,
+    StorageOverviewDto,
+    TemporaryAccessRequestDto,
+    TemporaryFileAccessesDto,
+    UpdateFile,
+} from '@kleinkram/api-dto';
+import env from '@kleinkram/backend-common/environment';
+import {
+    BodyOptionalSource,
+    BodyString,
+    BodyUUID,
+    BodyUUIDArray,
+    isValidFileName,
+} from '@kleinkram/validation';
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Put,
+    Query,
+} from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import logger from '../../logger';
+import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     AdminOnly,
@@ -51,15 +80,16 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 
-import { CancelFileUploadDto } from '@common/api/types/cancel-file-upload.dto';
-import { FileEventsDto } from '@common/api/types/file/file-event.dto';
-import { FileQueryDto } from '@common/api/types/file/file-query.dto';
-import FileEntity from '@common/entities/file/file.entity';
-import { HealthStatus } from '@common/frontend_shared/enum';
+import { FoxgloveService } from '@/services/foxglove.service';
+import { FileSource, HealthStatus } from '@kleinkram/shared';
 
-@Controller(['file', 'files']) // TODO: migrate to 'files'
+@Controller(['files'])
 export class FileController {
-    constructor(private readonly fileService: FileService) {}
+    constructor(
+        private readonly fileService: FileService,
+        private readonly queueService: QueueService,
+        private readonly foxgloveService: FoxgloveService,
+    ) {}
 
     @Get()
     @LoggedIn()
@@ -71,6 +101,22 @@ export class FileController {
         @Query() query: FileQueryDto,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
+        // we pre-check the access to give a proper error message
+        // the actual findMany method will check access again per file
+        await this.fileService.checkResourceAccess(
+            query.projectUuids ?? [],
+            query.missionUuids ?? [],
+            auth.user.uuid,
+        );
+
+        // also check access by patterns
+        await this.fileService.checkResourceAccessByName(
+            query.projectPatterns ?? [],
+            query.missionPatterns ?? [],
+            auth.user.uuid,
+        );
+
+        // now fetch files, we only query files we have access to
         return await this.fileService.findMany(
             query.projectUuids ?? [],
             query.projectPatterns ?? [],
@@ -127,7 +173,7 @@ export class FileController {
             'Returned File needs all specified topics (true) or any specified topics (false)',
         )
         matchAllTopics: boolean,
-        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value')
+        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value') // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tags: Record<string, any>,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
@@ -137,8 +183,8 @@ export class FileController {
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
         let _missionUUID = missionUUID;
-        if (auth.apikey) {
-            _missionUUID = auth.apikey.mission.uuid;
+        if (auth.apiKey) {
+            _missionUUID = auth.apiKey.mission.uuid;
         }
         return await this.fileService.findFiltered(
             fileName,
@@ -162,7 +208,10 @@ export class FileController {
 
     @Get('download')
     @CanReadFile()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Download link',
+        type: DownloadResponseDto,
+    })
     async download(
         @QueryUUID('uuid', 'File UUID') uuid: string,
         @QueryBoolean(
@@ -175,16 +224,18 @@ export class FileController {
             'preview_only',
             'Whether the download link is for preview only (true) or full download (false)',
         )
-        preview_only = false,
+        previewOnly = false,
         @AddUser() auth: AuthHeader,
-    ): Promise<string> {
+    ): Promise<DownloadResponseDto> {
         logger.debug(`download ${uuid}: expires=${expires.toString()}`);
-        return this.fileService.generateDownload(
+        const url = await this.fileService.generateDownload(
             uuid,
             expires,
-            preview_only,
+            previewOnly,
             auth.user,
+            auth.apiKey?.action,
         );
+        return { url };
     }
 
     // TODO: replace this with /file/:uuid
@@ -197,46 +248,80 @@ export class FileController {
     async getFileById(
         @QueryUUID('uuid', 'File UUID') uuid: string,
     ): Promise<FileWithTopicDto> {
-        return this.fileService.findOne(uuid);
+        const file = await this.fileService.findOne(uuid);
+        return plainToInstance(FileWithTopicDto, file, {
+            excludeExtraneousValues: true,
+        });
     }
 
     @Put(':uuid')
     @CanWriteFile()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'File',
+        type: FileDto,
+    })
     async update(
         @ParameterUID('uuid') uuid: string,
         @Body() dto: UpdateFile,
         @AddUser() auth: AuthHeader,
-    ): Promise<FileEntity | null> {
-        return this.fileService.update(uuid, dto, auth.user);
+    ): Promise<FileDto> {
+        const file = await this.fileService.update(
+            uuid,
+            dto,
+            auth.user,
+            auth.apiKey?.action,
+        );
+        return plainToInstance(FileDto, file, {
+            excludeExtraneousValues: true,
+        });
     }
 
     @Post('moveFiles')
     @CanMoveFiles()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Move Files Response',
+        type: MoveFilesResponseDto,
+    })
     async moveFiles(
         @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
         fileUUIDs: string[],
         @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
-    ): Promise<void> {
-        return this.fileService.moveFiles(fileUUIDs, missionUUID);
+        @AddUser() auth: AuthHeader,
+    ): Promise<MoveFilesResponseDto> {
+        await this.fileService.moveFiles(
+            fileUUIDs,
+            missionUUID,
+            auth.user,
+            auth.apiKey?.action,
+        );
+        return { success: true };
     }
 
     @Get('oneByName')
     @CanReadMission()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'File',
+        type: FileDto,
+    })
     async getOneFileByName(
         @QueryUUID('uuid', 'Mission UUID to search in') uuid: string,
         @QueryString('filename', 'Filename searched for') name: string,
-    ): Promise<FileEntity | null> {
-        return this.fileService.findOneByName(uuid, name);
+    ): Promise<FileDto> {
+        const file = await this.fileService.findOneByName(uuid, name);
+        return plainToInstance(FileDto, file, {
+            excludeExtraneousValues: true,
+        });
     }
 
     @Delete(':uuid')
     @CanDeleteFile()
-    @OutputDto(null) // TODO: type API response
-    async deleteFile(@ParameterUID('uuid') uuid: string): Promise<void> {
-        await this.fileService.deleteFile(uuid);
+    @OutputDto(DeleteFileResponseDto)
+    async deleteFile(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() auth: AuthHeader,
+    ): Promise<DeleteFileResponseDto> {
+        await this.fileService.deleteFile(uuid, auth.user, auth.apiKey?.action);
+        return { success: true };
     }
 
     @Get('storage')
@@ -266,42 +351,79 @@ export class FileController {
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Temporary file access',
+        type: TemporaryFileAccessesDto,
+    })
     async getTemporaryAccess(
         @AddUser() auth: AuthHeader,
-        @Body() body: CreatePreSignedURLSDto,
+        @Body() body: TemporaryAccessRequestDto,
     ): Promise<TemporaryFileAccessesDto> {
+        let source = body.source;
+        if (!source) {
+            source = FileSource.WEB_INTERFACE;
+            if (auth.apiKey) {
+                source = auth.apiKey.action
+                    ? FileSource.ACTION
+                    : FileSource.CLI;
+            }
+        }
+
+        const invalidFiles: { filename: string; error: string }[] = [];
+        for (const filename of body.filenames) {
+            if (!isValidFileName(filename)) {
+                invalidFiles.push({
+                    filename,
+                    error: `Filename "${filename}" is not valid!`,
+                });
+            }
+        }
+
+        if (invalidFiles.length > 0) {
+            throw new BadRequestException({
+                message: 'Validation failed',
+                errors: invalidFiles,
+            });
+        }
+
         return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
             auth.user.uuid,
+            auth.apiKey?.action,
+            source,
         );
     }
 
     @Post('cancelUpload')
     @UserOnly() //Push back authentication to the queue to accelerate the request
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(CancelUploadResponseDto)
     async cancelUpload(
         @Body() dto: CancelFileUploadDto,
         @AddUser() auth: AuthHeader,
-    ): Promise<void> {
-        logger.debug(`cancelUpload ${dto.uuids.toString()}`);
+    ): Promise<CancelUploadResponseDto> {
+        logger.debug(`cancelUpload ${JSON.stringify(dto)}`);
         await this.fileService.cancelUpload(
             dto.uuids,
             dto.missionUuid,
             auth.user.uuid,
         );
+        return { success: true };
     }
 
     @Post('deleteMultiple')
     @CanDeleteMission()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Delete Files Response',
+        type: DeleteFileResponseDto,
+    })
     async deleteMultiple(
         @BodyUUIDArray('uuids', 'List of File UUID to be deleted')
         uuids: string[],
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-    ): Promise<void> {
-        return this.fileService.deleteMultiple(uuids, missionUUID);
+    ): Promise<DeleteFileResponseDto> {
+        await this.fileService.deleteMultiple(uuids, missionUUID);
+        return { success: true };
     }
 
     @Get('exists')
@@ -352,10 +474,158 @@ export class FileController {
 
     @Post('reextractTopics')
     @AdminOnly()
-    @OutputDto(null) // TODO: type API response
-    async reextractTopics(): Promise<{ count: number }> {
+    @ApiOkResponse({
+        description: 'Reextracting topics completed',
+        type: ReextractTopicsResponseDto,
+    })
+    async reextractTopics(): Promise<ReextractTopicsResponseDto> {
         logger.debug('Triggering manual topic extraction for missing files');
         const count = await this.fileService.reextractMissingTopics();
         return { count };
+    }
+
+    @Get(':uuid/foxglove-link')
+    @CanReadFile()
+    @ApiOkResponse({
+        description: 'Generates a signed link for Foxglove Studio.',
+        type: FoxgloveLinkResponseDto,
+    })
+    async getFoxgloveLink(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() auth: AuthHeader,
+    ): Promise<{ url: string }> {
+        const url = await this.foxgloveService.generateFoxgloveUrl(
+            uuid,
+            auth.user,
+        );
+        return { url };
+    }
+
+    @Post('import/drive')
+    @CanCreateInMissionByBody()
+    @OutputDto(DriveImportResponseDto)
+    async importFromDrive(
+        @Body() body: DriveCreate,
+        @AddUser() authHeader: AuthHeader,
+    ): Promise<DriveImportResponseDto> {
+        await this.queueService.importFromDrive(body, authHeader.user);
+        return {
+            success: true,
+        };
+    }
+
+    @Post('upload/confirm')
+    @LoggedIn()
+    @ApiOkResponse({
+        type: ConfirmUploadDto,
+    })
+    async confirmUpload(
+        @BodyUUID('uuid', 'File UUID of file that successfully uploaded')
+        uuid: string,
+        @BodyString('md5', 'MD5 hash to validate uncorrupted upload')
+        md5: string,
+        @BodyOptionalSource(
+            'source',
+            'Source of the upload (CLI, Web Interface, etc.)',
+        )
+        source: FileSource | undefined,
+        @AddUser() auth: AuthHeader,
+    ): Promise<ConfirmUploadDto> {
+        let _source = source;
+        if (!_source) {
+            _source = FileSource.WEB_INTERFACE;
+            if (auth.apiKey) {
+                _source = auth.apiKey.action
+                    ? FileSource.ACTION
+                    : FileSource.CLI;
+            }
+        }
+        await this.queueService.confirmUpload(uuid, md5, auth.user, _source);
+        return {
+            success: true,
+        };
+    }
+
+    @Post('maintenance/recalculate-hashes')
+    @AdminOnly()
+    @ApiOkResponse({
+        description: 'Recalculating hashes completed',
+        type: RecalculateHashesResponseDto,
+    })
+    async recalculateHashes(): Promise<RecalculateHashesResponseDto> {
+        return await this.queueService.recalculateHashes();
+    }
+
+    @Get('queue')
+    @LoggedIn()
+    @ApiOkResponse({
+        type: FileQueueEntriesDto,
+    })
+    async active(
+        @QueryDate('startDate', 'Start of time range to filter queue by')
+        startDate: string,
+        @QueryOptionalString('stateFilter', 'State of QueueEntity to filter by')
+        stateFilter: string,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @AddUser() user: AuthHeader,
+    ): Promise<FileQueueEntriesDto> {
+        const date = new Date(startDate);
+
+        const data = (await this.queueService.active(
+            date,
+            stateFilter,
+            user.user.uuid,
+            skip,
+            take,
+        )) as unknown as FileQueueEntryDto[];
+
+        return plainToInstance(
+            FileQueueEntriesDto,
+            {
+                data,
+                // TODO: implenment count in queue Service
+                count: data.length,
+                skip,
+                take,
+            },
+            { excludeExtraneousValues: true },
+        );
+    }
+
+    @Delete('queue/:uuid')
+    @CanDeleteMission()
+    @ApiOkResponse({
+        type: DeleteMissionResponseDto,
+    })
+    async deleteQueueItem(
+        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<DeleteMissionResponseDto> {
+        return this.queueService.delete(missionUUID, uuid);
+    }
+
+    @Post('queue/:uuid/cancel')
+    @CanDeleteMission()
+    @ApiOkResponse({
+        type: CancelProcessingResponseDto,
+    })
+    async cancelProcessing(
+        @ParameterUID('uuid') queueUUID: string,
+        @BodyUUID('missionUUID', 'Mission UUID of Queue') missionUUID: string,
+    ): Promise<CancelProcessingResponseDto> {
+        return this.queueService.cancelProcessing(queueUUID, missionUUID);
+    }
+
+    @Post('queue/:uuid/stop')
+    @CanDeleteMission()
+    @ApiOkResponse({
+        type: StopJobResponseDto,
+    })
+    async stopJob(
+        @ParameterUID('uuid') queueUUID: string,
+    ): Promise<StopJobResponseDto> {
+        await this.queueService.stopJob(queueUUID);
+        return { success: true };
     }
 }

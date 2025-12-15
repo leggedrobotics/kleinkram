@@ -1,10 +1,12 @@
+// @ts-ignore
 import { defineBoot } from '#q-app/wrappers';
 import ROUTES, { PUBLIC_ROUTES } from 'src/router/routes';
 import { isAuthenticated } from 'src/services/auth';
 import { Router } from 'vue-router';
 
 let routerInstance: Router;
-export default defineBoot(({ router }) => {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+export default defineBoot(({ router }: { router: Router }) => {
     routerInstance = router;
 
     routerInstance.afterEach(async (to) => {

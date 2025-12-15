@@ -8,16 +8,23 @@
                 align="left"
                 active-color="primary"
             >
-                <q-tab name="info" label="Details" style="color: #222" />
+                <q-tab
+                    name="info"
+                    label="Execution Details"
+                    style="color: #222"
+                />
+                <q-tab
+                    name="template"
+                    label="Action Template"
+                    style="color: #222"
+                />
                 <q-tab
                     name="logs"
                     label="Logs"
                     style="color: #222"
-                    :disable="!action?.logs || action?.logs.length === 0"
+                    :disable="!logs?.data || logs?.data.length === 0"
                 >
-                    <q-tooltip
-                        v-if="!action?.logs || action?.logs.length === 0"
-                    >
+                    <q-tooltip v-if="!logs?.data || logs?.data.length === 0">
                         <span>No logs available</span>
                     </q-tooltip>
                 </q-tab>
@@ -45,6 +52,13 @@
                 <q-btn
                     class="button-border"
                     flat
+                    icon="sym_o_arrow_back"
+                    label="Back to Actions"
+                    @click="navigateBackToActions"
+                />
+                <q-btn
+                    class="button-border"
+                    flat
                     color="primary"
                     icon="sym_o_link"
                     label="Mission"
@@ -52,196 +66,64 @@
                 >
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
+                <q-btn
+                    class="button-border"
+                    flat
+                    color="primary"
+                    icon="sym_o_play_arrow"
+                    label="Restart"
+                    @click="restartAction"
+                >
+                    <q-tooltip>Restart Action</q-tooltip>
+                </q-btn>
             </button-group>
         </template>
     </title-section>
 
-    <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
+    <div v-if="isLoading" class="flex flex-center q-pa-lg">
+        <q-spinner color="primary" size="3em" />
+    </div>
+
+    <div v-else-if="!action" class="flex flex-center column q-pa-lg text-grey">
+        <q-icon name="sym_o_error" size="4em" class="q-mb-md" />
+        <div class="text-h6">Action not found</div>
+        <div class="q-mt-md">
+            <q-btn
+                color="primary"
+                label="Reload"
+                icon="sym_o_refresh"
+                unelevated
+                @click="handleRefetch"
+            />
+        </div>
+        <div v-if="error" class="text-caption text-negative q-mt-sm">
+            {{ error.message }}
+        </div>
+    </div>
+
+    <q-tab-panels
+        v-else
+        v-model="tab"
+        class="q-mt-lg"
+        style="background: transparent"
+    >
         <q-tab-panel name="info">
-            <div v-if="action" class="q-table-container">
-                <table class="q-table__table">
-                    <tbody>
-                        <tr>
-                            <td class="q-table__cell">Docker Image</td>
-                            <td class="q-table__cell">
-                                {{ action.template.imageName }}
+            <InfoBanner
+                v-if="showCliWarning"
+                text="This action likely failed due to an outdated Kleinkram CLI. Please rebuild it with a newer CLI version"
+                button-label="View Logs"
+                color="orange-1"
+                text-color="orange-9"
+                @click="viewTriggeringLog"
+            />
+            <ActionDetailsExecutionTab v-if="action" :action="action" />
+        </q-tab-panel>
 
-                                <span
-                                    v-if="action.image.repoDigests?.[0]"
-                                    style="color: #525252; font-size: 0.8em"
-                                >
-                                    <br />
-                                    {{ action.image.repoDigests?.[0] }}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Name</td>
-                            <td class="q-table__cell">
-                                {{ action?.template.name }}
-                                v{{ action?.template.version }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Created By</td>
-                            <td class="q-table__cell">
-                                {{ action?.creator?.name }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">State</td>
-                            <td class="q-table__cell">
-                                <ActionBadge v-if="action" :action="action" />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">State Reason</td>
-                            <td class="q-table__cell">
-                                {{ action?.stateCause }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Command</td>
-                            <td class="q-table__cell">
-                                {{ action?.template.command }}
-
-                                <span
-                                    v-if="!action?.template.command"
-                                    style="color: #525252; font-size: 0.8em"
-                                >
-                                    No command specified
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Entrypoint</td>
-                            <td class="q-table__cell">
-                                {{ action?.template.entrypoint }}
-
-                                <span
-                                    v-if="!action?.template.entrypoint"
-                                    style="color: #525252; font-size: 0.8em"
-                                >
-                                    No entrypoint specified
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Access Rights</td>
-                            <td class="q-table__cell">
-                                {{
-                                    accessGroupRightsMap[
-                                        action.template.accessRights
-                                    ]
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Submitted At:</td>
-                            <td class="q-table__cell">
-                                {{
-                                    action?.createdAt
-                                        ? formatDate(action?.createdAt)
-                                        : 'N/A'
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Last Updated At:</td>
-                            <td class="q-table__cell">
-                                {{
-                                    action?.updatedAt
-                                        ? formatDate(action?.updatedAt)
-                                        : 'N/A'
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Runner CPU Model:</td>
-                            <td class="q-table__cell">
-                                {{ action?.worker?.cpuModel || 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">Runner Hostname:</td>
-                            <td class="q-table__cell">
-                                {{ action.worker.hostname || 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr v-if="action">
-                            <td class="q-table__cell">Runtime:</td>
-                            <td class="q-table__cell">
-                                {{
-                                    (action.updatedAt.getTime() -
-                                        action.createdAt.getTime()) /
-                                    1000
-                                }}
-                                seconds
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="q-table__cell">
-                                Hardware Requirements:
-                            </td>
-                            <td class="q-table__cell">
-                                <div v-if="action.template">
-                                    Cores: {{ action.template.cpuCores }}<br />
-                                    RAM:
-                                    {{ action.template.cpuMemory }} GB<br />
-                                    min vRAM:
-                                    <template
-                                        v-if="action?.template.gpuMemory >= 0"
-                                    >
-                                        {{ action.template.gpuMemory }} GB
-                                    </template>
-                                    <template v-else>
-                                        no GPU requested
-                                    </template>
-                                    <br />
-                                </div>
-                                <div v-else>N/A</div>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="q-table__cell">Project / Mission:</td>
-                            <td class="q-table__cell">
-                                {{ action.mission?.project?.name }} /
-                                {{ action.mission?.name }}
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="q-table__cell">Artifact Files:</td>
-                            <td class="q-table__cell">
-                                <q-btn
-                                    v-if="
-                                        action.artifacts ===
-                                        ArtifactState.UPLOADED
-                                    "
-                                    label="Open"
-                                    flat
-                                    dense
-                                    padding="6px"
-                                    color="icon-secondary"
-                                    class="button-border"
-                                    icon="sym_o_link"
-                                    @click="openArtifact"
-                                />
-                                <div v-else>
-                                    {{ artifactState }}
-                                </div>
-                                <br />
-                                <span style="color: #525252; font-size: 0.8em">
-                                    Artifacts are only be stored for 3 months.
-                                    Please download them if you need them for
-                                    longer.
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <q-tab-panel name="template">
+            <ActionDetailsTemplateTab
+                v-if="action"
+                :template="action.template"
+            />
         </q-tab-panel>
 
         <q-tab-panel name="logs">
@@ -251,6 +133,28 @@
                 during the execution of the action.
             </p>
 
+            <div class="row justify-between items-center q-mb-md">
+                <div v-if="logs?.count" class="text-caption">
+                    Showing {{ logs.data.length }} of {{ logs.count }} log lines
+                </div>
+                <div class="q-gutter-x-sm">
+                    <q-btn
+                        v-if="(logs?.count || 0) > (logs?.data.length || 0)"
+                        flat
+                        label="Load More"
+                        color="primary"
+                        @click="loadMoreLogs"
+                    />
+                    <q-btn
+                        flat
+                        label="Download Logs"
+                        color="primary"
+                        icon="sym_o_download"
+                        @click="downloadLogs"
+                    />
+                </div>
+            </div>
+
             <q-card
                 class="q-pa-lg"
                 style="background-color: #f4f4f4"
@@ -259,13 +163,18 @@
             >
                 <q-card-section class="flex column q-pa-none">
                     <div
-                        v-for="log in action?.logs"
-                        :key="log.timestamp.toISOString()"
+                        v-for="(log, index) in logs?.data"
+                        :id="`log-line-${index}`"
+                        :key="log.timestamp"
                         class="flex justify-start q-pb-xs"
+                        :class="{
+                            'bg-orange-1': index === highlightedLogIndex,
+                        }"
                         style="
                             font-family: monospace;
                             color: #222222;
                             font-size: 0.8em;
+                            transition: background-color 3s ease-out;
                         "
                     >
                         <template v-if="log.type == 'stdout'">
@@ -328,6 +237,14 @@
                 kleinkram CLI during the execution of the action.
             </p>
 
+            <FileHistory
+                v-if="fileEvents"
+                :events="fileEvents"
+                class="q-mb-md"
+                hide-action-attribution
+            />
+
+            <h2 class="text-h5 q-mb-sm text-grey-9">Called Endpoints</h2>
             <q-card
                 class="q-pa-lg"
                 style="background-color: #f4f4f4"
@@ -360,51 +277,172 @@
 </template>
 
 <script setup lang="ts">
-import 'vue-json-pretty/lib/styles.css';
-
-import { ActionDto } from '@api/types/actions/action.dto';
-import { ArtifactState } from '@common/enum';
-import { useQuery } from '@tanstack/vue-query';
-import ActionBadge from 'components/action-badge.vue';
+import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
+import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import InfoBanner from 'components/info-banner.vue';
+import FileHistory from 'components/inspect-file/file-history.vue';
 import TitleSection from 'components/title-section.vue';
+import { useQuasar } from 'quasar';
+import { ActionService } from 'src/api/services/action.service';
+import {
+    useActionDetails,
+    useActionFileEvents,
+    useActionLogs,
+} from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
-import { accessGroupRightsMap } from 'src/services/generic';
-import { actionDetails } from 'src/services/queries/action';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, watch, watchEffect } from 'vue';
+import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 
 const tab = ref('info');
 
 const $route = useRoute();
 const $router = useRouter();
+const $q = useQuasar();
 
-const { data: action } = useQuery<ActionDto>({
-    queryKey: ['missions_action', $route.params.id],
-    queryFn: () => actionDetails($route.params.id as string),
-    refetchInterval: 5000,
+const {
+    data: action,
+    isLoading,
+    error,
+    refetch,
+} = useActionDetails(computed(() => $route.params.id as string));
+
+const handleRefetch = () => {
+    void refetch();
+};
+
+const logsLimit = ref(100);
+const totalLogsCount = ref(0);
+const isWarningDismissed = ref(false);
+const triggeringLogIndex = ref<number | null>(null);
+const highlightedLogIndex = ref<number | null>(null);
+
+const logsSkip = computed(() => {
+    if (totalLogsCount.value === 0) return 0;
+    return Math.max(0, totalLogsCount.value - logsLimit.value);
 });
 
-const artifactState = computed(() => {
-    switch (action.value?.artifacts ?? ArtifactState.ERROR) {
-        case ArtifactState.UPLOADING: {
-            return 'Uploading...';
-        }
-        case ArtifactState.ERROR: {
-            return 'N/A';
-        }
-        case ArtifactState.AWAITING_ACTION: {
-            return 'Waiting action completion...';
-        }
-        // No default
+const { data: logs, refetch: refetchLogs } = useActionLogs(
+    computed(() => $route.params.id as string),
+    logsSkip,
+    logsLimit,
+);
+
+watch(logs, (newLogs) => {
+    if (newLogs) {
+        totalLogsCount.value = newLogs.count;
     }
-    return 'N/A';
 });
 
-const openArtifact = (): void => {
-    if (action.value === undefined) return;
-    window.open(action.value.artifactUrl, '_blank');
+const showCliWarning = ref(false);
+
+watchEffect(() => {
+    if (isWarningDismissed.value) {
+        showCliWarning.value = false;
+        return;
+    }
+
+    const currentLogs = logs.value;
+    if (!currentLogs?.data) {
+        showCliWarning.value = false;
+        return;
+    }
+
+    const lastLogs = currentLogs.data.slice(-25);
+    const startIndex = Math.max(0, currentLogs.data.length - 25);
+
+    let foundIndex = -1;
+
+    for (const [index, lastLog] of lastLogs.entries()) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        const message = lastLog?.message;
+        if (
+            message &&
+            (message.includes('Update CLIVersion') ||
+                message.includes('Please update your CLI') ||
+                message.includes(
+                    'Error downloading data: Please update your CLI',
+                ))
+        ) {
+            foundIndex = Math.max(0, startIndex + index);
+            break;
+        }
+    }
+
+    if (foundIndex === -1) {
+        triggeringLogIndex.value = null;
+        showCliWarning.value = false;
+    } else {
+        triggeringLogIndex.value = foundIndex;
+        showCliWarning.value = true;
+    }
+});
+
+const viewTriggeringLog = async () => {
+    tab.value = 'logs';
+    if (triggeringLogIndex.value !== null) {
+        highlightedLogIndex.value = triggeringLogIndex.value;
+        // Wait for tab switch and DOM update
+        await nextTick();
+        const element = document.querySelector(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            `#log-line-${triggeringLogIndex.value}`,
+        );
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        setTimeout(() => {
+            highlightedLogIndex.value = null;
+        }, 2000);
+    }
+};
+
+const downloadLogs = async () => {
+    if (!action.value) return;
+    try {
+        const allLogs = await ActionService.getLogs(
+            action.value.uuid,
+            0,
+            totalLogsCount.value || 10_000,
+        );
+        const logContent = allLogs.data
+            .map(
+                (l) =>
+                    `[${formatDate(new Date(l.timestamp), true)}] [${l.type}] ${l.message}`,
+            )
+            .join('\n');
+        const blob = new Blob([logContent], { type: 'text/plain' });
+        const url = globalThis.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `action-${action.value.uuid}.log`;
+        a.click();
+        globalThis.URL.revokeObjectURL(url);
+    } catch {
+        $q.notify({
+            type: 'negative',
+            message: 'Failed to download logs',
+        });
+    }
+};
+
+const { data: fileEvents, refetch: refetchFileEvents } = useActionFileEvents(
+    computed(() => $route.params.id as string),
+);
+
+// Refetch file events when action state changes (e.g. from PROCESSING to COMPLETED)
+watch(
+    () => action.value?.state,
+    () => {
+        void refetchFileEvents();
+        void refetchLogs();
+    },
+);
+
+const loadMoreLogs = () => {
+    logsLimit.value += 100;
 };
 
 const openMission = async (): Promise<void> => {
@@ -418,29 +456,62 @@ const openMission = async (): Promise<void> => {
         },
     });
 };
+
+const restartAction = async (): Promise<void> => {
+    if (!action.value) return;
+
+    try {
+        const response = await ActionService.createAnalysis({
+            missionUUID: action.value.mission.uuid,
+            templateUUID: action.value.template.uuid,
+        });
+
+        $q.notify({
+            type: 'positive',
+            message: 'Action restarted successfully',
+        });
+
+        const routeData = $router.resolve({
+            name: ROUTES.ANALYSIS_DETAILS.name,
+            params: { id: response.actionUUID },
+        });
+        globalThis.location.assign(routeData.href);
+    } catch {
+        $q.notify({
+            type: 'negative',
+            message: 'Failed to restart action',
+        });
+    }
+};
+
+const navigateBackToActions = async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const previousPath = globalThis.history.state?.back as string | undefined;
+
+    // If we came from the actions list (any tab), go back to preserve filters/state
+    if (previousPath?.includes('/actions')) {
+        $router.back();
+        return;
+    }
+
+    // Fallback: Go to Executions tab with current action's scope
+    await $router.push(
+        action.value
+            ? {
+                  name: ROUTES.ACTION.name,
+                  params: { tab: 'runs' },
+                  query: {
+                      projectUuid: action.value.mission.project.uuid,
+                      missionUuid: action.value.mission.uuid,
+                      sortBy: 'createdAt',
+                      descending: 'true',
+                  },
+              }
+            : { name: ROUTES.ACTION.name },
+    );
+};
 </script>
 
 <style>
-.q-table-container {
-    width: 100%;
-    border: 1px solid #e0e0e0;
-    border-bottom: none;
-}
-
-.q-table__table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.q-table__cell {
-    padding: 8px;
-    border-bottom: none; /* Remove border to match page background */
-    outline: black;
-    border-bottom: 1px solid #e0e0e0;
-    border-right: 1px solid #e0e0e0;
-}
-
-.q-table__cell:last-child {
-    border-right: none;
-}
+/* Styles removed as table is no longer used */
 </style>

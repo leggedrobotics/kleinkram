@@ -56,29 +56,49 @@
         </template>
 
         <template #no-data>
-            <div
-                class="flex flex-center"
-                style="justify-content: center; margin: auto"
-            >
-                <div
-                    class="q-pa-md flex flex-center column q-gutter-md"
-                    style="min-height: 200px"
-                >
-                    <span class="text-subtitle1"> No Files Found </span>
+            <div class="full-width flex flex-center q-pa-xl text-grey">
+                <div v-if="isMissionEmpty" class="column items-center">
+                    <q-icon name="sym_o_folder_open" size="3rem" />
+                    <span class="q-mt-sm text-subtitle1">
+                        No files uploaded yet
+                    </span>
+                    <div class="q-mt-md">
+                        <CreateFileDialogOpener
+                            v-if="missionData !== undefined"
+                            :mission="missionData"
+                        >
+                            <q-btn
+                                flat
+                                dense
+                                padding="6px"
+                                class="button-border text-black"
+                                label="Upload File"
+                                icon="sym_o_upload"
+                                no-caps
+                            />
+                        </CreateFileDialogOpener>
+                    </div>
+                </div>
 
-                    <CreateFileDialogOpener
-                        v-if="missionData !== undefined"
-                        :mission="missionData"
-                    >
-                        <q-btn
-                            flat
-                            dense
-                            padding="6px"
-                            class="button-border"
-                            label="Upload File"
-                            icon="sym_o_add"
-                        />
-                    </CreateFileDialogOpener>
+                <div v-else-if="hasActiveFilters" class="column items-center">
+                    <q-icon name="sym_o_search_off" size="3rem" />
+                    <span class="q-mt-sm text-subtitle1">
+                        No files found matching your filters
+                    </span>
+                    <q-btn
+                        flat
+                        dense
+                        no-caps
+                        padding="6px"
+                        label="Reset Filters"
+                        class="button-border text-black q-mt-md"
+                        icon="sym_o_clear"
+                        @click="resetFilters"
+                    />
+                </div>
+
+                <div v-else class="column items-center">
+                    <span class="text-subtitle1">No data available</span>
                 </div>
             </div>
         </template>
@@ -191,10 +211,10 @@
 </template>
 
 <script setup lang="ts">
-import { CategoryDto } from '@api/types/category.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FilesDto } from '@api/types/file/files.dto';
-import { HealthStatus } from '@common/enum';
+import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
+import { FileType, HealthStatus } from '@kleinkram/shared';
 import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
@@ -219,14 +239,41 @@ import { useRouter } from 'vue-router';
 
 const selected = defineModel('selected', { required: true, type: Array });
 
-const $emit = defineEmits(['update:selected']);
+const $emit = defineEmits(['update:selected', 'reset-filter']);
 const $router = useRouter();
 
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
 const { data: missionData } = useMission(missionUuid);
 
-// TODO: this does not work across pages
+const isMissionEmpty = computed(() => {
+    return missionData.value && missionData.value.files.length === 0;
+});
+
+const hasActiveFilters = computed(() => {
+    const h = properties.urlHandler;
+
+    const totalFileTypes = Object.values(FileType).filter(
+        (t) => t !== FileType.ALL,
+    ).length;
+
+    const isTypeFilterActive =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        h.fileTypes && h.fileTypes.length < totalFileTypes;
+
+    return (
+        ((h.searchParams.name && h.searchParams.name.length > 0) ??
+            (h.searchParams.health && h.searchParams.health.length > 0) ??
+            isTypeFilterActive) ||
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        (h.categories && h.categories.length > 0)
+    );
+});
+
+function resetFilters(): void {
+    $emit('reset-filter');
+}
+
 const { data: missions } = useMissionsOfProjectMinimal(projectUuid, 100, 0);
 
 const nextMissionUuid = computed(() => {
@@ -259,7 +306,7 @@ if (properties.urlHandler.sortBy === 'name') {
     properties.urlHandler.setSort('filename');
 }
 
-function setPagination(update: TableRequest) {
+function setPagination(update: TableRequest): void {
     properties.urlHandler.setPage(update.pagination.page);
     properties.urlHandler.setTake(update.pagination.rowsPerPage);
     properties.urlHandler.setSort(update.pagination.sortBy);
@@ -307,6 +354,7 @@ const total = computed(() => (rawData.value ? rawData.value.count : 0));
 watch(
     () => total.value,
     () => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (data.value && !isLoading.value) {
             // eslint-disable-next-line vue/no-mutating-props
             properties.urlHandler.rowsNumber = total.value;
@@ -315,6 +363,7 @@ watch(
     { immediate: true },
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onRowClick = async (_: Event, row: any): Promise<void> => {
     await $router.push({
         path: '',
@@ -323,6 +372,8 @@ const onRowClick = async (_: Event, row: any): Promise<void> => {
         params: {
             projectUuid: projectUuid.value,
             missionUuid: missionUuid.value,
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             file_uuid: row.uuid,
         },
     });

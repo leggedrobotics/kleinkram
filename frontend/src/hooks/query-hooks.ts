@@ -1,32 +1,33 @@
-import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
-import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import { DefaultRights } from '@api/types/access-control/default-rights';
-import { ProjectAccessListDto } from '@api/types/access-control/project-access.dto';
-import { ActionWorkersDto } from '@api/types/action-workers.dto';
-import { ActionsDto } from '@api/types/actions/action.dto';
-import { CategoriesDto } from '@api/types/category.dto';
-import { FileEventsDto } from '@api/types/file/file-event.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import { MissionsDto } from '@kleinkram/api-dto';
+import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
+import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
+import type { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
+import type { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
+import type { ActionWorkersDto } from '@kleinkram/api-dto/types/action-workers.dto';
+import type { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
+import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import {
-    MissionsDto,
-    MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
-import { PermissionsDto, ProjectPermissions } from '@api/types/permissions.dto';
-import { ProjectWithRequiredTagsDto } from '@api/types/project/project-with-required-tags.dto';
-import { ProjectsDto } from '@api/types/project/projects.dto';
-import { StorageOverviewDto } from '@api/types/storage-overview.dto';
-import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
-import {
-    AccessGroupDto,
-    CurrentAPIUserDto,
-    UsersDto,
-} from '@api/types/user.dto';
+    PermissionsDto,
+    ProjectPermissions,
+} from '@kleinkram/api-dto/types/permissions.dto';
+import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
+import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
+import type {
+    TagsDto,
+    TagTypeDto,
+} from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
+import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
 import {
     AccessGroupRights,
     AccessGroupType,
     DataType,
     UserRole,
-} from '@common/enum';
+} from '@kleinkram/shared';
 import {
     ThrowOnError,
     useQuery,
@@ -41,7 +42,6 @@ import {
     getProjectAccess,
     searchAccessGroups,
 } from 'src/services/queries/access';
-import { getActions, getRunningActions } from 'src/services/queries/action';
 import { getCategories } from 'src/services/queries/categories';
 import {
     fetchFile,
@@ -103,6 +103,7 @@ export const getPermissionForProject = (
         (p: ProjectPermissions) => p.uuid === projectUuid,
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const projectPermission = (project?.access as number) ?? 0;
     return Math.max(defaultPermission, projectPermission);
 };
@@ -119,6 +120,7 @@ export const getPermissionForMission = (
         (m: { uuid: string; access: number }) => m.uuid === missionUuid,
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const missionPermission = (mission?.access as number) ?? 0;
     return Math.max(defaultPermission, missionPermission);
 };
@@ -137,6 +139,7 @@ export const canCreateMission = (
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (projectUuid === null) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.CREATE;
@@ -146,6 +149,7 @@ export const canModifyProject = (
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
     if (!permissions) return false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (projectUuid === null) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.WRITE;
@@ -203,6 +207,7 @@ export const canDeleteProject = (
     projectUuid: string | undefined,
     permissions: PermissionsDto | null | undefined,
 ): boolean => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (projectUuid === null) return false;
     if (!permissions) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
@@ -255,12 +260,15 @@ export const useMission = (
 };
 
 export const useManyMissions = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     missionUuid: ComputedRef<(string | any[])[]>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     allMissionUUIDs: ComputedRef<any[]>,
     hasMissionUUIDs: ComputedRef<boolean>,
 ): UseQueryReturnType<MissionsDto | undefined, Error> => {
     return useQuery<MissionsDto>({
         queryKey: missionUuid,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         queryFn: () => getMissions(allMissionUUIDs.value),
         enabled: hasMissionUUIDs,
     });
@@ -288,6 +296,7 @@ export const registerNoPermissionErrorHandler = (
     watch([isLoadingError], async () => {
         if (error.value instanceof AxiosError) {
             const statusCode =
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 Boolean(error.value.response?.data?.statusCode) ||
                 `Could not load the ${resourceName}`;
 
@@ -401,12 +410,15 @@ export const useFilteredProjects = (
         queryKey: ['projects', take, skip, sortBy, descending, searchParameter],
         queryFn: () => {
             const _take = typeof take === 'number' ? take : take.value;
+
             const _skip = typeof skip === 'number' ? skip : skip.value;
             const _sortBy = typeof sortBy === 'string' ? sortBy : sortBy.value;
+
             const _descending =
                 typeof descending === 'boolean' ? descending : descending.value;
 
             const _searchParameter: Record<string, string> =
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 (typeof searchParameter?.value === 'object'
                     ? searchParameter.value
                     : (searchParameter as Record<string, string>)) ?? {};
@@ -468,46 +480,6 @@ export const useAllTags = (): UseQueryReturnType<TagTypeDto[], Error> => {
     });
 };
 
-export const useActions = (
-    projectUuid: Ref<string> | string,
-    missionUuid: Ref<string | undefined> | string | undefined = undefined,
-    take: Ref<number>,
-    skip: Ref<number>,
-    sortBy: Ref<string>,
-    descending: Ref<boolean>,
-    search: Ref<string> | undefined = undefined,
-    queryKey: string,
-): UseQueryReturnType<ActionsDto | undefined, Error> => {
-    if (missionUuid === undefined) missionUuid = '';
-    if (search === undefined) search = computed(() => '');
-
-    return useQuery<ActionsDto>({
-        queryKey: computed(() => [
-            'action_mission',
-            projectUuid,
-            missionUuid,
-            queryKey,
-            take,
-            skip,
-            sortBy,
-            descending,
-            search,
-        ]),
-        queryFn: () =>
-            getActions(
-                unref(projectUuid),
-                unref(missionUuid) ?? '',
-                unref(take),
-                unref(skip),
-                unref(sortBy),
-                unref(descending),
-                unref(search) ?? '',
-            ),
-        staleTime: 0,
-        refetchInterval: 4000,
-    });
-};
-
 export const useFileEvents = (
     fileUuid: Ref<string | undefined>,
 ): UseQueryReturnType<FileEventsDto | undefined, Error> =>
@@ -560,17 +532,6 @@ export const useAccessGroup = (
         },
     });
 };
-
-export const useRunningActions = (): UseQueryReturnType<
-    ActionsDto | undefined,
-    Error
-> =>
-    useQuery({
-        queryKey: ['actions'],
-        queryFn: () => getRunningActions(),
-        staleTime: 100,
-        refetchInterval: 5000,
-    });
 
 export const useSearchAccessGroup = (
     search: Ref<string> | string,

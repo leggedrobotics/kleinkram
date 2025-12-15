@@ -2,10 +2,9 @@
     <div>
         <div class="row" style="padding-top: 12px">
             <div class="col-10">
-                <q-input
+                <app-search-bar
                     v-model="search"
-                    label="Search User / Access Group"
-                    debounce="300"
+                    placeholder="Search User / Access Group"
                 />
             </div>
         </div>
@@ -79,13 +78,14 @@
 </template>
 
 <script setup lang="ts">
-import { AccessGroupRights } from '@common/enum';
+import { AccessGroupRights } from '@kleinkram/shared';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import { QTable } from 'quasar';
 import { useSearchAccessGroup, useUserSearch } from 'src/hooks/query-hooks';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { computed, Ref, ref } from 'vue';
 
-import { AccessGroupsDto } from '@api/types/access-control/access-groups.dto';
+import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
 
 const properties = defineProps<{
     existingRights: Record<string, { label: string; value: AccessGroupRights }>;

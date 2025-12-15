@@ -7,21 +7,24 @@ import LokiTransport from 'winston-loki';
 export const ACTION_CONTAINER_LABEL = 'action_container';
 export const QUEUE_CONSUMER_LABEL = 'queue-consumer';
 
-const ignoreContainerLogs = winston.format((info: any) => {
-    if (info.labels?.job === ACTION_CONTAINER_LABEL) return false;
-    return info;
-});
+const ignoreContainerLogs = winston.format(
+    (info: winston.Logform.TransformableInfo) => {
+        const labels = info.labels as { job?: string } | undefined;
+        if (labels?.job === ACTION_CONTAINER_LABEL) return false;
+        return info;
+    },
+);
 
 const messageOnly = winston.format.printf(
     ({ level, message }: TransformableInfo): string => {
-        return `[${level.toUpperCase()}]: ${message}`;
+        return `[${level.toUpperCase()}]: ${String(message)}`;
     },
 );
 
 const traceIdFormat = winston.format((info) => {
     const currentSpan = trace.getSpan(context.active());
     if (currentSpan) {
-        info['trace_id'] = currentSpan.spanContext().traceId;
+        info.trace_id = currentSpan.spanContext().traceId;
     }
     return info;
 });
@@ -41,7 +44,9 @@ const logger = winston.createLogger({
             interval: 5,
             labels: {
                 job: QUEUE_CONSUMER_LABEL,
-                container_id: process.env['HOSTNAME'],
+
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                container_id: process.env.HOSTNAME,
             },
             json: true,
             format: winston.format.json(),

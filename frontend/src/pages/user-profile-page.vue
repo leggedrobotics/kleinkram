@@ -1,7 +1,9 @@
 <template>
-    <Suspense>
-        <UserProfileDetails />
-    </Suspense>
+    <div>
+        <Suspense>
+            <UserProfileDetails />
+        </Suspense>
+    </div>
 </template>
 
 <script setup lang="ts">

@@ -1,7 +1,5 @@
-import {
-    MissionsDto,
-    MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
+import { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
+import { MissionsDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import { AxiosResponse } from 'axios';
 import qs from 'qs';
 import axios from 'src/api/axios';
@@ -34,6 +32,7 @@ export const missionsOfProjectMinimal = async (
             skip,
         };
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parameters: Record<string, any> = {
         uuid: projectUUID,
         take,
@@ -71,6 +70,7 @@ export const missionsOfProject = async (
             skip,
         };
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parameters: Record<string, any> = {
         uuid: projectUUID,
         take,

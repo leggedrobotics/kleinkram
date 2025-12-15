@@ -2,20 +2,40 @@
     <q-btn-dropdown
         v-model="open"
         :label="labelText"
-        dense
-        clearable
+        no-caps
         flat
-        class="full-width full-height button-border"
+        :ripple="false"
+        style="height: 36px"
+        padding="0px"
+        class="full-width no-hover-effect"
+        content-class="bg-white text-black shadow-3 rounded-borders"
+        menu-anchor="bottom left"
+        menu-self="top left"
+        :menu-offset="[0, 4]"
+        @hide="onHide"
     >
-        <q-list style="width: 100%">
-            <q-item v-for="option in internalValue" :key="option.name">
-                <q-item-section class="items-center">
-                    <q-toggle
-                        dense
+        <q-list style="width: 100%; min-width: 200px" padding>
+            <q-item
+                v-for="option in internalValue"
+                :key="option.name"
+                v-ripple
+                clickable
+                class="q-py-sm"
+                @click.stop.prevent="() => onToggle(option.name)"
+            >
+                <q-item-section avatar style="min-width: 40px">
+                    <q-checkbox
                         :model-value="option.value"
-                        :label="option.name"
-                        @click.stop.prevent="() => onToggle(option.name)"
+                        dense
+                        color="primary"
+                        class="no-pointer-events"
                     />
+                </q-item-section>
+
+                <q-item-section>
+                    <q-item-label class="text-body2">
+                        {{ option.name }}
+                    </q-item-label>
                 </q-item-section>
             </q-item>
         </q-list>
@@ -23,13 +43,10 @@
 </template>
 
 <script setup lang="ts">
-import { FileType } from '@common/enum';
+import { FileType } from '@kleinkram/shared';
 import { computed, ref, watch } from 'vue';
 
-export interface FileTypeOption {
-    name: string;
-    value: boolean;
-}
+import { FileTypeOption } from 'src/types/file-type-option';
 
 const properties = defineProps<{
     modelValue?: FileTypeOption[] | undefined;
@@ -63,7 +80,13 @@ if (properties.modelValue === undefined) {
 watch(
     () => properties.modelValue,
     (v) => {
-        internalValue.value = v ? v.map((x) => ({ ...x })) : [];
+        const newValue = v
+            ? v.map((x) => ({ ...x }))
+            : DEFAULT_OPTIONS.map((value) => ({ ...value }));
+
+        if (JSON.stringify(newValue) !== JSON.stringify(internalValue.value)) {
+            internalValue.value = newValue;
+        }
     },
     { deep: true },
 );
@@ -72,7 +95,7 @@ const selectedString = computed(() => {
     return internalValue.value
         .filter((item) => item.value)
         .map((item) => item.name)
-        .join(' & ');
+        .join(', ');
 });
 
 const totalCount = computed(() => internalValue.value.length);
@@ -81,24 +104,20 @@ const selectedCount = computed(
 );
 
 const labelText = computed(() => {
-    const prefix = 'File Types:';
-
-    // If nothing selected, keep original 'All' behavior
-    if (selectedCount.value === 0) return `${prefix} All`;
-    // If all selected -> show ALL
-    if (selectedCount.value === totalCount.value) return `${prefix} ALL`;
-    // If more than 3 selected -> show MANY
-    if (selectedCount.value > 2) return `${prefix} MANY`;
-    // Otherwise show the joined names
-    return `${prefix} ${selectedString.value}`;
+    if (selectedCount.value === 0) return `File Types: All`;
+    if (selectedCount.value === totalCount.value) return `File Types: All`;
+    if (selectedCount.value > 1) return `File Types: Many`;
+    return `Type: ${selectedString.value}`;
 });
 
 function onToggle(name: string): void {
-    const updated = internalValue.value.map((it) =>
+    internalValue.value = internalValue.value.map((it) =>
         it.name === name ? { ...it, value: !it.value } : { ...it },
     );
-    internalValue.value = updated;
-    emit('update:modelValue', updated);
+}
+
+function onHide(): void {
+    emit('update:modelValue', internalValue.value);
 }
 
 function setAll(value: boolean): void {
@@ -109,3 +128,17 @@ function setAll(value: boolean): void {
 
 defineExpose({ setAll });
 </script>
+
+<style scoped>
+.no-hover-effect :deep(.q-focus-helper) {
+    display: none !important;
+}
+
+.no-hover-effect {
+    background: transparent !important;
+}
+
+.no-pointer-events {
+    pointer-events: none;
+}
+</style>

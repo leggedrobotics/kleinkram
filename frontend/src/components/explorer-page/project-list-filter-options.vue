@@ -4,42 +4,20 @@
             <my-projects-selector
                 v-if="myProjects !== undefined"
                 v-model="myProjects"
+                class="self-stretch"
             />
         </button-group>
 
         <button-group>
-            <q-input
+            <app-search-bar
                 v-model="search"
-                debounce="300"
                 placeholder="Search by Project Name"
-                dense
-                outlined
-            >
-                <template #append>
-                    <q-icon name="sym_o_search" />
-                </template>
-            </q-input>
+            />
 
-            <q-btn
-                flat
-                dense
-                padding="6px"
-                color="icon-secondary"
-                class="button-border"
-                icon="sym_o_loop"
-                @click="resetCache"
-            >
-                <q-tooltip> Refetch the Data</q-tooltip>
-            </q-btn>
+            <app-refresh-button @click="resetCache" />
 
             <dialog-opener-create-project>
-                <q-btn
-                    flat
-                    style="height: 100%"
-                    class="bg-button-secondary text-on-color"
-                    label="Create Project"
-                    icon="sym_o_add"
-                />
+                <app-create-button label="Create Project" />
             </dialog-opener-create-project>
         </button-group>
     </div>
@@ -49,6 +27,9 @@
 import { useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
+import AppCreateButton from 'components/common/app-create-button.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import AppSearchBar from 'components/common/app-search-bar.vue';
 import MyProjectsSelector from 'components/explorer-page/my-projects-selector.vue';
 import { useHandler } from 'src/hooks/query-hooks';
 import { ref, watch } from 'vue';

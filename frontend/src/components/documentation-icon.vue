@@ -17,5 +17,5 @@ const documentationBasePath = 'https://docs.datasets.leggedrobotics.com';
 const documentationDefaultPath = '/usage/getting-started.html';
 
 const documentationLink =
-    link || documentationBasePath + documentationDefaultPath;
+    link ?? documentationBasePath + documentationDefaultPath;
 </script>

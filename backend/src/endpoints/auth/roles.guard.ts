@@ -1,9 +1,10 @@
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import {
     AccessGroupRights,
     ActionState,
+    KeyTypes,
     UserRole,
-} from '@common/frontend_shared/enum';
+} from '@kleinkram/shared';
 import {
     BadRequestException,
     CanActivate,
@@ -17,14 +18,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import ActionTemplateEntity from '@common/entities/action/action-template.entity';
-import ActionEntity from '@common/entities/action/action.entity';
-import { FileGuardService } from '../../services/file-guard.service';
-import { ProjectGuardService } from '../../services/project-guard.service';
-import { UserService } from '../../services/user.service';
-import { ActionGuardService } from './action-guard.service';
-import { AuthGuardService } from './auth-guard.service';
-import { MissionGuardService } from './mission-guard.service';
+import { ActionGuardService } from '@/endpoints/auth/action-guard.service';
+import { AuthGuardService } from '@/endpoints/auth/auth-guard.service';
+import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
+import { FileGuardService } from '@/services/file-guard.service';
+import { ProjectGuardService } from '@/services/project-guard.service';
+import { UserService } from '@/services/user.service';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -35,14 +36,20 @@ export class PublicGuard implements CanActivate {
 
 export class BaseGuard extends AuthGuard('jwt') {
     async getUser(context: ExecutionContext) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const request = context.switchToHttp().getRequest();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (!request.user) {
             await super.canActivate(context); // Ensure the user is authenticated first by reading JWT
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const { user, apiKey } = request.user;
         if (!user) {
             throw new UnauthorizedException('User not logged in');
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         return { user, apiKey, request };
     }
 }
@@ -58,6 +65,7 @@ export class LoggedInUserGuard extends BaseGuard {
 @Injectable()
 export class UserGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { apiKey } = await this.getUser(context); // Will throw if not logged in
         if (apiKey) {
             throw new UnauthorizedException(
@@ -75,6 +83,7 @@ export class AdminOnlyGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey } = await this.getUser(context);
 
         if (apiKey) {
@@ -82,6 +91,7 @@ export class AdminOnlyGuard extends BaseGuard {
         }
 
         const databaseUser = await this.userService.findOneByUUID(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
             user.uuid,
             { role: true },
             {},
@@ -102,12 +112,34 @@ export class ReadProjectGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
+        const projectUUID = request.query.uuid || request.params.uuid;
+
         if (apiKey) {
+            // Check if this is an action API key
+            if (
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                apiKey.key_type === KeyTypes.ACTION &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                apiKey.mission?.project?.uuid
+            ) {
+                // Action keys can only access their associated project
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                if (apiKey.mission.project.uuid !== projectUUID) {
+                    throw new ForbiddenException(
+                        'Action key cannot access this project',
+                    );
+                }
+                return true;
+            }
+            // CLI keys and other keys cannot read projects
             throw new UnauthorizedException('CLI Keys cannot read projects');
         }
 
-        const projectUUID = request.query.uuid || request.params.uuid;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return this.projectGuardService.canAccessProject(user, projectUUID);
     }
 }
@@ -122,14 +154,19 @@ export class ReadProjectByNameGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot read projects');
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const projectName = request.query.name;
         return this.projectGuardService.canAccessProjectByName(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             projectName,
         );
     }
@@ -145,14 +182,19 @@ export class CreateInProjectByBodyGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot read projects');
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const projectUUID = request.body.projectUUID;
         return this.projectGuardService.canAccessProject(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             projectUUID,
             AccessGroupRights.CREATE,
         );
@@ -169,15 +211,20 @@ export class WriteProjectGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot write projects');
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const projectUUID =
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
             request.query.uuid || request.body.uuid || request.params.uuid;
         return this.projectGuardService.canAccessProject(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             projectUUID,
             AccessGroupRights.WRITE,
         );
@@ -191,15 +238,21 @@ export class DeleteProjectGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot delete projects');
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const projectUUID =
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
             request.query.uuid || request.params.uuid || request.body.uuid;
         return this.projectGuardService.canAccessProject(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             projectUUID,
             AccessGroupRights.DELETE,
         );
@@ -213,20 +266,27 @@ export class DeleteFileGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const fileUUID =
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
             request.query.uuid || request.body.uuid || request.params.uuid;
 
         if (apiKey) {
             return this.fileGuardService.canKeyAccessFile(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 fileUUID,
                 AccessGroupRights.DELETE,
             );
         }
         return this.fileGuardService.canAccessFile(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             fileUUID,
             AccessGroupRights.DELETE,
         );
@@ -243,10 +303,12 @@ export class CreateGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey } = await this.getUser(context);
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot create projects');
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return this.projectGuardService.canCreate(user);
     }
 }
@@ -261,16 +323,22 @@ export class ReadMissionGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUID = request.query.uuid;
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMission(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 missionUUID,
                 AccessGroupRights.READ,
             );
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return this.missionGuardService.canAccessMission(user, missionUUID);
     }
 }
@@ -285,15 +353,20 @@ export class CanReadManyMissionsGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
         if (apiKey) {
             throw new UnauthorizedException(
                 'CLI Keys cannot read many missions',
             );
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUIDs = request.query.uuids;
         return await this.missionGuardService.canReadManyMissions(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             missionUUIDs,
         );
     }
@@ -309,22 +382,32 @@ export class ReadMissionByNameGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionName = request.query.name;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const projectUuid = request.query.projectUUID;
 
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMissionByName(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 missionName,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 projectUuid,
                 AccessGroupRights.READ,
             );
         }
         return this.missionGuardService.canAccessMissionByName(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             missionName,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             projectUuid,
         );
     }
@@ -340,18 +423,24 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUID = request.body.missionUUID;
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMission(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 missionUUID,
                 AccessGroupRights.CREATE,
             );
         }
         return this.missionGuardService.canAccessMission(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             missionUUID,
             AccessGroupRights.CREATE,
         );
@@ -362,23 +451,31 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
 export class WriteMissionByBodyGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
+
         private reflector: Reflector,
     ) {
         super();
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUID = request.body.missionUUID;
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMission(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 missionUUID,
                 AccessGroupRights.WRITE,
             );
         }
         return this.missionGuardService.canAccessMission(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             missionUUID,
             AccessGroupRights.WRITE,
         );
@@ -395,20 +492,29 @@ export class CanDeleteMissionGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const missionUUID =
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
             request.body.uuid ||
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
             request.params.uuid ||
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             request.body.missionUUID;
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMission(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 missionUUID,
                 AccessGroupRights.DELETE,
             );
         }
         return this.missionGuardService.canAccessMission(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             missionUUID,
             AccessGroupRights.DELETE,
         );
@@ -419,25 +525,32 @@ export class CanDeleteMissionGuard extends BaseGuard {
 export class AddTagGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
-        @InjectRepository(ApikeyEntity)
-        private apikeyRepository: Repository<ApikeyEntity>,
+        @InjectRepository(ApiKeyEntity)
+        private apikeyRepository: Repository<ApiKeyEntity>,
         private reflector: Reflector,
     ) {
         super();
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUID = request.body.mission;
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMission(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 missionUUID,
                 AccessGroupRights.WRITE,
             );
         }
         return this.missionGuardService.canAccessMission(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             missionUUID,
             AccessGroupRights.WRITE,
         );
@@ -454,18 +567,25 @@ export class DeleteTagGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
         const taguuid = request.body.uuid || request.param.uuid;
 
         if (apiKey) {
             return this.missionGuardService.canKeyTagMission(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 taguuid,
                 AccessGroupRights.DELETE,
             );
         }
         return this.missionGuardService.canTagMission(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             taguuid,
             AccessGroupRights.WRITE,
         );
@@ -483,20 +603,29 @@ export class MoveMissionToProjectGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUID = request.query.missionUUID;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const projectUUID = request.query.projectUUID;
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot move missions');
         }
         return (
             (await this.projectGuardService.canAccessProject(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 user,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 projectUUID,
                 AccessGroupRights.CREATE,
             )) &&
             (await this.missionGuardService.canAccessMission(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 user,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 missionUUID,
                 AccessGroupRights.DELETE,
             ))
@@ -514,18 +643,26 @@ export class ReadFileGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const fileUUID = request.query.uuid ?? request.params.uuid;
 
         if (apiKey) {
             return this.fileGuardService.canKeyAccessFile(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 fileUUID,
                 AccessGroupRights.READ,
             );
         }
         return this.fileGuardService.canAccessFile(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             fileUUID,
             AccessGroupRights.READ,
         );
@@ -542,17 +679,25 @@ export class ReadFileByNameGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const filename = request.query.name;
         if (apiKey) {
             return this.fileGuardService.canKeyAccessFileByName(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 filename,
                 AccessGroupRights.READ,
             );
         }
         return this.fileGuardService.canAccessFileByName(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             filename,
             AccessGroupRights.READ,
         );
@@ -569,17 +714,26 @@ export class WriteFileGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
-        const fileUUID = request.query.uuid || request.body.uuid;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const fileUUID =
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
+            request.query.uuid || request.body.uuid || request.params.uuid;
         if (apiKey) {
             return this.fileGuardService.canKeyAccessFile(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 fileUUID,
                 AccessGroupRights.WRITE,
             );
         }
         return this.fileGuardService.canAccessFile(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             fileUUID,
             AccessGroupRights.WRITE,
         );
@@ -597,22 +751,32 @@ export class MoveFilesGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const fileUUIDs = request.body.fileUUIDs;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUID = request.body.missionUUID;
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot move files');
         }
         const canDeleteFiles = await this.fileGuardService.canAccessFiles(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             fileUUIDs,
             AccessGroupRights.DELETE,
         );
+
         if (!canDeleteFiles) {
             return false;
         }
         return this.missionGuardService.canAccessMission(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             missionUUID,
             AccessGroupRights.CREATE,
         );
@@ -626,15 +790,23 @@ export class ReadActionGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const actionUUID = request.query.uuid;
         if (apiKey) {
             return this.actionGuardService.canKeyAccessAction(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 actionUUID,
                 AccessGroupRights.READ,
             );
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return this.actionGuardService.canAccessAction(user, actionUUID);
     }
 }
@@ -650,23 +822,33 @@ export class CreateActionGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUID = request.body.missionUUID;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const actionTemplateUUID = request.body.templateUUID;
         const actionTemplate =
             await this.actionTemplateRepository.findOneOrFail({
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 where: { uuid: actionTemplateUUID },
             });
 
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMission(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 apiKey,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 missionUUID,
                 actionTemplate.accessRights,
             );
         }
         return this.missionGuardService.canAccessMission(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             missionUUID,
             actionTemplate.accessRights,
         );
@@ -685,9 +867,13 @@ export class DeleteActionGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const actionUUID = request.body.actionUUID;
         const action = await this.actionRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { uuid: actionUUID },
             relations: ['mission', 'creator'],
         });
@@ -713,12 +899,14 @@ export class DeleteActionGuard extends BaseGuard {
                 "can't delete action unless its DONE, FAILED or UNPROCESSABLE",
             );
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (action.creator.uuid === user.uuid) {
             return true;
         }
 
         const missionUUID = action.mission.uuid;
         return this.missionGuardService.canAccessMission(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
             missionUUID,
             AccessGroupRights.DELETE,
@@ -738,17 +926,25 @@ export class CreateActionsGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const missionUUIDs = request.body.missionUUIDs;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const actionTemplateUUID = request.body.templateUUID;
         const actionTemplate =
             await this.actionTemplateRepository.findOneOrFail({
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 where: { uuid: actionTemplateUUID },
             });
         if (apiKey) {
             const allCanAccess = await Promise.all(
-                missionUUIDs.map((missionUUID) =>
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                missionUUIDs.map((missionUUID: string) =>
                     this.missionGuardService.canKeyAccessMission(
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                         apiKey,
                         missionUUID,
                         actionTemplate.accessRights,
@@ -758,9 +954,12 @@ export class CreateActionsGuard extends BaseGuard {
             return allCanAccess.every(Boolean);
         }
         const allCanAccess = await Promise.all(
-            missionUUIDs.map((missionUUID) =>
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            missionUUIDs.map((missionUUID: string) =>
                 this.missionGuardService.canAccessMission(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     user.uuid,
+
                     missionUUID,
                     actionTemplate.accessRights,
                 ),
@@ -780,6 +979,7 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
         if (apiKey) {
@@ -787,10 +987,15 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
                 'CLI Keys cannot check access group creator',
             );
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const projectAccessUUID =
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
             request.body.projectAccessUUID || request.params.projectAccessUUID;
         return this.authGuardService.canEditAccessGroupByProjectUuid(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             projectAccessUUID,
         );
     }
@@ -806,6 +1011,7 @@ export class CanEditGroupByGroupUuid extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { user, apiKey, request } = await this.getUser(context);
 
         if (apiKey) {
@@ -814,9 +1020,12 @@ export class CanEditGroupByGroupUuid extends BaseGuard {
             );
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing
         const aguUUID = request.body.uuid || request.params.uuid;
         return this.authGuardService.canEditAccessGroupByGroupUuid(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             user,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             aguUUID,
         );
     }

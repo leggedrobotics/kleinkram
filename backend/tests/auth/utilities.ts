@@ -1,6 +1,5 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupType, UserRole } from '@common/frontend_shared/enum';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { UserRole } from '@kleinkram/shared';
 import { HeaderCreator } from '../utils/api-calls';
 import {
     database,
@@ -10,70 +9,7 @@ import {
 } from '../utils/database-utilities';
 
 // DEFAUL_URL for backend
-export const DEFAULT_URL = 'http://localhost:3000';
-export const DEFAULT_GROUP_UUIDS: [string] = [
-    '00000000-0000-0000-0000-000000000000',
-] as const;
-export const getAllAccessGroups = async (): Promise<AccessGroupEntity[]> => {
-    const accessGroupRepository =
-        database.getRepository<AccessGroupEntity>(AccessGroupEntity);
-    return (await accessGroupRepository.find({
-        relations: ['members', 'members.user'],
-        select: {
-            memberships: {
-                uuid: true,
-                user: {
-                    uuid: true,
-                    name: true,
-                    email: true,
-                    role: true,
-                },
-            },
-        },
-    })) as AccessGroupEntity[];
-};
-
-/**
- * Verify if an access group with the passed uuid exists
- *
- * @param uuid uuid of the access group to search for
- * @param accessGroups list of access groups to search in
- */
-export const verifyIfGroupWithUUIDExists = (
-    uuid: string,
-    accessGroups: AccessGroupEntity[],
-) => {
-    const group = accessGroups.filter(
-        (_group: AccessGroupEntity) => _group.uuid === uuid,
-    );
-    expect(group.length).toBe(1);
-};
-/**
- * Get the personal access group of the user with the passed email
- *
- * @param email email of the user
- * @param accessGroups list of access groups
- *
- * @returns access group of the user
- */
-export const getAccessGroupForEmail = (
-    email: string,
-    accessGroups: AccessGroupEntity[],
-): AccessGroupEntity => {
-    const group: AccessGroupEntity[] =
-        accessGroups.filter((_group: AccessGroupEntity) =>
-            _group.memberships?.some(
-                (accessGroupUser) =>
-                    accessGroupUser.user?.email === email &&
-                    _group.type === AccessGroupType.PRIMARY,
-            ),
-        ) ?? [];
-
-    const thereIsOnlyOnePersonalGroup = group.length === 1;
-    expect(thereIsOnlyOnePersonalGroup).toBe(true);
-
-    return group[0] as unknown as AccessGroupEntity;
-};
+export const DEFAULT_URL = process.env.DEFAULT_URL ?? 'http://localhost:3000';
 
 /**
  * Generates a user in the database, retrieves user details, and fetches a response.
@@ -93,7 +29,7 @@ export const generateAndFetchDatabaseUser = async (
 
         const baseEmail =
             userType === 'internal'
-                ? 'internal-user@kleinkram.leggedrobotics.com'
+                ? 'internal-user@kleinkram.dev'
                 : 'external-user@third-party.com';
 
         let userEmail = baseEmail;
@@ -104,6 +40,7 @@ export const generateAndFetchDatabaseUser = async (
         const userRepository = database.getRepository(UserEntity);
 
         // Check if user already exists and find an available email and username
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (true) {
             try {
                 await userRepository.findOneOrFail({
@@ -111,7 +48,9 @@ export const generateAndFetchDatabaseUser = async (
                 });
                 // If the user exists, modify the email and username
                 const [name, domain] = baseEmail.split('@');
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 userEmail = `${name}${counter}@${domain}`;
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 username = `${name}${counter}`;
                 counter++;
             } catch {
@@ -137,6 +76,7 @@ export const generateAndFetchDatabaseUser = async (
 
         if (!response.ok) {
             throw new Error(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Failed to fetch data: ${response.status} ${response.statusText}`,
             );
         }

@@ -72,31 +72,41 @@ const tracer = trace.getTracer('graphQL-backend');
  */
 export const traceWrapper =
     <T extends unknown[], U>(
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         function_: (..._: T) => U,
         functionName?: string,
     ): ((...__: T) => U) =>
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     (...arguments_: T): U =>
         tracer.startActiveSpan(
-            functionName || function_.name || 'traceWrapper',
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            functionName ?? function_.name ?? 'traceWrapper',
             (span) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let result: U | Promise<any>;
 
                 // capture some metadata about the function call
-                // eslint-disable-next-line unicorn/no-array-for-each
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, unicorn/no-array-for-each
                 arguments_.forEach((argument: any) => {
                     // check if arg is of type Job or QueueEntity and add metadata
                     if (
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         argument?.constructor?.name === 'Job' &&
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         !!argument?.id
                     ) {
                         span.setAttribute(
                             'queue_processor_job_id',
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             argument?.id,
                         );
                     } else if (
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         argument?.constructor?.name === 'QueueEntity' &&
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         !!argument?.uuid
                     ) {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                         span.setAttribute('queue_uuid', argument?.uuid);
                     }
                 });
@@ -120,7 +130,7 @@ export const traceWrapper =
                     span.setAttribute('error', true);
                     throw error;
                 } finally {
-                    // @ts-ignore
+                    // @ts-expect-error result is intentionally possibly unassigned for Promise handling
                     if (!(result instanceof Promise)) span.end();
                 }
 
@@ -141,39 +151,46 @@ export function tracing<A extends unknown[], C>(
 ):
     | (MethodDecorator & ClassDecorator)
     | ((
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           target: Record<string | symbol, any>,
           propertyKey?: string | symbol,
           descriptor?: TypedPropertyDescriptor<(...arguments_: A) => C>,
       ) => void) {
-    // @ts-ignore
+    // @ts-expect-error complex decorator type that works at runtime
     return function (
         target: new (...arguments_: A) => C,
         propertyKey?: string | symbol,
         descriptor?: TypedPropertyDescriptor<(...arguments_: A) => C>,
     ): // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void
+        | void
         | (new (...arguments_: A) => C)
         | TypedPropertyDescriptor<(...arguments_: A) => C> {
         const applyWrap = (
             methodName: string | symbol,
             originalMethod: (...arguments_: A) => C,
+
             // eslint-disable-next-line unicorn/consistent-function-scoping
         ): ((...arguments_: A) => C) => {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             return function (...arguments_: A): C {
                 return traceWrapper(
-                    // @ts-ignore
+                    // @ts-expect-error binding preserves 'this' context
                     originalMethod.bind(this),
                     traceName,
-                )(...arguments_) as C;
+                )(...arguments_);
             };
         };
 
         if (propertyKey === undefined) {
             // Decorator is applied to all methods of a class
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             for (const methodName of Reflect.ownKeys(target.prototype)) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const originalMethod: (...arguments_: A) => C =
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     target.prototype[methodName];
                 if (typeof originalMethod === 'function') {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     target.prototype[methodName] = applyWrap(
                         methodName,
                         originalMethod,
@@ -183,7 +200,7 @@ export function tracing<A extends unknown[], C>(
             return target;
         } else if (descriptor) {
             // Decorator is applied to a method
-            // @ts-ignore
+            // @ts-expect-error descriptor.value type assertion
             const originalMethod: (...arguments_: A) => C = descriptor.value;
             if (typeof originalMethod === 'function') {
                 descriptor.value = applyWrap(propertyKey, originalMethod);

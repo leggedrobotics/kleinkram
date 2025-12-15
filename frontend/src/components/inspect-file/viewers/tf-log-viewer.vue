@@ -38,7 +38,10 @@
 
                 <div class="full-width q-gutter-y-sm">
                     <div
-                        v-for="(tf, tfIdx) in msg.data.transforms || []"
+                        v-for="(tf, tfIdx) in (msg.data.transforms || []).slice(
+                            0,
+                            5,
+                        )"
                         :key="tfIdx"
                         class="bg-grey-1 rounded-borders q-pa-sm"
                     >
@@ -124,6 +127,12 @@
                             </div>
                         </div>
                     </div>
+                    <div
+                        v-if="(msg.data.transforms || []).length > 5"
+                        class="text-center text-caption text-grey-7 q-pa-xs bg-grey-2 rounded-borders"
+                    >
+                        + {{ msg.data.transforms.length - 5 }} more transforms
+                    </div>
                 </div>
             </q-item>
 
@@ -166,6 +175,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { onMounted } from 'vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -174,6 +184,7 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0) {
         emit('load-required');
     }
@@ -191,11 +202,14 @@ const formatTime = (nano: bigint): string => {
     return timePart?.replace('Z', '') ?? 'Invalid Time';
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const fmt = (number_: number | undefined): string => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (number_ === undefined || number_ === null) return '0.00';
     return number_.toFixed(4);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function copyRaw(data: any): Promise<void> {
     await quasarCopy(JSON.stringify(data, null, 2));
     Notify.create({

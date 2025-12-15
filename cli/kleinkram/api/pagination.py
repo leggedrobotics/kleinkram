@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import Any
 from typing import Dict
 from typing import Generator
@@ -34,11 +33,18 @@ def paginated_request(
 
     params[TAKE] = page_size
     params[SKIP] = 0
-    params[EXACT_MATCH] = str(exact_match).lower()  # pass string rather than bool
+    if exact_match:
+        params[EXACT_MATCH] = str(exact_match).lower()  # pass string rather than bool
 
     while True:
         resp = client.get(endpoint, params=params)
-        resp.raise_for_status()  # TODO: this is fine for now
+
+        # explicitly handle 404 if json contains message
+        if resp.status_code == 404 and "message" in resp.json():
+            raise ValueError(resp.json()["message"])
+
+        # raise for other errors
+        resp.raise_for_status()
 
         paged_data = resp.json()
         data_page = cast(List[DataPage], paged_data["data"])

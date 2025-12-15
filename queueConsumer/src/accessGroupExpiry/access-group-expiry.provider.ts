@@ -1,5 +1,5 @@
-import { redis } from '@common/consts';
-import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
+import { redis } from '@kleinkram/backend-common/consts';
+import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -48,6 +48,7 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
      * This method assumes it is being run within a distributed lock.
      *
      */
+
     private async _performExpirySoftDelete(): Promise<void> {
         const result = await this.groupMembershipRepository.softDelete({
             expirationDate: LessThan(new Date()),
@@ -55,7 +56,7 @@ export class AccessGroupExpiryProvider implements OnModuleInit {
 
         const affectedRows = result.affected ?? 0;
         logger.debug(
-            `Successfully soft-deleted ${affectedRows} expired group memberships.`,
+            `Successfully soft-deleted ${String(affectedRows)} expired group memberships.`,
         );
     }
 }

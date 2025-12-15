@@ -1,8 +1,9 @@
-import ActionEntity, {
+import {
+    ActionEntity,
     SubmittedAction,
-} from '@common/entities/action/action.entity';
-import WorkerEntity from '@common/entities/worker/worker.entity';
-import { ActionState, ArtifactState } from '@common/frontend_shared/enum';
+} from '@kleinkram/backend-common/entities/action/action.entity';
+import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { ActionState, ArtifactState } from '@kleinkram/shared';
 import {
     InjectQueue,
     OnQueueActive,
@@ -99,7 +100,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             await this.actionRepository
                 .createQueryBuilder()
                 .update()
-                .set({ worker: this.worker })
+                .set({ worker: { uuid: this.worker.uuid } })
                 .where('uuid = :uuid', { uuid: action.uuid })
                 .execute();
             logger.warn(
@@ -123,7 +124,7 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     }
 
     @OnQueueFailed()
-    async onFailed(job: Job<SubmittedAction>, error: any): Promise<void> {
+    async onFailed(job: Job<SubmittedAction>, error: unknown): Promise<void> {
         logger.error(
             `Error processing job ${job.id.toString()} of type ${job.name}. Error handled by ${os.hostname()}`,
         );
@@ -132,7 +133,9 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             return;
         }
 
-        await this.handleUnexpectedError(job, error);
+        const normalizedError =
+            error instanceof Error ? error : new Error(String(error));
+        await this.handleUnexpectedError(job, normalizedError);
     }
 
     /**

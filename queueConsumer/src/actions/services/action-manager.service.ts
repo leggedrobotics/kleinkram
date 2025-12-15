@@ -1,13 +1,12 @@
-import ActionEntity, {
-    ContainerLog,
-} from '@common/entities/action/action.entity';
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import environment from '@common/environment';
+import { tracing } from '@/tracing';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import {
-    ActionState,
-    ArtifactState,
-    KeyTypes,
-} from '@common/frontend_shared/enum';
+    ActionEntity,
+    ContainerLog,
+    Image,
+} from '@kleinkram/backend-common/entities/action/action.entity';
+import environment from '@kleinkram/backend-common/environment';
+import { ActionState, ArtifactState, KeyTypes } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
@@ -15,7 +14,6 @@ import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
-import { tracing } from '../../tracing';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
 import {
     ContainerEnvironment,
@@ -33,8 +31,8 @@ export class ActionManagerService {
         private containerDaemon: DockerDaemon,
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
-        @InjectRepository(ApikeyEntity)
-        private apikeyRepository: Repository<ApikeyEntity>,
+        @InjectRepository(ApiKeyEntity)
+        private apikeyRepository: Repository<ApiKeyEntity>,
     ) {}
 
     /**
@@ -62,7 +60,9 @@ export class ActionManagerService {
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
             rights: action.template.accessRights,
-            key_type: KeyTypes.CONTAINER,
+
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            key_type: KeyTypes.ACTION,
             action: action,
             user: action.creator,
         });
@@ -86,6 +86,7 @@ export class ActionManagerService {
             { uuid: action.uuid },
             {
                 state: ActionState.STARTING,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 state_cause: 'Action is currently running...',
             },
         );
@@ -110,51 +111,74 @@ export class ActionManagerService {
                 KLEINKRAM_PROJECT_UUID: action.mission.project.uuid,
                 KLEINKRAM_MISSION_UUID: action.mission.uuid,
                 KLEINKRAM_ACTION_UUID: action.uuid,
-                KLEINKRAM_API_ENDPOINT: environment.ENDPOINT,
+                KLEINKRAM_API_ENDPOINT: environment.BACKEND_URL,
                 KLEINKRAM_S3_ENDPOINT: `https://${environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
             };
             const needsGpu = action.template.gpuMemory > 0;
-            const { container, repoDigests, sha } =
-                await this.containerDaemon.startContainer(
-                    async (): Promise<void> => {
-                        await this.actionRepository.update(
-                            { uuid: action.uuid },
-                            { state: ActionState.PROCESSING },
-                        );
+            const {
+                container,
+                repoDigests,
+                sha,
+                source,
+                localCreatedAt,
+                remoteCreatedAt,
+            } = await this.containerDaemon.startContainer(
+                async () => {
+                    await this.actionRepository.update(
+                        { uuid: action.uuid },
+                        { state: ActionState.PROCESSING },
+                    );
+                },
+
+                {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    docker_image: action.template.image_name,
+                    name: action.uuid,
+
+                    limits: {
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        max_runtime:
+                            action.template.maxRuntime * 60 * 60 * 1000, // Hours to milliseconds
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        n_cpu: action.template.cpuCores || 1,
+
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        memory_limit:
+                            (action.template.cpuMemory || 2) *
+                            1024 *
+                            1024 *
+                            1024, // min 2 GB
                     },
-                    {
-                        docker_image: action.template.image_name,
-                        name: action.uuid,
-                        limits: {
-                            max_runtime:
-                                action.template.maxRuntime * 60 * 60 * 1000, // Hours to milliseconds
-                            n_cpu: action.template.cpuCores || 1,
-                            memory_limit:
-                                (action.template.cpuMemory || 2) *
-                                1024 *
-                                1024 *
-                                1024, // min 2 GB
-                        },
-                        needs_gpu: needsGpu,
-                        environment: environmentVariables ?? '',
-                        command: action.template.command ?? '',
-                        entrypoint: action.template.entrypoint ?? '',
-                    },
-                );
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    needs_gpu: needsGpu,
+                    environment: environmentVariables,
+                    command: action.template.command ?? '',
+                    entrypoint: action.template.entrypoint ?? '',
+                },
+            );
 
             // capture runner information
-            const actionImage = { repoDigests: repoDigests, sha };
+            const actionImage: Image = {
+                repoDigests: repoDigests,
+                sha,
+                source,
+                localCreatedAt,
+                remoteCreatedAt,
+            };
             const { executionStartedAt, container: actionContainer } =
                 await this.getContainerInfo(container);
             await this.actionRepository.update(
                 { uuid: action.uuid },
+
                 {
                     executionStartedAt,
+                    actionContainerStartedAt: executionStartedAt,
                     container: actionContainer,
                     image: actionImage,
                 },
             );
 
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             const sanitize = (string_: string): string => {
                 return string_.replace(apikey.apikey, '***');
             };
@@ -199,6 +223,7 @@ export class ActionManagerService {
                 { uuid: action.uuid },
                 {
                     executionEndedAt: new Date(),
+                    actionContainerExitedAt: new Date(),
                     artifacts: ArtifactState.UPLOADING,
                 },
             );
@@ -207,27 +232,59 @@ export class ActionManagerService {
                 throw new Error('Template is undefined');
             }
 
-            const { container: artifactUploadContainer } =
+            const { container: artifactUploadContainer, artifactMetadata } =
                 await this.containerDaemon.launchArtifactUploadContainer(
                     action.uuid,
                 );
             await artifactUploadContainer.wait();
             this.containerDaemon.removeContainer(artifactUploadContainer.id);
+
             await this.containerDaemon.removeVolume(action.uuid);
 
             const bucketName = environment.MINIO_ARTIFACTS_BUCKET_NAME;
+
             const filename = `${action.uuid}.tar.gz`;
             const artifactPath = `/${bucketName}/${filename}`;
 
+            const updateData: {
+                artifacts: ArtifactState;
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_path: string;
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_size?: number;
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_files?: string[];
+            } = {
+                artifacts: ArtifactState.UPLOADED,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_path: artifactPath,
+            };
+
+            if (artifactMetadata?.size !== undefined) {
+                updateData.artifact_size = artifactMetadata.size;
+            }
+            if (artifactMetadata?.files !== undefined) {
+                updateData.artifact_files = artifactMetadata.files;
+            }
+
             await this.actionRepository.update(
                 { uuid: action.uuid },
-                {
-                    artifacts: ArtifactState.UPLOADED,
-                    artifact_path: artifactPath,
-                },
+                updateData,
             );
 
             return true; // Mark the job as completed
+        } catch (error: unknown) {
+            logger.error(`Failed to process action: ${String(error)}`);
+            await this.actionRepository.update(
+                { uuid: action.uuid },
+                {
+                    state: ActionState.FAILED,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    state_cause:
+                        error instanceof Error ? error.message : String(error),
+                },
+            );
+            throw error;
         } finally {
             await apikey[Symbol.asyncDispose]();
         }
@@ -261,8 +318,10 @@ export class ActionManagerService {
      * The logs are also written to the logger service tagged with the
      * containerId and actionUuid.
      *
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      * @param logsObservable
      * @param actionUuid
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      * @param containerId
      * @private
      */
@@ -273,7 +332,10 @@ export class ActionManagerService {
     ): Promise<void> {
         const containerLogger = logger.child({
             labels: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 container_id: containerId,
+
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 action_uuid: actionUuid || 'unknown',
             },
         });
@@ -311,7 +373,9 @@ export class ActionManagerService {
      * Sets the state of the action based on the container exit code.
      * This function does not save the action to the database!
      *
+     // eslint-disable-next-line @typescript-eslint/naming-convention
      */
+
     private async setActionState(
         container: Dockerode.Container,
         action: Readonly<ActionEntity>,
@@ -325,7 +389,9 @@ export class ActionManagerService {
         const exitCode = Number(containerDetailsAfter.State.ExitCode);
 
         let state: ActionState;
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         let exit_code: number;
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         let state_cause: string;
 
         switch (exitCode) {
@@ -382,7 +448,9 @@ export class ActionManagerService {
             { uuid: action.uuid },
             {
                 state,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 exit_code,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 state_cause,
             },
         );
@@ -419,13 +487,13 @@ export class ActionManagerService {
             ),
         );
         const { hostname: name } = await si.osInfo();
-        const actionsInLocalProcess = (await this.actionRepository.find({
+        const actionsInLocalProcess = await this.actionRepository.find({
             where: {
                 state: ActionState.PROCESSING,
                 worker: { identifier: name },
             },
             relations: ['mission', 'mission.project'],
-        })) as Readonly<ActionEntity>[];
+        });
         logger.info(
             `Checking ${actionsInLocalProcess.length.toString()} pending Actions.`,
         );
@@ -439,6 +507,7 @@ export class ActionManagerService {
                     { uuid: action.uuid },
                     {
                         state: ActionState.FAILED,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         state_cause: 'Container crashed, no container found',
                     },
                 );
@@ -450,22 +519,22 @@ export class ActionManagerService {
         //////////////////////////////////////////////////////////////////////////////
         for (const container of runningActionContainers) {
             // try to find corresponding action
-            const uuid = container.Names[0]?.replace(
-                `/${DockerDaemon.CONTAINER_PREFIX}`,
-                '',
-            );
-
-            if (uuid === undefined) {
+            const containerName = container.Names[0];
+            if (!containerName) {
                 logger.warn(
-                    `Container ${container.Id} has no corresponding action, killing it.`,
+                    `Container ${container.Id} has no name, killing it.`,
                 );
                 await this.containerDaemon.killAndRemoveContainer(container.Id);
                 continue;
             }
+            const uuid = containerName.replace(
+                `/${DockerDaemon.CONTAINER_PREFIX}`,
+                '',
+            );
 
-            const action = (await this.actionRepository.findOne({
+            const action = await this.actionRepository.findOne({
                 where: { uuid },
-            })) as Readonly<ActionEntity> | null;
+            });
 
             // kill action container if no corresponding action is found
             if (!action) {
@@ -497,6 +566,8 @@ export class ActionManagerService {
                         { uuid: action.uuid },
                         {
                             state: ActionState.FAILED,
+
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             state_cause:
                                 'Container killed: running for more than 24 hours',
                         },
@@ -517,6 +588,7 @@ export class ActionManagerService {
                     { uuid: action.uuid },
                     {
                         state: ActionState.FAILED,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         state_cause:
                             'Container killed: action has never started',
                     },

@@ -10,6 +10,7 @@
         clearable
         dense
         outlined
+        hide-bottom-space
         use-input
         input-debounce="300"
         @clear="clear"
@@ -50,7 +51,7 @@
     </q-select>
 </template>
 <script setup lang="ts">
-import { CategoryDto } from '@api/types/category.dto';
+import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import { useCategories } from 'src/hooks/query-hooks';
 import { hashUUIDtoColor } from 'src/services/generic';
 import { computed, ref, Ref } from 'vue';
@@ -77,12 +78,23 @@ const clear = () => {
 const { data: _categories } = useCategories(properties.projectUuid, filter);
 
 const categories: Ref<CategoryDto[]> = computed(() =>
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     _categories.value ? _categories.value.data || [] : [],
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onInputChange = ($event: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     filter.value = $event;
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+:deep(.q-field__control),
+:deep(.q-field__marginal) {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+</style>

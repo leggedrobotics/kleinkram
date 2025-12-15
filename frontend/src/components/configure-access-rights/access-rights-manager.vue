@@ -81,9 +81,9 @@
 </template>
 
 <script setup lang="ts">
-import { DefaultRightDto } from '@api/types/access-control/default-right.dto';
-import { AccessGroupDto } from '@api/types/user.dto';
-import { AccessGroupRights, AccessGroupType } from '@common/enum';
+import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
+import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
+import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import AccessGroupAvatar from 'components/configure-access-rights/access-group-avatar.vue';
 import AccessRightsTable from 'components/configure-access-rights/access-rights-table.vue';
 import { QSelect } from 'quasar';
@@ -109,7 +109,10 @@ const { data: foundAccessGroups } = useSearchAccessGroup(searchQuery);
 const searchResults = computed<AccessGroupDto[]>(() => {
     return (
         foundAccessGroups.value?.data.map((r) => ({
+            // eslint-disable-next-line @typescript-eslint/no-misused-spread
             ...r,
+
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             memberCount: r.memberships?.length ?? 0,
         })) ?? []
     );
@@ -130,6 +133,7 @@ const handleSearchFilter = (
 };
 
 const getExistingRight = (uuid: string): AccessGroupRights | undefined => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return accessRights.value?.find((g) => g.uuid === uuid)?.rights;
 };
 
@@ -167,6 +171,7 @@ const onUpdateRights = (
     if (index === -1) return;
 
     const updatedList = [...accessRights.value];
+    // eslint-disable-next-line @typescript-eslint/no-misused-spread
     updatedList[index] = { ...group, rights: newRight };
 
     accessRights.value = updatedList;

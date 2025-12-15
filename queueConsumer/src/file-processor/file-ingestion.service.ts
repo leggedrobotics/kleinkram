@@ -6,24 +6,25 @@ import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Repository } from 'typeorm';
 
-import FileEntity from '@common/entities/file/file.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import env from '@common/environment';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {
     FileLocation,
     FileOrigin,
     FileState,
     FileType,
     QueueState,
-} from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
-import logger from 'src/logger';
+} from '@kleinkram/shared';
+import logger from '../logger';
 import {
     FILE_HANDLER,
     FileHandler,
     FileProcessingContext,
 } from './handlers/file-handler.interface';
 import { createHashingStream } from './helper/hash-helper';
+import { MagicNumberValidator } from './helper/magic-number.validator';
 import { FileSourceStrategy } from './strategies/file-source.interface';
 
 interface DownloadResult {
@@ -67,6 +68,24 @@ export class FileIngestionService {
                         fileData.filePath,
                     );
 
+                    const isValid = await MagicNumberValidator.validate(
+                        fileData.filePath,
+                        primaryFile.type,
+                    );
+
+                    if (!isValid) {
+                        logger.warn(
+                            `Magic number validation failed for ${primaryFile.filename} (${primaryFile.type})`,
+                        );
+                        primaryFile.state = FileState.CORRUPTED;
+                        await this.fileRepo.save(primaryFile);
+                        await this.updateQueueState(
+                            queueItem,
+                            QueueState.CORRUPTED,
+                        );
+                        return;
+                    }
+
                     await this.executeFileHandlers(
                         queueItem,
                         primaryFile,
@@ -78,9 +97,14 @@ export class FileIngestionService {
                         queueItem,
                         QueueState.COMPLETED,
                     );
-                } catch (error) {
-                    logger.error(`Failed to ingest file: ${error}`);
-                    await this.updateQueueState(queueItem, QueueState.ERROR);
+                } catch (error: unknown) {
+                    const errorMessage = String(error);
+                    logger.error(`Failed to ingest file: ${errorMessage}`);
+                    await this.updateQueueState(
+                        queueItem,
+                        QueueState.ERROR,
+                        errorMessage,
+                    );
                     throw error;
                 }
             },
@@ -95,6 +119,10 @@ export class FileIngestionService {
         await this.updateQueueState(queueItem, QueueState.DOWNLOADING);
 
         const source = await strategy.fetch(queueItem.identifier);
+
+        queueItem.displayName = source.filename;
+        await this.queueRepo.save(queueItem);
+
         const downloadPath = path.join(workDirectory, source.filename);
 
         // Start Tagging in the Background
@@ -108,7 +136,9 @@ export class FileIngestionService {
                 logger.debug(`File Tags added for ${queueItem.identifier}`),
             )
             .catch((error: unknown) =>
-                logger.warn(`Failed to add tags during download: ${error}`),
+                logger.warn(
+                    `Failed to add tags during download: ${String(error)}`,
+                ),
             );
 
         const { stream: hashStream, getHash } = createHashingStream();
@@ -136,15 +166,35 @@ export class FileIngestionService {
         queueItem: IngestionJobEntity,
         data: DownloadResult,
     ): Promise<FileEntity> {
-        const existingFile = await this.fileRepo.findOne({
-            where: { uuid: queueItem.identifier },
-        });
+        let existingFile;
+
+        // Drive Files do not have a UUID identifier, so we cannot verify existence by UUID.
+        // For standard uploads, the identifier IS the UUID.
+        if (queueItem.location !== FileLocation.DRIVE) {
+            existingFile = await this.fileRepo.findOne({
+                where: { uuid: queueItem.identifier },
+            });
+        }
 
         if (existingFile) {
             return existingFile;
         }
 
         const isBag = data.filename.endsWith('.bag');
+        const isDb3 = data.filename.endsWith('.db3');
+        const isMcap = data.filename.endsWith('.mcap');
+        const isSvo2 = data.filename.endsWith('.svo2');
+        const isTum = data.filename.endsWith('.tum');
+        const isYaml =
+            data.filename.endsWith('.yaml') || data.filename.endsWith('.yml');
+
+        let type = FileType.MCAP;
+        if (isBag) type = FileType.BAG;
+        if (isDb3) type = FileType.DB3;
+        if (isMcap) type = FileType.MCAP;
+        if (isSvo2) type = FileType.SVO2;
+        if (isTum) type = FileType.TUM;
+        if (isYaml) type = FileType.YAML;
 
         const entity = this.fileRepo.create({
             date: new Date(),
@@ -152,7 +202,7 @@ export class FileIngestionService {
             size: data.size,
             filename: data.filename,
             creator: queueItem.creator,
-            type: isBag ? FileType.BAG : FileType.MCAP,
+            type,
             state: FileState.UPLOADING,
             hash: data.hash,
             origin:
@@ -207,10 +257,14 @@ export class FileIngestionService {
     private async updateQueueState(
         queueItem: IngestionJobEntity,
         state: QueueState,
+        errorMessage?: string,
     ): Promise<void> {
         queueItem.state = state;
         if (state === QueueState.COMPLETED) {
             queueItem.processingDuration = 0; // You might want to calculate real duration here
+        }
+        if (errorMessage) {
+            queueItem.errorMessage = errorMessage.slice(0, 1000); // Truncate to avoid DB errors
         }
         await this.queueRepo.save(queueItem);
     }
@@ -231,9 +285,9 @@ export class FileIngestionService {
                 if (fs.existsSync(workDirectory)) {
                     fs.rmSync(workDirectory, { recursive: true, force: true });
                 }
-            } catch (cleanupError) {
+            } catch (cleanupError: unknown) {
                 logger.warn(
-                    `Failed to clean up temp dir ${workDirectory}: ${cleanupError}`,
+                    `Failed to clean up temp dir ${workDirectory}: ${String(cleanupError)}`,
                 );
             }
         }

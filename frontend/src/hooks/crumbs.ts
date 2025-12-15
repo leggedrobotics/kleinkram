@@ -19,6 +19,7 @@ export const useCrumbs = (): ComputedRef<PageBreadCrumb[]> => {
         const routeDefinition = Object.values(ROUTES).find(
             (r) => r.name === nameWithPostfix,
         );
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         return routeDefinition?.breadcrumbs === undefined
             ? []
             : routeDefinition.breadcrumbs;

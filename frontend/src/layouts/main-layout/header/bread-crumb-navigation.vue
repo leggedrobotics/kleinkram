@@ -6,12 +6,16 @@
             class="height-xl flex column justify-center q-px-lg"
             style="overflow-x: auto"
         >
-            <q-breadcrumbs gutter="md" class="flex-nowrap">
+            <q-breadcrumbs
+                gutter="xs"
+                class="flex-nowrap"
+                active-color="primary"
+            >
                 <template v-for="crumb in displayCrumbs" :key="crumb?.name">
                     <template v-if="crumb">
                         <q-breadcrumbs-el
                             v-if="isClickable(crumb)"
-                            class="text-link-primary ellipsis"
+                            class="breadcrumb-link text-link-primary ellipsis rounded-borders q-px-sm transition-fast"
                             :to="crumb.to"
                             :label="crumb.displayName"
                         >
@@ -24,14 +28,19 @@
                                     margin-top: 5px;
                                 "
                             />
-                            <q-tooltip v_if="crumb.displayName.length > 20">
+                            <q-tooltip
+                                v-if="crumb.displayName.length > 20"
+                                anchor="bottom middle"
+                                self="top middle"
+                                :offset="[10, 10]"
+                            >
                                 {{ crumb.displayName }}
                             </q-tooltip>
                         </q-breadcrumbs-el>
 
                         <q-breadcrumbs-el
                             v-else
-                            class="ellipsis"
+                            class="ellipsis q-px-sm"
                             :label="crumb.displayName"
                         >
                             <q-skeleton
@@ -43,7 +52,12 @@
                                     margin-top: 5px;
                                 "
                             />
-                            <q-tooltip v_if="crumb.displayName.length > 20">
+                            <q-tooltip
+                                v-if="crumb.displayName.length > 20"
+                                anchor="bottom middle"
+                                self="top middle"
+                                :offset="[10, 10]"
+                            >
                                 {{ crumb.displayName }}
                             </q-tooltip>
                         </q-breadcrumbs-el>
@@ -54,6 +68,7 @@
         <q-separator v-if="resolvedCrumbs?.length >= 1" />
     </div>
 </template>
+
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import { useCrumbs } from 'src/hooks/crumbs';
@@ -65,9 +80,11 @@ import {
 } from 'src/hooks/router-hooks';
 import { PageBreadCrumb } from 'src/router/routes-utilities';
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 const $q = useQuasar();
 const crumbs = useCrumbs();
+const route = useRoute();
 
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
@@ -78,6 +95,9 @@ const { data: mission } = useMission(missionUuid);
 const { data: file } = useFile(fileUuid);
 
 const resolvedCrumbs = computed(() => {
+    const tab = route.params.tab as string | undefined;
+    const tabName = tab === 'runs' ? 'Executions' : 'Templates';
+
     let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
@@ -87,7 +107,8 @@ const resolvedCrumbs = computed(() => {
             displayName: crumb.displayName
                 .replace(':project_name', project.value?.name ?? '')
                 .replace(':mission_name', mission.value?.name ?? '')
-                .replace(':file_name', file.value?.filename ?? ''),
+                .replace(':file_name', file.value?.filename ?? '')
+                .replace(':tab_name', tabName),
             name: crumb.name,
         } as PageBreadCrumb;
     });
@@ -102,6 +123,7 @@ const resolvedCrumbs = computed(() => {
             : _crumbs.slice(0, firstUndefinedIndex);
 
     // remove link of crumb if it is the only crumb
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (_crumbs !== undefined && _crumbs.length === 1) {
         // @ts-ignore
         _crumbs[0].to = undefined;
@@ -128,3 +150,13 @@ const isClickable = (crumb: PageBreadCrumb): boolean => {
     return crumb.to !== undefined;
 };
 </script>
+
+<style lang="scss" scoped>
+.breadcrumb-link {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: #e3f2fd;
+    }
+}
+</style>

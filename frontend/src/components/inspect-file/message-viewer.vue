@@ -3,9 +3,9 @@
         <div class="row justify-between items-center q-mb-sm">
             <div class="text-subtitle2 text-grey-8 flex items-center">
                 {{ topicName }}
-                <q-badge color="grey-4" text-color="black" class="q-ml-sm">{{
-                    messageType
-                }}</q-badge>
+                <q-badge color="grey-4" text-color="black" class="q-ml-sm">
+                    {{ messageType }}
+                </q-badge>
             </div>
 
             <q-badge
@@ -30,21 +30,36 @@
 
         <div
             v-else-if="isLoading && !hasData"
-            class="row items-center q-pa-md text-grey-7"
+            class="column flex-center q-pa-lg text-grey-7 bg-white rounded-borders"
+            style="min-height: 200px"
         >
-            <q-spinner-dots size="1.5em" />
-            <span class="q-ml-sm">Fetching data...</span>
+            <q-spinner-dots size="3em" color="primary" />
+            <div class="text-subtitle1 q-mt-md">
+                Fetching {{ messageType }}...
+            </div>
+            <div class="text-caption q-mt-xs">
+                Loaded {{ messages.length }} / {{ totalCount }} messages
+            </div>
         </div>
 
-        <component
-            :is="activeComponent"
-            v-else-if="hasData || isLoading"
-            :messages="messages"
-            :topic-name="topicName"
-            :total-count="totalCount"
-            @load-required="loadRequired"
-            @load-more="loadMore"
-        />
+        <div v-else-if="hasData || isLoading" class="relative-position">
+            <q-linear-progress
+                v-if="isLoading"
+                indeterminate
+                color="primary"
+                class="absolute-top"
+                style="z-index: 1; height: 2px"
+            />
+            <component
+                :is="activeComponent"
+                :messages="messages"
+                :topic-name="topicName"
+                :total-count="totalCount"
+                @load-required="loadRequired"
+                @load-more="loadMore"
+                @pause-preview="emitPausePreview"
+            />
+        </div>
 
         <div
             v-else
@@ -72,6 +87,7 @@ import {
 const properties = defineProps<{
     topicName: string;
     messageType: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     isLoading: boolean;
@@ -80,14 +96,16 @@ const properties = defineProps<{
     topicSize?: number;
 }>();
 
-const emit = defineEmits(['load-more', 'load-required']);
+const emit = defineEmits(['load-more', 'load-required', 'pause-preview']);
 
 const hasData = computed(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     () => properties.messages && properties.messages.length > 0,
 );
 
 // --- Type Detection ---
 const currentPreviewType = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-condition
     const sample = properties.messages?.[0]?.data;
     return detectPreviewType(properties.messageType, sample);
 });
@@ -102,5 +120,9 @@ const loadRequired = (): void => {
 
 const loadMore = (): void => {
     emit('load-more');
+};
+
+const emitPausePreview = (): void => {
+    emit('pause-preview');
 };
 </script>

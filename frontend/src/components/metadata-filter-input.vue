@@ -42,18 +42,20 @@
 </template>
 
 <script setup lang="ts">
-import { TagTypeDto } from '@api/types/tags/tags.dto';
-import { DataType } from '@common/enum';
+import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import { DataType } from '@kleinkram/shared';
 import { defineEmits, defineProps, ref, watch } from 'vue';
 
 const properties = defineProps<{
     tagTypeUuid: string;
     tagLookup: Record<string, TagTypeDto>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tagValues: Record<string, any>;
 }>();
 
 const emit = defineEmits(['update:tagValues']);
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 const internalValue = ref(properties.tagValues[properties.tagTypeUuid]?.value);
 
 const inputFieldTypeMapping = (datatype: DataType) => {
@@ -73,8 +75,10 @@ const inputFieldTypeMapping = (datatype: DataType) => {
 watch(internalValue, (newValue) => {
     const updatedTagValues = {
         ...properties.tagValues,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         [properties.tagTypeUuid]: {
             ...properties.tagValues[properties.tagTypeUuid],
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             value: newValue,
         },
     };

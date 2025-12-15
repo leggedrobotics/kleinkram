@@ -1,0 +1,22 @@
+{
+    "extends": "../tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": ".",
+        "baseUrl": ".",
+        "types": ["vite/client", "node"],
+        "allowJs": true,
+        "jsx": "preserve",
+        "module": "esnext",
+        "moduleResolution": "bundler"
+    },
+    "include": [
+        ".vitepress/**/*.ts",
+        ".vitepress/**/*.vue",
+        ".vitepress/**/*.mts",
+        "**/*.md",
+        "**/*.vue",
+        "scripts/**/*.ts"
+    ],
+    "exclude": ["node_modules", "dist", "cache"]
+}

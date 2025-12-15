@@ -1,7 +1,7 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { UserRole } from '@common/frontend_shared/enum';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,6 +20,7 @@ export class AuthGuardService {
         user: UserEntity,
         projectAccessUUID: string,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user || !projectAccessUUID) {
             logger.error(
                 `AuthGuard: projectAccessUUID (${projectAccessUUID}) or User (${user.uuid}) not provided.`,
@@ -31,6 +32,7 @@ export class AuthGuardService {
         }
         return await this.accessGroupRepository.exists({
             where: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 project_accesses: { uuid: projectAccessUUID },
                 creator: { uuid: user.uuid },
             },
@@ -41,6 +43,7 @@ export class AuthGuardService {
         user: UserEntity,
         uuid: string,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user || !uuid) {
             logger.error(
                 `AuthGuard: aguUUID (${uuid}) or User (${user.uuid}) not provided.`,

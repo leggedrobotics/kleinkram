@@ -1,4 +1,4 @@
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import axios from 'src/api/axios';
 
 export const createMission = async (
@@ -11,6 +11,7 @@ export const createMission = async (
         projectUUID,
         tags,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -20,11 +21,13 @@ export const moveMission = async (missionUUID: string, projectUUID: string) => {
         {},
         { params: { missionUUID, projectUUID } },
     );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const deleteMission = async (mission: MissionWithFilesDto) => {
     const response = await axios.delete(`/mission/${mission.uuid}`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -33,6 +36,7 @@ export const updateMissionTags = async (
     tags: Record<string, string>,
 ) => {
     const response = await axios.post('/mission/tags', { missionUUID, tags });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -41,5 +45,6 @@ export const updateMissionName = async (missionUUID: string, name: string) => {
         missionUUID,
         name,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

@@ -1,10 +1,10 @@
-import FileEventEntity from '@common/entities/file/file-event.entity';
-import FileEntity from '@common/entities/file/file.entity';
-import TopicEntity from '@common/entities/topic/topic.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { FileEventType, FileState } from '@common/frontend_shared/enum';
-import logger from 'src/logger';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { FileEventType, FileState } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
+import logger from '../../logger';
 import { ExtractedTopicInfo } from './file-handler.interface';
 
 export abstract class AbstractMetadataService {
@@ -87,9 +87,9 @@ export abstract class AbstractMetadataService {
                     },
                 }),
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(
-                `Metadata extraction finalize failed for ${targetEntity.filename}: ${error}`,
+                `Metadata extraction finalize failed for ${targetEntity.filename}: ${String(error)}`,
             );
             targetEntity.state = FileState.CONVERSION_ERROR;
             await this.fileRepo.save(targetEntity);

@@ -1,9 +1,12 @@
-import { FileEventsDto } from '@api/types/file/file-event.dto';
-import { FileWithTopicDto } from '@api/types/file/file.dto';
-import { FilesDto } from '@api/types/file/files.dto';
-import { IsUploadingDto } from '@api/types/file/is-uploading.dto';
-import { StorageOverviewDto } from '@api/types/storage-overview.dto';
-import { FileType, HealthStatus } from '@common/enum';
+import type { FileExistsResponseDto } from '@kleinkram/api-dto/types/file/access.dto';
+import type { DownloadResponseDto } from '@kleinkram/api-dto/types/file/download-response.dto';
+import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
+import type { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
+import type { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
+import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
+import { FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
@@ -17,7 +20,7 @@ export const fetchFilteredFiles = async (
     categories?: string[],
     matchAllTopics?: boolean,
     fileTypes?: FileType[],
-    tag?: Record<string, any>,
+    tag?: Record<string, unknown>,
     take?: number,
     skip?: number,
     sort?: string,
@@ -48,7 +51,7 @@ export const fetchFilteredFiles = async (
 
         const queryParameters = new URLSearchParams(parameters).toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
-            `/file/filtered?${queryParameters}`,
+            `/files/filtered?${queryParameters}`,
         );
         return response.data;
     } catch (error) {
@@ -60,7 +63,7 @@ export const fetchFilteredFiles = async (
 export const fetchFile = async (uuid: string): Promise<FileWithTopicDto> => {
     try {
         const response: AxiosResponse<FileWithTopicDto> =
-            await axios.get<FileWithTopicDto>('/file/one', {
+            await axios.get<FileWithTopicDto>('/files/one', {
                 params: { uuid },
             });
         return response.data;
@@ -72,16 +75,20 @@ export const fetchFile = async (uuid: string): Promise<FileWithTopicDto> => {
 export const downloadFile = async (
     uuid: string,
     expires: boolean,
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     preview_only = false,
 ): Promise<string> => {
-    const response = await axios.get('file/download', {
+    const response = await axios.get<DownloadResponseDto>('files/download', {
         params: {
             uuid,
+
             expires,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             preview_only,
         },
     });
-    return response.data;
+    return response.data.url;
 };
 
 export const filesOfMission = async (
@@ -95,10 +102,10 @@ export const filesOfMission = async (
     desc = false,
     health?: HealthStatus,
 ): Promise<FilesDto> => {
-    const tag: Record<string, any> = {};
+    const tag: Record<string, unknown> = {};
 
     return fetchFilteredFiles(
-        filename || '',
+        filename ?? '',
         undefined,
         missionUUID,
         undefined,
@@ -121,7 +128,7 @@ export const findOneByNameAndMission = async (
     missionUUID: string,
 ): Promise<FileWithTopicDto> => {
     const response: AxiosResponse<FileWithTopicDto> =
-        await axios.get<FileWithTopicDto>('file/oneByName', {
+        await axios.get<FileWithTopicDto>('files/oneByName', {
             params: {
                 filename,
                 uuid: missionUUID,
@@ -132,21 +139,26 @@ export const findOneByNameAndMission = async (
 
 export const getStorage = async (): Promise<StorageOverviewDto> => {
     const response: AxiosResponse<StorageOverviewDto> =
-        await axios.get<StorageOverviewDto>('file/storage');
+        await axios.get<StorageOverviewDto>('files/storage');
     return response.data;
 };
 
 export const getIsUploading = async (): Promise<boolean> => {
     const response: AxiosResponse<IsUploadingDto> =
-        await axios.get('file/isUploading');
+        await axios.get('files/isUploading');
     return response.data.isUploading;
 };
 
-export const existsFile = async (uuid: string): Promise<any> => {
+export const existsFile = async (
+    uuid: string,
+): Promise<FileExistsResponseDto | false> => {
     try {
-        const response = await axios.get('/file/exists', {
-            params: { uuid },
-        });
+        const response = await axios.get<FileExistsResponseDto>(
+            '/files/exists',
+            {
+                params: { uuid },
+            },
+        );
         return response.data;
     } catch {
         return false;
@@ -161,3 +173,10 @@ export const getFileEvents = async (
     );
     return response.data;
 };
+
+export async function getFoxgloveLink(fileUuid: string): Promise<string> {
+    const response = await axios.get<FoxgloveLinkResponseDto>(
+        `files/${fileUuid}/foxglove-link`,
+    );
+    return response.data.url;
+}

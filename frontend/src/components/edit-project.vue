@@ -68,7 +68,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ProjectWithRequiredTagsDto } from '@api/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
 import { useProjectQuery } from 'src/hooks/query-hooks';
@@ -101,6 +101,7 @@ watch(
     { immediate: true },
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 async function save_changes(): Promise<void> {
     // resolve immediately if no changes
     if (
@@ -176,6 +177,7 @@ async function save_changes(): Promise<void> {
 }
 
 defineExpose({
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     save_changes,
 });
 

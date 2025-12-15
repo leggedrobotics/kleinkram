@@ -13,13 +13,13 @@
     Move
 </template>
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQuasar } from 'quasar';
 import MoveFiles from 'src/dialogs/modify-file-location-dialog.vue';
 import { canDeleteMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 const $q = useQuasar();
 
@@ -33,6 +33,7 @@ const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() => {
     return canDeleteMission(
         mission.uuid,
+
         mission.project.uuid,
         permissions.value,
     );

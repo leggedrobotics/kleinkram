@@ -1,7 +1,7 @@
-import { CookieNames } from '@common/frontend_shared/enum';
+import { UserService } from '@/services/user.service';
+import { CookieNames } from '@kleinkram/shared';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { UserService } from '../../services/user.service';
 
 /**
  *
@@ -17,6 +17,7 @@ export class APIKeyResolverMiddleware implements NestMiddleware {
         _: Response,
         next: NextFunction,
     ): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (request.cookies !== undefined) {
             const key = request.cookies[CookieNames.CLI_KEY] as
                 | string
@@ -24,6 +25,16 @@ export class APIKeyResolverMiddleware implements NestMiddleware {
 
             if (key !== undefined) {
                 request.user = await this.userService.findUserByAPIKey(key);
+            }
+        }
+
+        if (!request.user) {
+            const headerKey = request.headers['x-api-key'] as
+                | string
+                | undefined;
+            if (headerKey) {
+                request.user =
+                    await this.userService.findUserByAPIKey(headerKey);
             }
         }
 

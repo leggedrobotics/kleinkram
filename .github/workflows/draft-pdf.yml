@@ -6,12 +6,11 @@ on:
             - .github/workflows/draft-pdf.yml
 
 jobs:
-    paper:
+    draft-pdf:
         runs-on: ubuntu-latest
-        name: Paper Draft
         steps:
             - name: Checkout
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
             - name: Build draft PDF
               uses: openjournals/openjournals-draft-action@master
               with:

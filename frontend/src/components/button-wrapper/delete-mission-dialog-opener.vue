@@ -21,19 +21,22 @@
 import {
     FlatMissionDto,
     MissionWithFilesDto,
-} from '@api/types/mission/mission.dto';
+} from '@kleinkram/api-dto/types/mission/mission.dto';
 import { useQuasar } from 'quasar';
 import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
 const $q = useQuasar();
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const { mission } = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
     mission: FlatMissionDto | MissionWithFilesDto;
 }>();
 const { data: permissions } = usePermissionsQuery();
 
 const fileCount = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return 'filesCount' in mission ? mission.filesCount : mission.files.length;
 });
 
@@ -42,7 +45,9 @@ const canModify = computed(() => {
         return false;
     }
     return canModifyMission(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         mission.uuid,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         mission.project.uuid,
         permissions.value,
     );
@@ -54,6 +59,7 @@ const deleteMission = (): void => {
         title: 'Delete Mission',
         component: DeleteMissionDialog,
         componentProps: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             missionUuid: mission.uuid,
         },
     });

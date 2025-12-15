@@ -60,6 +60,7 @@
     </div>
 </template>
 <script setup lang="ts">
+import { RecalculateHashesResponseDto } from '@kleinkram/api-dto';
 import { useQuasar } from 'quasar';
 import axios from 'src/api/axios';
 
@@ -88,10 +89,12 @@ async function resetFileSizes(): Promise<void> {
 }
 
 async function recalculateHashes(): Promise<void> {
-    const { data } = await axios.post('queue/recalculateHashes');
+    const { data } = await axios.post<RecalculateHashesResponseDto>(
+        'files/maintenance/recalculate-hashes',
+    );
 
     $q.notify({
-        message: `Recalculating hashes started. ${data.fileCount} files to process`,
+        message: `Recalculating hashes started. ${String(data.fileCount)} files to process`,
         color: 'positive',
         position: 'bottom',
         timeout: 2000,
@@ -99,9 +102,11 @@ async function recalculateHashes(): Promise<void> {
 }
 
 async function reextractTopics(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { data } = await axios.post('file/reextractTopics');
 
     $q.notify({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
         message: `Topic extraction started. ${data.count} files queued.`,
         color: 'positive',
         position: 'bottom',

@@ -1,12 +1,12 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import UserEntity from '@common/entities/user/user.entity';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
-} from '@common/frontend_shared/enum';
-import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+} from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
@@ -28,6 +28,7 @@ export class ProjectGuardService {
         projectUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!projectUuid || !user) {
             return false;
         }
@@ -55,6 +56,7 @@ export class ProjectGuardService {
         projectName: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!projectName || !user) {
             return false;
         }
@@ -68,6 +70,7 @@ export class ProjectGuardService {
     }
 
     async canCreate(user: UserEntity): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!user) {
             return false;
         }

@@ -5,7 +5,7 @@ import { pipeline } from 'node:stream/promises';
 
 /**
  * Creates a Transform stream that calculates the hash of data flowing through it.
- * Respects backpressure (10x performance requirement).
+ * Respects backpressure.
  */
 export function createHashingStream(algorithm = 'md5'): {
     stream: Transform;

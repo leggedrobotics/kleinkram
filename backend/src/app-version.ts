@@ -7,7 +7,6 @@ interface PackageJson {
 }
 
 const path = '/usr/src/app/backend/package.json';
-const fallbackPath = '../package.json';
 
 function readFileIfExists(filePath: string): PackageJson | null {
     try {
@@ -25,8 +24,9 @@ function readFileIfExists(filePath: string): PackageJson | null {
 export const appVersion = (() => {
     let packageJson = readFileIfExists(path);
 
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     if (!packageJson) {
-        packageJson = readFileIfExists(fallbackPath);
+        packageJson = readFileIfExists('./package.json');
     }
 
     return packageJson?.version ?? '';

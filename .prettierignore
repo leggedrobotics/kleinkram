@@ -11,6 +11,8 @@
 **/__generated__endpoints.json
 **/.mypy_cache
 **/cli
+pnpm-lock.yaml
+**/.pnpm-store
 
 # ignore bag and mcap files
 **/*.mcap

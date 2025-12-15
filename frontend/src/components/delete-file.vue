@@ -19,7 +19,7 @@ import { deleteFile } from 'src/services/mutations/file';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 const fileNameCheck = ref('');
 const client = useQueryClient();
@@ -82,6 +82,8 @@ const properties = defineProps<{
 
 defineExpose({
     deleteFileAction,
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     file_name_check: fileNameCheck,
 });
 </script>

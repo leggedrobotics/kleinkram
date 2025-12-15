@@ -1,13 +1,18 @@
-version: '3.8'
-
 services:
+    base:
+        image: kleinkram-base
+        build:
+            context: .
+            dockerfile: docker/base.Dockerfile
+
     api-server:
         image: rslethz/kleinkram:api-server-dev
-        container_name: kleinkram-api-server
+        container_name: kleinkram-api-server-dev
 
         build:
             context: .
-            dockerfile: ./backend/prod.Dockerfile
+            dockerfile: docker/backend.Dockerfile
+            target: production
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -24,13 +29,15 @@ services:
 
         environment:
             DEVBUILD: 'false'
+            REDIS_HOST: redis
 
         depends_on:
             - database
+            - redis
 
     database:
         image: postgres:17
-        container_name: kleinkram-postgres
+        container_name: kleinkram-postgres-dev
 
         ports:
             - '5432:5432'
@@ -48,26 +55,23 @@ services:
 
     minio:
         image: minio/minio
-        container_name: kleinkram-minio
+        container_name: kleinkram-minio-dev
 
         volumes:
             - minio_data:/data
+            - ./docker/minio-entrypoint.sh:/docker-entrypoint.sh:ro
 
         environment:
             MINIO_ROOT_USER: ${MINIO_USER}
             MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+            MINIO_PROMETHEUS_AUTH_TYPE: 'public'
+            MINIO_DATA_BUCKET_NAME: ${MINIO_DATA_BUCKET_NAME}
+            MINIO_DB_BUCKET_NAME: ${MINIO_DB_BUCKET_NAME}
+            MINIO_ARTIFACTS_BUCKET_NAME: ${MINIO_ARTIFACTS_BUCKET_NAME}
+            MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+            MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
 
-        command: >
-            mkdir -p /data/${MINIO_DATA_BUCKET_NAME} && 
-            mkdir -p /data/${MINIO_DB_BUCKET_NAME} &&
-            mkdir -p /data/${MINIO_ARTIFACTS_BUCKET_NAME} && 
-            /usr/bin/minio server --console-address ':9001' /data & 
-            sleep 10 &&
-            mc alias set myminio http://127.0.0.1:9000 ${MINIO_USER} ${MINIO_PASSWORD} &&
-            mc ilm rule add myminio/${MINIO_ARTIFACTS_BUCKET_NAME} --expire-days 90 || true &&
-            mc admin user svcacct add --access-key '${MINIO_ACCESS_KEY}' --secret-key '${MINIO_SECRET_KEY}' myminio ${MINIO_USER} || true &&
-            echo 'minio is ready' &&
-            sleep infinity"
+        entrypoint: ['/docker-entrypoint.sh']
 
         ports:
             - '127.0.0.1:9000:9000' # file storage
@@ -78,13 +82,21 @@ services:
 
     frontend:
         image: rslethz/kleinkram:frontend-dev
-        container_name: kleinkram-frontend
+        container_name: kleinkram-frontend-dev
 
         build:
             context: .
-            dockerfile: ./frontend/Dockerfile
+            dockerfile: docker/frontend.Dockerfile
+            target: production
             args:
-                - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
+                - BACKEND_URL=${BACKEND_URL}
+                - GIT_BRANCH=${GIT_BRANCH}
+                - GIT_COMMIT=${GIT_COMMIT}
+
+        volumes:
+            - ./frontend:/app/frontend
+            - ./packages:/app/packages
+            - /app/frontend/node_modules
 
         ports:
             - '8003:80'
@@ -94,7 +106,7 @@ services:
 
     redis:
         image: redis:latest
-        container_name: kleinkram-redis
+        container_name: kleinkram-redis-dev
         ports:
             - '6379:6379'
         networks:
@@ -102,10 +114,11 @@ services:
 
     queue-consumer:
         image: rslethz/kleinkram:queue-consumer-dev
-        container_name: kleinkram-queue-consumer
+        container_name: kleinkram-queue-consumer-dev
         build:
             context: .
-            dockerfile: ./queueConsumer/prod.Dockerfile
+            dockerfile: docker/queue-consumer.Dockerfile
+            target: production
         env_file:
             - .env
         networks:
@@ -116,9 +129,13 @@ services:
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+            - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
+        # Add docker group to allow access to docker socket
+        group_add:
+            - ${DOCKER_GID:-999}
     prometheus:
         image: prom/prometheus
-        container_name: kleinkram-prometheus
+        container_name: kleinkram-prometheus-dev
         volumes:
             - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
             - logging-prometheus-storage:/prometheus
@@ -136,7 +153,7 @@ services:
     tempo:
         user: '0:0'
         image: grafana/tempo:latest
-        container_name: kleinkram-tempo
+        container_name: kleinkram-tempo-dev
         command: ['-config.file=/etc/tempo/tempo.yml']
         volumes:
             - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
@@ -150,11 +167,12 @@ services:
 
     loki:
         image: grafana/loki
-        container_name: kleinkram-loki
+        container_name: kleinkram-loki-dev
         ports:
             - '3100:3100'
         command:
             - --config.file=/mnt/config/loki-config.yml
+            - -log.level=error
         volumes:
             - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
         networks:
@@ -162,13 +180,13 @@ services:
 
     grafana:
         image: grafana/grafana
-        container_name: kleinkram-grafana
+        container_name: kleinkram-grafana-dev
         volumes:
             - logging-grafana-storage:/var/lib/grafana
             - ./observability/grafana/provisioning:/etc/grafana/provisioning
 
         environment:
-            - GF_LOG_LEVEL=debug
+            - GF_LOG_LEVEL=critical
         ports:
             - '9050:3000' # localhost:9050 for accessing grafana
         networks:
@@ -178,14 +196,17 @@ services:
         depends_on:
             - api-server
         image: rslethz/kleinkram:docs-dev
-        container_name: kleinkram-documentation
+        container_name: kleinkram-documentation-dev
         volumes:
             - swagger-spec:/app/src/docs/
         build:
-            context: docs/.
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: docker/docs.Dockerfile
+            target: production
             args:
                 - MODE=staging
+        ports:
+            - '4000:80'
 
     artifact-uploader:
         image: rslethz/kleinkram:artifact-uploader-dev

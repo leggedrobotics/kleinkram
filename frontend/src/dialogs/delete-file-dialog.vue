@@ -24,7 +24,7 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
-import { FileWithTopicDto } from '@api/types/file/file.dto';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import DeleteFile from 'components/delete-file.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -38,7 +38,11 @@ const { file } = defineProps<{
 
 const deleteFileAction = (): void => {
     if (deleteFileReference.value === undefined) return;
-    deleteFileReference.value.deleteFileAction();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (deleteFileReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        (deleteFileReference.value as any).deleteFileAction();
+    }
     onDialogOK();
 };
 </script>

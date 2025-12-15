@@ -1,0 +1,143 @@
+name: CLI Integration Tests
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened]
+        branches:
+            - main
+            - dev
+
+jobs:
+    cli-tests:
+        runs-on: [self-hosted, linux]
+
+        permissions:
+            contents: read
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.10'
+
+            - name: Build Docker stack
+              run: docker compose -f docker-compose.testing.yml build
+              env:
+                  BACKEND_URL: 'http://localhost:3000'
+                  GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+                  GIT_COMMIT: ${{ github.sha }}
+
+            - name: Clear previous volumes
+              run: docker compose -f docker-compose.testing.yml down -v
+
+            - name: Launch Docker stack
+              run: |
+                  docker compose -f docker-compose.testing.yml up -d
+                  echo "Docker stack started"
+
+            - name: Generate mock test data
+              run: |
+                  # Install dependencies for data generation
+                  pip install rosbags
+
+                  # Generate valid bag files using the script
+                  python3 cli/tests/generate_test_data.py
+
+                  echo "Mock test data generated"
+
+            - name: Install CLI
+              working-directory: ./cli
+              run: |
+                  # Create virtual environment
+                  python -m venv .venv
+                  source .venv/bin/activate
+
+                  # Install CLI in development mode and dev dependencies
+                  pip install -e . -r requirements.txt -r requirements-dev.txt
+
+                  # Verify installation
+                  klein --version
+
+                  echo "CLI installed successfully"
+
+            - name: Wait for backend to be ready
+              run: |
+                  SECONDS=0
+                  TIMEOUT=180
+                  echo "Waiting for backend to be ready..."
+
+                  while ! curl -s http://localhost:3000/auth/available-providers > /dev/null; do
+                    if [ $SECONDS -ge $TIMEOUT ]; then
+                        echo "Timeout reached: Backend not ready"
+                        docker compose -f docker-compose.testing.yml logs api-server
+                        docker compose -f docker-compose.testing.yml down
+                        exit 1
+                    fi
+                    sleep 2
+                    echo "Waiting for backend... ($SECONDS seconds elapsed)"
+                  done
+
+                  echo "Backend is ready!"
+
+            - name: Configure CLI endpoint
+              working-directory: ./cli
+              run: |
+                  source .venv/bin/activate
+
+                  # Remove existing config to avoid compatibility check prompt
+                  rm -f ~/.kleinkram.json
+
+                  # Set endpoint to local
+                  klein endpoint local
+
+                  echo "CLI endpoint configured to local"
+
+            - name: Authenticate with fake OAuth (User 1 - Admin)
+              working-directory: ./cli
+              run: |
+                  source .venv/bin/activate
+
+                  # Authenticate as admin user using auto-select
+                  klein login --oauth-provider fake-oauth --user 1
+
+                  echo "Authenticated as admin user"
+
+            - name: Run CLI tests
+              working-directory: ./cli
+              run: |
+                  source .venv/bin/activate
+
+                  # Run pytest with verbose output
+                  pytest tests/ -v --tb=short
+
+                  echo "CLI tests completed successfully"
+
+            - name: Test with different user (User 2 - Internal)
+              working-directory: ./cli
+              run: |
+                  source .venv/bin/activate
+
+                  # Re-authenticate as internal user
+                  klein login --oauth-provider fake-oauth --user 2
+
+                  # Run a subset of tests that check permissions
+                  # (This is optional - only if you have permission-specific tests)
+                  echo "Authenticated as internal user for permission testing"
+
+            - name: Clean up
+              if: always()
+              run: |
+                  # Stop Docker stack
+                  docker compose -f docker-compose.testing.yml down
+                  docker compose down fake-oauth
+
+                  # Clean up test data
+                  rm -rf cli/data/testing
+
+                  echo "Cleanup completed"
+
+            - name: Delete Docker volumes
+              if: always()
+              run: docker volume prune -f

@@ -1,12 +1,12 @@
-import ActionEntity from '@common/entities/action/action.entity';
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { AccessGroupRights, UserRole } from '@common/frontend_shared/enum';
+import { ProjectGuardService } from '@/services/project-guard.service';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
+import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
-import { ProjectGuardService } from '../../services/project-guard.service';
 import { MissionGuardService } from './mission-guard.service';
 
 @Injectable()
@@ -23,6 +23,7 @@ export class ActionGuardService {
         actionUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!actionUuid || !user) {
             logger.error(
                 `ActionGuard: actionUUID (${actionUuid}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
@@ -61,7 +62,7 @@ export class ActionGuardService {
     }
 
     async canKeyAccessAction(
-        apikey: ApikeyEntity,
+        apikey: ApiKeyEntity,
         actionUuid: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {

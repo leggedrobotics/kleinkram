@@ -2,11 +2,12 @@
 
 Kleinkram can also be used via a command line interface (CLI) or a python package.
 This offers an easy way to interact with the platform in a programmatic way.
-In particular this can be used to upload and download files, create and update projects aswell as missions.
+In particular this can be used to upload and download files, createThe development of the CLI and Python package is done in the `cli` directory.
+For instructions on how to set up the python environment, see the [User Guide](../../usage/python/setup.md). guide.
 
 ## Usage
 
-If you wish to use the CLI follow the [Getting Started](../../usage/python/getting-started.md) guide.
+If you wish to use the CLI follow the [Getting Started](../../usage/python/cli.md) guide.
 
 ## Development Setup
 

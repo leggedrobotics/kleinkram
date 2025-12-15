@@ -23,9 +23,7 @@ List projects, missions, or files.
 """
 
 
-list_typer = typer.Typer(
-    name="list", invoke_without_command=True, help=HELP, no_args_is_help=True
-)
+list_typer = typer.Typer(name="list", invoke_without_command=True, help=HELP, no_args_is_help=True)
 
 
 @list_typer.command()
@@ -34,12 +32,8 @@ def files(
         None,
         help="file names, ids or patterns",
     ),
-    projects: Optional[List[str]] = typer.Option(
-        None, "--project", "-p", help="project name or id"
-    ),
-    missions: Optional[List[str]] = typer.Option(
-        None, "--mission", "-m", help="mission name or id"
-    ),
+    projects: Optional[List[str]] = typer.Option(None, "--project", "-p", help="project name or id"),
+    missions: Optional[List[str]] = typer.Option(None, "--mission", "-m", help="mission name or id"),
 ) -> None:
     file_ids, file_patterns = split_args(files or [])
     mission_ids, mission_patterns = split_args(missions or [])
@@ -51,9 +45,7 @@ def files(
         ids=mission_ids,
         patterns=mission_patterns,
     )
-    file_query = FileQuery(
-        mission_query=mission_query, patterns=file_patterns, ids=file_ids
-    )
+    file_query = FileQuery(mission_query=mission_query, patterns=file_patterns, ids=file_ids)
 
     client = AuthenticatedClient()
     parsed_files = list(get_files(client, file_query=file_query))
@@ -62,9 +54,7 @@ def files(
 
 @list_typer.command()
 def missions(
-    projects: Optional[List[str]] = typer.Option(
-        None, "--project", "-p", help="project name or id"
-    ),
+    projects: Optional[List[str]] = typer.Option(None, "--project", "-p", help="project name or id"),
     missions: Optional[List[str]] = typer.Argument(None, help="mission names"),
 ) -> None:
     mission_ids, mission_patterns = split_args(missions or [])

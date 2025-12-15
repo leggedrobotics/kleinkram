@@ -1,33 +1,33 @@
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import AccountEntity from '@common/entities/auth/account.entity';
-import GroupMembershipEntity from '@common/entities/auth/group-membership.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { Providers, UserRole } from '@common/frontend_shared/enum';
+import {
+    AccessGroupEntity,
+    AccountEntity,
+    AffiliationGroupService,
+    ALL_ENTITIES,
+    GroupMembershipEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
+import { Providers, UserRole } from '@kleinkram/shared';
 import jwt from 'jsonwebtoken';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
+
+import { createNewUser } from '@/services/auth.service';
+import path from 'node:path';
 import process from 'node:process';
 import { DataSource } from 'typeorm';
-import {
-    createAccessGroups,
-    createNewUser,
-} from '../../src/services/auth.service';
 
-const databasePort = process.env['DB_PORT'];
+const databasePort = process.env.DB_PORT;
 
 export const database = new DataSource({
     type: 'postgres',
     host: 'localhost',
     port: Number.parseInt(databasePort ?? '5432', 10),
-    ssl: process.env['DB_SSL'] === 'true',
-    username: process.env['DB_USER'] ?? '',
-    password: process.env['DB_PASSWORD'] ?? '',
-    database: process.env['DB_DATABASE'] ?? '',
+    ssl: process.env.DB_SSL === 'true',
+    username: process.env.DB_USER ?? '',
+    password: process.env.DB_PASSWORD ?? '',
+    database: process.env.DB_DATABASE ?? '',
     synchronize: false,
-    entities: [
-        '../common/entities/**/*.entity{.ts,.js}',
-        '../common/viewEntities/**/*.entity{.ts,.js}',
-    ],
+    entities: ALL_ENTITIES,
 });
 
 export const clearAllData = async () => {
@@ -36,6 +36,7 @@ export const clearAllData = async () => {
 
         // filter out the tables that should not be cleared (e.g. views)
         const tablesToClear = entities
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             .filter((entity) => entity.tableName !== undefined)
             .filter((entity) => !entity.tableName.includes('view'))
             .filter((entity) => !entity.tableName.includes('materialized'))
@@ -44,7 +45,9 @@ export const clearAllData = async () => {
             .join(', ');
 
         await database.query(`TRUNCATE ${tablesToClear} CASCADE;`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         throw new Error(`ERROR: Cleaning test database: ${error.toString()}`);
     }
 };
@@ -55,13 +58,20 @@ export const mockDatabaseUser = async (
     role: UserRole = UserRole.USER,
 ): Promise<string> => {
     // read config from access_config.json
-
-    const config = JSON.parse(fs.readFileSync('access_config.json', 'utf8'));
+    // eslint-disable-next-line unicorn/prefer-module
+    const configPath = path.join(__dirname, '../../src/access_config.json');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     const accessGroupRepository = database.getRepository(AccessGroupEntity);
     const groupMembershipRepository = database.getRepository(
         GroupMembershipEntity,
     );
-    await createAccessGroups(accessGroupRepository, config);
+    const affiliationGroupService = new AffiliationGroupService(
+        accessGroupRepository,
+        groupMembershipRepository,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    await affiliationGroupService.createAccessGroups(config);
 
     const userRepository = database.getRepository(UserEntity);
     const accountRepository = database.getRepository(AccountEntity);
@@ -72,11 +82,11 @@ export const mockDatabaseUser = async (
     const oauthID = hash.digest('hex');
 
     await createNewUser(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         config,
         userRepository,
         accountRepository,
-        accessGroupRepository,
-        groupMembershipRepository,
+        affiliationGroupService,
         {
             oauthID,
             provider: Providers.GOOGLE,
@@ -86,6 +96,7 @@ export const mockDatabaseUser = async (
         },
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (role) {
         const user = await userRepository.findOneOrFail({
             where: { email: email },
@@ -102,7 +113,7 @@ export const mockDatabaseUser = async (
 };
 
 export const getJwtToken = (user: UserEntity): string => {
-    const jwtSecret = process.env['JWT_SECRET'];
+    const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
         throw new Error(
             'JWT_SECRET is not defined in the environment variables.',

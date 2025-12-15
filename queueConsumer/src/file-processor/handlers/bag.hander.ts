@@ -5,20 +5,20 @@ import * as fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import { Repository } from 'typeorm';
 
-import FileEntity from '@common/entities/file/file.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import env from '@common/environment';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {
     FileEventType,
     FileOrigin,
     FileState,
     FileType,
     QueueState,
-} from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
-import logger from 'src/logger';
+} from '@kleinkram/shared';
+import logger from '../../logger';
 
-import FileEventEntity from '@common/entities/file/file-event.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { calculateFileHash } from '../helper/hash-helper';
 import { FileHandler, FileProcessingContext } from './file-handler.interface';
 import { McapMetadataService } from './mcap-metadata.service';
@@ -48,15 +48,15 @@ export class RosBagHandler implements FileHandler {
         const autoConvert = job.mission?.project?.autoConvert !== false;
 
         logger.debug(
-            `Starting ROS Bag pipeline for ${primaryFile.filename} (AutoConvert: ${autoConvert})`,
+            `Starting ROS Bag pipeline for ${primaryFile.filename} (AutoConvert: ${String(autoConvert)})`,
         );
 
         // Update state to indicate we are working
         job.state = QueueState.CONVERTING_AND_EXTRACTING_TOPICS;
         await this.jobRepo.save(job);
 
-        try {
-            if (autoConvert) {
+        if (autoConvert) {
+            try {
                 // --- Path A: Convert to MCAP, then extract from MCAP ---
                 const mcapFilename = primaryFile.filename.replace(
                     '.bag',
@@ -76,16 +76,22 @@ export class RosBagHandler implements FileHandler {
                     mcapOutputPath,
                     mcapFilename,
                 );
-            } else {
+            } catch (error: unknown) {
+                logger.error(`RosBag Conversion failed: ${String(error)}`);
+                primaryFile.state = FileState.CONVERSION_ERROR;
+                await this.fileRepo.save(primaryFile);
+                throw error;
+            }
+        } else {
+            try {
                 // --- Path B: Extraction Only (Stream directly from Bag) ---
                 await this.handleExtractionOnly(primaryFile, filePath);
+            } catch (error: unknown) {
+                logger.error(`RosBag Extraction failed: ${String(error)}`);
+                primaryFile.state = FileState.CORRUPTED;
+                await this.fileRepo.save(primaryFile);
+                throw error;
             }
-        } catch (error) {
-            logger.error(`RosBag Processing failed: ${error}`);
-
-            primaryFile.state = FileState.CONVERSION_ERROR;
-            await this.fileRepo.save(primaryFile);
-            throw error;
         }
     }
 
@@ -154,11 +160,11 @@ export class RosBagHandler implements FileHandler {
                     filename: mcapFilename,
                 })
                 .catch((error: unknown) =>
-                    logger.warn(`Tagging failed: ${error}`),
+                    logger.warn(`Tagging failed: ${String(error)}`),
                 );
 
             // Update Primary Bag File (inherit date from conversion result)
-            primaryFile.date = savedMcapEntity.date ?? primaryFile.date;
+            primaryFile.date = savedMcapEntity.date;
             primaryFile.state = FileState.OK;
             await this.fileRepo.save(primaryFile);
 

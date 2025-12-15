@@ -1,0 +1,35 @@
+name: check-version-number
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened, edited]
+        branches:
+            - main
+
+jobs:
+    check-version-number:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  run_install: false
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: '22'
+                  cache: 'pnpm'
+
+            - name: Validate Version Number by calling grunt validateVersions
+              run: |
+                  pnpm install --frozen-lockfile --ignore-scripts
+                  pnpm run validateVersions
+              working-directory: .
+
+            - uses: del-systems/check-if-version-bumped@v2
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  path: './package.json'

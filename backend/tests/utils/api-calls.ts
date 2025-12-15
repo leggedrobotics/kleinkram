@@ -1,19 +1,28 @@
+import { appVersion } from '@/app-version';
 import { S3Client } from '@aws-sdk/client-s3';
-import { CreateAccessGroupDto } from '@common/api/types/create-access-group.dto';
-import { CreateMission } from '@common/api/types/create-mission.dto';
-import { CreateProject } from '@common/api/types/create-project.dto';
-import { CreateTemplateDto } from '@common/api/types/create-template.dto';
-import { CreateTagTypeDto } from '@common/api/types/tags/create-tag-type.dto';
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import { QueueState } from '@common/frontend_shared/enum';
+import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import { CreateAccessGroupDto } from '@kleinkram/api-dto/types/create-access-group.dto';
+import { CreateMission } from '@kleinkram/api-dto/types/create-mission.dto';
+import { CreateProject } from '@kleinkram/api-dto/types/create-project.dto';
+import { CreateTagTypeDto } from '@kleinkram/api-dto/types/tags/create-tag-type.dto';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import crypto from 'node:crypto';
 import * as fs from 'node:fs';
-import { appVersion } from '../../src/app-version';
 import { DEFAULT_URL } from '../auth/utilities';
 import { database, getJwtToken } from './database-utilities';
 import { uploadFileMultipart } from './multipart-upload';
+
+export const getAuthHeaders = (user?: UserEntity): Record<string, string> => {
+    const headers: Record<string, string> = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'kleinkram-client-version': appVersion,
+    };
+    if (user) {
+        headers.cookie = `authtoken=${getJwtToken(user)}`;
+    }
+    return headers;
+};
 
 export class HeaderCreator {
     headers: Headers;
@@ -77,9 +86,11 @@ export const createProjectUsingPost = async (
         credentials: 'include',
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     console.log(`['DEBUG'] Created project:`, json);
     expect(response.status).toBeLessThan(300);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;
 };
 
@@ -104,8 +115,10 @@ export const createMissionUsingPost = async (
 
     // check if the request was successful
     expect(response.status).toBeLessThan(300);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     console.log(`['DEBUG'] Created mission:`, json);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;
 };
 
@@ -126,11 +139,17 @@ export async function uploadFile(
     filename: string,
     missionUuid: string,
 ): Promise<ArrayBuffer> {
-    const response = await fetch(`${DEFAULT_URL}/file/temporaryAccess`, {
+    const response = await fetch(`${DEFAULT_URL}/files/temporaryAccess`, {
         method: 'POST',
+
         headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
+
+            // eslint-disable-next-line @typescript-eslint/await-thenable
             cookie: `authtoken=${await getJwtToken(user)}`,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'kleinkram-client-version': appVersion,
         },
         body: JSON.stringify({
             filenames: [filename],
@@ -139,17 +158,28 @@ export async function uploadFile(
     });
 
     expect(response.status).toBe(201);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     expect(json).toBeDefined();
 
-    const fileresponseponse = json[0];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const fileresponseponse = json.data[0];
 
     expect(fileresponseponse).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(fileresponseponse.bucket).toBe('data');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(fileresponseponse.fileUUID).toBeDefined();
 
-    // open file from fixturesponse
-    const file = fs.readFileSync(`./tests/fixturesponse/${filename}`);
+    // open file from fixtures
+    const filePath = `./tests/fixtures/${filename}`;
+    if (!fs.existsSync(filePath)) {
+        throw new Error(
+            `Test data file '${filename}' not found at '${filePath}'. ` +
+                `Please run 'python3 cli/tests/generate_test_data.py' to generate the required test data.`,
+        );
+    }
+    const file = fs.readFileSync(filePath);
     const blob = new Blob([file], {
         type: 'application/octet-stream',
     });
@@ -163,15 +193,20 @@ export async function uploadFile(
         forcePathStyle: true,
         region: 'us-east-1',
         credentials: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             accessKeyId: fileresponseponse.accessCredentials.accessKey,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             secretAccessKey: fileresponseponse.accessCredentials.secretKey,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             sessionToken: fileresponseponse.accessCredentials.sessionToken,
         },
     });
 
     const responsei = await uploadFileMultipart(
         fileFile,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         fileresponseponse.bucket,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         fileresponseponse.fileUUID,
         minioClient,
     );
@@ -179,40 +214,24 @@ export async function uploadFile(
 
     // confirm upload
     // http://localhost:3000/queue/confirmUpload
-    const responseConfirm = await fetch(`${DEFAULT_URL}/queue/confirmUpload`, {
+
+    const responseConfirm = await fetch(`${DEFAULT_URL}/files/upload/confirm`, {
         method: 'POST',
         headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
+            // eslint-disable-next-line @typescript-eslint/await-thenable
             cookie: `authtoken=${await getJwtToken(user)}`,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'kleinkram-client-version': appVersion,
         },
         body: JSON.stringify({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             uuid: fileresponseponse.fileUUID,
             md5: hash.digest('base64'),
         }),
     });
     expect(responseConfirm.status).toBe(201);
-
-    while (true) {
-        const responseActive = await fetch(`${DEFAULT_URL}/queue/active`, {
-            method: 'GET',
-            headers: {
-                cookie: `authtoken=${await getJwtToken(user)}`,
-            },
-        });
-
-        expect(responseActive.status).toBe(200);
-        const active = await responseActive.json();
-        if (
-            active.some(
-                (x: IngestionJobEntity) =>
-                    x.uuid === fileresponseponse.queueUUID &&
-                    x.state === QueueState.COMPLETED,
-            )
-        ) {
-            break;
-        }
-        await new Promise((r) => setTimeout(r, 1000));
-    }
 
     return fileHash;
 }
@@ -233,9 +252,11 @@ export const createMetadataUsingPost = async (
         }),
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     console.log(`['DEBUG'] Created tag:`, json);
     expect(response.status).toBeLessThan(300);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;
 };
 
@@ -257,13 +278,14 @@ export const createAccessGroupUsingPost = async (
     });
 
     // get access group
-    const testAccesGroup = await database
+    const testAccessGroup = await database
         .getRepository<AccessGroupEntity>('AccessGroup')
         .findOneOrFail({ where: { name: accessGroup.name } });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const groupJson = await response.json();
     expect(response.status).toBeLessThan(300);
-    console.log(`['DEBUG'] Created access group:`, testAccesGroup.uuid);
+    console.log(`['DEBUG'] Created access group:`, testAccessGroup.uuid);
 
     // add users to access group
     await Promise.all(
@@ -275,11 +297,12 @@ export const createAccessGroupUsingPost = async (
                     headers: headersBuilder.getHeaders(),
                     body: JSON.stringify({
                         userUUID: user.uuid,
-                        uuid: testAccesGroup.uuid,
+                        uuid: testAccessGroup.uuid,
                     }),
                 },
             );
             expect(groupResponse.status).toBeLessThan(300);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const json = await groupResponse.json();
             console.log(
                 `['DEBUG'] Added user ${user.uuid} to access group:`,
@@ -290,7 +313,7 @@ export const createAccessGroupUsingPost = async (
 
     console.log(`['DEBUG'] Users added to access group:`, groupJson);
 
-    return testAccesGroup.uuid;
+    return testAccessGroup.uuid;
 };
 
 export const createActionUsingPost = async (
@@ -301,15 +324,17 @@ export const createActionUsingPost = async (
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const response = await fetch(`${DEFAULT_URL}/action/createTemplate`, {
+    const response = await fetch(`${DEFAULT_URL}/templates`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify(action),
         credentials: 'include',
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
     console.log(`['DEBUG'] Created action:`, json);
     expect(response.status).toBeLessThan(300);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;
 };

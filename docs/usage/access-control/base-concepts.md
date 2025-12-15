@@ -47,15 +47,15 @@ done manually within the database.
 ## Affiliation Groups
 
 Users may be added to an affiliation group based on their email domain, e.g. uses signing in with
-an `@leggedrobotics.com` email address are automatically added to the `Leggedrobotics` affiliation group. An affiliation
+an `@roboticscorp.com` email address are automatically added to the `RoboticsCorp` affiliation group. An affiliation
 group can be treated as a normal group, it can be assigned to a project or mission giving its
 members access rights to the resource.
 
 On top of that, affiliation groups can be used to
 
-- assign default access rights to its members (e.g. all members of the `Leggedrobotics` affiliation group get <Read/> on
+- assign default access rights to its members (e.g. all members of the `RoboticsCorp` affiliation group get <Read/> on
   all new projects by default (unless explicitly changed))
-- can restrict or allow global access rights (e.g. all users not part of the `Leggedrobotics` affiliation group are not
+- can restrict or allow global access rights (e.g. all users not part of the `RoboticsCorp` affiliation group are not
   allowed create new projects or creation of new access groups)
 
 ## Primary Group

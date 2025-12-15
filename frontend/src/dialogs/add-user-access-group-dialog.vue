@@ -28,7 +28,7 @@ import { ref } from 'vue';
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const addUserReference = ref<InstanceType<typeof AddUserToAccessGroup> | null>(
     // TODO: check why we need null as a value
-    // eslint-disable-next-line unicorn/no-null
+
     null,
 );
 
@@ -37,7 +37,9 @@ const { accessGroupUuid } = defineProps<{
 }>();
 
 const addUserToAccessGroupAction = (): void => {
-    addUserReference.value?.mutate();
+    if (addUserReference.value) {
+        addUserReference.value.mutate?.();
+    }
     onDialogOK();
 };
 </script>

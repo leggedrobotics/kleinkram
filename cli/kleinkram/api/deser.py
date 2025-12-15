@@ -13,11 +13,14 @@ from uuid import UUID
 import dateutil.parser
 
 from kleinkram.errors import ParsingError
-from kleinkram.models import File, Run, LogEntry, ActionTemplate
+from kleinkram.models import ActionTemplate
+from kleinkram.models import File
 from kleinkram.models import FileState
+from kleinkram.models import LogEntry
 from kleinkram.models import MetadataValue
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import Run
 
 __all__ = [
     "_parse_project",
@@ -127,11 +130,7 @@ def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
     result = {}
     try:
         for tag in tags:
-            entry = {
-                tag.get("name"): MetadataValue(
-                    tag.get("valueAsString"), tag.get("datatype")
-                )
-            }
+            entry = {tag.get("name"): MetadataValue(tag.get("valueAsString"), tag.get("datatype"))}
             result.update(entry)
         return result
     except ValueError as e:
@@ -149,9 +148,7 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description = project_object[ProjectObjectKeys.DESCRIPTION]
         created_at = _parse_datetime(project_object[ProjectObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(project_object[ProjectObjectKeys.UPDATED_AT])
-        required_tags = _parse_required_tags(
-            project_object[ProjectObjectKeys.REQUIRED_TAGS]
-        )
+        required_tags = _parse_required_tags(project_object[ProjectObjectKeys.REQUIRED_TAGS])
     except Exception as e:
         raise ParsingError(f"error parsing project: {project_object}") from e
     return Project(
@@ -229,25 +226,6 @@ def _parse_file(file: FileObject) -> File:
     return parsed
 
 
-"""
-@dataclass(frozen=True)
-class ActionTemplate:
-    uuid: UUID
-    access_rights: int
-    command: str
-    cpu_cores: int
-    cpu_memory_gb: int
-    entrypoint: str
-    gpu_memory_gb: int
-    image_name: str
-    max_runtime_minutes: int
-    created_at: datetime
-    name: str
-    version: str
-
-"""
-
-
 def _parse_action_template(run_object: RunObject) -> ActionTemplate:
     try:
         uuid_ = UUID(run_object[TemplateObjectKeys.UUID], version=4)
@@ -290,9 +268,7 @@ def _parse_run(run_object: RunObject) -> Run:
         artifact_url = run_object.get(RunObjectKeys.ARTIFACT_URL)
         created_at = _parse_datetime(run_object[RunObjectKeys.CREATED_AT])
         updated_at = (
-            _parse_datetime(run_object[RunObjectKeys.UPDATED_AT])
-            if run_object.get(RunObjectKeys.UPDATED_AT)
-            else None
+            _parse_datetime(run_object[RunObjectKeys.UPDATED_AT]) if run_object.get(RunObjectKeys.UPDATED_AT) else None
         )
 
         mission_dict = run_object[RunObjectKeys.MISSION]

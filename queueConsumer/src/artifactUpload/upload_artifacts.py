@@ -1,5 +1,6 @@
 import os
 import tarfile
+import json
 from minio import Minio
 
 
@@ -16,20 +17,23 @@ def upload_to_minio(file_path, bucket_name, object_name):
     # Initialize MinIO client
     # Ensure these ENVs are passed to the container
     client = Minio(
-        os.getenv("MINIO_ENDPOINT", "minio:9000"),
+        endpoint=os.getenv("MINIO_ENDPOINT", "minio:9000"),
         access_key=os.getenv("MINIO_ACCESS_KEY"),
         secret_key=os.getenv("MINIO_SECRET_KEY"),
         secure=False,  # Set to True if using HTTPS inside the network
     )
 
     # Check if bucket exists
-    if not client.bucket_exists(bucket_name):
+    if not client.bucket_exists(bucket_name=bucket_name):
         print(f"Bucket {bucket_name} does not exist. Please check configuration.")
         return
 
     # Upload
     client.fput_object(
-        bucket_name, object_name, file_path, content_type="application/gzip"
+        bucket_name=bucket_name,
+        object_name=object_name,
+        file_path=file_path,
+        content_type="application/gzip",
     )
     print(f"Successfully uploaded {object_name} to {bucket_name}")
 
@@ -55,5 +59,17 @@ if __name__ == "__main__":
 
         print(f"Uploading to MinIO bucket: {BUCKET_NAME}...")
         upload_to_minio(tar_filename, BUCKET_NAME, object_name)
+
+        # Get file size
+        file_size = os.path.getsize(tar_filename)
+
+        # Get file list
+        files = []
+        with tarfile.open(tar_filename, "r:gz") as tar:
+            files = tar.getnames()
+
+        metadata = {"size": file_size, "files": files}
+        print(f"ARTIFACT_METADATA: {json.dumps(metadata)}", flush=True)
+
     else:
         print(f"Directory {SOURCE_DIR} does not exist, skipping upload.")

@@ -1,23 +1,29 @@
-import { PermissionsDto } from '@common/api/types/permissions.dto';
+import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
+import {
+    userEntityToCurrentAPIUserDto,
+    userEntityToDto,
+} from '@/serialization';
 import {
     CurrentAPIUserDto,
+    PermissionsDto,
     UserDto,
     UsersDto,
-} from '@common/api/types/user.dto';
-import { systemUser } from '@common/consts';
-import ApikeyEntity from '@common/entities/auth/apikey.entity';
-import UserEntity from '@common/entities/user/user.entity';
+} from '@kleinkram/api-dto';
+import {
+    ApiKeyEntity,
+    MissionAccessViewEntity,
+    ProjectAccessViewEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
+import { systemUser } from '@kleinkram/backend-common/consts';
 import {
     AccessGroupRights,
     AccessGroupType,
     UserRole,
-} from '@common/frontend_shared/enum';
-import { MissionAccessViewEntity } from '@common/viewEntities/mission-access-view.entity';
-import { ProjectAccessViewEntity } from '@common/viewEntities/project-access-view.entity';
+} from '@kleinkram/shared';
 import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
-import { AuthHeader } from '../endpoints/auth/parameter-decorator';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -26,8 +32,8 @@ export class UserService implements OnModuleInit {
         private userRepository: Repository<UserEntity>,
         @InjectRepository(ProjectAccessViewEntity)
         private projectAccessView: Repository<ProjectAccessViewEntity>,
-        @InjectRepository(ApikeyEntity)
-        private apikeyRepository: Repository<ApikeyEntity>,
+        @InjectRepository(ApiKeyEntity)
+        private apikeyRepository: Repository<ApiKeyEntity>,
         @InjectRepository(MissionAccessViewEntity)
         private missionAccessView: Repository<MissionAccessViewEntity>,
     ) {}
@@ -79,26 +85,32 @@ export class UserService implements OnModuleInit {
 
         user.role = UserRole.ADMIN;
         await this.userRepository.save(user);
-        return user as unknown as CurrentAPIUserDto;
+        return userEntityToCurrentAPIUserDto(user);
     }
 
     async me(auth: AuthHeader): Promise<CurrentAPIUserDto> {
-        return (await this.userRepository.findOneOrFail({
+        const user = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
             select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
-            relations: ['memberships', 'memberships.accessGroup'],
-        })) as unknown as CurrentAPIUserDto;
+            relations: [
+                'memberships',
+                'memberships.accessGroup',
+                'memberships.user',
+            ],
+        });
+
+        return userEntityToCurrentAPIUserDto(user);
     }
 
     async findAll(skip: number, take: number): Promise<UsersDto> {
-        const [user, count] = await this.userRepository.findAndCount({
+        const [users, count] = await this.userRepository.findAndCount({
             skip,
             take,
             where: { hidden: false },
         });
 
         return {
-            users: user as UserDto[],
+            users: users.map((u) => userEntityToDto(u)),
             count,
         };
     }
@@ -109,7 +121,7 @@ export class UserService implements OnModuleInit {
         });
         user.role = UserRole.ADMIN;
         await this.userRepository.save(user);
-        return user as unknown as UserDto;
+        return userEntityToDto(user);
     }
 
     async demoteUser(usermail: string) {
@@ -118,7 +130,7 @@ export class UserService implements OnModuleInit {
         });
         user.role = UserRole.USER;
         await this.userRepository.save(user);
-        return user as unknown as UserDto;
+        return userEntityToDto(user);
     }
 
     async search(
@@ -127,6 +139,7 @@ export class UserService implements OnModuleInit {
         take: number,
     ): Promise<UsersDto> {
         // Ensure the search string is not empty or null or less than 3 characters
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (search === null || search === '' || search.length < 3) {
             return {
                 users: [],
@@ -150,7 +163,7 @@ export class UserService implements OnModuleInit {
             .take(take)
             .getManyAndCount();
 
-        const usersDto = users as UserDto[];
+        const usersDto = users.map((u) => userEntityToDto(u, true));
 
         // return the email only if it is an exact match
         // otherwise set it to null
@@ -218,12 +231,12 @@ export class UserService implements OnModuleInit {
         // map project accesses
         const projectAccesses = projectAccessRows.map((r) => ({
             uuid: r.projectUuid,
-            access: r.rights,
+            access: Number(r.rights),
         }));
 
         const missionAccesses = missionAccessRows.map((r) => ({
             uuid: r.missionUuid,
-            access: r.rights,
+            access: Number(r.rights),
         }));
 
         return {
@@ -243,8 +256,9 @@ export class UserService implements OnModuleInit {
      */
     async findUserByAPIKey(
         apikey: string,
-    ): Promise<{ apiKey: ApikeyEntity; user: UserEntity }> {
+    ): Promise<{ apiKey: ApiKeyEntity; user: UserEntity }> {
         const user = await this.userRepository.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             where: { api_keys: { apikey } },
             relations: ['api_keys'],
             select: ['uuid', 'name', 'role'],
@@ -255,13 +269,14 @@ export class UserService implements OnModuleInit {
             // Disable global eager loading to ensure your manual relations take precedence
             loadEagerRelations: false,
             relations: {
-                action: true,
+                action: {
+                    template: true,
+                },
                 mission: {
                     project: true,
                 },
             },
         });
-
         return { user, apiKey };
     }
 

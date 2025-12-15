@@ -9,10 +9,13 @@ const UNAUTHENTICATED_ENDPOINTS: string[] = [
     '/auth/github/callback',
     '/auth/fake-oauth',
     '/auth/fake-oauth/callback',
+    '/auth/available-providers',
     '/auth/logout',
     '/metrics',
     '/swagger',
     '/swagger/',
+    '/integrations/',
+    '/api/health',
 ];
 
 /**
@@ -32,6 +35,7 @@ describe('Unauthenticated users trigger 401', () => {
     for (const endpoint of endpoints) {
         // skip endpoints that are not protected
         if (
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             UNAUTHENTICATED_ENDPOINTS.some((url_prefix: string) =>
                 endpoint.url.startsWith(url_prefix),
             )

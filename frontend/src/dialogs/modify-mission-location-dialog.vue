@@ -5,66 +5,45 @@
             style="width: 80%; min-height: 100px; max-width: 500px"
         >
             <h5>Move mission {{ mission?.name }} to another project</h5>
-            <div class="row q-gutter-sm q-ma-md">
-                <div class="col-7 col-md-7">
-                    <q-btn-dropdown
-                        v-model="dd_open"
-                        dense
+
+            <div class="column q-gutter-y-md q-ma-md">
+                <ScopeSelector
+                    v-model:project-uuid="selectedProjectUuid"
+                    :show-mission="false"
+                    :required="true"
+                />
+
+                <div class="row justify-end q-gutter-x-sm">
+                    <q-btn
+                        label="Cancel"
                         flat
-                        class="full-width button-border"
-                        :label="selectedProject?.name || 'Project'"
-                    >
-                        <q-list>
-                            <q-item
-                                v-for="project in projects"
-                                :key="project.uuid"
-                                clickable
-                                @click="
-                                    () => {
-                                        selectedProject = project;
-                                        dd_open = false;
-                                    }
-                                "
-                            >
-                                <q-item-section>
-                                    <q-item-label>
-                                        {{ project.name }}
-                                    </q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-btn-dropdown>
-                </div>
-                <div class="col-2">
+                        class="button-border"
+                        @click="onDialogOK"
+                    />
                     <q-btn
                         label="OK"
                         color="primary"
                         unelevated
-                        style="margin-right: 5px"
+                        :disable="
+                            !selectedProjectUuid ||
+                            selectedProjectUuid === mission?.project?.uuid
+                        "
                         @click="onOk"
-                    />
-                </div>
-                <div class="col-1">
-                    <q-btn
-                        label="Cancel"
-                        flat
-                        class="q-mr-sm button-border"
-                        @click="onDialogOK"
                     />
                 </div>
             </div>
         </q-card>
     </q-dialog>
 </template>
-<script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
-import { useQueryClient } from '@tanstack/vue-query';
-import { Notify, useDialogPluginComponent } from 'quasar';
-import { useFilteredProjects } from 'src/hooks/query-hooks';
-import { moveMission } from 'src/services/mutations/mission';
-import { computed, ref } from 'vue';
 
-import { ProjectDto } from '@api/types/project/base-project.dto';
+<script setup lang="ts">
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { useQueryClient } from '@tanstack/vue-query';
+import ScopeSelector from 'components/common/scope-selector.vue';
+import { Notify, useDialogPluginComponent } from 'quasar';
+import { useScopeSelection } from 'src/composables/use-scope-selection';
+import { moveMission } from 'src/services/mutations/mission';
+import { ref } from 'vue';
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
@@ -74,23 +53,28 @@ const properties = defineProps<{
 
 const queryClient = useQueryClient();
 
-const { data } = useFilteredProjects(500, 0, 'name', true, {});
-
-const projects = computed(() => (data.value ? data.value.data : []));
-
-const selectedProject = ref<ProjectDto | undefined>(
-    properties.mission?.project ?? undefined,
+const selectedProjectUuid = ref<string | undefined>(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+    properties.mission?.project?.uuid,
 );
 
-const dd_open = ref(false);
+const { selectedProject } = useScopeSelection(selectedProjectUuid);
 
-async function onOk() {
-    if (!properties.mission || !selectedProject.value) {
+async function onOk(): Promise<void> {
+    if (
+        !properties.mission ||
+        !selectedProjectUuid.value ||
+        !selectedProject.value
+    ) {
         return;
     }
+
+    const targetProjectName = selectedProject.value.name;
+
     const creating = Notify.create({
         group: false,
-        message: `Moving mission ${properties.mission.name} to project ${selectedProject.value.name}`,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+        message: `Moving mission ${properties.mission.name} to project ${targetProjectName}`,
         color: 'grey',
         spinner: true,
         timeout: 4000,
@@ -98,13 +82,18 @@ async function onOk() {
     });
 
     try {
-        await moveMission(properties.mission.uuid, selectedProject.value.uuid);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        await moveMission(properties.mission.uuid, selectedProjectUuid.value);
+
         creating({
-            message: `Mission ${properties.mission.name} moved to project ${selectedProject.value.name}`,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+            message: `Mission ${properties.mission.name} moved to project ${targetProjectName}`,
             color: 'positive',
             spinner: false,
             timeout: 4000,
         });
+
+        // Invalidate queries to refresh lists
         const cache = queryClient.getQueryCache();
         const filtered = cache
             .getAll()
@@ -120,10 +109,12 @@ async function onOk() {
                 }),
             ),
         );
-        onDialogOK(selectedProject.value.uuid);
-    } catch (error: any) {
+
+        onDialogOK(selectedProjectUuid.value);
+    } catch (error: unknown) {
         creating({
-            message: `Error moving mission ${properties.mission.name} to project ${selectedProject.value.name}`,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+            message: `Error moving mission ${properties.mission.name} to project ${targetProjectName}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,

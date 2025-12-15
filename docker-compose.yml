@@ -1,25 +1,72 @@
 services:
+    base:
+        image: kleinkram-base
+        build:
+            context: .
+            dockerfile: docker/base.Dockerfile
+            args:
+                USER_ID: ${USER_ID:-1000}
+                GROUP_ID: ${GROUP_ID:-1000}
+
     api-server:
         container_name: kleinkram-api-server
 
         build:
             context: .
-            dockerfile: backend/Dockerfile
+            dockerfile: docker/backend.Dockerfile
+            target: development
+            args:
+                USER_ID: ${USER_ID:-1000}
+                GROUP_ID: ${GROUP_ID:-1000}
+            additional_contexts:
+                kleinkram-base: service:base
 
         develop:
             watch:
                 - action: sync
-                  path: ./common
-                  target: /usr/src/app/common
+                  path: ./packages
+                  target: /app/packages
                   ignore:
                       - node_modules/
                       - dist/
                 - action: sync
                   path: ./backend
-                  target: /usr/src/app/backend
+                  target: /app/backend
                   ignore:
                       - node_modules/
                       - dist/
+                      - tests/
+                # Backend config files
+                - action: rebuild
+                  path: ./backend/package.json
+                - action: rebuild
+                  path: ./backend/tsconfig.json
+                - action: rebuild
+                  path: ./backend/tsconfig.build.json
+                - action: rebuild
+                  path: ./backend/nest-cli.json
+                - action: rebuild
+                  path: ./backend/webpack.config.js
+                # Shared packages config files
+                - action: rebuild
+                  path: ./packages/shared/package.json
+                - action: rebuild
+                  path: ./packages/shared/tsconfig.json
+                - action: rebuild
+                  path: ./packages/backend-common/package.json
+                - action: rebuild
+                  path: ./packages/backend-common/tsconfig.json
+                - action: rebuild
+                  path: ./packages/api-dto/package.json
+                - action: rebuild
+                  path: ./packages/api-dto/tsconfig.json
+                - action: rebuild
+                  path: ./packages/validation/package.json
+                - action: rebuild
+                  path: ./packages/validation/tsconfig.json
+                # Root lockfile
+                - action: rebuild
+                  path: ./pnpm-lock.yaml
 
         ports:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
@@ -33,16 +80,38 @@ services:
 
         environment:
             DEVBUILD: 'true'
+            MINIO_ENDPOINT_INTERNAL: 'minio'
+            REDIS_HOST: redis
 
         depends_on:
-            - database
-            - minio
-            - redis
+            database:
+                condition: service_started
+            minio:
+                condition: service_healthy
+            redis:
+                condition: service_started
+            base:
+                condition: service_started
+
+        volumes:
+            - ./backend:/app/backend
+            - backend_node_modules:/app/backend/node_modules
+            - ./packages:/app/packages
+            - ./cli:/app/cli
+            - ./cli/tests/generate_test_data.py:/app/common/cli/tests/generate_test_data.py
+            # Mask host node_modules with anonymous volumes to avoid broken symlinks
+            - /app/packages/api-dto/node_modules
+            - /app/packages/backend-common/node_modules
+            - /app/packages/shared/node_modules
+            - /app/packages/validation/node_modules
+            - ./docs:/app/docs
 
     database:
         image: postgres:17
 
         container_name: kleinkram-postgres
+
+        command: postgres -c log_min_messages=ERROR -c log_min_error_statement=ERROR
 
         ports:
             - '5432:5432'
@@ -65,31 +134,30 @@ services:
 
         volumes:
             - minio_data:/data
+            - ./docker/minio-entrypoint.sh:/docker-entrypoint.sh:ro
 
         environment:
             MINIO_ROOT_USER: ${MINIO_USER}
             MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
             MINIO_PROMETHEUS_AUTH_TYPE: 'public'
+            MINIO_DATA_BUCKET_NAME: ${MINIO_DATA_BUCKET_NAME}
+            MINIO_DB_BUCKET_NAME: ${MINIO_DB_BUCKET_NAME}
+            MINIO_ARTIFACTS_BUCKET_NAME: ${MINIO_ARTIFACTS_BUCKET_NAME}
+            MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+            MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
 
-        entrypoint: sh
-
-        # initialize buckets (see https://github.com/minio/minio/issues/4769#issuecomment-331033735)
-        # and add service worker access key after startup of the minio server
-        command: >
-            -c "mkdir -p /data/${MINIO_DATA_BUCKET_NAME} &&
-            mkdir -p /data/${MINIO_DB_BUCKET_NAME} &&
-            mkdir -p /data/${MINIO_ARTIFACTS_BUCKET_NAME} && 
-            /usr/bin/minio server --console-address ':9001' /data & 
-            sleep 10 &&
-            mc alias set myminio http://minio:9000 ${MINIO_USER} ${MINIO_PASSWORD} &&
-            mc ilm rule add myminio/${MINIO_ARTIFACTS_BUCKET_NAME} --expire-days 90 || true &&
-            mc admin user svcacct add --access-key '${MINIO_ACCESS_KEY}' --secret-key '${MINIO_SECRET_KEY}' myminio ${MINIO_USER} || true &&
-            echo 'minio is ready' &&
-            sleep infinity"
+        entrypoint: ['/docker-entrypoint.sh']
 
         ports:
             - '127.0.0.1:9000:9000'
             - '127.0.0.1:9001:9001'
+
+        healthcheck:
+            test:
+                ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+            interval: 30s
+            timeout: 20s
+            retries: 3
 
         networks:
             - public-network
@@ -100,15 +168,29 @@ services:
 
         build:
             context: .
-            dockerfile: ./frontend/dev.Dockerfile
+            dockerfile: docker/frontend.Dockerfile
+            target: development
             args:
-                - QUASAR_ENDPOINT=${QUASAR_ENDPOINT}
+                - BACKEND_URL=${BACKEND_URL}
+                - USER_ID=${USER_ID:-1000}
+                - GROUP_ID=${GROUP_ID:-1000}
+            additional_contexts:
+                kleinkram-base: service:base
 
         ports:
             - '8003:8003'
 
+        volumes:
+            - ./frontend:/app/frontend
+            - ./.git:/app/.git:ro
+            - frontend_node_modules:/app/frontend/node_modules
+            - ./packages:/app/packages
+
         env_file:
             - .env
+
+        environment:
+            BACKEND_URL: ${BACKEND_URL}
 
         develop:
             watch:
@@ -119,17 +201,41 @@ services:
                       - node_modules/
                       - dist/
                 - action: sync
-                  path: ./common
-                  target: /app/common
+                  path: ./packages
+                  target: /app/packages
                   ignore:
                       - node_modules/
                       - dist/
-                - action: sync
-                  path: ./common/frontend_shared
-                  target: /app/common/frontend_shared
+                - action: rebuild
+                  path: ./frontend/package.json
+                - action: rebuild
+                  path: ./frontend/pnpm-lock.yaml
+                - action: rebuild
+                  path: ./frontend/tsconfig.json
+                - action: rebuild
+                  path: ./frontend/quasar.config.ts
+                # Shared packages config files
+                - action: rebuild
+                  path: ./packages/shared/package.json
+                - action: rebuild
+                  path: ./packages/shared/tsconfig.json
+                - action: rebuild
+                  path: ./packages/backend-common/package.json
+                - action: rebuild
+                  path: ./packages/backend-common/tsconfig.json
+                - action: rebuild
+                  path: ./packages/api-dto/package.json
+                - action: rebuild
+                  path: ./packages/api-dto/tsconfig.json
+                - action: rebuild
+                  path: ./packages/validation/package.json
+                - action: rebuild
+                  path: ./packages/validation/tsconfig.json
+                # Root lockfile
+                - action: rebuild
+                  path: ./pnpm-lock.yaml
 
         depends_on:
-            - api-server
             - minio
 
         networks:
@@ -139,6 +245,8 @@ services:
         image: redis:latest
 
         container_name: kleinkram-redis
+
+        command: redis-server --loglevel warning
 
         ports:
             - '6379:6379'
@@ -151,30 +259,83 @@ services:
 
         build:
             context: .
-            dockerfile: queueConsumer/Dockerfile
+            dockerfile: docker/queue-consumer.Dockerfile
+            target: development
+            args:
+                USER_ID: ${USER_ID:-1000}
+                GROUP_ID: ${GROUP_ID:-1000}
+            additional_contexts:
+                kleinkram-base: service:base
+                artifact-uploader: service:artifact-uploader
 
         volumes:
+            - ./queueConsumer:/app/queueConsumer
+            - queue_consumer_node_modules:/app/queueConsumer/node_modules
+            - ./packages:/app/packages
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
+            - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
+            # Mask host node_modules with anonymous volumes to avoid broken symlinks
+            - /app/packages/api-dto/node_modules
+            - /app/packages/backend-common/node_modules
+            - /app/packages/shared/node_modules
+            - /app/packages/validation/node_modules
+
+        # Add docker group to allow access to docker socket
+        group_add:
+            - ${DOCKER_GID:-999}
 
         develop:
             watch:
                 - action: sync
                   path: ./queueConsumer
-                  target: /usr/src/queueConsumer
+                  target: /app/queueConsumer
                   ignore:
                       - node_modules/
                       - dist/
-
                 - action: sync
-                  path: ./common
-                  target: /usr/src/common
+                  path: ./packages
+                  target: /app/packages
                   ignore:
                       - node_modules/
                       - dist/
+                # QueueConsumer config files
+                - action: rebuild
+                  path: ./queueConsumer/package.json
+                - action: rebuild
+                  path: ./queueConsumer/tsconfig.json
+                - action: rebuild
+                  path: ./queueConsumer/tsconfig.build.json
+                - action: rebuild
+                  path: ./queueConsumer/nest-cli.json
+                - action: rebuild
+                  path: ./queueConsumer/webpack.config.js
+                # Shared packages config files
+                - action: rebuild
+                  path: ./packages/shared/package.json
+                - action: rebuild
+                  path: ./packages/shared/tsconfig.json
+                - action: rebuild
+                  path: ./packages/backend-common/package.json
+                - action: rebuild
+                  path: ./packages/backend-common/tsconfig.json
+                - action: rebuild
+                  path: ./packages/api-dto/package.json
+                - action: rebuild
+                  path: ./packages/api-dto/tsconfig.json
+                - action: rebuild
+                  path: ./packages/validation/package.json
+                - action: rebuild
+                  path: ./packages/validation/tsconfig.json
+                # Root lockfile
+                - action: rebuild
+                  path: ./pnpm-lock.yaml
 
         env_file:
             - .env
+
+        environment:
+            REDIS_HOST: redis
 
         networks:
             - private-network
@@ -182,6 +343,7 @@ services:
         depends_on:
             - database
             - redis
+            - base
 
     prometheus:
         image: prom/prometheus
@@ -195,8 +357,9 @@ services:
             - '--web.enable-remote-write-receiver'
             - '--enable-feature=exemplar-storage'
             - '--enable-feature=native-histograms'
+            - '--log.level=error'
         ports:
-            - '9090:9090'
+            - '9099:9090'
         networks:
             - private-network
             - public-network
@@ -224,6 +387,7 @@ services:
             - '3100:3100'
         command:
             - --config.file=/mnt/config/loki-config.yml
+            - -log.level=error
         volumes:
             - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
         networks:
@@ -256,8 +420,9 @@ services:
         depends_on:
             - api-server
         build:
-            context: docs/.
-            dockerfile: local-dev.Dockerfile
+            context: .
+            dockerfile: docker/docs.Dockerfile
+            target: development
         environment:
             DEVBUILD: 'true'
         ports:
@@ -267,13 +432,19 @@ services:
             - vitepress_dist:/app/src/.vitepress/dist
             - node_modules:/app/src/node_modules
             - ./backend/docs:/app/src/docs/
+            - ./tsconfig.base.json:/app/tsconfig.base.json
+            - ./packages:/app/packages
 
-    artifactUploader:
+        command: sh -c "ln -sf /app/src/scripts /app/scripts && npm run docs:dev /app/src"
+
+    artifact-uploader:
         container_name: kleinkram-artifact-uploader
-        image: rslethz/grandtour-datasets:artifact-uploader-latest
+        image: rslethz/kleinkram:artifact-uploader-latest
         build:
             context: queueConsumer/src/artifactUpload
             dockerfile: Dockerfile
+        environment:
+            KLEINKRAM_ACTION_UUID: 'dev-action-uuid'
 
     postgres-exporter:
         image: prometheuscommunity/postgres-exporter
@@ -303,6 +474,9 @@ volumes:
     logging-tempo-data:
     vitepress_dist:
     node_modules:
+    backend_node_modules:
+    frontend_node_modules:
+    queue_consumer_node_modules:
 
 networks:
     public-network:

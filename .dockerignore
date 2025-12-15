@@ -1,4 +1,24 @@
-**/dist
-**/node_modules
-**/build
-**/.cache
+# Local dev files
+node_modules
+dist
+.env*
+.git
+.gitignore
+.vscode
+.idea
+
+# Tests
+backend/tests
+!backend/tests/actions/file-hash
+packages/*/tests
+**/*.test.ts
+**/*.spec.ts
+junit.xml
+coverage
+
+# Backend specific
+backend/tsconfig.tsbuildinfo
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+backend/pnpm-debug.log*

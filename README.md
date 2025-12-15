@@ -1,40 +1,61 @@
-# Kleinkram - A structured bag and mcap storage solution
+![Kleinkram Cover](docs/assets/landingpage.png)
 
-Kleinkram is a structured bag and mcap file storage solution for ROS1 and ROS2.
-It is designed to be a simple and efficient way to store and retrieve bag and mcap files.
-Kleinkram is being developed by the [Robotic Systems Lab (RSL) at ETH Zurich](https://rsl.ethz.ch/).
+# Kleinkram - Open Robotic Data Management
 
-## Features
+Kleinkram is a self-hosted, open-source platform for managing and processing robotics data. It provides a structured way to store, organize, and act on your data.
 
-- **Simple**: Kleinkram is designed to be simple to use and easy to understand.
-- **Efficient**: Kleinkram is designed to be efficient in terms of storage and retrieval.
-- **Structured**: Kleinkram is designed to be structured in terms of storage and retrieval.
-- **ROS1 and ROS2**: Kleinkram is designed to work with both ROS1 and ROS2.
+- **Organize**: Structure data in Projects and Missions.
+- **Store**: Support for ROS bags (`.bag`, `.mcap`), ZED camera recordings (`.svo2`), and configs (`.yml`).
+- **Process**: Run automated actions (validation, conversion, extraction) using Kleinkram Actions.
+- **Collaborate**: Share data with granular access control.
 
-## Getting Started
+## Documentation
 
-Consult the [Getting Started](https://docs.datasets.leggedrobotics.com/usage/getting-started.html) guide for users or
-the [Getting Started](https://docs.datasets.leggedrobotics.com/development/getting-started.html) guide for developers.
+For full documentation, please visit [docs.datasets.leggedrobotics.com](https://docs.datasets.leggedrobotics.com/).
 
-## Installation
+## Try Kleinkram Locally
 
-Clone the repository:
+You can easily run a local instance of Kleinkram to try it out. This has been tested on Ubuntu 24.04 and macOS.
+
+1. **Clone the repository**
 
 ```bash
 git clone git@github.com:leggedrobotics/kleinkram.git
 cd kleinkram
 ```
 
-Now you can run Kleinkram using `docker compose`
+2. **Start the application**
 
 ```bash
 docker compose up --build
 ```
 
-This will launch the frontend under `http://localhost:8003`,
-the minio console at `http://localhost:9001`, the documentation
-at `http://localhost:4000` and the api at `http://localhost:3000`.
+<details>
+<summary>Why <code>--build</code>?</summary>
+The <code>--build</code> flag ensures that the Docker images are built before starting. For more details on Docker Compose, see the <a href="https://docs.docker.com/compose/">official docs</a>.
+</details>
 
-## Documentation
+> [!WARNING]
+> If you have run Kleinkram locally before, you should consider deleting all existing data. See the <a href="https://docs.datasets.leggedrobotics.com/development/try-locally">Try Kleinkram Locally</a> documentation for more details.
 
-You can read the documentation deployed by RSL at [docs.datasets.leggedrobotics.com](https://docs.datasets.leggedrobotics.com/).
+3. **Access the application**
+
+You can now access the frontend at `http://localhost:8003`.
+
+> [!TIP]
+> **Browser Compatibility**
+> Make sure to use Chrome or Firefox for the best experience with the local development server. There are some known issues related to Safari when running Kleinkram locally.
+
+4. **Configure CLI (Optional)**
+
+If you want to use the CLI with your local instance, you need to set the endpoint to local:
+
+```bash
+klein endpoint local
+klein login
+```
+
+<details>
+<summary>Start Developing</summary>
+For a deeper dive into the project structure and development workflow, see the <a href="https://docs.datasets.leggedrobotics.com/development/application-structure">Application Structure</a> documentation. Your development environment is designed for Ubuntu 24.04.
+</details>

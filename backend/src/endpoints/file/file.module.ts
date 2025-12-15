@@ -1,25 +1,25 @@
-import FileEntity from '@common/entities/file/file.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import ProjectEntity from '@common/entities/project/project.entity';
-import TopicEntity from '@common/entities/topic/topic.entity';
+import { FileGuardService } from '@/services/file-guard.service';
+import { FileService } from '@/services/file.service';
+import { MissionService } from '@/services/mission.service';
+import { TagService } from '@/services/tag.service';
+import { TopicService } from '@/services/topic.service';
+import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
+import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
+import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FileService } from '../../services/file.service';
-import { TopicService } from '../../services/topic.service';
+import { FoxgloveModule } from '../integrations/foxglove.module';
+import { QueueModule } from '../queue/queue.module';
 import { FileController } from './file.controller';
-
-import AccessGroupEntity from '@common/entities/auth/accessgroup.entity';
-import AccountEntity from '@common/entities/auth/account.entity';
-import MetadataEntity from '@common/entities/metadata/metadata.entity';
-import TagTypeEntity from '@common/entities/tagType/tag-type.entity';
-import { MissionService } from '../../services/mission.service';
-import { TagService } from '../../services/tag.service';
-
-import CategoryEntity from '@common/entities/category/category.entity';
-import FileEventEntity from '@common/entities/file/file-event.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import { StorageModule } from '@common/modules/storage/storage.module';
-import { FileGuardService } from '../../services/file-guard.service';
 
 @Module({
     imports: [
@@ -37,6 +37,8 @@ import { FileGuardService } from '../../services/file-guard.service';
             FileEventEntity,
         ]),
         StorageModule,
+        FoxgloveModule,
+        QueueModule,
     ],
     providers: [
         FileService,
@@ -48,4 +50,5 @@ import { FileGuardService } from '../../services/file-guard.service';
     controllers: [FileController],
     exports: [FileService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class FileModule {}

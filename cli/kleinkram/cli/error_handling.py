@@ -23,9 +23,7 @@ class ErrorHandledTyper(typer.Typer):
 
     _error_handlers: OrderedDict[Type[Exception], ExceptionHandler]
 
-    def error_handler(
-        self, exc: Type[Exception]
-    ) -> Callable[[ExceptionHandler], ExceptionHandler]:
+    def error_handler(self, exc: Type[Exception]) -> Callable[[ExceptionHandler], ExceptionHandler]:
         def dec(func: ExceptionHandler) -> ExceptionHandler:
             self._error_handlers[exc] = func
             return func

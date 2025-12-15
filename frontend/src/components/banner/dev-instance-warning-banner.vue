@@ -25,5 +25,5 @@ import ENV from 'src/environment';
 
 // TODO: currently, all hosted versions should show this warning
 // eslint-disable-next-line unicorn/prevent-abbreviations
-const isDevInstance = ENV.ENDPOINT.includes('.dev.leggedrobotics.com');
+const isDevInstance = ENV.BACKEND_URL.includes('.dev.leggedrobotics.com');
 </script>

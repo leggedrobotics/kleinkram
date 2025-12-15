@@ -13,7 +13,7 @@
     </q-card-section>
 </template>
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
 import { Notify } from 'quasar';
@@ -77,6 +77,7 @@ const deleteMissionAction = async (): Promise<void> => {
                         } else if (status === 409) {
                             errorMessage = 'Mission may contain files.';
                         } else {
+                            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                             errorMessage = `Server responded with status: ${status}`;
                         }
                     } else if (error.request) {
@@ -101,6 +102,8 @@ const deleteMissionAction = async (): Promise<void> => {
 
 defineExpose({
     deleteMissionAction,
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_name_check: missionNameCheck,
 });
 </script>

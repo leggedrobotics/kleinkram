@@ -43,7 +43,11 @@
                         </div>
 
                         <div class="row q-col-gutter-md">
-                            <div class="col-12 col-sm-6">
+                            <div
+                                :class="
+                                    hasContext ? 'col-12 col-sm-6' : 'col-12'
+                                "
+                            >
                                 <div
                                     class="text-caption text-weight-bold text-grey-8 q-mb-xs"
                                 >
@@ -65,7 +69,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-12 col-sm-6">
+                            <div v-if="hasContext" class="col-12 col-sm-6">
                                 <div
                                     class="text-caption text-weight-bold text-grey-8 q-mb-xs"
                                 >
@@ -120,6 +124,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed, onMounted } from 'vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -128,6 +133,7 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0)
         emit('load-required');
 });
@@ -135,13 +141,24 @@ onMounted(() => {
 // --- Computed ---
 const uniqueSources = computed(() => {
     const sources = new Set(
-        properties.messages.map((m) => m.data.source || 'Unknown'),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+        properties.messages.map((m) => m.data.source ?? 'Unknown'),
     );
     return [...sources].join(', ');
 });
 
+const hasContext = computed(() => {
+    return properties.messages.some((message) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const stamp = message.data.header?.stamp;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        return stamp && (stamp.sec !== 0 || stamp.nsec !== 0);
+    });
+});
+
 // --- Formatters ---
 const formatFullDate = (timeObject: { sec: number; nsec: number }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!timeObject || (timeObject.sec === 0 && timeObject.nsec === 0))
         return '0 (Not Set)';
     const millis = timeObject.sec * 1000 + timeObject.nsec / 1_000_000;

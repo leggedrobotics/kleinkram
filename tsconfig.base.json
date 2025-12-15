@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "strict": true,
+        "noImplicitReturns": true,
+        "noImplicitAny": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "sourceMap": true,
+        "declaration": true,
+        "composite": true,
+        "incremental": true,
+        "paths": {
+            "@kleinkram/api-dto": ["./packages/api-dto/src/index.ts"],
+            "@kleinkram/api-dto/*": ["./packages/api-dto/src/*"],
+            "@kleinkram/backend-common": [
+                "./packages/backend-common/src/index.ts"
+            ],
+            "@kleinkram/backend-common/*": ["./packages/backend-common/src/*"],
+            "@kleinkram/shared": ["./packages/shared/src/index.ts"],
+            "@kleinkram/shared/*": ["./packages/shared/src/*"],
+            "@kleinkram/validation": ["./packages/validation/src/index.ts"],
+            "@kleinkram/validation/*": ["./packages/validation/src/*"]
+        }
+    }
+}

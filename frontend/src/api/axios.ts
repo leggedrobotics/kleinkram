@@ -1,6 +1,8 @@
 import axios, { AxiosRequestConfig, RawAxiosResponseHeaders } from 'axios';
 import { parseISO } from 'date-fns';
 import { ref } from 'vue';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 import BUILD_INFO from '../build';
 import ENV from '../environment';
 
@@ -25,6 +27,7 @@ const handleDates = <T extends JSON | null | undefined>(data: T): T | Date => {
 
     for (const [key, value] of Object.entries(data)) {
         // @ts-expect-error this is a hack to make the type checker happy
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         if (isIsoDateString(value)) data[key] = parseISO(value);
         else if (typeof value === 'object') handleDates(value);
     }
@@ -33,7 +36,7 @@ const handleDates = <T extends JSON | null | undefined>(data: T): T | Date => {
 };
 
 const axiosInstance = axios.create({
-    baseURL: ENV.ENDPOINT,
+    baseURL: ENV.BACKEND_URL,
     withCredentials: true,
     timeout: 1000 * 60 * 30,
 });
@@ -77,6 +80,10 @@ const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
     // as refreshing the token is not necessary
     if (error.response?.status !== 401) throw error as Error;
 
+    // Do not retry calls to the refresh-token endpoint itself
+    if (originalRequest.url?.includes('auth/refresh-token'))
+        throw error as Error;
+
     // throw if the original request has already been retried
     if (originalRequest.isRetryWithRefreshedToken) throw error as Error;
 
@@ -85,7 +92,7 @@ const refreshAccessTokenAndRetry: AxiosInterceptorParameters[1] = async (
     originalRequest.isRetryWithRefreshedToken = true;
 
     await axios.post(
-        `${ENV.ENDPOINT}/auth/refresh-token`,
+        `${ENV.BACKEND_URL}/auth/refresh-token`,
         {},
         { withCredentials: true },
     );

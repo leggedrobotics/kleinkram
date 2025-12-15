@@ -18,23 +18,22 @@ import typer
 
 import kleinkram.errors
 from kleinkram._version import __version__
-from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.client import CLI_VERSION_HEADER
-from kleinkram.api.deser import (
-    FileObject,
-    _parse_run,
-    RunObject,
-    _parse_action_template,
-)
+from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.deser import FileObject
 from kleinkram.api.deser import MissionObject
 from kleinkram.api.deser import ProjectObject
+from kleinkram.api.deser import RunObject
+from kleinkram.api.deser import _parse_action_template
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
 from kleinkram.api.deser import _parse_project
+from kleinkram.api.deser import _parse_run
 from kleinkram.api.pagination import paginated_request
-from kleinkram.api.query import FileQuery, RunQuery
+from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.api.query import RunQuery
 from kleinkram.api.query import file_query_is_unique
 from kleinkram.api.query import mission_query_is_unique
 from kleinkram.api.query import project_query_is_unique
@@ -50,9 +49,11 @@ from kleinkram.errors import MissionValidationError
 from kleinkram.errors import ProjectExists
 from kleinkram.errors import ProjectNotFound
 from kleinkram.errors import ProjectValidationError
-from kleinkram.models import File, Run, ActionTemplate
+from kleinkram.models import ActionTemplate
+from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import Run
 from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import split_args
 
@@ -150,9 +151,7 @@ def get_files(
     max_entries: Optional[int] = None,
 ) -> Generator[File, None, None]:
     params = _file_query_to_params(file_query)
-    response_stream = paginated_request(
-        client, FILE_ENDPOINT, params=params, max_entries=max_entries
-    )
+    response_stream = paginated_request(client, FILE_ENDPOINT, params=params, max_entries=max_entries)
     yield from map(lambda f: _parse_file(FileObject(f)), response_stream)
 
 
@@ -162,9 +161,7 @@ def get_missions(
     max_entries: Optional[int] = None,
 ) -> Generator[Mission, None, None]:
     params = _mission_query_to_params(mission_query)
-    response_stream = paginated_request(
-        client, MISSION_ENDPOINT, params=params, max_entries=max_entries
-    )
+    response_stream = paginated_request(client, MISSION_ENDPOINT, params=params, max_entries=max_entries)
     yield from map(lambda m: _parse_mission(MissionObject(m)), response_stream)
 
 
@@ -185,7 +182,7 @@ def get_projects(
     yield from map(lambda p: _parse_project(ProjectObject(p)), response_stream)
 
 
-LIST_ACTIONS_ENDPOINT = "/action/listActions"
+LIST_ACTIONS_ENDPOINT = "/actions"
 
 
 def get_runs(
@@ -201,7 +198,7 @@ def get_run(
     client: AuthenticatedClient,
     run_id: str,
 ) -> Run:
-    resp = client.get(f"{ACTION_ENDPOINT}/details", params={"uuid": run_id})
+    resp = client.get(f"{ACTION_ENDPOINT}s/{run_id}")
     if resp.status_code == 404:
         raise kleinkram.errors.RunNotFound(f"Run not found: {run_id}")
     resp.raise_for_status()
@@ -211,29 +208,23 @@ def get_run(
 def get_action_templates(
     client: AuthenticatedClient,
 ) -> Generator[ActionTemplate, None, None]:
-    response_stream = paginated_request(client, "/action/listTemplates")
+    response_stream = paginated_request(client, "/templates")
     yield from map(lambda p: _parse_action_template(RunObject(p)), response_stream)
 
 
-def get_project(
-    client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False
-) -> Project:
+def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False) -> Project:
     """\
     get a unique project by specifying a project spec
     """
     if not project_query_is_unique(query):
-        raise InvalidProjectQuery(
-            f"Project query does not uniquely determine project: {query}"
-        )
+        raise InvalidProjectQuery(f"Project query does not uniquely determine project: {query}")
     try:
         return next(get_projects(client, query, exact_match=exact_match))
     except StopIteration:
         raise ProjectNotFound(f"Project not found: {query}")
 
 
-def submit_action(
-    client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID
-) -> str:
+def submit_action(client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID) -> str:
     """
     Submits a new action to the API and returns the action UUID.
 
@@ -247,7 +238,7 @@ def submit_action(
     }
 
     typer.echo("Submitting action...")
-    resp = client.post(f"{ACTION_ENDPOINT}/submit", json=submit_payload)
+    resp = client.post(f"{ACTION_ENDPOINT}s", json=submit_payload)
     resp.raise_for_status()  # Raises on 4xx/5xx responses
 
     response_data = resp.json()
@@ -264,9 +255,7 @@ def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
     get a unique mission by specifying a mission query
     """
     if not mission_query_is_unique(query):
-        raise InvalidMissionQuery(
-            f"Mission query does not uniquely determine mission: {query}"
-        )
+        raise InvalidMissionQuery(f"Mission query does not uniquely determine mission: {query}")
     try:
         return next(get_missions(client, query))
     except StopIteration:
@@ -285,12 +274,8 @@ def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
         raise kleinkram.errors.FileNotFound(f"File not found: {query}")
 
 
-def _mission_name_is_available(
-    client: AuthenticatedClient, mission_name: str, project_id: UUID
-) -> bool:
-    mission_query = MissionQuery(
-        patterns=[mission_name], project_query=ProjectQuery(ids=[project_id])
-    )
+def _mission_name_is_available(client: AuthenticatedClient, mission_name: str, project_id: UUID) -> bool:
+    mission_query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project_id]))
     try:
         _ = get_mission(client, mission_query)
     except MissionNotFound:
@@ -298,26 +283,15 @@ def _mission_name_is_available(
     return False
 
 
-def _validate_mission_name(
-    client: AuthenticatedClient, project_id: UUID, mission_name: str
-) -> None:
+def _validate_mission_name(client: AuthenticatedClient, project_id: UUID, mission_name: str) -> None:
     if not _mission_name_is_available(client, mission_name, project_id):
-        raise MissionExists(
-            f"Mission with name: `{mission_name}` already exists"
-            f" in project: {project_id}"
-        )
+        raise MissionExists(f"Mission with name: `{mission_name}` already exists" f" in project: {project_id}")
 
     if is_valid_uuid4(mission_name):
-        raise ValueError(
-            f"Mission name: `{mission_name}` is a valid UUIDv4, "
-            "mission names must not be valid UUIDv4's"
-        )
+        raise ValueError(f"Mission name: `{mission_name}` is a valid UUIDv4, " "mission names must not be valid UUIDv4's")
 
     if mission_name.endswith(" "):
-        raise ValueError(
-            "A mission name cannot end with a whitespace. "
-            f"The given mission name was '{mission_name}'"
-        )
+        raise ValueError("A mission name cannot end with a whitespace. " f"The given mission name was '{mission_name}'")
 
 
 def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
@@ -329,9 +303,7 @@ def _project_name_is_available(client: AuthenticatedClient, project_name: str) -
     return False
 
 
-def _validate_mission_created(
-    client: AuthenticatedClient, project_id: str, mission_name: str
-) -> None:
+def _validate_mission_created(client: AuthenticatedClient, project_id: str, mission_name: str) -> None:
     """
     validate that a mission is successfully created
     """
@@ -394,9 +366,7 @@ def _create_mission(
     _validate_mission_name(client, project_id, mission_name)
 
     if required_tags and not set(required_tags).issubset(metadata.keys()):
-        raise InvalidMissionMetadata(
-            f"Mission tags `{required_tags}` are required but missing from metadata: {metadata}"
-        )
+        raise InvalidMissionMetadata(f"Mission tags `{required_tags}` are required but missing from metadata: {metadata}")
 
     # we need to translate tag keys to tag type ids
     tags = _get_tags_map(client, metadata)
@@ -414,9 +384,7 @@ def _create_mission(
     return UUID(resp.json()["uuid"], version=4)
 
 
-def _create_project(
-    client: AuthenticatedClient, project_name: str, description: str
-) -> UUID:
+def _create_project(client: AuthenticatedClient, project_name: str, description: str) -> UUID:
 
     _validate_project_name(client, project_name, description)
     payload = {"name": project_name, "description": description}
@@ -426,16 +394,12 @@ def _create_project(
     return UUID(resp.json()["uuid"], version=4)
 
 
-def _validate_project_name(
-    client: AuthenticatedClient, project_name: str, description: str
-) -> None:
+def _validate_project_name(client: AuthenticatedClient, project_name: str, description: str) -> None:
     if not _project_name_is_available(client, project_name):
         raise ProjectExists(f"Project with name: `{project_name}` already exists")
 
     if project_name.endswith(" "):
-        raise ProjectValidationError(
-            f"Project name must not end with a tailing whitespace: `{project_name}`"
-        )
+        raise ProjectValidationError(f"Project name must not end with a tailing whitespace: `{project_name}`")
 
     if not description:
         raise ProjectValidationError("Project description is required")
@@ -449,17 +413,13 @@ def _validate_tag_value(tag_value, tag_datatype) -> None:
             raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
     elif tag_datatype == "BOOLEAN":
         if tag_value.lower() not in {"true", "false"}:
-            raise InvalidMissionMetadata(
-                f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')"
-            )
+            raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')")
     else:
         pass  # any string is fine
     # TODO: add check for LOCATION tag datatype
 
 
-def _get_metadata_type_id_by_name(
-    client: AuthenticatedClient, tag_name: str
-) -> Tuple[Optional[UUID], str]:
+def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) -> Tuple[Optional[UUID], str]:
     resp = client.get(TAG_TYPE_BY_NAME, params={"name": tag_name, "take": 1})
 
     if resp.status_code in (403, 404):
@@ -474,9 +434,7 @@ def _get_metadata_type_id_by_name(
     return UUID(data["uuid"], version=4), data["datatype"]
 
 
-def _get_tags_map(
-    client: AuthenticatedClient, metadata: Dict[str, str]
-) -> Dict[UUID, str]:
+def _get_tags_map(client: AuthenticatedClient, metadata: Dict[str, str]) -> Dict[UUID, str]:
     # TODO: this needs a better endpoint
     # why are we using metadata type ids as keys???
     ret = {}
@@ -489,9 +447,7 @@ def _get_tags_map(
     return ret
 
 
-def _update_mission(
-    client: AuthenticatedClient, mission_id: UUID, *, metadata: Dict[str, str]
-) -> None:
+def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, metadata: Dict[str, str]) -> None:
     tags_dct = _get_tags_map(client, metadata)
     payload = {
         "missionUUID": str(mission_id),
@@ -530,12 +486,18 @@ def _get_api_version() -> Tuple[int, int, int]:
     config = get_config()
     client = httpx.Client()
 
-    resp = client.get(
-        f"{config.endpoint.api}{GET_STATUS}", headers={CLI_VERSION_HEADER: __version__}
-    )
-    vers = resp.headers["kleinkram-version"].split(".")
+    resp = client.get(f"{config.endpoint.api}{GET_STATUS}", headers={CLI_VERSION_HEADER: __version__})
+    vers_str = resp.headers.get("kleinkram-version")
 
-    return tuple(map(int, vers))  # type: ignore
+    if not vers_str:
+        return (0, 0, 0)
+
+    vers = vers_str.split(".")
+
+    try:
+        return tuple(map(int, vers))  # type: ignore
+    except ValueError:
+        return (0, 0, 0)
 
 
 def _claim_admin(client: AuthenticatedClient) -> None:
@@ -550,9 +512,7 @@ def _claim_admin(client: AuthenticatedClient) -> None:
 FILE_DELETE_MANY = "/files/deleteMultiple"
 
 
-def _delete_files(
-    client: AuthenticatedClient, file_ids: Sequence[UUID], mission_id: UUID
-) -> None:
+def _delete_files(client: AuthenticatedClient, file_ids: Sequence[UUID], mission_id: UUID) -> None:
     payload = {
         "uuids": [str(file_id) for file_id in file_ids],
         "missionUUID": str(mission_id),

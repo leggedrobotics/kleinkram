@@ -22,26 +22,16 @@ Download files from kleinkram.
 """
 
 
-download_typer = typer.Typer(
-    name="download", no_args_is_help=True, invoke_without_command=True, help=HELP
-)
+download_typer = typer.Typer(name="download", no_args_is_help=True, invoke_without_command=True, help=HELP)
 
 
 @download_typer.callback()
 def download(
-    files: Optional[List[str]] = typer.Argument(
-        None, help="file names, ids or patterns"
-    ),
-    projects: Optional[List[str]] = typer.Option(
-        None, "--project", "-p", help="project names, ids or patterns"
-    ),
-    missions: Optional[List[str]] = typer.Option(
-        None, "--mission", "-m", help="mission names, ids or patterns"
-    ),
+    files: Optional[List[str]] = typer.Argument(None, help="file names, ids or patterns"),
+    projects: Optional[List[str]] = typer.Option(None, "--project", "-p", help="project names, ids or patterns"),
+    missions: Optional[List[str]] = typer.Option(None, "--mission", "-m", help="mission names, ids or patterns"),
     dest: str = typer.Option(prompt="destination", help="local path to save the files"),
-    nested: bool = typer.Option(
-        False, help="save files in nested directories, project-name/mission-name"
-    ),
+    nested: bool = typer.Option(False, help="save files in nested directories, project-name/mission-name"),
     overwrite: bool = typer.Option(
         False,
         help="overwrite files if they already exist and don't match the file size or file hash",
@@ -64,9 +54,7 @@ def download(
         ids=mission_ids,
         project_query=project_query,
     )
-    file_query = FileQuery(
-        patterns=file_patterns, ids=file_ids, mission_query=mission_query
-    )
+    file_query = FileQuery(patterns=file_patterns, ids=file_ids, mission_query=mission_query)
 
     kleinkram.core.download(
         client=AuthenticatedClient(),

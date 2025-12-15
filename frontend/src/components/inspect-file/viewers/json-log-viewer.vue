@@ -83,6 +83,7 @@ import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { onMounted } from 'vue';
 
 const properties = defineProps<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
     topicName: string;
@@ -90,6 +91,7 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!properties.messages || properties.messages.length === 0)
         emit('load-required');
 });
@@ -107,16 +109,20 @@ const formatTime = (nano: bigint): string => {
     return timePart?.replace('Z', '') ?? 'Invalid Time';
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getByteSize = (data: any): number => {
     if (!data) return 0;
     if (data instanceof Uint8Array) return data.byteLength;
-    return JSON.stringify(data).length;
+    return JSON.stringify(data, replacer).length;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const formatContent = (data: any): string => {
     if (data === null) return '[Empty]';
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (data instanceof Uint8Array || data?.type === 'Buffer')
-        return `[Binary Data] Size: ${data.byteLength || 0} bytes`;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+        return `[Binary Data] Size: ${data.byteLength ?? 0} bytes`;
     try {
         const jsonString = JSON.stringify(data, replacer, 2);
         return jsonString.length > 2000
@@ -127,13 +133,21 @@ const formatContent = (data: any): string => {
     }
 };
 
-const replacer = (_key: string, value: any) =>
-    Array.isArray(value) && value.length > 20
-        ? `[Array(${value.length})]`
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const replacer = (_key: string, value: any) => {
+    if (typeof value === 'bigint') {
+        return value.toString();
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return Array.isArray(value) && value.length > 20
+        ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `[Array(${value.length})]`
         : value;
+};
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function copyToClipboard(data: any): Promise<void> {
-    await quasarCopy(JSON.stringify(data, null, 2));
+    await quasarCopy(JSON.stringify(data, replacer, 2));
     Notify.create({
         message: 'Payload copied',
         color: 'positive',

@@ -8,6 +8,7 @@
                 v-model:ready="ready"
                 :mission="mission"
                 :uploads="uploads"
+                :disable-scope="!!mission"
             />
         </template>
 
@@ -24,8 +25,8 @@
 </template>
 
 <script setup lang="ts">
-import { FlatMissionDto } from '@api/types/mission/mission.dto';
-import { FileUploadDto } from '@api/types/upload.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import CreateFile from 'components/create-file.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
@@ -45,7 +46,11 @@ defineProps<{
 
 const createFileAction = (): void => {
     if (createFileReference.value === undefined) return;
-    createFileReference.value.createFileAction();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (createFileReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        (createFileReference.value as any).createFileAction();
+    }
     onDialogOK();
 };
 </script>

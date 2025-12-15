@@ -24,47 +24,61 @@
                         <q-menu v-if="file" auto-close>
                             <q-list>
                                 <q-item
-                                    clickable
                                     v-ripple
+                                    clickable
+                                    :disable="isInvalid"
+                                    @click="handleCopyFoxglove"
+                                >
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_monitor_heart" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                        Copy Foxglove link
+                                    </q-item-section>
+                                </q-item>
+
+                                <q-item
+                                    v-ripple
+                                    clickable
                                     :disable="isInvalid"
                                     @click="handleCopyLink"
                                 >
-                                    <q-item-section avatar
-                                        ><q-icon name="sym_o_content_copy"
-                                    /></q-item-section>
-                                    <q-item-section
-                                        >Copy public link</q-item-section
-                                    >
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_content_copy" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                        Copy public link
+                                    </q-item-section>
                                 </q-item>
                                 <q-item
-                                    clickable
                                     v-ripple
+                                    clickable
                                     :disable="!file?.hash"
                                     @click="handleCopyHash"
                                 >
-                                    <q-item-section avatar
-                                        ><q-icon name="sym_o_encrypted"
-                                    /></q-item-section>
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_encrypted" />
+                                    </q-item-section>
                                     <q-item-section>Copy MD5</q-item-section>
                                 </q-item>
                                 <q-item
-                                    clickable
                                     v-ripple
+                                    clickable
                                     @click="handleCopyUuid"
                                 >
-                                    <q-item-section avatar
-                                        ><q-icon name="sym_o_fingerprint"
-                                    /></q-item-section>
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_fingerprint" />
+                                    </q-item-section>
                                     <q-item-section>Copy UUID</q-item-section>
                                 </q-item>
                                 <q-item
-                                    clickable
                                     v-ripple
+                                    clickable
                                     class="text-negative"
                                 >
-                                    <q-item-section avatar
-                                        ><q-icon name="sym_o_delete"
-                                    /></q-item-section>
+                                    <q-item-section avatar>
+                                        <q-icon name="sym_o_delete" />
+                                    </q-item-section>
                                     <q-item-section>
                                         <DeleteFileDialogOpener
                                             v-if="file"
@@ -91,9 +105,9 @@
                         <div class="text-placeholder">Project</div>
                         <div class="text-subtitle1 text-primary ellipsis">
                             {{ file?.mission.project.name }}
-                            <q-tooltip>{{
-                                file?.mission.project.name
-                            }}</q-tooltip>
+                            <q-tooltip>
+                                {{ file?.mission.project.name }}
+                            </q-tooltip>
                         </div>
                     </div>
                     <div class="col-12 col-md-2">
@@ -155,7 +169,8 @@
 </template>
 
 <script setup lang="ts">
-import { FileState } from '@common/enum';
+import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import { FileState } from '@kleinkram/shared';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import EditFileButton from 'components/buttons/edit-file-button.vue';
@@ -171,34 +186,47 @@ import {
 } from 'src/services/generic';
 import { computed } from 'vue';
 
-const properties = defineProps<{ file: any }>();
-const emit = defineEmits(['download', 'copy-link', 'copy-hash', 'copy-uuid']);
+const properties = defineProps<{ file: FileWithTopicDto }>();
+const emit = defineEmits([
+    'download',
+    'copy-link',
+    'copy-foxglove',
+    'copy-hash',
+    'copy-uuid',
+]);
 
 const isDownloadDisabled = computed(() =>
     [FileState.LOST, FileState.UPLOADING].includes(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         properties.file?.state ?? FileState.LOST,
     ),
 );
 const isInvalid = computed(
     () =>
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         properties.file?.state === FileState.LOST ||
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         properties.file?.state === FileState.ERROR,
 );
 
-const handleDownload = () => {
+const handleDownload = (): void => {
     emit('download');
 };
 
-const handleCopyLink = () => {
+const handleCopyLink = (): void => {
     emit('copy-link');
 };
 
-const handleCopyHash = () => {
+const handleCopyHash = (): void => {
     emit('copy-hash');
 };
 
-const handleCopyUuid = () => {
+const handleCopyUuid = (): void => {
     emit('copy-uuid');
+};
+
+const handleCopyFoxglove = (): void => {
+    emit('copy-foxglove');
 };
 </script>
 

@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { MissionWithFilesDto } from '@api/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 
 const { mission } = defineProps<{
     mission: MissionWithFilesDto;

@@ -1,10 +1,14 @@
-import { TagsDto, TagTypeDto } from '@api/types/tags/tags.dto';
-import { DataType } from '@common/enum';
+import type {
+    TagsDto,
+    TagTypeDto,
+} from '@kleinkram/api-dto/types/tags/tags.dto';
+import { DataType } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
 export const getTagTypes = async (): Promise<TagTypeDto[]> => {
     const response: AxiosResponse<TagsDto> = await axios.get('/tag/all');
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return response.data.data ?? [];
 };
 
@@ -13,6 +17,7 @@ export const getFilteredTagTypes = async (
     type?: DataType,
 ): Promise<TagsDto> => {
     let response: AxiosResponse<TagsDto>;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!name && type === null) {
         response = await axios.get<TagsDto>('/tag/all');
     } else {
@@ -20,6 +25,7 @@ export const getFilteredTagTypes = async (
         if (name) {
             parameters.name = name;
         }
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (type !== null) {
             parameters.type = type ?? '';
         }

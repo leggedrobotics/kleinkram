@@ -1,8 +1,8 @@
-import { CookieNames } from '@common/frontend_shared/enum';
+import { ActionService } from '@/services/action.service';
+import { CookieNames } from '@kleinkram/shared';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import logger from '../../logger';
-import { ActionService } from '../../services/action.service';
 
 /**
  *
@@ -15,6 +15,7 @@ export class AuditLoggerMiddleware implements NestMiddleware {
     constructor(private actionService: ActionService) {}
 
     use(request: Request, _: Response, next: NextFunction): void {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!request.cookies) {
             next(); // pass on to the next middleware function
             return;

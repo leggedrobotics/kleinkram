@@ -1,10 +1,11 @@
-import { DataType } from '@common/enum';
+import { DataType } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 
 export const removeTag = async (tagUUID: string) => {
     const response = await axios.delete('/tag/deleteTag', {
         params: { uuid: tagUUID },
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
@@ -16,10 +17,12 @@ export const addTags = async (
         mission: missionUUID,
         tags,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const createTagType = async (name: string, type: DataType) => {
     const response = await axios.post('/tag/create', { name, type });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

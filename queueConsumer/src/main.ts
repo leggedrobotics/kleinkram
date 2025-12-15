@@ -12,7 +12,19 @@ async function bootstrap(): Promise<void> {
     });
     await app.listen(3000);
     logger.info('Application started');
+
+    if (module.hot) {
+        module.hot.accept();
+        module.hot.dispose(() => app.close());
+    }
 }
+
+declare const module: {
+    hot?: {
+        accept: () => void;
+        dispose: (callback: () => Promise<void>) => void;
+    };
+};
 
 // eslint-disable-next-line unicorn/prefer-top-level-await
 bootstrap().catch((error: unknown) => {

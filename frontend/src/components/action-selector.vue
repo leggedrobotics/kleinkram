@@ -151,7 +151,7 @@
     </q-list>
 </template>
 <script setup lang="ts">
-import { ActionTemplateDto } from '@api/types/actions/action-template.dto';
+import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import { QSelect } from 'quasar';
 import { computed, Ref, ref } from 'vue';
 
@@ -163,13 +163,15 @@ const { actionTemplates } = defineProps<{
 }>();
 
 //template that gets written
-const selectedTemplate = defineModel<ActionTemplateDto>();
+const selectedTemplate = defineModel<ActionTemplateDto | undefined>();
 
 //clone templates to filter
 const filteredActionTemplates: Ref<ActionTemplateDto[] | []> = ref([]);
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 filteredActionTemplates.value = actionTemplates ? [...actionTemplates] : [];
 //removing newTemplate Option if Name in search field exactly matches existing template
 const options = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (actionTemplates === undefined) {
         throw new Error('actionTemplates undefined in options');
     }
@@ -186,10 +188,12 @@ const searchEnabled = ref(false);
 const model = ref(undefined);
 
 function filterActionTemplates(value: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!actionTemplates) {
         throw new Error('actionTemplates undefined in filterActionTemplates');
     }
     filteredActionTemplates.value =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         actionTemplates.filter((temporary) => {
             return temporary.name.includes(value);
         }) || [];

@@ -30,8 +30,8 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
-import { ActionDto } from '@api/types/actions/action.dto';
-import DeleteAction from 'components/delete-action.vue';
+import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
+import DeleteAction from 'components/actions/delete-action.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const deleteActionReference = ref<
@@ -44,7 +44,11 @@ const { action } = defineProps<{
 
 const deleteActionAction = (): void => {
     if (deleteActionReference.value === undefined) return;
-    deleteActionReference.value.deleteActionAction();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (deleteActionReference.value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        (deleteActionReference.value as any).deleteActionAction();
+    }
     onDialogOK();
 };
 </script>

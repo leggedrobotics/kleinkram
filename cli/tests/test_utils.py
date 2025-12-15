@@ -85,9 +85,7 @@ def test_is_valid_uuid4():
             "invalid_sybmols_____.txt",
             id="invalid symbols",
         ),
-        pytest.param(
-            Path(f'{"a" * 100}.txt'), f'{"a" * 40}38bf3e475f.txt', id="too long"
-        ),
+        pytest.param(Path(f'{"a" * 100}.txt'), f'{"a" * 40}38bf3e475f.txt', id="too long"),
         pytest.param(Path(f'{"a" * 50}.txt'), f'{"a" * 50}.txt', id="max length"),
         pytest.param(Path("in/a/folder.txt"), "folder.txt", id="in folder"),
     ],

@@ -1,9 +1,13 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
+// @ts-ignore
 import { defineConfig } from '#q-app/wrappers';
-import { fileURLToPath } from 'node:url';
 
+import path from 'node:path';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineConfig((/* ctx */) => {
     return {
         // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
@@ -32,19 +36,48 @@ export default defineConfig((/* ctx */) => {
 
         build: {
             alias: {
-                '@common': fileURLToPath(
-                    new URL('../common/frontend_shared', import.meta.url),
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                '@kleinkram/shared': path.resolve(
+                    // eslint-disable-next-line unicorn/prefer-module
+                    __dirname,
+                    '../packages/shared/src',
                 ),
-                '@api/types': fileURLToPath(
-                    new URL('../common/api/types', import.meta.url),
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                '@kleinkram/api-dto': path.resolve(
+                    // eslint-disable-next-line unicorn/prefer-module
+                    __dirname,
+                    '../packages/api-dto/src',
+                ),
+                // Use frontend-safe validation (no @nestjs dependencies)
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                '@kleinkram/validation/frontend': path.resolve(
+                    // eslint-disable-next-line unicorn/prefer-module
+                    __dirname,
+                    '../packages/validation/src/frontend.ts',
+                ),
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                '@kleinkram/backend-common': path.resolve(
+                    // eslint-disable-next-line unicorn/prefer-module
+                    __dirname,
+                    '../packages/backend-common/src',
+                ),
+                // Alias to resolve class-transformer/storage issue
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'class-transformer/storage': path.resolve(
+                    // eslint-disable-next-line unicorn/prefer-module
+                    __dirname,
+                    '../node_modules/class-transformer',
                 ),
             },
 
             typescript: {
                 strict: true,
                 vueShim: true,
-                extendTsConfig(tsConfig) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                extendTsConfig(tsConfig: any) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     if (tsConfig.compilerOptions === undefined) return;
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     tsConfig.compilerOptions.experimentalDecorators = true;
                 },
             },
@@ -64,12 +97,22 @@ export default defineConfig((/* ctx */) => {
             // polyfillModulePreload: true,
             // distDir
 
-            extendViteConf(viteConfig) {
-                viteConfig.optimizeDeps = viteConfig.optimizeDeps || {};
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            extendViteConf(viteConfig: any) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/prefer-module
+                viteConfig.envDir = path.resolve(__dirname, '..');
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                viteConfig.envPrefix = ['VITE_', 'BACKEND_URL'];
+
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                viteConfig.optimizeDeps = viteConfig.optimizeDeps ?? {};
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 viteConfig.optimizeDeps.include =
-                    viteConfig.optimizeDeps.include || [];
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    viteConfig.optimizeDeps.include ?? [];
 
                 // FIX: Use the VALID package names
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                 viteConfig.optimizeDeps.include.push(
                     '@foxglove/rosmsg',
                     '@foxglove/rosmsg-serialization', // ROS 1
@@ -77,18 +120,56 @@ export default defineConfig((/* ctx */) => {
                     '@mcap/core',
                     'fzstd',
                 );
+
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                viteConfig.optimizeDeps.exclude =
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    viteConfig.optimizeDeps.exclude ?? [];
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                viteConfig.optimizeDeps.exclude.push(
+                    '@kleinkram/shared',
+                    '@kleinkram/api-dto',
+                    '@kleinkram/validation/frontend',
+                    '@kleinkram/backend-common',
+                    // Exclude problematic paths
+                    'class-transformer/storage',
+                );
+
+                // Add validation/frontend alias for runtime resolution
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                viteConfig.resolve = viteConfig.resolve ?? {};
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                viteConfig.resolve.alias = viteConfig.resolve.alias ?? {};
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                viteConfig.resolve.alias['@kleinkram/validation/frontend'] =
+                    path.resolve(
+                        // eslint-disable-next-line unicorn/prefer-module
+                        __dirname,
+                        '../packages/validation/src/frontend.ts',
+                    );
             },
             // viteVuePluginOptions: {},
 
-            // vitePlugins: [
-            //   [ 'package-name', { ..options.. } ]
-            // ]
+            vitePlugins: [
+                [
+                    nodePolyfills,
+                    {
+                        globals: { global: true, Buffer: true, process: true },
+                        protocolImports: true,
+                    },
+                ],
+            ],
         },
 
         // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
         devServer: {
             // https: true
-            open: true, // opens browser window automatically
+            open: false, // Don't auto-open browser in Docker
+            host: '0.0.0.0', // Bind to all interfaces for Docker
+            hmr: {
+                // Use the client host for HMR WebSocket connection
+                clientPort: 8003,
+            },
         },
 
         // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

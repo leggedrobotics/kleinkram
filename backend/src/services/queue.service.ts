@@ -1,47 +1,46 @@
-import { CancelProcessingResponseDto } from '@common/api/types/cancel-processing-response.dto';
-import { DeleteMissionResponseDto } from '@common/api/types/delete-mission-response.dto';
-import { DriveCreate } from '@common/api/types/drive-create.dto';
-import { UpdateTagTypeDto } from '@common/api/types/update-tag-type.dto';
-import { FileAuditService } from '@common/audit/file-audit.service';
-import { redis } from '@common/consts';
-import FileEntity from '@common/entities/file/file.entity';
-import IngestionJobEntity from '@common/entities/file/ingestion-job.entity';
-import MissionEntity from '@common/entities/mission/mission.entity';
-import UserEntity from '@common/entities/user/user.entity';
-import env from '@common/environment';
+import { addAccessConstraints } from '@/endpoints/auth/auth-helper';
+import {
+    CancelProcessingResponseDto,
+    DeleteMissionResponseDto,
+    DriveCreate,
+} from '@kleinkram/api-dto';
+import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
+import { redis } from '@kleinkram/backend-common/consts';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {
     FileEventType,
     FileLocation,
     FileOrigin,
+    FileSource,
     FileState,
     FileType,
     QueueState,
     UserRole,
-} from '@common/frontend_shared/enum';
-import { StorageService } from '@common/modules/storage/storage.service';
-import { ConflictException, Injectable, OnModuleInit } from '@nestjs/common';
+} from '@kleinkram/shared';
+import { getGoogleDriveInfo } from '@kleinkram/validation';
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    OnModuleInit,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
+import * as fs from 'node:fs';
 import { Gauge } from 'prom-client';
 import { FindOptionsWhere, In, IsNull, MoreThan, Repository } from 'typeorm';
-import { addAccessConstraints } from '../endpoints/auth/auth-helper';
 import logger from '../logger';
 import { UserService } from './user.service';
 
-function extractFileIdFromUrl(url: string): string | undefined {
-    const filePattern = /\/file(?:\/u\/\d+)?\/d\/([a-zA-Z0-9_-]+)/;
-    const folderPattern = /\/drive(?:\/u\/\d+)?\/folders\/([a-zA-Z0-9_-]+)/;
-    let match = filePattern.exec(url);
-    if (match?.[1]) return match[1];
-    match = folderPattern.exec(url);
-    if (match?.[1]) return match[1];
-    return undefined;
-}
-
 @Injectable()
-class QueueService implements OnModuleInit {
+export class QueueService implements OnModuleInit {
     private fileQueue!: Queue.Queue;
 
     constructor(
@@ -74,20 +73,33 @@ class QueueService implements OnModuleInit {
     async importFromDrive(
         driveCreate: DriveCreate,
         user: UserEntity,
-    ): Promise<UpdateTagTypeDto> {
+    ): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: driveCreate.missionUUID },
         });
         const creator = await this.userService.findOneByUUID(user.uuid, {}, {});
 
-        const fileId = extractFileIdFromUrl(driveCreate.driveURL);
-        if (fileId === undefined)
-            throw new ConflictException('Invalid Drive URL');
+        const { id: fileId, isFolder } = getGoogleDriveInfo(
+            driveCreate.driveURL,
+        );
+        if (fileId === null) throw new ConflictException('Invalid Drive URL');
+
+        if (
+            isFolder && // Check if backend has Service Account Key configured
+            // We use fs.existsSync to be robust
+            (!env.GOOGLE_KEY_FILE ||
+                !fs.existsSync(env.GOOGLE_KEY_FILE) ||
+                !fs.statSync(env.GOOGLE_KEY_FILE).isFile())
+        ) {
+            throw new BadRequestException(
+                'Google Drive Folder ingestion requires a configured Service Account on the server.',
+            );
+        }
 
         const queueEntry = await this.queueRepository.save(
             this.queueRepository.create({
                 identifier: fileId,
-                display_name: `GoogleDrive Object (no id=${fileId})`,
+                displayName: `Google Drive File (${fileId})`,
                 state: QueueState.AWAITING_PROCESSING,
                 location: FileLocation.DRIVE,
                 mission,
@@ -100,7 +112,6 @@ class QueueService implements OnModuleInit {
             .catch((error: unknown) => logger.error(error));
 
         logger.debug('Added drive file to queue');
-        return {};
     }
 
     async recalculateHashes(): Promise<{
@@ -115,13 +126,15 @@ class QueueService implements OnModuleInit {
             relations: ['mission', 'mission.project'],
         });
 
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         logger.debug(`Add ${files.length} files to queue for hash calculation`);
 
         for (const file of files) {
             try {
                 await this.fileQueue.add('extractHashFromMinio', {
-                    file_uuid: file.uuid,
+                    fileUuid: file.uuid,
                 });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 logger.error(error);
             }
@@ -134,6 +147,7 @@ class QueueService implements OnModuleInit {
         uuid: string,
         md5: string,
         actor: UserEntity,
+        source: FileSource | string = FileSource.WEB_INTERFACE,
     ): Promise<void> {
         let job = await this.queueRepository.findOne({
             where: { identifier: uuid },
@@ -142,7 +156,7 @@ class QueueService implements OnModuleInit {
 
         if (!job) {
             logger.warn(
-                `confirmUpload: Job missing for file ${uuid}. Recreating...`,
+                `confirmUpload: Job missing for file ${uuid}.Recreating...`,
             );
 
             const file = await this.fileRepository.findOneOrFail({
@@ -153,7 +167,8 @@ class QueueService implements OnModuleInit {
             job = await this.queueRepository.save(
                 this.queueRepository.create({
                     identifier: file.uuid,
-                    display_name: file.filename,
+
+                    displayName: file.filename,
                     state: QueueState.AWAITING_UPLOAD,
                     location: FileLocation.MINIO,
                     mission: file.mission,
@@ -168,7 +183,8 @@ class QueueService implements OnModuleInit {
         ) {
             if (job.state >= QueueState.PROCESSING) return;
             logger.warn(
-                `Resuming upload for job ${job.uuid} in state ${job.state}`,
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                `Resuming upload for job ${job.uuid} in state ${job.state} `,
             );
         }
 
@@ -187,6 +203,7 @@ class QueueService implements OnModuleInit {
 
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
+        file.hash = md5;
         await this.fileRepository.save(file);
 
         job.state = QueueState.AWAITING_PROCESSING;
@@ -205,8 +222,9 @@ class QueueService implements OnModuleInit {
                 fileUuid: file.uuid,
                 filename: file.filename,
                 ...(job.mission?.uuid ? { missionUuid: job.mission.uuid } : {}),
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 ...(actor ? { actor } : {}),
-                details: { origin: FileOrigin.UPLOAD },
+                details: { origin: FileOrigin.UPLOAD, source },
             },
             true,
         );
@@ -218,7 +236,7 @@ class QueueService implements OnModuleInit {
         userUUID: string,
         skip: number,
         take: number,
-    ): Promise<any[]> {
+    ): Promise<IngestionJobEntity[]> {
         // @ts-ignore
         const user = await this.userService.findOneByUUID(userUUID);
         const where: FindOptionsWhere<IngestionJobEntity> = {
@@ -260,7 +278,7 @@ class QueueService implements OnModuleInit {
                 .map((state) => Number.parseInt(state));
             query.andWhere('ingestion_job.state IN (:...filter)', { filter });
         }
-        return query.getMany();
+        return (await query.getMany()) as IngestionJobEntity[];
     }
 
     async delete(
@@ -281,6 +299,7 @@ class QueueService implements OnModuleInit {
 
         const waitingJobs = await this.fileQueue.getWaiting();
         const jobToRemove = waitingJobs.find(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             (job) => job.data.queueUuid === queueUUID,
         );
         if (jobToRemove) await jobToRemove.remove();
@@ -330,6 +349,7 @@ class QueueService implements OnModuleInit {
 
         const waitingJobs = await this.fileQueue.getWaiting();
         const jobToRemove = waitingJobs.find(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             (job) => job.data.queueUuid === queueUUID,
         );
         if (jobToRemove) await jobToRemove.remove();
@@ -338,6 +358,35 @@ class QueueService implements OnModuleInit {
         await this.queueRepository.save(queue);
 
         return {};
+    }
+
+    async stopJob(queueUUID: string): Promise<void> {
+        const queue = await this.queueRepository.findOneOrFail({
+            where: { uuid: queueUUID },
+        });
+
+        // We can only stop active jobs
+        if (queue.state !== QueueState.PROCESSING) {
+            throw new ConflictException('Job is not processing');
+        }
+
+        // To stop a job we need to find the active job in the queue
+        const activeJobs = await this.fileQueue.getActive();
+        const jobToStop = activeJobs.find(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            (job) => job.data.queueUuid === queueUUID,
+        );
+
+        if (jobToStop) {
+            // This moves the job to failed
+            await jobToStop.moveToFailed({ message: 'Stopped by user' });
+            queue.state = QueueState.ERROR;
+            await this.queueRepository.save(queue);
+        } else {
+            throw new ConflictException(
+                'Job not found in active queue, state might be desynced',
+            );
+        }
     }
 
     /**

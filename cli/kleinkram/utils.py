@@ -32,9 +32,7 @@ SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml"]
 EXPERIMENTAL_FILE_TYPES = []
 
 
-def file_paths_from_files(
-    files: Sequence[File], *, dest: Path, allow_nested: bool = False
-) -> Dict[Path, File]:
+def file_paths_from_files(files: Sequence[File], *, dest: Path, allow_nested: bool = False) -> Dict[Path, File]:
     """\
     determines the destinations for a sequence of `File` objects,
     possibly nested by project and mission
@@ -44,10 +42,7 @@ def file_paths_from_files(
     elif not allow_nested:
         return {dest / file.name: file for file in files}
     else:
-        return {
-            dest / file.project_name / file.mission_name / file.name: file
-            for file in files
-        }
+        return {dest / file.project_name / file.mission_name / file.name: file for file in files}
 
 
 def upper_camel_case_to_words(s: str) -> List[str]:
@@ -87,13 +82,10 @@ def check_file_path(file: Path) -> None:
     if not file.exists():
         raise FileNotFoundError(f"{file} does not exist")
     if file.suffix not in SUPPORT_FILE_TYPES:
-        raise FileTypeNotSupported(
-            f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}"
-        )
+        raise FileTypeNotSupported(f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}")
     if not check_filename_is_sanatized(file.stem):
         raise FileNameNotSupported(
-            f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are "
-            f"allowed in filenames and at most 50chars: {file}"
+            f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are " f"allowed in filenames and at most 50chars: {file}"
         )
 
 
@@ -106,9 +98,7 @@ def format_error(msg: str, exc: Exception, *, verbose: bool = False) -> str:
 
 
 def format_traceback(exc: Exception) -> str:
-    return "".join(
-        traceback.format_exception(type(exc), value=exc, tb=exc.__traceback__)
-    )
+    return "".join(traceback.format_exception(type(exc), value=exc, tb=exc.__traceback__))
 
 
 def styled_string(*objects: Any, **kwargs: Any) -> str:
@@ -148,9 +138,7 @@ def get_filename(path: Path) -> str:
         - the 10 hashed chars are deterministic given the original filename
     """
 
-    stem = "".join(
-        char if char in INTERNAL_ALLOWED_CHARS else "_" for char in path.stem
-    )
+    stem = "".join(char if char in INTERNAL_ALLOWED_CHARS else "_" for char in path.stem)
 
     if len(stem) > 50:
         hash = md5(path.name.encode()).hexdigest()
