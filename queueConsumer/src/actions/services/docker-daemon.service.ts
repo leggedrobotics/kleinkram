@@ -222,10 +222,10 @@ export class DockerDaemon {
         logger.info(`Container started wit id: ${container.id}`);
 
         // stop the container after max_runtime seconds
-        await this.killContainerAfterMaxRuntime(
+        this.killContainerAfterMaxRuntime(
             container,
             containerOptions.limits?.max_runtime ?? 0,
-        );
+        ).catch((error: unknown) => logger.error(error));
 
         return {
             container,

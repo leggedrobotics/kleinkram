@@ -350,16 +350,29 @@ export class ActionManagerService {
                     // new transaction for each batch
                     await this.actionRepository.manager.transaction(
                         async (manager) => {
-                            const _action = await manager.findOneOrFail(
+                            const _action = await manager.findOne(
                                 ActionEntity,
                                 {
                                     where: { uuid: actionUuid },
+                                    select: ['uuid', 'logs'],
+                                    lock: { mode: 'pessimistic_write' },
                                 },
                             );
 
-                            _action.logs ??= [];
-                            _action.logs.push(...nextLogBatch);
-                            await manager.save(_action);
+                            if (!_action) {
+                                return;
+                            }
+
+                            const newLogs = [
+                                ...(_action.logs ?? []),
+                                ...nextLogBatch,
+                            ];
+
+                            await manager.update(
+                                ActionEntity,
+                                { uuid: actionUuid },
+                                { logs: newLogs },
+                            );
                         },
                     );
                 }),
