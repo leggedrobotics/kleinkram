@@ -47,7 +47,11 @@ jobs:
               id: tag
               run: |
                   if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-                    echo "tag=dev" >> $GITHUB_OUTPUT
+                    if [ "${{ matrix.type }}" == "prod" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
+                      echo "tag=latest" >> $GITHUB_OUTPUT
+                    else
+                      echo "tag=dev" >> $GITHUB_OUTPUT
+                    fi
                     echo "kleinkram_version=${{ inputs.kleinkram_version }}" >> $GITHUB_OUTPUT
                   elif [ "${{ matrix.type }}" == "dev" ]; then
                     echo "tag=dev" >> $GITHUB_OUTPUT
