@@ -430,40 +430,40 @@ export class ActionManagerService {
                 state = ActionState.FAILED;
                 exit_code = exitCode;
                 state_cause =
-                    'Container failed to run. The docker run command did ' +
-                    'not execute successfully. Please open an issue ' +
-                    'problem persists.';
-
+                    'Container failed to run. Docker run command failed.';
+                break;
+            }
+            case 126: {
+                state = ActionState.FAILED;
+                exit_code = exitCode;
+                state_cause = 'Command cannot be invoked (Permission denied?).';
+                break;
+            }
+            case 127: {
+                state = ActionState.FAILED;
+                exit_code = exitCode;
+                state_cause = 'Command not found.';
                 break;
             }
             case 139: {
                 state = ActionState.FAILED;
                 exit_code = exitCode;
                 state_cause =
-                    'Container was terminated by the operating system via SIGSEGV signal. ' +
-                    'This usually happens when the container tries to access memory ' +
-                    'it is not allowed to access.';
-
+                    'Container crashed (SIGSEGV). Invalid memory access.';
                 break;
             }
             case 143: {
                 state = ActionState.FAILED;
                 exit_code = exitCode;
                 state_cause =
-                    'Container was terminated by the operating system via SIGTERM signal. ' +
-                    'This usually happens when the container is stopped due to approaching ' +
-                    'time limit.';
-
+                    'Container stopped (SIGTERM). Time limit approached.';
                 break;
             }
             case 137: {
                 state = ActionState.FAILED;
                 exit_code = exitCode;
                 state_cause =
-                    'Container was immediately terminated by the operating ' +
-                    'system via SIGKILL signal. This usually happens when the ' +
-                    'container exceeds the memory limit or reaches the time CPU limit.';
-
+                    'Container killed (SIGKILL). Exceeded memory or CPU limit.';
                 break;
             }
             default: {
