@@ -37,7 +37,6 @@ describe('Verification project endpoint', () => {
             'user',
         );
         creator = creatorData.user;
-        creator = creatorData.user;
 
         // Create 2nd internal user
         const userData = await generateAndFetchDatabaseUser('internal', 'user');
