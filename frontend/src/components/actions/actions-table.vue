@@ -128,8 +128,14 @@ properties.handler.setSort('createdAt');
 properties.handler.setDescending(true);
 
 const queryFilters = computed(() => ({
-    projectUuid: (route.query.projectUuid as string) || undefined,
-    missionUuid: (route.query.missionUuid as string) || undefined,
+    projectUuid:
+        (route.query.projectUuid as string) ||
+        (route.params.projectUuid as string) ||
+        undefined,
+    missionUuid:
+        (route.query.missionUuid as string) ||
+        (route.params.missionUuid as string) ||
+        undefined,
     take: route.query.rowsPerPage ? Number(route.query.rowsPerPage) : 100,
     skip: route.query.page
         ? (Number(route.query.page) - 1) *
