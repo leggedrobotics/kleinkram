@@ -50,7 +50,7 @@
                     />
                     <span class="text-h6 text-grey-6">No executions found</span>
                     <span class="text-caption">
-                        There are no executions matching your criteria.
+                        {{ noDataSubtitle }}
                     </span>
                 </div>
             </div>
@@ -146,6 +146,13 @@ const queryFilters = computed(() => ({
     search: undefined,
     templateName: (route.query.name as string) || undefined,
 }));
+
+const noDataSubtitle = computed(() => {
+    if (queryFilters.value.missionUuid && !queryFilters.value.templateName) {
+        return 'No actions have been executed for this mission yet.';
+    }
+    return 'There are no executions matching your criteria.';
+});
 
 const { data: rawData, isLoading } = useActionList(queryFilters);
 
