@@ -381,7 +381,7 @@ const tagFilterQuery = computed(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const query: Record<string, any> = {};
     for (const key of Object.keys(tagFilter.value)) {
-        query[key] = tagFilter.value[key] ?? '';
+        query[key] = tagFilter.value[key]?.value ?? '';
     }
     return query;
 });

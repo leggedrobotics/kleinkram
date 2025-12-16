@@ -172,6 +172,6 @@ const updateTagValues = (newTagValues: Record<string, any>): void => {
 };
 
 const applyAction = (): void => {
-    onDialogOK(convertedTagValues);
+    onDialogOK(convertedTagValues.value);
 };
 </script>
