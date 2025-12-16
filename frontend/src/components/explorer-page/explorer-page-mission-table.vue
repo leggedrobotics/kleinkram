@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
-import { useQuery } from '@tanstack/vue-query';
+import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { QTable } from 'quasar';
 import { useHandler, useProjectQuery } from 'src/hooks/query-hooks';
@@ -220,6 +220,7 @@ const {
             queryHandler.value.descending,
             queryHandler.value.searchParams as { name: string },
         ),
+    placeholderData: keepPreviousData,
 });
 
 const data = computed(() => (rawData.value ? rawData.value.data : []));

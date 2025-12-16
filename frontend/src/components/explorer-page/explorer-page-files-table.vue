@@ -215,7 +215,11 @@ import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import { FileType, HealthStatus } from '@kleinkram/shared';
-import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
+import {
+    keepPreviousData,
+    useQuery,
+    UseQueryReturnType,
+} from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
@@ -347,6 +351,7 @@ const {
             properties.urlHandler.descending,
             properties.urlHandler.searchParams.health as HealthStatus,
         ),
+    placeholderData: keepPreviousData,
 });
 const data = computed(() => (rawData.value ? rawData.value.data : []));
 const total = computed(() => (rawData.value ? rawData.value.count : 0));

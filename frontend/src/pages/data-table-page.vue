@@ -276,7 +276,11 @@
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import { FileType } from '@kleinkram/shared';
-import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
+import {
+    keepPreviousData,
+    useQuery,
+    UseQueryReturnType,
+} from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 import ScopeSelector from 'components/common/scope-selector.vue';
@@ -404,6 +408,7 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
                 handler.value.sortBy,
                 handler.value.descending,
             ),
+        placeholderData: keepPreviousData,
     });
 
 const data = computed(() => (_data.value ? _data.value.data : []));
