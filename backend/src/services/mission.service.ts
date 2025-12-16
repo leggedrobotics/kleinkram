@@ -304,9 +304,12 @@ export class MissionService {
             .skip(skip);
 
         if (search) {
-            query.andWhere('mission.name ILIKE :search', {
-                search: `%${search}%`,
-            });
+            const tokens = search.trim().split(/\s+/);
+            for (const [index, token] of tokens.entries()) {
+                query.andWhere(`mission.name ILIKE :search_${String(index)}`, {
+                    [`search_${String(index)}`]: `%${token}%`,
+                });
+            }
         }
         if (sortBy) {
             query.orderBy(`mission.${sortBy}`, sortDirection);
@@ -355,9 +358,12 @@ export class MissionService {
             .addGroupBy('tagType.uuid');
 
         if (search) {
-            query.andWhere('mission.name ILIKE :search', {
-                search: `%${search}%`,
-            });
+            const tokens = search.trim().split(/\s+/);
+            for (const [index, token] of tokens.entries()) {
+                query.andWhere(`mission.name ILIKE :search_${String(index)}`, {
+                    [`search_${String(index)}`]: `%${token}%`,
+                });
+            }
         }
         if (sortBy) {
             query.orderBy(`mission.${sortBy}`, sortDirection);

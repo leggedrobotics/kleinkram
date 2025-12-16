@@ -404,9 +404,22 @@ export class FileService implements OnModuleInit {
         // Apply simple filters
         if (fileName) {
             logger.debug(`Filtering files by filename: ${fileName}`);
-            idQuery.andWhere('file.filename LIKE :fileName', {
-                fileName: `%${fileName}%`,
-            });
+            const tokens = fileName.trim().split(/\s+/);
+
+            if (tokens.length > 0) {
+                idQuery.andWhere(
+                    new Brackets((qb) => {
+                        for (const [index, token] of tokens.entries()) {
+                            qb.andWhere(
+                                `file.filename ILIKE :fileName_${String(index)}`,
+                                {
+                                    [`fileName_${String(index)}`]: `%${token}%`,
+                                },
+                            );
+                        }
+                    }),
+                );
+            }
         }
 
         if (projectUUID) {
