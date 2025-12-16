@@ -8,7 +8,13 @@ import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity'
 import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { FileContext } from '@backend-common/factories/file/file.factory';
-import { FileEventType, FileOrigin, FileType } from '@kleinkram/shared';
+import { extendedFaker } from '@backend-common/faker-extended';
+import {
+    DataType,
+    FileEventType,
+    FileOrigin,
+    FileType,
+} from '@kleinkram/shared';
 import * as Minio from 'minio';
 import { execSync } from 'node:child_process';
 import * as crypto from 'node:crypto';
@@ -17,6 +23,69 @@ import * as fs from 'node:fs';
 import path from 'node:path';
 import { Connection } from 'typeorm';
 import { Factory } from 'typeorm-seeding';
+
+/**
+ * Seed metadata value based on tag type
+ *
+ * @param tagType
+ * @param metadataProperties
+ */
+function seedMetadataValue(
+    tagType: TagTypeEntity,
+    metadataProperties: Partial<MetadataEntity>,
+) {
+    switch (tagType.datatype) {
+        case DataType.BOOLEAN: {
+            metadataProperties.value_boolean = extendedFaker.datatype.boolean();
+            break;
+        }
+        case DataType.NUMBER: {
+            metadataProperties.value_number = extendedFaker.number.int();
+            break;
+        }
+        case DataType.DATE: {
+            metadataProperties.value_date = extendedFaker.date.past();
+            break;
+        }
+        case DataType.LOCATION: {
+            metadataProperties.value_location = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
+            break;
+        }
+        case DataType.LINK: {
+            metadataProperties.value_string = extendedFaker.internet.url();
+            break;
+        }
+        default: {
+            // STRING
+            switch (tagType.name) {
+                case 'coordinates': {
+                    metadataProperties.value_string = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
+
+                    break;
+                }
+                case 'location': {
+                    metadataProperties.value_string =
+                        extendedFaker.location.city();
+
+                    break;
+                }
+                case 'robot_name': {
+                    metadataProperties.value_string =
+                        extendedFaker.animal.type();
+
+                    break;
+                }
+                default: {
+                    metadataProperties.value_string = tagType.name.includes(
+                        'description',
+                    )
+                        ? extendedFaker.lorem.sentence()
+                        : extendedFaker.lorem.words(3);
+                }
+            }
+        }
+    }
+}
 
 export const seedFiles = async (
     factory: Factory,
@@ -59,13 +128,10 @@ export const seedFiles = async (
         const meaningfulNames: Record<string, string[]> = {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '10_KB.bag': ['highway_drive_01.bag', 'urban_nav_test_01.bag'],
-
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '50_KB.bag': ['pick_place_demo.bag', 'assembly_run_01.bag'],
-
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '1_MB.bag': ['perimeter_scan_01.bag', 'rescue_mission_alpha.bag'],
-
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '17_MB.bag': ['highway_long_drive.bag', 'urban_heavy_traffic.bag'],
             // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -138,8 +204,7 @@ export const seedFiles = async (
                         name: randomCategoryName,
                         project: mission.project,
                         creator: adminUser,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    } as any).create();
+                    }).create();
                 }
 
                 let fileType = FileType.BAG;
@@ -207,8 +272,7 @@ export const seedFiles = async (
                     for (const topicDefinition of topics) {
                         await factory(TopicEntity)({
                             file: fileEntity,
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        } as any).create({
+                        }).create({
                             name: topicDefinition.name,
                             type: topicDefinition.type,
                             frequency: topicDefinition.frequency,
@@ -229,8 +293,7 @@ export const seedFiles = async (
                             extractedAt: new Date(),
                             durationMs: 100,
                         },
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    } as any).create();
+                    }).create();
                 }
 
                 // Create File Event (Upload Completed)
@@ -243,14 +306,11 @@ export const seedFiles = async (
                         origin: FileOrigin.UPLOAD,
                         source: 'Seeding Script',
                     },
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any).create();
+                }).create();
 
                 // Create Metadata for Mission (if not exists)
-                // We'll just add a random metadata to the mission
-                const tagType = tagTypes[0]; // Just pick the first one
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                if (tagType) {
+                // Iterate over all available tag types to ensure coverage
+                for (const tagType of tagTypes) {
                     // Check if mission already has this tag
                     const existingTag = await conn
                         .getRepository(MetadataEntity)
@@ -261,14 +321,18 @@ export const seedFiles = async (
                             },
                         });
                     if (!existingTag) {
-                        await factory(MetadataEntity)({
+                        const metadataProperties = {
                             mission: mission,
                             tagType: tagType,
                             creator: adminUser,
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
-                            value_string: 'Seeded Mission Data',
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        } as any).create();
+                            // Cast to Partial<MetadataEntity> to allow setting optional properties dynamically
+                        } as Partial<MetadataEntity>;
+
+                        seedMetadataValue(tagType, metadataProperties);
+
+                        await factory(MetadataEntity)(
+                            metadataProperties,
+                        ).create();
                     }
                 }
 

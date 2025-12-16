@@ -9,13 +9,25 @@ export interface MetadataContext {
     tagType: TagTypeEntity;
     creator: UserEntity;
 
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    value_string?: string;
+    // Optional metadata values
+    valueString?: string;
+    valueNumber?: number;
+    valueBoolean?: boolean;
+    valueDate?: Date;
+    valueLocation?: string;
 }
 
 define(MetadataEntity, (_, context: Partial<MetadataContext> = {}) => {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { mission, tagType, creator, value_string } = context;
+    const {
+        mission,
+        tagType,
+        creator,
+        valueString,
+        valueNumber,
+        valueBoolean,
+        valueDate,
+        valueLocation,
+    } = context;
 
     if (!mission) {
         throw new Error('Mission is required');
@@ -32,8 +44,20 @@ define(MetadataEntity, (_, context: Partial<MetadataContext> = {}) => {
     metadata.mission = mission;
     metadata.tagType = tagType;
     metadata.creator = creator;
-    if (value_string) {
-        metadata.value_string = value_string;
+    if (valueString !== undefined) {
+        metadata.value_string = valueString;
+    }
+    if (valueNumber !== undefined) {
+        metadata.value_number = valueNumber;
+    }
+    if (valueBoolean !== undefined) {
+        metadata.value_boolean = valueBoolean;
+    }
+    if (valueDate !== undefined) {
+        metadata.value_date = valueDate;
+    }
+    if (valueLocation !== undefined) {
+        metadata.value_location = valueLocation;
     }
 
     return metadata;
