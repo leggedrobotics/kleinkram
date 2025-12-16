@@ -8,6 +8,7 @@ import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity'
 import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { FileContext } from '@backend-common/factories/file/file.factory';
+import { MetadataContext } from '@backend-common/factories/metadata/metadata.factory';
 import { extendedFaker } from '@backend-common/faker-extended';
 import {
     DataType,
@@ -32,51 +33,51 @@ import { Factory } from 'typeorm-seeding';
  */
 function seedMetadataValue(
     tagType: TagTypeEntity,
-    metadataProperties: Partial<MetadataEntity>,
+    metadataProperties: Partial<MetadataContext>,
 ) {
     switch (tagType.datatype) {
         case DataType.BOOLEAN: {
-            metadataProperties.value_boolean = extendedFaker.datatype.boolean();
+            metadataProperties.valueBoolean = extendedFaker.datatype.boolean();
             break;
         }
         case DataType.NUMBER: {
-            metadataProperties.value_number = extendedFaker.number.int();
+            metadataProperties.valueNumber = extendedFaker.number.int();
             break;
         }
         case DataType.DATE: {
-            metadataProperties.value_date = extendedFaker.date.past();
+            metadataProperties.valueDate = extendedFaker.date.past();
             break;
         }
         case DataType.LOCATION: {
-            metadataProperties.value_location = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
+            metadataProperties.valueLocation = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
             break;
         }
         case DataType.LINK: {
-            metadataProperties.value_string = extendedFaker.internet.url();
+            metadataProperties.valueString = extendedFaker.internet.url();
             break;
         }
         default: {
             // STRING
             switch (tagType.name) {
                 case 'coordinates': {
-                    metadataProperties.value_string = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
+                    metadataProperties.valueString = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
 
                     break;
                 }
                 case 'location': {
-                    metadataProperties.value_string =
+                    metadataProperties.valueString =
                         extendedFaker.location.city();
 
                     break;
                 }
                 case 'robot_name': {
-                    metadataProperties.value_string =
+                    metadataProperties.valueString =
                         extendedFaker.animal.type();
 
                     break;
                 }
                 default: {
-                    metadataProperties.value_string = tagType.name.includes(
+                    metadataProperties.valueString = tagType.name.includes(
                         'description',
                     )
                         ? extendedFaker.lorem.sentence()
@@ -325,8 +326,7 @@ export const seedFiles = async (
                             mission: mission,
                             tagType: tagType,
                             creator: adminUser,
-                            // Cast to Partial<MetadataEntity> to allow setting optional properties dynamically
-                        } as Partial<MetadataEntity>;
+                        } as Partial<MetadataContext>;
 
                         seedMetadataValue(tagType, metadataProperties);
 
