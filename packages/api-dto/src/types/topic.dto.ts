@@ -70,3 +70,25 @@ export class TopicNamesDto implements Paginated<string> {
     @IsTake()
     take!: number;
 }
+
+export class TopicTypesDto implements Paginated<string> {
+    @ApiProperty()
+    @IsNumber()
+    count!: number;
+
+    @ApiProperty({
+        type: () => [String],
+        description: 'List of topic types',
+    })
+    @IsArray()
+    @IsString({ each: true })
+    data!: string[];
+
+    @ApiProperty()
+    @IsSkip()
+    skip!: number;
+
+    @ApiProperty()
+    @IsTake()
+    take!: number;
+}

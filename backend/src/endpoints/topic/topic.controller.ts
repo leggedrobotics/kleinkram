@@ -1,7 +1,7 @@
 import { ApiOkResponse } from '@/decorators';
 import { TopicService } from '@/services/topic.service';
 import { QuerySkip, QueryTake } from '@/validation/query-decorators';
-import { TopicNamesDto, TopicsDto } from '@kleinkram/api-dto';
+import { TopicNamesDto, TopicsDto, TopicTypesDto } from '@kleinkram/api-dto';
 import { Controller, Get } from '@nestjs/common';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { LoggedIn } from '../auth/roles.decorator';
@@ -32,5 +32,15 @@ export class TopicController {
     })
     async allNames(@AddUser() user: AuthHeader): Promise<TopicNamesDto> {
         return await this.topicService.findAllNames(user.user.uuid);
+    }
+
+    @Get('types')
+    @LoggedIn()
+    @ApiOkResponse({
+        description: 'Get all topic types',
+        type: TopicTypesDto,
+    })
+    async allTypes(@AddUser() user: AuthHeader): Promise<TopicTypesDto> {
+        return await this.topicService.findAllTypes(user.user.uuid);
     }
 }

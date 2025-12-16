@@ -2,7 +2,7 @@
     <title-section title="Datatable" />
 
     <div
-        class="q-pa-md bg-grey-1 rounded-borders q-mb-md border-grey-3"
+        class="q-pa-md q-mt-md bg-grey-1 rounded-borders q-mb-md border-grey-3"
         style="border: 1px solid #e0e0e0"
     >
         <div class="row q-col-gutter-sm q-mb-sm">
@@ -135,6 +135,27 @@
                             map-options
                             class="full-width"
                             @filter="filterFunction"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-8 col-md-5">
+                <div class="row no-wrap q-col-gutter-xs">
+                    <div class="col-8">
+                        <q-select
+                            v-model="selectedDatatypes"
+                            label="Filter by Datatype"
+                            use-input
+                            input-debounce="20"
+                            outlined
+                            dense
+                            bg-color="white"
+                            multiple
+                            use-chips
+                            :options="displayedDatatypes"
+                            class="full-width"
+                            @filter="filterDatatypeFunction"
                         />
                     </div>
                 </div>
@@ -294,7 +315,7 @@ import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
-import { allTopicsNames } from 'src/services/queries/topic';
+import { allTopicsNames, allTopicTypes } from 'src/services/queries/topic';
 import { FileTypeOption } from 'src/types/file-type-option';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -323,6 +344,12 @@ const { data: allTopics } = useQuery<string[]>({
 const displayedTopics = ref(allTopics.value);
 const selectedTopics = ref([]);
 const matchAllTopics = ref(false);
+const { data: allDatatypes } = useQuery<string[]>({
+    queryKey: ['topicTypes'],
+    queryFn: allTopicTypes,
+});
+const displayedDatatypes = ref(allDatatypes.value);
+const selectedDatatypes = ref([]);
 
 const tagFilter: Ref<Record<string, { name: string; value: string }>> = ref({});
 end.setHours(23, 59, 59, 999);
@@ -371,6 +398,7 @@ const queryKeyFiles = computed(() => [
     startDate,
     endDate,
     selectedTopics,
+    selectedDatatypes,
     matchAllTopics,
     tagFilter,
     selectedFileTypesFilter,
@@ -390,24 +418,22 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
     useQuery<FilesDto>({
         queryKey: queryKeyFiles,
         queryFn: () =>
-            fetchFilteredFiles(
-                filter.value,
-                handler.value.projectUuid,
-                handler.value.missionUuid,
-                startDate.value,
-                endDate.value,
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                selectedTopics.value ?? [],
-                [],
-                matchAllTopics.value,
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                selectedFileTypesFilter.value ?? ([] as FileType[]),
-                tagFilterQuery.value,
-                handler.value.take,
-                handler.value.skip,
-                handler.value.sortBy,
-                handler.value.descending,
-            ),
+            fetchFilteredFiles({
+                filename: filter.value,
+                projectUUID: handler.value.projectUuid,
+                missionUUID: handler.value.missionUuid,
+                startDate: startDate.value,
+                endDate: endDate.value,
+                topics: selectedTopics.value,
+                messageDatatypes: selectedDatatypes.value,
+                matchAllTopics: matchAllTopics.value,
+                fileTypes: selectedFileTypesFilter.value,
+                tag: tagFilterQuery.value,
+                take: handler.value.take,
+                skip: handler.value.skip,
+                sort: handler.value.sortBy,
+                desc: handler.value.descending,
+            }),
         placeholderData: keepPreviousData,
     });
 
@@ -538,6 +564,25 @@ function filterFunction(value: string, update: any): void {
         );
     });
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function filterDatatypeFunction(value: string, update: any): void {
+    if (value === '') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        update(() => {
+            displayedDatatypes.value = allDatatypes.value;
+        });
+        return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    update(() => {
+        if (!allDatatypes.value) return;
+        const needle = value.toLowerCase();
+        displayedDatatypes.value = allDatatypes.value.filter((v) =>
+            v.toLowerCase().includes(needle),
+        );
+    });
+}
 function useAndTopicFilter(): void {
     matchAllTopics.value = true;
 }
@@ -575,6 +620,7 @@ function resetFilter(): void {
     handler.value.setSearch({ name: '' });
     filter.value = '';
     selectedTopics.value = [];
+    selectedDatatypes.value = [];
     matchAllTopics.value = false;
     if (
         fileTypeSelectorReference.value &&

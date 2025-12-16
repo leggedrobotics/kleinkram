@@ -1,5 +1,19 @@
-import { SortOrder, UpdateFile } from '@kleinkram/api-dto';
+import { fileEntityToDto, fileEntityToDtoWithTopic } from '@/serialization';
+import {
+    FileEventsDto,
+    FileExistsResponseDto,
+    FilesDto,
+    FileWithTopicDto,
+    SortOrder,
+    StorageOverviewDto,
+    TemporaryFileAccessesDto,
+    UpdateFile,
+} from '@kleinkram/api-dto';
+import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
+import { redis } from '@kleinkram/backend-common/consts';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
@@ -31,7 +45,6 @@ import {
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
-import { fileEntityToDto, fileEntityToDtoWithTopic } from '../serialization';
 import {
     addFileFilters,
     addMissionFilters,
@@ -40,19 +53,6 @@ import {
     convertGlobToLikePattern,
 } from './utilities';
 
-import {
-    FileEventsDto,
-    FileExistsResponseDto,
-    FilesDto,
-    FileWithTopicDto,
-    StorageOverviewDto,
-    TemporaryFileAccessesDto,
-} from '@kleinkram/api-dto';
-import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
-import { redis } from '@kleinkram/backend-common/consts';
-import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
-import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
-
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
@@ -60,13 +60,13 @@ import Queue from 'bull';
 // @ts-ignore
 import Credentials from 'minio/dist/main/Credentials';
 // @ts-ignore
-import { BucketItem } from 'minio/dist/main/internal/type';
 import {
     addAccessConstraints,
     addAccessConstraintsToFileQuery,
     addAccessConstraintsToMissionQuery,
     addAccessConstraintsToProjectQuery,
-} from '../endpoints/auth/auth-helper';
+} from '@/endpoints/auth/auth-helper';
+import { BucketItem } from 'minio/dist/main/internal/type';
 import logger from '../logger';
 
 const FIND_MANY_SORT_KEYS = {
@@ -371,6 +371,7 @@ export class FileService implements OnModuleInit {
         startDate: Date | undefined,
         endDate: Date | undefined,
         topics: string,
+        messageDatatype: string,
         categories: string,
         matchAllTopics: boolean,
         fileTypes: string,
@@ -445,6 +446,7 @@ export class FileService implements OnModuleInit {
         // Apply complex filters via helper methods
         this._applyFileTypeFilter(idQuery, fileTypes);
         this._applyTopicFilter(idQuery, topics, matchAllTopics);
+        this._applyMessageDatatypeFilter(idQuery, messageDatatype);
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (health) {
@@ -621,6 +623,30 @@ export class FileService implements OnModuleInit {
                 topicCount: splitTopics.length,
             });
         }
+    }
+
+    /**
+     * Applies message datatype filtering to the query.
+     */
+    private _applyMessageDatatypeFilter(
+        query: SelectQueryBuilder<FileEntity>,
+        messageDatatype: string,
+    ): void {
+        if (!messageDatatype) {
+            return;
+        }
+
+        const splitMessageDatatype = messageDatatype
+            .split(',')
+            .filter((t) => t.length > 0);
+        if (splitMessageDatatype.length === 0) {
+            return;
+        }
+
+        // Filter files that have *at least one* of the message datatypes
+        query.andWhere('topic.type IN (:...splitMessageDatatype)', {
+            splitMessageDatatype,
+        });
     }
 
     /**
@@ -996,6 +1022,9 @@ export class FileService implements OnModuleInit {
      // eslint-disable-next-line @typescript-eslint/naming-convention
      * @param uuid The unique identifier of the file
      * @param expires Whether the download link should expire
+     * @param preview_only
+     * @param actor
+     * @param action
      */
     async generateDownload(
         uuid: string,
@@ -1130,6 +1159,7 @@ export class FileService implements OnModuleInit {
      *
      * @param uuid The unique identifier of the file
      * @param actor
+     * @param action
      */
     async deleteFile(
         uuid: string,
@@ -1227,6 +1257,8 @@ export class FileService implements OnModuleInit {
      * @param filenames list of filenames to upload
      * @param missionUUID the mission to upload the files to
      * @param userUUID the user that is uploading the files
+     * @param action
+     * @param uploadSource
      */
     async getTemporaryAccess(
         filenames: string[],

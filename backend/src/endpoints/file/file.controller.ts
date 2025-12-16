@@ -31,8 +31,8 @@ import {
     FileQueryDto,
     FileQueueEntriesDto,
     FileQueueEntryDto,
-    FileWithTopicDto,
     FilesDto,
+    FileWithTopicDto,
     FoxgloveLinkResponseDto,
     IsUploadingDto,
     MoveFilesResponseDto,
@@ -159,6 +159,12 @@ export class FileController {
         @QueryOptionalString('topics', 'Name of Topics (coma separated)')
         topics: string,
         @QueryOptionalString(
+            'messageDatatypes',
+            'Message datatypes to filter by (coma separated). If multiple are given, ' +
+                'files containing any of the datatypes are returned (OR).',
+        )
+        messageDatatypes: string,
+        @QueryOptionalString(
             'fileTypes',
             'File types to filter by (coma separated)',
         )
@@ -193,6 +199,7 @@ export class FileController {
             startDate,
             endDate,
             topics,
+            messageDatatypes,
             categories,
             matchAllTopics,
             fileTypes,
