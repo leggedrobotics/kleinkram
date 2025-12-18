@@ -31,6 +31,7 @@ export interface FilteredFilesConfig {
 
 export const fetchFilteredFiles = async (
     config: FilteredFilesConfig,
+    // eslint-disable-next-line complexity
 ): Promise<FilesDto> => {
     const {
         filename,

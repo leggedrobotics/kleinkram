@@ -3,305 +3,322 @@
         class="q-pa-md q-mt-md bg-grey-1 rounded-borders q-mb-md border-grey-3"
         style="border: 1px solid #e0e0e0"
     >
-        <div class="row q-col-gutter-sm q-mb-sm">
-            <div class="col-12 col-sm-6 col-md-3">
-                <q-input
-                    v-model="state.startDates"
-                    filled
-                    dense
-                    outlined
-                    bg-color="white"
-                    label="Start Date"
-                    @clear="useFilter.resetStartDate"
-                >
-                    <template #append>
-                        <q-icon name="sym_o_event" class="cursor-pointer">
-                            <q-popup-proxy
-                                cover
-                                transition-show="scale"
-                                transition-hide="scale"
-                            >
-                                <q-date
-                                    v-model="state.startDates"
-                                    :mask="dateMask"
-                                >
-                                    <div class="row items-center justify-end">
-                                        <q-btn
-                                            v-close-popup
-                                            label="Close"
-                                            color="primary"
-                                            flat
-                                        />
-                                    </div>
-                                </q-date>
-                            </q-popup-proxy>
-                        </q-icon>
-                    </template>
-                </q-input>
-            </div>
-
-            <div class="col-12 col-sm-6 col-md-3">
-                <q-input
-                    v-model="state.endDates"
-                    filled
-                    dense
-                    outlined
-                    bg-color="white"
-                    label="End Date"
-                    @clear="useFilter.resetEndDate"
-                >
-                    <template #append>
-                        <q-icon name="sym_o_event" class="cursor-pointer">
-                            <q-popup-proxy
-                                cover
-                                transition-show="scale"
-                                transition-hide="scale"
-                            >
-                                <q-date
-                                    v-model="state.endDates"
-                                    :mask="dateMask"
-                                >
-                                    <div class="row items-center justify-end">
-                                        <q-btn
-                                            v-close-popup
-                                            label="Close"
-                                            color="primary"
-                                            flat
-                                        />
-                                    </div>
-                                </q-date>
-                            </q-popup-proxy>
-                        </q-icon>
-                    </template>
-                </q-input>
-            </div>
-
-            <div class="col-12 col-md-6">
-                <ScopeSelector
-                    layout="row"
-                    :show-labels="true"
-                    class="full-width"
+        <div class="row items-start no-wrap q-gutter-x-sm">
+            <div class="col">
+                <SmartSearchInput
+                    :model-value="filterText"
+                    :provider="provider"
+                    :context-data="contextData"
+                    :highlight-keys="highlightKeys"
+                    :placeholder="placeholderText"
+                    :validator="validateSyntax"
+                    @update:model-value="onFilterUpdate"
+                    @submit="refresh"
+                    @toggle-advanced="toggleAdvanced"
                 />
-                <q-tooltip v-if="!handler.projectUuid" self="bottom middle">
-                    Please select a project first
-                </q-tooltip>
+            </div>
+            <div class="col-auto">
+                <q-btn
+                    unelevated
+                    color="black"
+                    icon="sym_o_search"
+                    label="Search"
+                    @click="refresh"
+                />
             </div>
         </div>
 
-        <div class="row q-col-gutter-sm items-center">
-            <div class="col-12 col-sm-4 col-md-2">
-                <file-type-selector
-                    ref="fileTypeSelectorReference"
-                    v-model="state.fileTypeFilter"
+        <q-slide-transition>
+            <div v-if="showAdvanced">
+                <q-separator class="q-my-sm" />
+                <FilterPopup
+                    :state="state"
+                    :current-project-uuid="handler.projectUuid"
+                    :current-mission-uuid="handler.missionUuid"
+                    :topics="allTopics ?? []"
+                    :datatypes="allDatatypes ?? []"
+                    :apply-date-shortcut="props.useFilter.applyDateShortcut"
+                    @update-project="setProjectUUID"
+                    @update-mission="setMissionUUID"
+                    @reset="onResetFilter"
                 />
             </div>
-
-            <div class="col-12 col-sm-8 col-md-5">
-                <div class="row no-wrap q-col-gutter-xs">
-                    <div class="col-auto">
-                        <q-btn-dropdown
-                            unelevated
-                            outline
-                            color="grey-4"
-                            text-color="black"
-                            dense
-                            class="bg-white full-height"
-                            no-caps
-                        >
-                            <template #label>
-                                <span class="text-weight-regular">{{
-                                    state.matchAllTopics ? 'And' : 'Or'
-                                }}</span>
-                            </template>
-                            <q-list>
-                                <q-item
-                                    clickable
-                                    @click="useFilter.useAndTopicFilter"
-                                >
-                                    <q-item-section>And</q-item-section>
-                                </q-item>
-                                <q-item
-                                    clickable
-                                    @click="useFilter.useOrTopicFilter"
-                                >
-                                    <q-item-section>Or</q-item-section>
-                                </q-item>
-                            </q-list>
-                        </q-btn-dropdown>
-                    </div>
-                    <div class="col">
-                        <q-select
-                            v-model="state.selectedTopics"
-                            label="Filter by Topics"
-                            use-input
-                            input-debounce="20"
-                            outlined
-                            dense
-                            bg-color="white"
-                            multiple
-                            use-chips
-                            :options="displayedTopics"
-                            emit-value
-                            map-options
-                            class="full-width"
-                            @filter="filterTopics"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-sm-8 col-md-5">
-                <div class="row no-wrap q-col-gutter-xs">
-                    <div class="col-8">
-                        <q-select
-                            v-model="state.selectedDatatypes"
-                            label="Filter by Datatype"
-                            use-input
-                            input-debounce="20"
-                            outlined
-                            dense
-                            bg-color="white"
-                            multiple
-                            use-chips
-                            :options="displayedDatatypes"
-                            class="full-width"
-                            @filter="filterDatatypes"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-sm-8 col-md-3">
-                <q-input
-                    v-model="state.filter"
-                    outlined
-                    dense
-                    bg-color="white"
-                    debounce="300"
-                    clearable
-                    placeholder="Search Filename"
-                    class="full-width"
-                >
-                    <template #append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
-            </div>
-
-            <div class="col-12 col-sm-4 col-md-2 text-right">
-                <div class="row justify-end q-gutter-x-sm">
-                    <q-btn
-                        v-if="state.tagFilter"
-                        flat
-                        dense
-                        round
-                        icon="sym_o_sell"
-                        color="primary"
-                        @click="openTagFilterDialog"
-                    >
-                        <q-tooltip>Advanced Tag Filter</q-tooltip>
-                        <q-badge
-                            v-if="Object.values(state.tagFilter).length > 0"
-                            color="red"
-                            floating
-                        >
-                            {{ Object.values(state.tagFilter).length }}
-                        </q-badge>
-                    </q-btn>
-
-                    <q-btn
-                        unelevated
-                        color="grey-4"
-                        text-color="black"
-                        label="Reset"
-                        icon="sym_o_refresh"
-                        no-caps
-                        class="full-height"
-                        @click="onResetFilter"
-                    />
-                </div>
-            </div>
-        </div>
+        </q-slide-transition>
     </div>
 </template>
 
 <script setup lang="ts">
-import ScopeSelector from 'components/common/scope-selector.vue';
-import FileTypeSelector from 'components/file-type-selector.vue';
-import { useQuasar } from 'quasar';
-import { useFileFilter } from 'src/composables/use-file-filter';
-import TagFilter from 'src/dialogs/tag-filter.vue';
-import { useHandler } from 'src/hooks/query-hooks';
-import { dateMask } from 'src/services/date-formating';
-import { ref } from 'vue';
+import SmartSearchInput from 'src/components/common/smart-search-input.vue';
+import FilterPopup from 'src/components/files/filter/filter-popup.vue';
+import { DEFAULT_STATE, useFileFilter } from 'src/composables/use-file-filter';
+import { useFileSearch } from 'src/composables/use-file-search';
+import { KEYWORDS, useFilterParser } from 'src/composables/use-filter-parser';
+import { useHandler, useMission } from 'src/hooks/query-hooks';
+import { PropType, computed, onMounted, ref, watch } from 'vue';
 
-const props = defineProps<{
-    useFilter: ReturnType<typeof useFileFilter>;
-}>();
+const props = defineProps({
+    useFilter: {
+        type: Object as PropType<ReturnType<typeof useFileFilter>>,
+        required: true,
+    },
+});
+defineEmits(['update:model-value']);
 
-const { state, allTopics, allDatatypes } = props.useFilter;
+const { state } = props.useFilter;
 
 const handler = useHandler();
-const $q = useQuasar();
+const showAdvanced = ref(false);
 
 const fileTypeSelectorReference = ref<
     { setAll?: (value: boolean) => void } | undefined
 >(undefined);
 
-const displayedTopics = ref<string[]>([]);
-const displayedDatatypes = ref<string[]>([]);
+// Draft State for Manual Trigger
+const draftProjectUuid = ref<string | undefined>(handler.value.projectUuid);
+const draftMissionUuid = ref<string | undefined>(handler.value.missionUuid);
 
-function filterTopics(value: string, update: (function_: () => void) => void) {
-    if (value === '') {
-        update(() => {
-            displayedTopics.value = allTopics.value ?? [];
-        });
-        return;
+// Sync draft from handler initially (and if URL changes externally)
+watch(
+    () => handler.value.projectUuid,
+    (value) => {
+        if (value !== draftProjectUuid.value) draftProjectUuid.value = value;
+    },
+);
+watch(
+    () => handler.value.missionUuid,
+    (value) => {
+        if (value !== draftMissionUuid.value) draftMissionUuid.value = value;
+    },
+);
+
+const projectUuid = computed(
+    () => draftProjectUuid.value ?? handler.value.projectUuid,
+);
+
+// Derive Project from Mission if missing
+const { data: missionData } = useMission(
+    computed(() => draftMissionUuid.value ?? ''),
+);
+watch(missionData, (m) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    const pUuid = ((m as any)?.project_uuid ?? (m as any)?.project?.uuid) as
+        | string
+        | undefined;
+    if (pUuid && !draftProjectUuid.value) {
+        draftProjectUuid.value = pUuid;
     }
-    update(() => {
-        const needle = value.toLowerCase();
-        displayedTopics.value =
-            allTopics.value?.filter((v) => v.toLowerCase().includes(needle)) ??
-            [];
-    });
+});
+
+// --- Use File Search Composable ---
+const { provider, contextData, projects, missions, allTopics, allDatatypes } =
+    useFileSearch(projectUuid);
+
+const highlightKeys = Object.values(KEYWORDS);
+
+const placeholderText = computed(() => {
+    const exampleProject =
+        projects.value.length > 0 ? projects.value[0]?.name : undefined;
+    const name = exampleProject ?? 'MyProject';
+    const projectString = name.includes(' ') ? `"${name}"` : name;
+    return `Search (e.g. project:${projectString} filetype:bag ...)`;
+});
+
+// --- Parser Integration ---
+
+const isUpdatingFromInput = ref(false);
+
+function onFilterUpdate(value: string) {
+    filterText.value = value;
+    isUpdatingFromInput.value = true;
+    parse(value);
+    setTimeout(() => {
+        isUpdatingFromInput.value = false;
+    }, 0);
 }
 
-function filterDatatypes(
-    value: string,
-    update: (function_: () => void) => void,
-) {
-    if (value === '') {
-        update(() => {
-            displayedDatatypes.value = allDatatypes.value ?? [];
-        });
-        return;
+// Compute defaults once
+const defaultState = DEFAULT_STATE();
+
+const { filterString, parse, validateSyntax } = useFilterParser(
+    state,
+    () => {
+        /* no-op */
+    },
+    {
+        projects,
+        missions,
+        // The parser reads current DASHBOARD (Draft) state to resolve names
+        projectUuid: computed(() => draftProjectUuid.value),
+        missionUuid: computed(() => draftMissionUuid.value),
+        setProject: (uuid) => {
+            draftProjectUuid.value = uuid;
+        },
+        setMission: (uuid) => {
+            draftMissionUuid.value = uuid;
+        },
+        defaultStartDate: defaultState.startDates,
+        defaultEndDate: defaultState.endDates,
+    },
+);
+
+// We want bidirectional binding:
+const filterText = ref(filterString.value);
+
+// Watch for external state changes to update the text
+watch(filterString, (newValue) => {
+    // Only update if the change did NOT originate from the input
+    if (!isUpdatingFromInput.value && newValue !== filterText.value) {
+        filterText.value = newValue;
     }
-    update(() => {
-        const needle = value.toLowerCase();
-        displayedDatatypes.value =
-            allDatatypes.value?.filter((v) =>
-                v.toLowerCase().includes(needle),
-            ) ?? [];
-    });
-}
+});
 
-function openTagFilterDialog(): void {
-    $q.dialog({
-        title: 'Filter by Metadata',
-        component: TagFilter,
-        componentProps: { tagValues: state.tagFilter },
-    }).onOk((_tagFilter: Record<string, { name: string; value: string }>) => {
-        state.tagFilter = _tagFilter;
-    });
-}
+// Watch input changes from SmartFilterInput
+watch(filterText, (newValue) => {
+    parse(newValue);
+});
+
+// Watch Date and Filter Changes to trigger refresh automatically
+watch(
+    [
+        () => props.useFilter.state.startDates,
+        () => props.useFilter.state.endDates,
+        () => props.useFilter.state.fileTypeFilter,
+        () => props.useFilter.state.selectedTopics,
+        () => props.useFilter.state.selectedDatatypes,
+        () => props.useFilter.state.matchAllTopics,
+        () => props.useFilter.state.tagFilter,
+    ],
+    () => {
+        refresh();
+    },
+    { deep: true },
+);
+
+// Re-sync filterText when projects or missions load (to include them in search string after reload)
+watch([projects, missions], () => {
+    if (!isUpdatingFromInput.value && filterString.value !== filterText.value) {
+        filterText.value = filterString.value;
+    }
+});
+
+// Parse initial filter from URL on mount (to restore topics, etc.)
+onMounted(() => {
+    // If there's a filter in state (from URL) or handler search param, parse it
+    const initialFilter =
+        props.useFilter.state.filter || handler.value.searchParams.name;
+    if (initialFilter) {
+        filterText.value = initialFilter;
+        parse(initialFilter);
+    }
+});
+
+// Watch for external URL changes to 'name' param
+watch(
+    () => handler.value.searchParams.name,
+    (newValue) => {
+        if (!isUpdatingFromInput.value && newValue !== filterText.value) {
+            filterText.value = newValue ?? '';
+            parse(newValue ?? '');
+        }
+    },
+);
+
+watch(
+    () => handler.value.searchParams.startDate,
+    (newValue) => {
+        const defaults = DEFAULT_STATE();
+        if (newValue && newValue !== props.useFilter.state.startDates) {
+            // eslint-disable-next-line vue/no-mutating-props
+            props.useFilter.state.startDates = newValue;
+        } else if (!newValue) {
+            // Reset to default if URL param is missing
+            // eslint-disable-next-line vue/no-mutating-props
+            props.useFilter.state.startDates = defaults.startDates;
+        }
+    },
+    { immediate: true },
+);
+
+watch(
+    () => handler.value.searchParams.endDate,
+    (newValue) => {
+        const defaults = DEFAULT_STATE();
+        if (newValue && newValue !== props.useFilter.state.endDates) {
+            // eslint-disable-next-line vue/no-mutating-props
+            props.useFilter.state.endDates = newValue;
+        } else if (!newValue) {
+            // eslint-disable-next-line vue/no-mutating-props
+            props.useFilter.state.endDates = defaults.endDates;
+        }
+    },
+    { immediate: true },
+);
+
+// --- Actions ---
 
 function onResetFilter(): void {
     props.useFilter.resetFilter();
+    // Also reset file types UI if needed
     if (
         fileTypeSelectorReference.value &&
         typeof fileTypeSelectorReference.value.setAll === 'function'
     ) {
         fileTypeSelectorReference.value.setAll(true);
     }
+    filterText.value = '';
+}
+
+function setProjectUUID(v: string | undefined) {
+    handler.value.setProjectUUID(v);
+}
+
+function setMissionUUID(v: string | undefined) {
+    handler.value.setMissionUUID(v);
+}
+
+function toggleAdvanced() {
+    showAdvanced.value = !showAdvanced.value;
+}
+
+function refresh() {
+    // Apply draft selections to the actual handler (URL)
+    handler.value.setProjectUUID(draftProjectUuid.value);
+    handler.value.setMissionUUID(draftMissionUuid.value);
+
+    // Merge dates from state (which might be manual custom inputs)
+    const { startDates, endDates } = props.useFilter.state;
+
+    // Save the full filterString (includes topics, datatypes, etc) to URL
+    // But exclude Project/Mission if they are set via UUID to avoid redundancy in URL
+    let nameForUrl = filterString.value;
+
+    if (draftProjectUuid.value) {
+        // Remove project: matches
+        // Regex matches project:"..." or project:word, allowing for optional space before
+        nameForUrl = nameForUrl.replaceAll(
+            /(?:^|\s)project:(?:(?:"[^"]*")|(?:[^\s]*))/gi,
+            '',
+        );
+    }
+    if (draftMissionUuid.value) {
+        nameForUrl = nameForUrl.replaceAll(
+            /(?:^|\s)mission:(?:(?:"[^"]*")|(?:[^\s]*))/gi,
+            '',
+        );
+    }
+
+    // Clean up spaces
+    nameForUrl = nameForUrl.replaceAll(/\s+/g, ' ').trim();
+
+    const defaults = DEFAULT_STATE();
+    const finalStart = startDates === defaults.startDates ? '' : startDates;
+    const finalEnd = endDates === defaults.endDates ? '' : endDates;
+
+    handler.value.setSearch({
+        ...handler.value.searchParams,
+        name: nameForUrl,
+        startDate: finalStart,
+        endDate: finalEnd,
+    });
 }
 </script>
