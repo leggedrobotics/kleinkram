@@ -96,7 +96,7 @@ export function useFileFilter() {
         for (const key of Object.keys(state.tagFilter)) {
             const value = state.tagFilter[key]?.value;
 
-            if (value === '') continue;
+            if (value === undefined || value === '') continue;
 
             if (typeof value === 'string') {
                 if (value.trim() !== '') {

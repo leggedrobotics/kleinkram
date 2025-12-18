@@ -1,23 +1,34 @@
 import { FileType } from '@kleinkram/shared';
 import { useQuery } from '@tanstack/vue-query';
-import { KEYWORDS } from 'src/composables/use-filter-parser';
 import {
     useAllTags,
     useFilteredProjects,
     useMissionsOfProjectMinimal,
     useProjectQuery,
 } from 'src/hooks/query-hooks';
-import { allTopicsNames, allTopicTypes } from 'src/services/queries/topic';
+import { Filter } from 'src/services/filters/filter-interface';
+import { DatatypeFilter } from 'src/services/filters/implementations/datatype-filter';
 import {
-    CompositeFilterProvider,
-    GenericMetadataStrategy,
-    KeywordStrategy,
+    EndDateFilter,
+    StartDateFilter,
+} from 'src/services/filters/implementations/date-filter';
+import { FileTypeFilter } from 'src/services/filters/implementations/file-type-filter';
+import { MetadataFilter } from 'src/services/filters/implementations/metadata-filter';
+import { MissionFilter } from 'src/services/filters/implementations/mission-filter';
+import { ProjectFilter } from 'src/services/filters/implementations/project-filter';
+import { TopicFilter } from 'src/services/filters/implementations/topic-filter';
+import { allTopicsNames, allTopicTypes } from 'src/services/queries/topic';
+import { CompositeFilterProvider } from 'src/services/suggestions/strategies/composite-filter-provider';
+import { KeywordStrategy } from 'src/services/suggestions/strategies/keyword-strategy';
+import {
     MetadataTag,
-    ValueStrategy,
-} from 'src/services/suggestions/filter-strategies';
+    SuggestionProvider,
+} from 'src/services/suggestions/suggestion-types';
 import { computed, Ref } from 'vue';
+import { FilterState } from './use-file-filter';
+import { FilterParserContext } from './use-filter-parser';
 
-export interface FileSearchContextData {
+export interface FileSearchContextData extends FilterParserContext {
     projects: { name: string; uuid: string }[];
     missions: { name: string; uuid: string }[];
     topics: string[];
@@ -25,9 +36,18 @@ export interface FileSearchContextData {
     fileTypes: string[];
     availableTags: MetadataTag[];
     hasProjectSelected: boolean;
+    projectUuid?: string | undefined;
+    missionUuid?: string | undefined;
+    setProject?: ((uuid: string | undefined) => void) | undefined;
+    setMission?: ((uuid: string | undefined) => void) | undefined;
 }
 
-export function useFileSearch(currentProjectUuid: Ref<string | undefined>) {
+export function useFileSearch(
+    currentProjectUuid: Ref<string | undefined>,
+    currentMissionUuid?: Ref<string | undefined>,
+    setProject?: (uuid: string | undefined) => void,
+    setMission?: (uuid: string | undefined) => void,
+) {
     // --- Data Fetching ---
 
     // Projects
@@ -41,32 +61,43 @@ export function useFileSearch(currentProjectUuid: Ref<string | undefined>) {
                 uuid: p.uuid,
             })) ?? [];
 
-        if (
-            selectedProject.value &&
-            !list.some((p) => p.uuid === selectedProject.value.uuid)
-        ) {
-            list.push({
-                name: selectedProject.value.name,
-                uuid: selectedProject.value.uuid,
-            });
+        if (currentProjectUuid.value) {
+            const p = list.find((x) => x.uuid === currentProjectUuid.value);
+            if (!p) {
+                list.push({
+                    name:
+                        selectedProject.value?.name ?? currentProjectUuid.value,
+                    uuid: currentProjectUuid.value,
+                });
+            }
         }
         return list;
     });
 
     // Missions (dependent on project)
-    // Note: This relies on currentProjectUuid being reactive
     const { data: missionsData } = useMissionsOfProjectMinimal(
         currentProjectUuid,
         100,
         0,
     );
-    const missions = computed(
-        () =>
+    const missions = computed(() => {
+        const list =
             missionsData.value?.data.map((m) => ({
                 name: m.name,
                 uuid: m.uuid,
-            })) ?? [],
-    );
+            })) ?? [];
+
+        if (currentMissionUuid?.value) {
+            const m = list.find((x) => x.uuid === currentMissionUuid.value);
+            if (!m) {
+                list.push({
+                    name: currentMissionUuid.value, // We don't have a mission query yet, so just use UUID
+                    uuid: currentMissionUuid.value,
+                });
+            }
+        }
+        return list;
+    });
 
     // Topics
     const { data: allTopics } = useQuery<string[]>({
@@ -99,69 +130,59 @@ export function useFileSearch(currentProjectUuid: Ref<string | undefined>) {
         availableTags:
             allTags.value?.map((t) => ({
                 name: t.name,
+                uuid: t.uuid,
                 datatype: t.datatype,
             })) ?? [],
         hasProjectSelected: !!currentProjectUuid.value,
+        projectUuid: currentProjectUuid.value,
+        missionUuid: currentMissionUuid?.value,
+        setProject,
+        setMission,
     }));
 
-    // --- Strategies ---
+    // --- Instantiate Filters ---
+    const filters: Filter<FilterState, FileSearchContextData>[] = [
+        new ProjectFilter(),
+        new MissionFilter(),
+        new TopicFilter(),
+        new DatatypeFilter(),
+        new FileTypeFilter(),
+        new StartDateFilter(),
+        new EndDateFilter(),
+        new MetadataFilter(),
+    ];
 
-    const provider = new CompositeFilterProvider<FileSearchContextData>([
-        new KeywordStrategy<FileSearchContextData>(KEYWORDS, {
-            [KEYWORDS.MISSION]: (context) => ({
+    // --- Keyword Strategy (for suggesting filter keywords like "project:", "mission:", etc.) ---
+    const keywordMap: Record<string, string> = {};
+    for (const f of filters) {
+        // Convert key like "project:" to label like "PROJECT" for display
+        keywordMap[f.label.toUpperCase()] = f.key;
+    }
+    // Add &topic: variant
+    keywordMap.TOPIC_AND = '&topic:';
+
+    const keywordStrategy = new KeywordStrategy<FileSearchContextData>(
+        keywordMap,
+        {
+            // Mission requires project to be selected
+            'mission:': (context) => ({
                 enabled: context.data.hasProjectSelected,
                 reason: 'Select a project first',
             }),
-            [KEYWORDS.TOPIC]: (context) => ({
-                enabled: true,
-                hidden: context.input.includes(KEYWORDS.TOPIC_AND),
-            }),
-            [KEYWORDS.TOPIC_AND]: (context) => ({
-                enabled: true,
-                hidden: /(?:^|\s)topic:/.test(context.input),
-            }),
-        }),
-        new ValueStrategy<FileSearchContextData>(
-            KEYWORDS.PROJECT,
-            'sym_o_folder',
-            'Project',
-            (context) => context.data.projects,
-        ),
-        new ValueStrategy<FileSearchContextData>(
-            KEYWORDS.MISSION,
-            'sym_o_flag',
-            'Mission',
-            (context) => context.data.missions,
-            (context) => context.data.hasProjectSelected,
-        ),
-        new ValueStrategy<FileSearchContextData>(
-            KEYWORDS.TOPIC,
-            'sym_o_topic',
-            'Topic',
-            (context) => context.data.topics.map((t) => ({ name: t })),
-        ),
-        new ValueStrategy<FileSearchContextData>(
-            KEYWORDS.DATATYPE,
-            'sym_o_data_object',
-            'Datatype',
-            (context) => context.data.datatypes.map((d) => ({ name: d })),
-        ),
-        new ValueStrategy<FileSearchContextData>(
-            KEYWORDS.FILETYPE,
-            'sym_o_description',
-            'File Type',
-            (context) => context.data.fileTypes.map((f) => ({ name: f })),
-        ),
-        new GenericMetadataStrategy<FileSearchContextData>(
-            KEYWORDS.METADATA,
-            (context) => context.data.availableTags,
-        ),
+        },
+    );
+
+    // --- Provider ---
+    // Combine KeywordStrategy with filter suggestions
+    const provider = new CompositeFilterProvider<FileSearchContextData>([
+        keywordStrategy,
+        ...(filters as unknown as SuggestionProvider<FileSearchContextData>[]),
     ]);
 
     return {
         provider,
+        filters,
         contextData,
-        // Expose raw data for usage in parser/other components if needed
         projects,
         missions,
         allTopics,

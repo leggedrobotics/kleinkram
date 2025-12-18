@@ -145,8 +145,7 @@ const highlightedHtml = computed(() => {
     const text = internalValue.value;
     const keys = props.highlightKeys ?? [];
 
-    if (keys.length === 0) return text; // Security: escape? text is escaped below but if we stick to return here we might want to escape.
-    // Actually better to escape always.
+    if (keys.length === 0) return text;
 
     const escaped = text
         .replaceAll('&', '&amp;')
@@ -155,9 +154,16 @@ const highlightedHtml = computed(() => {
 
     if (keys.length === 0) return escaped;
 
-    // Escape special regex chars in keywords
+    const processedKeys = keys.map((k) =>
+        k
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll(/[-[\]{}()*+?.,\\^$|#\s]/g, String.raw`\$&`),
+    );
+
     const pattern = new RegExp(
-        `((?:^|\\s)(?:${keys.map((k) => k.replaceAll(/[-[\]{}()*+?.,\\^$|#\s]/g, String.raw`\$&`)).join('|')}))`,
+        `((?:^|\\s)(?:${processedKeys.join('|')}))`,
         'gi',
     );
 
@@ -201,10 +207,6 @@ function focusInput(options?: Event) {
     if (inputReference.value) {
         inputReference.value.focus();
         showSuggestions.value = true;
-
-        // Ensure cursor is at end
-        // Removed auto-space insertion logic as it was annoying for users
-        // when simply refocusing the input.
 
         // Set caret to the very end
         void nextTick(() => {
@@ -293,7 +295,7 @@ function applySuggestion(suggestion: Suggestion) {
 
     const input = internalValue.value;
     const lastWordRegex =
-        /((?:[a-zA-Z0-9_-]+:"[^"]*)|(?:[a-zA-Z0-9_:=><!/.\-@#~"&]+))$/;
+        /([a-zA-Z0-9_-]+:"[^"]*|[a-zA-Z0-9_:=><!\/.\-@#~"&]+)$/;
 
     let toInsert = suggestion.prefix + suggestion.value;
     // Quote handling
@@ -398,7 +400,6 @@ function applySuggestion(suggestion: Suggestion) {
     /* Font Inheritance */
     font-family: inherit;
     font-size: inherit;
-    line-height: 24px !important; /* Force line-height to match container height */
     letter-spacing: inherit;
     font-weight: inherit;
     text-align: inherit;
@@ -430,5 +431,11 @@ function applySuggestion(suggestion: Suggestion) {
     /* Prevent text shadow causing ghosting */
     text-shadow: none !important;
     -webkit-text-fill-color: transparent !important;
+}
+
+.input-real::placeholder {
+    color: #9e9e9e;
+    -webkit-text-fill-color: #9e9e9e !important;
+    opacity: 1;
 }
 </style>

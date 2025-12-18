@@ -682,6 +682,7 @@ export class FileService implements OnModuleInit {
         const tagWhereClauses: string[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tagParameters: Record<string, any> = {};
+        const validTagNames = new Set<string>();
         let validTagCount = 0;
 
         for (const uuid of tagTypeUUIDs) {
@@ -719,6 +720,7 @@ export class FileService implements OnModuleInit {
             tagParameters[valueParameter] = processedValue;
 
             validTagCount++;
+            validTagNames.add(tagtype.name);
         }
 
         if (validTagCount === 0) {
@@ -734,8 +736,8 @@ export class FileService implements OnModuleInit {
             tagParameters,
         );
 
-        query.having('COUNT(DISTINCT tagtype.uuid) = :tagCount', {
-            tagCount: validTagCount,
+        query.having('COUNT(DISTINCT tagtype.name) = :tagCount', {
+            tagCount: validTagNames.size,
         });
     }
 

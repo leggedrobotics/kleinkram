@@ -16,6 +16,7 @@
                 option-value="uuid"
                 :placeholder="dynamicProjectPlaceholder"
                 :rules="projectRules"
+                searchable
                 @update:model-value="handleProjectChange"
             />
         </div>
@@ -36,6 +37,7 @@
                 option-value="uuid"
                 :placeholder="dynamicMissionPlaceholder"
                 :rules="missionRules"
+                searchable
                 @update:model-value="handleMissionChange"
             />
             <q-tooltip v-if="isMissionDisabled && missionDisabledReason">
@@ -182,11 +184,14 @@ const missionRules = computed(() => {
 
 // Dynamic placeholders showing example based on first available option
 const dynamicProjectPlaceholder = computed(() => {
+    if (selectedProjectUuid.value) return;
     const first = projects.value[0];
     return first ? `e.g. ${first.name}` : props.projectPlaceholder;
 });
 
 const dynamicMissionPlaceholder = computed(() => {
+    if (selectedMissionUuid.value) return;
+    if (!selectedProjectUuid.value) return 'Select a Project';
     const first = missions.value[0];
     return first ? `e.g. ${first.name}` : props.missionPlaceholder;
 });

@@ -18,3 +18,19 @@ export interface SuggestionContext<T = unknown> {
 export interface SuggestionProvider<T = unknown> {
     getSuggestions(context: SuggestionContext<T>): Suggestion[];
 }
+
+export interface MetadataTag {
+    name: string;
+    uuid: string;
+    datatype: string;
+}
+
+export interface SuggestionConfig {
+    label: string;
+    value: string;
+    prefix: string;
+    description: string;
+    icon: string;
+    appendSpace?: boolean;
+    disabled?: boolean;
+}

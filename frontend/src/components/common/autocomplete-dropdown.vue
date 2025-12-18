@@ -10,6 +10,7 @@
             <q-item
                 v-for="(suggestion, index) in suggestions"
                 :key="index"
+                :ref="(el) => setItemReference(el, index)"
                 clickable
                 :active="selectedIndex === index"
                 active-class="bg-blue-1 text-primary"
@@ -43,7 +44,7 @@
 
 <script setup lang="ts">
 import { Suggestion } from 'src/services/suggestions/suggestion-types';
-import { nextTick, ref, watch } from 'vue';
+import { ComponentPublicInstance, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
     suggestions: Suggestion[];
@@ -53,35 +54,31 @@ const props = defineProps<{
 defineEmits<(event: 'select', suggestion: Suggestion) => void>();
 
 const containerReference = ref<HTMLElement | null>(null);
+const itemReferences = ref<Record<number, HTMLElement>>({});
+
+function setItemReference(
+    element: Element | ComponentPublicInstance | null,
+    index: number,
+) {
+    if (!element) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete itemReferences.value[index];
+        return;
+    }
+    const htmlElement = (element as { $el?: HTMLElement }).$el ?? element;
+    if (htmlElement instanceof HTMLElement) {
+        itemReferences.value[index] = htmlElement;
+    }
+}
 
 watch(
     () => props.selectedIndex,
     async (newIndex) => {
         await nextTick();
-        if (!containerReference.value) return;
+        const activeItem = itemReferences.value[newIndex];
 
-        // Find the active item safely
-        const list = containerReference.value.querySelector('.q-list');
-        if (!list) return;
-
-        // Use querySelectorAll to ensure we only get items, ignoring potential separators
-        const items = list.querySelectorAll('.q-item');
-        const activeItem = items[newIndex] as HTMLElement;
-
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (activeItem) {
-            const container = containerReference.value;
-            const itemRect = activeItem.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
-
-            // Scroll down if below view
-            if (itemRect.bottom > containerRect.bottom) {
-                container.scrollTop += itemRect.bottom - containerRect.bottom;
-            }
-            // Scroll up if above view
-            else if (itemRect.top < containerRect.top) {
-                container.scrollTop -= containerRect.top - itemRect.top;
-            }
+            activeItem.scrollIntoView({ block: 'nearest' });
         }
     },
 );

@@ -8,7 +8,7 @@
                 <SmartSearchInput
                     :model-value="filterText"
                     :provider="provider"
-                    :context-data="contextData"
+                    :context-data="augmentedContext"
                     :highlight-keys="highlightKeys"
                     :placeholder="placeholderText"
                     :validator="validateSyntax"
@@ -31,13 +31,10 @@
         <q-slide-transition>
             <div v-if="showAdvanced">
                 <q-separator class="q-my-sm" />
-                <FilterPopup
+                <ComposableFilterPopup
+                    :filters="filters"
                     :state="state"
-                    :current-project-uuid="handler.projectUuid"
-                    :current-mission-uuid="handler.missionUuid"
-                    :topics="allTopics ?? []"
-                    :datatypes="allDatatypes ?? []"
-                    :apply-date-shortcut="props.useFilter.applyDateShortcut"
+                    :context="augmentedContext"
                     @update-project="setProjectUUID"
                     @update-mission="setMissionUUID"
                     @reset="onResetFilter"
@@ -49,10 +46,11 @@
 
 <script setup lang="ts">
 import SmartSearchInput from 'src/components/common/smart-search-input.vue';
-import FilterPopup from 'src/components/files/filter/filter-popup.vue';
+import ComposableFilterPopup from 'src/components/files/filter/composable-filter-popup.vue';
 import { DEFAULT_STATE, useFileFilter } from 'src/composables/use-file-filter';
 import { useFileSearch } from 'src/composables/use-file-search';
 import { KEYWORDS, useFilterParser } from 'src/composables/use-filter-parser';
+import { useFilterSync } from 'src/composables/use-filter-sync';
 import { useHandler, useMission } from 'src/hooks/query-hooks';
 import { PropType, computed, onMounted, ref, watch } from 'vue';
 
@@ -69,31 +67,16 @@ const { state } = props.useFilter;
 const handler = useHandler();
 const showAdvanced = ref(false);
 
-const fileTypeSelectorReference = ref<
-    { setAll?: (value: boolean) => void } | undefined
->(undefined);
-
-// Draft State for Manual Trigger
-const draftProjectUuid = ref<string | undefined>(handler.value.projectUuid);
-const draftMissionUuid = ref<string | undefined>(handler.value.missionUuid);
-
-// Sync draft from handler initially (and if URL changes externally)
-watch(
-    () => handler.value.projectUuid,
-    (value) => {
-        if (value !== draftProjectUuid.value) draftProjectUuid.value = value;
-    },
-);
-watch(
-    () => handler.value.missionUuid,
-    (value) => {
-        if (value !== draftMissionUuid.value) draftMissionUuid.value = value;
-    },
-);
-
-const projectUuid = computed(
-    () => draftProjectUuid.value ?? handler.value.projectUuid,
-);
+const {
+    draftProjectUuid,
+    draftMissionUuid,
+    projectUuid,
+    missionUuid,
+    setProjectUUID,
+    setMissionUUID,
+} = useFilterSync(handler, () => {
+    refresh();
+});
 
 // Derive Project from Mission if missing
 const { data: missionData } = useMission(
@@ -110,10 +93,31 @@ watch(missionData, (m) => {
 });
 
 // --- Use File Search Composable ---
-const { provider, contextData, projects, missions, allTopics, allDatatypes } =
-    useFileSearch(projectUuid);
+const { provider, filters, contextData, projects, missions } = useFileSearch(
+    projectUuid,
+    missionUuid,
+    (uuid) => {
+        draftProjectUuid.value = uuid;
+    },
+    (uuid) => {
+        draftMissionUuid.value = uuid;
+    },
+);
 
-const highlightKeys = Object.values(KEYWORDS);
+// Augmented Context for Popup
+const augmentedContext = computed(() => ({
+    ...contextData.value,
+    projectUuid: draftProjectUuid.value,
+    missionUuid: draftMissionUuid.value,
+    setProject: setProjectUUID,
+    setMission: setMissionUUID,
+}));
+
+// Derive Keys from filters
+const highlightKeys = computed(() => [
+    ...filters.map((f) => f.key),
+    KEYWORDS.TOPIC_AND,
+]);
 
 const placeholderText = computed(() => {
     const exampleProject =
@@ -141,21 +145,9 @@ const defaultState = DEFAULT_STATE();
 
 const { filterString, parse, validateSyntax } = useFilterParser(
     state,
-    () => {
-        /* no-op */
-    },
+    filters,
+    () => augmentedContext.value,
     {
-        projects,
-        missions,
-        // The parser reads current DASHBOARD (Draft) state to resolve names
-        projectUuid: computed(() => draftProjectUuid.value),
-        missionUuid: computed(() => draftMissionUuid.value),
-        setProject: (uuid) => {
-            draftProjectUuid.value = uuid;
-        },
-        setMission: (uuid) => {
-            draftMissionUuid.value = uuid;
-        },
         defaultStartDate: defaultState.startDates,
         defaultEndDate: defaultState.endDates,
     },
@@ -173,8 +165,11 @@ watch(filterString, (newValue) => {
 });
 
 // Watch input changes from SmartFilterInput
-watch(filterText, (newValue) => {
-    parse(newValue);
+watch(filterText, (_newValue) => {
+    // NOTE: parse(newValue) is removed here because:
+    // 1. User input is handled by onFilterUpdate (calls parse explicitly)
+    // 2. URL changes are handled by the handler watch (calls parse explicitly)
+    // 3. Advanced UI changes are handled by the filterString watch (DO NOT call parse to avoid circular state loss)
 });
 
 // Watch Date and Filter Changes to trigger refresh automatically
@@ -194,21 +189,73 @@ watch(
     { deep: true },
 );
 
-// Re-sync filterText when projects or missions load (to include them in search string after reload)
+// Redundant watch removed, filterString watcher handles this more accurately.
+// BUT: On initial page load, projects/missions may not have loaded yet when filterString is first computed.
+// We need to re-sync filterText when projects or missions data becomes available.
 watch([projects, missions], () => {
-    if (!isUpdatingFromInput.value && filterString.value !== filterText.value) {
+    // Only re-sync if this appears to be an initial load (URL has project/missionUuid but text is stale/empty)
+    const hasProjectInUrl = !!handler.value.projectUuid;
+    const hasMissionInUrl = !!handler.value.missionUuid;
+    const hasProjectInText = filterText.value
+        .toLowerCase()
+        .includes('project:');
+    const hasMissionInText = filterText.value
+        .toLowerCase()
+        .includes('mission:');
+
+    // If URL has scopes that aren't in the text yet, we should re-sync
+    if (
+        ((hasProjectInUrl && !hasProjectInText) ||
+            (hasMissionInUrl && !hasMissionInText)) &&
+        !isUpdatingFromInput.value &&
+        filterString.value !== filterText.value
+    ) {
         filterText.value = filterString.value;
     }
 });
 
+// Helper to reconstruct full filter string including stripped project/mission
+const quote = (s: string) => (s.includes(' ') ? `"${s}"` : s);
+
+function reconstructFullFilter(baseFilter = ''): string {
+    let text = baseFilter;
+
+    // Re-inject Project if missing in text but present in URL
+    if (handler.value.projectUuid && !text.toLowerCase().includes('project:')) {
+        const p = projects.value.find(
+            (x) => x.uuid === handler.value.projectUuid,
+        );
+        // Fallback to UUID if name not found (though useFileSearch usually provides a fallback)
+        const pName = p?.name ?? handler.value.projectUuid;
+        if (pName) {
+            text = `${text} project:${quote(pName)}`.trim();
+        }
+    }
+
+    // Re-inject Mission if missing in text but present in URL
+    if (handler.value.missionUuid && !text.toLowerCase().includes('mission:')) {
+        const m = missions.value.find(
+            (x) => x.uuid === handler.value.missionUuid,
+        );
+        const mName = m?.name ?? handler.value.missionUuid;
+        if (mName) {
+            text = `${text} mission:${quote(mName)}`.trim();
+        }
+    }
+
+    return text;
+}
+
 // Parse initial filter from URL on mount (to restore topics, etc.)
 onMounted(() => {
     // If there's a filter in state (from URL) or handler search param, parse it
-    const initialFilter =
+    const rawFilter =
         props.useFilter.state.filter || handler.value.searchParams.name;
-    if (initialFilter) {
-        filterText.value = initialFilter;
-        parse(initialFilter);
+
+    if (rawFilter || handler.value.projectUuid || handler.value.missionUuid) {
+        const fullFilter = reconstructFullFilter(rawFilter);
+        filterText.value = fullFilter;
+        parse(fullFilter);
     }
 });
 
@@ -216,9 +263,12 @@ onMounted(() => {
 watch(
     () => handler.value.searchParams.name,
     (newValue) => {
-        if (!isUpdatingFromInput.value && newValue !== filterText.value) {
-            filterText.value = newValue ?? '';
-            parse(newValue ?? '');
+        if (!isUpdatingFromInput.value) {
+            const fullFilter = reconstructFullFilter(newValue);
+            if (fullFilter !== filterText.value) {
+                filterText.value = fullFilter;
+                parse(fullFilter);
+            }
         }
     },
 );
@@ -258,22 +308,12 @@ watch(
 
 function onResetFilter(): void {
     props.useFilter.resetFilter();
-    // Also reset file types UI if needed
-    if (
-        fileTypeSelectorReference.value &&
-        typeof fileTypeSelectorReference.value.setAll === 'function'
-    ) {
-        fileTypeSelectorReference.value.setAll(true);
-    }
     filterText.value = '';
-}
-
-function setProjectUUID(v: string | undefined) {
-    handler.value.setProjectUUID(v);
-}
-
-function setMissionUUID(v: string | undefined) {
-    handler.value.setMissionUUID(v);
+    // Also clear project/mission drafts
+    draftProjectUuid.value = undefined;
+    draftMissionUuid.value = undefined;
+    // Trigger refresh to update URL
+    refresh();
 }
 
 function toggleAdvanced() {
@@ -293,8 +333,6 @@ function refresh() {
     let nameForUrl = filterString.value;
 
     if (draftProjectUuid.value) {
-        // Remove project: matches
-        // Regex matches project:"..." or project:word, allowing for optional space before
         nameForUrl = nameForUrl.replaceAll(
             /(?:^|\s)project:(?:(?:"[^"]*")|(?:[^\s]*))/gi,
             '',

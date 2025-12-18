@@ -130,19 +130,41 @@ function filterTags(value: string, update: (function_: () => void) => void) {
         const available = allTags.value.filter(
             (t) => !localTagValues.value[t.uuid],
         );
-        filteredTags.value = available.filter((v) =>
-            v.name.toLowerCase().includes(needle),
-        );
+
+        // Deduplicate suggestions by name
+        const seenNames = new Set<string>();
+        const uniqueTags: TagTypeDto[] = [];
+
+        for (const tag of available) {
+            if (
+                tag.name.toLowerCase().includes(needle) &&
+                !seenNames.has(tag.name)
+            ) {
+                uniqueTags.push(tag);
+                seenNames.add(tag.name);
+            }
+        }
+
+        filteredTags.value = uniqueTags;
     });
 }
 
-function addTagFilter(tag: TagTypeDto | null) {
-    if (!tag) return;
+function addTagFilter(selectedTag: TagTypeDto | null) {
+    if (!selectedTag || !allTags.value) return;
 
     // We must use a new object reference to trigger reactivity
     const newVals = { ...localTagValues.value };
-    // Initialize with empty value
-    newVals[tag.uuid] = { name: tag.name, value: undefined };
+
+    // Find ALL tags with the same name as the selected one (ignoring case)
+    const matchingTags = allTags.value.filter(
+        (t) => t.name.toLowerCase() === selectedTag.name.toLowerCase(),
+    );
+
+    // Add all of them
+    for (const tag of matchingTags) {
+        // Initialize with empty value if not already present
+        newVals[tag.uuid] ??= { name: tag.name, value: undefined };
+    }
 
     updateLocalTagValues(newVals);
 
