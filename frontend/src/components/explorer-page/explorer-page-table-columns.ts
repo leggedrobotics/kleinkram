@@ -80,6 +80,14 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         format: (value: number) => value.toString(),
     },
     {
+        name: 'size',
+        required: true,
+        label: 'Size',
+        align: 'left',
+        field: (row: ProjectWithMissionCountDto) => row.size,
+        format: formatSize,
+    },
+    {
         name: 'project-action',
         label: '',
         style: 'width: 10px',

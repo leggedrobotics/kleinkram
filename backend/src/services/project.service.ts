@@ -81,6 +81,35 @@ export class ProjectService {
         this.config = config;
     }
 
+    private async _getProjectSizes(
+        projectUuids: string[],
+    ): Promise<Map<string, number>> {
+        if (projectUuids.length === 0) {
+            return new Map();
+        }
+
+        const rawResults = await this.projectRepository
+            .createQueryBuilder('project')
+            .select('project.uuid', 'projectUuid')
+            .addSelect('COALESCE(SUM(file.size), 0)', 'totalSize')
+            .leftJoin(
+                'project.missions',
+                'mission',
+                'mission.deletedAt IS NULL',
+            )
+            .leftJoin('mission.files', 'file', 'file.deletedAt IS NULL')
+            .where('project.uuid IN (:...projectUuids)', { projectUuids })
+            .groupBy('project.uuid')
+            .getRawMany<{ projectUuid: string; totalSize: string }>();
+
+        const sizeMap = new Map<string, number>();
+        for (const raw of rawResults) {
+            const size = Number.parseInt(raw.totalSize) || 0;
+            sizeMap.set(raw.projectUuid, size);
+        }
+        return sizeMap;
+    }
+
     async findMany(
         projectUuids: string[],
         projectPatterns: string[],
@@ -117,10 +146,15 @@ export class ProjectService {
         query.skip(skip).take(take);
         const [projects, count] = await query.getManyAndCount();
 
+        const foundProjectUuids = projects.map((p) => p.uuid);
+        const sizes = await this._getProjectSizes(foundProjectUuids);
+
         return {
-            data: projects.map((element) =>
-                projectEntityToDtoWithMissionCountAndTags(element),
-            ),
+            data: projects.map((element) => {
+                const dto = projectEntityToDtoWithMissionCountAndTags(element);
+                dto.size = sizes.get(element.uuid) ?? 0;
+                return dto;
+            }),
             count,
             skip,
             take,
@@ -149,7 +183,10 @@ export class ProjectService {
             missionPromise,
             missionCountPromise,
         ]);
-        return projectEntityToDtoWithRequiredTags(mission, missionCount);
+        const sizes = await this._getProjectSizes([uuid]);
+        const dto = projectEntityToDtoWithRequiredTags(mission, missionCount);
+        dto.size = sizes.get(uuid) ?? 0;
+        return dto;
     }
 
     async getRecentProjects(

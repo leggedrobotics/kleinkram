@@ -2,6 +2,7 @@ import {
     CreateDateColumn,
     DeleteDateColumn,
     Entity,
+    Index,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
@@ -34,6 +35,7 @@ export class BaseEntity {
      * Timestamp of when the entity was deleted.
      * This field is used to soft-delete entities.
      */
+    @Index()
     @DeleteDateColumn({ select: false })
     deletedAt?: Date;
 }
