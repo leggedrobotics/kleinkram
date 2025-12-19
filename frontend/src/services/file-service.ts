@@ -356,6 +356,8 @@ async function _createFileAction(
                     endpoint: minioEndpoint,
                     forcePathStyle: true,
                     region: 'us-east-1',
+                    // Workaround for https://github.com/aws/aws-sdk-js-v3/issues/6834
+                    requestChecksumCalculation: 'WHEN_REQUIRED',
                     credentials: {
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                         accessKeyId: accessCredentials.accessKey,
