@@ -192,7 +192,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { QTable, useQuasar } from 'quasar';
 import ConfirmDeleteFile from 'src/dialogs/confirm-delete-file-dialog.vue';
 import ROUTES from 'src/router/routes';
-import { dateMask, formatDate } from 'src/services/date-formating';
+import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
 import {
     _downloadFile,
     getColor,
@@ -269,9 +269,16 @@ const fileStateFilterEnums = computed(() => {
 });
 
 // Use Composable
-// @ts-ignore
+const startDateIso = computed(() => {
+    try {
+        return parseDate(startDate.value).toISOString();
+    } catch {
+        return '';
+    }
+});
+
 const { data: queueEntries, isLoading } = useQueue(
-    startDate,
+    startDateIso,
     // @ts-ignore
     fileStateFilterEnums,
     queryPagination,

@@ -13,13 +13,15 @@
             dense
             map-options
             emit-value
-            :options="options"
+            :options="filteredOptions"
             :option-label="optionLabel"
             :option-value="optionValue"
+            :use-input="searchable && !model"
             :bg-color="
                 bgColor ??
                 ($attrs.readonly || $attrs.disable ? 'grey-2' : 'white')
             "
+            @filter="filterFunction"
         >
             <template v-for="(_, slot) in $slots" #[slot]="scope">
                 <slot :name="slot" v-bind="scope || {}" />
@@ -33,11 +35,13 @@
     lang="ts"
     generic="T, V extends string | number | object | boolean | null = string"
 >
+import { ref, watch } from 'vue';
+
 const model = defineModel<V | null | undefined>();
 
 defineOptions({ inheritAttrs: false });
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         label?: string | undefined;
         inputLabel?: string | undefined;
@@ -46,6 +50,7 @@ withDefaults(
         optionLabel?: string | ((opt: T) => string) | undefined;
         optionValue?: string | ((opt: T) => V) | undefined;
         bgColor?: string | undefined;
+        searchable?: boolean;
     }>(),
     {
         options: () => [],
@@ -55,6 +60,47 @@ withDefaults(
         optionValue: undefined,
         required: false,
         bgColor: undefined,
+        searchable: false,
     },
 );
+
+const filteredOptions = ref<readonly T[]>([]);
+
+watch(
+    () => props.options,
+    (newOptions) => {
+        filteredOptions.value = newOptions;
+    },
+    { immediate: true },
+);
+
+function filterFunction(
+    value: string,
+    update: (function_: () => void) => void,
+) {
+    if (value === '') {
+        update(() => {
+            filteredOptions.value = props.options;
+        });
+        return;
+    }
+
+    update(() => {
+        const needle = value.toLowerCase();
+        filteredOptions.value = props.options.filter((v) => {
+            let label: unknown = v;
+            if (typeof props.optionLabel === 'function') {
+                label = props.optionLabel(v);
+            } else if (
+                props.optionLabel &&
+                typeof v === 'object' &&
+                v !== null
+            ) {
+                label = (v as Record<string, unknown>)[props.optionLabel];
+            }
+
+            return String(label).toLowerCase().includes(needle);
+        });
+    });
+}
 </script>

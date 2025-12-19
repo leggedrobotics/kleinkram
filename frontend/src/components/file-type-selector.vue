@@ -1,52 +1,17 @@
 <template>
-    <q-btn-dropdown
-        v-model="open"
-        :label="labelText"
-        no-caps
-        flat
-        :ripple="false"
-        style="height: 36px"
-        padding="0px"
-        class="full-width no-hover-effect"
-        content-class="bg-white text-black shadow-3 rounded-borders"
-        menu-anchor="bottom left"
-        menu-self="top left"
-        :menu-offset="[0, 4]"
-        @hide="onHide"
-    >
-        <q-list style="width: 100%; min-width: 200px" padding>
-            <q-item
-                v-for="option in internalValue"
-                :key="option.name"
-                v-ripple
-                clickable
-                class="q-py-sm"
-                @click.stop.prevent="() => onToggle(option.name)"
-            >
-                <q-item-section avatar style="min-width: 40px">
-                    <q-checkbox
-                        :model-value="option.value"
-                        dense
-                        color="primary"
-                        class="no-pointer-events"
-                    />
-                </q-item-section>
-
-                <q-item-section>
-                    <q-item-label class="text-body2">
-                        {{ option.name }}
-                    </q-item-label>
-                </q-item-section>
-            </q-item>
-        </q-list>
-    </q-btn-dropdown>
+    <SelectionButtonGroup
+        :options="options"
+        :model-value="selectedKeys"
+        type="multi"
+        @update:model-value="onSelectionUpdate"
+    />
 </template>
 
 <script setup lang="ts">
 import { FileType } from '@kleinkram/shared';
-import { computed, ref, watch } from 'vue';
-
+import SelectionButtonGroup from 'components/common/selection-button-group.vue';
 import { FileTypeOption } from 'src/types/file-type-option';
+import { computed, ref, watch } from 'vue';
 
 const properties = defineProps<{
     modelValue?: FileTypeOption[] | undefined;
@@ -57,8 +22,6 @@ const emit =
         (event: 'update:modelValue', value: FileTypeOption[]) => void
     >();
 
-const open = ref(false);
-
 const DEFAULT_OPTIONS: FileTypeOption[] = Object.values(FileType)
     .filter((fileType) => fileType !== FileType.ALL)
     .map((fileType) => ({
@@ -66,7 +29,7 @@ const DEFAULT_OPTIONS: FileTypeOption[] = Object.values(FileType)
         value: true,
     }));
 
-// Internal copy to avoid mutating prop directly
+// Internal copy
 const internalValue = ref<FileTypeOption[]>(
     properties.modelValue
         ? properties.modelValue.map((v) => ({ ...v }))
@@ -83,7 +46,6 @@ watch(
         const newValue = v
             ? v.map((x) => ({ ...x }))
             : DEFAULT_OPTIONS.map((value) => ({ ...value }));
-
         if (JSON.stringify(newValue) !== JSON.stringify(internalValue.value)) {
             internalValue.value = newValue;
         }
@@ -91,33 +53,42 @@ watch(
     { deep: true },
 );
 
-const selectedString = computed(() => {
-    return internalValue.value
+// Compute options for the button group
+const options = computed(() => {
+    // Add 'All' option at the start
+    const optionsList = internalValue.value.map((opt) => ({
+        label: opt.name,
+        value: opt.name,
+    }));
+    return [{ label: 'All', value: 'ALL', special: true }, ...optionsList];
+});
+
+// Compute currently selected keys (strings)
+const selectedKeys = computed(() => {
+    const selected = internalValue.value
         .filter((item) => item.value)
-        .map((item) => item.name)
-        .join(', ');
+        .map((item) => item.name);
+
+    // Check if ALL are selected
+    if (selected.length === internalValue.value.length) {
+        return ['ALL', ...selected];
+    }
+    return selected;
 });
 
-const totalCount = computed(() => internalValue.value.length);
-const selectedCount = computed(
-    () => internalValue.value.filter((item) => item.value).length,
-);
+function onSelectionUpdate(newKeys: string | string[]) {
+    const keys = Array.isArray(newKeys) ? newKeys : [newKeys];
 
-const labelText = computed(() => {
-    if (selectedCount.value === 0) return `File Types: All`;
-    if (selectedCount.value === totalCount.value) return `File Types: All`;
-    if (selectedCount.value > 1) return `File Types: Many`;
-    return `Type: ${selectedString.value}`;
-});
+    const updated =
+        keys.length === 1 && keys[0] === 'ALL'
+            ? internalValue.value.map((it) => ({ ...it, value: true }))
+            : internalValue.value.map((it) => ({
+                  ...it,
+                  value: keys.includes(it.name),
+              }));
 
-function onToggle(name: string): void {
-    internalValue.value = internalValue.value.map((it) =>
-        it.name === name ? { ...it, value: !it.value } : { ...it },
-    );
-}
-
-function onHide(): void {
-    emit('update:modelValue', internalValue.value);
+    internalValue.value = updated;
+    emit('update:modelValue', updated);
 }
 
 function setAll(value: boolean): void {
@@ -128,17 +99,3 @@ function setAll(value: boolean): void {
 
 defineExpose({ setAll });
 </script>
-
-<style scoped>
-.no-hover-effect :deep(.q-focus-helper) {
-    display: none !important;
-}
-
-.no-hover-effect {
-    background: transparent !important;
-}
-
-.no-pointer-events {
-    pointer-events: none;
-}
-</style>

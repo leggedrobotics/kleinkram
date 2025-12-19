@@ -14,14 +14,9 @@
                 bg-color="white"
                 option-label="name"
                 option-value="uuid"
-                :input-label="
-                    showLabels
-                        ? undefined
-                        : selectedProjectUuid
-                          ? undefined
-                          : projectPlaceholder
-                "
+                :placeholder="dynamicProjectPlaceholder"
                 :rules="projectRules"
+                searchable
                 @update:model-value="handleProjectChange"
             />
         </div>
@@ -32,7 +27,7 @@
                 :options="missions"
                 :label="showLabels ? 'Mission' : undefined"
                 :required="required"
-                :disable="disabled || !selectedProjectUuid || isMissionsLoading"
+                :disable="isMissionDisabled"
                 :loading="isMissionsLoading"
                 clearable
                 dense
@@ -40,16 +35,14 @@
                 bg-color="white"
                 option-label="name"
                 option-value="uuid"
-                :input-label="
-                    showLabels
-                        ? undefined
-                        : selectedMissionUuid
-                          ? undefined
-                          : missionPlaceholder
-                "
+                :placeholder="dynamicMissionPlaceholder"
                 :rules="missionRules"
+                searchable
                 @update:model-value="handleMissionChange"
             />
+            <q-tooltip v-if="isMissionDisabled && missionDisabledReason">
+                {{ missionDisabledReason }}
+            </q-tooltip>
         </div>
     </div>
 </template>
@@ -187,5 +180,32 @@ const missionRules = computed(() => {
                   !!value || 'Mission is required',
           ]
         : [];
+});
+
+// Dynamic placeholders showing example based on first available option
+const dynamicProjectPlaceholder = computed(() => {
+    if (selectedProjectUuid.value) return;
+    const first = projects.value[0];
+    return first ? `e.g. ${first.name}` : props.projectPlaceholder;
+});
+
+const dynamicMissionPlaceholder = computed(() => {
+    if (selectedMissionUuid.value) return;
+    if (!selectedProjectUuid.value) return 'Select a Project';
+    const first = missions.value[0];
+    return first ? `e.g. ${first.name}` : props.missionPlaceholder;
+});
+
+// Check if mission is disabled to show tooltip
+const isMissionDisabled = computed(() => {
+    return (
+        props.disabled || !selectedProjectUuid.value || isMissionsLoading.value
+    );
+});
+
+const missionDisabledReason = computed(() => {
+    if (!selectedProjectUuid.value) return 'Select a project first';
+    if (isMissionsLoading.value) return 'Loading missions...';
+    return '';
 });
 </script>

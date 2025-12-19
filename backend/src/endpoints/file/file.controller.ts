@@ -578,6 +578,11 @@ export class FileController {
         @AddUser() user: AuthHeader,
     ): Promise<FileQueueEntriesDto> {
         const date = new Date(startDate);
+        if (Number.isNaN(date.getTime())) {
+            throw new BadRequestException(
+                `Invalid startDate: "${startDate}". Expected ISO 8601 format.`,
+            );
+        }
 
         const data = (await this.queueService.active(
             date,
