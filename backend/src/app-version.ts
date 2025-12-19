@@ -6,7 +6,7 @@ interface PackageJson {
     description?: string;
 }
 
-const path = '/usr/src/app/backend/package.json';
+const path = '/app/backend/package.json';
 
 function readFileIfExists(filePath: string): PackageJson | null {
     try {
