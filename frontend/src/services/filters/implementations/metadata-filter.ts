@@ -106,7 +106,6 @@ export class MetadataFilter extends BaseFilter<
 
         // All keys if empty
         if (metaPart === '') {
-            const seenNames = new Set<string>();
             for (const tag of availableTags) {
                 if (seenNames.has(tag.name.toLowerCase())) continue;
 
