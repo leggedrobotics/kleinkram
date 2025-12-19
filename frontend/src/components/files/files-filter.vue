@@ -19,8 +19,8 @@
             </div>
             <div class="col-auto">
                 <q-btn
-                    unelevated
-                    color="black"
+                    flat
+                    class="bg-button-secondary text-on-color"
                     icon="sym_o_search"
                     label="Search"
                     @click="refresh"
@@ -52,7 +52,7 @@ import { useFileSearch } from 'src/composables/use-file-search';
 import { KEYWORDS, useFilterParser } from 'src/composables/use-filter-parser';
 import { useFilterSync } from 'src/composables/use-filter-sync';
 import { useHandler, useMission } from 'src/hooks/query-hooks';
-import { PropType, computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, PropType, ref, watch } from 'vue';
 
 const props = defineProps({
     useFilter: {
@@ -164,14 +164,6 @@ watch(filterString, (newValue) => {
     }
 });
 
-// Watch input changes from SmartFilterInput
-watch(filterText, (_newValue) => {
-    // NOTE: parse(newValue) is removed here because:
-    // 1. User input is handled by onFilterUpdate (calls parse explicitly)
-    // 2. URL changes are handled by the handler watch (calls parse explicitly)
-    // 3. Advanced UI changes are handled by the filterString watch (DO NOT call parse to avoid circular state loss)
-});
-
 // Watch Date and Filter Changes to trigger refresh automatically
 watch(
     [
@@ -189,11 +181,9 @@ watch(
     { deep: true },
 );
 
-// Redundant watch removed, filterString watcher handles this more accurately.
-// BUT: On initial page load, projects/missions may not have loaded yet when filterString is first computed.
-// We need to re-sync filterText when projects or missions data becomes available.
 watch([projects, missions], () => {
-    // Only re-sync if this appears to be an initial load (URL has project/missionUuid but text is stale/empty)
+    // Only re-sync if this appears to be an initial load
+    // (URL has project/missionUuid but text is stale/empty)
     const hasProjectInUrl = !!handler.value.projectUuid;
     const hasMissionInUrl = !!handler.value.missionUuid;
     const hasProjectInText = filterText.value
@@ -225,7 +215,8 @@ function reconstructFullFilter(baseFilter = ''): string {
         const p = projects.value.find(
             (x) => x.uuid === handler.value.projectUuid,
         );
-        // Fallback to UUID if name not found (though useFileSearch usually provides a fallback)
+        // Fallback to UUID if name not found
+        // (though useFileSearch usually provides a fallback)
         const pName = p?.name ?? handler.value.projectUuid;
         if (pName) {
             text = `${text} project:${quote(pName)}`.trim();
@@ -334,13 +325,13 @@ function refresh() {
 
     if (draftProjectUuid.value) {
         nameForUrl = nameForUrl.replaceAll(
-            /(?:^|\s)project:(?:(?:"[^"]*")|(?:[^\s]*))/gi,
+            /(?:^|\s)project:(?:"[^"]*"|\S*)/gi,
             '',
         );
     }
     if (draftMissionUuid.value) {
         nameForUrl = nameForUrl.replaceAll(
-            /(?:^|\s)mission:(?:(?:"[^"]*")|(?:[^\s]*))/gi,
+            /(?:^|\s)mission:(?:"[^"]*"|\S*)/gi,
             '',
         );
     }

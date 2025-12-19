@@ -79,6 +79,21 @@
                 </q-btn>
             </q-td>
         </template>
+        <template #no-data>
+            <TableEmptyState
+                :is-empty="
+                    total === 0 &&
+                    !debouncedFilter &&
+                    selectedFileTypesFilter.length === 0
+                "
+                :has-filter="
+                    total === 0 &&
+                    (!!debouncedFilter || selectedFileTypesFilter.length > 0)
+                "
+                empty-label="No files found"
+                @reset="resetSearch"
+            />
+        </template>
     </q-table>
 </template>
 
@@ -92,6 +107,7 @@ import {
 } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
+import TableEmptyState from 'components/common/table-empty-state.vue';
 import FilesFilter from 'components/files/files-filter.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable, QTableColumn } from 'quasar';
@@ -138,6 +154,10 @@ const pagination = computed({
         handler.value.setDescending(v.descending);
     },
 });
+
+function resetSearch(): void {
+    handler.value.setSearch({ name: '' });
+}
 
 function setPagination(update: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

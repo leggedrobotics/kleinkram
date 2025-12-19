@@ -433,14 +433,16 @@ export class FileService implements OnModuleInit {
             idQuery.andWhere('mission.uuid = :missionUUID', { missionUUID });
         }
 
-        if (startDate && endDate) {
+        if (startDate) {
             logger.debug(
-                `Filtering files by date range: ${startDate.toString()} - ${endDate.toString()}`,
+                `Filtering files by start date: ${startDate.toString()}`,
             );
-            idQuery.andWhere('file.date BETWEEN :startDate AND :endDate', {
-                startDate,
-                endDate,
-            });
+            idQuery.andWhere('file.date >= :startDate', { startDate });
+        }
+
+        if (endDate) {
+            logger.debug(`Filtering files by end date: ${endDate.toString()}`);
+            idQuery.andWhere('file.date <= :endDate', { endDate });
         }
 
         // Apply complex filters via helper methods

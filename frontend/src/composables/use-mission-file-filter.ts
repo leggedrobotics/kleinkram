@@ -6,8 +6,10 @@ import { allTopicsNames, allTopicTypes } from 'src/services/queries/topic';
 import { FileTypeOption } from 'src/types/file-type-option';
 import { computed, reactive, ref, watch } from 'vue';
 
-export interface FilterState {
-    filter: string;
+export interface MissionFilterState {
+    filter: string; // filename
+    health: HealthStatus | undefined;
+    categories: string[]; // UUIDs
     startDates: string;
     endDates: string;
     selectedTopics: string[];
@@ -15,10 +17,9 @@ export interface FilterState {
     matchAllTopics: boolean;
     fileTypeFilter: FileTypeOption[] | undefined;
     tagFilter: Record<string, { name: string; value: string }>;
-    health: HealthStatus | undefined;
 }
 
-export const DEFAULT_STATE = (): FilterState => {
+export const DEFAULT_MISSION_STATE = (): MissionFilterState => {
     const start = new Date(0);
     const end = new Date();
     end.setHours(23, 59, 59, 999);
@@ -32,6 +33,8 @@ export const DEFAULT_STATE = (): FilterState => {
 
     return {
         filter: '',
+        health: undefined,
+        categories: [],
         startDates: formatDate(start),
         endDates: formatDate(end),
         selectedTopics: [],
@@ -39,24 +42,43 @@ export const DEFAULT_STATE = (): FilterState => {
         matchAllTopics: false,
         fileTypeFilter: allFileTypes,
         tagFilter: {},
-        health: undefined,
     };
 };
 
-export function useFileFilter() {
+export function useMissionFileFilter() {
     const handler = useHandler();
 
-    const defaultState = DEFAULT_STATE();
+    const defaultState = DEFAULT_MISSION_STATE();
 
     // Sync from URL (handler) if present
     if (handler.value.searchParams.name) {
         defaultState.filter = handler.value.searchParams.name;
+    }
+    if (handler.value.searchParams.health) {
+        // @ts-ignore
+        defaultState.health = handler.value.searchParams.health as HealthStatus;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (handler.value.categories) {
+        defaultState.categories = handler.value.categories;
     }
     if (handler.value.searchParams.startDate) {
         defaultState.startDates = handler.value.searchParams.startDate;
     }
     if (handler.value.searchParams.endDate) {
         defaultState.endDates = handler.value.searchParams.endDate;
+    }
+    if (handler.value.searchParams.messageDatatypes) {
+        defaultState.selectedDatatypes =
+            handler.value.searchParams.messageDatatypes.split(',');
+    }
+    if (handler.value.searchParams.topics) {
+        defaultState.selectedTopics =
+            handler.value.searchParams.topics.split(',');
+    }
+    if (handler.value.searchParams.matchAllTopics) {
+        defaultState.matchAllTopics =
+            handler.value.searchParams.matchAllTopics === 'true';
     }
 
     // Sync FileTypes
@@ -69,7 +91,7 @@ export function useFileFilter() {
         }));
     }
 
-    const state = reactive<FilterState>(defaultState);
+    const state = reactive<MissionFilterState>(defaultState);
 
     // -- Queries for Options --
     const { data: allTopics } = useQuery<string[]>({
@@ -99,31 +121,38 @@ export function useFileFilter() {
             const value = state.tagFilter[key]?.value;
 
             if (value === undefined || value === '') continue;
-            query[key] = String(value);
+
+            if (typeof value === 'string') {
+                if (value.trim() !== '') {
+                    query[key] = value;
+                }
+            } else {
+                // Handle numbers, booleans, dates
+                query[key] = String(value);
+            }
         }
         return query;
     });
 
     // -- Actions --
     function resetStartDate(): void {
-        const defaultS = DEFAULT_STATE();
+        const defaultS = DEFAULT_MISSION_STATE();
         state.startDates = defaultS.startDates;
     }
 
     function resetEndDate(): void {
-        const defaultS = DEFAULT_STATE();
+        const defaultS = DEFAULT_MISSION_STATE();
         state.endDates = defaultS.endDates;
     }
 
     function resetFilter(): void {
-        handler.value.setProjectUUID(undefined);
-        handler.value.setMissionUUID(undefined);
-        handler.value.setSearch({ name: '' });
+        handler.value.setSearch({ name: '', health: '' });
+        handler.value.setCategories([]);
 
         // Preserve fileTypeFilter structure if it exists, just selecting all
         const currentFileTypes = state.fileTypeFilter;
 
-        Object.assign(state, DEFAULT_STATE());
+        Object.assign(state, DEFAULT_MISSION_STATE());
 
         if (currentFileTypes) {
             state.fileTypeFilter = currentFileTypes.map((it) => ({
@@ -141,67 +170,6 @@ export function useFileFilter() {
         state.matchAllTopics = false;
     }
 
-    function applyDateShortcut(
-        type: 'today' | '7days' | 'lastmonth' | 'ytd' | 'all',
-    ): void {
-        if (type === 'all') {
-            resetStartDate();
-            resetEndDate();
-            // Clear from Search params
-            const newParameters = { ...handler.value.searchParams };
-            delete newParameters.startDate;
-            delete newParameters.endDate;
-
-            handler.value.setSearch({
-                ...newParameters,
-                startDate: undefined as unknown as string,
-                endDate: undefined as unknown as string,
-            });
-            return;
-        }
-
-        const end = new Date();
-        // End of day today
-        end.setHours(23, 59, 59, 999);
-
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-
-        switch (type) {
-            case 'today': {
-                // start is already beginning of today
-                break;
-            }
-            case '7days': {
-                start.setDate(start.getDate() - 7);
-                break;
-            }
-            case 'lastmonth': {
-                // 1 month ago
-                start.setMonth(start.getMonth() - 1);
-                break;
-            }
-            case 'ytd': {
-                // Jan 1st
-                start.setMonth(0, 1);
-                break;
-            }
-            // No default
-        }
-
-        const s = formatDate(start);
-        const dateEnd = formatDate(end);
-        state.startDates = s;
-        state.endDates = dateEnd;
-
-        // Immediately apply to handler (Search)
-        handler.value.setSearch({
-            ...handler.value.searchParams,
-            startDate: s,
-            endDate: dateEnd,
-        });
-    }
-
     // -- Debounce Logic --
     const debouncedFilter = ref(state.filter);
     let timeout: ReturnType<typeof setTimeout>;
@@ -213,6 +181,13 @@ export function useFileFilter() {
             timeout = setTimeout(() => {
                 debouncedFilter.value = value;
             }, 300);
+        },
+    );
+
+    watch(
+        () => handler.value.categories,
+        (newCategories) => {
+            state.categories = newCategories;
         },
     );
 
@@ -230,6 +205,5 @@ export function useFileFilter() {
         resetFilter,
         useAndTopicFilter,
         useOrTopicFilter,
-        applyDateShortcut,
     };
 }

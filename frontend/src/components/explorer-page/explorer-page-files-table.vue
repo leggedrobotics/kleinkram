@@ -229,6 +229,7 @@ import { QTable } from 'quasar';
 import { useMission, useMissionsOfProjectMinimal } from 'src/hooks/query-hooks';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import ROUTES from 'src/router/routes';
+import { parseDate } from 'src/services/date-formating';
 import {
     _downloadFile,
     getColorFileState,
@@ -268,6 +269,11 @@ const hasActiveFilters = computed(() => {
     return (
         ((h.searchParams.name && h.searchParams.name.length > 0) ??
             (h.searchParams.health && h.searchParams.health.length > 0) ??
+            (h.searchParams.startDate && h.searchParams.startDate.length > 0) ??
+            (h.searchParams.endDate && h.searchParams.endDate.length > 0) ??
+            (h.searchParams.topics && h.searchParams.topics.length > 0) ??
+            (h.searchParams.messageDatatypes &&
+                h.searchParams.messageDatatypes.length > 0) ??
             isTypeFilterActive) ||
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         (h.categories && h.categories.length > 0)
@@ -317,14 +323,20 @@ function setPagination(update: TableRequest): void {
     properties.urlHandler.setDescending(update.pagination.descending);
 }
 
-const pagination = computed(() => {
-    return {
+const pagination = computed({
+    get: () => ({
         page: properties.urlHandler.page,
         rowsPerPage: properties.urlHandler.take,
         rowsNumber: properties.urlHandler.rowsNumber,
         sortBy: properties.urlHandler.sortBy,
         descending: properties.urlHandler.descending,
-    };
+    }),
+    set: (v) => {
+        properties.urlHandler.setPage(v.page);
+        properties.urlHandler.setTake(v.rowsPerPage);
+        properties.urlHandler.setSort(v.sortBy);
+        properties.urlHandler.setDescending(v.descending);
+    },
 });
 
 const queryKey = computed(() => [
@@ -339,18 +351,36 @@ const {
     isLoading,
 }: UseQueryReturnType<FilesDto | undefined, Error> = useQuery({
     queryKey: queryKey,
-    queryFn: () =>
-        filesOfMission(
+    queryFn: () => {
+        const h = properties.urlHandler;
+        return filesOfMission(
             missionUuid.value ?? '',
-            properties.urlHandler.take,
-            properties.urlHandler.skip,
-            properties.urlHandler.fileTypes,
-            properties.urlHandler.searchParams.name,
-            properties.urlHandler.categories,
-            properties.urlHandler.sortBy,
-            properties.urlHandler.descending,
-            properties.urlHandler.searchParams.health as HealthStatus,
-        ),
+            h.take,
+            h.skip,
+            h.fileTypes,
+            h.searchParams.name,
+            h.categories,
+            h.sortBy,
+            h.descending,
+
+            h.searchParams.health as HealthStatus,
+            h.searchParams.startDate
+                ? parseDate(h.searchParams.startDate)
+                : undefined,
+            h.searchParams.endDate
+                ? parseDate(h.searchParams.endDate)
+                : undefined,
+            // Topics and Datatypes
+            h.searchParams.topics && h.searchParams.topics.length > 0
+                ? h.searchParams.topics.split(',')
+                : undefined,
+            h.searchParams.messageDatatypes &&
+                h.searchParams.messageDatatypes.length > 0
+                ? h.searchParams.messageDatatypes.split(',')
+                : undefined,
+            h.searchParams.matchAllTopics === 'true',
+        );
+    },
     placeholderData: keepPreviousData,
 });
 const data = computed(() => (rawData.value ? rawData.value.data : []));

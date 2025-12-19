@@ -2,10 +2,7 @@ import DatatypeFilterComponent from 'src/components/files/filter/components/data
 import { FilterState } from 'src/composables/use-file-filter';
 import { FileSearchContextData } from 'src/composables/use-file-search';
 import { KEYWORDS } from 'src/composables/use-filter-parser';
-import {
-    Suggestion,
-    SuggestionContext,
-} from 'src/services/suggestions/suggestion-types';
+import { SuggestionContext } from 'src/services/suggestions/suggestion-types';
 import { BaseFilter } from '../base-filter';
 
 export class DatatypeFilter extends BaseFilter<
@@ -25,44 +22,9 @@ export class DatatypeFilter extends BaseFilter<
         if (tokenValue) state.selectedDatatypes.push(tokenValue);
     }
 
-    override getSuggestions(
+    protected override getSuggestionItems(
         context: SuggestionContext<FileSearchContextData>,
-    ): Suggestion[] {
-        const lastWord = this.getLastWord(context.input);
-        const lowerLast = lastWord.toLowerCase();
-
-        if (
-            !lowerLast.startsWith(this.key) &&
-            !this.key.startsWith(lowerLast)
-        ) {
-            return [];
-        }
-
-        const list: Suggestion[] = [];
-
-        if (lowerLast.startsWith(this.key)) {
-            let query = lowerLast.slice(this.key.length);
-            if (query.startsWith('"')) query = query.slice(1);
-
-            const items = context.data.datatypes;
-            for (const item of items
-                .filter((index) => index.toLowerCase().includes(query))
-                .slice(0, 5)) {
-                const label = item.includes(' ') ? `"${item}"` : item;
-                list.push(
-                    this.createSuggestion({
-                        label,
-                        value: item,
-                        prefix: this.key,
-                        description: 'Datatype',
-                        icon: this.icon,
-                        appendSpace: true,
-                        disabled: false,
-                    }),
-                );
-            }
-        }
-
-        return list;
+    ): string[] {
+        return context.data.datatypes;
     }
 }

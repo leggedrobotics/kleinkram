@@ -6,7 +6,6 @@ import {
 import { computed } from 'vue';
 import { FilterState } from './use-file-filter';
 
-// Keep KEYWORDS for backward compatibility
 export const KEYWORDS = {
     PROJECT: 'project:',
     MISSION: 'mission:',
@@ -17,6 +16,8 @@ export const KEYWORDS = {
     START: 'date-start:',
     END: 'date-end:',
     METADATA: 'meta:',
+    HEALTH: 'health:',
+    CATEGORY: 'category:',
 };
 
 function quote(s: string) {
@@ -91,6 +92,36 @@ export function useFilterParser<TContext extends FilterParserContext>(
             }
         }
 
+        if (keys.has(KEYWORDS.HEALTH) && state.health) {
+            parts.push(`${KEYWORDS.HEALTH}${state.health}`);
+        }
+
+        if (
+            keys.has(KEYWORDS.CATEGORY) &&
+            'categories' in state &&
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            Array.isArray((state as any).categories)
+        ) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            const cats = (state as any).categories as string[];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            const availableCats = (context as any).availableCategories as
+                | {
+                      name: string;
+                      uuid: string;
+                  }[]
+                | undefined;
+
+            if (availableCats) {
+                for (const catUuid of cats) {
+                    const cat = availableCats.find((c) => c.uuid === catUuid);
+                    if (cat) {
+                        parts.push(`${KEYWORDS.CATEGORY}${quote(cat.name)}`);
+                    }
+                }
+            }
+        }
+
         // Dates
         if (keys.has(KEYWORDS.START)) {
             const startDateOnly = state.startDates.split(' ')[0];
@@ -112,8 +143,7 @@ export function useFilterParser<TContext extends FilterParserContext>(
             parts.push(state.filter);
         }
 
-        const result = parts.join(' ');
-        return result;
+        return parts.join(' ');
     });
 
     // eslint-disable-next-line complexity
@@ -124,9 +154,17 @@ export function useFilterParser<TContext extends FilterParserContext>(
         state.selectedTopics = [];
         state.selectedDatatypes = [];
         state.tagFilter = {};
+        state.tagFilter = {};
+        state.filter = '';
+        state.health = undefined;
         if (defaults?.defaultStartDate)
             state.startDates = defaults.defaultStartDate;
         if (defaults?.defaultEndDate) state.endDates = defaults.defaultEndDate;
+
+        if ('categories' in state) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            (state as any).categories = [];
+        }
 
         // Tokenize
         const { tokens, freeText } = parseSearchString(input);
@@ -200,7 +238,8 @@ export function useFilterParser<TContext extends FilterParserContext>(
         )
             .trim()
             .replaceAll(/\s+/g, ' ');
-        state.filter = combinedFreeText;
+
+        state.filter = (state.filter + ' ' + combinedFreeText).trim();
     }
 
     function validateSyntax(input: string): string | null {

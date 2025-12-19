@@ -165,6 +165,7 @@ export function useFileSearch(
         keywordMap,
         {
             // Mission requires project to be selected
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'mission:': (context) => ({
                 enabled: context.data.hasProjectSelected,
                 reason: 'Select a project first',

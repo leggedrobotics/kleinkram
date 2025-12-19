@@ -3,74 +3,109 @@ import {
     SuggestionConfig,
     SuggestionContext,
 } from 'src/services/suggestions/suggestion-types';
-import { Component } from 'vue';
+import { Component, markRaw } from 'vue';
 
 import { Filter } from './filter-interface';
+
+export interface NormalizedSuggestionItem {
+    name: string;
+    description?: string;
+}
 
 export abstract class BaseFilter<TState, TContext> implements Filter<
     TState,
     TContext
 > {
+    protected suggestionLimit = 8;
+
     protected constructor(
         public key: string,
         public label: string,
         public icon: string,
         public advancedComponent?: Component,
-    ) {}
+    ) {
+        if (this.advancedComponent) {
+            this.advancedComponent = markRaw(this.advancedComponent);
+        }
+    }
 
-    abstract parse(tokenValue: string, state: TState, context: TContext): void;
+    /**
+     * Parse the token value and update the state accordingly.
+     * @param tokenValue
+     * @param state
+     * @param context
+     */
+    abstract parse(
+        tokenValue: string,
+        state: TState,
+        context: Readonly<TContext>,
+    ): void;
 
     /**
      * Override this to provide items for the default getSuggestions implementation.
      * If not overridden, getSuggestions must be overridden.
+     *
+     * @return An array of suggestion items or strings.
+     * @param _context
      */
     protected getSuggestionItems(
         _context: SuggestionContext<TContext>,
-    ): { name: string }[] | string[] {
+    ): NormalizedSuggestionItem[] | string[] {
         return [];
+    }
+
+    private getNormalizedItems(
+        context: SuggestionContext<TContext>,
+    ): NormalizedSuggestionItem[] {
+        const items = this.getSuggestionItems(context);
+        if (items.length === 0) return [];
+
+        if (typeof items[0] === 'string') {
+            return (items as string[]).map((item) => ({
+                name: item,
+                description: this.label,
+            }));
+        }
+        return items as NormalizedSuggestionItem[];
     }
 
     getSuggestions(context: SuggestionContext<TContext>): Suggestion[] {
         const lastWord = this.getLastWord(context.input);
         const lowerLast = lastWord.toLowerCase();
 
-        if (
-            !lowerLast.startsWith(this.key) &&
-            !this.key.startsWith(lowerLast)
-        ) {
+        if (!lowerLast.startsWith(this.key.toLowerCase())) {
             return [];
         }
 
+        let query = lowerLast.slice(this.key.length);
+        const isQuoted = query.startsWith('"');
+        if (isQuoted) {
+            // Remove surrounding quotes
+            query = query.replaceAll(/^"|"$/g, '');
+        }
+
+        const items = this.getNormalizedItems(context);
         const list: Suggestion[] = [];
 
-        if (lowerLast.startsWith(this.key)) {
-            let query = lowerLast.slice(this.key.length);
-            if (query.startsWith('"')) query = query.slice(1);
+        for (const item of items) {
+            if (list.length >= this.suggestionLimit) break;
 
-            const items = this.getSuggestionItems(context);
-            if (items.length === 0) return [];
+            if (item.name.toLowerCase().includes(query)) {
+                const label = item.name.includes(' ')
+                    ? `"${item.name}"`
+                    : item.name;
 
-            for (const item of items) {
-                const itemName = typeof item === 'string' ? item : item.name;
-                if (!itemName) continue;
-
-                if (itemName.toLowerCase().includes(query)) {
-                    const label = itemName.includes(' ')
-                        ? `"${itemName}"`
-                        : itemName;
-                    list.push(
-                        this.createSuggestion({
-                            label,
-                            value: itemName,
-                            prefix: this.key,
-                            description: this.label,
-                            icon: this.icon,
-                            appendSpace: true,
-                            disabled: false,
-                        }),
-                    );
-                }
-                if (list.length >= 5) break;
+                list.push(
+                    this.createSuggestion({
+                        label,
+                        value: item.name,
+                        prefix: this.key,
+                        description: item.description ?? this.label,
+                        icon: this.icon,
+                        appendSpace: true,
+                        disabled: false,
+                    }),
+                );
             }
         }
 

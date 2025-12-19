@@ -127,6 +127,11 @@ export const filesOfMission = async (
     sort = 'filename',
     desc = false,
     health?: HealthStatus,
+    startDate?: Date,
+    endDate?: Date,
+    topics?: string[],
+    messageDatatypes?: string[],
+    matchAllTopics = true,
 ): Promise<FilesDto> => {
     const tag: Record<string, unknown> = {};
 
@@ -134,7 +139,7 @@ export const filesOfMission = async (
         filename: filename ?? '',
         missionUUID,
         categories,
-        matchAllTopics: true,
+        matchAllTopics,
         fileTypes,
         tag: Object.keys(tag).length > 0 ? tag : undefined,
         take,
@@ -142,6 +147,10 @@ export const filesOfMission = async (
         sort,
         desc,
         health,
+        startDate,
+        endDate,
+        topics,
+        messageDatatypes,
     });
 };
 
