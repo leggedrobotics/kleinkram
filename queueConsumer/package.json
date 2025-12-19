@@ -49,7 +49,7 @@
         "bull": "^4.16.4",
         "dockerode": "^4.0.9",
         "express": "^4.21.2",
-        "googleapis": "^166.0.0",
+        "googleapis": "^168.0.0",
         "ioredis": "^5.8.2",
         "jsonwebtoken": "^9.0.2",
         "logform": "^2.7.0",
