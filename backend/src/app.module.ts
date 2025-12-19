@@ -105,8 +105,8 @@ export class AppModule implements NestModule {
         consumer
             .apply(VersionCheckerMiddlewareService)
             .exclude(
-                '/auth/(.*)', // excludes auth endpoints
-                '/integrations/(.*)', // excludes integration endpoints
+                '/auth/{*path}', // excludes auth endpoints
+                '/integrations/{*path}', // excludes integration endpoints
                 '/api/health', // excludes health check
             )
             .forRoutes('*');

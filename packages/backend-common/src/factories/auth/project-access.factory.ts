@@ -1,34 +1,42 @@
 import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
-import { faker } from '@faker-js/faker';
-import { define } from 'typeorm-seeding';
+import { type Faker } from '@faker-js/faker';
+import { setSeederFactory } from 'typeorm-extension';
 
 import { AccessGroupRights } from '@kleinkram/shared';
 
 export interface ProjectAccessFactoryContext {
-    projects: ProjectEntity[];
-    accessGroups: AccessGroupEntity[];
+    project?: ProjectEntity;
+    accessGroup?: AccessGroupEntity;
+    projects?: ProjectEntity[];
+    accessGroups?: AccessGroupEntity[];
 }
 
-// @ts-ignore
-define(ProjectAccessEntity, (_, context: ProjectAccessFactoryContext) => {
-    const projectAccess = new ProjectAccessEntity();
+setSeederFactory(
+    ProjectAccessEntity,
+    (faker: Faker, context: Partial<ProjectAccessFactoryContext> = {}) => {
+        const projectAccess = new ProjectAccessEntity();
 
-    projectAccess.rights = faker.helpers.arrayElement([
-        0, 10, 20, 30,
-    ]) as AccessGroupRights;
+        projectAccess.rights = faker.helpers.arrayElement([
+            0, 10, 20, 30,
+        ]) as AccessGroupRights;
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (context?.projects) {
-        projectAccess.project = faker.helpers.arrayElement(context.projects);
-    }
+        if (context.project) {
+            projectAccess.project = context.project;
+        } else if (context.projects) {
+            projectAccess.project = faker.helpers.arrayElement(
+                context.projects,
+            );
+        }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (context?.accessGroups) {
-        projectAccess.accessGroup = faker.helpers.arrayElement(
-            context.accessGroups,
-        );
-    }
-    return projectAccess;
-});
+        if (context.accessGroup) {
+            projectAccess.accessGroup = context.accessGroup;
+        } else if (context.accessGroups) {
+            projectAccess.accessGroup = faker.helpers.arrayElement(
+                context.accessGroups,
+            );
+        }
+        return projectAccess;
+    },
+);

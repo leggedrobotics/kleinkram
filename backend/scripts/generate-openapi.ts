@@ -230,23 +230,39 @@ aside: false
     process.exit(0);
 }
 
+interface ExpressLayer {
+    route?: {
+        path: string;
+        stack: { method: string }[];
+    };
+}
+
+interface ExpressRouter {
+    stack: ExpressLayer[];
+}
+
+interface HttpServerWithRouter {
+    _events?: {
+        request?: {
+            _router?: ExpressRouter;
+        };
+    };
+}
+
 function saveEndpointsAsJson(app: INestApplication, filename: string): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const server = app.getHttpServer();
+    const server = app.getHttpServer() as HttpServerWithRouter;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    const endpoints = server._events.request._router.stack
+    const router = server._events?.request?._router;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-        .filter((r: any) => r.route)
+    if (!router) {
+        return;
+    }
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        .map((r: any) => ({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            url: r.route.path,
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            method: r.route.stack[0].method,
+    const endpoints = router.stack
+        .filter((r) => r.route)
+        .map((r) => ({
+            url: r.route?.path,
+            method: r.route?.stack[0]?.method,
         }));
 
     try {

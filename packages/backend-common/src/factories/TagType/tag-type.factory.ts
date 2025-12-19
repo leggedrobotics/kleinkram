@@ -1,8 +1,8 @@
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
-import { define } from 'typeorm-seeding';
+import { setSeederFactory } from 'typeorm-extension';
 
-define(TagTypeEntity, () => {
+setSeederFactory(TagTypeEntity, (_) => {
     const tagType = new TagTypeEntity();
 
     const [name, datatype, description] = extendedFaker.tagType.tagType();

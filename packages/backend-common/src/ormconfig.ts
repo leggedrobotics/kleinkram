@@ -1,6 +1,15 @@
+/* eslint-disable unicorn/prefer-module */
+import path from 'node:path';
 import process from 'node:process';
 
-export default {
+import { DataSource, DataSourceOptions } from 'typeorm';
+import { SeederOptions } from 'typeorm-extension';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+const isTsNode = !!(process as any)[Symbol.for('ts-node.register.instance')];
+const extension = isTsNode ? 'ts' : 'js';
+
+export const dataSourceOptions: DataSourceOptions & SeederOptions = {
     type: 'postgres',
     host: process.env.DB_HOST,
     port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
@@ -10,9 +19,11 @@ export default {
     database: process.env.DB_DATABASE,
     synchronize: false,
     entities: [
-        'src/entities/**/*.entity{.ts,.js}',
-        'src/viewEntities/**/*.entity{.ts,.js}',
+        path.join(__dirname, 'entities', `**/*.entity.${extension}`),
+        path.join(__dirname, 'viewEntities', `**/*.entity.${extension}`),
     ],
-    seeds: ['src/seeds/**/*.seed{.ts,.js}'],
-    factories: ['src/factories/**/*.factory{.ts,.js}'],
+    seeds: [path.join(__dirname, 'seeds', `**/*.seed.${extension}`)],
+    factories: [path.join(__dirname, 'factories', `**/*.factory.${extension}`)],
 };
+
+export default new DataSource(dataSourceOptions as DataSourceOptions);

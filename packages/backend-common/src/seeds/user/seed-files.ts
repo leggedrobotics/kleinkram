@@ -9,6 +9,7 @@ import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { FileContext } from '@backend-common/factories/file/file.factory';
 import { MetadataContext } from '@backend-common/factories/metadata/metadata.factory';
+import { TopicContext } from '@backend-common/factories/topic/topic.factory';
 import { extendedFaker } from '@backend-common/faker-extended';
 import {
     DataType,
@@ -22,8 +23,8 @@ import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 
 import path from 'node:path';
-import { Connection } from 'typeorm';
-import { Factory } from 'typeorm-seeding';
+import { DataSource } from 'typeorm';
+import { SeederFactoryManager } from 'typeorm-extension';
 
 /**
  * Seed metadata value based on tag type
@@ -89,9 +90,9 @@ function seedMetadataValue(
 }
 
 export const seedFiles = async (
-    factory: Factory,
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    conn: Connection,
+    factoryManager: SeederFactoryManager,
+
+    dataSource: DataSource,
     adminUser: UserEntity,
     createdMissions: MissionEntity[],
     tagTypes: TagTypeEntity[],
@@ -189,7 +190,7 @@ export const seedFiles = async (
                     categoryNames[
                         Math.floor(Math.random() * categoryNames.length)
                     ];
-                let category = await conn
+                let category = await dataSource
                     .getRepository(CategoryEntity)
                     .findOne({
                         where: {
@@ -201,27 +202,33 @@ export const seedFiles = async (
                     });
                 // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                 if (!category) {
-                    category = await factory(CategoryEntity)({
-                        name: randomCategoryName,
-                        project: mission.project,
-                        creator: adminUser,
-                    }).create();
+                    category = await factoryManager
+                        .get(CategoryEntity)
+                        .setMeta({
+                            name: randomCategoryName,
+                            project: mission.project,
+                            creator: adminUser,
+                        })
+                        .save();
                 }
 
                 let fileType = FileType.BAG;
                 if (targetName.endsWith('.mcap')) fileType = FileType.MCAP;
                 else if (targetName.endsWith('.yaml')) fileType = FileType.YAML;
 
-                const fileEntity = await factory(FileEntity)({
-                    mission: mission,
-                    user: adminUser,
-                    filename: targetName,
-                    size: fileSize,
-                    type: fileType,
-                    origin: FileOrigin.UPLOAD,
-                    hash: fileHash,
-                    categories: [category],
-                } as FileContext).create();
+                const fileEntity = await factoryManager
+                    .get(FileEntity)
+                    .setMeta({
+                        mission: mission,
+                        user: adminUser,
+                        filename: targetName,
+                        size: fileSize,
+                        type: fileType,
+                        origin: FileOrigin.UPLOAD,
+                        hash: fileHash,
+                        categories: [category],
+                    } as FileContext)
+                    .save();
 
                 if (!fileEntity.uuid) {
                     console.error(
@@ -271,49 +278,57 @@ export const seedFiles = async (
                     }
 
                     for (const topicDefinition of topics) {
-                        await factory(TopicEntity)({
-                            file: fileEntity,
-                        }).create({
-                            name: topicDefinition.name,
-                            type: topicDefinition.type,
-                            frequency: topicDefinition.frequency,
-                            nrMessages: BigInt(1000),
-                            messageEncoding: 'cdr',
-                        });
+                        await factoryManager
+                            .get(TopicEntity)
+                            .setMeta({
+                                file: fileEntity,
+                                name: topicDefinition.name,
+                                type: topicDefinition.type,
+                                frequency: topicDefinition.frequency,
+                                nrMessages: BigInt(1000),
+                                messageEncoding: 'cdr',
+                            } as Partial<TopicContext>)
+                            .save();
                     }
 
                     // Create File Event (Topics Extracted)
-                    await factory(FileEventEntity)({
-                        file: fileEntity,
-                        mission: mission,
-                        actor: adminUser,
-                        type: FileEventType.TOPICS_EXTRACTED,
-                        details: {
-                            topicCount: topics.length,
-                            method: 'seeded',
-                            extractedAt: new Date(),
-                            durationMs: 100,
-                        },
-                    }).create();
+                    await factoryManager
+                        .get(FileEventEntity)
+                        .setMeta({
+                            file: fileEntity,
+                            mission: mission,
+                            actor: adminUser,
+                            type: FileEventType.TOPICS_EXTRACTED,
+                            details: {
+                                topicCount: topics.length,
+                                method: 'seeded',
+                                extractedAt: new Date(),
+                                durationMs: 100,
+                            },
+                        })
+                        .save();
                 }
 
                 // Create File Event (Upload Completed)
-                await factory(FileEventEntity)({
-                    file: fileEntity,
-                    mission: mission,
-                    actor: adminUser,
-                    type: FileEventType.UPLOAD_COMPLETED,
-                    details: {
-                        origin: FileOrigin.UPLOAD,
-                        source: 'Seeding Script',
-                    },
-                }).create();
+                await factoryManager
+                    .get(FileEventEntity)
+                    .setMeta({
+                        file: fileEntity,
+                        mission: mission,
+                        actor: adminUser,
+                        type: FileEventType.UPLOAD_COMPLETED,
+                        details: {
+                            origin: FileOrigin.UPLOAD,
+                            source: 'Seeding Script',
+                        },
+                    })
+                    .save();
 
                 // Create Metadata for Mission (if not exists)
                 // Iterate over all available tag types to ensure coverage
                 for (const tagType of tagTypes) {
                     // Check if mission already has this tag
-                    const existingTag = await conn
+                    const existingTag = await dataSource
                         .getRepository(MetadataEntity)
                         .findOne({
                             where: {
@@ -330,9 +345,10 @@ export const seedFiles = async (
 
                         seedMetadataValue(tagType, metadataProperties);
 
-                        await factory(MetadataEntity)(
-                            metadataProperties,
-                        ).create();
+                        await factoryManager
+                            .get(MetadataEntity)
+                            .setMeta(metadataProperties)
+                            .save();
                     }
                 }
 
