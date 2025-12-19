@@ -154,7 +154,6 @@ export function useFilterParser<TContext extends FilterParserContext>(
         state.selectedTopics = [];
         state.selectedDatatypes = [];
         state.tagFilter = {};
-        state.tagFilter = {};
         state.filter = '';
         state.health = undefined;
         if (defaults?.defaultStartDate)
