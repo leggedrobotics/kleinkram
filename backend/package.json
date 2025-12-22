@@ -75,7 +75,7 @@
         "typeorm": "^0.3.27",
         "typeorm-extension": "^3.7.3",
         "uuid": "^13.0.0",
-        "winston": "^3.18.3",
+        "winston": "^3.19.0",
         "winston-loki": "^6.0.7"
     },
     "devDependencies": {
