@@ -24,7 +24,7 @@
         "@mcap/nodejs": "^1.0.2",
         "@mcap/support": "^1.0.4",
         "@nestjs/bull": "^11.0.4",
-        "@nestjs/common": "^11.1.9",
+        "@nestjs/common": "^11.1.10",
         "@nestjs/config": "^4.0.2",
         "@nestjs/core": "11.1.9",
         "@nestjs/platform-express": "^11.1.9",
