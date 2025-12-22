@@ -11,7 +11,7 @@ jobs:
     python-lint:
         runs-on: [self-hosted, linux]
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
             - name: Install and run Black
               run: |
                   sudo apt update
