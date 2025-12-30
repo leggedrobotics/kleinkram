@@ -57,5 +57,5 @@ klein login
 
 <details>
 <summary>Start Developing</summary>
-For a deeper dive into the project structure and development workflow, see the <a href="https://docs.datasets.leggedrobotics.com/development/application-structure">Application Structure</a> documentation. Your development environment is designed for Ubuntu 24.04.
+For a deeper dive into the project structure and development workflow, see the <a href="https://docs.datasets.leggedrobotics.com/development/application-structure.html">Application Structure</a> documentation. Your development environment is designed for Ubuntu 24.04.
 </details>
