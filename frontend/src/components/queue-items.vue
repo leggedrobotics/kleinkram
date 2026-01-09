@@ -253,7 +253,7 @@ const clearSelection = (): void => {
 watch(fileStateFilter, () => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (fileStateFilter.value) {
-        fileStateFilter.value = fileStateFilter.value.sort((a, b) =>
+        fileStateFilter.value = fileStateFilter.value.toSorted((a, b) =>
             // @ts-ignore
             QueueState[a] > QueueState[b] ? 1 : -1,
         );

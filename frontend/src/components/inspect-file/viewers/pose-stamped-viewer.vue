@@ -95,7 +95,7 @@ const updateCharts = debounce(() => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const message = properties.messages[index];
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        t[index] = Number(message.logTime - logStartTime) / 1_000_000_000;
+        t[index] = (message.logTime - logStartTime) / 1_000_000_000;
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const pos = message.data.pose?.position ?? {};

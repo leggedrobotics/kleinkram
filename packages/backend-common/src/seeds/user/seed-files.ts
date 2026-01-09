@@ -285,7 +285,7 @@ export const seedFiles = async (
                                 name: topicDefinition.name,
                                 type: topicDefinition.type,
                                 frequency: topicDefinition.frequency,
-                                nrMessages: BigInt(1000),
+                                nrMessages: 1000n,
                                 messageEncoding: 'cdr',
                             } as Partial<TopicContext>)
                             .save();

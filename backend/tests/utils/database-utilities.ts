@@ -58,7 +58,7 @@ export const mockDatabaseUser = async (
     role: UserRole = UserRole.USER,
 ): Promise<string> => {
     // read config from access_config.json
-    // eslint-disable-next-line unicorn/prefer-module
+
     const configPath = path.join(__dirname, '../../src/access_config.json');
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));

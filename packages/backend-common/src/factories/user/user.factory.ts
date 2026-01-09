@@ -46,7 +46,6 @@ setSeederFactory(
 
         try {
             const configPath = path.resolve(
-                // eslint-disable-next-line unicorn/prefer-module
                 __dirname,
                 '@backend-common/../../../backend/src/access_config.json',
             );

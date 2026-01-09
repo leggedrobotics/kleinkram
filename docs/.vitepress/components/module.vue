@@ -34,7 +34,7 @@ function filterSpecByPath(spec: any, pathPrefix: string) {
     const filteredSpec = { ...spec };
 
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, unicorn/no-immediate-mutation
     filteredSpec.paths = Object.keys(spec.paths)
         .filter((path) => path.startsWith(pathPrefix))
         // eslint-disable-next-line unicorn/no-array-reduce

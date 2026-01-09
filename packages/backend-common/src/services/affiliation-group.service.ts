@@ -90,6 +90,7 @@ export class AffiliationGroupService {
         user: UserEntity,
     ): Promise<void> {
         await Promise.all(
+            // eslint-disable-next-line @typescript-eslint/await-thenable
             config.emails.map((_config) => {
                 if (user.email?.endsWith(_config.email)) {
                     return Promise.all(

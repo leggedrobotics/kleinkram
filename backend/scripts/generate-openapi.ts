@@ -39,7 +39,7 @@ async function generateOpenApi() {
     }
 
     console.warn('Scanning for controllers...');
-    // eslint-disable-next-line unicorn/prefer-module
+
     const controllersDirectory = path.join(__dirname, '../src/endpoints');
     const controllerFiles = findControllers(controllersDirectory);
     const controllers: Type[] = [];
@@ -63,7 +63,7 @@ async function generateOpenApi() {
                 );
                 if (isController !== undefined) {
                     console.warn(
-                        `Found controller: ${String((exported as Type).name)}`,
+                        `Found controller: ${(exported as Type).name}`,
                     );
 
                     controllers.push(exported as Type);
@@ -105,6 +105,7 @@ async function generateOpenApi() {
                         // Return a function that returns the recursive mock (for method chaining)
                         // If properties are accessed (not called), it returns the function which is truthy/object-ish
 
+                        // eslint-disable-next-line unicorn/consistent-function-scoping
                         return (..._args: unknown[]) => recursiveMock;
                     },
                 },
@@ -151,6 +152,7 @@ async function generateOpenApi() {
     }[] = [];
 
     // Sort controllers by path for better readability
+    // eslint-disable-next-line unicorn/no-array-sort
     const sortedControllers = controllers.sort((a, b) => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         let pathA = Reflect.getMetadata(PATH_METADATA, a);

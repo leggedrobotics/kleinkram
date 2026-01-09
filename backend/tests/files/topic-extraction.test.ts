@@ -34,7 +34,7 @@ describe('Topic Extraction Tests', () => {
             name: '/test/topic',
             type: 'std_msgs/String',
             file: file,
-            nrMessages: BigInt(100),
+            nrMessages: 100n,
             frequency: 10,
             messageEncoding: 'none',
         });

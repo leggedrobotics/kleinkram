@@ -50,7 +50,6 @@ export default class CreateUsers implements Seeder {
 
         // Load config
         const configPath = path.resolve(
-            // eslint-disable-next-line unicorn/prefer-module
             __dirname,
             '../../../../../backend/src/access_config.json',
         );

@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/prefer-module */
 import path from 'node:path';
 import process from 'node:process';
 

@@ -417,7 +417,7 @@ export class ActionManagerService {
             `Container ${container.id} exited with code ${containerDetailsAfter.State.ExitCode.toString()}`,
         );
 
-        const exitCode = Number(containerDetailsAfter.State.ExitCode);
+        const exitCode = containerDetailsAfter.State.ExitCode;
 
         let state: ActionState;
         // eslint-disable-next-line @typescript-eslint/naming-convention

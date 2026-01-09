@@ -45,6 +45,7 @@ export async function findWorkerForAction(
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     logger.debug('jobDistribution: ', nrJobs);
+    //  eslint-disable-next-line unicorn/no-array-sort
     return activeWorkers.sort(
         (a, b) => nrJobs[a.identifier] - nrJobs[b.identifier],
     )[0];

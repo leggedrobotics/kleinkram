@@ -75,7 +75,7 @@ const duration = computed(() => {
     if (properties.messages.length < 2) return 0;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = properties.messages.at(-1).logTime;
-    return Number(end - startTime.value) / 1_000_000_000;
+    return (end - startTime.value) / 1_000_000_000;
 });
 
 const temperatureSeries = shallowRef<ChartSeries[]>([]);
@@ -89,7 +89,7 @@ watch(
             if (!message) continue;
             data.push({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                time: Number(message.logTime - startTime.value) / 1_000_000_000,
+                time: (message.logTime - startTime.value) / 1_000_000_000,
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 value: message.data.temperature ?? 0,
             });

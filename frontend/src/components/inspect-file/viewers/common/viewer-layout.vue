@@ -94,7 +94,7 @@ const duration = computed(() => {
     const start = props.messages[0].logTime;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = props.messages.at(-1).logTime;
-    return Number(end - start) / 1_000_000_000;
+    return (end - start) / 1_000_000_000;
 });
 
 // Helper to handle BigInt serialization
@@ -109,14 +109,6 @@ const replacer = (_key: string, value: any) => {
 
 async function copyRaw(): Promise<void> {
     if (props.messages.length === 0) return;
-    // Copy latest message by default, or maybe all?
-    // The existing viewers mostly copy the latest message or the whole array.
-    // Let's copy the latest message for now as a default, but maybe we should expose this?
-    // Actually, twist-viewer copies ALL messages, others copy LATEST.
-    // Let's default to latest, but maybe we need a prop or just let the parent handle it?
-    // To make it truly shared, maybe we should emit an event?
-    // But for now, let's implement a smart default: if > 1 message, copy latest?
-    // Or just copy the last one.
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const last = props.messages.at(-1);

@@ -107,6 +107,7 @@ describe('Verification project endpoint', () => {
             admin.uuid,
         ];
         const actualUserUuids = users.map((user) => user.uuid);
+        // eslint-disable-next-line unicorn/no-array-sort
         expect(actualUserUuids.sort()).toEqual(expectedUserUuids.sort());
 
         // delete all missions

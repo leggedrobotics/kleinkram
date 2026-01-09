@@ -196,11 +196,7 @@ const displayTopics = computed(
 watch(
     () => file.value,
     async (currentFile) => {
-        if (
-            !currentFile ||
-            currentFile.state !== FileState.OK ||
-            preview.isReaderReady.value
-        )
+        if (currentFile?.state !== FileState.OK || preview.isReaderReady.value)
             return;
 
         try {

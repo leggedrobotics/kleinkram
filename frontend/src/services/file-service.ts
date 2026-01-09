@@ -211,9 +211,8 @@ async function _createFileAction(
                 const responseData = error.response.data;
                 // Check for structured error: { message: 'Validation failed', errors: [...] }
                 if (
-                    responseData &&
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    responseData.message === 'Validation failed' &&
+                    responseData?.message === 'Validation failed' &&
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     Array.isArray(responseData.errors)
                 ) {

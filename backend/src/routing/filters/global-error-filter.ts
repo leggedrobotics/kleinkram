@@ -154,7 +154,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
         }
 
         const route: { url: string } = host.getArgByIndex(0);
-        logger.error(`An error occurred on route ${route.url.toString()}!`);
+        logger.error(`An error occurred on route ${route.url}!`);
 
         logger.error(`exception of type ${exception.name}`);
         logger.error(exception.message);

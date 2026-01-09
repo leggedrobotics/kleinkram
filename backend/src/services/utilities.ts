@@ -94,7 +94,7 @@ export const getFilteredProjectIdSubQuery = (
 const metadataMatchesKeyValuePair = (
     key: string,
     value: string,
-    tok: string | undefined = undefined,
+    tok?: string,
 ): Brackets => {
     /*
      * we need to add a random token to the typeorm params as

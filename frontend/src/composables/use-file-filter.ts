@@ -99,7 +99,7 @@ export function useFileFilter() {
             const value = state.tagFilter[key]?.value;
 
             if (value === undefined || value === '') continue;
-            query[key] = String(value);
+            query[key] = value;
         }
         return query;
     });

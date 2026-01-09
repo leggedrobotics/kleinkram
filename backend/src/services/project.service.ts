@@ -325,7 +325,7 @@ export class ProjectService {
                         createdAt: project.project_createdAt as Date,
                     } as ResentProjectDto;
                 })
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/no-array-sort
                 .sort(
                     (a: ResentProjectDto, b: ResentProjectDto) =>
                         b.updatedAt.getTime() - a.updatedAt.getTime(),

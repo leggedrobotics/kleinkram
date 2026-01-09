@@ -163,7 +163,7 @@ const highlightedHtml = computed(() => {
     );
 
     const pattern = new RegExp(
-        `((?:^|\\s)(?:${processedKeys.join('|')}))`,
+        String.raw`((?:^|\s)(?:${processedKeys.join('|')}))`,
         'gi',
     );
 

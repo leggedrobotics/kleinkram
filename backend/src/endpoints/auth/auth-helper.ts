@@ -12,7 +12,7 @@ export const projectAccessUUIDQuery = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query: SelectQueryBuilder<any>,
     userUUID: string,
-    tok: string | undefined = undefined,
+    tok?: string,
 ): SelectQueryBuilder<ProjectAccessViewEntity> => {
     // we us randomized tokens to creat a signature for the subquery parameters
     // in this way we avoid conflicts with other subqueries or the main query
@@ -35,7 +35,7 @@ export const missionAccessUUIDQuery = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query: SelectQueryBuilder<any>,
     userUUID: string,
-    tok: string | undefined = undefined,
+    tok?: string,
 ): SelectQueryBuilder<MissionAccessViewEntity> => {
     // we us randomized tokens to creat a signature for the subquery parameters
     // in this way we avoid conflicts with other subqueries or the main query
@@ -56,7 +56,7 @@ export const getUserIsAdminSubQuery = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query: SelectQueryBuilder<any>,
     userUUID: string,
-    tok: string | undefined = undefined,
+    tok?: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): SelectQueryBuilder<any> => {
     // we us randomized tokens to creat a signature for the subquery parameters

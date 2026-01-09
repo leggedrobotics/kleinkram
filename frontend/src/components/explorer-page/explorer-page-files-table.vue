@@ -252,7 +252,7 @@ const missionUuid = useMissionUUID();
 const { data: missionData } = useMission(missionUuid);
 
 const isMissionEmpty = computed(() => {
-    return missionData.value && missionData.value.files.length === 0;
+    return missionData.value?.files.length === 0;
 });
 
 const hasActiveFilters = computed(() => {
@@ -426,6 +426,6 @@ watch(
 );
 
 function sortedCats(file: FileWithTopicDto): CategoryDto[] {
-    return file.categories.sort((a, b) => a.name.localeCompare(b.name));
+    return file.categories.toSorted((a, b) => a.name.localeCompare(b.name));
 }
 </script>

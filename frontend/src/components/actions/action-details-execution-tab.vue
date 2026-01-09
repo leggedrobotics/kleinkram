@@ -355,7 +355,7 @@ const $router = useRouter();
 const formatDate = (d: string | Date) => new Date(d).toLocaleString();
 
 const formatBytes = (bytes: number, decimals = 2) => {
-    if (!+bytes) return '0 Bytes';
+    if (!(bytes satisfies number)) return '0 Bytes';
 
     const k = 1024;
     const dm = Math.max(decimals, 0);

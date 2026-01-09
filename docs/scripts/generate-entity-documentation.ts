@@ -229,7 +229,7 @@ function generateMarkdown(entities: ClassDeclaration[]): string {
                 // Match direct usages like "Entity", "Entity[]", "Entity[][]" and capture trailing [] pairs
                 // Use proper escaping for \b and square brackets in the RegExp string
                 const entityRegex = new RegExp(`${escName}([]*)`, 'g');
-                type = type.replace(entityRegex, (_match, bracketPart = '') => {
+                type = type.replace(entityRegex, (_match, bracketPart) => {
                     return `[${entName satisfies string}${String(bracketPart)}](#${anchor satisfies string})`;
                 });
 
@@ -238,7 +238,7 @@ function generateMarkdown(entities: ClassDeclaration[]): string {
                     `Array<s*${escName}s*>([]*)`,
                     'g',
                 );
-                type = type.replace(arrayRegex, (_match, bracketPart = '') => {
+                type = type.replace(arrayRegex, (_match, bracketPart) => {
                     // Represent Array<Entity> as Entity[] inside the link
                     return `[${entName satisfies string}[]](#${anchor satisfies string})${String(bracketPart)}`;
                 });

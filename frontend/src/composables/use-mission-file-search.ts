@@ -70,7 +70,7 @@ export function useMissionFileSearch(
         const categories = categoriesDto.value?.data ?? [];
         return categories
             .map((c) => ({ name: c.name, uuid: c.uuid, description: c.name }))
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .toSorted((a, b) => a.name.localeCompare(b.name));
     });
 
     // FileTypes (Static)

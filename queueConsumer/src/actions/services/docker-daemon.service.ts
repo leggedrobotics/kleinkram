@@ -238,6 +238,7 @@ export class DockerDaemon {
     }
 
     private errorHandling() {
+        // eslint-disable-next-line unicorn/consistent-function-scoping
         return (error: unknown): never => {
             let errorString = inspect(error);
 
