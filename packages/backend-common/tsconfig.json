@@ -12,7 +12,8 @@
             "@kleinkram/shared/*": ["../shared/src/*"],
             "@kleinkram/validation": ["../validation/src/index.ts"],
             "@kleinkram/validation/*": ["../validation/src/*"]
-        }
+        },
+        "types": ["node"]
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "dist"],
