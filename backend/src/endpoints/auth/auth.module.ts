@@ -5,8 +5,8 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { GoogleStrategy } from './google.strategy';
+import { AdminOnlyGuard, LoggedInUserGuard } from './guards';
 import { JwtStrategy } from './jwt.strategy';
-import { AdminOnlyGuard, LoggedInUserGuard } from './roles.guard';
 
 import { AccessService } from '@/services/access.service';
 import { ProjectGuardService } from '@/services/project-guard.service';

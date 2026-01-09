@@ -1,3 +1,4 @@
+import { ApiResponse } from '@/decorators';
 import { UnauthorizedExceptionDto } from '@kleinkram/api-dto';
 import {
     applyDecorators,
@@ -5,7 +6,6 @@ import {
     SetMetadata,
     UseGuards,
 } from '@nestjs/common';
-import { ApiResponse } from '../../decorators';
 import {
     AddTagGuard,
     AdminOnlyGuard,
@@ -35,7 +35,7 @@ import {
     WriteFileGuard,
     WriteMissionByBodyGuard,
     WriteProjectGuard,
-} from './roles.guard';
+} from './guards';
 
 // Logged-in user route decorator
 export function LoggedIn() {
