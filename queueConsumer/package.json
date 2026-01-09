@@ -77,7 +77,7 @@
         "run-script-webpack-plugin": "^0.2.3",
         "ts-loader": "^9.5.4",
         "typescript": "5.9.3",
-        "webpack": "^5.103.0",
+        "webpack": "^5.104.1",
         "webpack-node-externals": "^3.0.0"
     }
 }
