@@ -1,5 +1,5 @@
-import { INestApplication, Type } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Type } from '@nestjs/common';
+import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
 import * as fs from 'node:fs';
 import path from 'node:path';
@@ -134,8 +134,8 @@ async function generateOpenApi() {
 
     // Initialize the app to generate the router stack
     await app.init();
-    saveEndpointsAsJson(
-        app,
+    saveEndpointsFromDocument(
+        document,
         path.join(outputDirectory, '__generated__endpoints.json'),
     );
 
@@ -232,40 +232,20 @@ aside: false
     process.exit(0);
 }
 
-interface ExpressLayer {
-    route?: {
-        path: string;
-        stack: { method: string }[];
-    };
-}
+function saveEndpointsFromDocument(
+    document: OpenAPIObject,
+    filename: string,
+): void {
+    const endpoints: { url: string; method: string }[] = [];
 
-interface ExpressRouter {
-    stack: ExpressLayer[];
-}
-
-interface HttpServerWithRouter {
-    _events?: {
-        request?: {
-            _router?: ExpressRouter;
-        };
-    };
-}
-
-function saveEndpointsAsJson(app: INestApplication, filename: string): void {
-    const server = app.getHttpServer() as HttpServerWithRouter;
-
-    const router = server._events?.request?._router;
-
-    if (!router) {
-        return;
+    for (const [pathKey, methods] of Object.entries(document.paths)) {
+        for (const method of Object.keys(methods)) {
+            endpoints.push({
+                url: pathKey,
+                method: method.toLowerCase(),
+            });
+        }
     }
-
-    const endpoints = router.stack
-        .filter((r) => r.route)
-        .map((r) => ({
-            url: r.route?.path,
-            method: r.route?.stack[0]?.method,
-        }));
 
     try {
         fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));
