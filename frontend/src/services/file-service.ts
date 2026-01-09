@@ -30,6 +30,29 @@ import { existsFile } from 'src/services/queries/file';
 import { ref, Ref } from 'vue';
 import ENV from '../environment';
 
+// Type definitions for API error responses
+interface FileErrorItem {
+    filename: string;
+    error: string;
+}
+
+interface ValidationErrorResponse {
+    message: string;
+    errors: FileErrorItem[];
+}
+
+function isValidationErrorResponse(
+    data: unknown,
+): data is ValidationErrorResponse {
+    return (
+        typeof data === 'object' &&
+        data !== null &&
+        'message' in data &&
+        'errors' in data &&
+        Array.isArray((data as ValidationErrorResponse).errors)
+    );
+}
+
 const confirmDialog = (event: BeforeUnloadEvent): void => {
     event.preventDefault();
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -206,26 +229,20 @@ async function _createFileAction(
             });
         } catch (error: unknown) {
             let handled = false;
+            // Handle 400 Bad Request for validation errors (e.g., invalid filenames)
             if (error instanceof AxiosError && error.response?.status === 400) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                const responseData = error.response.data;
-                // Check for structured error: { message: 'Validation failed', errors: [...] }
+                const responseData: unknown = error.response.data;
                 if (
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    responseData?.message === 'Validation failed' &&
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    Array.isArray(responseData.errors)
+                    isValidationErrorResponse(responseData) &&
+                    responseData.message === 'Validation failed'
                 ) {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                    const invalidFilesList = responseData.errors;
                     try {
                         const renameMap: Record<string, string> =
                             await new Promise((resolve, reject) => {
                                 Dialog.create({
                                     component: RenameFilesDialog,
                                     componentProps: {
-                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                                        invalidFiles: invalidFilesList,
+                                        invalidFiles: responseData.errors,
                                     },
                                 })
                                     .onOk(resolve)
@@ -250,6 +267,35 @@ async function _createFileAction(
                 }
             }
 
+            // Handle 409 Conflict for files that already exist
+            if (error instanceof AxiosError && error.response?.status === 409) {
+                const responseData: unknown = error.response.data;
+                if (isValidationErrorResponse(responseData)) {
+                    const filenames = responseData.errors
+                        .map((f) => f.filename)
+                        .join(', ');
+                    Notify.create({
+                        message: `Upload failed: The following files already exist in this mission: ${filenames}`,
+                        color: 'negative',
+                        spinner: false,
+                        position: 'bottom',
+                        timeout: 30_000,
+                        closeBtn: true,
+                    });
+                    return;
+                } else {
+                    Notify.create({
+                        message: `Upload failed: One or more files already exist in this mission.`,
+                        color: 'negative',
+                        spinner: false,
+                        position: 'bottom',
+                        timeout: 30_000,
+                        closeBtn: true,
+                    });
+                    return;
+                }
+            }
+
             if (!handled) {
                 console.error('error', error);
                 let errorMessage = '';
@@ -262,13 +308,12 @@ async function _createFileAction(
                     if (error.response?.status === 403) {
                         message = `Upload failed: You do not have the necessary permissions.`;
                     } else if (error.response?.status === 400) {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                        const responseData = error.response.data;
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                        message = responseData.message
-                            ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                              `Upload failed: ${JSON.stringify(responseData.message)}`
-                            : `Upload failed: ${JSON.stringify(responseData)}`;
+                        const responseData: unknown = error.response.data;
+                        message =
+                            isValidationErrorResponse(responseData) &&
+                            responseData.message
+                                ? `Upload failed: ${responseData.message}`
+                                : `Upload failed: ${JSON.stringify(responseData)}`;
                     }
                 }
 

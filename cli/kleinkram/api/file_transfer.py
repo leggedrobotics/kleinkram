@@ -96,8 +96,14 @@ def _get_upload_creditials(
         "missionUUID": str(mission_id),
         "source": "CLI",
     }
-    resp = client.post(UPLOAD_CREDS, json=dct)
-    resp.raise_for_status()
+    try:
+        resp = client.post(UPLOAD_CREDS, json=dct)
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        # 409 Conflict means file already exists
+        if e.response.status_code == 409:
+            return None
+        raise
 
     data = resp.json()["data"][0]
 

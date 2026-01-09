@@ -30,6 +30,7 @@ import {
 } from '@kleinkram/shared';
 import {
     BadRequestException,
+    ConflictException,
     Injectable,
     NotFoundException,
     OnModuleInit,
@@ -1439,11 +1440,8 @@ export class FileService implements OnModuleInit {
             }
 
             if (invalidFiles.length > 0) {
-                // If we have some valid credentials and some errors, we might want to return partial success?
-                // The current API contract seems to throw BadRequest if ANY file is invalid.
-                // We'll stick to that behavior for now.
-                throw new BadRequestException({
-                    message: 'Validation failed',
+                throw new ConflictException({
+                    message: 'Files already exist',
                     errors: invalidFiles,
                 });
             }
