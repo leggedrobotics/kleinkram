@@ -278,7 +278,7 @@ export default withMermaid({
 
         footer: {
             message: 'Released under the MIT License.',
-            copyright: 'Copyright © 2025 - Robotic Systems Lab',
+            copyright: 'Copyright © 2026 - Robotic Systems Lab',
         },
     },
 });
