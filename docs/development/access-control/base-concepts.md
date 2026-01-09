@@ -22,7 +22,7 @@ the user is created. Only the user itself is member of this group. No other user
 ### Affiliation Groups
 
 Affiliation groups are groups to which user are added automatically based on their mail domain.
-These default groups can be configured in the configuration file: `backend/access_config.json`.
+These default groups can be configured in the configuration file: `backend/src/access_config.json`.
 
 #### Example
 
