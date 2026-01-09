@@ -10,6 +10,7 @@ import Read from '../components/AccessWrites/read.vue';
 import Creator from '../components/AccessWrites/creator.vue';
 import ApiModulesTable from './components/api-modules-table.vue';
 import { EnhanceAppContext } from 'vitepress';
+import './custom.css'
 
 export default {
     enhanceApp({ app }: EnhanceAppContext): void {

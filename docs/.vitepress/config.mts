@@ -109,13 +109,17 @@ export default withMermaid({
                     text: 'Actions & Automation',
                     items: [
                         {
-                            text: 'Using Actions',
-                            link: '/usage/actions/usage.md',
+                            text: 'Use Actions',
+                            link: '/usage/actions/use-actions.md',
                         },
                         {
-                            text: 'Developing Actions',
-                            link: '/usage/actions/developing.md',
+                            text: 'Write Actions',
+                            link: '/usage/actions/write-actions.md',
                         },
+                        {
+                            text: 'Example Actions',
+                            link: '/usage/actions/examples.md',
+                        }
                     ],
                     collapsed: false,
                 },
