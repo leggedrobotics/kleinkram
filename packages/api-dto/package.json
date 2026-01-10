@@ -1,6 +1,6 @@
 {
     "name": "@kleinkram/api-dto",
-    "version": "0.56.0",
+    "version": "0.57.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "license": "MIT",
@@ -24,7 +24,7 @@
         "@kleinkram/shared": "workspace:*",
         "@kleinkram/validation": "workspace:*",
         "@mcap/core": "^2.1.7",
-        "@nestjs/swagger": "^8.0.0",
+        "@nestjs/swagger": "^11.2.3",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.3",
         "fs-extra": "^11.3.2",

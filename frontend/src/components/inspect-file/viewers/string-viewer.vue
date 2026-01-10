@@ -6,6 +6,26 @@
                     <q-badge color="purple-1" text-color="purple-9">
                         {{ messages.length }} messages
                     </q-badge>
+                    <q-badge
+                        v-if="
+                            messages.length > 0 &&
+                            parseContent(messages[0].data.data).isXml
+                        "
+                        color="orange-1"
+                        text-color="orange-9"
+                    >
+                        XML
+                    </q-badge>
+                    <q-badge
+                        v-else-if="
+                            messages.length > 0 &&
+                            parseContent(messages[0].data.data).isJson
+                        "
+                        color="teal-1"
+                        text-color="teal-9"
+                    >
+                        JSON
+                    </q-badge>
                 </div>
                 <q-btn
                     icon="sym_o_content_copy"
@@ -16,7 +36,7 @@
                     color="grey-7"
                     @click="copyRaw"
                 >
-                    <q-tooltip>Copy JSON</q-tooltip>
+                    <q-tooltip>Copy Messages (JSON)</q-tooltip>
                 </q-btn>
             </div>
 
@@ -32,7 +52,12 @@
                                 {{ formatTime(msg.logTime) }}
                             </div>
 
-                            <div v-if="parseContent(msg.data.data).isJson">
+                            <div
+                                v-if="
+                                    parseContent(msg.data.data).isJson ||
+                                    parseContent(msg.data.data).isXml
+                                "
+                            >
                                 <div
                                     v-if="parseContent(msg.data.data).prefix"
                                     class="text-body2 text-grey-9 break-word q-mb-xs"
@@ -44,8 +69,8 @@
                                     class="bg-grey-1 q-pa-sm rounded-borders font-mono text-caption overflow-auto relative-position group"
                                     style="max-height: 300px"
                                 >
-                                    <pre class="q-ma-none">{{
-                                        parseContent(msg.data.data).json
+                                    <pre class="q-ma-none text-break">{{
+                                        parseContent(msg.data.data).formatted
                                     }}</pre>
                                     <q-btn
                                         icon="sym_o_content_copy"
@@ -59,11 +84,15 @@
                                             () =>
                                                 copyText(
                                                     parseContent(msg.data.data)
-                                                        .json,
+                                                        .formatted,
                                                 )
                                         "
                                     >
-                                        <q-tooltip>Copy JSON</q-tooltip>
+                                        <q-tooltip>{{
+                                            parseContent(msg.data.data).isJson
+                                                ? 'Copy JSON'
+                                                : 'Copy XML'
+                                        }}</q-tooltip>
                                     </q-btn>
                                 </div>
 
@@ -112,6 +141,7 @@
 <script setup lang="ts">
 import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { onMounted } from 'vue';
+import xmlFormat from '../../../utils/xml-formatter';
 import SmoothLoading from '../../common/smooth-loading.vue';
 
 const properties = defineProps<{
@@ -133,15 +163,22 @@ onMounted(() => {
 
 interface ParsedContent {
     prefix: string;
-    json: string;
+    formatted: string;
     suffix: string;
     isJson: boolean;
+    isXml: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const parseContent = (string_: string): ParsedContent => {
     if (!string_ || typeof string_ !== 'string') {
-        return { prefix: string_ || '', json: '', suffix: '', isJson: false };
+        return {
+            prefix: string_ || '',
+            formatted: '',
+            suffix: '',
+            isJson: false,
+            isXml: false,
+        };
     }
 
     // 1. Try full JSON first
@@ -150,15 +187,33 @@ const parseContent = (string_: string): ParsedContent => {
         const object = JSON.parse(string_);
         return {
             prefix: '',
-            json: JSON.stringify(object, null, 2),
+            formatted: JSON.stringify(object, null, 2),
             suffix: '',
             isJson: true,
+            isXml: false,
         };
     } catch {
         // Continue to inline check
     }
 
-    // 2. Try to find JSON object/array substring
+    // 2. Try XML
+    const trimmed = string_.trim();
+    if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
+        try {
+            const formatted = xmlFormat(string_);
+            return {
+                prefix: '',
+                formatted,
+                suffix: '',
+                isJson: false,
+                isXml: true,
+            };
+        } catch {
+            // Continue to inline check
+        }
+    }
+
+    // 3. Try to find JSON object/array substring
     // Look for first { or [ and last } or ]
     const firstBrace = string_.indexOf('{');
     const firstBracket = string_.indexOf('[');
@@ -173,7 +228,13 @@ const parseContent = (string_: string): ParsedContent => {
     }
 
     if (start === -1) {
-        return { prefix: string_, json: '', suffix: '', isJson: false };
+        return {
+            prefix: string_,
+            formatted: '',
+            suffix: '',
+            isJson: false,
+            isXml: false,
+        };
     }
 
     // Find end
@@ -190,7 +251,13 @@ const parseContent = (string_: string): ParsedContent => {
     }
 
     if (end === -1 || end <= start) {
-        return { prefix: string_, json: '', suffix: '', isJson: false };
+        return {
+            prefix: string_,
+            formatted: '',
+            suffix: '',
+            isJson: false,
+            isXml: false,
+        };
     }
 
     const potentialJson = string_.slice(start, end + 1);
@@ -199,12 +266,19 @@ const parseContent = (string_: string): ParsedContent => {
         const object = JSON.parse(potentialJson);
         return {
             prefix: string_.slice(0, start),
-            json: JSON.stringify(object, null, 2),
+            formatted: JSON.stringify(object, null, 2),
             suffix: string_.slice(end + 1),
             isJson: true,
+            isXml: false,
         };
     } catch {
-        return { prefix: string_, json: '', suffix: '', isJson: false };
+        return {
+            prefix: string_,
+            formatted: '',
+            suffix: '',
+            isJson: false,
+            isXml: false,
+        };
     }
 };
 
@@ -237,7 +311,15 @@ const formatTime = (nano: bigint): string => {
 };
 
 async function copyRaw(): Promise<void> {
-    await quasarCopy(JSON.stringify(properties.messages, null, 2));
+    await quasarCopy(
+        JSON.stringify(
+            properties.messages,
+            (key, value) =>
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                typeof value === 'bigint' ? value.toString() : value,
+            2,
+        ),
+    );
     Notify.create({
         message: 'Data copied',
         color: 'positive',
@@ -271,6 +353,11 @@ const loadMore = (): void => {
 .break-word {
     word-wrap: break-word;
     white-space: pre-wrap;
+    word-break: break-all;
+}
+.text-break {
+    white-space: pre-wrap;
+    word-wrap: break-word;
     word-break: break-all;
 }
 </style>

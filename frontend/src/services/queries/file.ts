@@ -10,23 +10,47 @@ import { FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
+export interface FilteredFilesConfig {
+    filename?: string | undefined;
+    projectUUID?: string | undefined;
+    missionUUID?: string | undefined;
+    startDate?: Date | undefined;
+    endDate?: Date | undefined;
+    topics?: string[] | undefined;
+    messageDatatypes?: string[] | undefined;
+    categories?: string[] | undefined;
+    matchAllTopics?: boolean | undefined;
+    fileTypes?: FileType[] | undefined;
+    tag?: Record<string, unknown> | undefined;
+    take?: number | undefined;
+    skip?: number | undefined;
+    sort?: string | undefined;
+    desc?: boolean | undefined;
+    health?: HealthStatus | undefined;
+}
+
 export const fetchFilteredFiles = async (
-    filename: string,
-    projectUUID?: string,
-    missionUUID?: string,
-    startDate?: Date,
-    endDate?: Date,
-    topics?: string[],
-    categories?: string[],
-    matchAllTopics?: boolean,
-    fileTypes?: FileType[],
-    tag?: Record<string, unknown>,
-    take?: number,
-    skip?: number,
-    sort?: string,
-    desc?: boolean,
-    health?: HealthStatus,
+    config: FilteredFilesConfig,
+    // eslint-disable-next-line complexity
 ): Promise<FilesDto> => {
+    const {
+        filename,
+        projectUUID,
+        missionUUID,
+        startDate,
+        endDate,
+        topics,
+        messageDatatypes,
+        categories,
+        matchAllTopics,
+        fileTypes,
+        tag,
+        take,
+        skip,
+        sort,
+        desc,
+        health,
+    } = config;
     try {
         const parameters: Record<string, string> = {};
         if (filename) parameters.fileName = filename;
@@ -35,6 +59,8 @@ export const fetchFilteredFiles = async (
         if (startDate) parameters.startDate = startDate.toISOString();
         if (endDate) parameters.endDate = endDate.toISOString();
         if (topics && topics.length > 0) parameters.topics = topics.join(',');
+        if (messageDatatypes && messageDatatypes.length > 0)
+            parameters.messageDatatypes = messageDatatypes.join(',');
         if (categories && categories.length > 0) {
             parameters.categories = categories.join(',');
         }
@@ -101,26 +127,31 @@ export const filesOfMission = async (
     sort = 'filename',
     desc = false,
     health?: HealthStatus,
+    startDate?: Date,
+    endDate?: Date,
+    topics?: string[],
+    messageDatatypes?: string[],
+    matchAllTopics = true,
 ): Promise<FilesDto> => {
     const tag: Record<string, unknown> = {};
 
-    return fetchFilteredFiles(
-        filename ?? '',
-        undefined,
+    return fetchFilteredFiles({
+        filename: filename ?? '',
         missionUUID,
-        undefined,
-        undefined,
-        undefined,
         categories,
-        true,
+        matchAllTopics,
         fileTypes,
-        Object.keys(tag).length > 0 ? tag : undefined,
+        tag: Object.keys(tag).length > 0 ? tag : undefined,
         take,
         skip,
         sort,
         desc,
         health,
-    );
+        startDate,
+        endDate,
+        topics,
+        messageDatatypes,
+    });
 };
 
 export const findOneByNameAndMission = async (

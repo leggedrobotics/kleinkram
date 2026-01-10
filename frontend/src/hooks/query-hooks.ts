@@ -233,14 +233,12 @@ export const useProjectQuery = (
  */
 export const useMission = (
     missionUuid: Ref<string | undefined> | string,
-    throwOnError:
-        | ThrowOnError<
-              MissionWithFilesDto,
-              Error,
-              MissionWithFilesDto,
-              readonly unknown[]
-          >
-        | undefined = undefined,
+    throwOnError?: ThrowOnError<
+        MissionWithFilesDto,
+        Error,
+        MissionWithFilesDto,
+        readonly unknown[]
+    >,
     retryDelay = 1000,
 ): UseQueryReturnType<MissionWithFilesDto | undefined, Error> => {
     if (typeof missionUuid === 'string') {

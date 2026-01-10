@@ -70,7 +70,7 @@ export const missionEntityToDto = (mission: MissionEntity): MissionDto => {
         ...missionEntityToMinimumDto(mission),
         project: projectEntityToDto(mission.project),
         createdAt: mission.createdAt,
-        tags: mission.tags?.map(tagEntityToDto) ?? [],
+        tags: mission.tags?.map((element) => tagEntityToDto(element)) ?? [],
         updatedAt: mission.updatedAt,
     };
 };
@@ -296,8 +296,11 @@ export const projectEntityToDtoWithMissionCountAndTags = (
         creator: userEntityToDto(project.creator),
         missionCount: project.missionCount ?? 0,
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        requiredTags: project.requiredTags?.map(tagTypeEntityToDto) ?? [],
+        requiredTags:
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            project.requiredTags?.map((element) =>
+                tagTypeEntityToDto(element),
+            ) ?? [],
     };
 };
 

@@ -50,7 +50,7 @@
                     />
                     <span class="text-h6 text-grey-6">No executions found</span>
                     <span class="text-caption">
-                        There are no executions matching your criteria.
+                        {{ noDataSubtitle }}
                     </span>
                 </div>
             </div>
@@ -128,8 +128,14 @@ properties.handler.setSort('createdAt');
 properties.handler.setDescending(true);
 
 const queryFilters = computed(() => ({
-    projectUuid: (route.query.projectUuid as string) || undefined,
-    missionUuid: (route.query.missionUuid as string) || undefined,
+    projectUuid:
+        (route.query.projectUuid as string) ||
+        (route.params.projectUuid as string) ||
+        undefined,
+    missionUuid:
+        (route.query.missionUuid as string) ||
+        (route.params.missionUuid as string) ||
+        undefined,
     take: route.query.rowsPerPage ? Number(route.query.rowsPerPage) : 100,
     skip: route.query.page
         ? (Number(route.query.page) - 1) *
@@ -140,6 +146,13 @@ const queryFilters = computed(() => ({
     search: undefined,
     templateName: (route.query.name as string) || undefined,
 }));
+
+const noDataSubtitle = computed(() => {
+    if (queryFilters.value.missionUuid && !queryFilters.value.templateName) {
+        return 'No actions have been executed for this mission yet.';
+    }
+    return 'There are no executions matching your criteria.';
+});
 
 const { data: rawData, isLoading } = useActionList(queryFilters);
 

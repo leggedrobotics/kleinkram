@@ -66,7 +66,7 @@ const extractSeries = (category: 'linear' | 'angular'): ChartSeries[] => {
     for (const message of properties.messages) {
         // Normalized Time
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        const t = Number(message.logTime - startTime.value) / 1_000_000_000;
+        const t = (message.logTime - startTime.value) / 1_000_000_000;
         // Handle TwistStamped vs Twist
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const twist = message.data.twist ?? message.data;

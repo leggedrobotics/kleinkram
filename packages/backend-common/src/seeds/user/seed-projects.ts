@@ -5,8 +5,8 @@ import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupType } from '@kleinkram/shared';
-import { Connection } from 'typeorm';
-import { Factory } from 'typeorm-seeding';
+import { DataSource } from 'typeorm';
+import { SeederFactoryManager } from 'typeorm-extension';
 
 export interface SeededProjects {
     createdProjects: ProjectEntity[];
@@ -15,9 +15,9 @@ export interface SeededProjects {
 }
 
 export const seedProjects = async (
-    factory: Factory,
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    conn: Connection,
+    factoryManager: SeederFactoryManager,
+
+    dataSource: DataSource,
     adminUser: UserEntity,
     internalUser: UserEntity,
 ): Promise<SeededProjects> => {
@@ -30,7 +30,7 @@ export const seedProjects = async (
     const TAG_TYPE_COUNT = 10;
 
     try {
-        existingTagTypes = await conn.getRepository(TagTypeEntity).find();
+        existingTagTypes = await dataSource.getRepository(TagTypeEntity).find();
     } catch {
         // eslint-disable-next-line no-console
         console.log('TagType table not found, will create tag types');
@@ -43,7 +43,9 @@ export const seedProjects = async (
     } else {
         // eslint-disable-next-line no-console
         console.log('Creating tag types...');
-        tagTypes = await factory(TagTypeEntity)().createMany(TAG_TYPE_COUNT);
+        tagTypes = await factoryManager
+            .get(TagTypeEntity)
+            .saveMany(TAG_TYPE_COUNT);
     }
 
     // 2. Create Projects and Missions
@@ -75,7 +77,7 @@ export const seedProjects = async (
 
     let existingProjects: ProjectEntity[] = [];
     try {
-        existingProjects = await conn.getRepository(ProjectEntity).find();
+        existingProjects = await dataSource.getRepository(ProjectEntity).find();
     } catch {
         // eslint-disable-next-line no-console
         console.log('Project table not found, will create projects');
@@ -88,18 +90,17 @@ export const seedProjects = async (
             console.log(
                 `Project "${projectDefinition.name}" already exists, skipping`,
             );
-            // We need to fetch the existing missions if we want to return them,
-            // but for now the main seeder logic mostly needs createdMissions for file seeding.
-            // If we skip, we might not have them in createdMissions.
-            // Let's fetch them to be safe if we want to seed files into existing projects.
+
             const project = existingProjects.find(
                 (p) => p.name === projectDefinition.name,
             );
             if (project) {
-                const missions = await conn.getRepository(MissionEntity).find({
-                    where: { project: { uuid: project.uuid } },
-                    relations: ['project'],
-                });
+                const missions = await dataSource
+                    .getRepository(MissionEntity)
+                    .find({
+                        where: { project: { uuid: project.uuid } },
+                        relations: ['project'],
+                    });
 
                 createdProjects.push(project);
                 createdMissions.push(...missions);
@@ -107,19 +108,21 @@ export const seedProjects = async (
             continue;
         }
 
-        // eslint-disable-next-line no-console
         console.log(`Creating project "${projectDefinition.name}"...`);
-        const project = await factory(ProjectEntity)({
-            name: projectDefinition.name,
-            description: projectDefinition.description,
-            creator: adminUser,
-            tagTypes: tagTypes,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any).create();
+        const project = await factoryManager
+            .get(ProjectEntity)
+            .setMeta({
+                name: projectDefinition.name,
+                description: projectDefinition.description,
+                creator: adminUser,
+                tagTypes: tagTypes,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any)
+            .save();
         createdProjects.push(project);
 
         // Grant access to internal user
-        const internalUserGroup = await conn
+        const internalUserGroup = await dataSource
             .getRepository(AccessGroupEntity)
             .findOne({
                 where: {
@@ -129,20 +132,25 @@ export const seedProjects = async (
             });
 
         if (internalUserGroup) {
-            await factory(ProjectAccessEntity)().create({
-                project: project,
-                accessGroup: internalUserGroup,
-            });
+            await factoryManager
+                .get(ProjectAccessEntity)
+                .setMeta({
+                    project: project,
+                    accessGroup: internalUserGroup,
+                })
+                .save();
         }
 
         for (const missionName of projectDefinition.missions) {
-            const mission = await factory(MissionEntity)({
-                project: project,
-                user: adminUser,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any).create({
-                name: missionName,
-            });
+            const mission = await factoryManager
+                .get(MissionEntity)
+                .setMeta({
+                    project: project,
+                    user: adminUser,
+                    name: missionName,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any)
+                .save();
             createdMissions.push(mission);
         }
     }

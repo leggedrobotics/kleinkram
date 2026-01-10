@@ -8,20 +8,91 @@ import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity'
 import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { FileContext } from '@backend-common/factories/file/file.factory';
-import { FileEventType, FileOrigin, FileType } from '@kleinkram/shared';
+import { MetadataContext } from '@backend-common/factories/metadata/metadata.factory';
+import { TopicContext } from '@backend-common/factories/topic/topic.factory';
+import { extendedFaker } from '@backend-common/faker-extended';
+import {
+    DataType,
+    FileEventType,
+    FileOrigin,
+    FileType,
+} from '@kleinkram/shared';
 import * as Minio from 'minio';
 import { execSync } from 'node:child_process';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 
 import path from 'node:path';
-import { Connection } from 'typeorm';
-import { Factory } from 'typeorm-seeding';
+import { DataSource } from 'typeorm';
+import { SeederFactoryManager } from 'typeorm-extension';
+
+/**
+ * Seed metadata value based on tag type
+ *
+ * @param tagType
+ * @param metadataProperties
+ */
+function seedMetadataValue(
+    tagType: TagTypeEntity,
+    metadataProperties: Partial<MetadataContext>,
+) {
+    switch (tagType.datatype) {
+        case DataType.BOOLEAN: {
+            metadataProperties.valueBoolean = extendedFaker.datatype.boolean();
+            break;
+        }
+        case DataType.NUMBER: {
+            metadataProperties.valueNumber = extendedFaker.number.int();
+            break;
+        }
+        case DataType.DATE: {
+            metadataProperties.valueDate = extendedFaker.date.past();
+            break;
+        }
+        case DataType.LOCATION: {
+            metadataProperties.valueLocation = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
+            break;
+        }
+        case DataType.LINK: {
+            metadataProperties.valueString = extendedFaker.internet.url();
+            break;
+        }
+        default: {
+            // STRING
+            switch (tagType.name) {
+                case 'coordinates': {
+                    metadataProperties.valueString = `${String(extendedFaker.location.latitude())}, ${String(extendedFaker.location.longitude())}`;
+
+                    break;
+                }
+                case 'location': {
+                    metadataProperties.valueString =
+                        extendedFaker.location.city();
+
+                    break;
+                }
+                case 'robot_name': {
+                    metadataProperties.valueString =
+                        extendedFaker.animal.type();
+
+                    break;
+                }
+                default: {
+                    metadataProperties.valueString = tagType.name.includes(
+                        'description',
+                    )
+                        ? extendedFaker.lorem.sentence()
+                        : extendedFaker.lorem.words(3);
+                }
+            }
+        }
+    }
+}
 
 export const seedFiles = async (
-    factory: Factory,
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    conn: Connection,
+    factoryManager: SeederFactoryManager,
+
+    dataSource: DataSource,
     adminUser: UserEntity,
     createdMissions: MissionEntity[],
     tagTypes: TagTypeEntity[],
@@ -59,13 +130,10 @@ export const seedFiles = async (
         const meaningfulNames: Record<string, string[]> = {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '10_KB.bag': ['highway_drive_01.bag', 'urban_nav_test_01.bag'],
-
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '50_KB.bag': ['pick_place_demo.bag', 'assembly_run_01.bag'],
-
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '1_MB.bag': ['perimeter_scan_01.bag', 'rescue_mission_alpha.bag'],
-
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '17_MB.bag': ['highway_long_drive.bag', 'urban_heavy_traffic.bag'],
             // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -122,7 +190,7 @@ export const seedFiles = async (
                     categoryNames[
                         Math.floor(Math.random() * categoryNames.length)
                     ];
-                let category = await conn
+                let category = await dataSource
                     .getRepository(CategoryEntity)
                     .findOne({
                         where: {
@@ -134,28 +202,33 @@ export const seedFiles = async (
                     });
                 // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                 if (!category) {
-                    category = await factory(CategoryEntity)({
-                        name: randomCategoryName,
-                        project: mission.project,
-                        creator: adminUser,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    } as any).create();
+                    category = await factoryManager
+                        .get(CategoryEntity)
+                        .setMeta({
+                            name: randomCategoryName,
+                            project: mission.project,
+                            creator: adminUser,
+                        })
+                        .save();
                 }
 
                 let fileType = FileType.BAG;
                 if (targetName.endsWith('.mcap')) fileType = FileType.MCAP;
                 else if (targetName.endsWith('.yaml')) fileType = FileType.YAML;
 
-                const fileEntity = await factory(FileEntity)({
-                    mission: mission,
-                    user: adminUser,
-                    filename: targetName,
-                    size: fileSize,
-                    type: fileType,
-                    origin: FileOrigin.UPLOAD,
-                    hash: fileHash,
-                    categories: [category],
-                } as FileContext).create();
+                const fileEntity = await factoryManager
+                    .get(FileEntity)
+                    .setMeta({
+                        mission: mission,
+                        user: adminUser,
+                        filename: targetName,
+                        size: fileSize,
+                        type: fileType,
+                        origin: FileOrigin.UPLOAD,
+                        hash: fileHash,
+                        categories: [category],
+                    } as FileContext)
+                    .save();
 
                 if (!fileEntity.uuid) {
                     console.error(
@@ -205,54 +278,57 @@ export const seedFiles = async (
                     }
 
                     for (const topicDefinition of topics) {
-                        await factory(TopicEntity)({
-                            file: fileEntity,
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        } as any).create({
-                            name: topicDefinition.name,
-                            type: topicDefinition.type,
-                            frequency: topicDefinition.frequency,
-                            nrMessages: BigInt(1000),
-                            messageEncoding: 'cdr',
-                        });
+                        await factoryManager
+                            .get(TopicEntity)
+                            .setMeta({
+                                file: fileEntity,
+                                name: topicDefinition.name,
+                                type: topicDefinition.type,
+                                frequency: topicDefinition.frequency,
+                                nrMessages: 1000n,
+                                messageEncoding: 'cdr',
+                            } as Partial<TopicContext>)
+                            .save();
                     }
 
                     // Create File Event (Topics Extracted)
-                    await factory(FileEventEntity)({
-                        file: fileEntity,
-                        mission: mission,
-                        actor: adminUser,
-                        type: FileEventType.TOPICS_EXTRACTED,
-                        details: {
-                            topicCount: topics.length,
-                            method: 'seeded',
-                            extractedAt: new Date(),
-                            durationMs: 100,
-                        },
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    } as any).create();
+                    await factoryManager
+                        .get(FileEventEntity)
+                        .setMeta({
+                            file: fileEntity,
+                            mission: mission,
+                            actor: adminUser,
+                            type: FileEventType.TOPICS_EXTRACTED,
+                            details: {
+                                topicCount: topics.length,
+                                method: 'seeded',
+                                extractedAt: new Date(),
+                                durationMs: 100,
+                            },
+                        })
+                        .save();
                 }
 
                 // Create File Event (Upload Completed)
-                await factory(FileEventEntity)({
-                    file: fileEntity,
-                    mission: mission,
-                    actor: adminUser,
-                    type: FileEventType.UPLOAD_COMPLETED,
-                    details: {
-                        origin: FileOrigin.UPLOAD,
-                        source: 'Seeding Script',
-                    },
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any).create();
+                await factoryManager
+                    .get(FileEventEntity)
+                    .setMeta({
+                        file: fileEntity,
+                        mission: mission,
+                        actor: adminUser,
+                        type: FileEventType.UPLOAD_COMPLETED,
+                        details: {
+                            origin: FileOrigin.UPLOAD,
+                            source: 'Seeding Script',
+                        },
+                    })
+                    .save();
 
                 // Create Metadata for Mission (if not exists)
-                // We'll just add a random metadata to the mission
-                const tagType = tagTypes[0]; // Just pick the first one
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                if (tagType) {
+                // Iterate over all available tag types to ensure coverage
+                for (const tagType of tagTypes) {
                     // Check if mission already has this tag
-                    const existingTag = await conn
+                    const existingTag = await dataSource
                         .getRepository(MetadataEntity)
                         .findOne({
                             where: {
@@ -261,14 +337,18 @@ export const seedFiles = async (
                             },
                         });
                     if (!existingTag) {
-                        await factory(MetadataEntity)({
+                        const metadataProperties = {
                             mission: mission,
                             tagType: tagType,
                             creator: adminUser,
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
-                            value_string: 'Seeded Mission Data',
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        } as any).create();
+                        } as Partial<MetadataContext>;
+
+                        seedMetadataValue(tagType, metadataProperties);
+
+                        await factoryManager
+                            .get(MetadataEntity)
+                            .setMeta(metadataProperties)
+                            .save();
                     }
                 }
 

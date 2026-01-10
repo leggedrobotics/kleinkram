@@ -1,6 +1,6 @@
 import { addAccessConstraints } from '@/endpoints/auth/auth-helper';
 import { topicEntityToDto } from '@/serialization';
-import { TopicNamesDto, TopicsDto } from '@kleinkram/api-dto';
+import { TopicNamesDto, TopicsDto, TopicTypesDto } from '@kleinkram/api-dto';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { UserRole } from '@kleinkram/shared';
@@ -46,6 +46,38 @@ export class TopicService {
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
             data: topics.map((topic) => topic.name),
+            take: count,
+            skip: 0,
+        };
+    }
+
+    async findAllTypes(userUuid: string): Promise<TopicTypesDto> {
+        const baseQuery = this.topicRepository
+            .createQueryBuilder('topic')
+            .select('DISTINCT topic.type', 'type')
+            .orderBy('type');
+
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUuid },
+        });
+
+        const topicsQuery =
+            user.role === UserRole.ADMIN
+                ? baseQuery
+                : addAccessConstraints(
+                      baseQuery
+                          .leftJoin('topic.file', 'file')
+                          .leftJoin('file.mission', 'mission')
+                          .leftJoin('mission.project', 'project'),
+                      userUuid,
+                  );
+
+        const topics = await topicsQuery.clone().getRawMany();
+        const count = await topicsQuery.getCount();
+
+        return {
+            count,
+            data: topics.map((topic: TopicEntity) => topic.type),
             take: count,
             skip: 0,
         };

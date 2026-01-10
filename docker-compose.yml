@@ -428,14 +428,14 @@ services:
         ports:
             - '4000:4000'
         volumes:
-            - ./docs:/app/src
-            - vitepress_dist:/app/src/.vitepress/dist
-            - node_modules:/app/src/node_modules
-            - ./backend/docs:/app/src/docs/
+            - ./docs:/app/docs
+            - vitepress_dist:/app/docs/.vitepress/dist
+            - node_modules:/app/docs/node_modules
+            - ./backend/docs:/app/docs/docs/
             - ./tsconfig.base.json:/app/tsconfig.base.json
             - ./packages:/app/packages
 
-        command: sh -c "ln -sf /app/src/scripts /app/scripts && npm run docs:dev /app/src"
+        command: sh -c "ln -sf /app/docs/scripts /app/scripts && npm run docs:dev /app/docs"
 
     artifact-uploader:
         container_name: kleinkram-artifact-uploader

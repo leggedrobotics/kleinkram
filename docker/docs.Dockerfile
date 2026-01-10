@@ -2,19 +2,6 @@ FROM node:22-slim AS base
 
 WORKDIR /app
 
-# Copy package.json from docs folder
-COPY docs/package.json docs/pnpm-lock.yaml tsconfig.base.json ./
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-RUN pnpm install --frozen-lockfile
-
-# Development Stage
-FROM base AS development
-CMD ["npm", "run", "docs:dev", "/app/src"]
-
-# Swagger Stage
-FROM node:22-slim AS swagger-builder
-WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy root configs
@@ -26,9 +13,18 @@ COPY packages/api-dto/package.json ./packages/api-dto/
 COPY packages/backend-common/package.json ./packages/backend-common/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/validation/package.json ./packages/validation/
+COPY docs/package.json ./docs/
 
-# Install dependencies (including devDependencies for ts-node)
+# Install dependencies
 RUN pnpm install --frozen-lockfile
+
+# Development Stage
+FROM base AS development
+WORKDIR /app/docs
+CMD ["npm", "run", "docs:dev", "/app/docs"]
+
+# Swagger Stage
+FROM base AS swagger-builder
 
 # Copy source code
 COPY backend ./backend
@@ -66,24 +62,28 @@ RUN SERVER_PORT=3000 \
 FROM base AS builder
 ARG MODE="production"
 
-# Copy all docs source
-COPY docs ./src
-RUN mkdir -p ./src/development/api/generated
+# Set workdir first
+WORKDIR /app/docs
+
+# Copy docs source to /app/docs
+COPY docs .
+
+# Ensure directory for generated docs exists
+RUN mkdir -p development/api/generated
 
 # Copy generated markdown files
-COPY --from=swagger-builder /app/backend/*.md ./src/development/api/generated/
+COPY --from=swagger-builder /app/backend/*.md development/api/generated/
 
 # build postgres entity documentation
-COPY packages/backend-common/src ./packages/backend-common/src
+COPY packages/backend-common/src /app/packages/backend-common/src
 
 # Run the locally installed tsx binary directly to avoid pnpm exec lookup issues
-RUN mkdir -p src/development/application-structure && \
-    cd src && \
-    ../node_modules/.bin/tsx scripts/generate-entity-documentation.ts && \
+RUN mkdir -p development/application-structure && \
+    pnpm exec tsx scripts/generate-entity-documentation.ts && \
     test -f development/application-structure/postgres.md
 
 # Build the docs
-RUN pnpm run docs:build:${MODE} -- src
+RUN pnpm run docs:build:${MODE}
 
 FROM debian:bookworm-slim AS nginx-base
 RUN apt-get update && apt-get install -y nginx
@@ -113,8 +113,9 @@ COPY --from=nginx-base /lib/x86_64-linux-gnu/libpcre2-8.so.0 /lib/x86_64-linux-g
 COPY --from=nginx-base /lib/x86_64-linux-gnu/libz.so.1 /lib/x86_64-linux-gnu/libz.so.1
 
 # Copy the built docs
-COPY --from=builder /app/src/.vitepress/dist /usr/share/nginx/html
+COPY --from=builder /app/docs/.vitepress/dist /usr/share/nginx/html
 COPY --from=swagger-builder /app/backend/swagger.json /usr/share/nginx/html/swagger.json
+
 # Copy generated markdown files
 COPY --from=swagger-builder /app/backend/*.md /usr/share/nginx/html/development/api/generated/
 COPY --from=swagger-builder /app/backend/api-modules.json /usr/share/nginx/html/development/api/generated/api-modules.json

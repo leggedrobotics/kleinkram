@@ -58,15 +58,13 @@ const groupedEvents = computed<GroupedFileEvent[]>(() => {
         const last = grouped.at(-1);
 
         const isSameEvent =
-            last &&
-            last.type === event.type &&
+            last?.type === event.type &&
             last.actor?.uuid === event.actor?.uuid &&
             last.action?.name === event.action?.name &&
             last.file?.uuid === event.file?.uuid;
 
         const isUploadSequence =
-            last &&
-            last.type === FileEventType.UPLOAD_COMPLETED &&
+            last?.type === FileEventType.UPLOAD_COMPLETED &&
             event.type === FileEventType.UPLOAD_STARTED &&
             last.actor?.uuid === event.actor?.uuid &&
             last.file?.uuid === event.file?.uuid;

@@ -1,4 +1,8 @@
-import { DECORATORS } from '@nestjs/swagger/dist/constants';
+// Manual definition for NestJS v11 compatibility
+const DECORATORS = {
+    API_MODEL_PROPERTIES: 'swagger/apiModelProperties',
+    API_PARAMETERS: 'swagger/apiParameters',
+};
 
 export const metadataApplier = (
     parameterName: string,

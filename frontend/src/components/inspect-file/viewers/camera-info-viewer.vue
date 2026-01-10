@@ -214,6 +214,7 @@ const getArray = (data: any): number[] => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         Object.keys(data)
             .map(Number)
+            // eslint-disable-next-line unicorn/no-array-sort
             .sort((a, b) => a - b)
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
             .map((k) => data[k])

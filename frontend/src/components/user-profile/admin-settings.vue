@@ -103,7 +103,7 @@ async function recalculateHashes(): Promise<void> {
 
 async function reextractTopics(): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const { data } = await axios.post('file/reextractTopics');
+    const { data } = await axios.post('files/reextractTopics');
 
     $q.notify({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions

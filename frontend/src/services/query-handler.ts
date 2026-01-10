@@ -214,6 +214,14 @@ export class QueryURLHandler extends QueryHandler {
         );
     }
 
+    async safeWriteURL(): Promise<void> {
+        try {
+            await this.writeURL();
+        } catch (error) {
+            console.error('Failed to update URL:', error);
+        }
+    }
+
     /**
      * ---------------------------------------------
      * Setters that update the URL
@@ -221,74 +229,53 @@ export class QueryURLHandler extends QueryHandler {
      */
     override setPage(page: number): void {
         super.setPage(page);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
     override setTake(take: number): void {
         super.setTake(take);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
     override setSort(sortBy: string): void {
         super.setSort(sortBy);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
     override setDescending(descending: boolean): void {
         super.setDescending(descending);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
     override setProjectUUID(projectUuid: string | undefined): void {
         super.setProjectUUID(projectUuid);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
     override setMissionUUID(missionUuid: string | undefined): void {
         super.setMissionUUID(missionUuid);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
     override setSearch(searchParameters: Record<string, string>): void {
         super.setSearch(searchParameters);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
-    // Renamed and updated to call the new super method
     override setFileTypes(fileTypes: FileType[]): void {
         super.setFileTypes(fileTypes);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
     override setCategories(categories: string[]): void {
         super.setCategories(categories);
-        this.writeURL().catch((error: unknown) => {
-            console.error(error);
-        });
+        void this.safeWriteURL();
     }
 
     override addCategory(category: string): void {
         if (!this.categories.includes(category)) {
             super.addCategory(category);
-            this.writeURL().catch((error: unknown) => {
-                console.error(error);
-            });
+            void this.safeWriteURL();
         }
     }
 
@@ -318,12 +305,30 @@ export class QueryURLHandler extends QueryHandler {
             : '';
 
         const searchParameters = {} as Record<string, string>;
-        if (route.query.name)
-            searchParameters.name = route.query.name as string;
-        if (route.query.health)
-            searchParameters.health = route.query.health as string;
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        this.searchParams = searchParameters ?? DEFAULT_SEARCH;
+
+        // Reserved keys that are handled separately
+        const reservedKeys = new Set([
+            'page',
+            'rowsPerPage',
+            'sortBy',
+            'descending',
+            'projectUuid',
+            'missionUuid',
+            'file_type',
+            'categories',
+        ]);
+
+        for (const key of Object.keys(route.query)) {
+            if (!reservedKeys.has(key)) {
+                const value = route.query[key];
+                // We only support string filters for now (single value)
+                if (typeof value === 'string') {
+                    searchParameters[key] = value;
+                }
+            }
+        }
+
+        this.searchParams = searchParameters;
 
         const queryFileTypes = route.query.file_type as string | undefined;
         this.fileTypes =
@@ -349,8 +354,6 @@ export class QueryURLHandler extends QueryHandler {
         // Logic to determine if fileTypes is in its default state
         const allFileTypesCount = Object.values(FileType).length;
         const isDefaultFileTypes =
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            !this.fileTypes ||
             this.fileTypes.length === 0 ||
             this.fileTypes.length === allFileTypesCount;
 
@@ -377,7 +380,6 @@ export class QueryURLHandler extends QueryHandler {
             ...this.searchParams,
 
             // Join the array into a single comma-separated string
-
             // eslint-disable-next-line @typescript-eslint/naming-convention
             file_type: isDefaultFileTypes
                 ? undefined
@@ -387,7 +389,6 @@ export class QueryURLHandler extends QueryHandler {
                 this.categories.length > 0 ? this.categories : undefined,
         };
 
-        // check if any query was set before writing to the URL
         const queries = this.router.currentRoute.value.query;
         const hasQueries = Object.keys(queries).length > 0;
 
@@ -395,7 +396,7 @@ export class QueryURLHandler extends QueryHandler {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const finalQuery: Record<string, any> = {};
         for (const [key, value] of Object.entries(newQuery)) {
-            if (value !== undefined) {
+            if (value !== undefined && value !== '') {
                 finalQuery[key] = value;
             }
         }

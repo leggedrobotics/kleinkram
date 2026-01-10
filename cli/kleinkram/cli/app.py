@@ -61,7 +61,7 @@ Kleinkram CLI
 
 The Kleinkram CLI is a command line interface for Kleinkram.
 For a list of available commands, run `klein --help` or visit \
-https://docs.datasets.leggedrobotics.com/usage/python/getting-started.html \
+https://docs.datasets.leggedrobotics.com/usage/python/setup \
 for more information.
 """
 
@@ -193,7 +193,7 @@ def _version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-def check_version_compatiblity() -> None:
+def check_version_compatibility() -> None:
     cli_version = get_supported_api_version()
     api_version = _get_api_version()
     api_vers_str = ".".join(map(str, api_version))
@@ -205,10 +205,16 @@ def check_version_compatiblity() -> None:
         )
 
     if cli_version[1] != api_version[1]:
-        msg = f"You are using an outdated CLI version ({__version__}). "
-        msg += f"Please consider upgrading the CLI to version {api_vers_str}."
-        Console(file=sys.stderr).print(msg, style="red")
-        logger.warning(msg)
+        if cli_version < api_version:
+            msg = f"You are using an outdated CLI version ({__version__}). "
+            msg += f"Please consider upgrading the CLI to version {api_vers_str}."
+            Console(file=sys.stderr).print(msg, style="red")
+            logger.warning(msg)
+        elif cli_version > api_version:
+            msg = f"You are using a CLI version ({__version__}) that is newer than the server version ({api_vers_str}). "
+            msg += "Please ask the admin to update the server."
+            Console(file=sys.stderr).print(msg, style="yellow")
+            logger.warning(msg)
 
 
 @app.callback()
@@ -246,7 +252,7 @@ def cli(
     logger.info(f"CLI version: {__version__}")
 
     try:
-        check_version_compatiblity()
+        check_version_compatibility()
     except InvalidCLIVersion as e:
         logger.error(format_traceback(e))
         raise

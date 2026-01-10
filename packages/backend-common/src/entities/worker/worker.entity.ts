@@ -10,13 +10,13 @@ export class WorkerEntity extends BaseEntity {
     @Column()
     hostname!: string;
 
-    @Column()
+    @Column({ type: 'float' })
     cpuMemory!: number;
 
     @Column({ nullable: true })
     gpuModel?: string;
 
-    @Column({ default: -1 })
+    @Column({ default: -1, type: 'float' })
     gpuMemory!: number;
 
     @Column()

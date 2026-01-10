@@ -14,7 +14,7 @@
 const { link } = defineProps<{ link?: string }>();
 
 const documentationBasePath = 'https://docs.datasets.leggedrobotics.com';
-const documentationDefaultPath = '/usage/getting-started.html';
+const documentationDefaultPath = '/usage/getting-started';
 
 const documentationLink =
     link ?? documentationBasePath + documentationDefaultPath;

@@ -117,7 +117,7 @@ const duration = computed(() => {
     const start = properties.messages[0].logTime;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = properties.messages.at(-1).logTime;
-    return Number(end - start) / 1_000_000_000;
+    return (end - start) / 1_000_000_000;
 });
 
 const startTime = computed(() => {
@@ -165,7 +165,7 @@ const updateCharts = debounce(() => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const message = properties.messages[index];
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        t[index] = Number(message.logTime - logStartTime) / 1_000_000_000;
+        t[index] = (message.logTime - logStartTime) / 1_000_000_000;
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const trans = message.data.transform?.translation ?? {};

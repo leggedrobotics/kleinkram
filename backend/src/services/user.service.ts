@@ -231,12 +231,12 @@ export class UserService implements OnModuleInit {
         // map project accesses
         const projectAccesses = projectAccessRows.map((r) => ({
             uuid: r.projectUuid,
-            access: Number(r.rights),
+            access: r.rights,
         }));
 
         const missionAccesses = missionAccessRows.map((r) => ({
             uuid: r.missionUuid,
-            access: Number(r.rights),
+            access: r.rights,
         }));
 
         return {

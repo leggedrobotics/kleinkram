@@ -1,5 +1,19 @@
-import { SortOrder, UpdateFile } from '@kleinkram/api-dto';
+import { fileEntityToDto, fileEntityToDtoWithTopic } from '@/serialization';
+import {
+    FileEventsDto,
+    FileExistsResponseDto,
+    FilesDto,
+    FileWithTopicDto,
+    SortOrder,
+    StorageOverviewDto,
+    TemporaryFileAccessesDto,
+    UpdateFile,
+} from '@kleinkram/api-dto';
+import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
+import { redis } from '@kleinkram/backend-common/consts';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
+import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
@@ -16,6 +30,7 @@ import {
 } from '@kleinkram/shared';
 import {
     BadRequestException,
+    ConflictException,
     Injectable,
     NotFoundException,
     OnModuleInit,
@@ -31,7 +46,6 @@ import {
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
-import { fileEntityToDto, fileEntityToDtoWithTopic } from '../serialization';
 import {
     addFileFilters,
     addMissionFilters,
@@ -40,19 +54,6 @@ import {
     convertGlobToLikePattern,
 } from './utilities';
 
-import {
-    FileEventsDto,
-    FileExistsResponseDto,
-    FilesDto,
-    FileWithTopicDto,
-    StorageOverviewDto,
-    TemporaryFileAccessesDto,
-} from '@kleinkram/api-dto';
-import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
-import { redis } from '@kleinkram/backend-common/consts';
-import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
-import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
-
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
@@ -60,13 +61,13 @@ import Queue from 'bull';
 // @ts-ignore
 import Credentials from 'minio/dist/main/Credentials';
 // @ts-ignore
-import { BucketItem } from 'minio/dist/main/internal/type';
 import {
     addAccessConstraints,
     addAccessConstraintsToFileQuery,
     addAccessConstraintsToMissionQuery,
     addAccessConstraintsToProjectQuery,
-} from '../endpoints/auth/auth-helper';
+} from '@/endpoints/auth/auth-helper';
+import { BucketItem } from 'minio/dist/main/internal/type';
 import logger from '../logger';
 
 const FIND_MANY_SORT_KEYS = {
@@ -371,6 +372,7 @@ export class FileService implements OnModuleInit {
         startDate: Date | undefined,
         endDate: Date | undefined,
         topics: string,
+        messageDatatype: string,
         categories: string,
         matchAllTopics: boolean,
         fileTypes: string,
@@ -404,9 +406,22 @@ export class FileService implements OnModuleInit {
         // Apply simple filters
         if (fileName) {
             logger.debug(`Filtering files by filename: ${fileName}`);
-            idQuery.andWhere('file.filename LIKE :fileName', {
-                fileName: `%${fileName}%`,
-            });
+            const tokens = fileName.trim().split(/\s+/);
+
+            if (tokens.length > 0) {
+                idQuery.andWhere(
+                    new Brackets((qb) => {
+                        for (const [index, token] of tokens.entries()) {
+                            qb.andWhere(
+                                `file.filename ILIKE :fileName_${String(index)}`,
+                                {
+                                    [`fileName_${String(index)}`]: `%${token}%`,
+                                },
+                            );
+                        }
+                    }),
+                );
+            }
         }
 
         if (projectUUID) {
@@ -419,19 +434,22 @@ export class FileService implements OnModuleInit {
             idQuery.andWhere('mission.uuid = :missionUUID', { missionUUID });
         }
 
-        if (startDate && endDate) {
+        if (startDate) {
             logger.debug(
-                `Filtering files by date range: ${startDate.toString()} - ${endDate.toString()}`,
+                `Filtering files by start date: ${startDate.toString()}`,
             );
-            idQuery.andWhere('file.date BETWEEN :startDate AND :endDate', {
-                startDate,
-                endDate,
-            });
+            idQuery.andWhere('file.date >= :startDate', { startDate });
+        }
+
+        if (endDate) {
+            logger.debug(`Filtering files by end date: ${endDate.toString()}`);
+            idQuery.andWhere('file.date <= :endDate', { endDate });
         }
 
         // Apply complex filters via helper methods
         this._applyFileTypeFilter(idQuery, fileTypes);
         this._applyTopicFilter(idQuery, topics, matchAllTopics);
+        this._applyMessageDatatypeFilter(idQuery, messageDatatype);
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (health) {
@@ -611,6 +629,30 @@ export class FileService implements OnModuleInit {
     }
 
     /**
+     * Applies message datatype filtering to the query.
+     */
+    private _applyMessageDatatypeFilter(
+        query: SelectQueryBuilder<FileEntity>,
+        messageDatatype: string,
+    ): void {
+        if (!messageDatatype) {
+            return;
+        }
+
+        const splitMessageDatatype = messageDatatype
+            .split(',')
+            .filter((t) => t.length > 0);
+        if (splitMessageDatatype.length === 0) {
+            return;
+        }
+
+        // Filter files that have *at least one* of the message datatypes
+        query.andWhere('topic.type IN (:...splitMessageDatatype)', {
+            splitMessageDatatype,
+        });
+    }
+
+    /**
      * Applies tag filtering to the query.
      * This is the most complex filter, requiring a 'relational division' query.
      *
@@ -643,6 +685,7 @@ export class FileService implements OnModuleInit {
         const tagWhereClauses: string[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tagParameters: Record<string, any> = {};
+        const validTagNames = new Set<string>();
         let validTagCount = 0;
 
         for (const uuid of tagTypeUUIDs) {
@@ -680,6 +723,7 @@ export class FileService implements OnModuleInit {
             tagParameters[valueParameter] = processedValue;
 
             validTagCount++;
+            validTagNames.add(tagtype.name);
         }
 
         if (validTagCount === 0) {
@@ -695,8 +739,8 @@ export class FileService implements OnModuleInit {
             tagParameters,
         );
 
-        query.having('COUNT(DISTINCT tagtype.uuid) = :tagCount', {
-            tagCount: validTagCount,
+        query.having('COUNT(DISTINCT tagtype.name) = :tagCount', {
+            tagCount: validTagNames.size,
         });
     }
 
@@ -983,6 +1027,9 @@ export class FileService implements OnModuleInit {
      // eslint-disable-next-line @typescript-eslint/naming-convention
      * @param uuid The unique identifier of the file
      * @param expires Whether the download link should expire
+     * @param preview_only
+     * @param actor
+     * @param action
      */
     async generateDownload(
         uuid: string,
@@ -1117,6 +1164,7 @@ export class FileService implements OnModuleInit {
      *
      * @param uuid The unique identifier of the file
      * @param actor
+     * @param action
      */
     async deleteFile(
         uuid: string,
@@ -1214,6 +1262,8 @@ export class FileService implements OnModuleInit {
      * @param filenames list of filenames to upload
      * @param missionUUID the mission to upload the files to
      * @param userUUID the user that is uploading the files
+     * @param action
+     * @param uploadSource
      */
     async getTemporaryAccess(
         filenames: string[],
@@ -1390,11 +1440,8 @@ export class FileService implements OnModuleInit {
             }
 
             if (invalidFiles.length > 0) {
-                // If we have some valid credentials and some errors, we might want to return partial success?
-                // The current API contract seems to throw BadRequest if ANY file is invalid.
-                // We'll stick to that behavior for now.
-                throw new BadRequestException({
-                    message: 'Validation failed',
+                throw new ConflictException({
+                    message: 'Files already exist',
                     errors: invalidFiles,
                 });
             }

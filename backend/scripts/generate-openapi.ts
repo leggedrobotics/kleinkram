@@ -1,5 +1,5 @@
-import { INestApplication, Type } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Type } from '@nestjs/common';
+import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
 import * as fs from 'node:fs';
 import path from 'node:path';
@@ -39,7 +39,7 @@ async function generateOpenApi() {
     }
 
     console.warn('Scanning for controllers...');
-    // eslint-disable-next-line unicorn/prefer-module
+
     const controllersDirectory = path.join(__dirname, '../src/endpoints');
     const controllerFiles = findControllers(controllersDirectory);
     const controllers: Type[] = [];
@@ -63,7 +63,7 @@ async function generateOpenApi() {
                 );
                 if (isController !== undefined) {
                     console.warn(
-                        `Found controller: ${String((exported as Type).name)}`,
+                        `Found controller: ${(exported as Type).name}`,
                     );
 
                     controllers.push(exported as Type);
@@ -105,6 +105,7 @@ async function generateOpenApi() {
                         // Return a function that returns the recursive mock (for method chaining)
                         // If properties are accessed (not called), it returns the function which is truthy/object-ish
 
+                        // eslint-disable-next-line unicorn/consistent-function-scoping
                         return (..._args: unknown[]) => recursiveMock;
                     },
                 },
@@ -133,8 +134,8 @@ async function generateOpenApi() {
 
     // Initialize the app to generate the router stack
     await app.init();
-    saveEndpointsAsJson(
-        app,
+    saveEndpointsFromDocument(
+        document,
         path.join(outputDirectory, '__generated__endpoints.json'),
     );
 
@@ -151,6 +152,7 @@ async function generateOpenApi() {
     }[] = [];
 
     // Sort controllers by path for better readability
+    // eslint-disable-next-line unicorn/no-array-sort
     const sortedControllers = controllers.sort((a, b) => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         let pathA = Reflect.getMetadata(PATH_METADATA, a);
@@ -211,7 +213,7 @@ aside: false
         modules.push({
             name: name,
             path: `/${String(controllerPath)}`,
-            link: `generated/${name}.html`,
+            link: `generated/${name}`,
             description: `Docs for ${name} module`,
         });
     }
@@ -230,24 +232,20 @@ aside: false
     process.exit(0);
 }
 
-function saveEndpointsAsJson(app: INestApplication, filename: string): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const server = app.getHttpServer();
+function saveEndpointsFromDocument(
+    document: OpenAPIObject,
+    filename: string,
+): void {
+    const endpoints: { url: string; method: string }[] = [];
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    const endpoints = server._events.request._router.stack
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-        .filter((r: any) => r.route)
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        .map((r: any) => ({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            url: r.route.path,
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            method: r.route.stack[0].method,
-        }));
+    for (const [pathKey, methods] of Object.entries(document.paths)) {
+        for (const method of Object.keys(methods)) {
+            endpoints.push({
+                url: pathKey,
+                method: method.toLowerCase(),
+            });
+        }
+    }
 
     try {
         fs.writeFileSync(filename, JSON.stringify(endpoints, null, 2));

@@ -12,6 +12,12 @@ export class ProjectWithRequiredTagsDto extends ProjectWithCreator {
     missionCount!: number;
 
     @ApiProperty({
+        description: 'Total size of files in byte',
+    })
+    @IsNumber()
+    size!: number;
+
+    @ApiProperty({
         type: () => [TagTypeDto],
         description: 'List of required tags',
     })

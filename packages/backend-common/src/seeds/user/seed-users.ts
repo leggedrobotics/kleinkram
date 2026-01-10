@@ -9,8 +9,8 @@ import {
     AccessGroupType,
     UserRole,
 } from '@kleinkram/shared';
-import { Connection, Not } from 'typeorm';
-import { Factory } from 'typeorm-seeding';
+import { DataSource, Not } from 'typeorm';
+import { SeederFactoryManager } from 'typeorm-extension';
 
 export interface SeededUsers {
     adminUser: UserEntity;
@@ -19,22 +19,22 @@ export interface SeededUsers {
 }
 
 export const seedUsers = async (
-    factory: Factory,
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    conn: Connection,
+    factoryManager: SeederFactoryManager,
+
+    dataSource: DataSource,
     affiliationGroupService?: AffiliationGroupService,
     config?: AccessGroupConfig,
 ): Promise<SeededUsers> => {
     // eslint-disable-next-line no-console
     console.log('1. Creating Users...');
 
-    const userCount = await conn.getRepository(UserEntity).count({
+    const userCount = await dataSource.getRepository(UserEntity).count({
         where: { uuid: Not(systemUser.uuid) },
     });
     if (userCount > 0) {
         // eslint-disable-next-line no-console
         console.log('Users exist in DB, skipping seeding.');
-        const users = await conn.getRepository(UserEntity).find({
+        const users = await dataSource.getRepository(UserEntity).find({
             select: ['uuid', 'email', 'name', 'role', 'avatarUrl'],
         });
         // eslint-disable-next-line no-console
@@ -66,7 +66,7 @@ export const seedUsers = async (
         email: string,
         context: UserContext,
     ): Promise<UserEntity> => {
-        const existing = await conn
+        const existing = await dataSource
             .getRepository(UserEntity)
             .findOne({ where: { email } });
 
@@ -78,7 +78,7 @@ export const seedUsers = async (
 
         // eslint-disable-next-line no-console
         console.log(`Creating user ${email}...`);
-        return factory(UserEntity)(context).create();
+        return factoryManager.get(UserEntity).setMeta(context).save();
     };
 
     const adminUser = await createOrGetUser('admin@kleinkram.dev', {
@@ -103,7 +103,7 @@ export const seedUsers = async (
     await Promise.all(
         allUsers.map(async (user) => {
             // We can check memberships
-            const userWithGroups = await conn
+            const userWithGroups = await dataSource
                 .getRepository(UserEntity)
                 .findOne({
                     where: { uuid: user.uuid },
@@ -115,10 +115,13 @@ export const seedUsers = async (
             );
 
             if (!hasPrimary) {
-                await factory(AccessGroupEntity)({
-                    user: user,
-                    isPersonal: true,
-                } as AccessGroupFactoryContext).create();
+                await factoryManager
+                    .get(AccessGroupEntity)
+                    .setMeta({
+                        user: user,
+                        isPersonal: true,
+                    } as Partial<AccessGroupFactoryContext>)
+                    .save();
             }
         }),
     );

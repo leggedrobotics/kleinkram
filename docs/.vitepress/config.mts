@@ -5,6 +5,7 @@ const require = createRequire(import.meta.url);
 
 export default withMermaid({
     lang: 'en-US',
+    cleanUrls: true,
 
     title: 'Kleinkram',
     description: 'A structured bag and mcap dataset storage.',
@@ -108,13 +109,17 @@ export default withMermaid({
                     text: 'Actions & Automation',
                     items: [
                         {
-                            text: 'Using Actions',
-                            link: '/usage/actions/usage.md',
+                            text: 'Use Actions',
+                            link: '/usage/actions/use-actions.md',
                         },
                         {
-                            text: 'Developing Actions',
-                            link: '/usage/actions/developing.md',
+                            text: 'Write Actions',
+                            link: '/usage/actions/write-actions.md',
                         },
+                        {
+                            text: 'Example Actions',
+                            link: '/usage/actions/examples.md',
+                        }
                     ],
                     collapsed: false,
                 },
@@ -277,7 +282,7 @@ export default withMermaid({
 
         footer: {
             message: 'Released under the MIT License.',
-            copyright: 'Copyright © 2025 - Robotic Systems Lab',
+            copyright: 'Copyright © 2026 - Robotic Systems Lab',
         },
     },
 });

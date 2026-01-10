@@ -1,9 +1,8 @@
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { Connection } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 export const seedActionTemplates = async (
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    conn: Connection,
+    dataSource: DataSource,
     adminUser: UserEntity,
 ): Promise<void> => {
     // eslint-disable-next-line no-console
@@ -24,7 +23,7 @@ export const seedActionTemplates = async (
     ];
 
     // Dynamic import or string repo access
-    const ActionTemplateRepo = conn.getRepository('ActionTemplateEntity');
+    const ActionTemplateRepo = dataSource.getRepository('ActionTemplateEntity');
 
     // eslint-disable-next-line no-console
     console.log('Checking action templates...');

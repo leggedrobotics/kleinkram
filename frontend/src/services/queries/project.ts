@@ -15,7 +15,7 @@ export const filteredProjects = async (
     const parameters: Record<string, string> = {
         take: take.toString(),
         skip: skip.toString(),
-        sortBy: sortBy.toString(),
+        sortBy: sortBy,
         sortOrder: descending ? 'DESC' : 'ASC',
     };
     if (searchParameters && 'name' in searchParameters) {

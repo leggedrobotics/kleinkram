@@ -6,7 +6,8 @@
         "outDir": "dist",
         "paths": {
             "@api-dto/*": ["src/types/*"]
-        }
+        },
+        "types": []
     },
     "include": ["src/**/*"],
     "references": [

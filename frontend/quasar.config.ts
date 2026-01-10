@@ -38,33 +38,28 @@ export default defineConfig((/* ctx */) => {
             alias: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 '@kleinkram/shared': path.resolve(
-                    // eslint-disable-next-line unicorn/prefer-module
                     __dirname,
                     '../packages/shared/src',
                 ),
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 '@kleinkram/api-dto': path.resolve(
-                    // eslint-disable-next-line unicorn/prefer-module
                     __dirname,
                     '../packages/api-dto/src',
                 ),
                 // Use frontend-safe validation (no @nestjs dependencies)
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 '@kleinkram/validation/frontend': path.resolve(
-                    // eslint-disable-next-line unicorn/prefer-module
                     __dirname,
                     '../packages/validation/src/frontend.ts',
                 ),
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 '@kleinkram/backend-common': path.resolve(
-                    // eslint-disable-next-line unicorn/prefer-module
                     __dirname,
                     '../packages/backend-common/src',
                 ),
                 // Alias to resolve class-transformer/storage issue
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 'class-transformer/storage': path.resolve(
-                    // eslint-disable-next-line unicorn/prefer-module
                     __dirname,
                     '../node_modules/class-transformer',
                 ),
@@ -99,7 +94,7 @@ export default defineConfig((/* ctx */) => {
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             extendViteConf(viteConfig: any) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/prefer-module
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 viteConfig.envDir = path.resolve(__dirname, '..');
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 viteConfig.envPrefix = ['VITE_', 'BACKEND_URL'];
@@ -143,7 +138,6 @@ export default defineConfig((/* ctx */) => {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 viteConfig.resolve.alias['@kleinkram/validation/frontend'] =
                     path.resolve(
-                        // eslint-disable-next-line unicorn/prefer-module
                         __dirname,
                         '../packages/validation/src/frontend.ts',
                     );

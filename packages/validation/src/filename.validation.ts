@@ -9,7 +9,7 @@ const extensionsGroup = [
 ].join('|');
 
 // Regex for the full filename including extension
-const regexString = `^[\\w\\-.()]{3,50}\\.(${extensionsGroup})$`;
+const regexString = String.raw`^[\w\-.()]{3,50}\.(${extensionsGroup})$`;
 export const FILE_NAME_REGEX = new RegExp(regexString);
 
 // Regex for the filename part (without extension)

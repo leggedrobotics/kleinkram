@@ -124,7 +124,7 @@ const resolvedCrumbs = computed(() => {
 
     // remove link of crumb if it is the only crumb
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (_crumbs !== undefined && _crumbs.length === 1) {
+    if (_crumbs?.length === 1) {
         // @ts-ignore
         _crumbs[0].to = undefined;
     }

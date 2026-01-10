@@ -7,23 +7,25 @@ import * as fs from 'node:fs';
 
 import { systemUser } from '@backend-common/consts';
 import path from 'node:path';
-import { Connection, Not } from 'typeorm';
-import { Factory, Seeder } from 'typeorm-seeding';
+import { DataSource, Not } from 'typeorm';
+import { Seeder, SeederFactoryManager } from 'typeorm-extension';
 import { seedActionTemplates } from './seed-action-templates';
 import { seedFiles } from './seed-files';
 import { seedProjects } from './seed-projects';
 import { seedUsers } from './seed-users';
 
 export default class CreateUsers implements Seeder {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    public async run(factory: Factory, conn: Connection): Promise<void> {
+    public async run(
+        dataSource: DataSource,
+        factoryManager: SeederFactoryManager,
+    ): Promise<void> {
         if (!process.env.SEED || process.env.SEED !== 'true') {
             // eslint-disable-next-line no-console
             console.log('Skipping seeding (SEED env var not set to true)');
             return;
         }
 
-        const userCount = await conn.getRepository(UserEntity).count({
+        const userCount = await dataSource.getRepository(UserEntity).count({
             where: { uuid: Not(systemUser.uuid) },
         });
         if (userCount > 0) {
@@ -36,8 +38,9 @@ export default class CreateUsers implements Seeder {
         console.log('\n\n »» Seeding Users and Data...\n\n');
 
         // Create Access Groups first
-        const accessGroupRepository = conn.getRepository(AccessGroupEntity);
-        const groupMembershipRepository = conn.getRepository(
+        const accessGroupRepository =
+            dataSource.getRepository(AccessGroupEntity);
+        const groupMembershipRepository = dataSource.getRepository(
             GroupMembershipEntity,
         );
         const affiliationGroupService = new AffiliationGroupService(
@@ -47,7 +50,6 @@ export default class CreateUsers implements Seeder {
 
         // Load config
         const configPath = path.resolve(
-            // eslint-disable-next-line unicorn/prefer-module
             __dirname,
             '../../../../../backend/src/access_config.json',
         );
@@ -69,21 +71,27 @@ export default class CreateUsers implements Seeder {
         }
 
         const { adminUser, internalUser } = await seedUsers(
-            factory,
-            conn,
+            factoryManager,
+            dataSource,
             affiliationGroupService,
             config,
         );
 
         const { createdMissions, tagTypes } = await seedProjects(
-            factory,
-            conn,
+            factoryManager,
+            dataSource,
             adminUser,
             internalUser,
         );
 
-        await seedActionTemplates(conn, adminUser);
+        await seedActionTemplates(dataSource, adminUser);
 
-        await seedFiles(factory, conn, adminUser, createdMissions, tagTypes);
+        await seedFiles(
+            factoryManager,
+            dataSource,
+            adminUser,
+            createdMissions,
+            tagTypes,
+        );
     }
 }

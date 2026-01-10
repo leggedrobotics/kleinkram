@@ -39,7 +39,7 @@ const { files } = defineProps<{
 }>();
 
 const fileArguments = computed(() => {
-    return files.map((file) => file.uuid.toString()).join(' ');
+    return files.map((file) => file.uuid).join(' ');
 });
 
 const copyCommandAction = async (): Promise<void> => {

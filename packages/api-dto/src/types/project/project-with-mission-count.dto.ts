@@ -6,4 +6,8 @@ export class ProjectWithMissionCountDto extends ProjectWithCreator {
     @ApiProperty()
     @IsNumber()
     missionCount!: number;
+
+    @ApiProperty()
+    @IsNumber()
+    size!: number;
 }

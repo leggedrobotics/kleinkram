@@ -1,197 +1,7 @@
 <template>
     <title-section title="Datatable" />
 
-    <div
-        class="q-pa-md bg-grey-1 rounded-borders q-mb-md border-grey-3"
-        style="border: 1px solid #e0e0e0"
-    >
-        <div class="row q-col-gutter-sm q-mb-sm">
-            <div class="col-12 col-sm-6 col-md-3">
-                <q-input
-                    v-model="startDates"
-                    filled
-                    dense
-                    outlined
-                    bg-color="white"
-                    label="Start Date"
-                    @clear="resetStartDate"
-                >
-                    <template #append>
-                        <q-icon name="sym_o_event" class="cursor-pointer">
-                            <q-popup-proxy
-                                cover
-                                transition-show="scale"
-                                transition-hide="scale"
-                            >
-                                <q-date v-model="startDates" :mask="dateMask">
-                                    <div class="row items-center justify-end">
-                                        <q-btn
-                                            v-close-popup
-                                            label="Close"
-                                            color="primary"
-                                            flat
-                                        />
-                                    </div>
-                                </q-date>
-                            </q-popup-proxy>
-                        </q-icon>
-                    </template>
-                </q-input>
-            </div>
-
-            <div class="col-12 col-sm-6 col-md-3">
-                <q-input
-                    v-model="endDates"
-                    filled
-                    dense
-                    outlined
-                    bg-color="white"
-                    label="End Date"
-                    @clear="resetEndDate"
-                >
-                    <template #append>
-                        <q-icon name="sym_o_event" class="cursor-pointer">
-                            <q-popup-proxy
-                                cover
-                                transition-show="scale"
-                                transition-hide="scale"
-                            >
-                                <q-date v-model="endDates" :mask="dateMask">
-                                    <div class="row items-center justify-end">
-                                        <q-btn
-                                            v-close-popup
-                                            label="Close"
-                                            color="primary"
-                                            flat
-                                        />
-                                    </div>
-                                </q-date>
-                            </q-popup-proxy>
-                        </q-icon>
-                    </template>
-                </q-input>
-            </div>
-
-            <div class="col-12 col-md-6">
-                <ScopeSelector
-                    layout="row"
-                    :show-labels="true"
-                    class="full-width"
-                />
-                <q-tooltip v-if="!handler.projectUuid" self="bottom middle">
-                    Please select a project first
-                </q-tooltip>
-            </div>
-        </div>
-
-        <div class="row q-col-gutter-sm items-center">
-            <div class="col-12 col-sm-4 col-md-2">
-                <file-type-selector
-                    ref="fileTypeSelectorReference"
-                    v-model="fileTypeFilter"
-                />
-            </div>
-
-            <div class="col-12 col-sm-8 col-md-5">
-                <div class="row no-wrap q-col-gutter-xs">
-                    <div class="col-auto">
-                        <q-btn-dropdown
-                            unelevated
-                            outline
-                            color="grey-4"
-                            text-color="black"
-                            dense
-                            class="bg-white full-height"
-                            no-caps
-                        >
-                            <template #label>
-                                <span class="text-weight-regular">{{
-                                    matchAllTopics ? 'And' : 'Or'
-                                }}</span>
-                            </template>
-                            <q-list>
-                                <q-item clickable @click="useAndTopicFilter">
-                                    <q-item-section>And</q-item-section>
-                                </q-item>
-                                <q-item clickable @click="useOrTopicFilter">
-                                    <q-item-section>Or</q-item-section>
-                                </q-item>
-                            </q-list>
-                        </q-btn-dropdown>
-                    </div>
-                    <div class="col">
-                        <q-select
-                            v-model="selectedTopics"
-                            label="Filter by Topics"
-                            use-input
-                            input-debounce="20"
-                            outlined
-                            dense
-                            bg-color="white"
-                            multiple
-                            use-chips
-                            :options="displayedTopics"
-                            emit-value
-                            map-options
-                            class="full-width"
-                            @filter="filterFunction"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-sm-8 col-md-3">
-                <q-input
-                    v-model="filter"
-                    outlined
-                    dense
-                    bg-color="white"
-                    debounce="300"
-                    clearable
-                    placeholder="Search Filename"
-                    class="full-width"
-                >
-                    <template #append>
-                        <q-icon name="sym_o_search" />
-                    </template>
-                </q-input>
-            </div>
-
-            <div class="col-12 col-sm-4 col-md-2 text-right">
-                <div class="row justify-end q-gutter-x-sm">
-                    <q-btn
-                        v-if="tagFilter"
-                        flat
-                        dense
-                        round
-                        icon="sym_o_sell"
-                        color="primary"
-                        @click="openTagFilterDialog"
-                    >
-                        <q-tooltip>Advanced Tag Filter</q-tooltip>
-                        <q-badge
-                            v-if="Object.values(tagFilter).length > 0"
-                            color="red"
-                            floating
-                        >
-                            {{ Object.values(tagFilter).length }}
-                        </q-badge>
-                    </q-btn>
-
-                    <q-btn
-                        unelevated
-                        color="grey-4"
-                        text-color="black"
-                        label="Reset"
-                        icon="sym_o_refresh"
-                        no-caps
-                        class="full-height"
-                        @click="resetFilter"
-                    />
-                </div>
-            </div>
-        </div>
-    </div>
+    <FilesFilter :use-filter="filterHook" />
 
     <q-table
         ref="tableReference"
@@ -202,7 +12,7 @@
         separator="none"
         :rows-per-page-options="[5, 10, 20, 50, 100]"
         :rows="data"
-        :columns="columns as any"
+        :columns="columns as QTableColumn<FileWithTopicDto>[]"
         row-key="uuid"
         :loading="loading"
         selection="multiple"
@@ -269,77 +79,85 @@
                 </q-btn>
             </q-td>
         </template>
+        <template #no-data>
+            <TableEmptyState
+                :is-empty="
+                    total === 0 &&
+                    !debouncedFilter &&
+                    selectedFileTypesFilter.length === 0
+                "
+                :has-filter="
+                    total === 0 &&
+                    (!!debouncedFilter || selectedFileTypesFilter.length > 0)
+                "
+                empty-label="No files found"
+                @reset="resetSearch"
+            />
+        </template>
     </q-table>
 </template>
 
 <script setup lang="ts">
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
-import { FileType } from '@kleinkram/shared';
-import { useQuery, UseQueryReturnType } from '@tanstack/vue-query';
+import {
+    keepPreviousData,
+    useQuery,
+    UseQueryReturnType,
+} from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
-import ScopeSelector from 'components/common/scope-selector.vue';
-import FileTypeSelector from 'components/file-type-selector.vue';
+import TableEmptyState from 'components/common/table-empty-state.vue';
+import FilesFilter from 'components/files/files-filter.vue';
 import TitleSection from 'components/title-section.vue';
-import { QTable, useQuasar } from 'quasar';
-import TagFilter from 'src/dialogs/tag-filter.vue';
+import { QTable, QTableColumn } from 'quasar';
+import { useFileFilter } from 'src/composables/use-file-filter';
 import { useHandler } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
-import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
+import { formatDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
-import { allTopicsNames } from 'src/services/queries/topic';
-import { FileTypeOption } from 'src/types/file-type-option';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 const $router = useRouter();
-const $q = useQuasar();
 const tableReference: Ref<QTable | undefined> = ref(undefined);
 const handler = useHandler();
 handler.value.sortBy = 'file.createdAt';
 handler.value.descending = true;
 const loading = ref(false);
-const filter = ref('');
-const start = new Date(0);
-const end = new Date();
-const startDates = ref(formatDate(start));
-const endDates = ref(formatDate(end));
-const fileTypeFilter = ref<FileTypeOption[] | undefined>(undefined);
-const fileTypeSelectorReference = ref<
-    { setAll?: (value: boolean) => void } | undefined
->(undefined);
 const selected = ref([]);
-const { data: allTopics } = useQuery<string[]>({
-    queryKey: ['topics'],
-    queryFn: allTopicsNames,
-});
-const displayedTopics = ref(allTopics.value);
-const selectedTopics = ref([]);
-const matchAllTopics = ref(false);
 
-const tagFilter: Ref<Record<string, { name: string; value: string }>> = ref({});
-end.setHours(23, 59, 59, 999);
-const startDate = computed(() => parseDate(startDates.value));
-const endDate = computed(() => parseDate(endDates.value));
-const selectedFileTypesFilter = computed<FileType[]>(() => {
-    const list = fileTypeFilter.value ?? [];
-    return list
-        .filter((option) => option.value)
-        .map((option) => option.name) as FileType[];
-});
+const filterHook = useFileFilter();
+const {
+    state,
+    startDate,
+    endDate,
+    selectedFileTypesFilter,
+    tagFilterQuery,
+    debouncedFilter,
+} = filterHook;
 
-const pagination = computed(() => {
-    return {
+const pagination = computed({
+    get: () => ({
         page: handler.value.page,
         rowsPerPage: handler.value.take,
         rowsNumber: handler.value.rowsNumber,
         sortBy: handler.value.sortBy,
         descending: handler.value.descending,
-    };
+    }),
+    set: (v) => {
+        handler.value.setPage(v.page);
+        handler.value.setTake(v.rowsPerPage);
+        handler.value.setSort(v.sortBy);
+        handler.value.setDescending(v.descending);
+    },
 });
+
+function resetSearch(): void {
+    handler.value.setSearch({ name: '' });
+}
 
 function setPagination(update: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -363,47 +181,38 @@ const queryKeyFiles = computed(() => [
     'Filtered Files',
     handler.value.projectUuid,
     handler.value.missionUuid,
-    filter,
+    debouncedFilter,
     startDate,
     endDate,
-    selectedTopics,
-    matchAllTopics,
-    tagFilter,
+    state.selectedTopics,
+    state.selectedDatatypes,
+    state.matchAllTopics,
+    state.tagFilter,
     selectedFileTypesFilter,
     handler.value.queryKey,
 ]);
-
-const tagFilterQuery = computed(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const query: Record<string, any> = {};
-    for (const key of Object.keys(tagFilter.value)) {
-        query[key] = tagFilter.value[key] ?? '';
-    }
-    return query;
-});
 
 const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
     useQuery<FilesDto>({
         queryKey: queryKeyFiles,
         queryFn: () =>
-            fetchFilteredFiles(
-                filter.value,
-                handler.value.projectUuid,
-                handler.value.missionUuid,
-                startDate.value,
-                endDate.value,
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                selectedTopics.value ?? [],
-                [],
-                matchAllTopics.value,
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                selectedFileTypesFilter.value ?? ([] as FileType[]),
-                tagFilterQuery.value,
-                handler.value.take,
-                handler.value.skip,
-                handler.value.sortBy,
-                handler.value.descending,
-            ),
+            fetchFilteredFiles({
+                filename: debouncedFilter.value,
+                projectUUID: handler.value.projectUuid,
+                missionUUID: handler.value.missionUuid,
+                startDate: startDate.value,
+                endDate: endDate.value,
+                topics: state.selectedTopics,
+                messageDatatypes: state.selectedDatatypes,
+                matchAllTopics: state.matchAllTopics,
+                fileTypes: selectedFileTypesFilter.value,
+                tag: tagFilterQuery.value,
+                take: handler.value.take,
+                skip: handler.value.skip,
+                sort: handler.value.sortBy,
+                desc: handler.value.descending,
+            }),
+        placeholderData: keepPreviousData,
     });
 
 const data = computed(() => (_data.value ? _data.value.data : []));
@@ -504,86 +313,16 @@ const columns = [
     },
 ];
 
-function openTagFilterDialog(): void {
-    $q.dialog({
-        title: 'Filter by Metadata',
-        component: TagFilter,
-        componentProps: { tagValues: tagFilter.value },
-    }).onOk((_tagFilter) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        tagFilter.value = _tagFilter;
-    });
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function filterFunction(value: string, update: any): void {
-    if (value === '') {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        update(() => {
-            displayedTopics.value = allTopics.value;
-        });
-        return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    update(() => {
-        if (!allTopics.value) return;
-        const needle = value.toLowerCase();
-        displayedTopics.value = allTopics.value.filter((v) =>
-            v.toLowerCase().includes(needle),
-        );
-    });
-}
-function useAndTopicFilter(): void {
-    matchAllTopics.value = true;
-}
-
-function useOrTopicFilter(): void {
-    matchAllTopics.value = false;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: any, row: any): Promise<void> => {
+const onRowClick = async (_: any, row: FileWithTopicDto): Promise<void> => {
     await $router.push({
         name: ROUTES.FILE.routeName,
         params: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             file_uuid: row.uuid,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             missionUuid: row.mission.uuid,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             projectUuid: row.mission.project.uuid,
         },
     });
 };
-
-function resetStartDate(): void {
-    startDates.value = formatDate(start);
-}
-
-function resetEndDate(): void {
-    endDates.value = formatDate(end);
-}
-
-function resetFilter(): void {
-    handler.value.setProjectUUID(undefined);
-    handler.value.setMissionUUID(undefined);
-    handler.value.setSearch({ name: '' });
-    filter.value = '';
-    selectedTopics.value = [];
-    matchAllTopics.value = false;
-    if (
-        fileTypeSelectorReference.value &&
-        typeof fileTypeSelectorReference.value.setAll === 'function'
-    ) {
-        fileTypeSelectorReference.value.setAll(true);
-    } else if (fileTypeFilter.value) {
-        fileTypeFilter.value = fileTypeFilter.value.map((it) => ({
-            ...it,
-            value: true,
-        }));
-    }
-    tagFilter.value = {};
-    resetStartDate();
-    resetEndDate();
-}
 </script>

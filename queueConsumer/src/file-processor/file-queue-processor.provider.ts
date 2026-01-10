@@ -87,7 +87,7 @@ export class FileQueueProcessorProvider {
             );
             // ETag is often surrounded by quotes in S3/Minio, e.g. "5b3...c6"
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            let hash = stat?.etag?.replace(/"/g, '');
+            let hash = stat?.etag?.replaceAll('"', '');
 
             // Valid MD5 is 32 hex chars. S3 multipart ETag has -N suffix.
             const ismd5 = /^[\da-f]{32}$/i.test(hash ?? '');

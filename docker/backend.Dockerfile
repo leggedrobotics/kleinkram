@@ -36,6 +36,7 @@ FROM gcr.io/distroless/nodejs22-debian12 AS production
 WORKDIR /app
 
 COPY --from=build /app/backend/dist/main.js ./backend/dist/main.js
+COPY --from=build /app/backend/package.json ./backend/package.json
 
 WORKDIR /app/backend
 

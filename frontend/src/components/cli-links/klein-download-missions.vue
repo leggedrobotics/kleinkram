@@ -38,7 +38,7 @@ const { missions } = defineProps<{
 }>();
 
 const echoCommand = computed(() => {
-    return missions.map((mission) => mission.uuid.toString()).join(' ');
+    return missions.map((mission) => mission.uuid).join(' ');
 });
 
 const copyCommandAction = async (): Promise<void> => {

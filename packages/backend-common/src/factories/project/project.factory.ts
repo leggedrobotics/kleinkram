@@ -3,8 +3,8 @@ import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
-import { faker } from '@faker-js/faker';
-import { define } from 'typeorm-seeding';
+import { type Faker } from '@faker-js/faker';
+import { setSeederFactory } from 'typeorm-extension';
 
 export interface ProjectContext {
     name: string;
@@ -14,29 +14,33 @@ export interface ProjectContext {
     tagTypes: TagTypeEntity[];
 }
 
-define(ProjectEntity, (_, context: Partial<ProjectContext> = {}) => {
-    const creator =
-        context.creator ?? faker.helpers.arrayElement(context.allUsers ?? []);
+setSeederFactory(
+    ProjectEntity,
+    (faker: Faker, context: Partial<ProjectContext> = {}) => {
+        const creator =
+            context.creator ??
+            faker.helpers.arrayElement(context.allUsers ?? []);
 
-    // eslint-disable-next-line no-console
-    console.assert(creator, 'No creator provided for project');
+        // eslint-disable-next-line no-console
+        console.assert(creator, 'No creator provided for project');
 
-    const project = new ProjectEntity();
-    project.uuid = extendedFaker.string.uuid();
-    project.name = context.name ?? extendedFaker.project.name();
-    project.creator = creator;
-    project.description = extendedFaker.lorem.paragraph();
+        const project = new ProjectEntity();
+        project.uuid = extendedFaker.string.uuid();
+        project.name = context.name ?? extendedFaker.project.name();
+        project.creator = creator;
+        project.description = extendedFaker.lorem.paragraph();
 
-    if (context.tagTypes === undefined)
-        throw new Error('Metadata are undefined');
+        if (context.tagTypes === undefined)
+            throw new Error('Metadata are undefined');
 
-    project.requiredTags = extendedFaker.helpers.arrayElements(
-        context.tagTypes,
-        {
-            min: 0,
-            max: context.tagTypes.length,
-        },
-    );
+        project.requiredTags = extendedFaker.helpers.arrayElements(
+            context.tagTypes,
+            {
+                min: 0,
+                max: context.tagTypes.length,
+            },
+        );
 
-    return project;
-});
+        return project;
+    },
+);

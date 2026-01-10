@@ -14,7 +14,7 @@ hero:
           link: /usage/getting-started
         - theme: alt
           text: Use Actions
-          link: /usage/actions/usage
+          link: /usage/actions/use-actions
         - theme: alt
           text: Try Locally
           link: /development/try-locally
@@ -27,7 +27,7 @@ features:
     - title: Powerful Actions
       icon: ⚡
       details: Validate, convert, and process your data using Docker-based actions.
-      link: /usage/actions/usage.md
+      link: /usage/actions/use-actions.md
     - title: CLI & Python SDK
       icon: 🐍
       details: Automate your workflows and integrate seamlessly with our robust Python SDK and CLI.
