@@ -12,6 +12,7 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { context, trace } from '@opentelemetry/api';
 
 @Injectable()
 export class PublicGuard implements CanActivate {
@@ -40,28 +41,59 @@ export class BaseGuard extends AuthGuard('jwt') {
             throw new UnauthorizedException('User not logged in');
         }
 
+        this.setAttribute('user.id', user.uuid);
         return { user, apiKey, request };
+    }
+
+    protected setAttribute(
+        key: string,
+        value: string | number | boolean,
+    ): void {
+        trace.getSpan(context.active())?.setAttribute(key, value);
+    }
+
+    protected recordGuardResult(
+        context: ExecutionContext,
+        result: boolean,
+    ): boolean {
+        const guardName = this.constructor.name;
+        this.setAttribute(`guard.${guardName}.result`, result);
+        this.setAttribute('guard.enriched', true); // Confirm enrichment logic was reached
+        return result;
     }
 }
 
 @Injectable()
 export class LoggedInUserGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        await this.getUser(context); // Will throw if not logged in
-        return true;
+        try {
+            await this.getUser(context); // Will throw if not logged in
+            this.recordGuardResult(context, true);
+            return true;
+        } catch (error) {
+            this.recordGuardResult(context, false);
+            throw error;
+        }
     }
 }
 
 @Injectable()
 export class UserGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { apiKey } = await this.getUser(context); // Will throw if not logged in
-        if (apiKey) {
-            throw new UnauthorizedException(
-                'CLI Keys cannot access user only data',
-            );
+        try {
+            const { apiKey } = await this.getUser(context); // Will throw if not logged in
+            if (apiKey) {
+                this.recordGuardResult(context, false);
+                throw new UnauthorizedException(
+                    'CLI Keys cannot access user only data',
+                );
+            }
+            this.recordGuardResult(context, true);
+            return true;
+        } catch (error) {
+            this.recordGuardResult(context, false);
+            throw error;
         }
-        return true;
     }
 }
 
@@ -72,22 +104,30 @@ export class AdminOnlyGuard extends BaseGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey } = await this.getUser(context);
+        try {
+            const { user, apiKey } = await this.getUser(context);
 
-        if (apiKey) {
-            throw new UnauthorizedException('CLI Keys are never admins');
+            if (apiKey) {
+                this.recordGuardResult(context, false);
+                throw new UnauthorizedException('CLI Keys are never admins');
+            }
+
+            const databaseUser = await this.userService.findOneByUUID(
+                user.uuid,
+                { role: true },
+                {},
+            );
+
+            if (databaseUser.role !== UserRole.ADMIN) {
+                this.recordGuardResult(context, false);
+                throw new ForbiddenException('User is not an admin');
+            }
+
+            this.recordGuardResult(context, true);
+            return true;
+        } catch (error) {
+            this.recordGuardResult(context, false);
+            throw error;
         }
-
-        const databaseUser = await this.userService.findOneByUUID(
-            user.uuid,
-            { role: true },
-            {},
-        );
-
-        if (databaseUser.role !== UserRole.ADMIN) {
-            throw new ForbiddenException('User is not an admin');
-        }
-
-        return true;
     }
 }

@@ -41,21 +41,28 @@ export class DeleteFileGuard extends BaseGuard {
         }
 
         if (!fileUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('file.id', fileUUID);
+
         if (apiKey) {
-            return this.fileGuardService.canKeyAccessFile(
+            const result = await this.fileGuardService.canKeyAccessFile(
                 apiKey,
                 fileUUID,
                 AccessGroupRights.DELETE,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.fileGuardService.canAccessFile(
+        const result = await this.fileGuardService.canAccessFile(
             user,
             fileUUID,
             AccessGroupRights.DELETE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -76,21 +83,28 @@ export class ReadFileGuard extends BaseGuard {
             (request.query.uuid as string | undefined) ?? params.uuid;
 
         if (!fileUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('file.id', fileUUID);
+
         if (apiKey) {
-            return this.fileGuardService.canKeyAccessFile(
+            const result = await this.fileGuardService.canKeyAccessFile(
                 apiKey,
                 fileUUID,
                 AccessGroupRights.READ,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.fileGuardService.canAccessFile(
+        const result = await this.fileGuardService.canAccessFile(
             user,
             fileUUID,
             AccessGroupRights.READ,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -109,21 +123,28 @@ export class ReadFileByNameGuard extends BaseGuard {
         const filename = request.query.name as string | undefined;
 
         if (!filename) {
-            return false; // Deny access if filename not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('file.name', filename);
+
         if (apiKey) {
-            return this.fileGuardService.canKeyAccessFileByName(
+            const result = await this.fileGuardService.canKeyAccessFileByName(
                 apiKey,
                 filename,
                 AccessGroupRights.READ,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.fileGuardService.canAccessFileByName(
+        const result = await this.fileGuardService.canAccessFileByName(
             user,
             filename,
             AccessGroupRights.READ,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -147,21 +168,28 @@ export class WriteFileGuard extends BaseGuard {
             params.uuid;
 
         if (!fileUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('file.id', fileUUID);
+
         if (apiKey) {
-            return this.fileGuardService.canKeyAccessFile(
+            const result = await this.fileGuardService.canKeyAccessFile(
                 apiKey,
                 fileUUID,
                 AccessGroupRights.WRITE,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.fileGuardService.canAccessFile(
+        const result = await this.fileGuardService.canAccessFile(
             user,
             fileUUID,
             AccessGroupRights.WRITE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -183,12 +211,18 @@ export class MoveFilesGuard extends BaseGuard {
         const missionUUID = body.missionUUID;
 
         if (!fileUUIDs || fileUUIDs.length === 0 || !missionUUID) {
-            return false; // Deny access if required parameters not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('file.ids', fileUUIDs.join(','));
+        this.setAttribute('mission.id', missionUUID);
+
         if (apiKey) {
+            this.recordGuardResult(context, false);
             throw new UnauthorizedException('CLI Keys cannot move files');
         }
+
         const canDeleteFiles = await this.fileGuardService.canAccessFiles(
             user,
             fileUUIDs,
@@ -196,12 +230,17 @@ export class MoveFilesGuard extends BaseGuard {
         );
 
         if (!canDeleteFiles) {
+            this.recordGuardResult(context, false);
             return false;
         }
-        return this.missionGuardService.canAccessMission(
+
+        const result = await this.missionGuardService.canAccessMission(
             user,
             missionUUID,
             AccessGroupRights.CREATE,
         );
+
+        this.recordGuardResult(context, result);
+        return result;
     }
 }

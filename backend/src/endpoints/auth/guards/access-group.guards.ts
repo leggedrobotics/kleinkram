@@ -41,13 +41,19 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
             body?.projectAccessUUID ?? params?.projectAccessUUID;
 
         if (!projectAccessUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
-        return this.authGuardService.canEditAccessGroupByProjectUuid(
-            user,
-            projectAccessUUID,
-        );
+        this.setAttribute('project.id', projectAccessUUID);
+
+        const result =
+            await this.authGuardService.canEditAccessGroupByProjectUuid(
+                user,
+                projectAccessUUID,
+            );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -74,12 +80,18 @@ export class CanEditGroupByGroupUuid extends BaseGuard {
         const aguUUID = body?.uuid ?? params?.uuid;
 
         if (!aguUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
-        return this.authGuardService.canEditAccessGroupByGroupUuid(
-            user,
-            aguUUID,
-        );
+        this.setAttribute('group.id', aguUUID);
+
+        const result =
+            await this.authGuardService.canEditAccessGroupByGroupUuid(
+                user,
+                aguUUID,
+            );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }

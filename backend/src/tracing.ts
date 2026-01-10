@@ -13,6 +13,7 @@ import {
     TraceIdRatioBasedSampler,
 } from '@opentelemetry/sdk-trace-base';
 import logger from './logger';
+import { WideLogSpanProcessor } from './utils/wide-log-span-processor';
 
 const exporter = new OTLPTraceExporter({
     url: 'http://tempo:4318/v1/traces',
@@ -29,6 +30,7 @@ const sdk = new NodeSDK({
             scheduledDelayMillis: 5000,
             maxExportBatchSize: 512,
         }),
+        new WideLogSpanProcessor(),
     ],
 
     metricReader: new PrometheusExporter({
