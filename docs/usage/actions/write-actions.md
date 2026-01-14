@@ -65,12 +65,12 @@ is backed by disk storage on the host machine and does not count towards the con
 
 Actions have certain limitations to for resource management and scheduling purposes:
 
-| Limitation     | Description                                                                                                                                     |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Execution Time | Actions have a maximum runtime.                                                                                                                 |
-| Memory Limits  | Actions are allocated a specific memory quota.                                                                                                  |
-| GPU Support    | GPU acceleration is available via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html). |
-| Access Scoping | Actions are confined to the project they are executed within.                                                                                   |
+| Limitation       | Description                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Execution Time   | Actions have a maximum runtime.                                                                                                                 |
+| Memory Limits    | Actions are allocated a specific memory quota.                                                                                                  |
+| GPU Acceleration | GPU acceleration is available via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html). |
+| Access Scoping   | Actions are confined to the project they are executed within.                                                                                   |
 
 ### Action Status (Exit Codes)
 

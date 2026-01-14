@@ -172,8 +172,8 @@ export class DockerDaemon {
 
         logger.info(
             needsGpu
-                ? 'Creating container with GPU support'
-                : 'Creating container without GPU support',
+                ? 'Creating container with GPU acceleration'
+                : 'Creating container without GPU acceleration',
         );
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: containerOptions.docker_image,

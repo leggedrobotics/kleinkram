@@ -51,7 +51,7 @@
             <div v-if="readonly" class="col-6">
                 <AppInput
                     :model-value="hasGpu ? 'Enabled' : 'Disabled'"
-                    label="GPU Support"
+                    label="GPU Acceleration"
                     readonly
                 />
             </div>
