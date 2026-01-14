@@ -109,12 +109,7 @@
                         {{ formatBytes(action.artifactSize) }}
                     </div>
                 </div>
-                <div
-                    v-if="
-                        action.artifactFiles && action.artifactFiles.length > 0
-                    "
-                    class="q-mt-md"
-                >
+                <div v-if="showArtifactTree" class="q-mt-md">
                     <ArtifactFileTree :files="action.artifactFiles || []" />
                 </div>
             </div>
@@ -396,6 +391,19 @@ const artifactStateText = computed(() => {
             return 'N/A';
         }
     }
+});
+
+const showArtifactTree = computed(() => {
+    if (!props.action.artifactFiles || props.action.artifactFiles.length === 0)
+        return false;
+
+    // In case where an empty out folder is the only artifact,
+    // we should not display the artifact tree
+    return !(
+        props.action.artifactFiles.length === 1 &&
+        (props.action.artifactFiles[0] === 'out' ||
+            props.action.artifactFiles[0] === 'out/')
+    );
 });
 
 const isExpired = computed(() => {
