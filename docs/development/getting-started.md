@@ -138,6 +138,7 @@ When seeding is enabled, the following entities are created in the database:
 |                      | `extract-metadata`            | Extracts metadata from files                                                      |
 |                      | `convert-formats`             | Converts file formats                                                             |
 |                      | `python-template`             | Basic Python action template                                                      |
+|                      | `gpu-example`                 | Python action template with GPU support                                           |
 | **Files**            | Various                       | `.bag`, `.mcap`, and `.yaml` files are generated and distributed across missions. |
 
 ::: tip Source Code

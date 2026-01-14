@@ -27,6 +27,7 @@ jobs:
                         extract-metadata,
                         convert-formats,
                         python-template,
+                        gpu-example,
                     ]
                 type: [dev, prod]
 

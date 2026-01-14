@@ -2,12 +2,13 @@
 
 Kleinkram comes with a set of example actions that cover common use cases:
 
-| Action               | Description                                                | Input           | Output             |
-| :------------------- | :--------------------------------------------------------- | :-------------- | :----------------- |
-| **Validate Data**    | Calculates SHA256 checksums of all files in a mission.     | Any             | `.txt` (checksums) |
-| **Convert Formats**  | Converts MCAP files to CSV.                                | `.mcap`         | `.csv`             |
-| **Extract Metadata** | Extracts metadata from bag files (topics, duration, etc.). | `.bag`, `.mcap` | Metadata tags      |
-| **Python Script**    | Run a custom Python script on your data.                   | Any             | Any                |
+| Action                | Image Name                               | Description                                                | Input           | Output             |
+| :-------------------- | :--------------------------------------- | :--------------------------------------------------------- | :-------------- | :----------------- |
+| **Validate Data**     | `rslethz/action:validate-data-latest`    | Calculates SHA256 checksums of all files in a mission.     | Any             | `.txt` (checksums) |
+| **Convert Formats**   | `rslethz/action:convert-formats-latest`  | Converts MCAP files to CSV.                                | `.mcap`         | `.csv`             |
+| **Extract Metadata**  | `rslethz/action:extract-metadata-latest` | Extracts metadata from bag files (topics, duration, etc.). | `.bag`, `.mcap` | Metadata tags      |
+| **Python Script**     | `rslethz/action:python-template-latest`  | Run a custom Python script on your data.                   | Any             | Any                |
+| **GPU Python Script** | `rslethz/action:gpu-example-latest`      | Run a custom Python script with GPU support.               | Any             | Any                |
 
 ::: tip Source Code for Example Actions
 The source code of these example actions is available in the
