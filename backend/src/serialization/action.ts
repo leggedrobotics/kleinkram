@@ -67,7 +67,10 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
 
         mission: missionEntityToDto(action.mission),
         state: action.state,
-        stateCause: action.state_cause ?? '',
+        stateCause:
+            action.state_cause === 'Container exited with code 0'
+                ? 'Completed Successfully'
+                : (action.state_cause ?? ''),
         template: actionTemplateEntityToDto(action.template),
         updatedAt: action.updatedAt,
         uuid: action.uuid,
