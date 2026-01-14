@@ -110,7 +110,7 @@ import ActionBadge from 'components/action-badge.vue';
 import { QTable } from 'quasar';
 import { useActionList } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
-import { formatDate } from 'src/services/date-formating';
+import { formatDate, formatDuration } from 'src/services/date-formating';
 import { getActionColor } from 'src/services/generic';
 import { QueryHandler, TableRequest } from 'src/services/query-handler';
 import { computed, ref, Ref, watch } from 'vue';
@@ -245,6 +245,14 @@ const columns = [
         field: (row: ActionDto) =>
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             row.updatedAt ? formatDate(row.updatedAt, true) : 'N/A',
+    },
+    {
+        name: 'runtime',
+        label: 'Duration',
+        align: 'left',
+        sortable: true,
+        field: (row: ActionDto) =>
+            row.runtime ? formatDuration(row.runtime) : 'N/A',
     },
     {
         name: 'createdAt',
