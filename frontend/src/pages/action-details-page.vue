@@ -108,14 +108,17 @@
         style="background: transparent"
     >
         <q-tab-panel name="info">
-            <InfoBanner
-                v-if="showCliWarning"
-                text="This action likely failed due to an outdated Kleinkram CLI. Please rebuild it with a newer CLI version"
-                button-label="View Logs"
-                color="orange-1"
-                text-color="orange-9"
-                @click="viewTriggeringLog"
-            />
+            <div v-if="activeHints.length > 0" class="q-mb-md">
+                <InfoBanner
+                    v-for="hint in activeHints"
+                    :key="hint.id"
+                    :text="hint.text"
+                    :button-label="hint.buttonLabel || 'View'"
+                    color="orange-1"
+                    text-color="orange-9"
+                    @click="() => executeHint(hint)"
+                />
+            </div>
             <ActionDetailsExecutionTab v-if="action" :action="action" />
         </q-tab-panel>
 
@@ -285,6 +288,7 @@ import FileHistory from 'components/inspect-file/file-history.vue';
 import TitleSection from 'components/title-section.vue';
 import { useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
+import { useActionErrorHints } from 'src/composables/use-action-error-hints';
 import {
     useActionDetails,
     useActionFileEvents,
@@ -292,7 +296,7 @@ import {
 } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
-import { computed, nextTick, ref, watch, watchEffect } from 'vue';
+import { computed, ref, watch } from 'vue';
 import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -315,8 +319,6 @@ const handleRefetch = () => {
 
 const logsLimit = ref(100);
 const totalLogsCount = ref(0);
-const isWarningDismissed = ref(false);
-const triggeringLogIndex = ref<number | null>(null);
 const highlightedLogIndex = ref<number | null>(null);
 
 const logsSkip = computed(() => {
@@ -336,68 +338,12 @@ watch(logs, (newLogs) => {
     }
 });
 
-const showCliWarning = ref(false);
-
-watchEffect(() => {
-    if (isWarningDismissed.value) {
-        showCliWarning.value = false;
-        return;
-    }
-
-    const currentLogs = logs.value;
-    if (!currentLogs?.data) {
-        showCliWarning.value = false;
-        return;
-    }
-
-    const lastLogs = currentLogs.data.slice(-25);
-    const startIndex = Math.max(0, currentLogs.data.length - 25);
-
-    let foundIndex = -1;
-
-    for (const [index, lastLog] of lastLogs.entries()) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        const message = lastLog?.message;
-        if (
-            message &&
-            (message.includes('Update CLIVersion') ||
-                message.includes('Please update your CLI') ||
-                message.includes(
-                    'Error downloading data: Please update your CLI',
-                ))
-        ) {
-            foundIndex = Math.max(0, startIndex + index);
-            break;
-        }
-    }
-
-    if (foundIndex === -1) {
-        triggeringLogIndex.value = null;
-        showCliWarning.value = false;
-    } else {
-        triggeringLogIndex.value = foundIndex;
-        showCliWarning.value = true;
-    }
-});
-
-const viewTriggeringLog = async () => {
-    tab.value = 'logs';
-    if (triggeringLogIndex.value !== null) {
-        highlightedLogIndex.value = triggeringLogIndex.value;
-        // Wait for tab switch and DOM update
-        await nextTick();
-        const element = document.querySelector(
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `#log-line-${triggeringLogIndex.value}`,
-        );
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        setTimeout(() => {
-            highlightedLogIndex.value = null;
-        }, 2000);
-    }
-};
+const { activeHints, executeHint } = useActionErrorHints(
+    action,
+    logs,
+    $router,
+    { tab, highlightedLogIndex },
+);
 
 const downloadLogs = async () => {
     if (!action.value) return;

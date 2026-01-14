@@ -106,6 +106,21 @@ export const ActionService = {
         return data;
     },
 
+    async getTemplate(uuid: string): Promise<ActionTemplateDto> {
+        const { data } = await axios.get<ActionTemplatesDto>(
+            `/templates/${uuid}/revisions`,
+            {
+                params: { skip: 0, take: 1 },
+            },
+        );
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        const latest = data.data?.[0];
+        if (!latest) {
+            throw new Error(`Template with uuid ${uuid} not found`);
+        }
+        return latest;
+    },
+
     async checkNameAvailability(name: string): Promise<boolean> {
         const { data } = await axios.get<ActionTemplateAvailabilityDto>(
             '/templates/availability',

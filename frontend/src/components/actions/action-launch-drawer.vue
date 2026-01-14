@@ -135,8 +135,9 @@
 
 <script setup lang="ts">
 import { Dialog, Notify } from 'quasar';
+import ROUTES from 'src/router/routes';
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 // --- Shared Components ---
 import ComputeResourcesFieldset from 'components/actions/compute-resources-fieldset.vue';
@@ -167,6 +168,7 @@ const emits = defineEmits(['close', 'create-action']);
 // --- State ---
 const queryClient = useQueryClient();
 const router = useRouter();
+const route = useRoute();
 
 const _open = ref(false);
 const runtimeCommand = ref('');
@@ -310,14 +312,16 @@ async function executeLaunch(): Promise<void> {
             queryKey: actionKeys.all,
         });
 
-        closeDrawer();
-
-        if (!Array.isArray(result)) {
-            await router.push({
-                name: 'AnalysisDetailsPage',
-                params: { id: result.actionUUID },
-            });
-        }
+        await (Array.isArray(result)
+            ? router.push({
+                  name: ROUTES.ACTION.routeName,
+                  params: { tab: 'runs' },
+                  query: route.query,
+              })
+            : router.push({
+                  name: ROUTES.ANALYSIS_DETAILS.routeName,
+                  params: { id: result.actionUUID },
+              }));
     } catch (error: unknown) {
         const message =
             error instanceof Error ? error.message : 'Unknown error occurred';

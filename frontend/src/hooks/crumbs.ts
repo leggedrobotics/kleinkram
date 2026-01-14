@@ -16,12 +16,25 @@ export const useCrumbs = (): ComputedRef<PageBreadCrumb[]> => {
     const route = useRoute();
     return computed(() => {
         const nameWithPostfix = `${route.name as string}Layout`;
-        const routeDefinition = Object.values(ROUTES).find(
-            (r) => r.name === nameWithPostfix,
+
+        let routeDefinition = Object.values(ROUTES).find(
+            (r) => r.name === nameWithPostfix && 'breadcrumbs' in r,
         );
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        return routeDefinition?.breadcrumbs === undefined
-            ? []
-            : routeDefinition.breadcrumbs;
+
+        // fall back to the parent route's breadcrumbs
+        if (
+            (!routeDefinition || !('breadcrumbs' in routeDefinition)) &&
+            'ACTION' in ROUTES &&
+            'breadcrumbs' in ROUTES.ACTION
+        ) {
+            routeDefinition = ROUTES.ACTION;
+        }
+
+        const breadcrumbs =
+            routeDefinition && 'breadcrumbs' in routeDefinition
+                ? routeDefinition.breadcrumbs
+                : undefined;
+
+        return breadcrumbs ?? [];
     });
 };

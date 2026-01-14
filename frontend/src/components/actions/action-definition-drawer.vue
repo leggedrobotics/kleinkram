@@ -13,7 +13,7 @@
         >
             <h3 class="text-h4 q-ma-none">
                 {{
-                    mode === 'restore'
+                    mode === ActionDrawerMode.ACTION_RESTORE
                         ? 'Restore Action Template Version'
                         : isEditing
                           ? 'Edit Action Template'
@@ -257,7 +257,7 @@
                         unelevated
                         class="bg-button-secondary text-on-color"
                         :label="
-                            mode === 'restore'
+                            mode === ActionDrawerMode.ACTION_RESTORE
                                 ? 'Restore Version'
                                 : isEditing
                                   ? 'Save New Version'
@@ -284,12 +284,13 @@ import {
     useCreateTemplate,
     useUpdateTemplateVersion,
 } from 'src/composables/use-action-mutations';
+import { ActionDrawerMode } from 'src/router/enums';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { computed, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
     open: boolean;
-    mode?: 'create' | 'edit' | 'restore';
+    mode?: ActionDrawerMode;
     initialTemplate?: ActionTemplateDto | undefined;
 }>();
 
