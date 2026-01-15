@@ -4,7 +4,16 @@ const inRange = (value: string, min: number, max: number): boolean => {
     // Step values (e.g. */5, 0-23/2)
     if (value.includes('/')) {
         const [base, step] = value.split('/');
-        if (!step || Number.isNaN(Number(step))) return false;
+        if (!step) return false;
+        const stepNumber = Number(step);
+        const maxSpan = max - min + 1;
+        if (
+            Number.isNaN(stepNumber) ||
+            stepNumber <= 0 ||
+            stepNumber > maxSpan
+        ) {
+            return false;
+        }
         if (base !== '*' && !inRange(base, min, max)) return false;
         return true;
     }
