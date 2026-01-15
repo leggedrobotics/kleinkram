@@ -1232,7 +1232,6 @@ export class FileService implements OnModuleInit {
         );
 
         logger.debug(`File with uuid ${uuid} deleted`);
-        await this.triggerService.addFileEvent(uuid, TriggerEvent.DELETE);
     }
 
     async getStorage(): Promise<StorageOverviewDto> {
