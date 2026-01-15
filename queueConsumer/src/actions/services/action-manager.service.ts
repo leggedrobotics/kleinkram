@@ -78,8 +78,14 @@ export class ActionManagerService {
 
         logger.info('Creating container.');
 
-        if (action.state !== ActionState.PENDING)
-            throw new Error(`Action state is not 'PENDING'`);
+        if (action.state !== ActionState.PENDING) {
+            logger.error(
+                `Action ${action.uuid} state is '${action.state}' (expected 'PENDING'). Trigger source: ${action.triggerSource}`,
+            );
+            throw new Error(
+                `Action state is not 'PENDING'. Current state: ${action.state}`,
+            );
+        }
 
         // set state to 'STARTING'
         await this.actionRepository.update(
