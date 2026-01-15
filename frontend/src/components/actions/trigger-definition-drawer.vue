@@ -291,7 +291,8 @@ import { QForm, uid, useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
 import ENV from 'src/environment';
 import { useHandler } from 'src/hooks/query-hooks';
-import { computed, ref, watch } from 'vue';
+import { getMission } from 'src/services/queries/mission';
+import { computed, ref, toRaw, watch } from 'vue';
 
 const props = defineProps<{
     open: boolean;
@@ -343,18 +344,38 @@ watch(
     () => props.open,
     async (isOpen) => {
         if (isOpen) {
+            // Initialize Project context for ScopeSelector
+            localProjectUuid.value = handler.value.projectUuid;
+
             await loadTemplates();
+
             if (props.triggerToEdit) {
                 localTrigger.value = structuredClone(
-                    props.triggerToEdit,
+                    toRaw(props.triggerToEdit),
                 ) as Partial<CreateActionTriggerDto>;
+
+                // If project is not set (e.g. global search), try to find it from mission
+                if (!localProjectUuid.value && localTrigger.value.missionUuid) {
+                    try {
+                        const mission = await getMission(
+                            localTrigger.value.missionUuid,
+                        );
+                        if (mission.project.uuid) {
+                            localProjectUuid.value = mission.project.uuid;
+                        }
+                    } catch (error) {
+                        console.error(
+                            'Failed to resolve project from mission',
+                            error,
+                        );
+                    }
+                }
             } else {
                 localTrigger.value = {
                     ...structuredClone(defaultState),
                     uuid: uid(), // Optimistic UUID
                     missionUuid: handler.value.missionUuid ?? '',
                 };
-                localProjectUuid.value = handler.value.projectUuid;
             }
         }
     },
@@ -364,6 +385,10 @@ watch(
     () => localTrigger.value.type,
     (newType, oldType) => {
         if (newType === oldType) return;
+        // In edit mode, type cannot be changed by user (disabled field),
+        // so any change is due to initialization/loading. We must NOT reset config.
+        if (isEditing.value) return;
+
         // Reset config when type changes
         switch (newType) {
             case TriggerType.WEBHOOK: {
@@ -453,9 +478,24 @@ const saveTrigger = async () => {
     isSaving.value = true;
     try {
         if (isEditing.value && props.triggerToEdit) {
+            const rawPayload = {
+                name: localTrigger.value.name,
+                description: localTrigger.value.description,
+                templateUuid: localTrigger.value.templateUuid,
+                missionUuid: localTrigger.value.missionUuid,
+                type: localTrigger.value.type,
+                config: localTrigger.value.config,
+            };
+
+            const payload = Object.fromEntries(
+                Object.entries(rawPayload).filter(
+                    ([, value]) => value !== undefined,
+                ),
+            ) as UpdateActionTriggerDto;
+
             await ActionService.updateTrigger(
                 props.triggerToEdit.uuid,
-                localTrigger.value as UpdateActionTriggerDto,
+                payload,
             );
             $q.notify({ type: 'positive', message: 'Trigger updated' });
         } else {

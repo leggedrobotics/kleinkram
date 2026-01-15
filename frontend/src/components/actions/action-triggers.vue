@@ -121,6 +121,7 @@
 import type { ActionTriggerDto } from '@kleinkram/api-dto/types/actions/action-trigger.dto';
 import { TriggerType } from '@kleinkram/shared';
 import AppCreateButton from 'components/common/app-create-button.vue';
+import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import { QTableColumn, useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
