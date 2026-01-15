@@ -20,6 +20,7 @@ import {
     FileState,
     FileType,
     QueueState,
+    TriggerEvent,
     UserRole,
 } from '@kleinkram/shared';
 import { getGoogleDriveInfo } from '@kleinkram/validation';
@@ -37,6 +38,7 @@ import * as fs from 'node:fs';
 import { Gauge } from 'prom-client';
 import { FindOptionsWhere, In, IsNull, MoreThan, Repository } from 'typeorm';
 import logger from '../logger';
+import { TriggerService } from './trigger.service';
 import { UserService } from './user.service';
 
 @Injectable()
@@ -63,6 +65,7 @@ export class QueueService implements OnModuleInit {
         private completedJobs: Gauge,
         @InjectMetric('backend_failed_jobs')
         private failedJobs: Gauge,
+        private readonly triggerService: TriggerService,
     ) {}
 
     onModuleInit(): void {
@@ -228,6 +231,8 @@ export class QueueService implements OnModuleInit {
             },
             true,
         );
+
+        await this.triggerService.addFileEvent(file.uuid, TriggerEvent.UPLOAD);
     }
 
     async active(

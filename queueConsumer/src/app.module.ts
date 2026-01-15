@@ -37,6 +37,7 @@ import { DockerDaemon } from './actions/services/docker-daemon.service';
 import { ImageResolutionService } from './actions/services/image-resolution.service';
 import { FileProcessorModule } from './file-processor/file-processor.module';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-queue-processor.provider';
+import { TriggerProcessorModule } from './trigger-processor/trigger-processor.module';
 
 @Module({
     imports: [
@@ -45,6 +46,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
         }),
 
         FileProcessorModule,
+        TriggerProcessorModule,
 
         BullModule.registerQueue({
             name: `action-queue-${os.hostname()}`,
@@ -58,6 +60,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
         }),
 
         BullModule.registerQueue({ name: 'file-queue' }),
+        BullModule.registerQueue({ name: 'trigger-queue' }),
 
         ConfigModule.forRoot({
             isGlobal: true,

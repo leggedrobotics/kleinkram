@@ -2,6 +2,7 @@ export * from './audit/audit.types';
 export * from './audit/file-audit.service';
 export * from './consts';
 export * from './entities/action/action-template.entity';
+export * from './entities/action/action-trigger.entity';
 export * from './entities/action/action.entity';
 export * from './entities/auth/access-group.entity';
 export * from './entities/auth/account.entity';
@@ -38,6 +39,7 @@ export * from './viewEntities/mission-access-view.entity';
 export * from './viewEntities/project-access-view.entity';
 
 import { ActionTemplateEntity } from './entities/action/action-template.entity';
+import { ActionTriggerEntity } from './entities/action/action-trigger.entity';
 import { ActionEntity } from './entities/action/action.entity';
 import { AccessGroupEntity } from './entities/auth/access-group.entity';
 import { AccountEntity } from './entities/auth/account.entity';
@@ -61,6 +63,7 @@ import { ProjectAccessViewEntity } from './viewEntities/project-access-view.enti
 
 export const ALL_ENTITIES = [
     ActionTemplateEntity,
+    ActionTriggerEntity,
     ActionEntity,
     AccessGroupEntity,
     AccountEntity,

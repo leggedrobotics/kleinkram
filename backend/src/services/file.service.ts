@@ -54,6 +54,9 @@ import {
     convertGlobToLikePattern,
 } from './utilities';
 
+import { TriggerService } from '@/services/trigger.service';
+import { TriggerEvent } from '@kleinkram/shared';
+
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
@@ -120,6 +123,7 @@ export class FileService implements OnModuleInit {
         @InjectRepository(FileEventEntity)
         private eventRepo: Repository<FileEventEntity>,
         private readonly auditService: FileAuditService,
+        private readonly triggerService: TriggerService,
     ) {}
 
     onModuleInit(): void {
@@ -984,6 +988,10 @@ export class FileService implements OnModuleInit {
                 },
                 true,
             );
+            await this.triggerService.addFileEvent(
+                databaseFile.uuid,
+                TriggerEvent.RENAME,
+            );
         }
 
         // Log Move Event (if done via update)
@@ -1001,6 +1009,10 @@ export class FileService implements OnModuleInit {
                     },
                 },
                 true,
+            );
+            await this.triggerService.addFileEvent(
+                databaseFile.uuid,
+                TriggerEvent.MOVE,
             );
         }
 
@@ -1135,6 +1147,10 @@ export class FileService implements OnModuleInit {
                         },
                         true,
                     );
+                    await this.triggerService.addFileEvent(
+                        uuid,
+                        TriggerEvent.MOVE,
+                    );
 
                     // ... [Existing Tag Update Logic] ...
                     const newFile = await this.fileRepository.findOneOrFail({
@@ -1216,6 +1232,7 @@ export class FileService implements OnModuleInit {
         );
 
         logger.debug(`File with uuid ${uuid} deleted`);
+        await this.triggerService.addFileEvent(uuid, TriggerEvent.DELETE);
     }
 
     async getStorage(): Promise<StorageOverviewDto> {

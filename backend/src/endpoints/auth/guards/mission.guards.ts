@@ -1,7 +1,7 @@
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ProjectGuardService } from '@/services/project-guard.service';
 import { ApiKeyEntity } from '@kleinkram/backend-common';
-import { AccessGroupRights } from '@kleinkram/shared';
+import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import {
     BadRequestException,
     ExecutionContext,
@@ -15,6 +15,7 @@ import { BaseGuard } from './base.guards';
 
 interface MissionBody {
     missionUUID?: string;
+    missionUuid?: string;
     uuid?: string;
     mission?: string;
 }
@@ -133,7 +134,11 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
         const { user, apiKey, request } = await this.getUser(context);
 
         const body = request.body as MissionBody;
-        const missionUUID = body.missionUUID;
+        const missionUUID = body.missionUUID ?? body.missionUuid;
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
 
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
@@ -167,7 +172,11 @@ export class WriteMissionByBodyGuard extends BaseGuard {
         const { user, apiKey, request } = await this.getUser(context);
 
         const body = request.body as MissionBody;
-        const missionUUID = body.missionUUID;
+        const missionUUID = body.missionUUID ?? body.missionUuid;
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
 
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
@@ -205,7 +214,11 @@ export class CanDeleteMissionGuard extends BaseGuard {
         let missionUUID: string | undefined;
 
         if (body) {
-            missionUUID = body.uuid ?? body.missionUUID;
+            missionUUID = body.uuid ?? body.missionUUID ?? body.missionUuid;
+        }
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
 
         if (!missionUUID && params) {

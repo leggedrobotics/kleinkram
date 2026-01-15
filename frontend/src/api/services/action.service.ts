@@ -2,9 +2,12 @@ import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs
 import type { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto/types/actions/action-template-availability.dto';
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
+import type { ActionTriggerDto } from '@kleinkram/api-dto/types/actions/action-trigger.dto';
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import type { ActionsDto } from '@kleinkram/api-dto/types/actions/actions.dto';
+import type { CreateActionTriggerDto } from '@kleinkram/api-dto/types/actions/create-action-trigger.dto';
 import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
+import type { UpdateActionTriggerDto } from '@kleinkram/api-dto/types/actions/update-action-trigger.dto';
 import type { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
 import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import type {
@@ -148,5 +151,37 @@ export const ActionService = {
             `/actions/${uuid}/file-events`,
         );
         return data;
+    },
+
+    async getTriggers(missionUuid?: string): Promise<ActionTriggerDto[]> {
+        const { data } = await axios.get<ActionTriggerDto[]>('/triggers', {
+            params: { missionUuid },
+        });
+        return data;
+    },
+
+    async createTrigger(
+        payload: CreateActionTriggerDto,
+    ): Promise<ActionTriggerDto> {
+        const { data } = await axios.post<ActionTriggerDto>(
+            '/triggers',
+            payload,
+        );
+        return data;
+    },
+
+    async updateTrigger(
+        uuid: string,
+        payload: UpdateActionTriggerDto,
+    ): Promise<ActionTriggerDto> {
+        const { data } = await axios.patch<ActionTriggerDto>(
+            `/triggers/${uuid}`,
+            payload,
+        );
+        return data;
+    },
+
+    async deleteTrigger(uuid: string): Promise<void> {
+        await axios.delete(`/triggers/${uuid}`);
     },
 };

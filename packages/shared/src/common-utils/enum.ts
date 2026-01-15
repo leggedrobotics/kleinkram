@@ -192,3 +192,16 @@ export enum LogType {
     STDOUT = 'stdout',
     STDERR = 'stderr',
 }
+
+export enum TriggerType {
+    WEBHOOK = 'WEBHOOK',
+    TIME = 'TIME',
+    FILE = 'FILE',
+}
+
+export enum TriggerEvent {
+    UPLOAD = 'UPLOAD',
+    RENAME = 'RENAME',
+    MOVE = 'MOVE',
+    DELETE = 'DELETE',
+}

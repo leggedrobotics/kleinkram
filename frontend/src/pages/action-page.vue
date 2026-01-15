@@ -9,16 +9,32 @@
                 class="text-grey"
                 @update:model-value="onTabChange"
             >
-                <q-tab
-                    name="store"
-                    label="Action Templates"
-                    style="color: #222"
-                />
+                <q-tab name="store" label="Templates" style="color: #222" />
                 <q-tab
                     name="executions"
                     label="Executions"
                     style="color: #222"
                 />
+                <q-tab name="triggers" style="color: #222">
+                    <div class="row items-center no-wrap">
+                        <span>Triggers</span>
+                        <q-badge
+                            color="orange-7"
+                            text-color="white"
+                            label="BETA"
+                            class="text-weight-bold cursor-help q-ml-xs"
+                            style="
+                                font-size: 9px;
+                                padding: 2px 4px;
+                                vertical-align: middle;
+                            "
+                        >
+                            <q-tooltip>
+                                Trigger system is currently in beta.
+                            </q-tooltip>
+                        </q-badge>
+                    </div>
+                </q-tab>
             </q-tabs>
         </template>
     </title-section>
@@ -39,6 +55,10 @@
 
         <q-tab-panel name="executions" class="q-pa-none">
             <ActionExecutions />
+        </q-tab-panel>
+
+        <q-tab-panel name="triggers" class="q-pa-none">
+            <ActionTriggers />
         </q-tab-panel>
     </q-tab-panels>
 
@@ -78,6 +98,7 @@ import ActionExecutions from 'components/actions/action-executions.vue';
 import ActionLaunchDrawer from 'components/actions/action-launch-drawer.vue';
 import ActionRevisionsDrawer from 'components/actions/action-revisions-drawer.vue';
 import ActionStore from 'components/actions/action-store.vue';
+import ActionTriggers from 'components/actions/action-triggers.vue';
 
 import TitleSection from 'components/title-section.vue';
 import { Notify } from 'quasar';
@@ -95,11 +116,13 @@ const router = useRouter();
 const TAB_MAPPING = {
     store: 'templates',
     executions: 'runs',
+    triggers: 'triggers',
 } as const;
 
 const REVERSE_TAB_MAPPING = {
     templates: 'store',
     runs: 'executions',
+    triggers: 'triggers',
 } as const;
 
 const selectedTab = computed(() => {
