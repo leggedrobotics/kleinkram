@@ -1,12 +1,12 @@
 import { IsNotUndefined } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID } from 'class-validator';
 
 @Expose()
 export class UserDto {
     @ApiProperty()
-    @IsString()
+    @IsUUID()
     @Expose()
     uuid!: string;
 
