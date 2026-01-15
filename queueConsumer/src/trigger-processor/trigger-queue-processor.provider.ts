@@ -5,7 +5,12 @@ import {
 } from '@kleinkram/backend-common';
 import { systemUser } from '@kleinkram/backend-common/consts';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
-import { TriggerEvent, TriggerType, isValidCron } from '@kleinkram/shared';
+import {
+    ActionTriggerSource,
+    TriggerEvent,
+    TriggerType,
+    isValidCron,
+} from '@kleinkram/shared';
 import { Process, Processor } from '@nestjs/bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -80,11 +85,15 @@ export class TriggerQueueProcessorProvider {
             this.logger.log(
                 `Trigger ${trigger.name} matched file ${file.filename}`,
             );
-            await this.dispatchAction(trigger, {
-                fileUuid: file.uuid,
-                filename: file.filename,
-                event,
-            });
+            await this.dispatchAction(
+                trigger,
+                {
+                    fileUuid: file.uuid,
+                    filename: file.filename,
+                    event,
+                },
+                ActionTriggerSource.FILE_EVENT,
+            );
         }
     }
 
@@ -126,10 +135,14 @@ export class TriggerQueueProcessorProvider {
                     this.logger.log(
                         `Trigger ${trigger.name} matched cron time ${previousDate.toISOString()}`,
                     );
-                    await this.dispatchAction(trigger, {
-                        scheduledTime: previousDate.toISOString(),
-                        triggerTime: timestamp.toISOString(),
-                    });
+                    await this.dispatchAction(
+                        trigger,
+                        {
+                            scheduledTime: previousDate.toISOString(),
+                            triggerTime: timestamp.toISOString(),
+                        },
+                        ActionTriggerSource.CRON,
+                    );
                 }
             } catch (error) {
                 this.logger.error(
@@ -142,6 +155,7 @@ export class TriggerQueueProcessorProvider {
     private async dispatchAction(
         trigger: ActionTriggerEntity,
         payload: Record<string, unknown>,
+        triggerSource: ActionTriggerSource,
     ): Promise<void> {
         const creator = await this.userRepository.findOneOrFail({
             where: { uuid: systemUser.uuid },
@@ -153,6 +167,8 @@ export class TriggerQueueProcessorProvider {
                 trigger.mission,
                 creator,
                 payload,
+                triggerSource,
+                trigger.uuid,
             );
         } catch (error) {
             this.logger.error(

@@ -5,7 +5,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { addActionQueue } from '@backend-common/scheduling-logic';
-import { ActionState } from '@kleinkram/shared';
+import { ActionState, ActionTriggerSource } from '@kleinkram/shared';
 import {
     ConflictException,
     Injectable,
@@ -80,6 +80,8 @@ export class ActionDispatcherService implements OnModuleInit {
         creator: UserEntity,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         parameters: Record<string, any>,
+        triggerSource: ActionTriggerSource = ActionTriggerSource.MANUAL,
+        triggerUuid?: string,
     ): Promise<string> {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: templateUuid },
@@ -90,6 +92,8 @@ export class ActionDispatcherService implements OnModuleInit {
             creator,
             state: ActionState.PENDING,
             template,
+            triggerSource,
+            triggerUuid,
         });
         action = await this.actionRepository.save(action);
 

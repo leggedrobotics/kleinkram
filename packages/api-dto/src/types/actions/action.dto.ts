@@ -4,7 +4,11 @@ import { AuditLogDto } from '@api-dto/actions/audit-log.dto';
 import { DockerImageDto } from '@api-dto/actions/docker-image.dto';
 import { MissionDto } from '@api-dto/mission/mission.dto';
 import { UserDto } from '@api-dto/user/user.dto';
-import { ActionState, ArtifactState } from '@kleinkram/shared';
+import {
+    ActionState,
+    ActionTriggerSource,
+    ArtifactState,
+} from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -88,4 +92,13 @@ export class ActionDto {
     @ValidateNested()
     @Type(() => ActionWorkerDto)
     worker!: ActionWorkerDto | null;
+
+    @ApiProperty()
+    @IsEnum(ActionTriggerSource)
+    triggerSource!: ActionTriggerSource;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsUUID()
+    triggerUuid?: string;
 }

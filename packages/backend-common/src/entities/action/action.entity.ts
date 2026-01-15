@@ -1,4 +1,5 @@
 import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@backend-common/entities/action/action-trigger.entity';
 import { ApiKeyEntity } from '@backend-common/entities/auth/api-key.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
@@ -7,6 +8,7 @@ import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { RuntimeDescription } from '@backend-common/types';
 import {
     ActionState,
+    ActionTriggerSource,
     ArtifactState,
     ImageSource,
     LogType,
@@ -125,4 +127,21 @@ export class ActionEntity extends BaseEntity {
         nullable: true,
     })
     worker?: WorkerEntity;
+
+    @Column({
+        type: 'enum',
+        enum: ActionTriggerSource,
+        default: ActionTriggerSource.MANUAL,
+    })
+    triggerSource!: ActionTriggerSource;
+
+    @ManyToOne(() => ActionTriggerEntity, {
+        nullable: true,
+        onDelete: 'SET NULL',
+    })
+    @JoinColumn({ name: 'triggerUuid' })
+    trigger?: ActionTriggerEntity;
+
+    @Column({ nullable: true })
+    triggerUuid?: string;
 }

@@ -1,6 +1,7 @@
 import { AccessGroupEntity, ApiKeyEntity } from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
@@ -88,6 +89,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                         TopicEntity,
                         ActionEntity,
                         ActionTemplateEntity,
+                        ActionTriggerEntity,
                         ProjectEntity,
                         UserEntity,
                         ApiKeyEntity,
@@ -116,6 +118,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
             TopicEntity,
             ActionEntity,
             ActionTemplateEntity,
+            ActionTriggerEntity,
             ProjectEntity,
             UserEntity,
             ApiKeyEntity,

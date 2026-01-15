@@ -11,7 +11,12 @@ import {
 } from '@kleinkram/backend-common';
 import { redis, systemUser } from '@kleinkram/backend-common/consts';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
-import { isValidCron, TriggerEvent, TriggerType } from '@kleinkram/shared';
+import {
+    ActionTriggerSource,
+    isValidCron,
+    TriggerEvent,
+    TriggerType,
+} from '@kleinkram/shared';
 import {
     BadRequestException,
     Injectable,
@@ -184,6 +189,8 @@ export class TriggerService implements OnModuleInit {
             trigger.mission,
             creator,
             payload,
+            ActionTriggerSource.WEBHOOK,
+            trigger.uuid,
         );
 
         return { actionUuid };

@@ -76,5 +76,7 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         uuid: action.uuid,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         worker: workerEntityToDto(action.worker)!,
+        triggerSource: action.triggerSource,
+        triggerUuid: action.triggerUuid,
     };
 };

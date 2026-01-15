@@ -205,3 +205,10 @@ export enum TriggerEvent {
     MOVE = 'MOVE',
     DELETE = 'DELETE',
 }
+
+export enum ActionTriggerSource {
+    MANUAL = 'MANUAL',
+    CRON = 'CRON',
+    WEBHOOK = 'WEBHOOK',
+    FILE_EVENT = 'FILE_EVENT',
+}
