@@ -16,14 +16,14 @@ const inRange = (value: string, min: number, max: number): boolean => {
 
     // Range (e.g. 1-5)
     if (value.includes('-')) {
-        const [start, end] = value.split('-').map(Number);
-        return (
-            !Number.isNaN(start) &&
-            !Number.isNaN(end) &&
-            start >= min &&
-            end <= max &&
-            start <= end
-        );
+        const parts = value.split('-');
+        if (parts.length !== 2) return false;
+        const [startString, endString] = parts;
+        if (!/^\d+$/.test(startString) || !/^\d+$/.test(endString))
+            return false;
+        const start = Number(startString);
+        const end = Number(endString);
+        return start >= min && end <= max && start <= end;
     }
 
     // Simple number
@@ -82,7 +82,13 @@ const translateDow = (d: string) => {
         'Saturday',
         'Sunday',
     ];
-    return `on ${days[Number.parseInt(d)]}`;
+    // Only handle simple numeric day-of-week values (0-7) here.
+    // For more complex cron expressions (e.g. ranges, lists, steps),
+    // fall back to a generic description to avoid incorrect or undefined output.
+    if (/^[0-7]$/.test(d)) {
+        return `on ${days[Number(d)]}`;
+    }
+    return `on day-of-week ${d}`;
 };
 
 export const cronToHuman = (cron: string): string => {
