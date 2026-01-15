@@ -1,4 +1,5 @@
 import { ImageSource } from '@kleinkram/shared';
+import { validateDockerImageName } from '@kleinkram/validation';
 import { Injectable } from '@nestjs/common';
 import Dockerode from 'dockerode';
 import { exec } from 'node:child_process';
@@ -167,6 +168,7 @@ export class ImageResolutionService {
         imageTag: string,
     ): Promise<Date | undefined> {
         try {
+            validateDockerImageName(imageTag);
             const { stdout } = await execAsync(`crane config ${imageTag}`);
             const { created } = JSON.parse(stdout) as { created?: string };
             return created ? new Date(created) : undefined;

@@ -1,4 +1,5 @@
 export * from './body-decorators';
+export * from './docker-image.validation';
 export * from './filename.validation';
 export * from './files/google-drive.validator';
 export * from './is-not-undefined';
