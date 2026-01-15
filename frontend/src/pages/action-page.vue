@@ -128,7 +128,9 @@ const selectedTab = computed(() => {
 const onTabChange = (value: string | number | null) => {
     if (typeof value !== 'string') return;
 
-    const tabSlug = TAB_MAPPING[value as keyof typeof TAB_MAPPING];
+    const tabSlug = TAB_MAPPING[value as keyof typeof TAB_MAPPING] as
+        | string
+        | undefined;
 
     if (
         route.name === ROUTES.ACTION.routeName &&
@@ -136,7 +138,7 @@ const onTabChange = (value: string | number | null) => {
     ) {
         void router.replace({
             name: ROUTES.ACTION.routeName,
-            params: { ...route.params, tab: tabSlug },
+            params: { ...route.params, tab: tabSlug ?? 'templates' },
             query: route.query,
         });
     }
