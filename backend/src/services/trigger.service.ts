@@ -99,7 +99,7 @@ export class TriggerService implements OnModuleInit {
     ): Promise<ActionTriggerDto> {
         const trigger = await this.triggerRepository.findOne({
             where: { uuid },
-            relations: { template: true, mission: true },
+            relations: { template: true, mission: true, creator: true },
         });
 
         if (!trigger) {

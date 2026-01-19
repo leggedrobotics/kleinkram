@@ -17,7 +17,11 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { ApiOkResponse, OutputDto } from '../../decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
-import { CanCreateInMissionByBody, LoggedIn } from '../auth/roles.decorator';
+import {
+    CanCreateInMissionByBody,
+    CanModifyTrigger,
+    LoggedIn,
+} from '../auth/roles.decorator';
 
 @ApiTags('Triggers')
 @Controller('triggers')
@@ -44,7 +48,7 @@ export class TriggerController {
     }
 
     @Patch(':uuid')
-    @LoggedIn()
+    @CanModifyTrigger()
     @ApiOkResponse({ type: ActionTriggerDto })
     async update(
         @ParameterUuid('uuid') uuid: string,
@@ -54,7 +58,7 @@ export class TriggerController {
     }
 
     @Delete(':uuid')
-    @LoggedIn()
+    @CanModifyTrigger()
     @OutputDto(null)
     async remove(@ParameterUuid('uuid') uuid: string): Promise<void> {
         return this.triggerService.delete(uuid);

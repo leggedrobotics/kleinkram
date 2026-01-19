@@ -69,9 +69,22 @@
                                 dense
                                 icon="sym_o_edit"
                                 color="grey-7"
+                                :disable="
+                                    props.row.creatorUuid !== currentUser?.uuid
+                                "
                                 @click="() => editTrigger(props.row)"
                             >
-                                <q-tooltip>Edit</q-tooltip>
+                                <q-tooltip
+                                    v-if="
+                                        props.row.creatorUuid ===
+                                        currentUser?.uuid
+                                    "
+                                    >Edit</q-tooltip
+                                >
+                                <q-tooltip v-else
+                                    >Only the creator can edit this
+                                    trigger</q-tooltip
+                                >
                             </q-btn>
                             <q-btn
                                 flat
@@ -79,9 +92,22 @@
                                 dense
                                 icon="sym_o_delete"
                                 color="negative"
+                                :disable="
+                                    props.row.creatorUuid !== currentUser?.uuid
+                                "
                                 @click="() => confirmDelete(props.row)"
                             >
-                                <q-tooltip>Delete</q-tooltip>
+                                <q-tooltip
+                                    v-if="
+                                        props.row.creatorUuid ===
+                                        currentUser?.uuid
+                                    "
+                                    >Delete</q-tooltip
+                                >
+                                <q-tooltip v-else
+                                    >Only the creator can delete this
+                                    trigger</q-tooltip
+                                >
                             </q-btn>
                         </div>
                     </q-td>
@@ -119,6 +145,7 @@
 
 <script setup lang="ts">
 import type { ActionTriggerDto } from '@kleinkram/api-dto/types/actions/action-trigger.dto';
+import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
 import { TriggerType } from '@kleinkram/shared';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
@@ -126,6 +153,7 @@ import AppSearchBar from 'components/common/app-search-bar.vue';
 import { QTableColumn, useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
 import { useHandler } from 'src/hooks/query-hooks';
+import { getUser } from 'src/services/auth';
 import { computed, onMounted, ref } from 'vue';
 import TriggerDefinitionDrawer from './trigger-definition-drawer.vue';
 
@@ -138,6 +166,7 @@ const isLoading = ref(false);
 const searchTerm = ref('');
 const isDrawerOpen = ref(false);
 const selectedTrigger = ref<ActionTriggerDto | undefined>(undefined);
+const currentUser = ref<CurrentAPIUserDto | null>(null);
 
 // Columns
 const columns: QTableColumn[] = [
@@ -236,7 +265,8 @@ const deleteTriggerConfirmed = async (trigger: ActionTriggerDto) => {
 };
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
+    currentUser.value = await getUser();
     void loadTriggers();
 });
 </script>
