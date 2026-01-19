@@ -5,6 +5,7 @@ import {
     FileEntity,
     MissionEntity,
     UserEntity,
+    WorkerEntity,
 } from '@kleinkram/backend-common';
 import { systemUser } from '@kleinkram/backend-common/consts';
 import {
@@ -33,6 +34,32 @@ describe('Trigger System API Tests', () => {
     let missionUuid: string;
     let templateUuid: string;
     let projectUuid: string;
+
+    beforeAll(async () => {
+        // Seed a stable worker for the dispatcher
+        const workerRepo = database.getRepository(WorkerEntity);
+        const identifier = 'test-worker-trigger-system';
+        const existing = await workerRepo.findOneBy({ identifier });
+
+        const workerData = {
+            identifier,
+            hostname: 'test-host',
+            reachable: true,
+            lastSeen: new Date(),
+            cpuCores: 8,
+            cpuMemory: 16,
+            gpuMemory: 0,
+            cpuModel: 'Test CPU',
+            storage: 1000,
+        };
+
+        if (existing) {
+            Object.assign(existing, workerData);
+            await workerRepo.save(existing);
+        } else {
+            await workerRepo.save(workerRepo.create(workerData));
+        }
+    });
 
     beforeEach(async () => {
         const setup = await generateAndFetchDatabaseUser('internal', 'admin');
