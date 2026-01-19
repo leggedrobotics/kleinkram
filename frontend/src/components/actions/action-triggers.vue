@@ -61,6 +61,11 @@
                             props.row.templateName || props.row.templateUuid
                         }}</span>
                     </q-td>
+                    <q-td key="creator" :props="props">
+                        <span class="text-grey-8">{{
+                            props.row.creatorName || props.row.creatorUuid
+                        }}</span>
+                    </q-td>
                     <q-td key="actions" :props="props">
                         <div class="row justify-end q-gutter-x-sm">
                             <q-btn
@@ -178,6 +183,7 @@ const columns: QTableColumn[] = [
         field: (row: ActionTriggerDto) => row.templateName ?? row.templateUuid,
         align: 'left',
     },
+    { name: 'creator', label: 'Creator', field: 'creatorName', align: 'left' },
     { name: 'actions', label: '', field: 'actions', align: 'right' },
 ];
 
