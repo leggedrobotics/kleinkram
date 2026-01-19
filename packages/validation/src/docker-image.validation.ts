@@ -13,7 +13,7 @@ export function isValidDockerImageName(imageName: string): boolean {
 export function validateDockerImageName(imageName: string): void {
     if (!isValidDockerImageName(imageName)) {
         throw new Error(
-            `Invalid Docker image name: "${imageName}". Only alphanumeric characters, dots, underscores, hyphens, and forward slashes are allowed. Tags can be specified with a colon.`,
+            `Invalid Docker image name: "${imageName}". Only alphanumeric characters, dots, underscores, hyphens, and forward slashes are allowed. Tags can be specified with a colon and digest references can be specified with @sha256:.`,
         );
     }
 }
