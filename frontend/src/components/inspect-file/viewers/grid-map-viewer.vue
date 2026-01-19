@@ -178,10 +178,7 @@ watch(
         if (
             newLength > 0 &&
             (oldLength === 0 || !isPlaying.value) && // If it's the first load or we are just viewing the latest, update index
-            // But if user is scrubbing, maybe we shouldn't jump?
-            // For now, let's default to showing the latest if not playing and at the end
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            (currentIndex.value === (oldLength ?? 0) - 1 ??
+            (currentIndex.value === (oldLength ?? 0) - 1 ||
                 (oldLength ?? 0) === 0)
         ) {
             currentIndex.value = newLength - 1;
