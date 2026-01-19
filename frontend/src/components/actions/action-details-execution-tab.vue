@@ -396,7 +396,7 @@ const triggerSourceLabel = computed(() => {
 const goToTriggers = async (): Promise<void> => {
     await $router.push({
         name: ROUTES.ACTION.routeName,
-        params: { tab: 'triggers' },
+        query: { tab: 'triggers' },
     });
 };
 
