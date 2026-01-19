@@ -1,4 +1,4 @@
-import { TriggerType } from '@kleinkram/shared';
+import { TriggerEvent, TriggerType } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import {
     IsEnum,
@@ -16,6 +16,7 @@ export interface TimeConfig {
 
 export interface FileConfig {
     patterns: string[];
+    event?: TriggerEvent[];
 }
 
 export type TriggerConfig = WebhookConfig | TimeConfig | FileConfig;
