@@ -54,4 +54,13 @@ export class ActionTriggerDto {
     @ApiProperty()
     @IsObject()
     config!: TriggerConfig;
+
+    @ApiProperty()
+    @IsUUID()
+    creatorUuid!: string;
+
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    creatorName?: string | null;
 }

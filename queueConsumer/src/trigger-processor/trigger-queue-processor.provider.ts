@@ -1,9 +1,4 @@
-import {
-    ActionTriggerEntity,
-    FileEntity,
-    UserEntity,
-} from '@kleinkram/backend-common';
-import { systemUser } from '@kleinkram/backend-common/consts';
+import { ActionTriggerEntity, FileEntity } from '@kleinkram/backend-common';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import {
     ActionTriggerSource,
@@ -29,8 +24,6 @@ export class TriggerQueueProcessorProvider {
         private triggerRepository: Repository<ActionTriggerEntity>,
         @InjectRepository(FileEntity)
         private fileRepository: Repository<FileEntity>,
-        @InjectRepository(UserEntity)
-        private userRepository: Repository<UserEntity>,
         private readonly actionDispatcher: ActionDispatcherService,
     ) {}
 
@@ -58,7 +51,7 @@ export class TriggerQueueProcessorProvider {
                 mission: { uuid: file.mission.uuid },
                 type: TriggerType.FILE,
             },
-            relations: ['template', 'mission'],
+            relations: ['template', 'mission', 'creator'],
         });
 
         for (const trigger of triggers) {
@@ -106,7 +99,7 @@ export class TriggerQueueProcessorProvider {
 
         const triggers = await this.triggerRepository.find({
             where: { type: TriggerType.TIME },
-            relations: ['template', 'mission'],
+            relations: ['template', 'mission', 'creator'],
         });
 
         for (const trigger of triggers) {
@@ -157,15 +150,11 @@ export class TriggerQueueProcessorProvider {
         payload: Record<string, unknown>,
         triggerSource: ActionTriggerSource,
     ): Promise<void> {
-        const creator = await this.userRepository.findOneOrFail({
-            where: { uuid: systemUser.uuid },
-        });
-
         try {
             await this.actionDispatcher.dispatch(
                 trigger.template.uuid,
                 trigger.mission,
-                creator,
+                trigger.creator,
                 payload,
                 triggerSource,
                 trigger.uuid,

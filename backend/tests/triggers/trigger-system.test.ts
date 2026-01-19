@@ -1,4 +1,5 @@
 import { appVersion } from '@/app-version';
+import { ActionTriggerDto } from '@kleinkram/api-dto';
 import {
     ActionEntity,
     ActionTriggerEntity,
@@ -356,6 +357,37 @@ describe('Trigger System API Tests', () => {
 
             const countAfter = await actionRepo.count();
             expect(countAfter).toBe(countBefore + 1);
+        });
+    });
+
+    describe('Creator Association', () => {
+        it('should associate the trigger with the correct creator', async () => {
+            const trigger = await createTrigger({
+                name: 'Creator Test Trigger',
+                description: 'Verifies creator association',
+                templateUuid: templateUuid,
+                missionUuid: missionUuid,
+                type: TriggerType.WEBHOOK,
+                config: {},
+            });
+
+            const response = await fetch(
+                `${DEFAULT_URL}/triggers?missionUuid=${missionUuid}`,
+                {
+                    method: 'GET',
+                    headers: new HeaderCreator(user).getHeaders(),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const triggers = (await response.json()) as ActionTriggerDto[];
+            const createdTrigger = triggers.find(
+                (t) => t.uuid === trigger.uuid,
+            );
+
+            expect(createdTrigger).toBeDefined();
+            expect(createdTrigger?.creatorUuid).toBe(user.uuid);
+            expect(createdTrigger?.creatorName).toBe(user.name);
         });
     });
 });

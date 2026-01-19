@@ -9,7 +9,7 @@ import {
     MissionEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
-import { redis, systemUser } from '@kleinkram/backend-common/consts';
+import { redis } from '@kleinkram/backend-common/consts';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import {
     ActionTriggerSource,
@@ -39,8 +39,6 @@ export class TriggerService implements OnModuleInit {
         private templateRepository: Repository<ActionTemplateEntity>,
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
-        @InjectRepository(UserEntity)
-        private userRepository: Repository<UserEntity>,
         private readonly actionDispatcher: ActionDispatcherService,
     ) {}
 
@@ -51,7 +49,8 @@ export class TriggerService implements OnModuleInit {
     async findAll(missionUuid?: string): Promise<ActionTriggerDto[]> {
         const query = this.triggerRepository
             .createQueryBuilder('trigger')
-            .leftJoinAndSelect('trigger.template', 'template');
+            .leftJoinAndSelect('trigger.template', 'template')
+            .leftJoinAndSelect('trigger.creator', 'creator');
 
         if (missionUuid) {
             query.where('trigger.missionUuid = :missionUuid', { missionUuid });
@@ -60,7 +59,10 @@ export class TriggerService implements OnModuleInit {
         return entities.map((entity) => this.toDto(entity));
     }
 
-    async create(dto: CreateActionTriggerDto): Promise<ActionTriggerDto> {
+    async create(
+        dto: CreateActionTriggerDto,
+        creator: UserEntity,
+    ): Promise<ActionTriggerDto> {
         this.validateConfig(dto.type, dto.config as Record<string, unknown>);
 
         const template = await this.templateRepository.findOneBy({
@@ -84,6 +86,7 @@ export class TriggerService implements OnModuleInit {
             config: dto.config,
             template,
             mission,
+            creator,
         });
 
         const saved = await this.triggerRepository.save(entity);
@@ -160,6 +163,8 @@ export class TriggerService implements OnModuleInit {
             missionUuid: entity.missionUuid,
             type: entity.type,
             config: entity.config,
+            creatorUuid: entity.creatorUuid,
+            creatorName: entity.creator.name,
         };
     }
 
@@ -169,7 +174,7 @@ export class TriggerService implements OnModuleInit {
     ): Promise<{ actionUuid: string }> {
         const trigger = await this.triggerRepository.findOne({
             where: { uuid },
-            relations: ['template', 'mission'],
+            relations: ['template', 'mission', 'creator'],
         });
 
         if (!trigger) {
@@ -180,14 +185,10 @@ export class TriggerService implements OnModuleInit {
             throw new BadRequestException('Trigger is not a webhook trigger');
         }
 
-        const creator = await this.userRepository.findOneOrFail({
-            where: { uuid: systemUser.uuid },
-        });
-
         const actionUuid = await this.actionDispatcher.dispatch(
             trigger.template.uuid,
             trigger.mission,
-            creator,
+            trigger.creator,
             payload,
             ActionTriggerSource.WEBHOOK,
             trigger.uuid,

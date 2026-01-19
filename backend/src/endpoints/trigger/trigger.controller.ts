@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiOkResponse, OutputDto } from '../../decorators';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { CanCreateInMissionByBody, LoggedIn } from '../auth/roles.decorator';
 
 @ApiTags('Triggers')
@@ -37,8 +38,9 @@ export class TriggerController {
     @ApiOkResponse({ type: ActionTriggerDto })
     async create(
         @Body() dto: CreateActionTriggerDto,
+        @AddUser() auth: AuthHeader,
     ): Promise<ActionTriggerDto> {
-        return this.triggerService.create(dto);
+        return this.triggerService.create(dto, auth.user);
     }
 
     @Patch(':uuid')
