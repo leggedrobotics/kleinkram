@@ -39,7 +39,8 @@ const mockGauge = {
 };
 
 const mockTriggerService = {
-    addFileEvent: jest.fn().mockResolvedValue(),
+    // eslint-disable-next-line unicorn/no-useless-undefined
+    addFileEvent: jest.fn().mockResolvedValue(undefined),
 };
 
 describe('Reproduction Issue: File Hash Not Saved', () => {
