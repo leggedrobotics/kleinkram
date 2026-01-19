@@ -101,7 +101,7 @@ export function IsDockerImage(validationOptions?: ValidationOptions) {
                     );
                 },
                 defaultMessage(_args: ValidationArguments) {
-                    return `Invalid Docker image name. It contains forbidden characters or format, or exceeds the maximum length.`;
+                    return `Invalid Docker image name. It contains forbidden characters, has an invalid format, or exceeds the maximum length.`;
                 },
             },
         });
