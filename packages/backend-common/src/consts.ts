@@ -6,7 +6,8 @@ export const redis = {
 };
 
 export const systemUser = {
-    uuid: '10000000-0000-0000-0000-000000000000',
+    // valid uuid v4 for system user
+    uuid: '00000000-0000-4000-8000-000000000000',
     name: 'System',
     hidden: true,
     email: 'infrastructure@leggedrobotics.com',
