@@ -834,6 +834,12 @@ importers:
       bull:
         specifier: ^4.16.5
         version: 4.16.5
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      class-validator:
+        specifier: ^0.14.3
+        version: 0.14.3
       cron-parser:
         specifier: ^5.4.0
         version: 5.4.0
