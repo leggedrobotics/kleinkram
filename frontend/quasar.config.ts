@@ -46,6 +46,11 @@ export default defineConfig((/* ctx */) => {
                     __dirname,
                     '../packages/api-dto/src',
                 ),
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                '@kleinkram/validation': path.resolve(
+                    __dirname,
+                    '../packages/validation/src',
+                ),
                 // Use frontend-safe validation (no @nestjs dependencies)
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 '@kleinkram/validation/frontend': path.resolve(
@@ -124,6 +129,7 @@ export default defineConfig((/* ctx */) => {
                 viteConfig.optimizeDeps.exclude.push(
                     '@kleinkram/shared',
                     '@kleinkram/api-dto',
+                    '@kleinkram/validation',
                     '@kleinkram/validation/frontend',
                     '@kleinkram/backend-common',
                     // Exclude problematic paths
