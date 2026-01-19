@@ -192,6 +192,24 @@ const emits =
 
 const isGpuEnabled = computed(() => props.gpuMemory > -1);
 
+function safeEmit(
+    value: number | string | null,
+    event:
+        | 'update:cpuCores'
+        | 'update:cpuMemory'
+        | 'update:gpuMemory'
+        | 'update:maxRuntime',
+): void {
+    if (value === null || value === '') {
+        return;
+    }
+    const number_ = Number(value);
+    if (Number.isNaN(number_)) {
+        return;
+    }
+    emits(event, number_);
+}
+
 interface Preset {
     name: string;
     icon: string;
@@ -279,15 +297,15 @@ function selectCustomPreset() {
 }
 
 function updateCpuCores(value: number | string | null) {
-    emits('update:cpuCores', Number(value));
+    safeEmit(value, 'update:cpuCores');
 }
 
 function updateCpuMemory(value: number | string | null) {
-    emits('update:cpuMemory', Number(value));
+    safeEmit(value, 'update:cpuMemory');
 }
 
 function updateMaxRuntime(value: number | string | null) {
-    emits('update:maxRuntime', Number(value));
+    safeEmit(value, 'update:maxRuntime');
 }
 
 function toggleGpu(value: boolean) {
@@ -299,7 +317,7 @@ function toggleGpu(value: boolean) {
 }
 
 function updateGpuMemory(value: number | string | null) {
-    emits('update:gpuMemory', Number(value));
+    safeEmit(value, 'update:gpuMemory');
 }
 </script>
 
