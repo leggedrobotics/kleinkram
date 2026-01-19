@@ -40,7 +40,7 @@ export class ActionTriggerDto {
     @ApiProperty({ required: false })
     @IsString()
     @IsOptional()
-    templateName?: string;
+    templateName?: string | null;
 
     @ApiProperty()
     @IsUUID()
