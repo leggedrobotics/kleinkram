@@ -1,4 +1,4 @@
-import { MissionsDto } from '@kleinkram/api-dto';
+import type { MissionsDto } from '@kleinkram/api-dto';
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
@@ -9,7 +9,7 @@ import type { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
 import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
-import {
+import type {
     PermissionsDto,
     ProjectPermissions,
 } from '@kleinkram/api-dto/types/permissions.dto';
