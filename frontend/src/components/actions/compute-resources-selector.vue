@@ -271,7 +271,7 @@ watch(
                 p.cpuCores === cores &&
                 p.cpuMemory === mem &&
                 ((p.gpuMemory === -1 && gpuValue === -1) ||
-                    (p.gpuMemory > -1 && gpuValue > -1)),
+                    p.gpuMemory === gpuValue),
         );
 
         // If we are already on Custom, stay on Custom unless we are initializing
