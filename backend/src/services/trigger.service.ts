@@ -217,11 +217,30 @@ export class TriggerService implements OnModuleInit {
         type: TriggerType,
         config: Record<string, unknown>,
     ): void {
-        if (type !== TriggerType.TIME) return;
+        if (type === TriggerType.TIME) {
+            const cron = config.cron;
+            if (typeof cron !== 'string' || !isValidCron(cron)) {
+                throw new BadRequestException('Invalid cron expression');
+            }
+            return;
+        }
 
-        const cron = config.cron;
-        if (typeof cron !== 'string' || !isValidCron(cron)) {
-            throw new BadRequestException('Invalid cron expression');
+        if (type === TriggerType.FILE) {
+            const patterns = config.patterns;
+            if (!Array.isArray(patterns) || patterns.length === 0) {
+                throw new BadRequestException(
+                    'Invalid file trigger configuration: "patterns" must be a non-empty array',
+                );
+            }
+            const hasInvalidPattern = patterns.some(
+                (pattern) =>
+                    typeof pattern !== 'string' || pattern.trim().length === 0,
+            );
+            if (hasInvalidPattern) {
+                throw new BadRequestException(
+                    'Invalid file trigger configuration: all "patterns" entries must be non-empty strings',
+                );
+            }
         }
     }
 
