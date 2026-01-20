@@ -22,11 +22,14 @@ import {
     Injectable,
     NotFoundException,
     OnModuleInit,
+    PayloadTooLargeException,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import Queue from 'bull';
 import { Repository } from 'typeorm';
+
+const MAX_WEBHOOK_PAYLOAD_SIZE = 100 * 1024; // 100KB
 
 @Injectable()
 export class TriggerService implements OnModuleInit {
@@ -172,6 +175,19 @@ export class TriggerService implements OnModuleInit {
         uuid: string,
         payload: Record<string, unknown>,
     ): Promise<{ actionUuid: string }> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+        const p = payload as any;
+        if (typeof p !== 'object' || p === null || Array.isArray(p)) {
+            throw new BadRequestException('Payload must be a plain object');
+        }
+
+        const payloadSize = Buffer.byteLength(JSON.stringify(payload));
+        if (payloadSize > MAX_WEBHOOK_PAYLOAD_SIZE) {
+            throw new PayloadTooLargeException(
+                `Payload size ${payloadSize.toString()} exceeds limit of ${MAX_WEBHOOK_PAYLOAD_SIZE.toString()} bytes`,
+            );
+        }
+
         const trigger = await this.triggerRepository.findOne({
             where: { uuid },
             relations: ['template', 'mission', 'creator'],
