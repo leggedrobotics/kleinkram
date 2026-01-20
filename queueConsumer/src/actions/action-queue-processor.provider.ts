@@ -203,8 +203,6 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             action.state_cause = error.message;
             action.artifacts = ArtifactState.ERROR;
             await this.actionRepository.save(action);
-            action.artifacts = ArtifactState.ERROR;
-            await this.actionRepository.save(action);
         } catch (error_: unknown) {
             // If the entity is not found, it means it was deleted concurrently
             if (
