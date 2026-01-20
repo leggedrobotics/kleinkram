@@ -21,6 +21,10 @@ within that mission. For your convenience, you can also access files of other mi
 Actions are queued and executed on hosted action runners within your Kleinkram instance. You can monitor the progress of
 your actions in the "Executions" tab.
 
+### Automating Actions
+
+You can automate action execution using Triggers. Triggers can schedule actions (Cron), run them on external events (Webhook), or react to file uploads (File Pattern). Learn more in the [Action Triggers](triggers.md) guide.
+
 ## Core Concepts of Kleinkram Actions
 
 ::: tip Action Templates vs Action Executions
