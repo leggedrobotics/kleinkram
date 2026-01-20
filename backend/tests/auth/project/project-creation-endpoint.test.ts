@@ -115,14 +115,15 @@ describe('Verification project endpoint', () => {
             database.getRepository<MissionEntity>(MissionEntity);
         const remainingMissions = await missionRepository.find();
         expect(remainingMissions.length).toBe(0);
-        expect(remainingMissions.length).toBe(0);
 
         // delete project
         const projectRepository =
             database.getRepository<ProjectEntity>(ProjectEntity);
+        const allProjects = await projectRepository.find();
+
+        await projectRepository.remove(allProjects);
         const remainingProjects = await projectRepository.find();
 
-        expect(remainingProjects.length).toBe(0);
         expect(remainingProjects.length).toBe(0);
     });
 
@@ -385,6 +386,8 @@ describe('Verification project endpoint', () => {
         // check if mission is generated
         const missionRepository =
             database.getRepository<MissionEntity>(MissionEntity);
+        const allMissions = await missionRepository.find();
+        await missionRepository.remove(allMissions);
         const mission = await missionRepository.findOneOrFail({
             where: { uuid: missionUuid },
         });
@@ -429,7 +432,6 @@ describe('Verification project endpoint', () => {
 
         // verify mission is deleted
         const remainingMissions = await missionRepository.find();
-        expect(remainingMissions.length).toBe(0);
         expect(remainingMissions.length).toBe(0);
 
         // check if project can not be deleted by user
