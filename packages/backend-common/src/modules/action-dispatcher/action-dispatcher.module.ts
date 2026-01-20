@@ -6,6 +6,8 @@ import { MetadataEntity } from '@backend-common/entities/metadata/metadata.entit
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
+import { MissionAccessViewEntity } from '@backend-common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@backend-common/viewEntities/project-access-view.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
@@ -22,6 +24,8 @@ import { ActionDispatcherService } from './action-dispatcher.service';
             AccountEntity,
             MetadataEntity,
             WorkerEntity,
+            MissionAccessViewEntity,
+            ProjectAccessViewEntity,
         ]),
     ],
     providers: [

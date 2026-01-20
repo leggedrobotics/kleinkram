@@ -5,14 +5,22 @@ import {
     ContainerLog,
     Image,
 } from '@kleinkram/backend-common/entities/action/action.entity';
+import { MissionAccessEntity } from '@kleinkram/backend-common/entities/auth/mission-access.entity';
+import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import environment from '@kleinkram/backend-common/environment';
-import { ActionState, ArtifactState, KeyTypes } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    ActionState,
+    ArtifactState,
+    KeyTypes,
+    UserRole,
+} from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import si from 'systeminformation';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
 import {
@@ -33,6 +41,10 @@ export class ActionManagerService {
         private actionRepository: Repository<ActionEntity>,
         @InjectRepository(ApiKeyEntity)
         private apikeyRepository: Repository<ApiKeyEntity>,
+        @InjectRepository(MissionAccessEntity)
+        private missionAccessRepository: Repository<MissionAccessEntity>,
+        @InjectRepository(ProjectAccessEntity)
+        private projectAccessRepository: Repository<ProjectAccessEntity>,
     ) {}
 
     /**
@@ -55,6 +67,20 @@ export class ActionManagerService {
 
         if (action.creator === undefined) {
             throw new Error('User is undefined');
+        }
+
+        const hasWriteAccess = await this.checkAccess(
+            {
+                uuid: action.creator.uuid,
+                role: action.creator.role ?? UserRole.USER,
+            },
+            action.mission.uuid,
+            AccessGroupRights.WRITE,
+        );
+        if (!hasWriteAccess) {
+            throw new Error(
+                `User ${action.creator.uuid} lost access to mission ${action.mission.uuid}`,
+            );
         }
 
         const apiKey = this.apikeyRepository.create({
@@ -632,5 +658,47 @@ export class ActionManagerService {
                 );
             }
         }
+    }
+
+    async checkAccess(
+        user: { uuid: string; role: UserRole },
+        missionUuid: string,
+        rights: AccessGroupRights,
+    ): Promise<boolean> {
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        // Check mission access
+        const directAccess = await this.missionAccessRepository.findOne({
+            where: {
+                mission: { uuid: missionUuid },
+                accessGroup: {
+                    memberships: {
+                        user: { uuid: user.uuid },
+                    },
+                },
+                rights: MoreThanOrEqual(rights),
+            },
+        });
+
+        if (directAccess) {
+            return true;
+        }
+
+        // Check project access
+        const projectAccess = await this.projectAccessRepository.findOne({
+            where: {
+                project: { missions: { uuid: missionUuid } },
+                accessGroup: {
+                    memberships: {
+                        user: { uuid: user.uuid },
+                    },
+                },
+                rights: MoreThanOrEqual(rights),
+            },
+        });
+
+        return !!projectAccess;
     }
 }

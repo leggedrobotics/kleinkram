@@ -5,7 +5,14 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { addActionQueue } from '@backend-common/scheduling-logic';
-import { ActionState, ActionTriggerSource } from '@kleinkram/shared';
+import { MissionAccessViewEntity } from '@backend-common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@backend-common/viewEntities/project-access-view.entity';
+import {
+    AccessGroupRights,
+    ActionState,
+    ActionTriggerSource,
+    UserRole,
+} from '@kleinkram/shared';
 import {
     ConflictException,
     Injectable,
@@ -17,7 +24,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
 import { Gauge } from 'prom-client';
-import { EntityManager, LessThan, Repository } from 'typeorm';
+import { EntityManager, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 
 @Injectable()
 export class ActionDispatcherService implements OnModuleInit {
@@ -41,6 +48,12 @@ export class ActionDispatcherService implements OnModuleInit {
         private completedJobs: Gauge,
         @InjectMetric('backend_failed_jobs')
         private failedJobs: Gauge,
+        @InjectRepository(MissionEntity)
+        private missionRepository: Repository<MissionEntity>,
+        @InjectRepository(MissionAccessViewEntity)
+        private missionAccessView: Repository<MissionAccessViewEntity>,
+        @InjectRepository(ProjectAccessViewEntity)
+        private projectAccessView: Repository<ProjectAccessViewEntity>,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -87,6 +100,21 @@ export class ActionDispatcherService implements OnModuleInit {
             where: { uuid: templateUuid },
         });
 
+        const canAccess = await this.canAccess(
+            creator,
+            mission,
+            template.accessRights,
+        );
+
+        if (!canAccess) {
+            this.logger.error(
+                `[Dispatch] Access denied for user ${creator.uuid}`,
+            );
+            throw new ConflictException(
+                'Creator no longer has access to this mission',
+            );
+        }
+
         let action = this.actionRepository.create({
             mission,
             creator,
@@ -95,20 +123,36 @@ export class ActionDispatcherService implements OnModuleInit {
             triggerSource,
             triggerUuid,
         });
+
         action = await this.actionRepository.save(action);
 
-        try {
-            const runtimeRequirements = {
-                cpuCores: template.cpuCores,
-                cpuMemory: template.cpuMemory,
-                gpuMemory: template.gpuMemory,
-                maxRuntime: template.maxRuntime,
-                ...parameters,
-            };
+        const runtimeRequirements = {
+            cpuCores: template.cpuCores,
+            cpuMemory: template.cpuMemory,
+            gpuMemory: template.gpuMemory,
+            maxRuntime: template.maxRuntime,
+            ...parameters,
+        };
 
-            // Try to queue
+        // Try to queue
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        let queued = await addActionQueue(
+            action,
+            runtimeRequirements,
+            this.workerRepository,
+            this.actionRepository,
+            this.actionQueues,
+            this.logger,
+        );
+
+        // If failed, try to refresh workers and retry
+        if (!queued) {
+            this.logger.warn(
+                'Queue rejection, attempting to refresh workers and retry...',
+            );
+            await this.healthCheck();
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            let queued = await addActionQueue(
+            queued = await addActionQueue(
                 action,
                 runtimeRequirements,
                 this.workerRepository,
@@ -116,40 +160,14 @@ export class ActionDispatcherService implements OnModuleInit {
                 this.actionQueues,
                 this.logger,
             );
-
-            // If failed, try to refresh workers and retry
-            if (!queued) {
-                this.logger.warn(
-                    'Queue rejection, attempting to refresh workers and retry...',
-                );
-                await this.healthCheck();
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                queued = await addActionQueue(
-                    action,
-                    runtimeRequirements,
-                    this.workerRepository,
-                    this.actionRepository,
-                    this.actionQueues,
-                    this.logger,
-                );
-            }
-
-            if (!queued) throw new Error('Queue rejection');
-
-            this.logger.log(
-                `Action ${action.uuid} dispatched for mission ${mission.uuid}`,
-            );
-            return action.uuid;
-        } catch (error) {
-            this.logger.error(`Failed to queue action ${action.uuid}`, error);
-            await this.actionRepository.update(action.uuid, {
-                state: ActionState.UNPROCESSABLE,
-
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause: 'Resources unavailable or queue error',
-            });
-            throw new ConflictException('No worker available');
         }
+
+        if (!queued) throw new Error('Queue rejection');
+
+        this.logger.log(
+            `Action ${action.uuid} dispatched for mission ${mission.uuid}`,
+        );
+        return action.uuid;
     }
 
     /**
@@ -338,5 +356,54 @@ export class ActionDispatcherService implements OnModuleInit {
             jobs.push(..._jobs);
         }
         return jobs;
+    }
+
+    private async canAccess(
+        user: UserEntity,
+        mission: MissionEntity,
+        rights: AccessGroupRights,
+    ): Promise<boolean> {
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        // Check if user has direct access to the mission
+        const directAccess = await this.missionAccessView.findOne({
+            where: {
+                missionUuid: mission.uuid,
+                userUuid: user.uuid,
+                rights: MoreThanOrEqual(rights),
+            },
+        });
+
+        if (directAccess) {
+            return true;
+        }
+
+        let projectUuid = mission.project?.uuid;
+        if (!projectUuid) {
+            // Need to fetch mission to get project uuid
+            const missionWithProject = await this.missionRepository.findOne({
+                where: { uuid: mission.uuid },
+                relations: ['project'],
+            });
+
+            if (missionWithProject?.project) {
+                projectUuid = missionWithProject.project.uuid;
+            } else {
+                return false;
+            }
+        }
+
+        // Check if user has access via project
+        const projectAccess = await this.projectAccessView.findOne({
+            where: {
+                projectUuid: projectUuid,
+                userUuid: user.uuid,
+                rights: MoreThanOrEqual(rights),
+            },
+        });
+
+        return !!projectAccess;
     }
 }
