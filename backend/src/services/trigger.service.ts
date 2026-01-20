@@ -238,8 +238,9 @@ export class TriggerService implements OnModuleInit {
             },
             {
                 jobId,
-                removeOnComplete: true,
-                removeOnFail: true,
+                attempts: 3,
+                removeOnComplete: 100,
+                removeOnFail: 100,
             },
         );
     }
