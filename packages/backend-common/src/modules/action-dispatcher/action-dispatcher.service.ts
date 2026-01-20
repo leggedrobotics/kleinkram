@@ -5,14 +5,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { addActionQueue } from '@backend-common/scheduling-logic';
-import { MissionAccessViewEntity } from '@backend-common/viewEntities/mission-access-view.entity';
-import { ProjectAccessViewEntity } from '@backend-common/viewEntities/project-access-view.entity';
-import {
-    AccessGroupRights,
-    ActionState,
-    ActionTriggerSource,
-    UserRole,
-} from '@kleinkram/shared';
+import { ActionState, ActionTriggerSource, UserRole } from '@kleinkram/shared';
 import {
     ConflictException,
     Injectable,
@@ -24,7 +17,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
 import { Gauge } from 'prom-client';
-import { EntityManager, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { EntityManager, LessThan, Repository } from 'typeorm';
+import { AccessControlService } from '../access-control/access-control.service';
 
 @Injectable()
 export class ActionDispatcherService implements OnModuleInit {
@@ -48,12 +42,7 @@ export class ActionDispatcherService implements OnModuleInit {
         private completedJobs: Gauge,
         @InjectMetric('backend_failed_jobs')
         private failedJobs: Gauge,
-        @InjectRepository(MissionEntity)
-        private missionRepository: Repository<MissionEntity>,
-        @InjectRepository(MissionAccessViewEntity)
-        private missionAccessView: Repository<MissionAccessViewEntity>,
-        @InjectRepository(ProjectAccessViewEntity)
-        private projectAccessView: Repository<ProjectAccessViewEntity>,
+        private accessControlService: AccessControlService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -100,8 +89,11 @@ export class ActionDispatcherService implements OnModuleInit {
             where: { uuid: templateUuid },
         });
 
-        const canAccess = await this.canAccess(
-            creator,
+        const canAccess = await this.accessControlService.canAccessMission(
+            {
+                uuid: creator.uuid,
+                role: creator.role ?? UserRole.USER,
+            },
             mission,
             template.accessRights,
         );
@@ -356,54 +348,5 @@ export class ActionDispatcherService implements OnModuleInit {
             jobs.push(..._jobs);
         }
         return jobs;
-    }
-
-    private async canAccess(
-        user: UserEntity,
-        mission: MissionEntity,
-        rights: AccessGroupRights,
-    ): Promise<boolean> {
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
-        // Check if user has direct access to the mission
-        const directAccess = await this.missionAccessView.findOne({
-            where: {
-                missionUuid: mission.uuid,
-                userUuid: user.uuid,
-                rights: MoreThanOrEqual(rights),
-            },
-        });
-
-        if (directAccess) {
-            return true;
-        }
-
-        let projectUuid = mission.project?.uuid;
-        if (!projectUuid) {
-            // Need to fetch mission to get project uuid
-            const missionWithProject = await this.missionRepository.findOne({
-                where: { uuid: mission.uuid },
-                relations: ['project'],
-            });
-
-            if (missionWithProject?.project) {
-                projectUuid = missionWithProject.project.uuid;
-            } else {
-                return false;
-            }
-        }
-
-        // Check if user has access via project
-        const projectAccess = await this.projectAccessView.findOne({
-            where: {
-                projectUuid: projectUuid,
-                userUuid: user.uuid,
-                rights: MoreThanOrEqual(rights),
-            },
-        });
-
-        return !!projectAccess;
     }
 }

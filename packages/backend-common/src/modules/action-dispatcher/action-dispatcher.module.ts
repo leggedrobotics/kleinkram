@@ -11,6 +11,7 @@ import { ProjectAccessViewEntity } from '@backend-common/viewEntities/project-ac
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
+import { AccessControlModule } from '../access-control/access-control.module';
 import { ActionDispatcherService } from './action-dispatcher.service';
 
 @Module({
@@ -27,6 +28,7 @@ import { ActionDispatcherService } from './action-dispatcher.service';
             MissionAccessViewEntity,
             ProjectAccessViewEntity,
         ]),
+        AccessControlModule,
     ],
     providers: [
         ActionDispatcherService,

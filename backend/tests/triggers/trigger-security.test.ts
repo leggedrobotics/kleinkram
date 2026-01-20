@@ -8,6 +8,7 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { AccessControlService } from '@kleinkram/backend-common/modules/access-control/access-control.service';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
@@ -99,6 +100,12 @@ describe('Trigger Security', () => {
     beforeAll(() => {
         // Manually instantiate the service with repositories from the shared connection
         // and mock metrics.
+        const accessControlService = new AccessControlService(
+            getRepo(MissionEntity),
+            getRepo(MissionAccessViewEntity),
+            getRepo(ProjectAccessViewEntity),
+        );
+
         actionDispatcher = new ActionDispatcherService(
             getRepo(ActionEntity),
             getRepo(ActionTemplateEntity),
@@ -108,9 +115,7 @@ describe('Trigger Security', () => {
             mockGauge, // backend_active_jobs
             mockGauge, // backend_completed_jobs
             mockGauge, // backend_failed_jobs
-            getRepo(MissionEntity),
-            getRepo(MissionAccessViewEntity),
-            getRepo(ProjectAccessViewEntity),
+            accessControlService,
         );
     });
 

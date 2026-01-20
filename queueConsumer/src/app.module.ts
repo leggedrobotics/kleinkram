@@ -1,4 +1,9 @@
-import { AccessGroupEntity, ApiKeyEntity } from '@kleinkram/backend-common';
+import {
+    AccessControlModule,
+    AccessGroupEntity,
+    ApiKeyEntity,
+    StorageModule,
+} from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
@@ -19,7 +24,6 @@ import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.enti
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import env from '@kleinkram/backend-common/environment';
-import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import configuration from '@kleinkram/backend-common/typeorm-config';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
@@ -135,6 +139,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         ]),
         ScheduleModule.forRoot(),
         StorageModule,
+        AccessControlModule,
     ],
     providers: [
         ActionQueueProcessorProvider,
