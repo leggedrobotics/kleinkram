@@ -113,9 +113,6 @@ describe('Verification project endpoint', () => {
         // delete all missions
         const missionRepository =
             database.getRepository<MissionEntity>(MissionEntity);
-        const allMissions = await missionRepository.find();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const responseMission = await missionRepository.remove(allMissions);
         const remainingMissions = await missionRepository.find();
         expect(remainingMissions.length).toBe(0);
         expect(remainingMissions.length).toBe(0);
@@ -123,9 +120,6 @@ describe('Verification project endpoint', () => {
         // delete project
         const projectRepository =
             database.getRepository<ProjectEntity>(ProjectEntity);
-        const allProjects = await projectRepository.find();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const response = await projectRepository.remove(allProjects);
         const remainingProjects = await projectRepository.find();
 
         expect(remainingProjects.length).toBe(0);

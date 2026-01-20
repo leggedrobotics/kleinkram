@@ -20,7 +20,7 @@ export interface MetadataContext {
 
 setSeederFactory(
     MetadataEntity,
-    (faker: Faker, context: Partial<MetadataContext> = {}) => {
+    (_faker: Faker, context: Partial<MetadataContext> = {}) => {
         const {
             mission,
             tagType,

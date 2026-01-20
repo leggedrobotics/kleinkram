@@ -130,8 +130,6 @@ describe('Action File Events', () => {
         });
         await apikeyRepo.save(apikeyEntity);
         const actionKey = apikeyEntity.apikey;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const apiKey = actionKey;
 
         // 4. Create a File directly in DB
         // Reuse the file created earlier

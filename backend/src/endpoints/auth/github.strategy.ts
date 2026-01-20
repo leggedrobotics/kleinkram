@@ -28,8 +28,8 @@ export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
     }
 
     async validate(
-        accessToken: string,
-        refreshToken: string,
+        _accessToken: string,
+        _refreshToken: string,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         profile: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,6 +1,5 @@
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ProjectGuardService } from '@/services/project-guard.service';
-import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import {
     BadRequestException,
@@ -8,9 +7,6 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { BaseGuard } from './base.guards';
 
 interface MissionBody {
@@ -26,10 +22,7 @@ interface TagParameters {
 
 @Injectable()
 export class ReadMissionGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -56,10 +49,7 @@ export class ReadMissionGuard extends BaseGuard {
 
 @Injectable()
 export class CanReadManyMissionsGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -88,10 +78,7 @@ export class CanReadManyMissionsGuard extends BaseGuard {
 
 @Injectable()
 export class ReadMissionByNameGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -123,10 +110,7 @@ export class ReadMissionByNameGuard extends BaseGuard {
 
 @Injectable()
 export class CreateInMissionByBodyGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -161,10 +145,7 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
 
 @Injectable()
 export class WriteMissionByBodyGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -199,10 +180,7 @@ export class WriteMissionByBodyGuard extends BaseGuard {
 
 @Injectable()
 export class CanDeleteMissionGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -248,12 +226,7 @@ export class CanDeleteMissionGuard extends BaseGuard {
 
 @Injectable()
 export class AddTagGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        @InjectRepository(ApiKeyEntity)
-        private apikeyRepository: Repository<ApiKeyEntity>,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -284,10 +257,7 @@ export class AddTagGuard extends BaseGuard {
 
 @Injectable()
 export class DeleteTagGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -322,7 +292,6 @@ export class MoveMissionToProjectGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
     ) {
         super();
     }

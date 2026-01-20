@@ -13,7 +13,7 @@ export interface CategoryContext {
 
 setSeederFactory(
     CategoryEntity,
-    (faker: Faker, context: Partial<CategoryContext> = {}) => {
+    (_faker: Faker, context: Partial<CategoryContext> = {}) => {
         const { project, creator, name } = context;
 
         if (!project) {

@@ -6,7 +6,6 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
 
 interface ProjectBody {
@@ -62,10 +61,7 @@ export class ReadProjectGuard extends BaseGuard {
 
 @Injectable()
 export class ReadProjectByNameGuard extends BaseGuard {
-    constructor(
-        private projectGuardService: ProjectGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private projectGuardService: ProjectGuardService) {
         super();
     }
 
@@ -91,10 +87,7 @@ export class ReadProjectByNameGuard extends BaseGuard {
 
 @Injectable()
 export class CreateInProjectByBodyGuard extends BaseGuard {
-    constructor(
-        private projectGuardService: ProjectGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private projectGuardService: ProjectGuardService) {
         super();
     }
 
@@ -122,10 +115,7 @@ export class CreateInProjectByBodyGuard extends BaseGuard {
 
 @Injectable()
 export class WriteProjectGuard extends BaseGuard {
-    constructor(
-        private projectGuardService: ProjectGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private projectGuardService: ProjectGuardService) {
         super();
     }
 
@@ -189,10 +179,7 @@ export class DeleteProjectGuard extends BaseGuard {
 
 @Injectable()
 export class CreateGuard extends BaseGuard {
-    constructor(
-        private projectGuardService: ProjectGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private projectGuardService: ProjectGuardService) {
         super();
     }
 

@@ -9,7 +9,6 @@ import {
 } from '@kleinkram/api-dto';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { validateDockerImageName } from '@kleinkram/validation';
 import {
     ConflictException,
@@ -28,8 +27,6 @@ export class TemplateService {
         private actionTemplateRepository: Repository<ActionTemplateEntity>,
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
-        @InjectRepository(UserEntity)
-        private userRepository: Repository<UserEntity>,
     ) {}
 
     async create(
@@ -74,7 +71,6 @@ export class TemplateService {
     }
 
     async createVersion(
-        uuid: string,
         data: UpdateTemplateDto,
         auth: AuthHeader,
     ): Promise<ActionTemplateDto> {

@@ -1,5 +1,5 @@
 import { AccessGroupRights, UserRole } from '@kleinkram/shared';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { MissionEntity } from '../../entities/mission/mission.entity';
@@ -8,8 +8,6 @@ import { ProjectAccessViewEntity } from '../../viewEntities/project-access-view.
 
 @Injectable()
 export class AccessControlService {
-    private readonly logger = new Logger(AccessControlService.name);
-
     constructor(
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,

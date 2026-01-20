@@ -4,7 +4,6 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
 
 interface AccessGroupBody {
@@ -19,10 +18,7 @@ interface AccessGroupParameters {
 
 @Injectable()
 export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
-    constructor(
-        private reflector: Reflector,
-        private authGuardService: AuthGuardService,
-    ) {
+    constructor(private authGuardService: AuthGuardService) {
         super();
     }
 
@@ -53,10 +49,7 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
 
 @Injectable()
 export class CanEditGroupByGroupUuid extends BaseGuard {
-    constructor(
-        private reflector: Reflector,
-        private authGuardService: AuthGuardService,
-    ) {
+    constructor(private authGuardService: AuthGuardService) {
         super();
     }
 

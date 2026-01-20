@@ -20,7 +20,7 @@ export interface FileContext {
 
 setSeederFactory(
     FileEntity,
-    (faker: Faker, context: Partial<FileContext> = {}) => {
+    (_faker: Faker, context: Partial<FileContext> = {}) => {
         if (!context.mission) {
             throw new Error('Mission is required');
         }
