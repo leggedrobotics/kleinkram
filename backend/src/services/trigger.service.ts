@@ -216,10 +216,31 @@ export class TriggerService implements OnModuleInit {
         });
     }
 
+    /**
+     *
+     * Adds a cron check job to the queue.
+     *
+     * We use a deterministic job ID based on the current minute to ensure that
+     * if multiple backend instances are running, they don't produce duplicate jobs.
+     * Bull's built-in deduplication will prevent multiple jobs with the same ID
+     * from being added.
+     *
+     */
     @Cron(CronExpression.EVERY_MINUTE)
     async addCronCheck(): Promise<void> {
-        await this.triggerQueue.add('cronCheck', {
-            timestamp: new Date(),
-        });
+        const timestamp = new Date();
+        const jobId = `cronCheck-${Math.floor(timestamp.getTime() / 60_000).toString()}`;
+
+        await this.triggerQueue.add(
+            'cronCheck',
+            {
+                timestamp,
+            },
+            {
+                jobId,
+                removeOnComplete: true,
+                removeOnFail: true,
+            },
+        );
     }
 }
