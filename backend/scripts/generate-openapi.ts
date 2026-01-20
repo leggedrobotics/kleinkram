@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import * as fs from 'node:fs';
 import path from 'node:path';
 import 'reflect-metadata';
+import { ThrottlerLoggerGuard } from '../src/endpoints/trigger/throttler-logger.guard';
 
 // Reuse constants from @nestjs/common if possible, or string literals
 // PATH_METADATA 'path'
@@ -80,11 +81,16 @@ async function generateOpenApi() {
         `Initializing NestJS TestingModule with ${String(controllers.length)} controllers...`,
     );
 
-    const moduleFixture = await Test.createTestingModule({
+    // Mock ThrottlerLoggerGuard to prevent failures
+    ThrottlerLoggerGuard.prototype.onModuleInit = () => Promise.resolve();
+    ThrottlerLoggerGuard.prototype.canActivate = () => Promise.resolve(true);
+
+    const builder = Test.createTestingModule({
         controllers,
         providers: [],
-    })
+    });
 
+    const moduleFixture = await builder
         .useMocker((_token) => {
             // Create a recursive mock that handles any property access or method call
             const recursiveMock = new Proxy(
