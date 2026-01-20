@@ -118,33 +118,18 @@ export class ActionDispatcherService implements OnModuleInit {
 
         action = await this.actionRepository.save(action);
 
-        const runtimeRequirements = {
-            cpuCores: template.cpuCores,
-            cpuMemory: template.cpuMemory,
-            gpuMemory: template.gpuMemory,
-            maxRuntime: template.maxRuntime,
-            ...parameters,
-        };
+        try {
+            const runtimeRequirements = {
+                cpuCores: template.cpuCores,
+                cpuMemory: template.cpuMemory,
+                gpuMemory: template.gpuMemory,
+                maxRuntime: template.maxRuntime,
+                ...parameters,
+            };
 
-        // Try to queue
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        let queued = await addActionQueue(
-            action,
-            runtimeRequirements,
-            this.workerRepository,
-            this.actionRepository,
-            this.actionQueues,
-            this.logger,
-        );
-
-        // If failed, try to refresh workers and retry
-        if (!queued) {
-            this.logger.warn(
-                'Queue rejection, attempting to refresh workers and retry...',
-            );
-            await this.healthCheck();
+            // Try to queue
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            queued = await addActionQueue(
+            let queued = await addActionQueue(
                 action,
                 runtimeRequirements,
                 this.workerRepository,
@@ -152,14 +137,39 @@ export class ActionDispatcherService implements OnModuleInit {
                 this.actionQueues,
                 this.logger,
             );
+
+            // If failed, try to refresh workers and retry
+            if (!queued) {
+                this.logger.warn(
+                    'Queue rejection, attempting to refresh workers and retry...',
+                );
+                await this.healthCheck();
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                queued = await addActionQueue(
+                    action,
+                    runtimeRequirements,
+                    this.workerRepository,
+                    this.actionRepository,
+                    this.actionQueues,
+                    this.logger,
+                );
+            }
+
+            if (!queued) throw new Error('Queue rejection');
+
+            this.logger.log(
+                `Action ${action.uuid} dispatched for mission ${mission.uuid}`,
+            );
+            return action.uuid;
+        } catch (error) {
+            this.logger.error(`Failed to queue action ${action.uuid}`, error);
+            await this.actionRepository.update(action.uuid, {
+                state: ActionState.UNPROCESSABLE,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                state_cause: 'Resources unavailable or queue error',
+            });
+            throw new ConflictException('No worker available');
         }
-
-        if (!queued) throw new Error('Queue rejection');
-
-        this.logger.log(
-            `Action ${action.uuid} dispatched for mission ${mission.uuid}`,
-        );
-        return action.uuid;
     }
 
     /**
