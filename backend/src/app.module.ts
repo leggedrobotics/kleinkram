@@ -39,6 +39,7 @@ import { DBDumper } from './services/dbdumper.service';
                 version: appVersion,
             },
         }),
+
         ConfigModule.forRoot({
             envFilePath: ['.env', '../.env'],
             isGlobal: true,
