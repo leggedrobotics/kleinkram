@@ -49,9 +49,9 @@ export class FakeOauthStrategy extends PassportStrategy(
 
     async validate(
         accessToken: string,
-        refreshToken: string,
+        _refreshToken: string,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        profile: any,
+        _profile: any,
         callback: VerifyCallback,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> {

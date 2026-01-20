@@ -6,7 +6,6 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
 
 interface FileBody {
@@ -61,10 +60,7 @@ export class DeleteFileGuard extends BaseGuard {
 
 @Injectable()
 export class ReadFileGuard extends BaseGuard {
-    constructor(
-        private fileGuardService: FileGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private fileGuardService: FileGuardService) {
         super();
     }
 
@@ -96,10 +92,7 @@ export class ReadFileGuard extends BaseGuard {
 
 @Injectable()
 export class ReadFileByNameGuard extends BaseGuard {
-    constructor(
-        private fileGuardService: FileGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private fileGuardService: FileGuardService) {
         super();
     }
 
@@ -129,10 +122,7 @@ export class ReadFileByNameGuard extends BaseGuard {
 
 @Injectable()
 export class WriteFileGuard extends BaseGuard {
-    constructor(
-        private fileGuardService: FileGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private fileGuardService: FileGuardService) {
         super();
     }
 
@@ -170,7 +160,6 @@ export class MoveFilesGuard extends BaseGuard {
     constructor(
         private fileGuardService: FileGuardService,
         private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
     ) {
         super();
     }

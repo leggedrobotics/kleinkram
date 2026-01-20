@@ -13,11 +13,11 @@ import {
     QueueState,
     UserRole,
 } from '@kleinkram/shared';
-import { InjectQueue, Process, Processor } from '@nestjs/bull';
+import { Process, Processor } from '@nestjs/bull';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Job, Queue } from 'bull';
+import { Job } from 'bull';
 import { Redis } from 'ioredis';
 import crypto from 'node:crypto';
 import Redlock from 'redlock';
@@ -54,7 +54,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         private projectAccessView: Repository<ProjectAccessViewEntity>,
         @InjectRepository(MissionAccessViewEntity)
         private missionAccessView: Repository<MissionAccessViewEntity>,
-        @InjectQueue('file-queue') private readonly fileQueue: Queue,
         private readonly storageService: StorageService,
     ) {}
 

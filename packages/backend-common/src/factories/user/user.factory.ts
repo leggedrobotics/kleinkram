@@ -25,7 +25,7 @@ interface AccessGroupConfig {
 
 setSeederFactory(
     UserEntity,
-    (faker: Faker, context: Partial<UserContext> = {}) => {
+    (_faker: Faker, context: Partial<UserContext> = {}) => {
         const role =
             context.role ??
             extendedFaker.helpers.arrayElement([UserRole.ADMIN, UserRole.USER]);

@@ -90,7 +90,7 @@ async function generateOpenApi() {
             const recursiveMock = new Proxy(
                 {},
                 {
-                    get: (target, property) => {
+                    get: (_target, property) => {
                         if (
                             property === 'then' ||
                             property === 'catch' ||

@@ -15,7 +15,7 @@ export interface TopicContext {
 
 setSeederFactory(
     TopicEntity,
-    (faker: Faker, context: Partial<TopicContext> = {}) => {
+    (_faker: Faker, context: Partial<TopicContext> = {}) => {
         const topic = new TopicEntity();
         topic.name = context.name ?? extendedFaker.ros.topic();
         topic.uuid = extendedFaker.string.uuid();

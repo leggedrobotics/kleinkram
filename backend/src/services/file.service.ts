@@ -112,8 +112,6 @@ export class FileService implements OnModuleInit {
         private readonly dataSource: DataSource,
         @InjectRepository(TagTypeEntity)
         private tagTypeRepository: Repository<TagTypeEntity>,
-        @InjectRepository(IngestionJobEntity)
-        private queueRepository: Repository<IngestionJobEntity>,
         @InjectRepository(CategoryEntity)
         private categoryRepository: Repository<CategoryEntity>,
         private readonly storageService: StorageService,

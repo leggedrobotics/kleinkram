@@ -8,7 +8,6 @@ import {
     ExecutionContext,
     Injectable,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseGuard } from './base.guards';
@@ -91,7 +90,6 @@ export class CreateActionGuard extends BaseGuard {
 @Injectable()
 export class DeleteActionGuard extends BaseGuard {
     constructor(
-        private reflector: Reflector,
         private missionGuardService: MissionGuardService,
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
@@ -152,7 +150,6 @@ export class DeleteActionGuard extends BaseGuard {
 @Injectable()
 export class CreateActionsGuard extends BaseGuard {
     constructor(
-        private reflector: Reflector,
         private missionGuardService: MissionGuardService,
         @InjectRepository(ActionTemplateEntity)
         private actionTemplateRepository: Repository<ActionTemplateEntity>,

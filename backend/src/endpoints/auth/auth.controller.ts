@@ -40,8 +40,7 @@ export class AuthController {
 
     @Get('github')
     @UseGuards(AuthGuard('github'))
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-    async githubAuth(@Req() request: any): Promise<void> {
+    async githubAuth(): Promise<void> {
         // Initiates the GitHub OAuth flow
         // OAuth is handled by the AuthGuard
     }

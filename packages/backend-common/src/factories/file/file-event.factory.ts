@@ -17,7 +17,7 @@ export interface FileEventContext {
 
 setSeederFactory(
     FileEventEntity,
-    (faker: Faker, context: Partial<FileEventContext> = {}) => {
+    (_faker: Faker, context: Partial<FileEventContext> = {}) => {
         const { file, mission, actor, type, details } = context;
 
         if (!file) {

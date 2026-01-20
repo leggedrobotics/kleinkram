@@ -43,8 +43,6 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
     let fileRepository: Repository<FileEntity>;
     let queueRepository: Repository<IngestionJobEntity>;
     let missionRepository: Repository<MissionEntity>;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let userRepository: Repository<UserEntity>;
     let user: UserEntity;
     let missionUuid: string;
 
@@ -62,7 +60,6 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
         fileRepository = database.getRepository(FileEntity);
         queueRepository = database.getRepository(IngestionJobEntity);
         missionRepository = database.getRepository(MissionEntity);
-        userRepository = database.getRepository(UserEntity);
 
         // Setup Data
         const userUuid = await mockDatabaseUser('test@example.com');
