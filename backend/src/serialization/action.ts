@@ -78,5 +78,6 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         worker: workerEntityToDto(action.worker)!,
         triggerSource: action.triggerSource,
         triggerUuid: action.triggerUuid,
+        errorHint: action.errorHint,
     };
 };

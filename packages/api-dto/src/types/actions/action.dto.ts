@@ -5,6 +5,7 @@ import { DockerImageDto } from '@api-dto/actions/docker-image.dto';
 import { MissionDto } from '@api-dto/mission/mission.dto';
 import { UserDto } from '@api-dto/user/user.dto';
 import {
+    ActionErrorHint,
     ActionState,
     ActionTriggerSource,
     ArtifactState,
@@ -99,6 +100,13 @@ export class ActionDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @ApiProperty({ required: false })
+    @IsOptional()
     @IsUUID()
     triggerUuid?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsEnum(ActionErrorHint)
+    errorHint?: ActionErrorHint;
 }

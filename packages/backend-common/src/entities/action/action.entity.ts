@@ -7,6 +7,7 @@ import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { RuntimeDescription } from '@backend-common/types';
 import {
+    ActionErrorHint,
     ActionState,
     ActionTriggerSource,
     ArtifactState,
@@ -144,4 +145,11 @@ export class ActionEntity extends BaseEntity {
 
     @Column({ nullable: true })
     triggerUuid?: string;
+
+    @Column({
+        type: 'enum',
+        enum: ActionErrorHint,
+        nullable: true,
+    })
+    errorHint?: ActionErrorHint;
 }

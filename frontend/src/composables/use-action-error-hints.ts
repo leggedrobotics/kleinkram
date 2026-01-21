@@ -1,6 +1,6 @@
 import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
-import { ActionState } from '@kleinkram/shared';
+import { ActionErrorHint, ActionState } from '@kleinkram/shared';
 import ROUTES from 'src/router/routes';
 import { computed, nextTick, type Ref } from 'vue';
 import type { Router } from 'vue-router';
@@ -25,14 +25,12 @@ const ERROR_HINTS: ErrorHint[] = [
         id: 'docker-404',
         text: 'The Docker image could not be found. Please check the image name.',
         buttonLabel: 'Edit Action Settings',
-        check: (act) => {
-            if (act.state !== ActionState.FAILED || !act.stateCause)
-                return false;
-            return (
+        check: (act) =>
+            act.errorHint === ActionErrorHint.DOCKER_IMAGE_NOT_FOUND ||
+            // Fallback for actions processed before update
+            (act.state === ActionState.FAILED &&
                 act.stateCause.includes('failed to resolve reference') &&
-                act.stateCause.includes('not found')
-            );
-        },
+                act.stateCause.includes('not found')),
         onClick: async (act, r) => {
             await r.push({
                 name: ROUTES.ACTION_TEMPLATE_EDIT.routeName,
@@ -45,7 +43,9 @@ const ERROR_HINTS: ErrorHint[] = [
         id: 'cli-outdated',
         text: 'This action likely failed due to an outdated Kleinkram CLI. Please rebuild it with a newer CLI version',
         buttonLabel: 'View Logs',
-        check: (_, logsData) => {
+        check: (act, logsData) => {
+            if (act.errorHint === ActionErrorHint.CLI_OUTDATED) return true;
+            // Fallback
             if (!logsData?.data) return false;
             const lastLogs = logsData.data.slice(-25);
             return lastLogs.some(
@@ -57,7 +57,7 @@ const ERROR_HINTS: ErrorHint[] = [
                     ),
             );
         },
-        onClick: (_, __, context) => {
+        onClick: (_, _r, context) => {
             if (!context.logs?.data || !context.scrollToLog) return;
 
             const logsData = context.logs.data;
@@ -77,6 +77,18 @@ const ERROR_HINTS: ErrorHint[] = [
                     break;
                 }
             }
+        },
+    },
+    {
+        id: 'memory-limit-exceeded',
+        text: 'The action was killed because it exceeded the memory limit. This is often caused by downloading large files to the container memory. Please try using /tmp_disk for downloads.',
+        buttonLabel: 'View Documentation',
+        check: (act) => act.errorHint === ActionErrorHint.MEMORY_LIMIT_EXCEEDED,
+        onClick: () => {
+            window.open(
+                'https://kleinkram.io/docs/advanced/tmp_disk',
+                '_blank',
+            );
         },
     },
 ];

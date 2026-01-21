@@ -36,6 +36,7 @@ import os from 'node:os';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AccessGroupExpiryProvider } from './accessGroupExpiry/access-group-expiry.provider';
 import { ActionQueueProcessorProvider } from './actions/action-queue-processor.provider';
+import { ActionErrorHintService } from './actions/services/action-error-hint.service';
 import { ActionManagerService } from './actions/services/action-manager.service';
 import { ContainerCleanupService } from './actions/services/cleanup-containers.service';
 import { DockerDaemon } from './actions/services/docker-daemon.service';
@@ -149,6 +150,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         ContainerCleanupService,
         AccessGroupExpiryProvider,
         ImageResolutionService,
+        ActionErrorHintService,
     ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

@@ -3,6 +3,7 @@ import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
@@ -25,6 +26,7 @@ import { ActionsController } from './action.controller';
             MissionEntity,
             AccountEntity,
             MetadataEntity,
+            FileEntity,
         ]),
         QueueModule,
         StorageModule,

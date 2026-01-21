@@ -22,6 +22,7 @@ import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
+import { ActionErrorHintService } from './action-error-hint.service';
 import {
     ContainerEnvironment,
     DockerDaemon,
@@ -35,12 +36,13 @@ export class ActionManagerService {
     private static LOG_WRITE_BATCH_TIME = 100;
 
     constructor(
-        private containerDaemon: DockerDaemon,
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
         @InjectRepository(ApiKeyEntity)
         private apikeyRepository: Repository<ApiKeyEntity>,
         private accessControlService: AccessControlService,
+        private readonly containerDaemon: DockerDaemon,
+        private readonly actionErrorHintService: ActionErrorHintService,
     ) {}
 
     /**
@@ -331,6 +333,8 @@ export class ActionManagerService {
                         error instanceof Error ? error.message : String(error),
                 },
             );
+            // Trigger hint assessment asynchronously
+            void this.actionErrorHintService.assess(action.uuid);
             throw error;
         } finally {
             await apikey[Symbol.asyncDispose]();
