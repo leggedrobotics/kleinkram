@@ -79,5 +79,6 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         triggerSource: action.triggerSource,
         triggerUuid: action.triggerUuid,
         errorHint: action.errorHint,
+        exitCode: action.exit_code,
     };
 };

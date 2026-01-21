@@ -7,6 +7,7 @@ import {
     environment,
     Image,
 } from '@kleinkram/backend-common';
+import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import {
     AccessGroupRights,
     ActionState,
@@ -14,9 +15,11 @@ import {
     KeyTypes,
     UserRole,
 } from '@kleinkram/shared';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
+import fs from 'node:fs';
+import path from 'node:path';
 import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import si from 'systeminformation';
 import { Repository } from 'typeorm';
@@ -30,20 +33,63 @@ import {
 } from './docker-daemon.service';
 
 @Injectable()
-export class ActionManagerService {
-    // we will write logs to the database every 100 millisecond
-
+export class ActionManagerService implements OnModuleInit {
+    // we will write logs to the database every 100 milliseconds
     private static LOG_WRITE_BATCH_TIME = 100;
+    private currentInstanceId!: string;
 
     constructor(
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
         @InjectRepository(ApiKeyEntity)
         private apikeyRepository: Repository<ApiKeyEntity>,
+        @InjectRepository(ActionRunnerEntity)
+        private actionRunnerRepository: Repository<ActionRunnerEntity>,
         private accessControlService: AccessControlService,
         private readonly containerDaemon: DockerDaemon,
         private readonly actionErrorHintService: ActionErrorHintService,
     ) {}
+
+    async onModuleInit(): Promise<void> {
+        await this.registerRunner();
+    }
+
+    private async registerRunner(): Promise<void> {
+        const osInfo = await si.osInfo();
+        const hostname = osInfo.hostname;
+
+        let packageJsonVersion = 'unknown';
+        try {
+            const packageJsonPath = path.resolve(
+                __dirname,
+                '../../../package.json',
+            );
+            const packageJson = JSON.parse(
+                fs.readFileSync(packageJsonPath, 'utf8'),
+            ) as { version: string };
+            packageJsonVersion = packageJson.version;
+        } catch (error) {
+            logger.warn(
+                `Failed to read package.json version: ${String(error)}`,
+            );
+        }
+
+        const gitHash = process.env.GIT_COMMIT ?? 'unknown';
+
+        // Let DB generate UUID
+        const runner = this.actionRunnerRepository.create({
+            hostname,
+            version: packageJsonVersion,
+            gitHash,
+            startedAt: new Date(),
+            lastSeenAt: new Date(),
+        });
+        const savedRunner = await this.actionRunnerRepository.save(runner);
+        this.currentInstanceId = savedRunner.uuid;
+        logger.info(
+            `Action Runner registered with ID: ${this.currentInstanceId}`,
+        );
+    }
 
     /**
      * Creates a new API key for the given action.
@@ -164,7 +210,7 @@ export class ActionManagerService {
                 {
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     docker_image: action.template.image_name,
-                    name: action.uuid,
+                    name: `${this.currentInstanceId}-${action.uuid}`,
 
                     limits: {
                         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -528,6 +574,12 @@ export class ActionManagerService {
     async cleanupContainers(): Promise<void> {
         logger.debug('Cleanup containers and dangling actions...');
 
+        // Update heartbeat
+        await this.actionRunnerRepository.update(
+            { uuid: this.currentInstanceId },
+            { lastSeenAt: new Date() },
+        );
+
         const containers = await this.containerDaemon.docker
             .listContainers({ all: true })
             .catch(dockerDaemonErrorHandler);
@@ -543,12 +595,12 @@ export class ActionManagerService {
         //////////////////////////////////////////////////////////////////////////////
 
         const actionIds = new Set(
-            runningActionContainers.map((container) =>
-                container.Names[0]?.replace(
-                    `/${DockerDaemon.CONTAINER_PREFIX}`,
-                    '',
-                ),
-            ),
+            runningActionContainers.map((container) => {
+                const { actionUuid } = this.parseContainerName(
+                    container.Names[0] ?? '',
+                );
+                return actionUuid;
+            }),
         );
         const { hostname: name } = await si.osInfo();
         const actionsInLocalProcess = await this.actionRepository.find({
@@ -581,83 +633,146 @@ export class ActionManagerService {
         //////////////////////////////////////////////////////////////////////////////
         // Kill Old Containers
         //////////////////////////////////////////////////////////////////////////////
+
+        // Fetch all known runners from DB to identify "Friendly" instances
+        const knownRunners = await this.actionRunnerRepository.find({
+            select: ['uuid'],
+        });
+        const knownInstanceIds = new Set(knownRunners.map((r) => r.uuid));
+
         for (const container of runningActionContainers) {
-            // try to find corresponding action
             const containerName = container.Names[0];
+
             if (!containerName) {
-                logger.warn(
-                    `Container ${container.Id} has no name, killing it.`,
+                continue;
+            }
+
+            const { instanceId, actionUuid } =
+                this.parseContainerName(containerName);
+
+            // 1. If it's MY container: Check standard cleanup rules (e.g. 24h limit)
+            // 2. If it's a KNOWN runner (but not me): Kill it (Old instance of THIS env)
+            // 3. Otherwise (Unknown runner or Legacy): IGNORE to prevent "Friendly Fire" on neighbor environments
+
+            if (instanceId === this.currentInstanceId) {
+                // My container. Check 24h limit.
+                const action = await this.actionRepository.findOne({
+                    where: { uuid: actionUuid },
+                });
+                if (!action) continue;
+
+                await this.checkAndKillIfOld(container, action);
+                continue;
+            }
+
+            if (instanceId && knownInstanceIds.has(instanceId)) {
+                // It belongs to a runner in my DB (so it is my environment), but it is NOT this runner.
+                // It is an OLD runner of THIS environment. KILL IT.
+                logger.info(
+                    `Container ${container.Id} belongs to old runner ${instanceId}, killing it.`,
                 );
                 await this.containerDaemon.killAndRemoveContainer(container.Id);
+
+                // Mark action as failed
+                await this.actionRepository.update(
+                    { uuid: actionUuid },
+                    {
+                        state: ActionState.FAILED,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        state_cause: 'Interrupted by new Runner Instance',
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        exit_code: 137,
+                    },
+                );
                 continue;
             }
-            const uuid = containerName.replace(
-                `/${DockerDaemon.CONTAINER_PREFIX}`,
-                '',
-            );
 
-            const action = await this.actionRepository.findOne({
-                where: { uuid },
-            });
+            // - instanceId is defined but NOT in DB (Neighbor Environment) -> IGNORE.
+            // - instanceId is null (Legacy container) -> IGNORE (Safety first).
 
-            // kill action container if no corresponding action is found
-            if (!action) {
-                logger.warn(
-                    `Container ${container.Id} has no corresponding action, killing it.`,
+            if (instanceId) {
+                logger.debug(
+                    `Ignoring container ${container.Id} from unknown runner ${instanceId} (likely other environment).`,
+                );
+            } else {
+                logger.debug(
+                    `Ignoring legacy container ${container.Id} (no instance ID).`,
+                );
+            }
+        }
+    }
+
+    private async checkAndKillIfOld(
+        container: Dockerode.ContainerInfo,
+        action: ActionEntity,
+    ): Promise<void> {
+        // ignore containers which are not in processing state
+        if (
+            action.state === ActionState.PROCESSING ||
+            action.state === ActionState.STOPPING
+        ) {
+            // kill if older than 24 hours
+            const createdAt = new Date(container.Created * 1000);
+            const now = new Date();
+            const diff = now.getTime() - createdAt.getTime();
+
+            if (diff > 1000 * 60 * 60 * 24) {
+                logger.info(
+                    `Container for action ${action.uuid} is older than 24 hours, killing it.`,
                 );
                 await this.containerDaemon.killAndRemoveContainer(container.Id);
-                continue;
-            }
-            // ignore containers which are not in processing state
-            if (
-                action.state === ActionState.PROCESSING ||
-                action.state === ActionState.STOPPING
-            ) {
-                // kill if older than 24 hours
-                const createdAt = new Date(container.Created * 1000);
-                const now = new Date();
-                const diff = now.getTime() - createdAt.getTime();
 
-                if (diff > 1000 * 60 * 60 * 24) {
-                    logger.info(
-                        `Container for action ${action.uuid} is older than 24 hours, killing it.`,
-                    );
-                    await this.containerDaemon.killAndRemoveContainer(
-                        container.Id,
-                    );
-
-                    await this.actionRepository.update(
-                        { uuid: action.uuid },
-                        {
-                            state: ActionState.FAILED,
-
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
-                            state_cause:
-                                'Container killed: running for more than 24 hours',
-                        },
-                    );
-                }
-                continue;
-            }
-
-            // kill and fail the action
-            logger.info(
-                `Container for completed action ${action.uuid} found, killing it.`,
-            );
-
-            await this.containerDaemon.killAndRemoveContainer(container.Id);
-
-            if (action.state === ActionState.PENDING) {
                 await this.actionRepository.update(
                     { uuid: action.uuid },
                     {
                         state: ActionState.FAILED,
+
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         state_cause:
-                            'Container killed: action has never started',
+                            'Container killed: running for more than 24 hours',
                     },
                 );
             }
+            return;
         }
+
+        // kill and fail the action
+        logger.info(
+            `Container for completed action ${action.uuid} found, killing it.`,
+        );
+
+        await this.containerDaemon.killAndRemoveContainer(container.Id);
+
+        if (action.state === ActionState.PENDING) {
+            await this.actionRepository.update(
+                { uuid: action.uuid },
+                {
+                    state: ActionState.FAILED,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    state_cause: 'Container killed: action has never started',
+                },
+            );
+        }
+    }
+
+    private parseContainerName(containerName: string): {
+        instanceId: string | null;
+        actionUuid: string;
+    } {
+        const suffix = containerName.replace(
+            `/${DockerDaemon.CONTAINER_PREFIX}`,
+            '',
+        );
+        let instanceId: string | null = null;
+        let actionUuid = suffix;
+
+        // Check format: <InstanceUUID>-<ActionUUID>
+        // UUID is 36 chars.
+        if (suffix.length > 37 && suffix[36] === '-') {
+            instanceId = suffix.slice(0, 36);
+            actionUuid = suffix.slice(37);
+        }
+
+        return { instanceId, actionUuid };
     }
 }

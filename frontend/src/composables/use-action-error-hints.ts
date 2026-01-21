@@ -4,6 +4,7 @@ import { ActionErrorHint, ActionState } from '@kleinkram/shared';
 import ROUTES from 'src/router/routes';
 import { computed, nextTick, type Ref } from 'vue';
 import type { Router } from 'vue-router';
+import environment from '../environment';
 
 export interface ErrorHint {
     id: string;
@@ -85,8 +86,17 @@ const ERROR_HINTS: ErrorHint[] = [
         buttonLabel: 'View Documentation',
         check: (act) => act.errorHint === ActionErrorHint.MEMORY_LIMIT_EXCEEDED,
         onClick: () => {
+            window.open(`${environment.DOCS_URL}/advanced/tmp_disk`, '_blank');
+        },
+    },
+    {
+        id: 'system-interruption',
+        text: 'The action was interrupted by the scheduler. Please try again later or contact your administrator.',
+        buttonLabel: 'View Documentation',
+        check: (act) => act.stateCause === 'Interrupted by new Runner Instance',
+        onClick: () => {
             window.open(
-                'https://kleinkram.io/docs/advanced/tmp_disk',
+                `${environment.DOCS_URL}/usage/actions/action-status`,
                 '_blank',
             );
         },

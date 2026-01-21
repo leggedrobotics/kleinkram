@@ -109,4 +109,8 @@ export class ActionDto {
     @IsOptional()
     @IsEnum(ActionErrorHint)
     errorHint?: ActionErrorHint;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    exitCode?: number;
 }
