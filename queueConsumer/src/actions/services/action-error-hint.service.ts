@@ -152,6 +152,7 @@ export class ActionErrorHintService {
                     limit: limit,
                     direction: 'BACKWARD', // Newest first
                 },
+                timeout: 5000,
             });
 
             const result = response.data.data.result;
