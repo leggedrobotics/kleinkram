@@ -7,15 +7,18 @@ import { FileOrigin, FileState, FileType } from '@kleinkram/shared';
 import {
     Column,
     Entity,
+    Index,
     JoinTable,
     ManyToMany,
     ManyToOne,
     OneToMany,
-    Unique,
 } from 'typeorm';
 
+@Index('unique_file_name_per_mission', ['filename', 'mission'], {
+    where: '"deletedAt" IS NULL',
+    unique: true,
+})
 @Entity({ name: 'file_entity' })
-@Unique('unique_file_name_per_mission', ['filename', 'mission'])
 export class FileEntity extends BaseEntity {
     @ManyToOne(() => MissionEntity, (mission: MissionEntity) => mission.files, {
         nullable: false,
