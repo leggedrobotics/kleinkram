@@ -96,7 +96,6 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                         ActionEntity,
                         ActionRunnerEntity,
                         ActionTemplateEntity,
-                        ProjectEntity,
                         UserEntity,
                         ApiKeyEntity,
                         AccountEntity,
