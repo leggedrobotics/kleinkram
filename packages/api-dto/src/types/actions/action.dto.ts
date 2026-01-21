@@ -101,8 +101,6 @@ export class ActionDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
-    @ApiProperty({ required: false })
-    @IsOptional()
     @IsUUID()
     triggerUuid?: string;
 
