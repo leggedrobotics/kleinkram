@@ -65,7 +65,7 @@
         "redlock": "5.0.0-beta.2",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
-        "systeminformation": "^5.27.15",
+        "systeminformation": "^5.30.3",
         "typeorm": "^0.3.28",
         "typeorm-extension": "^3.7.3",
         "util": "^0.12.5",
