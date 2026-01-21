@@ -26,6 +26,16 @@ export class PaginatedQueryDto {
     @Type(() => Number)
     @ApiProperty({ required: false, default: DEFAULT_TAKE })
     take: number = DEFAULT_TAKE;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    search?: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    level?: string;
 }
 
 export class SortablePaginatedQueryDto extends PaginatedQueryDto {

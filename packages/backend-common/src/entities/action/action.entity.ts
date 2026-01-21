@@ -80,9 +80,6 @@ export class ActionEntity extends BaseEntity {
     })
     mission?: MissionEntity;
 
-    @Column({ type: 'json', nullable: true, select: false })
-    logs?: ContainerLog[];
-
     @Column({ type: 'json', nullable: true, default: [] })
     auditLogs?: unknown[];
 

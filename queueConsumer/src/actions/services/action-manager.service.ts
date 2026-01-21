@@ -331,6 +331,11 @@ export class ActionManagerService implements OnModuleInit {
             await this.logIngestionService.startIngestion(
                 container.id,
                 action.uuid,
+                {
+                    templateUuid: action.template.uuid,
+                    missionUuid: action.mission.uuid,
+                    triggerUuid: action.triggerUuid ?? undefined,
+                },
                 sanitize,
             );
 

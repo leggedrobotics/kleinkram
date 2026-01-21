@@ -16,11 +16,11 @@ export function IsTake(validationOptions?: ValidationOptions) {
 
                     // Check if the value is an integer and within range
                     return (
-                        Number.isInteger(value) && value >= 0 && value <= 9999
+                        Number.isInteger(value) && value >= 0 && value <= 50_000
                     );
                 },
                 defaultMessage() {
-                    return 'Take must be an optional integer between 0 and 9999'; // Custom error message
+                    return 'Take must be an optional integer between 0 and 50000'; // Custom error message
                 },
             },
         });
