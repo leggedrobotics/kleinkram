@@ -36,7 +36,8 @@ import {
 export class ActionManagerService implements OnModuleInit {
     // we will write logs to the database every 100 milliseconds
     private static LOG_WRITE_BATCH_TIME = 100;
-    private currentInstanceId!: string;
+    private currentInstanceId: string | undefined;
+    private initPromise!: Promise<void>;
 
     constructor(
         @InjectRepository(ActionEntity)
@@ -51,7 +52,8 @@ export class ActionManagerService implements OnModuleInit {
     ) {}
 
     async onModuleInit(): Promise<void> {
-        await this.registerRunner();
+        this.initPromise = this.registerRunner();
+        await this.initPromise;
     }
 
     private async registerRunner(): Promise<void> {
@@ -145,6 +147,13 @@ export class ActionManagerService implements OnModuleInit {
     // eslint-disable-next-line complexity
     @tracing('processing_action')
     async processAction(action: Readonly<ActionEntity>): Promise<boolean> {
+        await this.initPromise;
+        if (!this.currentInstanceId) {
+            throw new Error(
+                'ActionManagerService not initialized: currentInstanceId is missing',
+            );
+        }
+
         logger.info(`\n\nProcessing Action ${action.uuid}`);
 
         logger.info('Creating container.');
@@ -572,6 +581,13 @@ export class ActionManagerService implements OnModuleInit {
      */
     @tracing()
     async cleanupContainers(): Promise<void> {
+        await this.initPromise;
+        if (!this.currentInstanceId) {
+            throw new Error(
+                'ActionManagerService not initialized: currentInstanceId is missing',
+            );
+        }
+
         logger.debug('Cleanup containers and dangling actions...');
 
         // Update heartbeat
