@@ -101,7 +101,6 @@ export class ActionErrorHintService {
         }
 
         // Calculate downloaded size from audit logs
-        // Calculate downloaded size from audit logs
         const auditLogs = (action.auditLogs ?? []) as unknown as AuditLog[];
         let totalDownloadedBytes = 0;
 
