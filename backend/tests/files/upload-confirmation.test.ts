@@ -38,6 +38,11 @@ const mockGauge = {
     set: jest.fn(),
 };
 
+const mockTriggerService = {
+    // eslint-disable-next-line unicorn/no-useless-undefined
+    addFileEvent: jest.fn().mockResolvedValue(undefined),
+};
+
 describe('Reproduction Issue: File Hash Not Saved', () => {
     let queueService: QueueService;
     let fileRepository: Repository<FileEntity>;
@@ -98,6 +103,8 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
             mockGauge as any, // completedJobs
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             mockGauge as any, // failedJobs
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+            mockTriggerService as any, // triggerService
         );
 
         // Mock the fileQueue property

@@ -19,6 +19,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FoxgloveModule } from '../integrations/foxglove.module';
 import { QueueModule } from '../queue/queue.module';
+import { TriggerModule } from '../trigger/trigger.module';
 import { FileController } from './file.controller';
 
 @Module({
@@ -39,6 +40,7 @@ import { FileController } from './file.controller';
         StorageModule,
         FoxgloveModule,
         QueueModule,
+        TriggerModule,
     ],
     providers: [
         FileService,

@@ -161,7 +161,7 @@ describe('Verify Action (Templates & Runs)', () => {
             cpuMemory: 2,
             entrypoint: 'd',
             gpuMemory: -1,
-            dockerImage: 'rslethz/test',
+            dockerImage: 'rslethz/action:python-template-latest',
             accessRights: AccessGroupRights.DELETE, // Restricted rights
             maxRuntime: 1,
         };
@@ -213,7 +213,9 @@ describe('Verify Action (Templates & Runs)', () => {
         });
 
         expect(template.name).toBe('test_action_template');
-        expect(template.image_name).toBe('rslethz/test');
+        expect(template.image_name).toBe(
+            'rslethz/action:python-template-latest',
+        );
     });
 
     test('if a internal user with rights can submit (dispatch) an action', async () => {

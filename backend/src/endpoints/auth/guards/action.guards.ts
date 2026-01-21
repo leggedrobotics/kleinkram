@@ -1,6 +1,7 @@
 import { ActionGuardService } from '@/endpoints/auth/action-guard.service';
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { AccessGroupRights, ActionState } from '@kleinkram/shared';
 import {
@@ -17,6 +18,37 @@ interface ActionBody {
     templateUUID?: string;
     actionUUID?: string;
     missionUUIDs?: string[];
+}
+
+@Injectable()
+export class CanModifyTriggerGuard extends BaseGuard {
+    constructor(
+        @InjectRepository(ActionTriggerEntity)
+        private actionTriggerRepository: Repository<ActionTriggerEntity>,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, request } = await this.getUser(context);
+
+        const params = request.params as { uuid?: string } | undefined;
+        const triggerUUID = params?.uuid;
+
+        if (!triggerUUID) {
+            return false;
+        }
+
+        const trigger = await this.actionTriggerRepository.findOne({
+            where: { uuid: triggerUUID },
+        });
+
+        if (!trigger) {
+            return false;
+        }
+
+        return trigger.creatorUuid === user.uuid;
+    }
 }
 
 @Injectable()

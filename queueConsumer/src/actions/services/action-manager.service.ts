@@ -1,12 +1,19 @@
 import { tracing } from '@/tracing';
-import { ApiKeyEntity } from '@kleinkram/backend-common';
 import {
+    AccessControlService,
     ActionEntity,
+    ApiKeyEntity,
     ContainerLog,
+    environment,
     Image,
-} from '@kleinkram/backend-common/entities/action/action.entity';
-import environment from '@kleinkram/backend-common/environment';
-import { ActionState, ArtifactState, KeyTypes } from '@kleinkram/shared';
+} from '@kleinkram/backend-common';
+import {
+    AccessGroupRights,
+    ActionState,
+    ArtifactState,
+    KeyTypes,
+    UserRole,
+} from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
@@ -33,6 +40,7 @@ export class ActionManagerService {
         private actionRepository: Repository<ActionEntity>,
         @InjectRepository(ApiKeyEntity)
         private apikeyRepository: Repository<ApiKeyEntity>,
+        private accessControlService: AccessControlService,
     ) {}
 
     /**
@@ -57,6 +65,20 @@ export class ActionManagerService {
             throw new Error('User is undefined');
         }
 
+        const hasWriteAccess = await this.accessControlService.canAccessMission(
+            {
+                uuid: action.creator.uuid,
+                role: action.creator.role ?? UserRole.USER,
+            },
+            action.mission,
+            AccessGroupRights.WRITE,
+        );
+        if (!hasWriteAccess) {
+            throw new Error(
+                `User ${action.creator.uuid} lost access to mission ${action.mission.uuid}`,
+            );
+        }
+
         const apiKey = this.apikeyRepository.create({
             mission: { uuid: action.mission.uuid },
             rights: action.template.accessRights,
@@ -72,14 +94,21 @@ export class ActionManagerService {
         );
     }
 
+    // eslint-disable-next-line complexity
     @tracing('processing_action')
     async processAction(action: Readonly<ActionEntity>): Promise<boolean> {
         logger.info(`\n\nProcessing Action ${action.uuid}`);
 
         logger.info('Creating container.');
 
-        if (action.state !== ActionState.PENDING)
-            throw new Error(`Action state is not 'PENDING'`);
+        if (action.state !== ActionState.PENDING) {
+            logger.error(
+                `Action ${action.uuid} state is '${action.state}' (expected 'PENDING'). Trigger source: ${action.triggerSource}`,
+            );
+            throw new Error(
+                `Action state is not 'PENDING'. Current state: ${action.state}`,
+            );
+        }
 
         // set state to 'STARTING'
         await this.actionRepository.update(

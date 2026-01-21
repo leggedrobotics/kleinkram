@@ -11,6 +11,7 @@ import {
     AdminOnlyGuard,
     CanDeleteMissionGuard,
     CanEditGroupByGroupUuid,
+    CanModifyTriggerGuard,
     CanReadManyMissionsGuard,
     CreateActionGuard,
     CreateActionsGuard,
@@ -398,6 +399,19 @@ export function CanReadManyMissions() {
             type: UnauthorizedExceptionDto,
             description:
                 'User does not have Read permissions on the specified project.',
+        }),
+    );
+}
+
+export function CanModifyTrigger() {
+    return applyDecorators(
+        SetMetadata('CanModifyTrigger', true),
+        UseGuards(CanModifyTriggerGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have permission to modify this trigger.',
         }),
     );
 }

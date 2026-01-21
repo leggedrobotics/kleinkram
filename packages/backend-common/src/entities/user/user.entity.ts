@@ -12,6 +12,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { UserRole } from '@kleinkram/shared';
 import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+import { ActionTriggerEntity } from '../action/action-trigger.entity';
 
 @Entity({ name: 'user' })
 export class UserEntity extends BaseEntity {
@@ -123,4 +124,10 @@ export class UserEntity extends BaseEntity {
         (category: CategoryEntity) => category.creator,
     )
     categories?: CategoryEntity[];
+
+    @OneToMany(
+        () => ActionTriggerEntity,
+        (actionTrigger: ActionTriggerEntity) => actionTrigger.creator,
+    )
+    triggers?: ActionTriggerEntity[];
 }

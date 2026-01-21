@@ -204,6 +204,16 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             action.artifacts = ArtifactState.ERROR;
             await this.actionRepository.save(action);
         } catch (error_: unknown) {
+            // If the entity is not found, it means it was deleted concurrently
+            if (
+                error_ instanceof Error &&
+                error_.name === 'EntityNotFoundError'
+            ) {
+                logger.warn(
+                    `Action entity ${job.id.toString()} found missing during processing (likely deleted). Skipping state update.`,
+                );
+                return;
+            }
             logger.error(
                 `Failed to update action state in database: ${(error_ as { message: string }).message}`,
             );

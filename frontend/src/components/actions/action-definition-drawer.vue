@@ -220,7 +220,7 @@ import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-
 import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import type { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
-import { isValidDockerImageName } from '@kleinkram/validation';
+import { isValidDockerImageName } from '@kleinkram/validation/frontend';
 import ComputeResourcesSelector from 'components/actions/compute-resources-selector.vue';
 import { debounce, Notify, QForm } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';

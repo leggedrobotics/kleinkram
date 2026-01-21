@@ -113,6 +113,10 @@ export default withMermaid({
                             link: '/usage/actions/use-actions.md',
                         },
                         {
+                            text: 'Action Triggers',
+                            link: '/usage/actions/triggers.md',
+                        },
+                        {
                             text: 'Write Actions',
                             link: '/usage/actions/write-actions.md',
                         },

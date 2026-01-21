@@ -23,6 +23,12 @@ export class MissionAccessViewEntity {
     userUuid!: string;
 
     /** The highest level of access rights the user has for the mission. */
-    @ViewColumn({ name: 'rights' })
+    @ViewColumn({
+        name: 'rights',
+        transformer: {
+            from: (value: string) => Number.parseInt(value, 10),
+            to: (value: number) => value,
+        },
+    })
     rights!: AccessGroupRights;
 }

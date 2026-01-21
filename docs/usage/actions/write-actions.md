@@ -35,8 +35,7 @@ are discarded as soon as the action completes.
 ::: tip Layered Filesystem used By Docker
 Docker uses a layered filesystem, where the base image layers are read-only, and
 all files created inside a container are stored on a writable container layer that sits on top of the read-only,
-immutable image layers. For more details visit
-the [Docker Documentation](https://docs.docker.com/engine/storage/#container-layer-basics).
+immutable image layers. [-> Docker Documentation](https://docs.docker.com/engine/storage/#container-layer-basics).
 :::
 
 #### Persisting Data Beyond Action Lifetime

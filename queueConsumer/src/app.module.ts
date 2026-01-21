@@ -1,6 +1,12 @@
-import { AccessGroupEntity, ApiKeyEntity } from '@kleinkram/backend-common';
+import {
+    AccessControlModule,
+    AccessGroupEntity,
+    ApiKeyEntity,
+    StorageModule,
+} from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
@@ -18,7 +24,6 @@ import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.enti
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import env from '@kleinkram/backend-common/environment';
-import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import configuration from '@kleinkram/backend-common/typeorm-config';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
@@ -37,6 +42,7 @@ import { DockerDaemon } from './actions/services/docker-daemon.service';
 import { ImageResolutionService } from './actions/services/image-resolution.service';
 import { FileProcessorModule } from './file-processor/file-processor.module';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-queue-processor.provider';
+import { TriggerProcessorModule } from './trigger-processor/trigger-processor.module';
 
 @Module({
     imports: [
@@ -45,6 +51,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
         }),
 
         FileProcessorModule,
+        TriggerProcessorModule,
 
         BullModule.registerQueue({
             name: `action-queue-${os.hostname()}`,
@@ -58,6 +65,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
         }),
 
         BullModule.registerQueue({ name: 'file-queue' }),
+        BullModule.registerQueue({ name: 'trigger-queue' }),
 
         ConfigModule.forRoot({
             isGlobal: true,
@@ -85,6 +93,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
                         TopicEntity,
                         ActionEntity,
                         ActionTemplateEntity,
+                        ActionTriggerEntity,
                         ProjectEntity,
                         UserEntity,
                         ApiKeyEntity,
@@ -113,6 +122,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
             TopicEntity,
             ActionEntity,
             ActionTemplateEntity,
+            ActionTriggerEntity,
             ProjectEntity,
             UserEntity,
             ApiKeyEntity,
@@ -129,6 +139,7 @@ import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-qu
         ]),
         ScheduleModule.forRoot(),
         StorageModule,
+        AccessControlModule,
     ],
     providers: [
         ActionQueueProcessorProvider,

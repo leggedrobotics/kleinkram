@@ -5,7 +5,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { addActionQueue } from '@backend-common/scheduling-logic';
-import { ActionState } from '@kleinkram/shared';
+import { ActionState, ActionTriggerSource, UserRole } from '@kleinkram/shared';
 import {
     ConflictException,
     Injectable,
@@ -18,6 +18,7 @@ import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
 import { Gauge } from 'prom-client';
 import { EntityManager, LessThan, Repository } from 'typeorm';
+import { AccessControlService } from '../access-control/access-control.service';
 
 @Injectable()
 export class ActionDispatcherService implements OnModuleInit {
@@ -41,6 +42,7 @@ export class ActionDispatcherService implements OnModuleInit {
         private completedJobs: Gauge,
         @InjectMetric('backend_failed_jobs')
         private failedJobs: Gauge,
+        private accessControlService: AccessControlService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -80,17 +82,40 @@ export class ActionDispatcherService implements OnModuleInit {
         creator: UserEntity,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         parameters: Record<string, any>,
+        triggerSource: ActionTriggerSource = ActionTriggerSource.MANUAL,
+        triggerUuid?: string,
     ): Promise<string> {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: templateUuid },
         });
+
+        const canAccess = await this.accessControlService.canAccessMission(
+            {
+                uuid: creator.uuid,
+                role: creator.role ?? UserRole.USER,
+            },
+            mission,
+            template.accessRights,
+        );
+
+        if (!canAccess) {
+            this.logger.error(
+                `[Dispatch] Access denied for user ${creator.uuid}`,
+            );
+            throw new ConflictException(
+                'Creator no longer has access to this mission',
+            );
+        }
 
         let action = this.actionRepository.create({
             mission,
             creator,
             state: ActionState.PENDING,
             template,
+            triggerSource,
+            triggerUuid,
         });
+
         action = await this.actionRepository.save(action);
 
         try {
@@ -140,7 +165,6 @@ export class ActionDispatcherService implements OnModuleInit {
             this.logger.error(`Failed to queue action ${action.uuid}`, error);
             await this.actionRepository.update(action.uuid, {
                 state: ActionState.UNPROCESSABLE,
-
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 state_cause: 'Resources unavailable or queue error',
             });

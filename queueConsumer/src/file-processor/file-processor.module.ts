@@ -2,7 +2,7 @@ import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
+import { ActionDispatcherModule } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.module';
 import { FileIngestionService } from './file-ingestion.service';
 import { FILE_HANDLER, FileHandler } from './handlers/file-handler.interface';
 import { McapHandler } from './handlers/mcap.handler';
@@ -42,6 +42,7 @@ import { Db3Handler } from './handlers/db3.handler';
         ]),
         BullModule.registerQueue({ name: 'file-queue' }),
         StorageModule,
+        ActionDispatcherModule,
     ],
     providers: [
         FileQueueProcessorProvider,
@@ -49,7 +50,6 @@ import { Db3Handler } from './handlers/db3.handler';
         FileIngestionService,
         GoogleDriveStrategy,
         MinioStrategy,
-        ActionDispatcherService,
 
         RosBagMetadataService,
         McapMetadataService,
