@@ -99,6 +99,16 @@ const FIND_MANY_SORT_KEYS = {
     'file.date': 'file.date',
 };
 
+const FILE_EXTENSION_TO_FILE_TYPE_MAP: ReadonlyMap<string, FileType> = new Map([
+    ['.bag', FileType.BAG],
+    ['.mcap', FileType.MCAP],
+    ['.yaml', FileType.YAML],
+    ['.yml', FileType.YAML],
+    ['.svo2', FileType.SVO2],
+    ['.tum', FileType.TUM],
+    ['.db3', FileType.DB3],
+]);
+
 @Injectable()
 export class FileService implements OnModuleInit {
     private fileCleanupQueue!: Queue.Queue;
@@ -931,10 +941,18 @@ export class FileService implements OnModuleInit {
         const isRenamed = file.filename !== oldFilename;
 
         // validate file ending
-        const fileEnding =
-            databaseFile.type === FileType.MCAP ? '.mcap' : '.bag';
-        if (!file.filename.endsWith(fileEnding)) {
-            throw new BadRequestException('File ending must not be changed');
+        const validExtensions = [...FILE_EXTENSION_TO_FILE_TYPE_MAP.entries()]
+            .filter(([, type]) => type === databaseFile.type)
+            .map(([extension]) => extension);
+
+        if (
+            !validExtensions.some((extension) =>
+                file.filename.endsWith(extension),
+            )
+        ) {
+            throw new BadRequestException(
+                `File ending must be one of: ${validExtensions.join(', ')}`,
+            );
         }
 
         databaseFile.filename = file.filename;
@@ -1340,23 +1358,9 @@ export class FileService implements OnModuleInit {
                     error: null,
                 };
 
-                const fileExtensionToFileTypeMap: ReadonlyMap<
-                    string,
-                    FileType
-                > = new Map([
-                    ['.bag', FileType.BAG],
-
-                    ['.mcap', FileType.MCAP],
-                    ['.yaml', FileType.YAML],
-                    ['.yml', FileType.YAML],
-                    ['.svo2', FileType.SVO2],
-                    ['.tum', FileType.TUM],
-                    ['.db3', FileType.DB3],
-                ]);
-
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 const supported_file_endings = [
-                    ...fileExtensionToFileTypeMap.keys(),
+                    ...FILE_EXTENSION_TO_FILE_TYPE_MAP.keys(),
                 ];
 
                 if (
@@ -1375,7 +1379,7 @@ export class FileService implements OnModuleInit {
                 if (matchingFileType === undefined)
                     throw new UnsupportedMediaTypeException();
                 const fileType: FileType | undefined =
-                    fileExtensionToFileTypeMap.get(matchingFileType);
+                    FILE_EXTENSION_TO_FILE_TYPE_MAP.get(matchingFileType);
                 if (fileType === undefined)
                     throw new UnsupportedMediaTypeException();
 
@@ -1434,8 +1438,7 @@ export class FileService implements OnModuleInit {
                         // Add to local set to catch duplicates in the same batch
                         existingFilenames.add(filename);
                     });
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } catch (error: any) {
+                } catch (error: unknown) {
                     if (
                         error instanceof QueryFailedError &&
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
