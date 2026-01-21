@@ -39,9 +39,13 @@ import { AccessGroupExpiryProvider } from './accessGroupExpiry/access-group-expi
 import { ActionQueueProcessorProvider } from './actions/action-queue-processor.provider';
 import { ActionErrorHintService } from './actions/services/action-error-hint.service';
 import { ActionManagerService } from './actions/services/action-manager.service';
+import { ArtifactService } from './actions/services/artifact.service';
 import { ContainerCleanupService } from './actions/services/cleanup-containers.service';
+import { ContainerLifecycleService } from './actions/services/container-lifecycle.service';
 import { DockerDaemon } from './actions/services/docker-daemon.service';
 import { ImageResolutionService } from './actions/services/image-resolution.service';
+import { LogIngestionService } from './actions/services/log-ingestion.service';
+import { ResourceMonitorService } from './actions/services/resource-monitor.service';
 import { FileProcessorModule } from './file-processor/file-processor.module';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-queue-processor.provider';
 import { TriggerProcessorModule } from './trigger-processor/trigger-processor.module';
@@ -147,10 +151,14 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         ActionQueueProcessorProvider,
         FileCleanupQueueProcessorProvider,
         DockerDaemon,
+        ImageResolutionService,
+        ResourceMonitorService,
+        LogIngestionService,
+        ArtifactService,
+        ContainerLifecycleService,
         ActionManagerService,
         ContainerCleanupService,
         AccessGroupExpiryProvider,
-        ImageResolutionService,
         ActionErrorHintService,
     ],
 })

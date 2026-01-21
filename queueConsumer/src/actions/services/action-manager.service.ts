@@ -3,15 +3,12 @@ import {
     AccessControlService,
     ActionEntity,
     ApiKeyEntity,
-    ContainerLog,
-    environment,
     Image,
 } from '@kleinkram/backend-common';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import {
     AccessGroupRights,
     ActionState,
-    ArtifactState,
     KeyTypes,
     UserRole,
 } from '@kleinkram/shared';
@@ -20,22 +17,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
 import fs from 'node:fs';
 import path from 'node:path';
-import { bufferTime, concatMap, lastValueFrom, Observable, tap } from 'rxjs';
 import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
 import { ActionErrorHintService } from './action-error-hint.service';
-import {
-    ContainerEnvironment,
-    DockerDaemon,
-    dockerDaemonErrorHandler,
-} from './docker-daemon.service';
+import { ArtifactService } from './artifact.service';
+import { ContainerLifecycleService } from './container-lifecycle.service';
+import { LogIngestionService } from './log-ingestion.service';
 
 @Injectable()
 export class ActionManagerService implements OnModuleInit {
-    // we will write logs to the database every 100 milliseconds
-    private static LOG_WRITE_BATCH_TIME = 100;
     private currentInstanceId: string | undefined;
     private initPromise!: Promise<void>;
 
@@ -47,8 +39,10 @@ export class ActionManagerService implements OnModuleInit {
         @InjectRepository(ActionRunnerEntity)
         private actionRunnerRepository: Repository<ActionRunnerEntity>,
         private accessControlService: AccessControlService,
-        private readonly containerDaemon: DockerDaemon,
+        private readonly containerLifecycleService: ContainerLifecycleService,
         private readonly actionErrorHintService: ActionErrorHintService,
+        private readonly logIngestionService: LogIngestionService,
+        private readonly artifactService: ArtifactService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -90,6 +84,27 @@ export class ActionManagerService implements OnModuleInit {
         this.currentInstanceId = savedRunner.uuid;
         logger.info(
             `Action Runner registered with ID: ${this.currentInstanceId}`,
+        );
+    }
+
+    /**
+     * Get the current runner instance ID.
+     */
+    getCurrentInstanceId(): string | undefined {
+        return this.currentInstanceId;
+    }
+
+    /**
+     * Update the heartbeat timestamp for the current runner.
+     */
+    async updateHeartbeat(): Promise<void> {
+        await this.initPromise;
+        if (!this.currentInstanceId) {
+            return;
+        }
+        await this.actionRunnerRepository.update(
+            { uuid: this.currentInstanceId },
+            { lastSeenAt: new Date() },
         );
     }
 
@@ -144,7 +159,6 @@ export class ActionManagerService implements OnModuleInit {
         );
     }
 
-    // eslint-disable-next-line complexity
     @tracing('processing_action')
     async processAction(action: Readonly<ActionEntity>): Promise<boolean> {
         await this.initPromise;
@@ -192,15 +206,6 @@ export class ActionManagerService implements OnModuleInit {
 
         const apikey = await this.createAPIkey(action);
         try {
-            const environmentVariables: ContainerEnvironment = {
-                KLEINKRAM_API_KEY: apikey.apikey,
-                KLEINKRAM_PROJECT_UUID: action.mission.project.uuid,
-                KLEINKRAM_MISSION_UUID: action.mission.uuid,
-                KLEINKRAM_ACTION_UUID: action.uuid,
-                KLEINKRAM_API_ENDPOINT: environment.BACKEND_URL,
-                KLEINKRAM_S3_ENDPOINT: `https://${environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
-            };
-            const needsGpu = action.template.gpuMemory > 0;
             const {
                 container,
                 repoDigests,
@@ -208,39 +213,15 @@ export class ActionManagerService implements OnModuleInit {
                 source,
                 localCreatedAt,
                 remoteCreatedAt,
-            } = await this.containerDaemon.startContainer(
+            } = await this.containerLifecycleService.startActionContainer(
+                this.currentInstanceId,
+                action,
+                apikey.apikey,
                 async () => {
                     await this.actionRepository.update(
                         { uuid: action.uuid },
                         { state: ActionState.PROCESSING },
                     );
-                },
-
-                {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    docker_image: action.template.image_name,
-                    name: `${this.currentInstanceId}-${action.uuid}`,
-
-                    limits: {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        max_runtime:
-                            action.template.maxRuntime * 60 * 60 * 1000, // Hours to milliseconds
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        n_cpu: action.template.cpuCores || 1,
-
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        memory_limit: Math.ceil(
-                            (action.template.cpuMemory || 2) *
-                                1024 *
-                                1024 *
-                                1024,
-                        ), // min 2 GB
-                    },
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    needs_gpu: needsGpu,
-                    environment: environmentVariables,
-                    command: action.template.command ?? '',
-                    entrypoint: action.template.entrypoint ?? '',
                 },
             );
 
@@ -270,40 +251,11 @@ export class ActionManagerService implements OnModuleInit {
                 return string_.replace(apikey.apikey, '***');
             };
 
-            // get logs from container and save them to the database
-            const logsObservable = await this.containerDaemon
-                .subscribeToLogs(container.id, sanitize)
-                .catch((error: unknown) => {
-                    logger.error('Error while subscribing to logs:', error);
-                });
-
-            if (!logsObservable) {
-                const containerInfo = await container
-                    .inspect()
-                    .catch(() => null);
-
-                if (containerInfo) {
-                    if (containerInfo.State.OOMKilled) {
-                        throw new Error(
-                            'Container was killed due to memory constraints (OOMKilled). Container logs are not available.',
-                        );
-                    }
-                    if (containerInfo.State.ExitCode === 137) {
-                        throw new Error(
-                            'Container was killed (Exit Code 137). Likely due to memory constraints or manual termination. Logs are not available.',
-                        );
-                    }
-                }
-
-                throw new Error(
-                    'Container logs are not available. Container might never have been started correctly.',
-                );
-            }
-
-            await this.processContainerLogs(
-                logsObservable,
-                action.uuid,
+            // Delegate log ingestion to LogIngestionService
+            await this.logIngestionService.startIngestion(
                 container.id,
+                action.uuid,
+                sanitize,
             );
 
             // wait for the container to stop
@@ -320,7 +272,7 @@ export class ActionManagerService implements OnModuleInit {
                 { state: ActionState.STOPPING },
             );
 
-            this.containerDaemon.removeContainer(container.id, true);
+            this.containerLifecycleService.removeContainer(container.id, true);
             await this.setActionState(container, action);
 
             await this.actionRepository.update(
@@ -328,7 +280,6 @@ export class ActionManagerService implements OnModuleInit {
                 {
                     executionEndedAt: new Date(),
                     actionContainerExitedAt: new Date(),
-                    artifacts: ArtifactState.UPLOADING,
                 },
             );
 
@@ -336,45 +287,8 @@ export class ActionManagerService implements OnModuleInit {
                 throw new Error('Template is undefined');
             }
 
-            const { container: artifactUploadContainer, artifactMetadata } =
-                await this.containerDaemon.launchArtifactUploadContainer(
-                    action.uuid,
-                );
-            await artifactUploadContainer.wait();
-            this.containerDaemon.removeContainer(artifactUploadContainer.id);
-
-            await this.containerDaemon.removeVolume(action.uuid);
-
-            const bucketName = environment.MINIO_ARTIFACTS_BUCKET_NAME;
-
-            const filename = `${action.uuid}.tar.gz`;
-            const artifactPath = `/${bucketName}/${filename}`;
-
-            const updateData: {
-                artifacts: ArtifactState;
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_path: string;
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_size?: number;
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_files?: string[];
-            } = {
-                artifacts: ArtifactState.UPLOADED,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_path: artifactPath,
-            };
-
-            if (artifactMetadata?.size !== undefined) {
-                updateData.artifact_size = artifactMetadata.size;
-            }
-            if (artifactMetadata?.files !== undefined) {
-                updateData.artifact_files = artifactMetadata.files;
-            }
-
-            await this.actionRepository.update(
-                { uuid: action.uuid },
-                updateData,
-            );
+            // Delegate artifact upload to ArtifactService
+            await this.artifactService.uploadArtifacts(action.uuid);
 
             return true; // Mark the job as completed
         } catch (error: unknown) {
@@ -417,84 +331,8 @@ export class ActionManagerService implements OnModuleInit {
     }
 
     /**
-     * Process the logs from the container and save them to the database.
-     * The logs are written to the database periodically to reduce the
-     * number of writes.
-     *
-     * The logs are also written to the logger service tagged with the
-     * containerId and actionUuid.
-     *
-     // eslint-disable-next-line @typescript-eslint/naming-convention
-     * @param logsObservable
-     * @param actionUuid
-     // eslint-disable-next-line @typescript-eslint/naming-convention
-     * @param containerId
-     * @private
-     */
-    private async processContainerLogs(
-        logsObservable: Observable<ContainerLog>,
-        actionUuid: string,
-        containerId: string,
-    ): Promise<void> {
-        const containerLogger = logger.child({
-            labels: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                container_id: containerId,
-
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                action_uuid: actionUuid || 'unknown',
-            },
-        });
-
-        await lastValueFrom(
-            logsObservable.pipe(
-                tap((next) =>
-                    containerLogger.info(`[${next.timestamp}] ${next.message}`),
-                ),
-                bufferTime(ActionManagerService.LOG_WRITE_BATCH_TIME),
-                concatMap(async (nextLogBatch: ContainerLog[]) => {
-                    // new transaction for each batch
-                    await this.actionRepository.manager.transaction(
-                        async (manager) => {
-                            const _action = await manager.findOne(
-                                ActionEntity,
-                                {
-                                    where: { uuid: actionUuid },
-                                    select: ['uuid', 'logs'],
-                                    lock: { mode: 'pessimistic_write' },
-                                },
-                            );
-
-                            if (!_action) {
-                                return;
-                            }
-
-                            const newLogs = [
-                                ...(_action.logs ?? []),
-                                ...nextLogBatch,
-                            ];
-
-                            await manager.update(
-                                ActionEntity,
-                                { uuid: actionUuid },
-                                { logs: newLogs },
-                            );
-                        },
-                    );
-                }),
-            ),
-        ).catch((error: unknown) => {
-            logger.error('Error while processing logs:', error);
-        });
-    }
-
-    /**
      * Sets the state of the action based on the container exit code.
-     * This function does not save the action to the database!
-     *
-     // eslint-disable-next-line @typescript-eslint/naming-convention
      */
-
     private async setActionState(
         container: Dockerode.Container,
         action: Readonly<ActionEntity>,
@@ -560,8 +398,7 @@ export class ActionManagerService implements OnModuleInit {
                 exit_code = exitCode;
             }
         }
-        logger.warn(`Action ${action.uuid} has failed with exit code 125`);
-        logger.warn(action.state_cause);
+        logger.info(`Action ${action.uuid} finished with state ${state}`);
 
         await this.actionRepository.update(
             { uuid: action.uuid },
@@ -573,232 +410,5 @@ export class ActionManagerService implements OnModuleInit {
                 state_cause,
             },
         );
-    }
-
-    /**
-     * Checks all pending missions, if no container is running,
-     * it updates the state of the mission to 'FAILED'.
-     */
-    @tracing()
-    async cleanupContainers(): Promise<void> {
-        await this.initPromise;
-        if (!this.currentInstanceId) {
-            throw new Error(
-                'ActionManagerService not initialized: currentInstanceId is missing',
-            );
-        }
-
-        logger.debug('Cleanup containers and dangling actions...');
-
-        // Update heartbeat
-        await this.actionRunnerRepository.update(
-            { uuid: this.currentInstanceId },
-            { lastSeenAt: new Date() },
-        );
-
-        const containers = await this.containerDaemon.docker
-            .listContainers({ all: true })
-            .catch(dockerDaemonErrorHandler);
-
-        const runningActionContainers: Dockerode.ContainerInfo[] =
-            containers?.filter((container: Dockerode.ContainerInfo) =>
-                container.Names[0]?.startsWith(
-                    `/${DockerDaemon.CONTAINER_PREFIX}`,
-                ),
-            ) ?? [];
-        //////////////////////////////////////////////////////////////////////////////
-        // Find crashed containers
-        //////////////////////////////////////////////////////////////////////////////
-
-        const actionIds = new Set(
-            runningActionContainers.map((container) => {
-                const { actionUuid } = this.parseContainerName(
-                    container.Names[0] ?? '',
-                );
-                return actionUuid;
-            }),
-        );
-        const { hostname: name } = await si.osInfo();
-        const actionsInLocalProcess = await this.actionRepository.find({
-            where: {
-                state: ActionState.PROCESSING,
-                worker: { identifier: name },
-            },
-            relations: ['mission', 'mission.project'],
-        });
-        logger.info(
-            `Checking ${actionsInLocalProcess.length.toString()} pending Actions.`,
-        );
-
-        for (const action of actionsInLocalProcess) {
-            if (!actionIds.has(action.uuid)) {
-                logger.info(
-                    `Action ${action.uuid} is running but has no running container.`,
-                );
-                await this.actionRepository.update(
-                    { uuid: action.uuid },
-                    {
-                        state: ActionState.FAILED,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        state_cause: 'Container crashed, no container found',
-                    },
-                );
-            }
-        }
-
-        //////////////////////////////////////////////////////////////////////////////
-        // Kill Old Containers
-        //////////////////////////////////////////////////////////////////////////////
-
-        // Fetch all known runners from DB to identify "Friendly" instances
-        const knownRunners = await this.actionRunnerRepository.find({
-            select: ['uuid'],
-        });
-        const knownInstanceIds = new Set(knownRunners.map((r) => r.uuid));
-
-        for (const container of runningActionContainers) {
-            const containerName = container.Names[0];
-
-            if (!containerName) {
-                continue;
-            }
-
-            const { instanceId, actionUuid } =
-                this.parseContainerName(containerName);
-
-            // 1. If it's MY container: Check standard cleanup rules (e.g. 24h limit)
-            // 2. If it's a KNOWN runner (but not me): Kill it (Old instance of THIS env)
-            // 3. Otherwise (Unknown runner or Legacy): IGNORE to prevent "Friendly Fire" on neighbor environments
-
-            if (instanceId === this.currentInstanceId) {
-                // My container. Check 24h limit.
-                const action = await this.actionRepository.findOne({
-                    where: { uuid: actionUuid },
-                });
-                if (!action) continue;
-
-                await this.checkAndKillIfOld(container, action);
-                continue;
-            }
-
-            if (instanceId && knownInstanceIds.has(instanceId)) {
-                // It belongs to a runner in my DB (so it is my environment), but it is NOT this runner.
-                // It is an OLD runner of THIS environment. KILL IT.
-                logger.info(
-                    `Container ${container.Id} belongs to old runner ${instanceId}, killing it.`,
-                );
-                await this.containerDaemon.killAndRemoveContainer(container.Id);
-
-                // Mark action as failed
-                await this.actionRepository.update(
-                    { uuid: actionUuid },
-                    {
-                        state: ActionState.FAILED,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        state_cause: 'Interrupted by new Runner Instance',
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        exit_code: 137,
-                    },
-                );
-                continue;
-            }
-
-            // - instanceId is defined but NOT in DB (Neighbor Environment) -> IGNORE.
-            // - instanceId is null (Legacy container) -> IGNORE (Safety first).
-
-            if (instanceId) {
-                logger.debug(
-                    `Ignoring container ${container.Id} from unknown runner ${instanceId} (likely other environment).`,
-                );
-            } else {
-                logger.debug(
-                    `Ignoring legacy container ${container.Id} (no instance ID).`,
-                );
-            }
-        }
-    }
-
-    private async checkAndKillIfOld(
-        container: Dockerode.ContainerInfo,
-        action: ActionEntity,
-    ): Promise<void> {
-        // ignore containers which are not in processing state
-        if (
-            action.state === ActionState.PROCESSING ||
-            action.state === ActionState.STOPPING
-        ) {
-            // kill if older than 24 hours
-            const createdAt = new Date(container.Created * 1000);
-            const now = new Date();
-            const diff = now.getTime() - createdAt.getTime();
-
-            if (diff > 1000 * 60 * 60 * 24) {
-                logger.info(
-                    `Container for action ${action.uuid} is older than 24 hours, killing it.`,
-                );
-                await this.containerDaemon.killAndRemoveContainer(container.Id);
-
-                await this.actionRepository.update(
-                    { uuid: action.uuid },
-                    {
-                        state: ActionState.FAILED,
-
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        state_cause:
-                            'Container killed: running for more than 24 hours',
-                    },
-                );
-            }
-            return;
-        }
-
-        // kill and fail the action
-        logger.info(
-            `Container for completed action ${action.uuid} found, killing it.`,
-        );
-
-        await this.containerDaemon.killAndRemoveContainer(container.Id);
-
-        if (action.state === ActionState.PENDING) {
-            await this.actionRepository.update(
-                { uuid: action.uuid },
-                {
-                    state: ActionState.FAILED,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    state_cause: 'Container killed: action has never started',
-                },
-            );
-        }
-    }
-
-    private parseContainerName(containerName: string): {
-        instanceId: string | null;
-        actionUuid: string;
-    } {
-        const suffix = containerName.replace(
-            `/${DockerDaemon.CONTAINER_PREFIX}`,
-            '',
-        );
-        let instanceId: string | null = null;
-        let actionUuid = suffix;
-
-        // Check format: <InstanceUUID>-<ActionUUID>
-        // UUID is 36 chars.
-        if (suffix.length > 37 && suffix[36] === '-') {
-            const potentialInstanceId = suffix.slice(0, 36);
-            const uuidRegex =
-                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-            if (uuidRegex.test(potentialInstanceId)) {
-                instanceId = potentialInstanceId;
-                actionUuid = suffix.slice(37);
-            } else {
-                logger.warn(
-                    `Failed to parse instance UUID from container name: ${containerName}. Potential UUID '${potentialInstanceId}' is invalid.`,
-                );
-            }
-        }
-
-        return { instanceId, actionUuid };
     }
 }

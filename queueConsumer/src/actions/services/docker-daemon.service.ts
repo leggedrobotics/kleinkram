@@ -71,6 +71,7 @@ export interface ContainerStartOptions {
     environment?: ContainerEnvironment;
     command?: string;
     entrypoint?: string;
+    labels?: Record<string, string>;
 }
 
 export const dockerDaemonErrorHandler = (error: unknown): void => {
@@ -178,6 +179,7 @@ export class DockerDaemon {
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: containerOptions.docker_image,
             name: DockerDaemon.CONTAINER_PREFIX + containerOptions.name,
+            Labels: containerOptions.labels ?? {},
             Env: Object.entries(containerOptions.environment ?? {}).map(
                 ([key, value]) => `${key}=${value}`,
             ),
