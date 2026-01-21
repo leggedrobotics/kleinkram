@@ -25,7 +25,7 @@ export class ArtifactService {
      *
      * @param actionUuid The UUID of the action to upload artifacts for.
      */
-    async uploadArtifacts(actionUuid: string): Promise<void> {
+    async uploadArtifacts(actionUuid: string, runnerId: string): Promise<void> {
         // Mark as uploading
         await this.actionRepository.update(
             { uuid: actionUuid },
@@ -33,12 +33,15 @@ export class ArtifactService {
         );
 
         const { container: artifactUploadContainer, artifactMetadata } =
-            await this.dockerDaemon.launchArtifactUploadContainer(actionUuid);
+            await this.dockerDaemon.launchArtifactUploadContainer(
+                actionUuid,
+                runnerId,
+            );
 
         await artifactUploadContainer.wait();
         this.dockerDaemon.removeContainer(artifactUploadContainer.id);
 
-        await this.dockerDaemon.removeVolume(actionUuid);
+        await this.dockerDaemon.removeVolume(`${runnerId}-${actionUuid}`);
 
         const bucketName = environment.MINIO_ARTIFACTS_BUCKET_NAME;
         const filename = `${actionUuid}.tar.gz`;

@@ -526,7 +526,10 @@ export class DockerDaemon {
     }
 
     @tracing()
-    async launchArtifactUploadContainer(containerId: string): Promise<{
+    async launchArtifactUploadContainer(
+        actionUuid: string,
+        runnerId: string,
+    ): Promise<{
         container: Dockerode.Container;
         repoDigests: string[];
         artifactMetadata?: { size: number; files: string[] } | undefined;
@@ -559,9 +562,9 @@ export class DockerDaemon {
 
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: artifactUploaderImage,
-            name: `kleinkram-artifact-uploader-${containerId}`,
+            name: `kleinkram-artifact-uploader-${actionUuid}`,
             Env: [
-                `KLEINKRAM_ACTION_UUID=${containerId}`,
+                `KLEINKRAM_ACTION_UUID=${actionUuid}`,
                 `MINIO_ENDPOINT=${environment.MINIO_ENDPOINT === 'localhost' ? '127.0.0.1' : environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
                 `MINIO_ACCESS_KEY=${environment.MINIO_ACCESS_KEY}`,
                 `MINIO_SECRET_KEY=${environment.MINIO_SECRET_KEY}`,
@@ -580,7 +583,7 @@ export class DockerDaemon {
                 Mounts: [
                     {
                         Target: '/out',
-                        Source: `vol-${containerId}`,
+                        Source: `vol-${runnerId}-${actionUuid}`,
                         Type: 'volume',
                     },
                 ],

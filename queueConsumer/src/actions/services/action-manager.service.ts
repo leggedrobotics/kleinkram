@@ -288,7 +288,10 @@ export class ActionManagerService implements OnModuleInit {
             }
 
             // Delegate artifact upload to ArtifactService
-            await this.artifactService.uploadArtifacts(action.uuid);
+            await this.artifactService.uploadArtifacts(
+                action.uuid,
+                this.currentInstanceId,
+            );
 
             return true; // Mark the job as completed
         } catch (error: unknown) {
