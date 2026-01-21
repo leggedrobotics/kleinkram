@@ -63,18 +63,28 @@ export class ReadActionGuard extends BaseGuard {
         const actionUUID = request.query.uuid as string | undefined;
 
         if (!actionUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('action.id', actionUUID);
+
         if (apiKey) {
-            return this.actionGuardService.canKeyAccessAction(
+            const result = await this.actionGuardService.canKeyAccessAction(
                 apiKey,
                 actionUUID,
                 AccessGroupRights.READ,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
 
-        return this.actionGuardService.canAccessAction(user, actionUUID);
+        const result = await this.actionGuardService.canAccessAction(
+            user,
+            actionUUID,
+        );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -96,8 +106,12 @@ export class CreateActionGuard extends BaseGuard {
         const actionTemplateUUID = body?.templateUUID;
 
         if (!missionUUID || !actionTemplateUUID) {
-            return false; // Deny access if required parameters not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
+
+        this.setAttribute('mission.id', missionUUID);
+        this.setAttribute('action_template.id', actionTemplateUUID);
 
         const actionTemplate =
             await this.actionTemplateRepository.findOneOrFail({
@@ -105,17 +119,21 @@ export class CreateActionGuard extends BaseGuard {
             });
 
         if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
+            const result = this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
                 actionTemplate.accessRights,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.missionGuardService.canAccessMission(
+        const result = await this.missionGuardService.canAccessMission(
             user,
             missionUUID,
             actionTemplate.accessRights,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -137,20 +155,30 @@ export class DeleteActionGuard extends BaseGuard {
         const actionUUID = body?.actionUUID ?? params?.uuid;
 
         if (!actionUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
+
+        this.setAttribute('action.id', actionUUID);
 
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUUID },
             relations: ['mission', 'creator'],
         });
 
-        if (action.mission === undefined)
+        if (action.mission === undefined) {
+            this.recordGuardResult(context, false);
             throw new BadRequestException('Action does not have a mission');
-        if (action.creator === undefined)
+        }
+        if (action.creator === undefined) {
+            this.recordGuardResult(context, false);
             throw new BadRequestException('Action does not have a creator');
+        }
+
+        this.setAttribute('mission.id', action.mission.uuid);
 
         if (apiKey) {
+            this.recordGuardResult(context, false);
             throw new BadRequestException(
                 'apiKey in DeleteActionGuard is not supported',
             );
@@ -162,20 +190,24 @@ export class DeleteActionGuard extends BaseGuard {
                 action.state === ActionState.UNPROCESSABLE
             )
         ) {
+            this.recordGuardResult(context, false);
             throw new BadRequestException(
                 "can't delete action unless its DONE, FAILED or UNPROCESSABLE",
             );
         }
         if (action.creator.uuid === user.uuid) {
+            this.recordGuardResult(context, true);
             return true;
         }
 
         const missionUUID = action.mission.uuid;
-        return this.missionGuardService.canAccessMission(
+        const result = await this.missionGuardService.canAccessMission(
             user,
             missionUUID,
             AccessGroupRights.DELETE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -197,8 +229,12 @@ export class CreateActionsGuard extends BaseGuard {
         const actionTemplateUUID = body?.templateUUID;
 
         if (!missionUUIDs || missionUUIDs.length === 0 || !actionTemplateUUID) {
-            return false; // Deny access if required parameters not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
+
+        this.setAttribute('mission.ids', missionUUIDs.join(','));
+        this.setAttribute('action_template.id', actionTemplateUUID);
 
         const actionTemplate =
             await this.actionTemplateRepository.findOneOrFail({
@@ -207,13 +243,15 @@ export class CreateActionsGuard extends BaseGuard {
 
         if (apiKey) {
             // canKeyAccessMission is synchronous, use .every() directly
-            return missionUUIDs.every((missionUUID: string) =>
+            const result = missionUUIDs.every((missionUUID: string) =>
                 this.missionGuardService.canKeyAccessMission(
                     apiKey,
                     missionUUID,
                     actionTemplate.accessRights,
                 ),
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
 
         const userCanAccessResults = missionUUIDs.map((missionUUID: string) =>
@@ -224,6 +262,8 @@ export class CreateActionsGuard extends BaseGuard {
             ),
         );
         const allCanAccess = await Promise.all(userCanAccessResults);
-        return allCanAccess.every(Boolean);
+        const result = allCanAccess.every(Boolean);
+        this.recordGuardResult(context, result);
+        return result;
     }
 }

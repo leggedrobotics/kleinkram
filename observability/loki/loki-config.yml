@@ -10,6 +10,10 @@ common:
             store: inmemory
     replication_factor: 1
     path_prefix: /tmp/loki
+    storage:
+        filesystem:
+            chunks_directory: /tmp/loki/chunks
+            rules_directory: /tmp/loki/rules
 
 schema_config:
     configs:
@@ -20,6 +24,10 @@ schema_config:
           index:
               prefix: index_
               period: 24h
+
+limits_config:
+    allow_structured_metadata: true
+    volume_enabled: true
 
 storage_config:
     filesystem:

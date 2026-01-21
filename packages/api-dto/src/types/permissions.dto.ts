@@ -10,6 +10,7 @@ export class ProjectPermissions {
 
     @ApiProperty()
     @IsEnum(AccessGroupRights)
+    @Type(() => Number)
     access!: AccessGroupRights;
 }
 
@@ -20,6 +21,7 @@ export class MissionPermissions {
 
     @ApiProperty()
     @IsEnum(AccessGroupRights)
+    @Type(() => Number)
     access!: AccessGroupRights;
 }
 
@@ -30,21 +32,22 @@ export class PermissionsDto {
 
     @ApiProperty()
     @IsEnum(AccessGroupRights)
+    @Type(() => Number)
     defaultPermission!: AccessGroupRights;
 
     @ApiProperty({
         type: () => [ProjectPermissions],
         description: 'List of projects and their access rights',
     })
-    @ValidateNested()
+    @ValidateNested({ each: true })
     @Type(() => ProjectPermissions)
     projects!: ProjectPermissions[];
 
     @ApiProperty({
         type: () => [MissionPermissions],
-        description: 'List of projects and their access rights',
+        description: 'List of missions and their access rights',
     })
-    @ValidateNested()
-    @Type(() => ProjectPermissions)
+    @ValidateNested({ each: true })
+    @Type(() => MissionPermissions)
     missions!: MissionPermissions[];
 }

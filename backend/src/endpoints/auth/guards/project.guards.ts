@@ -31,8 +31,11 @@ export class ReadProjectGuard extends BaseGuard {
             (request.query.uuid as string | undefined) ?? params.uuid;
 
         if (!projectUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
+
+        this.setAttribute('project.id', projectUUID);
 
         if (apiKey) {
             // Check if this is an action API key
@@ -44,18 +47,26 @@ export class ReadProjectGuard extends BaseGuard {
                 if (missionProject?.uuid) {
                     // Action keys can only access their associated project
                     if (missionProject.uuid !== projectUUID) {
+                        this.recordGuardResult(context, false);
                         throw new ForbiddenException(
                             'Action key cannot access this project',
                         );
                     }
+                    this.recordGuardResult(context, true);
                     return true;
                 }
             }
             // CLI keys and other keys cannot read projects
+            this.recordGuardResult(context, false);
             throw new UnauthorizedException('CLI Keys cannot read projects');
         }
 
-        return this.projectGuardService.canAccessProject(user, projectUUID);
+        const result = await this.projectGuardService.canAccessProject(
+            user,
+            projectUUID,
+        );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -75,13 +86,18 @@ export class ReadProjectByNameGuard extends BaseGuard {
         const projectName = request.query.name as string | undefined;
 
         if (!projectName) {
-            return false; // Deny access if project name not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
-        return this.projectGuardService.canAccessProjectByName(
+        this.setAttribute('project.name', projectName);
+
+        const result = await this.projectGuardService.canAccessProjectByName(
             user,
             projectName,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -102,14 +118,19 @@ export class CreateInProjectByBodyGuard extends BaseGuard {
         const projectUUID = body?.projectUUID;
 
         if (!projectUUID) {
-            return false; // Deny access if project UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
-        return this.projectGuardService.canAccessProject(
+        this.setAttribute('project.id', projectUUID);
+
+        const result = await this.projectGuardService.canAccessProject(
             user,
             projectUUID,
             AccessGroupRights.CREATE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -134,14 +155,19 @@ export class WriteProjectGuard extends BaseGuard {
             params?.uuid;
 
         if (!projectUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
-        return this.projectGuardService.canAccessProject(
+        this.setAttribute('project.id', projectUUID);
+
+        const result = await this.projectGuardService.canAccessProject(
             user,
             projectUUID,
             AccessGroupRights.WRITE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -166,14 +192,19 @@ export class DeleteProjectGuard extends BaseGuard {
             body?.uuid;
 
         if (!projectUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
-        return this.projectGuardService.canAccessProject(
+        this.setAttribute('project.id', projectUUID);
+
+        const result = await this.projectGuardService.canAccessProject(
             user,
             projectUUID,
             AccessGroupRights.DELETE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -186,8 +217,11 @@ export class CreateGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey } = await this.getUser(context);
         if (apiKey) {
+            this.recordGuardResult(context, false);
             throw new UnauthorizedException('CLI Keys cannot create projects');
         }
-        return this.projectGuardService.canCreate(user);
+        const result = await this.projectGuardService.canCreate(user);
+        this.recordGuardResult(context, result);
+        return result;
     }
 }

@@ -20,11 +20,43 @@ const traceIdFormat = winston.format((info) => {
     return info;
 });
 
+const lokiLabelFormat = winston.format((info) => {
+    // These keys will be promoted to Loki labels for better indexing/filtering
+    const keysToPromote = [
+        'project_id',
+        'mission_id',
+        'file_id',
+        'user_id',
+        'method',
+        'target',
+        'http_endpoint',
+        'normalized_target',
+        'status_code',
+        'guard_enriched',
+        'duration_ms',
+    ];
+
+    const labels: Record<string, string> = {};
+    for (const key of keysToPromote) {
+        if (info[key] !== undefined && info[key] !== null) {
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
+            labels[key] = String(info[key]);
+        }
+    }
+
+    if (Object.keys(labels).length > 0) {
+        // winston-loki picks up labels from the 'labels' property of the info object
+        info.labels = Object.assign(info.labels ?? {}, labels);
+    }
+    return info;
+});
+
 const logger = winston.createLogger({
     level: 'debug',
     levels: winston.config.npm.levels,
     format: winston.format.combine(
         traceIdFormat(), // Add trace ID to the log format
+        lokiLabelFormat(), // Promote specific fields to Loki labels
         winston.format.json(), // Keep the JSON format
     ),
     transports: [
@@ -58,8 +90,8 @@ export class NestLoggerWrapper implements LoggerService {
     }
 
     log(message: never, ...optionalParameters: never[]): void {
-        // Filter out module initialization spam
-        if (!this.shouldFilterMessage(String(message))) {
+        // Strictly only log Wide Events to satisfy the "only wide event logs" requirement
+        if (String(message).includes('WideEvent:')) {
             logger.info(message, ...optionalParameters);
         }
     }
@@ -77,11 +109,15 @@ export class NestLoggerWrapper implements LoggerService {
     }
 
     debug?(message: never, ...optionalParameters: never[]): void {
-        logger.debug(message, ...optionalParameters);
+        if (String(message).includes('WideEvent:')) {
+            logger.debug(message, ...optionalParameters);
+        }
     }
 
     verbose?(message: never, ...optionalParameters: never[]): void {
-        logger.verbose(message, ...optionalParameters);
+        if (String(message).includes('WideEvent:')) {
+            logger.verbose(message, ...optionalParameters);
+        }
     }
 }
 

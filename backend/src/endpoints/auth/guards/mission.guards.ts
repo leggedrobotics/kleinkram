@@ -32,18 +32,28 @@ export class ReadMissionGuard extends BaseGuard {
         const missionUUID = request.query.uuid as string | undefined;
 
         if (!missionUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('mission.id', missionUUID);
+
         if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
+            const result = this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
                 AccessGroupRights.READ,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
 
-        return this.missionGuardService.canAccessMission(user, missionUUID);
+        const result = await this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+        );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -66,13 +76,18 @@ export class CanReadManyMissionsGuard extends BaseGuard {
             | undefined;
 
         if (!missionUUIDs || missionUUIDs.length === 0) {
-            return false; // Deny access if UUIDs not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
-        return await this.missionGuardService.canReadManyMissions(
+        this.setAttribute('mission.ids', missionUUIDs.join(','));
+
+        const result = await this.missionGuardService.canReadManyMissions(
             user,
             missionUUIDs,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -89,22 +104,31 @@ export class ReadMissionByNameGuard extends BaseGuard {
         const projectUuid = request.query.projectUUID as string | undefined;
 
         if (!missionName || !projectUuid) {
-            return false; // Deny access if required parameters not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('mission.name', missionName);
+        this.setAttribute('project.id', projectUuid);
+
         if (apiKey) {
-            return this.missionGuardService.canKeyAccessMissionByName(
-                apiKey,
-                missionName,
-                projectUuid,
-                AccessGroupRights.READ,
-            );
+            const result =
+                await this.missionGuardService.canKeyAccessMissionByName(
+                    apiKey,
+                    missionName,
+                    projectUuid,
+                    AccessGroupRights.READ,
+                );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.missionGuardService.canAccessMissionByName(
+        const result = await this.missionGuardService.canAccessMissionByName(
             user,
             missionName,
             projectUuid,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -125,21 +149,28 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
         }
 
         if (!missionUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('mission.id', missionUUID);
+
         if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
+            const result = this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
                 AccessGroupRights.CREATE,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.missionGuardService.canAccessMission(
+        const result = await this.missionGuardService.canAccessMission(
             user,
             missionUUID,
             AccessGroupRights.CREATE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -160,21 +191,28 @@ export class WriteMissionByBodyGuard extends BaseGuard {
         }
 
         if (!missionUUID) {
-            return false; // Deny access if UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('mission.id', missionUUID);
+
         if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
+            const result = this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
                 AccessGroupRights.WRITE,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.missionGuardService.canAccessMission(
+        const result = await this.missionGuardService.canAccessMission(
             user,
             missionUUID,
             AccessGroupRights.WRITE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -204,23 +242,30 @@ export class CanDeleteMissionGuard extends BaseGuard {
         }
 
         if (!missionUUID) {
+            this.recordGuardResult(context, false);
             throw new BadRequestException(
                 'Mission UUID not provided in body or params',
             );
         }
 
+        this.setAttribute('mission.id', missionUUID);
+
         if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
+            const result = this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
                 AccessGroupRights.DELETE,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.missionGuardService.canAccessMission(
+        const result = await this.missionGuardService.canAccessMission(
             user,
             missionUUID,
             AccessGroupRights.DELETE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -237,21 +282,28 @@ export class AddTagGuard extends BaseGuard {
         const missionUUID = body.mission;
 
         if (!missionUUID) {
-            return false; // Deny access if mission UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('mission.id', missionUUID);
+
         if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
+            const result = this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
                 AccessGroupRights.WRITE,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.missionGuardService.canAccessMission(
+        const result = await this.missionGuardService.canAccessMission(
             user,
             missionUUID,
             AccessGroupRights.WRITE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -269,21 +321,28 @@ export class DeleteTagGuard extends BaseGuard {
         const tagUuid = body.uuid ?? params.uuid;
 
         if (!tagUuid) {
-            return false; // Deny access if tag UUID not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('tag.id', tagUuid);
+
         if (apiKey) {
-            return this.missionGuardService.canKeyTagMission(
+            const result = await this.missionGuardService.canKeyTagMission(
                 apiKey,
                 tagUuid,
                 AccessGroupRights.DELETE,
             );
+            this.recordGuardResult(context, result);
+            return result;
         }
-        return this.missionGuardService.canTagMission(
+        const result = await this.missionGuardService.canTagMission(
             user,
             tagUuid,
             AccessGroupRights.WRITE,
         );
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
 
@@ -303,13 +362,19 @@ export class MoveMissionToProjectGuard extends BaseGuard {
         const projectUUID = request.query.projectUUID as string | undefined;
 
         if (!missionUUID || !projectUUID) {
-            return false; // Deny access if required parameters not provided
+            this.recordGuardResult(context, false);
+            return false;
         }
 
+        this.setAttribute('mission.id', missionUUID);
+        this.setAttribute('project.id', projectUUID);
+
         if (apiKey) {
+            this.recordGuardResult(context, false);
             throw new UnauthorizedException('CLI Keys cannot move missions');
         }
-        return (
+
+        const result =
             (await this.projectGuardService.canAccessProject(
                 user,
                 projectUUID,
@@ -319,7 +384,9 @@ export class MoveMissionToProjectGuard extends BaseGuard {
                 user,
                 missionUUID,
                 AccessGroupRights.DELETE,
-            ))
-        );
+            ));
+
+        this.recordGuardResult(context, result);
+        return result;
     }
 }
