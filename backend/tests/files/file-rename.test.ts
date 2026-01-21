@@ -140,7 +140,7 @@ describe('File Rename Bug Verification', () => {
         const headers = new HeaderCreator(user);
         headers.addHeader('Content-Type', 'application/json');
 
-        // 2. Rename .yaml -> .yml (Should Success)
+        // 2. Rename .yaml -> .yml (Should Succeed)
         let renameResponse = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
             method: 'PUT',
             headers: headers.getHeaders(),
@@ -154,7 +154,7 @@ describe('File Rename Bug Verification', () => {
         file = await fileRepo.findOneOrFail({ where: { uuid: file.uuid } });
         expect(file.filename).toBe('config.yml');
 
-        // 3. Rename .yml -> .yaml (Should Success)
+        // 3. Rename .yml -> .yaml (Should Succeed)
         renameResponse = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
             method: 'PUT',
             headers: headers.getHeaders(),
