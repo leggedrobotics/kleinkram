@@ -101,6 +101,18 @@ fi
 
 :::
 
+## Container Termination
+
+In some cases, the system may forcefully terminate your action container. This typically results in an exit code of `137` (SIGKILL) or `143` (SIGTERM). Common reasons include:
+
+- **Time Limit Exceeded**: The action ran longer than the configured `max_runtime` (default: 2 hours).
+- **Resource Limits**: The container consumed more memory or CPU than allocated (OOMKilled).
+- **Scheduler Interruption**: If the Action Runner service is updated or restarted, it may terminate containers running from previous instances to ensure system consistency. This is reported with the status cause "Interrupted by new Runner Instance".
+
+:::tip
+If you see "Interrupted by new Runner Instance", simply retry the action later. If the issue persists, contact your administrator.
+:::
+
 ## Environment Variables
 
 The following environment variables are available within the Docker container during action execution:

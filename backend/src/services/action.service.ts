@@ -13,6 +13,7 @@ import {
 } from '@kleinkram/api-dto';
 import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
@@ -40,6 +41,7 @@ export class ActionService {
         private apikeyRepository: Repository<ApiKeyEntity>,
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
+
         private readonly actionDispatcher: ActionDispatcherService,
         private readonly storageService: StorageService,
     ) {}
@@ -203,7 +205,8 @@ export class ActionService {
 
     async writeAuditLog(
         apiKey: string,
-        auditLog: { method: string; url: string },
+        auditLog: { method: string; url: string; message?: string },
+        fileUuid?: string,
     ): Promise<void> {
         await this.apikeyRepository.manager.transaction(
             async (manager: EntityManager): Promise<void> => {
@@ -217,6 +220,22 @@ export class ActionService {
 
                 const action: ActionEntity | undefined = key.action;
                 if (action === undefined) return;
+
+                if (fileUuid) {
+                    try {
+                        const file = await manager.findOne(FileEntity, {
+                            where: { uuid: fileUuid },
+                            select: ['size'],
+                        });
+                        if (file?.size && file.size > 0) {
+                            auditLog.message = `Downloaded ${file.size.toString()}`;
+                        }
+                    } catch (error) {
+                        logger.warn(
+                            `Failed to fetch file size for audit log: ${String(error)}`,
+                        );
+                    }
+                }
 
                 action.auditLogs ??= [];
                 action.auditLogs.push(auditLog);

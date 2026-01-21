@@ -103,4 +103,11 @@ export default {
             import.meta.env.VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT ?? 'false',
         );
     },
+
+    get DOCS_URL(): string {
+        return asString(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            import.meta.env.VITE_DOCS_URL ?? 'https://kleinkram.io/docs',
+        );
+    },
 };

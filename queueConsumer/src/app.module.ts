@@ -5,6 +5,7 @@ import {
     StorageModule,
 } from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
+import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
@@ -36,6 +37,7 @@ import os from 'node:os';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AccessGroupExpiryProvider } from './accessGroupExpiry/access-group-expiry.provider';
 import { ActionQueueProcessorProvider } from './actions/action-queue-processor.provider';
+import { ActionErrorHintService } from './actions/services/action-error-hint.service';
 import { ActionManagerService } from './actions/services/action-manager.service';
 import { ContainerCleanupService } from './actions/services/cleanup-containers.service';
 import { DockerDaemon } from './actions/services/docker-daemon.service';
@@ -92,9 +94,8 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                         ProjectEntity,
                         TopicEntity,
                         ActionEntity,
+                        ActionRunnerEntity,
                         ActionTemplateEntity,
-                        ActionTriggerEntity,
-                        ProjectEntity,
                         UserEntity,
                         ApiKeyEntity,
                         AccountEntity,
@@ -121,6 +122,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
             FileEntity,
             TopicEntity,
             ActionEntity,
+            ActionRunnerEntity,
             ActionTemplateEntity,
             ActionTriggerEntity,
             ProjectEntity,
@@ -149,6 +151,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         ContainerCleanupService,
         AccessGroupExpiryProvider,
         ImageResolutionService,
+        ActionErrorHintService,
     ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

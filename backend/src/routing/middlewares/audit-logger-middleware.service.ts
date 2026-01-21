@@ -41,8 +41,16 @@ export class AuditLoggerMiddleware implements NestMiddleware {
             `AuditLoggerMiddleware: ${JSON.stringify(auditLog, undefined, 2)}`,
         );
 
+        let fileUuid: string | undefined;
+        if (
+            request.originalUrl.includes('/files/download') &&
+            request.query.uuid
+        ) {
+            fileUuid = request.query.uuid as string;
+        }
+
         this.actionService
-            .writeAuditLog(key, auditLog)
+            .writeAuditLog(key, auditLog, fileUuid)
             .then(() => {
                 logger.debug(`Audit log written for ${auditLog.url}`);
             })
