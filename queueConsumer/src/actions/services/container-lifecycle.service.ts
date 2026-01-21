@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import logger from '../../logger';
 import {
     ContainerEnvironment,
+    ContainerLimits,
     ContainerStartOptions,
     DockerDaemon,
 } from './docker-daemon.service';
@@ -50,6 +51,10 @@ export class ContainerLifecycleService {
         source: ImageSource;
         localCreatedAt: Date | undefined;
         remoteCreatedAt: Date | undefined;
+        containerLimits: ContainerLimits;
+        needsGpu: boolean;
+        volumeName: string;
+        dockerImage: string;
     }> {
         if (!action.template) {
             throw new Error('Action template is undefined');
@@ -97,7 +102,15 @@ export class ContainerLifecycleService {
             labels,
         };
 
-        return this.dockerDaemon.startContainer(onProcessing, containerOptions);
+        const result = await this.dockerDaemon.startContainer(
+            onProcessing,
+            containerOptions,
+        );
+
+        return {
+            ...result,
+            dockerImage: action.template.image_name,
+        };
     }
 
     /**

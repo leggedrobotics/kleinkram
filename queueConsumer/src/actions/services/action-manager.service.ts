@@ -21,6 +21,7 @@ import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
+import { WideLogger } from '../helper/wide-logger';
 import { ActionErrorHintService } from './action-error-hint.service';
 import { ArtifactService } from './artifact.service';
 import { ContainerLifecycleService } from './container-lifecycle.service';
@@ -161,24 +162,49 @@ export class ActionManagerService implements OnModuleInit {
 
     @tracing('processing_action')
     async processAction(action: Readonly<ActionEntity>): Promise<boolean> {
+        const wideLog = new WideLogger('action_processed', {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            action_uuid: action.uuid,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            mission_uuid: action.mission?.uuid,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            project_uuid: action.mission?.project?.uuid,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            template_name: action.template?.name,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            creator_uuid: action.creator?.uuid,
+        });
+
         await this.initPromise;
         if (!this.currentInstanceId) {
-            throw new Error(
+            const error = new Error(
                 'ActionManagerService not initialized: currentInstanceId is missing',
             );
+            wideLog.recordError(error);
+            wideLog.flush('error');
+            throw error;
         }
 
-        logger.info(`\n\nProcessing Action ${action.uuid}`);
+        wideLog.add({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            runner_id: this.currentInstanceId,
+        });
 
-        logger.info('Creating container.');
+        logger.debug(`Processing Action ${action.uuid}`);
 
         if (action.state !== ActionState.PENDING) {
-            logger.error(
-                `Action ${action.uuid} state is '${action.state}' (expected 'PENDING'). Trigger source: ${action.triggerSource}`,
-            );
-            throw new Error(
+            const error = new Error(
                 `Action state is not 'PENDING'. Current state: ${action.state}`,
             );
+            wideLog.add({
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                actual_state: action.state,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                trigger_source: action.triggerSource,
+            });
+            wideLog.recordError(error);
+            wideLog.flush('error');
+            throw error;
         }
 
         // set state to 'STARTING'
@@ -213,6 +239,10 @@ export class ActionManagerService implements OnModuleInit {
                 source,
                 localCreatedAt,
                 remoteCreatedAt,
+                containerLimits,
+                needsGpu,
+                volumeName,
+                dockerImage,
             } = await this.containerLifecycleService.startActionContainer(
                 this.currentInstanceId,
                 action,
@@ -224,6 +254,27 @@ export class ActionManagerService implements OnModuleInit {
                     );
                 },
             );
+
+            wideLog.add({
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                container_id: container.id,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                image_sha: sha,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                image_source: source,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                needs_gpu: needsGpu,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                volume_name: volumeName,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                docker_image: dockerImage,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                memory_limit: containerLimits.memory_limit,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                n_cpu: containerLimits.n_cpu,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                max_runtime: containerLimits.max_runtime,
+            });
 
             // capture runner information
             const actionImage: Image = {
@@ -273,7 +324,7 @@ export class ActionManagerService implements OnModuleInit {
             );
 
             this.containerLifecycleService.removeContainer(container.id, true);
-            await this.setActionState(container, action);
+            await this.setActionState(container, action, wideLog);
 
             await this.actionRepository.update(
                 { uuid: action.uuid },
@@ -288,14 +339,31 @@ export class ActionManagerService implements OnModuleInit {
             }
 
             // Delegate artifact upload to ArtifactService
-            await this.artifactService.uploadArtifacts(
+            const {
+                artifactSize,
+                artifactFiles,
+                containerLimits: artifactContainerLimits,
+            } = await this.artifactService.uploadArtifacts(
                 action.uuid,
                 this.currentInstanceId,
             );
 
+            wideLog.add({
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_size: artifactSize,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_files: artifactFiles?.length,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_memory_limit: artifactContainerLimits.memory_limit,
+            });
+
+            wideLog.flush();
+
             return true; // Mark the job as completed
         } catch (error: unknown) {
-            logger.error(`Failed to process action: ${String(error)}`);
+            wideLog.recordError(error);
+            wideLog.flush('error');
+
             await this.actionRepository.update(
                 { uuid: action.uuid },
                 {
@@ -339,12 +407,9 @@ export class ActionManagerService implements OnModuleInit {
     private async setActionState(
         container: Dockerode.Container,
         action: Readonly<ActionEntity>,
+        wideLog: WideLogger,
     ): Promise<void> {
         const containerDetailsAfter = await container.inspect();
-
-        logger.info(
-            `Container ${container.id} exited with code ${containerDetailsAfter.State.ExitCode.toString()}`,
-        );
 
         const exitCode = containerDetailsAfter.State.ExitCode;
 
@@ -401,7 +466,15 @@ export class ActionManagerService implements OnModuleInit {
                 exit_code = exitCode;
             }
         }
-        logger.info(`Action ${action.uuid} finished with state ${state}`);
+
+        wideLog.add({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            exit_code,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            final_state: state,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_cause,
+        });
 
         await this.actionRepository.update(
             { uuid: action.uuid },

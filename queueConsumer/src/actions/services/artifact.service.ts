@@ -4,7 +4,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
-import { DockerDaemon } from './docker-daemon.service';
+import { tracing } from '../../tracing';
+import { ContainerLimits, DockerDaemon } from './docker-daemon.service';
 
 /**
  * Service for handling artifact uploads after action completion.
@@ -25,18 +26,32 @@ export class ArtifactService {
      *
      * @param actionUuid The UUID of the action to upload artifacts for.
      */
-    async uploadArtifacts(actionUuid: string, runnerId: string): Promise<void> {
+    @tracing()
+    async uploadArtifacts(
+        actionUuid: string,
+        runnerId: string,
+    ): Promise<{
+        artifactPath: string;
+        artifactSize?: number;
+        artifactFiles?: string[];
+        containerLimits: ContainerLimits;
+        volumeName: string;
+    }> {
         // Mark as uploading
         await this.actionRepository.update(
             { uuid: actionUuid },
             { artifacts: ArtifactState.UPLOADING },
         );
 
-        const { container: artifactUploadContainer, artifactMetadata } =
-            await this.dockerDaemon.launchArtifactUploadContainer(
-                actionUuid,
-                runnerId,
-            );
+        const {
+            container: artifactUploadContainer,
+            artifactMetadata,
+            containerLimits,
+            volumeName,
+        } = await this.dockerDaemon.launchArtifactUploadContainer(
+            actionUuid,
+            runnerId,
+        );
 
         await artifactUploadContainer.wait();
         this.dockerDaemon.removeContainer(artifactUploadContainer.id);
@@ -70,6 +85,14 @@ export class ArtifactService {
 
         await this.actionRepository.update({ uuid: actionUuid }, updateData);
 
-        logger.info(`Artifacts uploaded for action ${actionUuid}`);
+        logger.debug(`Artifacts uploaded for action ${actionUuid}`);
+
+        return {
+            artifactPath,
+            artifactSize: artifactMetadata?.size,
+            artifactFiles: artifactMetadata?.files,
+            containerLimits,
+            volumeName,
+        };
     }
 }

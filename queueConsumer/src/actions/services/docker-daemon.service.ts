@@ -125,42 +125,46 @@ export class DockerDaemon {
         source: ImageSource;
         localCreatedAt: Date | undefined;
         remoteCreatedAt: Date | undefined;
+        containerLimits: ContainerLimits;
+        needsGpu: boolean;
+        volumeName: string;
     }> {
         // merge the given container limitations with the default ones
         containerOptions ??= {};
-        containerOptions = {
+        const runLimits = {
+            ...defaultContainerLimitations,
+            ...containerOptions.limits,
+        };
+        const runOptions = {
             ...containerOptions,
-            limits: {
-                ...defaultContainerLimitations,
-                ...containerOptions.limits,
-            },
+            limits: runLimits,
             environment: { ...containerOptions.environment },
         };
 
         logger.debug(
-            `Starting container with options: ${JSON.stringify(containerOptions)}`,
+            `Starting container with options: ${JSON.stringify(runOptions)}`,
         );
 
-        if (containerOptions.docker_image === undefined) {
+        if (runOptions.docker_image === undefined) {
             throw new Error('No docker image specified');
         }
 
-        if (containerOptions.name === undefined) {
+        if (runOptions.name === undefined) {
             throw new Error('No name specified');
         }
 
         const { image, source, localCreatedAt, remoteCreatedAt } =
-            await this.getImage(containerOptions.docker_image);
+            await this.getImage(runOptions.docker_image);
         // get image details
         const details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
             throw new Error(
-                `Image '${containerOptions.docker_image}' not found, could not start container!`,
+                `Image '${runOptions.docker_image}' not found, could not start container!`,
             );
         }
         const repoDigests = details.RepoDigests;
         const sha = details.Id;
-        const needsGpu = containerOptions.needs_gpu ?? false;
+        const needsGpu = runOptions.needs_gpu ?? false;
         const addGpuCapabilities = {
             DeviceRequests: [
                 {
@@ -171,26 +175,26 @@ export class DockerDaemon {
             ],
         };
 
-        logger.info(
+        const volumeName = `vol-${runOptions.name}`;
+
+        logger.debug(
             needsGpu
                 ? 'Creating container with GPU acceleration'
                 : 'Creating container without GPU acceleration',
         );
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
-            Image: containerOptions.docker_image,
-            name: DockerDaemon.CONTAINER_PREFIX + containerOptions.name,
-            Labels: containerOptions.labels ?? {},
-            Env: Object.entries(containerOptions.environment ?? {}).map(
+            Image: runOptions.docker_image,
+            name: DockerDaemon.CONTAINER_PREFIX + runOptions.name,
+            Labels: runOptions.labels,
+            Env: Object.entries(runOptions.environment).map(
                 ([key, value]) => `${key}=${value}`,
             ),
-            Cmd: containerOptions.command
-                ? containerOptions.command.split(' ')
-                : [],
+            Cmd: runOptions.command ? runOptions.command.split(' ') : [],
             HostConfig: {
                 ...(needsGpu ? addGpuCapabilities : {}),
-                Memory: containerOptions.limits?.memory_limit, // memory limit in bytes
-                NanoCpus: (containerOptions.limits?.n_cpu ?? 0) * 1_000_000_000, // CPU limit in nano CPUs
-                DiskQuota: containerOptions.limits?.disk_quota,
+                Memory: runLimits.memory_limit, // memory limit in bytes
+                NanoCpus: runLimits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
+                DiskQuota: runLimits.disk_quota,
                 NetworkMode,
                 LogConfig,
                 CapDrop,
@@ -201,7 +205,7 @@ export class DockerDaemon {
                 Mounts: [
                     {
                         Target: '/out', // Inside container
-                        Source: `vol-${containerOptions.name}`, // Volume name
+                        Source: volumeName, // Volume name
                         Type: 'volume', // Use Docker-managed volume
                     },
                 ],
@@ -211,22 +215,22 @@ export class DockerDaemon {
                 '/tmp_disk': {},
             },
         };
-        if (containerOptions.entrypoint) {
-            containerCreateOptions.Entrypoint = containerOptions.entrypoint;
+        if (runOptions.entrypoint) {
+            containerCreateOptions.Entrypoint = runOptions.entrypoint;
         }
         await start();
         const container = await this.docker
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
 
-        logger.info('Container created! Starting container...');
+        logger.debug('Container created! Starting container...');
         await container.start();
-        logger.info(`Container started wit id: ${container.id}`);
+        logger.debug(`Container started with id: ${container.id}`);
 
         // stop the container after max_runtime seconds
         this.killContainerAfterMaxRuntime(
             container,
-            containerOptions.limits?.max_runtime ?? 0,
+            runLimits.max_runtime,
         ).catch((error: unknown) => logger.error(error));
 
         return {
@@ -236,6 +240,9 @@ export class DockerDaemon {
             source,
             localCreatedAt,
             remoteCreatedAt,
+            containerLimits: runLimits,
+            needsGpu: needsGpu,
+            volumeName: volumeName,
         };
     }
 
@@ -533,6 +540,8 @@ export class DockerDaemon {
         container: Dockerode.Container;
         repoDigests: string[];
         artifactMetadata?: { size: number; files: string[] } | undefined;
+        containerLimits: ContainerLimits;
+        volumeName: string;
     }> {
         const containerOptions = { limits: defaultContainerLimitations };
 
@@ -556,9 +565,11 @@ export class DockerDaemon {
         }
         const repoDigests = details.RepoDigests;
 
-        logger.info(
+        logger.debug(
             `Creating artifact uploader container from image: ${artifactUploaderImage} with options: ${JSON.stringify(containerOptions)}`,
         );
+
+        const volumeName = `vol-${runnerId}-${actionUuid}`;
 
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: artifactUploaderImage,
@@ -583,7 +594,7 @@ export class DockerDaemon {
                 Mounts: [
                     {
                         Target: '/out',
-                        Source: `vol-${runnerId}-${actionUuid}`,
+                        Source: volumeName,
                         Type: 'volume',
                     },
                 ],
@@ -594,9 +605,9 @@ export class DockerDaemon {
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
 
-        logger.info('Container created! Starting container...');
+        logger.debug('Container created! Starting container...');
         await container.start();
-        logger.info(`Container started with id: ${container.id}`);
+        logger.debug(`Container started with id: ${container.id}`);
 
         // Stream logs to stdout/stderr for debugging and capture metadata
         let artifactMetadata: { size: number; files: string[] } | undefined;
@@ -696,6 +707,12 @@ export class DockerDaemon {
 
         await logPromise;
 
-        return { container, repoDigests, artifactMetadata };
+        return {
+            container,
+            repoDigests,
+            artifactMetadata,
+            containerLimits: containerOptions.limits,
+            volumeName,
+        };
     }
 }
