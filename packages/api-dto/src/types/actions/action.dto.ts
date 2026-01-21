@@ -15,6 +15,7 @@ import { Type } from 'class-transformer';
 import {
     IsDate,
     IsEnum,
+    IsInt,
     IsOptional,
     IsString,
     IsUUID,
@@ -112,5 +113,6 @@ export class ActionDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @IsInt()
     exitCode?: number;
 }
