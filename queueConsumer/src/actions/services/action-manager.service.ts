@@ -10,6 +10,7 @@ import {
     AccessGroupRights,
     ActionState,
     KeyTypes,
+    ResourceUsage,
     UserRole,
 } from '@kleinkram/shared';
 import { Injectable, OnModuleInit } from '@nestjs/common';
@@ -25,6 +26,7 @@ import { WideLogger } from '../helper/wide-logger';
 import { ActionErrorHintService } from './action-error-hint.service';
 import { ArtifactService } from './artifact.service';
 import { ContainerLifecycleService } from './container-lifecycle.service';
+import { ContainerStatsService } from './container-stats.service';
 import { LogIngestionService } from './log-ingestion.service';
 
 @Injectable()
@@ -44,6 +46,7 @@ export class ActionManagerService implements OnModuleInit {
         private readonly actionErrorHintService: ActionErrorHintService,
         private readonly logIngestionService: LogIngestionService,
         private readonly artifactService: ArtifactService,
+        private readonly containerStatsService: ContainerStatsService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -302,7 +305,20 @@ export class ActionManagerService implements OnModuleInit {
                 return string_.replace(apikey.apikey, '***');
             };
 
+            // Start stats collection BEFORE log ingestion (which blocks until container exit)
+            const statsPromise = this.containerStatsService
+                .collectStats(container)
+                .catch((error: unknown) => {
+                    logger.warn(
+                        `Failed to collect stats for ${action.uuid}: ${String(
+                            error,
+                        )}`,
+                    );
+                    return null;
+                });
+
             // Delegate log ingestion to LogIngestionService
+            // Note: If startIngestion blocks until container exit, stats collection must be started BEFORE this.
             await this.logIngestionService.startIngestion(
                 container.id,
                 action.uuid,
@@ -311,6 +327,20 @@ export class ActionManagerService implements OnModuleInit {
 
             // wait for the container to stop
             await container.wait();
+
+            // Give the stats stream a moment to finish flushing after container exit
+            // using a race to prevent infinite hanging
+            const statsResult = await Promise.race([
+                statsPromise,
+                new Promise<null>((resolve) =>
+                    setTimeout(() => {
+                        logger.warn(
+                            `Stats collection timed out for ${action.uuid}`,
+                        );
+                        resolve(null);
+                    }, 10_000),
+                ),
+            ]);
 
             // update action state based on container exit code
             action = await this.actionRepository.findOneOrFail({
@@ -333,6 +363,40 @@ export class ActionManagerService implements OnModuleInit {
                     actionContainerExitedAt: new Date(),
                 },
             );
+
+            if (statsResult) {
+                await this.saveActionStats(action, statsResult, wideLog);
+                logger.debug(
+                    `Stats collected and saved for action ${
+                        action.uuid
+                    }: ${String(statsResult.samples.length)} samples`,
+                );
+            } else {
+                logger.warn(
+                    `Stats collection failed or timed out for action ${action.uuid}`,
+                );
+                // If timed out, still try to save if it finishes later
+                statsPromise
+                    .then(async (lateResult) => {
+                        if (lateResult) {
+                            logger.debug(
+                                `Late stats arrived for ${action.uuid}, saving...`,
+                            );
+                            await this.saveActionStats(
+                                action,
+                                lateResult,
+                                wideLog,
+                            );
+                        }
+                    })
+                    .catch((error: unknown) => {
+                        logger.warn(
+                            `Failed to save late stats for ${
+                                action.uuid
+                            }: ${String(error)}`,
+                        );
+                    });
+            }
 
             if (action.template === undefined) {
                 throw new Error('Template is undefined');
@@ -404,6 +468,40 @@ export class ActionManagerService implements OnModuleInit {
     /**
      * Sets the state of the action based on the container exit code.
      */
+    private async saveActionStats(
+        action: Readonly<ActionEntity>,
+        statsResult: ResourceUsage,
+        wideLog: WideLogger,
+    ): Promise<void> {
+        const memoryLimitBytes =
+            (action.template?.cpuMemory ?? 2) * 1024 * 1024 * 1024;
+        const efficiencyScore =
+            memoryLimitBytes > 0
+                ? statsResult.maxMemoryBytes / memoryLimitBytes
+                : 0;
+
+        await this.actionRepository.update(
+            { uuid: action.uuid },
+            {
+                resourceUsage: statsResult,
+                maxMemoryBytes: statsResult.maxMemoryBytes,
+                avgCpuPercent: statsResult.avgCpuPercent,
+                efficiencyScore: efficiencyScore,
+            },
+        );
+
+        wideLog.add({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            resource_max_ram_bytes: statsResult.maxMemoryBytes,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            resource_avg_cpu_percent: statsResult.avgCpuPercent,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            resource_max_cpu_percent: statsResult.maxCpuPercent,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            resource_efficiency_score: efficiencyScore,
+        });
+    }
+
     private async setActionState(
         container: Dockerode.Container,
         action: Readonly<ActionEntity>,

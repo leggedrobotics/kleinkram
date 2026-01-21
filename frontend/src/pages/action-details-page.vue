@@ -19,6 +19,16 @@
                     style="color: #222"
                 />
                 <q-tab
+                    name="resources"
+                    label="Resource Consumption"
+                    style="color: #222"
+                    :disable="!action?.resourceUsage"
+                >
+                    <q-tooltip v-if="!action?.resourceUsage">
+                        <span>No resource data available</span>
+                    </q-tooltip>
+                </q-tab>
+                <q-tab
                     name="logs"
                     label="Logs"
                     style="color: #222"
@@ -127,6 +137,10 @@
                 v-if="action"
                 :template="action.template"
             />
+        </q-tab-panel>
+
+        <q-tab-panel name="resources">
+            <ActionDetailsResourcesTab v-if="action" :action="action" />
         </q-tab-panel>
 
         <q-tab-panel name="logs">
@@ -281,6 +295,7 @@
 
 <script setup lang="ts">
 import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
+import ActionDetailsResourcesTab from 'components/actions/action-details-resources-tab.vue';
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import InfoBanner from 'components/info-banner.vue';

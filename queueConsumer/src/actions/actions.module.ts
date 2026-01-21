@@ -15,6 +15,7 @@ import { ActionManagerService } from './services/action-manager.service';
 import { ArtifactService } from './services/artifact.service';
 import { ContainerCleanupService } from './services/cleanup-containers.service';
 import { ContainerLifecycleService } from './services/container-lifecycle.service';
+import { ContainerStatsService } from './services/container-stats.service';
 import { DockerDaemon } from './services/docker-daemon.service';
 import { ImageResolutionService } from './services/image-resolution.service';
 import { LogIngestionService } from './services/log-ingestion.service';
@@ -47,6 +48,7 @@ import { ResourceMonitorService } from './services/resource-monitor.service';
         ActionManagerService,
         ContainerCleanupService,
         ActionErrorHintService,
+        ContainerStatsService,
     ],
     exports: [ActionManagerService],
 })

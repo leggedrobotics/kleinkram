@@ -13,6 +13,7 @@ import {
     ArtifactState,
     ImageSource,
     LogType,
+    ResourceUsage,
 } from '@kleinkram/shared';
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 
@@ -152,4 +153,16 @@ export class ActionEntity extends BaseEntity {
         nullable: true,
     })
     errorHint?: ActionErrorHint;
+
+    @Column({ type: 'json', nullable: true })
+    resourceUsage?: ResourceUsage;
+
+    @Column({ type: 'bigint', nullable: true })
+    maxMemoryBytes?: number;
+
+    @Column({ type: 'float', nullable: true })
+    avgCpuPercent?: number;
+
+    @Column({ type: 'float', nullable: true })
+    efficiencyScore?: number;
 }
