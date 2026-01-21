@@ -198,7 +198,7 @@ export class DockerDaemon {
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: runOptions.docker_image,
             name: DockerDaemon.CONTAINER_PREFIX + runOptions.name,
-            Labels: runOptions.labels,
+            Labels: runOptions.labels ?? {},
             Env: Object.entries(runOptions.environment).map(
                 ([key, value]) => `${key}=${value}`,
             ),
