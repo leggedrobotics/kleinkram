@@ -33,19 +33,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import os from 'node:os';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AccessGroupExpiryProvider } from './accessGroupExpiry/access-group-expiry.provider';
-import { ActionQueueProcessorProvider } from './actions/action-queue-processor.provider';
-import { ActionErrorHintService } from './actions/services/action-error-hint.service';
-import { ActionManagerService } from './actions/services/action-manager.service';
-import { ArtifactService } from './actions/services/artifact.service';
-import { ContainerCleanupService } from './actions/services/cleanup-containers.service';
-import { ContainerLifecycleService } from './actions/services/container-lifecycle.service';
-import { DockerDaemon } from './actions/services/docker-daemon.service';
-import { ImageResolutionService } from './actions/services/image-resolution.service';
-import { LogIngestionService } from './actions/services/log-ingestion.service';
-import { ResourceMonitorService } from './actions/services/resource-monitor.service';
+import { ActionsModule } from './actions/actions.module';
 import { FileProcessorModule } from './file-processor/file-processor.module';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-queue-processor.provider';
 import { TriggerProcessorModule } from './trigger-processor/trigger-processor.module';
@@ -56,12 +46,9 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
             redis,
         }),
 
+        ActionsModule,
         FileProcessorModule,
         TriggerProcessorModule,
-
-        BullModule.registerQueue({
-            name: `action-queue-${os.hostname()}`,
-        }),
         BullModule.registerQueue({
             name: 'file-cleanup',
         }),
@@ -122,46 +109,18 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         }),
         TypeOrmModule.forFeature([
             IngestionJobEntity,
-            FileEventEntity,
             MissionEntity,
             FileEntity,
-            TopicEntity,
-            ActionEntity,
-            ActionRunnerEntity,
-            ActionTemplateEntity,
-            ActionTriggerEntity,
-            ProjectEntity,
             UserEntity,
-            ApiKeyEntity,
-            TagTypeEntity,
-            MetadataEntity,
-            ProjectAccessEntity,
-            MissionAccessEntity,
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
-            WorkerEntity,
-            CategoryEntity,
             GroupMembershipEntity,
-            AccessGroupEntity,
         ]),
         ScheduleModule.forRoot(),
         StorageModule,
         AccessControlModule,
     ],
-    providers: [
-        ActionQueueProcessorProvider,
-        FileCleanupQueueProcessorProvider,
-        DockerDaemon,
-        ImageResolutionService,
-        ResourceMonitorService,
-        LogIngestionService,
-        ArtifactService,
-        ContainerLifecycleService,
-        ActionManagerService,
-        ContainerCleanupService,
-        AccessGroupExpiryProvider,
-        ActionErrorHintService,
-    ],
+    providers: [FileCleanupQueueProcessorProvider, AccessGroupExpiryProvider],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}
