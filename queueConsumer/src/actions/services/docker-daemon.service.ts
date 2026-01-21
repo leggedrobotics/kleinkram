@@ -102,8 +102,6 @@ export class DockerDaemon {
     /**
      * Start a container with the given action and uuid.
      *
-     * The container will be stopped after max_runtime milliseconds and
-     * forcefully killed 10 seconds after max_runtime if it is still running.
      *
      * This function returns as soon as the container is started.
      *
@@ -227,12 +225,6 @@ export class DockerDaemon {
         await container.start();
         logger.debug(`Container started with id: ${container.id}`);
 
-        // stop the container after max_runtime seconds
-        this.killContainerAfterMaxRuntime(
-            container,
-            runLimits.max_runtime,
-        ).catch((error: unknown) => logger.error(error));
-
         return {
             container,
             repoDigests: repoDigests,
@@ -257,52 +249,6 @@ export class DockerDaemon {
             logger.error(`Failed to create container: ${errorString}`);
             throw error;
         };
-    }
-
-    /**
-     * Kill a container after maxRuntimeMs milliseconds.
-     *
-     * The OS sends a SIGTERM signal to the container, which allows the container to
-     * gracefully shut down. If the container does not stop after 10 seconds, it is
-     * forcefully killed (SIGKILL).
-     *
-     * @param container
-     * @param maxRuntimeMs
-     * @param clearVolume - if true, the volume is removed after the container is stopped
-     * @private
-     */
-    private async killContainerAfterMaxRuntime(
-        container: Dockerode.Container,
-        maxRuntimeMs: number,
-        clearVolume = false,
-    ): Promise<void> {
-        const cancelTimeout = setTimeout(() => {
-            logger.info(
-                `Stopping container ${container.id} after ${maxRuntimeMs.toString()}ms`,
-            );
-
-            // initialize a kill timeout
-            const killTimout = setTimeout(() => {
-                logger.info(
-                    `Killing container ${container.id} after 10 seconds of stopping`,
-                );
-                this.killAndRemoveContainer(container.id, clearVolume).catch(
-                    (error: unknown) => logger.error(error),
-                );
-            }, 10_000);
-
-            this.stopContainer(container.id)
-                .then(() => {
-                    clearTimeout(killTimout);
-                    // clear the kill timeout
-                    this.removeContainer(container.id, clearVolume);
-                })
-                .catch((error: unknown) => logger.error(error));
-        }, maxRuntimeMs);
-
-        await container.wait().finally(() => {
-            clearTimeout(cancelTimeout); // clear the cancel timeout
-        });
     }
 
     @tracing()
@@ -697,13 +643,6 @@ export class DockerDaemon {
                 stderrWritable as unknown as NodeJS.WritableStream,
             );
         });
-
-        // stop the container after max_runtime seconds
-        await this.killContainerAfterMaxRuntime(
-            container,
-            containerOptions.limits.max_runtime,
-            true,
-        );
 
         await logPromise;
 

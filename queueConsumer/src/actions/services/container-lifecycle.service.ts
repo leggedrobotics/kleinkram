@@ -18,6 +18,8 @@ export const LABEL_PREFIX = 'kleinkram';
 export const LABEL_RUNNER_ID = `${LABEL_PREFIX}.runner_id`;
 export const LABEL_ACTION_UUID = `${LABEL_PREFIX}.action_uuid`;
 export const LABEL_CREATED_AT = `${LABEL_PREFIX}.created_at`;
+export const LABEL_MAX_RUNTIME = `${LABEL_PREFIX}.max_runtime`;
+export const LABEL_EXPIRES_AT = `${LABEL_PREFIX}.expires_at`;
 
 // How long before a runner is considered inactive (5 minutes)
 const RUNNER_INACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
@@ -99,7 +101,18 @@ export class ContainerLifecycleService {
             environment: environmentVariables,
             command: action.template.command ?? '',
             entrypoint: action.template.entrypoint ?? '',
-            labels,
+            labels: {
+                ...labels,
+                [LABEL_MAX_RUNTIME]: (
+                    action.template.maxRuntime *
+                    60 *
+                    60 *
+                    1000
+                ).toString(),
+                [LABEL_EXPIRES_AT]: new Date(
+                    Date.now() + action.template.maxRuntime * 60 * 60 * 1000,
+                ).toISOString(),
+            },
         };
 
         const result = await this.dockerDaemon.startContainer(
@@ -161,6 +174,26 @@ export class ContainerLifecycleService {
 
             // Case 1: My Container
             if (containerRunnerId === currentRunnerId) {
+                // Check for timeout if labels exist
+                const expiresAtString = labels[LABEL_EXPIRES_AT];
+                if (expiresAtString) {
+                    const expiresAt = new Date(expiresAtString).getTime();
+                    if (now > expiresAt) {
+                        logger.info(
+                            `[Reaper] Killing timed out container ${containerInfo.Id} (action ${containerActionUuid})`,
+                        );
+                        await this.dockerDaemon.killAndRemoveContainer(
+                            containerInfo.Id,
+                        );
+                        await this.markActionAsFailed(
+                            containerActionUuid,
+                            'Time limit exceeded',
+                            143, // SIGTERM equivalent or custom exit code for timeout
+                        );
+                        continue;
+                    }
+                }
+
                 if (!activeActionUuids.has(containerActionUuid)) {
                     logger.info(
                         `[Reaper] Killing zombie container ${containerInfo.Id} (action ${containerActionUuid} not active)`,

@@ -24,7 +24,10 @@ interface DockerStats {
 
 @Injectable()
 export class ContainerStatsService {
-    async collectStats(container: Dockerode.Container): Promise<ResourceUsage> {
+    async collectStats(
+        container: Dockerode.Container,
+        onStatsUpdate?: (stats: ResourceUsage) => void,
+    ): Promise<ResourceUsage> {
         let maxMemory = 0;
         let maxCpu = 0;
         let totalCpu = 0;
@@ -32,101 +35,19 @@ export class ContainerStatsService {
         const samples: ResourceSample[] = [];
         const startTime = Date.now();
 
-        // Get the stream
+        logger.debug(`Starting stats streaming for container ${container.id}`);
+
         return new Promise<ResourceUsage>((resolve) => {
-            logger.debug(
-                `Starting stats polling for container ${container.id}`,
-            );
-            const pollInterval = 1000;
             let previousCpu = 0;
             let previousSystem = 0;
-            let skippedSamples = 0;
+            let buffer = '';
 
-            const collectionLoop = async () => {
-                while (Boolean(container.id)) {
-                    try {
-                        // Just try to get stats - if container is gone, we'll get an error
-                        const stats = (await container.stats({
-                            stream: false,
-                        })) as DockerStats;
-
-                        if (!this.isValidStats(stats)) {
-                            skippedSamples++;
-                            await new Promise((r) =>
-                                setTimeout(r, pollInterval),
-                            );
-                            continue;
-                        }
-
-                        const {
-                            usedMemory,
-                            cpuPercent,
-                            currentCpu,
-                            currentSystem,
-                        } = this.calculateMetrics(
-                            stats,
-                            previousCpu,
-                            previousSystem,
-                        );
-
-                        if (usedMemory > maxMemory) maxMemory = usedMemory;
-                        if (cpuPercent > maxCpu) maxCpu = cpuPercent;
-
-                        if (cpuPercent > 0) {
-                            totalCpu += cpuPercent;
-                            cpuSamples++;
-                        }
-
-                        // Docker stats snapshot handles deltas internally or gives cumulative?
-                        // stats({stream:false}) returns specific structure.
-                        // Usually it returns the *current* state.
-                        // However, calculating CPU % requires previous usage.
-                        // If we poll, we get cumulative usage. We can compare with previous sample.
-                        // BUT, if we poll every 1s, we might miss spikes?
-                        // It's acceptable for this usecase.
-
-                        previousCpu = currentCpu;
-                        previousSystem = currentSystem;
-
-                        // 3. Add Sample
-                        const elapsedTime = Math.floor(
-                            (Date.now() - startTime) / 1000,
-                        );
-
-                        // Avoid duplicate timestamps
-                        if (
-                            samples.length === 0 ||
-                            (samples.at(-1)?.t ?? -1) < elapsedTime
-                        ) {
-                            samples.push({
-                                t: elapsedTime,
-                                c: Number.parseFloat(cpuPercent.toFixed(2)),
-                                m: usedMemory,
-                            });
-                        }
-
-                        await new Promise((r) => setTimeout(r, pollInterval));
-                    } catch (error: unknown) {
-                        // If container is gone (404) or other error, stop
-                        const errorMessage = String(error);
-                        if (errorMessage.includes('404')) {
-                            break;
-                        }
-                        logger.warn(
-                            `Stats polling error for ${container.id}: ${errorMessage}`,
-                        );
-                        // Backoff slightly on error
-                        await new Promise((r) => setTimeout(r, pollInterval));
-                    }
-                }
-
+            const onFinished = () => {
                 const count = samples.length;
                 logger.debug(
-                    `Stats polling finished for container ${
+                    `Stats streaming finished for container ${
                         container.id
-                    }. Collected ${String(count)} valid samples (skipped ${String(
-                        skippedSamples,
-                    )} invalid).`,
+                    }. Collected ${String(count)} valid samples.`,
                 );
 
                 const downsampled = this.downsample(samples, 100);
@@ -144,8 +65,121 @@ export class ContainerStatsService {
                 });
             };
 
-            // Start the loop (fire and forget inside the promise wrapper)
-            void collectionLoop();
+            container
+                .stats({ stream: true })
+                .then((stream) => {
+                    const dataStream = stream;
+
+                    dataStream.on('data', (chunk: Buffer) => {
+                        buffer += chunk.toString();
+
+                        while (buffer.includes('\n')) {
+                            const newlineIndex = buffer.indexOf('\n');
+                            const line = buffer.slice(0, newlineIndex).trim();
+                            buffer = buffer.slice(newlineIndex + 1);
+
+                            if (!line) continue;
+
+                            try {
+                                const stats = JSON.parse(line) as DockerStats;
+
+                                if (!this.isValidStats(stats)) {
+                                    continue;
+                                }
+
+                                const {
+                                    usedMemory,
+                                    cpuPercent,
+                                    currentCpu,
+                                    currentSystem,
+                                } = this.calculateMetrics(
+                                    stats,
+                                    previousCpu,
+                                    previousSystem,
+                                );
+
+                                if (usedMemory > maxMemory)
+                                    maxMemory = usedMemory;
+                                if (cpuPercent > maxCpu) maxCpu = cpuPercent;
+
+                                if (cpuPercent > 0) {
+                                    totalCpu += cpuPercent;
+                                    cpuSamples++;
+                                }
+
+                                previousCpu = currentCpu;
+                                previousSystem = currentSystem;
+
+                                const elapsedTime = Math.floor(
+                                    (Date.now() - startTime) / 1000,
+                                );
+
+                                // Avoid duplicate timestamps
+                                if (
+                                    samples.length === 0 ||
+                                    (samples.at(-1)?.t ?? -1) < elapsedTime
+                                ) {
+                                    samples.push({
+                                        t: elapsedTime,
+                                        c: Number.parseFloat(
+                                            cpuPercent.toFixed(2),
+                                        ),
+                                        m: usedMemory,
+                                    });
+
+                                    if (onStatsUpdate) {
+                                        onStatsUpdate({
+                                            maxMemoryBytes: maxMemory,
+                                            maxCpuPercent: Number.parseFloat(
+                                                maxCpu.toFixed(2),
+                                            ),
+                                            avgCpuPercent:
+                                                cpuSamples > 0
+                                                    ? Number.parseFloat(
+                                                          (
+                                                              totalCpu /
+                                                              cpuSamples
+                                                          ).toFixed(2),
+                                                      )
+                                                    : 0,
+                                            samples: this.downsample(
+                                                samples,
+                                                100,
+                                            ),
+                                        });
+                                    }
+                                }
+                            } catch (error) {
+                                logger.warn(
+                                    `Error parsing stats JSON: ${String(
+                                        error,
+                                    )}`,
+                                );
+                            }
+                        }
+                    });
+
+                    dataStream.on('end', () => {
+                        onFinished();
+                    });
+
+                    dataStream.on('error', (error) => {
+                        logger.warn(
+                            `Stats stream error for ${container.id}: ${String(
+                                error,
+                            )}`,
+                        );
+                        onFinished();
+                    });
+                })
+                .catch((error: unknown) => {
+                    logger.warn(
+                        `Failed to start stats stream for ${
+                            container.id
+                        }: ${String(error)}`,
+                    );
+                    onFinished();
+                });
         });
     }
 

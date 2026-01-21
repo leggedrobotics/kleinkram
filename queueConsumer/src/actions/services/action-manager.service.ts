@@ -305,9 +305,18 @@ export class ActionManagerService implements OnModuleInit {
                 return string_.replace(apikey.apikey, '***');
             };
 
+            let lastStatsUpdate = 0;
+            const statsUpdateInterval = 2000;
+
             // Start stats collection BEFORE log ingestion (which blocks until container exit)
             const statsPromise = this.containerStatsService
-                .collectStats(container)
+                .collectStats(container, (stats) => {
+                    const now = Date.now();
+                    if (now - lastStatsUpdate > statsUpdateInterval) {
+                        lastStatsUpdate = now;
+                        void this.saveActionStats(action, stats);
+                    }
+                })
                 .catch((error: unknown) => {
                     logger.warn(
                         `Failed to collect stats for ${action.uuid}: ${String(
@@ -471,7 +480,7 @@ export class ActionManagerService implements OnModuleInit {
     private async saveActionStats(
         action: Readonly<ActionEntity>,
         statsResult: ResourceUsage,
-        wideLog: WideLogger,
+        wideLog?: WideLogger,
     ): Promise<void> {
         const memoryLimitBytes =
             (action.template?.cpuMemory ?? 2) * 1024 * 1024 * 1024;
@@ -490,16 +499,18 @@ export class ActionManagerService implements OnModuleInit {
             },
         );
 
-        wideLog.add({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            resource_max_ram_bytes: statsResult.maxMemoryBytes,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            resource_avg_cpu_percent: statsResult.avgCpuPercent,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            resource_max_cpu_percent: statsResult.maxCpuPercent,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            resource_efficiency_score: efficiencyScore,
-        });
+        if (wideLog) {
+            wideLog.add({
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                resource_max_ram_bytes: statsResult.maxMemoryBytes,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                resource_avg_cpu_percent: statsResult.avgCpuPercent,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                resource_max_cpu_percent: statsResult.maxCpuPercent,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                resource_efficiency_score: efficiencyScore,
+            });
+        }
     }
 
     private async setActionState(
