@@ -41,8 +41,7 @@ export class ActionService {
         private apikeyRepository: Repository<ApiKeyEntity>,
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
-        @InjectRepository(FileEntity)
-        private fileRepository: Repository<FileEntity>,
+
         private readonly actionDispatcher: ActionDispatcherService,
         private readonly storageService: StorageService,
     ) {}
@@ -224,7 +223,7 @@ export class ActionService {
 
                 if (fileUuid) {
                     try {
-                        const file = await this.fileRepository.findOne({
+                        const file = await manager.findOne(FileEntity, {
                             where: { uuid: fileUuid },
                             select: ['size'],
                         });
