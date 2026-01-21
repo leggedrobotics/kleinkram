@@ -769,8 +769,18 @@ export class ActionManagerService implements OnModuleInit {
         // Check format: <InstanceUUID>-<ActionUUID>
         // UUID is 36 chars.
         if (suffix.length > 37 && suffix[36] === '-') {
-            instanceId = suffix.slice(0, 36);
-            actionUuid = suffix.slice(37);
+            const potentialInstanceId = suffix.slice(0, 36);
+            const uuidRegex =
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+            if (uuidRegex.test(potentialInstanceId)) {
+                instanceId = potentialInstanceId;
+                actionUuid = suffix.slice(37);
+            } else {
+                logger.warn(
+                    `Failed to parse instance UUID from container name: ${containerName}. Potential UUID '${potentialInstanceId}' is invalid.`,
+                );
+            }
         }
 
         return { instanceId, actionUuid };
