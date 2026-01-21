@@ -99,6 +99,21 @@ export class DockerDaemon {
         this.docker = new Dockerode({ socketPath: '/var/run/docker.sock' });
     }
 
+    static getArtifactVolumeName(runnerId: string, actionUuid: string): string {
+        return `vol-${runnerId}-${actionUuid}`;
+    }
+
+    async removeArtifactVolume(
+        runnerId: string,
+        actionUuid: string,
+    ): Promise<void> {
+        const volumeName = DockerDaemon.getArtifactVolumeName(
+            runnerId,
+            actionUuid,
+        );
+        return this.removeDockerVolume(volumeName);
+    }
+
     /**
      * Start a container with the given action and uuid.
      *
@@ -357,6 +372,10 @@ export class DockerDaemon {
 
     async removeVolume(containerId: string): Promise<void> {
         const volumeName = `vol-${containerId}`;
+        return this.removeDockerVolume(volumeName);
+    }
+
+    private async removeDockerVolume(volumeName: string): Promise<void> {
         const volume = this.docker.getVolume(volumeName);
 
         // try to remove volume, if in use wait and try again
@@ -515,7 +534,10 @@ export class DockerDaemon {
             `Creating artifact uploader container from image: ${artifactUploaderImage} with options: ${JSON.stringify(containerOptions)}`,
         );
 
-        const volumeName = `vol-${runnerId}-${actionUuid}`;
+        const volumeName = DockerDaemon.getArtifactVolumeName(
+            runnerId,
+            actionUuid,
+        );
 
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: artifactUploaderImage,

@@ -56,7 +56,7 @@ export class ArtifactService {
         await artifactUploadContainer.wait();
         this.dockerDaemon.removeContainer(artifactUploadContainer.id);
 
-        await this.dockerDaemon.removeVolume(`${runnerId}-${actionUuid}`);
+        await this.dockerDaemon.removeArtifactVolume(runnerId, actionUuid);
 
         const bucketName = environment.MINIO_ARTIFACTS_BUCKET_NAME;
         const filename = `${actionUuid}.tar.gz`;
