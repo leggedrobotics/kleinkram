@@ -21,7 +21,7 @@
         "gen:docs": "node -r ts-node/register -r tsconfig-paths/register ./scripts/generate-openapi.ts"
     },
     "dependencies": {
-        "@aws-sdk/client-sts": "3.939.0",
+        "@aws-sdk/client-sts": "3.975.0",
         "@kleinkram/api-dto": "workspace:*",
         "@kleinkram/backend-common": "workspace:*",
         "@kleinkram/shared": "workspace:*",
