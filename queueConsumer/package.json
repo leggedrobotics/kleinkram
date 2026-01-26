@@ -27,7 +27,7 @@
         "@nestjs/common": "^11.1.10",
         "@nestjs/config": "^4.0.2",
         "@nestjs/core": "11.1.12",
-        "@nestjs/platform-express": "^11.1.9",
+        "@nestjs/platform-express": "^11.1.12",
         "@nestjs/schedule": "^5.0.1",
         "@nestjs/swagger": "^11.2.3",
         "@nestjs/typeorm": "^11.0.0",
