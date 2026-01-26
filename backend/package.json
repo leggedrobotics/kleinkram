@@ -121,7 +121,7 @@
         "ts-node": "^10.9.1",
         "tsconfig-paths": "^4.2.0",
         "typescript": "5.9.3",
-        "vue": "^3.5.25",
+        "vue": "^3.5.27",
         "vue-json-pretty": "^2.6.0",
         "webpack": "5.104.1",
         "webpack-node-externals": "^3.0.0"
