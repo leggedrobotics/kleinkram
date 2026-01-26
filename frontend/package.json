@@ -22,7 +22,7 @@
         "@kleinkram/validation": "workspace:*",
         "@mcap/core": "^2.1.7",
         "@mdi/font": "7.4.47",
-        "@tanstack/vue-query": "^5.92.5",
+        "@tanstack/vue-query": "^5.92.9",
         "@types/js-yaml": "^4.0.9",
         "@types/lz4js": "^0.2.2",
         "axios": "^1.13.2",
