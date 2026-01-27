@@ -9,6 +9,7 @@ import {
     ActionState,
     ActionTriggerSource,
     ArtifactState,
+    ResourceUsage,
 } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -113,4 +114,20 @@ export class ActionDto {
     @IsOptional()
     @IsInt()
     exitCode?: number;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    resourceUsage?: ResourceUsage;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    maxMemoryBytes?: number;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    avgCpuPercent?: number;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    efficiencyScore?: number;
 }

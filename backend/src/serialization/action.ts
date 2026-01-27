@@ -80,5 +80,9 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         triggerUuid: action.triggerUuid,
         errorHint: action.errorHint,
         exitCode: action.exit_code,
+        resourceUsage: action.resourceUsage,
+        maxMemoryBytes: action.maxMemoryBytes,
+        avgCpuPercent: action.avgCpuPercent,
+        efficiencyScore: action.efficiencyScore,
     };
 };

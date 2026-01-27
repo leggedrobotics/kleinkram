@@ -2,12 +2,18 @@ import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.e
 import { ActionErrorHint, ActionState } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import axios from 'axios';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 
 interface AuditLog {
     message?: string;
     // other fields irrelevant
+}
+
+interface LokiStream {
+    stream: Record<string, string>;
+    values: [string, string][];
 }
 
 @Injectable()
@@ -26,7 +32,6 @@ export class ActionErrorHintService {
                     'state',
                     'state_cause',
                     'template',
-                    'logs',
                     'auditLogs',
                 ],
                 relations: ['template'],
@@ -37,17 +42,18 @@ export class ActionErrorHintService {
             }
 
             let hint: ActionErrorHint | null = null;
+            const logs = await this.getLogsFromLoki(actionUuid, 50);
 
             // 1. Docker Image Not Found
             if (this.checkDockerImageNotFound(action)) {
                 hint = ActionErrorHint.DOCKER_IMAGE_NOT_FOUND;
             }
             // 2. CLI Outdated
-            else if (this.checkCliOutdated(action)) {
+            else if (this.checkCliOutdated(logs)) {
                 hint = ActionErrorHint.CLI_OUTDATED;
             }
             // 3. Memory Limit Exceeded
-            else if (this.checkMemoryLimitExceeded(action)) {
+            else if (this.checkMemoryLimitExceeded(action, logs)) {
                 hint = ActionErrorHint.MEMORY_LIMIT_EXCEEDED;
             }
 
@@ -75,12 +81,9 @@ export class ActionErrorHintService {
         );
     }
 
-    private checkCliOutdated(action: ActionEntity): boolean {
-        const logs = action.logs;
-        if (!logs) return false;
-
-        const lastLogs = logs.slice(-25);
-        return lastLogs.some(
+    private checkCliOutdated(logs: LogEntry[]): boolean {
+        // Loki returns newest first (BACKWARD)
+        return logs.some(
             (l) =>
                 l.message.includes('Update CLIVersion') ||
                 l.message.includes('Please update your CLI') ||
@@ -90,7 +93,10 @@ export class ActionErrorHintService {
         );
     }
 
-    private checkMemoryLimitExceeded(action: ActionEntity): boolean {
+    private checkMemoryLimitExceeded(
+        action: ActionEntity,
+        logs: LogEntry[],
+    ): boolean {
         const stateCause = action.state_cause;
         if (
             !stateCause?.includes(
@@ -123,14 +129,63 @@ export class ActionErrorHintService {
         }
 
         // Check for tqdm progress bar in last 10 lines
-        const logs = action.logs ?? [];
-        const lastLogs = logs.slice(-10);
-        // TQDM progress bars typically look like: "10%|#         | 10/100 [00:01<00:09,  9.00it/s]"
-        // Or for files: "100%|##########| 1.00G/1.00G [00:10<00:00, 100MB/s]"
+        // If logs are newest first (BACKWARD), take first 10
+        const lastLogs = logs.slice(0, 10);
+        // TQDM progress bars
         return lastLogs.some((l) =>
             /\|\s*\d+(?:\.\d+)?[a-zA-Z]*\/|\[\d{2}:\d{2}<|it\/s|B\/s/.test(
                 l.message,
             ),
         );
     }
+
+    private async getLogsFromLoki(
+        actionUuid: string,
+        limit: number,
+    ): Promise<LogEntry[]> {
+        try {
+            const response = await axios.get<{
+                data: { result: LokiStream[] };
+            }>('http://loki:3100/loki/api/v1/query_range', {
+                params: {
+                    query: `{job="queue-consumer", action_run_uuid="${actionUuid}"}`,
+                    limit: limit,
+                    direction: 'BACKWARD', // Newest first
+                },
+                timeout: 5000,
+            });
+
+            const result = response.data.data.result;
+            const streams = Array.isArray(result) ? result : [];
+
+            return streams.flatMap((stream) =>
+                stream.values.map((value) => {
+                    const [, lineJson] = value;
+                    try {
+                        const parsed = JSON.parse(lineJson) as {
+                            message: string;
+                        };
+                        return {
+                            message: parsed.message,
+                        } as LogEntry;
+                    } catch {
+                        return {
+                            message: lineJson,
+                        } as LogEntry;
+                    }
+                }),
+            );
+        } catch (error) {
+            logger.warn(
+                `Failed to fetch logs from Loki for hint assessment ${actionUuid}: ${String(
+                    error,
+                )}`,
+            );
+            return [];
+        }
+    }
+}
+
+interface LogEntry {
+    message: string;
 }

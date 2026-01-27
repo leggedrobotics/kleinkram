@@ -136,11 +136,17 @@ export const ActionService = {
         await axios.delete(`/templates/${uuid}`);
     },
 
-    async getLogs(uuid: string, skip = 0, take = 100): Promise<ActionLogsDto> {
+    async getLogs(
+        uuid: string,
+        skip = 0,
+        take = 100,
+        search?: string,
+        level?: string,
+    ): Promise<ActionLogsDto> {
         const { data } = await axios.get<ActionLogsDto>(
             `/actions/${uuid}/logs`,
             {
-                params: { skip, take },
+                params: { skip, take, search, level },
             },
         );
         return data;

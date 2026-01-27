@@ -19,9 +19,10 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import environment from '@kleinkram/backend-common/environment';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
-import { ArtifactState, UserRole } from '@kleinkram/shared';
+import { ArtifactState, LogType, UserRole } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import axios from 'axios';
 import {
     Brackets,
     EntityManager,
@@ -29,6 +30,19 @@ import {
     SelectQueryBuilder,
 } from 'typeorm';
 import logger from '../logger';
+
+interface LokiStream {
+    stream: Record<string, string>;
+    values: [string, string][];
+}
+
+interface LokiResponse {
+    status: string;
+    data: {
+        resultType: string;
+        result: LokiStream[];
+    };
+}
 
 @Injectable()
 export class ActionService {
@@ -183,19 +197,144 @@ export class ActionService {
     ): Promise<ActionLogsDto> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUuid },
-            select: ['uuid', 'logs'],
+            select: ['uuid', 'createdAt', 'executionEndedAt'],
         });
 
-        const logs = action.logs ?? [];
-        const count = logs.length;
-        const data = logs.slice(query.skip, query.skip + query.take);
+        const start = action.createdAt.getTime() * 1_000_000; // Nanoseconds
+        // Add 1 minute buffer to end time or use current time if running
+        const end =
+            (action.executionEndedAt?.getTime() ?? Date.now()) * 1_000_000 +
+            60_000_000_000;
 
-        return {
-            count,
-            skip: query.skip,
-            take: query.take,
-            data,
-        };
+        let logQl = `{job="queue-consumer", action_run_uuid="${actionUuid}"}`;
+        if (query.search) {
+            logQl += ` |= "${query.search}"`;
+        }
+        if (query.level) {
+            // Filter by level (stdout/stderr)
+            // Assuming log ingestion structures it as JSON with "type" field
+            logQl += ` | json | type="${query.level}"`;
+        }
+
+        try {
+            let response;
+            try {
+                response = await axios.get<LokiResponse>(
+                    'http://loki:3100/loki/api/v1/query_range',
+                    {
+                        params: {
+                            query: logQl,
+                            start: start.toString(),
+                            end: end.toString(),
+                            limit: 50_000,
+                            direction: 'FORWARD',
+                        },
+                    },
+                );
+            } catch (error) {
+                if (
+                    axios.isAxiosError(error) &&
+                    error.response?.status === 400
+                ) {
+                    logger.warn(
+                        `Loki query with limit 50000 failed, retrying with 5000. Verify Loki config "max_entries_limit_per_query".`,
+                    );
+                    response = await axios.get<LokiResponse>(
+                        'http://loki:3100/loki/api/v1/query_range',
+                        {
+                            params: {
+                                query: logQl,
+                                start: start.toString(),
+                                end: end.toString(),
+                                limit: 5000,
+                                direction: 'FORWARD',
+                            },
+                        },
+                    );
+                } else {
+                    throw error;
+                }
+            }
+
+            const result = response.data.data.result;
+            const streams: LokiStream[] = Array.isArray(result) ? result : [];
+
+            // Flatten all streams
+            const allLogs = streams.flatMap((stream) =>
+                stream.values.map((value) => {
+                    const [tsNs, lineJson] = value;
+                    try {
+                        const parsed = JSON.parse(lineJson) as unknown;
+
+                        if (
+                            typeof parsed !== 'object' ||
+                            parsed === null ||
+                            !('message' in parsed) ||
+                            typeof (parsed as { message: unknown }).message !==
+                                'string'
+                        ) {
+                            throw new Error('Invalid log format');
+                        }
+
+                        const validParsed = parsed as {
+                            timestamp?: string;
+                            message: string;
+                            type?: LogType;
+                        };
+
+                        return {
+                            timestamp:
+                                validParsed.timestamp ??
+                                new Date(
+                                    Number.parseInt(tsNs.slice(0, 13)),
+                                ).toISOString(),
+                            message: validParsed.message,
+                            type: validParsed.type ?? ('stdout' as LogType),
+                        };
+                    } catch {
+                        return {
+                            timestamp: new Date(
+                                Number.parseInt(tsNs.slice(0, 13)),
+                            ).toISOString(),
+                            message:
+                                typeof lineJson === 'string'
+                                    ? lineJson
+                                    : JSON.stringify(lineJson),
+                            type: 'stdout' as LogType,
+                        };
+                    }
+                }),
+            );
+
+            // Sort by timestamp (Loki might return multiple streams interleaved)
+            allLogs.sort(
+                (a, b) =>
+                    new Date(a.timestamp).getTime() -
+                    new Date(b.timestamp).getTime(),
+            );
+
+            const count = allLogs.length;
+            const data = allLogs.slice(query.skip, query.skip + query.take);
+
+            return {
+                count,
+                skip: query.skip,
+                take: query.take,
+                data,
+            };
+        } catch (error) {
+            logger.error(
+                `Failed to fetch logs from Loki for ${actionUuid}: ${String(
+                    error,
+                )}`,
+            );
+            return {
+                count: 0,
+                skip: query.skip,
+                take: query.take,
+                data: [],
+            };
+        }
     }
 
     async delete(actionUUID: string): Promise<boolean> {

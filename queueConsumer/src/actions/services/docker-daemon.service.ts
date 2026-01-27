@@ -71,6 +71,7 @@ export interface ContainerStartOptions {
     environment?: ContainerEnvironment;
     command?: string;
     entrypoint?: string;
+    labels?: Record<string, string>;
 }
 
 export const dockerDaemonErrorHandler = (error: unknown): void => {
@@ -98,11 +99,24 @@ export class DockerDaemon {
         this.docker = new Dockerode({ socketPath: '/var/run/docker.sock' });
     }
 
+    static getArtifactVolumeName(runnerId: string, actionUuid: string): string {
+        return `vol-${runnerId}-${actionUuid}`;
+    }
+
+    async removeArtifactVolume(
+        runnerId: string,
+        actionUuid: string,
+    ): Promise<void> {
+        const volumeName = DockerDaemon.getArtifactVolumeName(
+            runnerId,
+            actionUuid,
+        );
+        return this.removeDockerVolume(volumeName);
+    }
+
     /**
      * Start a container with the given action and uuid.
      *
-     * The container will be stopped after max_runtime milliseconds and
-     * forcefully killed 10 seconds after max_runtime if it is still running.
      *
      * This function returns as soon as the container is started.
      *
@@ -124,42 +138,46 @@ export class DockerDaemon {
         source: ImageSource;
         localCreatedAt: Date | undefined;
         remoteCreatedAt: Date | undefined;
+        containerLimits: ContainerLimits;
+        needsGpu: boolean;
+        volumeName: string;
     }> {
         // merge the given container limitations with the default ones
         containerOptions ??= {};
-        containerOptions = {
+        const runLimits = {
+            ...defaultContainerLimitations,
+            ...containerOptions.limits,
+        };
+        const runOptions = {
             ...containerOptions,
-            limits: {
-                ...defaultContainerLimitations,
-                ...containerOptions.limits,
-            },
+            limits: runLimits,
             environment: { ...containerOptions.environment },
         };
 
         logger.debug(
-            `Starting container with options: ${JSON.stringify(containerOptions)}`,
+            `Starting container with options: ${JSON.stringify(runOptions)}`,
         );
 
-        if (containerOptions.docker_image === undefined) {
+        if (runOptions.docker_image === undefined) {
             throw new Error('No docker image specified');
         }
 
-        if (containerOptions.name === undefined) {
+        if (runOptions.name === undefined) {
             throw new Error('No name specified');
         }
 
         const { image, source, localCreatedAt, remoteCreatedAt } =
-            await this.getImage(containerOptions.docker_image);
+            await this.getImage(runOptions.docker_image);
         // get image details
         const details = await image.inspect().catch(dockerDaemonErrorHandler);
         if (!details) {
             throw new Error(
-                `Image '${containerOptions.docker_image}' not found, could not start container!`,
+                `Image '${runOptions.docker_image}' not found, could not start container!`,
             );
         }
         const repoDigests = details.RepoDigests;
         const sha = details.Id;
-        const needsGpu = containerOptions.needs_gpu ?? false;
+        const needsGpu = runOptions.needs_gpu ?? false;
         const addGpuCapabilities = {
             DeviceRequests: [
                 {
@@ -170,25 +188,26 @@ export class DockerDaemon {
             ],
         };
 
-        logger.info(
+        const volumeName = `vol-${runOptions.name}`;
+
+        logger.debug(
             needsGpu
                 ? 'Creating container with GPU acceleration'
                 : 'Creating container without GPU acceleration',
         );
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
-            Image: containerOptions.docker_image,
-            name: DockerDaemon.CONTAINER_PREFIX + containerOptions.name,
-            Env: Object.entries(containerOptions.environment ?? {}).map(
+            Image: runOptions.docker_image,
+            name: DockerDaemon.CONTAINER_PREFIX + runOptions.name,
+            Labels: runOptions.labels ?? {},
+            Env: Object.entries(runOptions.environment).map(
                 ([key, value]) => `${key}=${value}`,
             ),
-            Cmd: containerOptions.command
-                ? containerOptions.command.split(' ')
-                : [],
+            Cmd: runOptions.command ? runOptions.command.split(' ') : [],
             HostConfig: {
                 ...(needsGpu ? addGpuCapabilities : {}),
-                Memory: containerOptions.limits?.memory_limit, // memory limit in bytes
-                NanoCpus: (containerOptions.limits?.n_cpu ?? 0) * 1_000_000_000, // CPU limit in nano CPUs
-                DiskQuota: containerOptions.limits?.disk_quota,
+                Memory: runLimits.memory_limit, // memory limit in bytes
+                NanoCpus: runLimits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
+                DiskQuota: runLimits.disk_quota,
                 NetworkMode,
                 LogConfig,
                 CapDrop,
@@ -199,7 +218,7 @@ export class DockerDaemon {
                 Mounts: [
                     {
                         Target: '/out', // Inside container
-                        Source: `vol-${containerOptions.name}`, // Volume name
+                        Source: volumeName, // Volume name
                         Type: 'volume', // Use Docker-managed volume
                     },
                 ],
@@ -209,23 +228,17 @@ export class DockerDaemon {
                 '/tmp_disk': {},
             },
         };
-        if (containerOptions.entrypoint) {
-            containerCreateOptions.Entrypoint = containerOptions.entrypoint;
+        if (runOptions.entrypoint) {
+            containerCreateOptions.Entrypoint = runOptions.entrypoint;
         }
         await start();
         const container = await this.docker
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
 
-        logger.info('Container created! Starting container...');
+        logger.debug('Container created! Starting container...');
         await container.start();
-        logger.info(`Container started wit id: ${container.id}`);
-
-        // stop the container after max_runtime seconds
-        this.killContainerAfterMaxRuntime(
-            container,
-            containerOptions.limits?.max_runtime ?? 0,
-        ).catch((error: unknown) => logger.error(error));
+        logger.debug(`Container started with id: ${container.id}`);
 
         return {
             container,
@@ -234,6 +247,9 @@ export class DockerDaemon {
             source,
             localCreatedAt,
             remoteCreatedAt,
+            containerLimits: runLimits,
+            needsGpu: needsGpu,
+            volumeName: volumeName,
         };
     }
 
@@ -248,52 +264,6 @@ export class DockerDaemon {
             logger.error(`Failed to create container: ${errorString}`);
             throw error;
         };
-    }
-
-    /**
-     * Kill a container after maxRuntimeMs milliseconds.
-     *
-     * The OS sends a SIGTERM signal to the container, which allows the container to
-     * gracefully shut down. If the container does not stop after 10 seconds, it is
-     * forcefully killed (SIGKILL).
-     *
-     * @param container
-     * @param maxRuntimeMs
-     * @param clearVolume - if true, the volume is removed after the container is stopped
-     * @private
-     */
-    private async killContainerAfterMaxRuntime(
-        container: Dockerode.Container,
-        maxRuntimeMs: number,
-        clearVolume = false,
-    ): Promise<void> {
-        const cancelTimeout = setTimeout(() => {
-            logger.info(
-                `Stopping container ${container.id} after ${maxRuntimeMs.toString()}ms`,
-            );
-
-            // initialize a kill timeout
-            const killTimout = setTimeout(() => {
-                logger.info(
-                    `Killing container ${container.id} after 10 seconds of stopping`,
-                );
-                this.killAndRemoveContainer(container.id, clearVolume).catch(
-                    (error: unknown) => logger.error(error),
-                );
-            }, 10_000);
-
-            this.stopContainer(container.id)
-                .then(() => {
-                    clearTimeout(killTimout);
-                    // clear the kill timeout
-                    this.removeContainer(container.id, clearVolume);
-                })
-                .catch((error: unknown) => logger.error(error));
-        }, maxRuntimeMs);
-
-        await container.wait().finally(() => {
-            clearTimeout(cancelTimeout); // clear the cancel timeout
-        });
     }
 
     @tracing()
@@ -402,6 +372,10 @@ export class DockerDaemon {
 
     async removeVolume(containerId: string): Promise<void> {
         const volumeName = `vol-${containerId}`;
+        return this.removeDockerVolume(volumeName);
+    }
+
+    private async removeDockerVolume(volumeName: string): Promise<void> {
         const volume = this.docker.getVolume(volumeName);
 
         // try to remove volume, if in use wait and try again
@@ -524,10 +498,15 @@ export class DockerDaemon {
     }
 
     @tracing()
-    async launchArtifactUploadContainer(containerId: string): Promise<{
+    async launchArtifactUploadContainer(
+        actionUuid: string,
+        runnerId: string,
+    ): Promise<{
         container: Dockerode.Container;
         repoDigests: string[];
         artifactMetadata?: { size: number; files: string[] } | undefined;
+        containerLimits: ContainerLimits;
+        volumeName: string;
     }> {
         const containerOptions = { limits: defaultContainerLimitations };
 
@@ -551,15 +530,20 @@ export class DockerDaemon {
         }
         const repoDigests = details.RepoDigests;
 
-        logger.info(
+        logger.debug(
             `Creating artifact uploader container from image: ${artifactUploaderImage} with options: ${JSON.stringify(containerOptions)}`,
+        );
+
+        const volumeName = DockerDaemon.getArtifactVolumeName(
+            runnerId,
+            actionUuid,
         );
 
         const containerCreateOptions: Dockerode.ContainerCreateOptions = {
             Image: artifactUploaderImage,
-            name: `kleinkram-artifact-uploader-${containerId}`,
+            name: `kleinkram-artifact-uploader-${actionUuid}`,
             Env: [
-                `KLEINKRAM_ACTION_UUID=${containerId}`,
+                `KLEINKRAM_ACTION_UUID=${actionUuid}`,
                 `MINIO_ENDPOINT=${environment.MINIO_ENDPOINT === 'localhost' ? '127.0.0.1' : environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
                 `MINIO_ACCESS_KEY=${environment.MINIO_ACCESS_KEY}`,
                 `MINIO_SECRET_KEY=${environment.MINIO_SECRET_KEY}`,
@@ -578,7 +562,7 @@ export class DockerDaemon {
                 Mounts: [
                     {
                         Target: '/out',
-                        Source: `vol-${containerId}`,
+                        Source: volumeName,
                         Type: 'volume',
                     },
                 ],
@@ -589,9 +573,9 @@ export class DockerDaemon {
             .createContainer(containerCreateOptions)
             .catch(this.errorHandling());
 
-        logger.info('Container created! Starting container...');
+        logger.debug('Container created! Starting container...');
         await container.start();
-        logger.info(`Container started with id: ${container.id}`);
+        logger.debug(`Container started with id: ${container.id}`);
 
         // Stream logs to stdout/stderr for debugging and capture metadata
         let artifactMetadata: { size: number; files: string[] } | undefined;
@@ -682,15 +666,14 @@ export class DockerDaemon {
             );
         });
 
-        // stop the container after max_runtime seconds
-        await this.killContainerAfterMaxRuntime(
-            container,
-            containerOptions.limits.max_runtime,
-            true,
-        );
-
         await logPromise;
 
-        return { container, repoDigests, artifactMetadata };
+        return {
+            container,
+            repoDigests,
+            artifactMetadata,
+            containerLimits: containerOptions.limits,
+            volumeName,
+        };
     }
 }
