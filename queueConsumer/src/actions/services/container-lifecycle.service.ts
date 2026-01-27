@@ -4,6 +4,7 @@ import { ActionState, ImageSource } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
+import si from 'systeminformation';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import {
@@ -159,12 +160,19 @@ export class ContainerLifecycleService {
         });
         const activeActionUuids = new Set(activeActions.map((a) => a.uuid));
 
+        // Track seen containers for crashed action detection
+        const seenActionUuids = new Set<string>();
+
         const now = Date.now();
 
         for (const containerInfo of containers) {
             const labels = containerInfo.Labels;
             const containerRunnerId = labels[LABEL_RUNNER_ID];
             const containerActionUuid = labels[LABEL_ACTION_UUID];
+
+            if (containerActionUuid) {
+                seenActionUuids.add(containerActionUuid);
+            }
 
             if (!containerRunnerId || !containerActionUuid) {
                 // Legacy container without proper labels - apply old logic (kill if > 24h)
@@ -240,6 +248,28 @@ export class ContainerLifecycleService {
             logger.debug(
                 `[Janitor] Ignoring container ${containerInfo.Id} from unknown runner ${containerRunnerId} (likely different environment)`,
             );
+        }
+
+        // --- Crash Detection: Actions in PROCESSING but no container ---
+        const { hostname } = await si.osInfo();
+        const actionsOnThisWorker = await this.actionRepository.find({
+            where: {
+                state: ActionState.PROCESSING,
+                worker: { identifier: hostname },
+            },
+            select: ['uuid'],
+        });
+
+        for (const action of actionsOnThisWorker) {
+            if (!seenActionUuids.has(action.uuid)) {
+                logger.info(
+                    `[Janitor] Action ${action.uuid} is PROCESSING but has no container - marking as FAILED`,
+                );
+                await this.markActionAsFailed(
+                    action.uuid,
+                    'Container crashed, no container found',
+                );
+            }
         }
 
         logger.debug('Container reconciliation complete.');
