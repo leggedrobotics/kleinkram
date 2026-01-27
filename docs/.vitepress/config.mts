@@ -141,6 +141,10 @@ export default withMermaid({
                             link: '/usage/getting-started.md',
                         },
                         {
+                            text: 'Contributing',
+                            link: '/development/contributing.md',
+                        },
+                        {
                             text: 'Start Development',
                             link: '/development/getting-started.md',
                         },
@@ -155,62 +159,30 @@ export default withMermaid({
                             link: '/development/application-structure',
                         },
                         {
-                            text: 'Core Services',
+                            text: 'Services',
                             items: [
                                 {
-                                    text: 'frontend',
+                                    text: 'Frontend',
                                     link: '/development/application-structure/frontend',
                                 },
                                 {
-                                    text: 'api-server',
+                                    text: 'API Server',
                                     link: '/development/application-structure/api-server',
                                 },
                                 {
-                                    text: 'queue-processor',
+                                    text: 'Queue Processor',
                                     link: '/development/application-structure/queue-processor',
                                 },
                             ],
-                            collapsed: true,
+                            collapsed: false,
                         },
                         {
-                            text: 'Databases & Storage',
-                            items: [
-                                {
-                                    text: 'minio',
-                                    link: '/development/application-structure/minio',
-                                },
-                                {
-                                    text: 'postgres',
-                                    link: '/development/application-structure/postgres',
-                                },
-                                {
-                                    text: 'redis',
-                                    link: '/development/application-structure/redis',
-                                },
-                                {
-                                    text: 'prometheus',
-                                    link: '/development/application-structure/prometheus',
-                                },
-                            ],
-                            collapsed: true,
+                            text: 'Infrastructure',
+                            link: '/development/application-structure/infrastructure',
                         },
                         {
-                            text: 'Logging & Monitoring',
-                            items: [
-                                {
-                                    text: 'grafana',
-                                    link: '/development/application-structure/grafana',
-                                },
-                                {
-                                    text: 'tempo',
-                                    link: '/development/application-structure/tempo',
-                                },
-                                {
-                                    text: 'loki',
-                                    link: '/development/application-structure/loki',
-                                },
-                            ],
-                            collapsed: true,
+                            text: 'Database Schema',
+                            link: '/development/application-structure/database-schema',
                         },
                         {
                             text: 'Access Control',
@@ -227,10 +199,10 @@ export default withMermaid({
                             collapsed: true,
                         },
                     ],
-                    collapsed: true,
+                    collapsed: false,
                 },
                 {
-                    text: 'Details',
+                    text: 'Guides & Reference',
                     items: [
                         {
                             text: 'API Development',

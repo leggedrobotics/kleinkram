@@ -3,6 +3,10 @@
 This guide will help you get started with the development of the project. It will start with some instructions on how to
 run the project locally and how to set up the development environment.
 
+::: warning Contributing?
+If you want to contribute to Kleinkram, please read the [Contributing Guide](/development/contributing.md) first.
+:::
+
 ## Prerequisites and Dependencies
 
 In order to get started with the development of the project, you need to have the following tools installed on your
