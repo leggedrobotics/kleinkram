@@ -3,7 +3,7 @@ import si from 'systeminformation';
 
 /**
  * Service for monitoring system resources and providing system information.
- * Wraps `systeminformation` to provide a clean interface for other services.
+ * Uses `systeminformation` to expose selected OS-related data via a clean interface for other services.
  */
 @Injectable()
 export class ResourceMonitorService {
