@@ -50,12 +50,19 @@ Kleinkram empowers researchers to streamline data management and accelerate robo
 # Statement of need
 
 To render robotic data useful for research, it is essential to store, organize, and index the data in a way that makes
-it easily searchable and shareable. While large corporations have developed internal tools or rely on closed-source
-third-party providers, no openly available, ready-to-use, and easy-to-deploy solution exists for the robotics research
-community. Additionally, features such as data verification and the ability to perform tailored compute jobs on newly
-generated datasets are highly desirable, as they facilitate benchmarking, reproducibility and algorithmic development.
+it easily searchable and shareable. While large corporations have developed internal tools, the broader robotics
+community often relies on fragmented solutions. Current solutions typically fall into three categories, none of which
+fully satisfy academic research needs. (1) Commercial SaaS platforms (e.g., Foxglove, Roboto AI) offer excellent
+indexing and visualisations but are often closed-source and cost-prohibitive for academia. (2) Cloud-native reference
+architectures (e.g., AWS ADDF, Azure DataOps) provide scalability but require complex, vendor-locked infrastructure
+setups that are overkill for single labs. Finally, (3) legacy open-source tools (e.g., Marv Robotics) or raw storage
+(S3, Google Drive) either lack modern CI/CD integration or offer no content-based indexing, forcing researchers to
+manually download large bags for inspection. Thus, a gap remains for an openly available, ready-to-use, and
+easy-to-deploy solution exists for the robotics research community. Additionally, features such as data verification
+and the ability to perform tailored compute jobs on newly generated datasets are highly desirable, as they facilitate
+benchmarking, reproducibility and algorithmic development.
 
-To address these challenges, we introduce **Kleinkram**, an on-premise cloud solution designed for scalable and
+To address these challenges, we introduce **Kleinkram**, a self-hosted web service designed for scalable and
 efficient data management. Unlike traditional cloud storage, Kleinkram natively integrates compute capabilities,
 automates data transfer, and eliminates the tedious manual effort typically associated with data management workflows.
 By categorizing and structuring data around common robotics use cases, Kleinkram facilitates the creation of large,
@@ -68,7 +75,7 @@ compatibility with ROSbag and MCAP data formats.
 
 Kleinkram is designed around the typical data generation process in mobile robotics, assuming data is collected and
 stored primarily in ROS1/ROS2-compatible ROSbag or MCAP file formats. Once data recording for an experiment is complete,
-these files can be efficiently uploaded and ingested into the Kleinkram system for centralized storage, indexing, and
+these files can be efficiently uploaded and ingested into the Kleinkram system for centralised storage, indexing, and
 subsequent post-processing. It is important to note that the current version of Kleinkram focuses on post-recording and
 data management. It does not support real-time data streaming or processing on the fly.
 
@@ -147,7 +154,7 @@ development, benchmarking, and evaluation.
 Equally important was Kleinkram’s user-friendly CLI, which provided quick access to summary statistics such as dataset
 counts, durations, and other key metrics — many of which were directly used in associated publications. Given that for
 our use case, data has to be mainly accessed within the ETH network infrastructure; datasets can be pulled on demand and
-deleted afterwards, fully utilizing the fast on-premise interconnect infrastructure without relying on external servers.
+deleted afterwards, fully utilising the fast on-premise interconnect infrastructure without relying on external servers.
 
 Throughout the project, Kleinkram also enforced metadata submission during upload. Users were required to include a YAML
 file describing the mission, which captured essential information such as the robot operator, specific hardware
