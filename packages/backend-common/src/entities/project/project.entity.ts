@@ -21,7 +21,7 @@ import {
 export class ProjectEntity extends BaseEntity {
     /**
      * The name of the project. This is the name that will be displayed in the UI.
-     * The name must be globally unique.
+     * The name must be unique among active (non-deleted) projects.
      */
     @Column()
     name!: string;
