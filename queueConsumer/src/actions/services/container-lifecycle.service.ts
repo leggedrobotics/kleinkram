@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
 import si from 'systeminformation';
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import logger from '../../logger';
 import {
     ContainerEnvironment,
@@ -203,16 +203,34 @@ export class ContainerLifecycleService {
                 }
 
                 if (!activeActionUuids.has(containerActionUuid)) {
-                    logger.info(
-                        `[Janitor] Killing zombie container ${containerInfo.Id} (action ${containerActionUuid} not active)`,
-                    );
-                    await this.dockerDaemon.killAndRemoveContainer(
-                        containerInfo.Id,
-                    );
-                    await this.markActionAsFailed(
+                    // Re-check atomically by attempting to mark as FAILED only if NOT in an active state.
+                    // This prevents killing a container for an action that just started or moved to processing.
+                    const affected = await this.markActionAsFailed(
                         containerActionUuid,
                         'Container killed by Janitor: action no longer active',
+                        undefined,
+                        {
+                            state: Not(
+                                In([
+                                    ActionState.PROCESSING,
+                                    ActionState.STARTING,
+                                ]),
+                            ),
+                        },
                     );
+
+                    if (affected > 0) {
+                        logger.info(
+                            `[Janitor] Killing zombie container ${containerInfo.Id} (action ${containerActionUuid} confirmed not active)`,
+                        );
+                        await this.dockerDaemon.killAndRemoveContainer(
+                            containerInfo.Id,
+                        );
+                    } else {
+                        logger.debug(
+                            `[Janitor] Skipping kill of container ${containerInfo.Id} (action ${containerActionUuid} is active or already handled)`,
+                        );
+                    }
                 }
                 continue;
             }
@@ -305,9 +323,10 @@ export class ContainerLifecycleService {
         actionUuid: string,
         cause: string,
         exitCode?: number,
-    ): Promise<void> {
-        await this.actionRepository.update(
-            { uuid: actionUuid },
+        extraCriteria: object = {},
+    ): Promise<number> {
+        const result = await this.actionRepository.update(
+            { uuid: actionUuid, ...extraCriteria },
             {
                 state: ActionState.FAILED,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -318,6 +337,7 @@ export class ContainerLifecycleService {
                 }),
             },
         );
+        return result.affected ?? 0;
     }
 
     /**
