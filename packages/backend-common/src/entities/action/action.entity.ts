@@ -15,7 +15,14 @@ import {
     LogType,
     ResourceUsage,
 } from '@kleinkram/shared';
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import {
+    Column,
+    Entity,
+    Index,
+    JoinColumn,
+    ManyToOne,
+    OneToOne,
+} from 'typeorm';
 
 export interface ContainerLog {
     timestamp: string;
@@ -47,6 +54,7 @@ export interface SubmittedAction {
 
 @Entity({ name: 'action' })
 export class ActionEntity extends BaseEntity {
+    @Index()
     @Column({ type: 'enum', enum: ActionState })
     state!: ActionState;
 
