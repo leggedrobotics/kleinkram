@@ -26,7 +26,7 @@ const RUNNER_INACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 
 /**
  * Service for managing container lifecycle with Docker Labels.
- * Implements the "Safe Reaper" reconciliation loop to prevent friendly fire.
+ * Implements the "Safe Janitor" reconciliation loop to prevent friendly fire.
  */
 @Injectable()
 export class ContainerLifecycleService {
@@ -127,7 +127,7 @@ export class ContainerLifecycleService {
     }
 
     /**
-     * The Safe Reaper: Reconciliation loop to clean up zombie containers.
+     * The Safe Janitor: Reconciliation loop to clean up zombie containers.
      * Prevents friendly fire between environments by checking runner heartbeats.
      */
     async performReconciliation(currentRunnerId: string): Promise<void> {
@@ -180,7 +180,7 @@ export class ContainerLifecycleService {
                     const expiresAt = new Date(expiresAtString).getTime();
                     if (now > expiresAt) {
                         logger.info(
-                            `[Reaper] Killing timed out container ${containerInfo.Id} (action ${containerActionUuid})`,
+                            `[Janitor] Killing timed out container ${containerInfo.Id} (action ${containerActionUuid})`,
                         );
                         await this.dockerDaemon.killAndRemoveContainer(
                             containerInfo.Id,
@@ -196,14 +196,14 @@ export class ContainerLifecycleService {
 
                 if (!activeActionUuids.has(containerActionUuid)) {
                     logger.info(
-                        `[Reaper] Killing zombie container ${containerInfo.Id} (action ${containerActionUuid} not active)`,
+                        `[Janitor] Killing zombie container ${containerInfo.Id} (action ${containerActionUuid} not active)`,
                     );
                     await this.dockerDaemon.killAndRemoveContainer(
                         containerInfo.Id,
                     );
                     await this.markActionAsFailed(
                         containerActionUuid,
-                        'Container killed by Reaper: action no longer active',
+                        'Container killed by Janitor: action no longer active',
                     );
                 }
                 continue;
@@ -218,7 +218,7 @@ export class ContainerLifecycleService {
 
                 if (isInactive) {
                     logger.info(
-                        `[Reaper] Killing container ${containerInfo.Id} from inactive runner ${containerRunnerId}`,
+                        `[Janitor] Killing container ${containerInfo.Id} from inactive runner ${containerRunnerId}`,
                     );
                     await this.dockerDaemon.killAndRemoveContainer(
                         containerInfo.Id,
@@ -230,7 +230,7 @@ export class ContainerLifecycleService {
                     );
                 } else {
                     logger.debug(
-                        `[Reaper] Ignoring container ${containerInfo.Id} from active runner ${containerRunnerId}`,
+                        `[Janitor] Ignoring container ${containerInfo.Id} from active runner ${containerRunnerId}`,
                     );
                 }
                 continue;
@@ -238,7 +238,7 @@ export class ContainerLifecycleService {
 
             // Case 3: Unknown Runner (different environment)
             logger.debug(
-                `[Reaper] Ignoring container ${containerInfo.Id} from unknown runner ${containerRunnerId} (likely different environment)`,
+                `[Janitor] Ignoring container ${containerInfo.Id} from unknown runner ${containerRunnerId} (likely different environment)`,
             );
         }
 
@@ -258,12 +258,12 @@ export class ContainerLifecycleService {
 
         if (ageMs > MAX_AGE_MS) {
             logger.info(
-                `[Reaper] Killing legacy container ${containerInfo.Id} (older than 24h)`,
+                `[Janitor] Killing legacy container ${containerInfo.Id} (older than 24h)`,
             );
             await this.dockerDaemon.killAndRemoveContainer(containerInfo.Id);
         } else {
             logger.debug(
-                `[Reaper] Ignoring legacy container ${containerInfo.Id} (less than 24h old)`,
+                `[Janitor] Ignoring legacy container ${containerInfo.Id} (less than 24h old)`,
             );
         }
     }
