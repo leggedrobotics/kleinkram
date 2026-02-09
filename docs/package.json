@@ -19,7 +19,7 @@
         "vue-json-pretty": "^2.6.0"
     },
     "devDependencies": {
-        "@types/node": "^25.0.9",
+        "@types/node": "^25.2.2",
         "mermaid": "^11.12.1",
         "ts-morph": "^27.0.2",
         "tsx": "^4.21.0",
