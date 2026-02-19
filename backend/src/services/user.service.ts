@@ -1,9 +1,11 @@
 import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
+    apiKeyEntityToMetadataDto,
     userEntityToCurrentAPIUserDto,
     userEntityToDto,
 } from '@/serialization';
 import {
+    ApiKeyMetadataDto,
     CurrentAPIUserDto,
     PermissionsDto,
     UserDto,
@@ -278,6 +280,37 @@ export class UserService implements OnModuleInit {
             },
         });
         return { user, apiKey };
+    }
+
+    /**
+     * Get all API keys (including soft-deleted) for a user.
+     * Returns only metadata, never the actual key value.
+     *
+     * @param userUuid
+     */
+    async getApiKeysForUser(userUuid: string): Promise<ApiKeyMetadataDto[]> {
+        const keys = await this.apikeyRepository.find({
+            withDeleted: true,
+            where: { user: { uuid: userUuid } },
+            select: {
+                uuid: true,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                key_type: true,
+                rights: true,
+                createdAt: true,
+                updatedAt: true,
+                deletedAt: true,
+            },
+            relations: [
+                'mission',
+                'mission.project',
+                'action',
+                'action.template',
+            ],
+            order: { createdAt: 'DESC' },
+        });
+
+        return keys.map((key) => apiKeyEntityToMetadataDto(key));
     }
 
     /**

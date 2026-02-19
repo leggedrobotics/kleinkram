@@ -1,4 +1,4 @@
-import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { AccessGroupEntity, ApiKeyEntity } from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
@@ -10,6 +10,7 @@ import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.enti
 
 import {
     AccessGroupDto,
+    ApiKeyMetadataDto,
     CurrentAPIUserDto,
     FileDto,
     FileWithTopicDto,
@@ -358,3 +359,22 @@ export function accessGroupEntityToDto(
         projectAccesses: [],
     };
 }
+
+export const apiKeyEntityToMetadataDto = (
+    apiKey: ApiKeyEntity,
+): ApiKeyMetadataDto => {
+    return {
+        uuid: apiKey.uuid,
+        keyType: apiKey.key_type,
+        rights: apiKey.rights,
+        expired: !!apiKey.deletedAt,
+        createdAt: apiKey.createdAt,
+        updatedAt: apiKey.updatedAt,
+        missionUuid: apiKey.mission.uuid,
+        missionName: apiKey.mission.name,
+        actionUuid: apiKey.action?.uuid,
+        actionTemplateName: apiKey.action?.template?.name,
+        actionTemplateVersion: apiKey.action?.template?.version,
+        projectUuid: apiKey.mission.project?.uuid,
+    };
+};

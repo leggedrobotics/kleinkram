@@ -24,6 +24,11 @@
                         :disable="user.role === UserRole.USER"
                         style="color: #222"
                     />
+                    <q-tab
+                        name="Api Tokens"
+                        label="API Tokens"
+                        style="color: #222"
+                    />
                 </q-tabs>
             </template>
         </title-section>
@@ -45,6 +50,9 @@
             <q-tab-panel name="Admin">
                 <admin-settings />
             </q-tab-panel>
+            <q-tab-panel name="Api Tokens">
+                <user-profile-api-keys />
+            </q-tab-panel>
         </q-tab-panels>
     </template>
     <template v-else>
@@ -59,6 +67,7 @@ import { UserRole } from '@kleinkram/shared';
 import ExplorerPageProjectTable from 'components/explorer-page/explorer-page-project-table.vue';
 import TitleSection from 'components/title-section.vue';
 import AdminSettings from 'components/user-profile/admin-settings.vue';
+import UserProfileApiKeys from 'components/user-profile/user-profile-api-keys.vue';
 import UserProfileBanner from 'components/user-profile/user-profile-banner.vue';
 import UserProfileDetails from 'components/user-profile/user-profile-details.vue';
 import { useHandler, useUser } from 'src/hooks/query-hooks';

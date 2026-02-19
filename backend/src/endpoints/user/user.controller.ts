@@ -6,6 +6,7 @@ import {
     QueryTake,
 } from '@/validation/query-decorators';
 import {
+    ApiKeyMetadataDto,
     CurrentAPIUserDto,
     NoQueryParametersDto,
     PermissionsDto,
@@ -99,5 +100,18 @@ export class UserController {
         @AddUser() authHeader: AuthHeader,
     ): Promise<PermissionsDto> {
         return this.userService.getUserPermissions(authHeader.user.uuid);
+    }
+
+    @Get('api-keys')
+    @LoggedIn()
+    @ApiOperation({ summary: 'Get API key metadata for the current user' })
+    @ApiOkResponse({
+        description: 'API key metadata (excluding secret key values)',
+        type: [ApiKeyMetadataDto],
+    })
+    async apiKeys(
+        @AddUser() authHeader: AuthHeader,
+    ): Promise<ApiKeyMetadataDto[]> {
+        return this.userService.getApiKeysForUser(authHeader.user.uuid);
     }
 }
