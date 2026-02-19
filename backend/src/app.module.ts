@@ -113,6 +113,7 @@ export class AppModule implements NestModule {
                 '/hooks/{*path}', // excludes hook endpoints
                 '/api/health', // excludes health check
                 '/', // excludes root for convenience
+                '/favicon.ico', // excludes favicon for browser requests
             )
             .forRoutes('*');
     }
