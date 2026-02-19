@@ -174,7 +174,11 @@ export class TriggerService implements OnModuleInit {
     async triggerWebhook(
         uuid: string,
         payload: Record<string, unknown>,
-    ): Promise<{ actionUuid: string }> {
+    ): Promise<{
+        actionUuid: string;
+        templateUuid: string;
+        createdAt: Date;
+    }> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const p = payload as any;
         if (typeof p !== 'object' || p === null || Array.isArray(p)) {
@@ -210,7 +214,11 @@ export class TriggerService implements OnModuleInit {
             trigger.uuid,
         );
 
-        return { actionUuid };
+        return {
+            actionUuid,
+            templateUuid: trigger.template.uuid,
+            createdAt: new Date(),
+        };
     }
 
     private validateConfig(

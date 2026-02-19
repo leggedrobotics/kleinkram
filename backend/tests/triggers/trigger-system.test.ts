@@ -228,8 +228,15 @@ describe('Trigger System API Tests', () => {
         expect(hookResponse.status).toBe(201);
         const hookData = (await hookResponse.json()) as {
             actionUUID: string;
+            templateUUID: string;
+            state: string;
+            createdAt: string;
         };
         expect(hookData.actionUUID).toBeDefined();
+        expect(hookData.templateUUID).toBe(templateUuid);
+        expect(hookData.state).toBe('PENDING');
+        expect(hookData.createdAt).toBeDefined();
+        expect(new Date(hookData.createdAt).getTime()).not.toBeNaN();
 
         // 3. Verify Action exists in DB
         const actionRepo = database.getRepository(ActionEntity);

@@ -22,6 +22,7 @@ export * from '@api-dto/actions/docker-image.dto';
 export * from '@api-dto/actions/logs.dto';
 export * from '@api-dto/actions/update-action-trigger.dto';
 export * from '@api-dto/actions/update-template.dto';
+export * from '@api-dto/actions/webhook-trigger-response.dto';
 export * from '@api-dto/add-access-group-project.dto';
 export * from '@api-dto/add-tag-type.dto';
 export * from '@api-dto/add-user-access-group.dto';
