@@ -1,6 +1,6 @@
 <template>
     <q-table
-        v-if="apiKeys"
+        v-model:pagination="pagination"
         flat
         bordered
         :rows="apiKeys"
@@ -9,6 +9,8 @@
         wrap-cells
         separator="none"
         :rows-per-page-options="[10, 20, 50]"
+        :loading="isLoading"
+        @request="onRequest"
     >
         <template #no-data>
             <div
@@ -63,7 +65,7 @@
             </q-td>
         </template>
 
-        <template #body-cell-status="props">
+        <template #body-cell-deletedAt="props">
             <q-td :props="props">
                 <q-badge
                     :color="props.row.expired ? 'negative' : 'positive'"
@@ -71,12 +73,10 @@
                 />
             </q-td>
         </template>
+        <template #loading>
+            <q-inner-loading showing color="primary" />
+        </template>
     </q-table>
-    <div v-else>
-        <div class="row flex-center">
-            <q-spinner-gears size="100px" />
-        </div>
-    </div>
 </template>
 
 <script setup lang="ts">
@@ -86,8 +86,60 @@ import type { QTableColumn } from 'quasar';
 import { useMyApiKeys } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
+import { QueryURLHandler } from 'src/services/query-handler';
+import { computed, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 
-const { data: apiKeys } = useMyApiKeys();
+const router = useRouter();
+const queryHandler = reactive(
+    new QueryURLHandler(router, undefined, undefined, 'createdAt', true),
+);
+
+const { data: rawData, isLoading } = useMyApiKeys(
+    computed(() => queryHandler.take),
+    computed(() => queryHandler.skip),
+    computed(() => queryHandler.sortBy),
+    computed(() => queryHandler.descending),
+);
+
+const apiKeys = computed(() => (rawData.value ? rawData.value.data : []));
+const rowsNumber = computed(() => (rawData.value ? rawData.value.count : 0));
+
+const pagination = computed({
+    get: () => ({
+        sortBy: queryHandler.sortBy,
+        descending: queryHandler.descending,
+        page: queryHandler.page,
+        rowsPerPage: queryHandler.take,
+        rowsNumber: rowsNumber.value,
+    }),
+    set: (value) => ({
+        sortBy: value.sortBy,
+        descending: value.descending,
+        page: value.page,
+        rowsPerPage: value.rowsPerPage,
+        rowsNumber: rowsNumber.value,
+    }),
+});
+
+interface TableRequestProperties {
+    pagination: {
+        page: number;
+        rowsPerPage: number;
+        sortBy: string;
+        descending: boolean;
+    };
+}
+
+function onRequest(props: unknown) {
+    const { page, rowsPerPage, sortBy, descending } = (
+        props as TableRequestProperties
+    ).pagination;
+    queryHandler.setPage(page);
+    queryHandler.setTake(rowsPerPage);
+    queryHandler.setSort(sortBy);
+    queryHandler.setDescending(descending);
+}
 
 const rightsLabel = (rights: AccessGroupRights): string => {
     switch (rights) {
@@ -147,11 +199,12 @@ const columns: QTableColumn<ApiKeyMetadataDto>[] = [
         format: (value: string) => value || '—',
     },
     {
-        name: 'status',
+        name: 'deletedAt',
         required: true,
         label: 'Status',
         align: 'center',
         field: (row) => row.expired,
+        sortable: true,
         style: 'width: 100px',
     },
     {

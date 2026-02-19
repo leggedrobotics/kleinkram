@@ -4,6 +4,7 @@ import {
     IsBoolean,
     IsDate,
     IsEnum,
+    IsInt,
     IsOptional,
     IsString,
     IsUUID,
@@ -57,7 +58,9 @@ export class ApiKeyMetadataDto {
     actionTemplateName?: string;
 
     @ApiProperty({ required: false })
+    @ApiProperty({ required: false })
     @IsOptional()
+    @IsInt()
     actionTemplateVersion?: number;
 
     @ApiProperty({ required: false })

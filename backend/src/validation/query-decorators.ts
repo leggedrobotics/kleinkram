@@ -485,7 +485,11 @@ export const QuerySortBy = (
                 'file.size',
                 'file.filename',
                 'state',
+                'state',
                 'state_cause',
+                'key_type',
+                'rights',
+                'deletedAt',
             ];
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument

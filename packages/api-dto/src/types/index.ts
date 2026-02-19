@@ -90,6 +90,7 @@ export * from '@api-dto/update-tag-type.dto';
 export * from '@api-dto/update-tag-types.dto';
 export * from '@api-dto/upload.dto';
 export * from '@api-dto/user/api-key-metadata.dto';
+export * from '@api-dto/user/api-keys.dto';
 export * from '@api-dto/user/current-api-user.dto';
 export * from '@api-dto/user/user.dto';
 export * from '@api-dto/user/users.dto';

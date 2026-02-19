@@ -20,7 +20,7 @@ import type {
     TagsDto,
     TagTypeDto,
 } from '@kleinkram/api-dto/types/tags/tags.dto';
-import type { ApiKeyMetadataDto } from '@kleinkram/api-dto/types/user/api-key-metadata.dto';
+import type { ApiKeysDto } from '@kleinkram/api-dto/types/user/api-keys.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
 import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
 import {
@@ -99,13 +99,28 @@ export const useUser = (): UseQueryReturnType<
 /**
  * Fetches API key metadata for the current user
  */
-export const useMyApiKeys = (): UseQueryReturnType<
-    ApiKeyMetadataDto[] | null,
-    Error
-> => {
-    return useQuery<ApiKeyMetadataDto[] | null>({
-        queryKey: ['apiKeys'],
-        queryFn: () => getMyApiKeys(),
+/**
+ * Fetches API key metadata for the current user
+ * @param take
+ * @param skip
+ * @param sortBy
+ * @param descending
+ */
+export const useMyApiKeys = (
+    take: Ref<number>,
+    skip: Ref<number>,
+    sortBy: Ref<string>,
+    descending: Ref<boolean>,
+): UseQueryReturnType<ApiKeysDto | null, Error> => {
+    return useQuery<ApiKeysDto | null>({
+        queryKey: ['apiKeys', { take, skip, sortBy, descending }],
+        queryFn: () =>
+            getMyApiKeys(
+                take.value,
+                skip.value,
+                sortBy.value,
+                descending.value,
+            ),
     });
 };
 
