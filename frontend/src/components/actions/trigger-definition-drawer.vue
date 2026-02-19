@@ -135,38 +135,57 @@
 
                         <!-- Webhook Config -->
                         <div v-if="localTrigger.type === TriggerType.WEBHOOK">
-                            <div
-                                class="q-pa-sm bg-grey-2 rounded-borders q-mt-xs"
-                            >
-                                <div class="row items-center no-wrap">
-                                    <div
-                                        class="q-mr-sm"
-                                        style="
-                                            flex: 1 1 auto;
-                                            word-break: break-all;
-                                            font-family: monospace;
-                                        "
-                                    >
-                                        {{ ENV.BACKEND_URL }}/hooks/actions/{{
-                                            localTrigger.uuid ||
-                                            'generated-uuid'
-                                        }}
+                            <template v-if="isEditing">
+                                <div
+                                    class="q-pa-sm bg-grey-2 rounded-borders q-mt-xs"
+                                >
+                                    <div class="row items-center no-wrap">
+                                        <div
+                                            class="q-mr-sm"
+                                            style="
+                                                flex: 1 1 auto;
+                                                word-break: break-all;
+                                                font-family: monospace;
+                                            "
+                                        >
+                                            {{
+                                                ENV.BACKEND_URL
+                                            }}/hooks/actions/{{
+                                                localTrigger.uuid
+                                            }}
+                                        </div>
+                                        <q-btn
+                                            icon="sym_o_content_copy"
+                                            flat
+                                            dense
+                                            round
+                                            color="primary"
+                                            @click="copyWebhookUrl"
+                                        >
+                                            <q-tooltip>Copy URL</q-tooltip>
+                                        </q-btn>
                                     </div>
-                                    <q-btn
-                                        icon="sym_o_content_copy"
-                                        flat
-                                        dense
-                                        round
-                                        color="primary"
-                                        @click="copyWebhookUrl"
-                                    >
-                                        <q-tooltip>Copy URL</q-tooltip>
-                                    </q-btn>
                                 </div>
-                            </div>
-                            <div class="q-mt-sm text-caption text-grey-7">
-                                Send a POST request to this URL to trigger the
-                                action.
+                                <div class="q-mt-sm text-caption text-grey-7">
+                                    Send a POST request to this URL to trigger
+                                    the action.
+                                </div>
+                            </template>
+                            <div
+                                v-else
+                                class="q-pa-sm bg-blue-1 rounded-borders q-mt-xs"
+                            >
+                                <div
+                                    class="row items-center no-wrap text-caption text-primary"
+                                >
+                                    <q-icon
+                                        name="sym_o_info"
+                                        size="xs"
+                                        class="q-mr-sm"
+                                    />
+                                    The webhook URL will be available after the
+                                    trigger is created.
+                                </div>
                             </div>
                         </div>
 
@@ -287,7 +306,7 @@ import type { CreateActionTriggerDto } from '@kleinkram/api-dto/types/actions/cr
 import type { UpdateActionTriggerDto } from '@kleinkram/api-dto/types/actions/update-action-trigger.dto';
 import { cronToHuman, isValidCron, TriggerType } from '@kleinkram/shared';
 import ScopeSelector from 'components/common/scope-selector.vue';
-import { QForm, uid, useQuasar } from 'quasar';
+import { QForm, useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
 import ENV from 'src/environment';
 import { useHandler } from 'src/hooks/query-hooks';
@@ -373,7 +392,6 @@ watch(
             } else {
                 localTrigger.value = {
                     ...structuredClone(defaultState),
-                    uuid: uid(), // Optimistic UUID
                     missionUuid: handler.value.missionUuid ?? '',
                 };
             }
@@ -514,7 +532,8 @@ const saveTrigger = async () => {
 };
 
 const copyWebhookUrl = async () => {
-    const url = `${ENV.BACKEND_URL}/hooks/actions/${localTrigger.value.uuid ?? 'generated-uuid'}`;
+    if (!localTrigger.value.uuid) return;
+    const url = `${ENV.BACKEND_URL}/hooks/actions/${localTrigger.value.uuid}`;
     await navigator.clipboard.writeText(url);
     $q.notify({ type: 'positive', message: 'Webhook URL copied to clipboard' });
 };
