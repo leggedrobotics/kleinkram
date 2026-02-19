@@ -19,12 +19,6 @@
                         style="color: #222"
                     />
                     <q-tab
-                        name="Settings"
-                        label="Settings"
-                        :disable="true"
-                        style="color: #222"
-                    />
-                    <q-tab
                         name="Admin"
                         label="Admin"
                         :disable="user.role === UserRole.USER"
