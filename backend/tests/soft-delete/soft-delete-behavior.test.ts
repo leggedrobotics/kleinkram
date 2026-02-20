@@ -109,14 +109,17 @@ describe('Comprehensive Soft Delete Behavior', () => {
         >;
         expect(listJson.data.find((p) => p.uuid === uuid)).toBeUndefined();
 
-        // 4. Verify it still exists in DB but is deleted
+        // 4. Verify it still exists in DB but is soft-deleted (not returned by default queries)
         const projectRepo = database.getRepository(ProjectEntity);
-        const dbProject = await projectRepo.findOne({
+        const dbProjectWithDeleted = await projectRepo.findOne({
             where: { uuid },
             withDeleted: true,
         });
-        expect(dbProject).toBeDefined();
-        expect(dbProject?.deletedAt).not.toBeNull();
+        expect(dbProjectWithDeleted).toBeDefined();
+        const dbProjectWithoutDeleted = await projectRepo.findOne({
+            where: { uuid },
+        });
+        expect(dbProjectWithoutDeleted).toBeNull();
 
         // 5. Re-create project with SAME NAME
         const newUuid = await createProjectUsingPost(projectRequest, creator);
@@ -177,14 +180,17 @@ describe('Comprehensive Soft Delete Behavior', () => {
         );
         expect(deleteResponse.status).toBe(200);
 
-        // 3. Verify it still exists in DB but is deleted
+        // 3. Verify it still exists in DB but is soft-deleted (not returned by default queries)
         const missionRepo = database.getRepository(MissionEntity);
-        const dbMission = await missionRepo.findOne({
+        const dbMissionWithDeleted = await missionRepo.findOne({
             where: { uuid: missionUuid },
             withDeleted: true,
         });
-        expect(dbMission).toBeDefined();
-        expect(dbMission?.deletedAt).not.toBeNull();
+        expect(dbMissionWithDeleted).toBeDefined();
+        const dbMissionWithoutDeleted = await missionRepo.findOne({
+            where: { uuid: missionUuid },
+        });
+        expect(dbMissionWithoutDeleted).toBeNull();
 
         // 4. Re-create mission with SAME NAME in SAME project
         const newMissionUuid = await createMissionUsingPost(
