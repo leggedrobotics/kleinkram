@@ -2,16 +2,16 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios from 'axios';
 
 // 1. Define interfaces to describe the shape of the data
-interface MetricPoint {
+export interface MetricPoint {
     labels: Record<string, string>;
     value: number;
 }
 
-type PrometheusMetrics = Record<string, MetricPoint[]>;
+export type PrometheusMetrics = Record<string, MetricPoint[]>;
 
 @Injectable()
 export class StorageMetricsService {
-    private readonly METRICS_ENDPOINT = 'http://seaweedfs:9333/metrics';
+    private readonly METRICS_ENDPOINT = 'http://seaweedfs:9324/metrics';
 
     async getSystemMetrics(): Promise<PrometheusMetrics> {
         try {

@@ -30,7 +30,7 @@ EOF
 # 2. Start SeaweedFS in the background
 echo "Starting SeaweedFS server..."
 mkdir -p /data
-/usr/bin/weed server -dir=/data -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3.json -ip.bind=0.0.0.0 -s3.ip.bind=0.0.0.0 &
+/usr/bin/weed server -dir=/data -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3.json -ip.bind=0.0.0.0 -s3.ip.bind=0.0.0.0 -metricsPort=9324 &
 
 # 3. Wait for the server to be actually ready (Healthcheck Loop)
 echo "Waiting for SeaweedFS Master to startup..."

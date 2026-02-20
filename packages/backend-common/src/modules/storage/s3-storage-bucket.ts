@@ -15,7 +15,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { StorageAuthService } from './storage-auth.service';
 import { S3ClientContainer } from './storage-config.factory';
-import { StorageMetricsService } from './storage-metrics.service';
+import { MetricPoint, StorageMetricsService } from './storage-metrics.service';
 import {
     IStorageBucket,
     StorageCredentials,
@@ -167,8 +167,25 @@ export class S3StorageBucket implements IStorageBucket {
             };
         }
         const raw = await this.metricsService.getSystemMetrics();
-        const total = raw.seaweedfs_master_disk_total_bytes[0]?.value ?? 0;
-        const free = raw.seaweedfs_master_disk_free_bytes[0]?.value ?? 0;
+
+        const totalRaw = raw.seaweedfs_master_disk_total_bytes as
+            | MetricPoint[]
+            | undefined;
+        const volRecord = raw.SeaweedFS_volumeServer_resource as
+            | MetricPoint[]
+            | undefined;
+        const total =
+            totalRaw?.[0]?.value ??
+            volRecord?.find((m) => m.labels.type === 'all')?.value ??
+            0;
+
+        const freeRaw = raw.seaweedfs_master_disk_free_bytes as
+            | MetricPoint[]
+            | undefined;
+        const free =
+            freeRaw?.[0]?.value ??
+            volRecord?.find((m) => m.labels.type === 'free')?.value ??
+            0;
 
         return {
             usedBytes: total - free,
