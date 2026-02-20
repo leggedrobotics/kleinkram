@@ -25,7 +25,7 @@ export class UniversalHttpReader implements IReadable {
     async init(): Promise<void> {
         const response = await fetch(this.url, {
             headers: {
-                Range: 'bytes=0-0',
+                Range: 'bytes=0-', // Use open-ended range for better compatibility
                 ...this.additionalHeaders,
             },
         });
@@ -72,7 +72,13 @@ export class UniversalHttpReader implements IReadable {
         length: bigint,
     ): Promise<Uint8Array> {
         const start = Number(offset);
-        const end = start + Number(length) - 1;
+        let end = start + Number(length) - 1;
+
+        // Clamp to file size if known
+        if (this._size !== undefined && end >= this._size) {
+            end = this._size - 1;
+        }
+
         const startTime = performance.now();
 
         const response = await fetch(this.url, {
@@ -92,7 +98,32 @@ export class UniversalHttpReader implements IReadable {
 
         this.optimizer.updateMetrics(buffer.byteLength, duration);
 
-        return new Uint8Array(buffer);
+        let data = new Uint8Array(buffer);
+
+        // If server returned 200 OK instead of 206 Partial Content, it returned the whole file
+        if (response.status === 200) {
+            // Update size if it was unknown
+            this._size ??= data.length;
+
+            // Cache the whole file to avoid future full downloads if range isn't supported
+            if (
+                this.cachedBlocks.length > 0 &&
+                this.cachedBlocks[0].offset === 0n &&
+                this.cachedBlocks[0].data.length === this._size
+            ) {
+                // Already cached
+            } else {
+                this.cachedBlocks.unshift({ offset: 0n, data });
+                if (this.cachedBlocks.length > 50) {
+                    this.cachedBlocks.pop();
+                }
+            }
+
+            // Slice to the requested range
+            data = data.subarray(start, start + Number(length));
+        }
+
+        return data;
     }
 
     async read(offset: bigint, length: bigint): Promise<Uint8Array> {
@@ -112,20 +143,22 @@ export class UniversalHttpReader implements IReadable {
             );
         }
 
-        // 2. Check active requests (simple deduplication)
-        // Note: This simple key check might miss overlapping requests that could satisfy this one.
-        // For a more robust solution, we'd check ranges of active requests too.
-        // But for now, let's stick to the requested range key or maybe just proceed to fetch.
-
-        // 3. Determine fetch size
+        // 2. Determine fetch size
         const optimalSize = this.optimizer.getOptimalRequestSize(
             Number(length),
         );
-        const fetchLength = BigInt(optimalSize);
+        let fetchLength = BigInt(optimalSize);
 
-        // Align fetch to start at requested offset (or slightly before if we wanted to be fancy, but let's keep it simple)
-        // We fetch [offset, offset + fetchLength)
+        // Clamp fetchLength to file size
+        if (
+            this._size !== undefined &&
+            offset + fetchLength > BigInt(this._size)
+        ) {
+            fetchLength = BigInt(this._size) - offset;
+            if (fetchLength < length) fetchLength = length; // Ensure we at least get what's requested
+        }
 
+        // 3. Check active requests (simple deduplication)
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         const key = `${offset}-${fetchLength}`;
         let promise = this.activeRequests.get(key);
@@ -146,11 +179,19 @@ export class UniversalHttpReader implements IReadable {
                         this.optimizer.stopActivity();
                         this.stopLogging();
                     }
-                    // Add to cache
-                    this.cachedBlocks.push({ offset, data });
-                    // Optional: Prune cache if too big
-                    if (this.cachedBlocks.length > 50) {
-                        this.cachedBlocks.shift(); // Remove oldest
+                    // Add to cache if not already cached as part of a 200 response
+                    if (
+                        !this.cachedBlocks.some(
+                            (b) =>
+                                b.offset === offset &&
+                                b.data.length === data.length,
+                        )
+                    ) {
+                        this.cachedBlocks.push({ offset, data });
+                        // Optional: Prune cache if too big
+                        if (this.cachedBlocks.length > 50) {
+                            this.cachedBlocks.shift(); // Remove oldest
+                        }
                     }
                 })
                 .catch(() => {
@@ -165,12 +206,19 @@ export class UniversalHttpReader implements IReadable {
         const data = await promise;
 
         // Return the requested slice
-        // The data we got starts at `offset` and has length `fetchLength`
-        // We want `length` bytes from it.
+        // The data we got starts at `offset`
         if (data.length < Number(length)) {
+            // If we are at the end of the file, it's okay if it's smaller than requested
+            if (
+                this._size !== undefined &&
+                offset + BigInt(data.length) === BigInt(this._size)
+            ) {
+                return data;
+            }
+
             throw new Error(
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                `Fetched data smaller than requested: ${data.length} < ${length}`,
+                `Fetched data smaller than requested and not at EOF: ${data.length} < ${length} at offset ${offset}`,
             );
         }
 
