@@ -53,6 +53,15 @@ Use the `download` command to retrieve files from a mission.
 klein download -p myproject -m mymission --dest ./downloaded_data
 ```
 
+::: tip Nested Directories
+By default, all downloaded files are saved directly in the destination directory, flattening the project and mission structure. To preserve this structure and group files into `<dest>/<project-name>/<mission-name>` subdirectories, use the `--nested` flag.
+
+```bash
+klein download -p myproject -m mymission --dest ./downloaded_data --nested
+```
+
+:::
+
 ### Verifying Files
 
 Use the `verify` command to check if files were uploaded correctly.

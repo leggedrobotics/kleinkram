@@ -79,7 +79,7 @@ def download(
         table = files_to_table(files, title="downloading files...")
         Console().print(table)
 
-    kleinkram.api.file_transfer.download_files(client, paths, verbose=verbose, overwrite=overwrite)
+    kleinkram.api.file_transfer.download_files(client, paths, verbose=verbose, overwrite=overwrite, create_parents=nested)
 
 
 def upload(
