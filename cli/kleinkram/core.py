@@ -55,7 +55,7 @@ def download(
     verbose: bool = False,
 ) -> None:
     """\
-    downloads files, asserts that the destition dir exists
+    downloads files, asserts that the destination dir exists
     returns the files that were downloaded
 
     TODO: the above is a lie, at the moment we just return all files that were found
@@ -68,7 +68,7 @@ def download(
     if not base_dir.is_dir():
         raise ValueError(f"Destination {base_dir.absolute()} is not a directory")
 
-    # retrive files and get the destination paths
+    # retrieve files and get the destination paths
     try:
         files = list(kleinkram.api.routes.get_files(client, file_query=query))
     except httpx.HTTPStatusError:

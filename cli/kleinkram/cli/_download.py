@@ -37,7 +37,7 @@ def download(
         help="overwrite files if they already exist and don't match the file size or file hash",
     ),
 ) -> None:
-    # create destionation directory
+    # create destination directory
     dest_dir = Path(dest)
     if not dest_dir.exists():
         typer.confirm(f"Destination {dest_dir} does not exist. Create it?", abort=True)
