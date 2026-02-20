@@ -98,9 +98,6 @@ export const useUser = (): UseQueryReturnType<
 
 /**
  * Fetches API key metadata for the current user
- */
-/**
- * Fetches API key metadata for the current user
  * @param take
  * @param skip
  * @param sortBy
