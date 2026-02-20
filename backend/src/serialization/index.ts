@@ -363,6 +363,10 @@ export function accessGroupEntityToDto(
 export const apiKeyEntityToMetadataDto = (
     apiKey: ApiKeyEntity,
 ): ApiKeyMetadataDto => {
+    if (!apiKey.mission.project) {
+        throw new Error('ApiKey mission project is not set');
+    }
+
     return {
         uuid: apiKey.uuid,
         keyType: apiKey.key_type,
@@ -375,6 +379,6 @@ export const apiKeyEntityToMetadataDto = (
         actionUuid: apiKey.action?.uuid,
         actionTemplateName: apiKey.action?.template?.name,
         actionTemplateVersion: apiKey.action?.template?.version,
-        projectUuid: apiKey.mission.project?.uuid,
+        projectUuid: apiKey.mission.project.uuid,
     };
 };
