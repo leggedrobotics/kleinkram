@@ -4,16 +4,19 @@ import { AccessGroupType } from '@kleinkram/shared';
 import {
     Column,
     Entity,
+    Index,
     JoinTable,
     ManyToOne,
     OneToMany,
-    Unique,
 } from 'typeorm';
 import { GroupMembershipEntity } from './group-membership.entity';
 import { MissionAccessEntity } from './mission-access.entity';
 import { ProjectAccessEntity } from './project-access.entity';
 
-@Unique('unique_access_group_name', ['name'])
+@Index('unique_access_group_name', ['name'], {
+    where: '"deletedAt" IS NULL',
+    unique: true,
+})
 @Entity({ name: 'access_group' })
 export class AccessGroupEntity extends BaseEntity {
     @Column()

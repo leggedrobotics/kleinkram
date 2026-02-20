@@ -466,7 +466,7 @@ export class MissionService {
                 'Mission cannot be deleted because it contains files',
             );
         }
-        await this.missionRepository.remove(mission);
+        await this.missionRepository.softRemove(mission);
     }
 
     async updateTags(

@@ -26,6 +26,7 @@ import {
     FileState,
     FileType,
     HealthStatus,
+    TriggerEvent,
     UserRole,
 } from '@kleinkram/shared';
 import {
@@ -55,7 +56,6 @@ import {
 } from './utilities';
 
 import { TriggerService } from '@/services/trigger.service';
-import { TriggerEvent } from '@kleinkram/shared';
 
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
@@ -1243,7 +1243,7 @@ export class FileService implements OnModuleInit {
                         );
                     });
 
-                await transactionalEntityManager.remove(fileToDelete);
+                await transactionalEntityManager.softRemove(fileToDelete);
             },
         );
 

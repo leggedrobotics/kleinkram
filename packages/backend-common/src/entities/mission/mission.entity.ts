@@ -7,9 +7,12 @@ import { IngestionJobEntity } from '@backend-common/entities/file/ingestion-job.
 import { MetadataEntity } from '@backend-common/entities/metadata/metadata.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, OneToMany } from 'typeorm';
 
-@Unique('unique_mission_name_per_project', ['name', 'project'])
+@Index('unique_mission_name_per_project', ['name', 'project'], {
+    where: '"deletedAt" IS NULL',
+    unique: true,
+})
 @Entity({ name: 'mission' })
 export class MissionEntity extends BaseEntity {
     @Column()
@@ -20,6 +23,7 @@ export class MissionEntity extends BaseEntity {
         (project: ProjectEntity) => project.missions,
         {
             nullable: false,
+            onDelete: 'CASCADE',
         },
     )
     project?: ProjectEntity;

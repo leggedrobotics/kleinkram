@@ -3,11 +3,15 @@ import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AccessGroupRights, KeyTypes } from '@kleinkram/shared';
-import { Column, Entity, Generated, ManyToOne, OneToOne } from 'typeorm';
+import { Column, Entity, Generated, Index, ManyToOne, OneToOne } from 'typeorm';
 
+@Index('unique_apikey_active', ['apikey'], {
+    where: '"deletedAt" IS NULL',
+    unique: true,
+})
 @Entity({ name: 'apikey' })
 export class ApiKeyEntity extends BaseEntity {
-    @Column({ unique: true })
+    @Column()
     @Generated('uuid')
     apikey!: string;
 

@@ -113,19 +113,18 @@ describe('Verification project endpoint', () => {
         // delete all missions
         const missionRepository =
             database.getRepository<MissionEntity>(MissionEntity);
-        const remainingMissions = await missionRepository.find();
-        await missionRepository.remove(remainingMissions);
-        expect(remainingMissions.length).toBe(0);
+        const missionsToClear = await missionRepository.find({
+            withDeleted: true,
+        });
+        await missionRepository.remove(missionsToClear);
 
         // delete project
         const projectRepository =
             database.getRepository<ProjectEntity>(ProjectEntity);
-        const allProjects = await projectRepository.find();
-
-        await projectRepository.remove(allProjects);
-        const remainingProjects = await projectRepository.find();
-
-        expect(remainingProjects.length).toBe(0);
+        const projectsToClear = await projectRepository.find({
+            withDeleted: true,
+        });
+        await projectRepository.remove(projectsToClear);
     });
 
     // afterAll handled by setupDatabaseHooks

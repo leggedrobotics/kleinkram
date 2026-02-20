@@ -34,6 +34,7 @@ import {
 } from '@/serialization';
 import {
     AccessGroupEntity,
+    CategoryEntity,
     MissionEntity,
     ProjectAccessEntity,
     ProjectEntity,
@@ -508,11 +509,16 @@ export class ProjectService {
                     );
                 }
 
-                // all categories will be deleted due to 'onDelete: CASCADE'.
-                const deleteResult = await transactionalEntityManager.delete(
-                    ProjectEntity,
-                    { uuid },
-                );
+                // explicitly soft-delete related categories since 'onDelete: CASCADE'
+                // only applies to hard deletes at the DB level
+                await transactionalEntityManager.softDelete(CategoryEntity, {
+                    project: { uuid },
+                });
+
+                const deleteResult =
+                    await transactionalEntityManager.softDelete(ProjectEntity, {
+                        uuid,
+                    });
 
                 // If no rows were affected, the project UUID didn't exist.
                 if (deleteResult.affected === 0) {
