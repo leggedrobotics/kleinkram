@@ -32,6 +32,14 @@ SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml"]
 EXPERIMENTAL_FILE_TYPES = []
 
 
+def sanitize_path_component(name: str) -> str:
+    """Sanitize a path component to prevent path traversal."""
+    name = name.replace("/", "_").replace("\\", "_")
+    if name in (".", ".."):
+        name = name.replace(".", "_")
+    return name
+
+
 def file_paths_from_files(files: Sequence[File], *, dest: Path, allow_nested: bool = False) -> Dict[Path, File]:
     """\
     determines the destinations for a sequence of `File` objects,
@@ -39,10 +47,28 @@ def file_paths_from_files(files: Sequence[File], *, dest: Path, allow_nested: bo
     """
     if len(set([file.mission_id for file in files])) > 1 and not allow_nested:
         raise ValueError("files from multiple missions were selected")
-    elif not allow_nested:
-        return {dest / file.name: file for file in files}
-    else:
-        return {dest / file.project_name / file.mission_name / file.name: file for file in files}
+
+    result = {}
+    base_dir = dest.resolve()
+
+    for file in files:
+        file_name = sanitize_path_component(file.name)
+        if not allow_nested:
+            path = dest / file_name
+        else:
+            project_name = sanitize_path_component(file.project_name)
+            mission_name = sanitize_path_component(file.mission_name)
+            path = dest / project_name / mission_name / file_name
+
+        resolved_path = path.resolve()
+        try:
+            resolved_path.relative_to(base_dir)
+        except ValueError:
+            raise ValueError(f"Refusing to download to path outside the destination directory: {resolved_path}")
+
+        result[path] = file
+
+    return result
 
 
 def upper_camel_case_to_words(s: str) -> List[str]:

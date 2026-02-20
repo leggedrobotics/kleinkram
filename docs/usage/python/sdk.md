@@ -77,10 +77,12 @@ kleinkram.upload(
 )
 
 # Download files
+# Note: The destination directory (`dest`) must already exist before downloading.
 kleinkram.download(
     project_name="my-project",
     mission_name="my-mission",
-    dest="./downloaded_data"
+    dest="./downloaded_data",
+    nested=True # Organizes files into dest/project-name/mission-name subdirectories
 )
 ```
 

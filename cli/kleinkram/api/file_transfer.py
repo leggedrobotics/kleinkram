@@ -328,6 +328,7 @@ def download_file(
     file: File,
     path: Path,
     overwrite: bool = False,
+    create_parents: bool = False,
     verbose: bool = False,
 ) -> Tuple[DownloadState, int]:
     """\
@@ -360,8 +361,9 @@ def download_file(
     # request a download url
     download_url = _get_file_download(client, file.id)
 
-    # create parent directories (moved earlier, before file open)
-    # path.parent.mkdir(parents=True, exist_ok=True)
+    # create parent directories
+    if create_parents:
+        path.parent.mkdir(parents=True, exist_ok=True)
 
     # download the file and check the hash
     try:
@@ -566,6 +568,7 @@ def download_files(
     *,
     verbose: bool = False,
     overwrite: bool = False,
+    create_parents: bool = False,
     n_workers: int = 2,
 ) -> None:
     console = Console(file=sys.stderr)
@@ -587,6 +590,7 @@ def download_files(
                     file=file,
                     path=path,
                     overwrite=overwrite,
+                    create_parents=create_parents,
                     verbose=verbose,
                 )
                 futures[future] = (file, path)

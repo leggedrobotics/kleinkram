@@ -142,6 +142,26 @@ def test_download(mission, tmp_path):
 
 
 @pytest.mark.slow
+def test_download_nested(project, mission, tmp_path):
+    client = AuthenticatedClient()
+
+    query = FileQuery(mission_query=MissionQuery(ids=[mission.id]), patterns=["*.bag"])
+    kleinkram.core.download(client=client, query=query, base_dir=tmp_path, nested=True)
+    files = list_files(mission_ids=[mission.id], file_names=["*.bag"])
+
+    project_dir = tmp_path / project.name
+    mission_dir = project_dir / mission.name
+
+    assert mission_dir.exists()
+    assert mission_dir.is_dir()
+
+    assert set([f.name for f in mission_dir.iterdir()]) == set([f.name for f in files])
+
+    for file in files:
+        assert (mission_dir / file.name).stat().st_size == file.size
+
+
+@pytest.mark.slow
 def test_verify(mission):
     client = AuthenticatedClient()
     query = MissionQuery(ids=[mission.id])
