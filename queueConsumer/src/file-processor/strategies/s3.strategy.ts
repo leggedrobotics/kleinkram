@@ -1,7 +1,6 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
-import { Injectable } from '@nestjs/common';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FileSourceResult, FileSourceStrategy } from './file-source.interface';
@@ -9,7 +8,8 @@ import { FileSourceResult, FileSourceStrategy } from './file-source.interface';
 @Injectable()
 export class S3Strategy implements FileSourceStrategy {
     constructor(
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
         @InjectRepository(FileEntity)
         private fileEntityRepository: Repository<FileEntity>,
     ) {}
@@ -24,10 +24,7 @@ export class S3Strategy implements FileSourceStrategy {
             where: { uuid: identifier },
         });
 
-        const stream = await this.storageService.getFileStream(
-            env.S3_DATA_BUCKET_NAME,
-            identifier,
-        );
+        const stream = await this.dataStorage.getFileStream(identifier);
 
         return {
             stream,

@@ -1,10 +1,9 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileLocation, FileState, QueueState } from '@kleinkram/shared';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Job, Queue } from 'bull';
 import { Repository } from 'typeorm';
@@ -23,7 +22,8 @@ export class FileQueueProcessorProvider {
         private queueRepo: Repository<IngestionJobEntity>,
         @InjectRepository(FileEntity)
         private fileRepo: Repository<FileEntity>,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
         private readonly fileIngestionService: FileIngestionService,
         private readonly driveStrategy: GoogleDriveStrategy,
         private readonly s3Strategy: S3Strategy,
@@ -81,10 +81,7 @@ export class FileQueueProcessorProvider {
         }
 
         try {
-            const stat = await this.storageService.getFileInfo(
-                env.S3_DATA_BUCKET_NAME,
-                file.uuid,
-            );
+            const stat = await this.dataStorage.getFileInfo(file.uuid);
             // ETag is often surrounded by quotes in S3/Minio, e.g. "5b3...c6"
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             let hash = stat?.etag?.replaceAll('"', '');
@@ -102,10 +99,7 @@ export class FileQueueProcessorProvider {
                 logger.debug(
                     `Calculating hash for ${fileUuid} (ETag: ${String(hash)})`,
                 );
-                const stream = await this.storageService.getFileStream(
-                    env.S3_DATA_BUCKET_NAME,
-                    file.uuid,
-                );
+                const stream = await this.dataStorage.getFileStream(file.uuid);
                 hash = await this.calculateHash(stream);
             }
 

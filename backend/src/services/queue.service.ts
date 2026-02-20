@@ -11,7 +11,7 @@ import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/inge
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
     FileEventType,
     FileLocation,
@@ -27,6 +27,7 @@ import { getGoogleDriveInfo } from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
+    Inject,
     Injectable,
     OnModuleInit,
 } from '@nestjs/common';
@@ -53,7 +54,6 @@ export class QueueService implements OnModuleInit {
         @InjectRepository(FileEntity)
         private fileRepository: Repository<FileEntity>,
         private userService: UserService,
-        private readonly storageService: StorageService,
         private readonly auditService: FileAuditService,
 
         // Metrics for File Queue
@@ -66,6 +66,8 @@ export class QueueService implements OnModuleInit {
         @InjectMetric('backend_failed_jobs')
         private failedJobs: Gauge,
         private readonly triggerService: TriggerService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
     ) {}
 
     onModuleInit(): void {
@@ -196,8 +198,8 @@ export class QueueService implements OnModuleInit {
             relations: ['mission', 'mission.project'],
         });
 
-        const fileInfo = await this.storageService
-            .getFileInfo(env.S3_DATA_BUCKET_NAME, file.uuid)
+        const fileInfo = await this.dataStorage
+            .getFileInfo(file.uuid)
             .catch((): void => {
                 throw new ConflictException('File not found in Minio');
             });
@@ -316,9 +318,7 @@ export class QueueService implements OnModuleInit {
         });
 
         if (file) {
-            await this.storageService
-                .deleteFile(env.S3_DATA_BUCKET_NAME, file.uuid)
-                .catch(logger.log);
+            await this.dataStorage.deleteFile(file.uuid).catch(logger.log);
             await this.fileRepository.remove(file);
 
             if (file.type === FileType.BAG) {
@@ -329,8 +329,8 @@ export class QueueService implements OnModuleInit {
                     },
                 });
                 if (mcap) {
-                    await this.storageService
-                        .deleteFile(env.S3_DATA_BUCKET_NAME, mcap.uuid)
+                    await this.dataStorage
+                        .deleteFile(mcap.uuid)
                         .catch(logger.log);
                     await this.fileRepository.remove(mcap);
                 }

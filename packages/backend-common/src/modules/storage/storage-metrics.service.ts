@@ -14,7 +14,7 @@ type PrometheusMetrics = Record<string, MetricPoint[]>;
 @Injectable()
 export class StorageMetricsService {
     private readonly METRICS_ENDPOINT =
-        'http://minio:9000/minio/metrics/v3/system/drive';
+        'http://seaweedfs:9000/minio/metrics/v3/system/drive';
 
     private readonly EXPIRATION_SECONDS = 24 * 60 * 60; // 24 hours
 

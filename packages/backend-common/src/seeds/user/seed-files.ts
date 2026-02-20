@@ -1,4 +1,5 @@
 /* eslint-disable complexity */
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { CategoryEntity } from '@backend-common/entities/category/category.entity';
 import { FileEventEntity } from '@backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@backend-common/entities/file/file.entity';
@@ -17,7 +18,6 @@ import {
     FileOrigin,
     FileType,
 } from '@kleinkram/shared';
-import * as Minio from 'minio';
 import { execSync } from 'node:child_process';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
@@ -106,16 +106,26 @@ export const seedFiles = async (
         console.error('Failed to generate test data', error);
     }
 
-    // Minio Client Setup
-    const minioClient = new Minio.Client({
-        endPoint:
-            process.env.S3_ENDPOINT_INTERNAL ??
-            process.env.S3_ENDPOINT ??
-            'minio',
-        port: 9000,
-        useSSL: false,
-        accessKey: process.env.S3_ACCESS_KEY ?? '',
-        secretKey: process.env.S3_SECRET_KEY ?? '',
+    // S3 Client Setup
+    let s3Endpoint =
+        process.env.S3_ENDPOINT_INTERNAL ??
+        process.env.S3_ENDPOINT ??
+        'seaweedfs';
+    if (!s3Endpoint.startsWith('http')) {
+        s3Endpoint = `http://${s3Endpoint}`;
+    }
+    if (!s3Endpoint.includes(':', 7)) {
+        s3Endpoint = `${s3Endpoint}:9000`;
+    }
+
+    const s3Client = new S3Client({
+        endpoint: s3Endpoint,
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: process.env.S3_ACCESS_KEY ?? '',
+            secretAccessKey: process.env.S3_SECRET_KEY ?? '',
+        },
+        forcePathStyle: true,
     });
 
     const bucketName = process.env.S3_DATA_BUCKET_NAME ?? 'data';
@@ -360,16 +370,17 @@ export const seedFiles = async (
                 );
 
                 try {
-                    await minioClient.fPutObject(
-                        bucketName,
-                        objectName,
-                        filePath,
-                        {
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
-                            'Content-Type': 'application/octet-stream',
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
-                            'X-Amz-Meta-Original-Filename': targetName,
-                        },
+                    await s3Client.send(
+                        new PutObjectCommand({
+                            Bucket: bucketName,
+                            Key: objectName,
+                            Body: fs.createReadStream(filePath),
+                            ContentType: 'application/octet-stream',
+                            Metadata: {
+                                // eslint-disable-next-line @typescript-eslint/naming-convention
+                                'Original-Filename': targetName,
+                            },
+                        }),
                     );
                     // eslint-disable-next-line no-console
                     console.log(
@@ -377,7 +388,7 @@ export const seedFiles = async (
                     );
                 } catch (error) {
                     console.error(
-                        `Failed to upload ${fileName} to MinIO!`,
+                        `Failed to upload ${fileName} to storage!`,
                         error,
                     );
                 }

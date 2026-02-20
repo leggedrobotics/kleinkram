@@ -18,9 +18,9 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { ArtifactState, LogType, UserRole } from '@kleinkram/shared';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import {
@@ -57,7 +57,8 @@ export class ActionService {
         private missionRepository: Repository<MissionEntity>,
 
         private readonly actionDispatcher: ActionDispatcherService,
-        private readonly storageService: StorageService,
+        @Inject('ArtifactStorageBucket')
+        private readonly artifactStorage: IStorageBucket,
     ) {}
 
     async submit(
@@ -425,8 +426,7 @@ export class ActionService {
         try {
             const friendlyFilename = `${action.template?.name ?? 'artifact'}-${action.uuid}.tar.gz`;
 
-            return await this.storageService.getPresignedDownloadUrl(
-                bucketName,
+            return await this.artifactStorage.getPresignedDownloadUrl(
                 `${action.uuid}.tar.gz`,
                 4 * 60 * 60,
                 {

@@ -31,7 +31,6 @@ export * from './modules/storage/storage-auth.service';
 export * from './modules/storage/storage-config.factory';
 export * from './modules/storage/storage-metrics.service';
 export * from './modules/storage/storage.module';
-export * from './modules/storage/storage.service';
 export * from './scheduling-logic';
 export * from './seeds/user/seed-users';
 export * from './services/affiliation-group.service';

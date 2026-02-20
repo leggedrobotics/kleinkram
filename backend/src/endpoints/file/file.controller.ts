@@ -45,7 +45,6 @@ import {
     TemporaryFileAccessesDto,
     UpdateFile,
 } from '@kleinkram/api-dto';
-import env from '@kleinkram/backend-common/environment';
 import {
     BodyOptionalSource,
     BodyString,
@@ -452,7 +451,7 @@ export class FileController {
     })
     async resetMinioTags(): Promise<void> {
         logger.debug('Resetting S3 tags');
-        await this.fileService.renameTags(env.S3_DATA_BUCKET_NAME);
+        await this.fileService.renameTags();
         logger.debug('Resetting S3 tags done');
     }
 

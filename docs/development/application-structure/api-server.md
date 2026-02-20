@@ -45,7 +45,8 @@ Are we using this? Should we?
 
 Some functions were extracted into services. They are currently in the root of the `src` directory. Logger & Tracing
 handle the respective tasks.
-The StorageService is a helper provider to interact with the S3 storage.
+
+The storage system uses a bucket-based abstraction (`IStorageBucket`). Specific buckets (e.g., `DataStorageBucket`, `ArtifactStorageBucket`) are injected into services to handle object storage. This abstracts away the underlying provider (S3/SeaweedFS).
 
 ## Development
 

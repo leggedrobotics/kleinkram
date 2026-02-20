@@ -1,8 +1,7 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileState } from '@kleinkram/shared';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FileHandler, FileProcessingContext } from './file-handler.interface';
@@ -12,7 +11,8 @@ import { McapMetadataService } from './mcap-metadata.service';
 export class McapHandler implements FileHandler {
     constructor(
         private readonly mcapMetadataService: McapMetadataService,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
         @InjectRepository(FileEntity) private fileRepo: Repository<FileEntity>,
     ) {}
 
@@ -25,8 +25,7 @@ export class McapHandler implements FileHandler {
 
         try {
             const presignedUrl =
-                await this.storageService.getInternalPresignedDownloadUrl(
-                    env.S3_DATA_BUCKET_NAME,
+                await this.dataStorage.getInternalPresignedDownloadUrl(
                     primaryFile.uuid,
                     15 * 60,
                 );

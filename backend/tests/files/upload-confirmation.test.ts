@@ -26,7 +26,7 @@ import {
 } from '../utils/database-utilities';
 
 // Mock dependencies
-const mockStorageService = {
+const mockDataStorage = {
     getFileInfo: jest.fn().mockResolvedValue({ size: 1024 }),
 };
 
@@ -92,7 +92,7 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             { findOneByUUID: jest.fn() } as any, // UserService
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            mockStorageService as any,
+            mockDataStorage as any,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
             mockFileAuditService as any,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any

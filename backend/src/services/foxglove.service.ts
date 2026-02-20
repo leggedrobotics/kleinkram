@@ -2,9 +2,9 @@ import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.ser
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileEventType, FileType } from '@kleinkram/shared';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'node:crypto';
 import { Repository } from 'typeorm';
@@ -26,7 +26,8 @@ export class FoxgloveService {
     constructor(
         @InjectRepository(FileEntity)
         private fileRepository: Repository<FileEntity>,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
         private readonly auditService: FileAuditService,
     ) {}
 
@@ -93,15 +94,10 @@ export class FoxgloveService {
         if (signature !== expectedSignature)
             throw new BadRequestException('Invalid signature');
 
-        return await this.storageService.getPresignedDownloadUrl(
-            environment.S3_DATA_BUCKET_NAME,
-            file.uuid,
-            3600,
-            {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'response-content-disposition': `attachment; filename ="${file.filename}"`,
-            },
-        );
+        return await this.dataStorage.getPresignedDownloadUrl(file.uuid, 3600, {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'response-content-disposition': `attachment; filename="${file.filename}"`,
+        });
     }
 
     private generateSignature(data: string): string {
