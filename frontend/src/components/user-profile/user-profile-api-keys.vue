@@ -113,13 +113,12 @@ const pagination = computed({
         rowsPerPage: queryHandler.take,
         rowsNumber: rowsNumber.value,
     }),
-    set: (value) => ({
-        sortBy: value.sortBy,
-        descending: value.descending,
-        page: value.page,
-        rowsPerPage: value.rowsPerPage,
-        rowsNumber: rowsNumber.value,
-    }),
+    set: (value) => {
+        queryHandler.setPage(value.page);
+        queryHandler.setTake(value.rowsPerPage);
+        queryHandler.setSort(value.sortBy);
+        queryHandler.setDescending(value.descending);
+    },
 });
 
 interface TableRequestProperties {
