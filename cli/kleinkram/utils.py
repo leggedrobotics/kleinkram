@@ -52,12 +52,13 @@ def file_paths_from_files(files: Sequence[File], *, dest: Path, allow_nested: bo
     base_dir = dest.resolve()
 
     for file in files:
+        file_name = sanitize_path_component(file.name)
         if not allow_nested:
-            path = dest / file.name
+            path = dest / file_name
         else:
             project_name = sanitize_path_component(file.project_name)
             mission_name = sanitize_path_component(file.mission_name)
-            path = dest / project_name / mission_name / file.name
+            path = dest / project_name / mission_name / file_name
 
         resolved_path = path.resolve()
         try:
