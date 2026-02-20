@@ -544,10 +544,10 @@ export class DockerDaemon {
             name: `kleinkram-artifact-uploader-${actionUuid}`,
             Env: [
                 `KLEINKRAM_ACTION_UUID=${actionUuid}`,
-                `MINIO_ENDPOINT=${environment.S3_ENDPOINT === 'localhost' ? '127.0.0.1' : environment.S3_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
-                `MINIO_ACCESS_KEY=${environment.S3_ACCESS_KEY}`,
-                `MINIO_SECRET_KEY=${environment.S3_SECRET_KEY}`,
-                `MINIO_ARTIFACTS_BUCKET_NAME=${environment.S3_ARTIFACTS_BUCKET_NAME}`,
+                `S3_ENDPOINT=${environment.S3_ENDPOINT === 'localhost' ? '127.0.0.1' : environment.S3_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+                `S3_ACCESS_KEY=${environment.S3_ACCESS_KEY}`,
+                `S3_SECRET_KEY=${environment.S3_SECRET_KEY}`,
+                `S3_ARTIFACTS_BUCKET_NAME=${environment.S3_ARTIFACTS_BUCKET_NAME}`,
             ],
 
             HostConfig: {

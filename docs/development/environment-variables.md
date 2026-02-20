@@ -18,14 +18,14 @@ These URLs are used for communication between services and for generating links.
 | `DOCS_URL`     | The URL where the documentation site is accessible.   | `http://localhost:4000` |
 | `BACKEND_URL`  | The URL where the backend API is accessible.          | `http://localhost:3000` |
 
-## MinIO Configuration (Object Storage)
+## S3 Configuration (Object Storage)
 
-Configuration for MinIO, which is used for S3-compatible object storage.
+Configuration for SeaweedFS (or S3-compatible storage), which is used for object storage.
 
 | Variable                   | Description                                   | Default                                    |
 | :------------------------- | :-------------------------------------------- | :----------------------------------------- |
-| `S3_USER`                  | The username for S3 access.                   | `minioadmin`                               |
-| `S3_PASSWORD`              | The password for S3 access.                   | `minioadmin`                               |
+| `S3_USER`                  | The username for S3 access.                   | `seaweed`                                  |
+| `S3_PASSWORD`              | The password for S3 access.                   | `seaweed`                                  |
 | `S3_ACCESS_KEY`            | The access key for S3 clients.                | `pMEKIOCnYJhmssiKZDGU`                     |
 | `S3_SECRET_KEY`            | The secret key for S3 clients.                | `ECnXGyUR5ZrPsxeD5JEWxtI1CMZFMJ8kTJMMAQ5B` |
 | `S3_DATA_BUCKET_NAME`      | The bucket name for main data storage.        | `data`                                     |

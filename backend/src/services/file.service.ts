@@ -1081,7 +1081,7 @@ export class FileService implements OnModuleInit {
 
         const stats = await this.dataStorage.getFileInfo(file.uuid);
 
-        // verify that the file exists in Minio
+        // verify that the file exists in storage
         if (!stats) throw new NotFoundException('File not found');
 
         // TODO: find a better solution to avoid leaking download links without logging
@@ -1182,7 +1182,7 @@ export class FileService implements OnModuleInit {
 
     /**
      * Delete a file with the given uuid.
-     * The file will be removed from the database and from Minio.
+     * The file will be removed from the database and from storage.
      *
      * @param uuid The unique identifier of the file
      * @param actor
@@ -1228,7 +1228,7 @@ export class FileService implements OnModuleInit {
                     .deleteFile(fileToDelete.uuid)
                     .catch(() => {
                         logger.error(
-                            `File ${fileToDelete.uuid} not found in Minio, deleting from database only!`,
+                            `File ${fileToDelete.uuid} not found in storage, deleting from database only!`,
                         );
                     });
 
@@ -1268,7 +1268,7 @@ export class FileService implements OnModuleInit {
     }
 
     /**
-     * Get temporary access to upload files to Minio.
+     * Get temporary access to upload files to storage.
      * This function creates a new file entry in the database and a new queue entry.
      * The queue entry is used to track the upload progress.
      *
@@ -1514,7 +1514,7 @@ export class FileService implements OnModuleInit {
                             .deleteFile(file.uuid)
                             .catch(() => {
                                 logger.error(
-                                    `File ${file.uuid} not found in Minio, deleting from database only!`,
+                                    `File ${file.uuid} not found in storage, deleting from database only!`,
                                 );
                             });
                     }),
@@ -1591,7 +1591,7 @@ export class FileService implements OnModuleInit {
                     );
                 } else {
                     logger.error(
-                        `File ${file.uuid} not found in Minio, setting state to LOST`,
+                        `File ${file.uuid} not found in storage, setting state to LOST`,
                     );
                     file.state = FileState.LOST;
                 }

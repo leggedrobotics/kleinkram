@@ -5,40 +5,39 @@ import {
     GetObjectTaggingCommand,
     HeadObjectCommand,
     ListObjectsV2Command,
-    PutObjectCommand,
     PutObjectTaggingCommand,
-    _Object,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { createReadStream, createWriteStream } from 'node:fs';
+import { Inject, Injectable } from '@nestjs/common';
 import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { S3StorageBucket } from './s3-storage-bucket';
 import { StorageAuthService } from './storage-auth.service';
 import { S3ClientContainer } from './storage-config.factory';
 import { StorageMetricsService } from './storage-metrics.service';
 import {
-    IStorageBucket,
     StorageCredentials,
     StorageItem,
     StorageItemStat,
     StorageSystemMetrics,
 } from './types';
 
-export class S3StorageBucket implements IStorageBucket {
+@Injectable()
+export class StorageService {
     constructor(
-        private readonly bucketName: string,
+        @Inject('S3_CLIENTS')
         private readonly clients: S3ClientContainer,
+        private readonly metricsService: StorageMetricsService,
         private readonly authService: StorageAuthService,
-        private readonly metricsService?: StorageMetricsService,
     ) {}
 
     async getPresignedDownloadUrl(
+        bucketName: string,
         objectName: string,
         expirySeconds: number,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
         const command = new GetObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: objectName,
             ResponseContentDisposition:
                 responseDisposition?.['response-content-disposition'],
@@ -49,12 +48,13 @@ export class S3StorageBucket implements IStorageBucket {
     }
 
     async getInternalPresignedDownloadUrl(
+        bucketName: string,
         objectName: string,
         expirySeconds: number,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
         const command = new GetObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: objectName,
             ResponseContentDisposition:
                 responseDisposition?.['response-content-disposition'],
@@ -65,24 +65,25 @@ export class S3StorageBucket implements IStorageBucket {
     }
 
     async downloadFile(
+        bucketName: string,
         objectName: string,
         destinationPath: string,
     ): Promise<void> {
-        const command = new GetObjectCommand({
-            Bucket: this.bucketName,
-            Key: objectName,
-        });
-        const response = await this.clients.internal.send(command);
-        if (response.Body instanceof Readable) {
-            await pipeline(response.Body, createWriteStream(destinationPath));
-        } else {
-            throw new TypeError('S3 body is not a readable stream');
-        }
+        // We reuse S3StorageBucket logic here but create a transient instance
+        const bucket = new S3StorageBucket(
+            bucketName,
+            this.clients,
+            this.authService,
+        );
+        return bucket.downloadFile(objectName, destinationPath);
     }
 
-    async getFileStream(objectName: string): Promise<Readable> {
+    async getFileStream(
+        bucketName: string,
+        objectName: string,
+    ): Promise<Readable> {
         const command = new GetObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: objectName,
         });
         const response = await this.clients.internal.send(command);
@@ -92,13 +93,13 @@ export class S3StorageBucket implements IStorageBucket {
         throw new TypeError('S3 body is not a readable stream');
     }
 
-    async listFiles(): Promise<StorageItem[]> {
+    async listFiles(bucketName: string): Promise<StorageItem[]> {
         const command = new ListObjectsV2Command({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
         });
         const response = await this.clients.internal.send(command);
         return (
-            response.Contents?.map((item: _Object) => ({
+            response.Contents?.map((item) => ({
                 name: item.Key ?? '',
                 lastModified: item.LastModified ?? new Date(),
                 etag: item.ETag ?? '',
@@ -108,10 +109,11 @@ export class S3StorageBucket implements IStorageBucket {
     }
 
     async getFileInfo(
+        bucketName: string,
         objectName: string,
     ): Promise<StorageItemStat | undefined> {
         const command = new HeadObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: objectName,
         });
         try {
@@ -136,51 +138,33 @@ export class S3StorageBucket implements IStorageBucket {
     }
 
     async uploadFile(
+        bucketName: string,
         objectName: string,
         filePath: string,
         metaData?: Record<string, string>,
     ): Promise<void> {
-        const command = new PutObjectCommand({
-            Bucket: this.bucketName,
-            Key: objectName,
-            Body: createReadStream(filePath),
-            Metadata: metaData,
-        });
-        await this.clients.internal.send(command);
+        const bucket = new S3StorageBucket(
+            bucketName,
+            this.clients,
+            this.authService,
+        );
+        return bucket.uploadFile(objectName, filePath, metaData);
     }
 
-    async deleteFile(objectName: string): Promise<void> {
+    async deleteFile(bucketName: string, objectName: string): Promise<void> {
         const command = new DeleteObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: objectName,
         });
         await this.clients.internal.send(command);
     }
 
-    async getSystemMetrics(): Promise<StorageSystemMetrics> {
-        if (!this.metricsService) {
-            return {
-                usedBytes: 0,
-                totalBytes: 0,
-                usedInodes: 0,
-                totalInodes: 0,
-            };
-        }
-        const raw = await this.metricsService.getSystemMetrics();
-        const total = raw.seaweedfs_master_disk_total_bytes[0]?.value ?? 0;
-        const free = raw.seaweedfs_master_disk_free_bytes[0]?.value ?? 0;
-
-        return {
-            usedBytes: total - free,
-            totalBytes: total,
-            usedInodes: 0,
-            totalInodes: 0,
-        };
-    }
-
-    async getTags(objectName: string): Promise<Record<string, string>> {
+    async getTags(
+        bucketName: string,
+        objectName: string,
+    ): Promise<Record<string, string>> {
         const command = new GetObjectTaggingCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: objectName,
         });
         const response = await this.clients.internal.send(command);
@@ -196,11 +180,12 @@ export class S3StorageBucket implements IStorageBucket {
     }
 
     async addTags(
+        bucketName: string,
         objectName: string,
         tags: Record<string, string>,
     ): Promise<void> {
         const command = new PutObjectTaggingCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: objectName,
             Tagging: {
                 TagSet: Object.entries(tags).map(([key, value]) => ({
@@ -212,12 +197,22 @@ export class S3StorageBucket implements IStorageBucket {
         await this.clients.internal.send(command);
     }
 
-    async removeTags(objectName: string): Promise<void> {
+    async removeTags(bucketName: string, objectName: string): Promise<void> {
         const command = new DeleteObjectTaggingCommand({
-            Bucket: this.bucketName,
+            Bucket: bucketName,
             Key: objectName,
         });
         await this.clients.internal.send(command);
+    }
+
+    async getSystemMetrics(): Promise<StorageSystemMetrics> {
+        const bucket = new S3StorageBucket(
+            'unused',
+            this.clients,
+            this.authService,
+            this.metricsService,
+        );
+        return bucket.getSystemMetrics();
     }
 
     async generateTemporaryCredential(

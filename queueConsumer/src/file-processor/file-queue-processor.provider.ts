@@ -58,7 +58,7 @@ export class FileQueueProcessorProvider {
     }
 
     @Process({ name: 'processS3File', concurrency: 1 })
-    async processMinioFile(job: Job<{ queueUuid: string }>): Promise<void> {
+    async processS3File(job: Job<{ queueUuid: string }>): Promise<void> {
         logger.debug(`Processing S3 File Job: ${job.data.queueUuid}`);
         const queueItem = await this.queueRepo.findOneOrFail({
             where: { uuid: job.data.queueUuid },
@@ -68,7 +68,7 @@ export class FileQueueProcessorProvider {
     }
 
     @Process({ name: 'extractHashFromS3' })
-    async extractHashFromMinio(job: Job<{ fileUuid: string }>): Promise<void> {
+    async extractHashFromS3(job: Job<{ fileUuid: string }>): Promise<void> {
         const { fileUuid } = job.data;
         logger.debug(`Extracting hash for file ${fileUuid}`);
 
@@ -82,7 +82,7 @@ export class FileQueueProcessorProvider {
 
         try {
             const stat = await this.dataStorage.getFileInfo(file.uuid);
-            // ETag is often surrounded by quotes in S3/Minio, e.g. "5b3...c6"
+            // ETag is often surrounded by quotes in S3, e.g. "5b3...c6"
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             let hash = stat?.etag?.replaceAll('"', '');
 

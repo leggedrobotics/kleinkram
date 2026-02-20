@@ -9,6 +9,7 @@ import { S3StorageBucket } from './s3-storage-bucket';
 import { StorageAuthService } from './storage-auth.service';
 import { S3ClientContainer, S3ClientFactory } from './storage-config.factory';
 import { StorageMetricsService } from './storage-metrics.service';
+import { StorageService } from './storage.service';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { StorageMetricsService } from './storage-metrics.service';
         S3ClientFactory,
         StorageMetricsService,
         StorageAuthService,
+        StorageService,
         {
             provide: 'DataStorageBucket',
             useFactory: (
@@ -66,6 +68,7 @@ import { StorageMetricsService } from './storage-metrics.service';
         'DataStorageBucket',
         'ArtifactStorageBucket',
         'DbDumpStorageBucket',
+        StorageService,
     ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

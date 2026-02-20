@@ -48,7 +48,7 @@ export class FoxgloveController {
         response.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
         response.header('Access-Control-Allow-Credentials', 'true');
 
-        // 302 Redirect to MinIO/S3
+        // 302 Redirect to S3
         response.redirect(resolvedFileUrl);
     }
 }

@@ -9,7 +9,7 @@ import { ContainerLimits, DockerDaemon } from './docker-daemon.service';
 
 /**
  * Service for handling artifact uploads after action completion.
- * Encapsulates the artifact upload container logic and MinIO path management.
+ * Encapsulates the artifact upload container logic and s3 path management.
  */
 @Injectable()
 export class ArtifactService {

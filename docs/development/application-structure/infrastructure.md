@@ -4,9 +4,9 @@ The application relies on several infrastructure services running alongside the 
 
 ## Storage & Caching
 
-### MinIO (Object Storage)
+### SeaweedFS (Object Storage)
 
-MinIO is a high-performance object storage server compatible with the Amazon S3 API. It is used to store unstructured data such as mission files (`.bag`, `.mcap`) and artifacts.
+SeaweedFS is a high-performance distributed storage system for blobs, objects, files, and data lake, compatible with the Amazon S3 API. It is used to store unstructured data such as mission files (`.bag`, `.mcap`) and artifacts.
 
 **Key Buckets:**
 
@@ -18,12 +18,13 @@ MinIO is a high-performance object storage server compatible with the Amazon S3 
 - `dbdump`: Stores scheduled PostgreSQL database dumps.
     - Filenames follow the pattern `backup-<timestamp>.sql`.
 
-The API server should never download or upload files directly to avoid performance bottlenecks. Instead, it issues presigned URLs or temporary credentials for clients to interact with MinIO directly.
+The API server should never download or upload files directly to avoid performance bottlenecks. Instead, it issues presigned URLs or temporary credentials for clients to interact with SeaweedFS directly.
 
 **Development Access:**
-MinIO Console: `http://localhost:9001` SeaweedFS (Object Storage)
+Dashboard: `http://localhost:9333`
+S3 API: `http://localhost:9000`
 
-Default Credentials: `minioadmin` / `minioadmin`
+Default Credentials: `seaweed` / `seaweed` (configured via environment)
 
 ### Redis (Queue & Cache)
 

@@ -444,12 +444,12 @@ export class FileController {
         return this.fileService.exists(uuid);
     }
 
-    @Post('resetMinioTags')
+    @Post('resetS3Tags')
     @AdminOnly()
     @ApiOkResponse({
-        description: 'Resetting Minio tags completed',
+        description: 'Resetting S3 tags completed',
     })
-    async resetMinioTags(): Promise<void> {
+    async resetS3Tags(): Promise<void> {
         logger.debug('Resetting S3 tags');
         await this.fileService.renameTags();
         logger.debug('Resetting S3 tags done');

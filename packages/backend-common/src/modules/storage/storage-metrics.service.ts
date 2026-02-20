@@ -1,7 +1,5 @@
-import environment from '@backend-common/environment';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios from 'axios';
-import jwt from 'jsonwebtoken';
 
 // 1. Define interfaces to describe the shape of the data
 interface MetricPoint {
@@ -13,18 +11,11 @@ type PrometheusMetrics = Record<string, MetricPoint[]>;
 
 @Injectable()
 export class StorageMetricsService {
-    private readonly METRICS_ENDPOINT =
-        'http://seaweedfs:9000/minio/metrics/v3/system/drive';
-
-    private readonly EXPIRATION_SECONDS = 24 * 60 * 60; // 24 hours
+    private readonly METRICS_ENDPOINT = 'http://seaweedfs:9333/metrics';
 
     async getSystemMetrics(): Promise<PrometheusMetrics> {
-        const token = this.generateMetricToken();
-
         try {
-            const response = await axios.get(this.METRICS_ENDPOINT, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await axios.get(this.METRICS_ENDPOINT);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             return this.parsePrometheusMetrics(response.data);
         } catch (error) {
@@ -33,17 +24,6 @@ export class StorageMetricsService {
                 { cause: error as Error },
             );
         }
-    }
-
-    private generateMetricToken(): string {
-        const payload = {
-            exp: Math.floor(Date.now() / 1000) + this.EXPIRATION_SECONDS,
-            sub: environment.S3_ACCESS_KEY,
-            iss: 'prometheus',
-        };
-        return jwt.sign(payload, environment.S3_SECRET_KEY, {
-            algorithm: 'HS512',
-        });
     }
 
     private parsePrometheusMetrics(metricsText: string): PrometheusMetrics {

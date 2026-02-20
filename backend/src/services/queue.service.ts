@@ -136,7 +136,7 @@ export class QueueService implements OnModuleInit {
 
         for (const file of files) {
             try {
-                await this.fileQueue.add('extractHashFromMinio', {
+                await this.fileQueue.add('extractHashFromS3', {
                     fileUuid: file.uuid,
                 });
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -175,7 +175,7 @@ export class QueueService implements OnModuleInit {
 
                     displayName: file.filename,
                     state: QueueState.AWAITING_UPLOAD,
-                    location: FileLocation.MINIO,
+                    location: FileLocation.S3,
                     mission: file.mission,
                     creator: actor,
                 } as IngestionJobEntity),
@@ -201,10 +201,10 @@ export class QueueService implements OnModuleInit {
         const fileInfo = await this.dataStorage
             .getFileInfo(file.uuid)
             .catch((): void => {
-                throw new ConflictException('File not found in Minio');
+                throw new ConflictException('File not found in storage');
             });
 
-        if (!fileInfo) throw new Error('File not found in Minio');
+        if (!fileInfo) throw new Error('File not found in storage');
 
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
@@ -214,7 +214,7 @@ export class QueueService implements OnModuleInit {
         job.state = QueueState.AWAITING_PROCESSING;
         await this.queueRepository.save(job);
 
-        await this.fileQueue.add('processMinioFile', {
+        await this.fileQueue.add('processS3File', {
             queueUuid: job.uuid,
             md5,
         });

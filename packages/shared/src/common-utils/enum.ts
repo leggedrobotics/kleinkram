@@ -22,7 +22,6 @@ export enum FileOrigin {
 
 export enum FileLocation {
     DRIVE = 'DRIVE',
-    MINIO = 'MINIO',
     S3 = 'S3',
 }
 

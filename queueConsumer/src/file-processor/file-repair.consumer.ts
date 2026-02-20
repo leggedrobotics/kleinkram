@@ -48,7 +48,7 @@ export class FileRepairProcessor {
                     60 * 60,
                 );
 
-            // Stream directly from MinIO
+            // Stream directly from s3
             await this.rosBagMetadataService.extractFromUrl(
                 presignedUrl,
                 fileEntity,

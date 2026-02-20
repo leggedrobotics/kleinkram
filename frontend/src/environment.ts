@@ -110,4 +110,10 @@ export default {
             import.meta.env.VITE_DOCS_URL ?? 'https://kleinkram.io/docs',
         );
     },
+    get S3_ENDPOINT(): string {
+        return asString(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            import.meta.env.VITE_S3_ENDPOINT ?? '',
+        );
+    },
 };

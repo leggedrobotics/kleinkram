@@ -54,10 +54,10 @@ DEFAULT_LOCAL_API = "http://localhost:3000"
 DEFAULT_LOCAL_S3 = "http://localhost:9000"
 
 DEFAULT_DEV_API = "https://api.datasets.dev.leggedrobotics.com"
-DEFAULT_DEV_S3 = "https://minio.datasets.dev.leggedrobotics.com"
+DEFAULT_DEV_S3 = "https://s3.datasets.dev.leggedrobotics.com"
 
 DEFAULT_PROD_API = "https://api.datasets.leggedrobotics.com"
-DEFAULT_PROD_S3 = "https://minio.datasets.leggedrobotics.com"
+DEFAULT_PROD_S3 = "https://s3.datasets.leggedrobotics.com"
 
 
 DEFAULT_ENDPOINTS = {

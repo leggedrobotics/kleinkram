@@ -62,7 +62,7 @@ export class FileIngestionService {
                         fileData,
                     );
 
-                    await this.ensureFileIsInMinio(
+                    await this.ensureFileIsInS3(
                         queueItem,
                         primaryFile,
                         fileData.filePath,
@@ -214,7 +214,7 @@ export class FileIngestionService {
         return await this.fileRepo.save(entity);
     }
 
-    private async ensureFileIsInMinio(
+    private async ensureFileIsInS3(
         queueItem: IngestionJobEntity,
         file: FileEntity,
         filePath: string,
