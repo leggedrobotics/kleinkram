@@ -162,7 +162,7 @@ const rightsLabel = (rights: AccessGroupRights): string => {
 
 const columns: QTableColumn<ApiKeyMetadataDto>[] = [
     {
-        name: 'keyType',
+        name: 'key_type',
         required: true,
         label: 'Type',
         align: 'left',

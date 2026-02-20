@@ -116,7 +116,14 @@ export class UserController {
         @AddUser() authHeader: AuthHeader,
         @QuerySkip('skip') skip: number,
         @QueryTake('take') take: number,
-        @QuerySortBy('sortBy') sortBy: string,
+        @QuerySortBy('sortBy', 'Sort by field', [
+            'uuid',
+            'key_type',
+            'rights',
+            'deletedAt',
+            'createdAt',
+        ])
+        sortBy: string,
         @QuerySortDirection('sortOrder') sortOrder: string,
     ): Promise<ApiKeysDto> {
         return this.userService.getApiKeysForUser(

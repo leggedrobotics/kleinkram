@@ -455,6 +455,7 @@ export const QueryDate = (
 export const QuerySortBy = (
     parameterName: string,
     parameterDescription?: string,
+    allowedFields?: string[],
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
@@ -469,7 +470,7 @@ export const QuerySortBy = (
             }
 
             // check if value is a valid field
-            const fields = [
+            const fields = allowedFields ?? [
                 'uuid',
                 'name',
                 'description',
@@ -485,9 +486,6 @@ export const QuerySortBy = (
                 'file.filename',
                 'state',
                 'state_cause',
-                'key_type',
-                'rights',
-                'deletedAt',
             ];
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
