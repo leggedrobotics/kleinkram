@@ -77,6 +77,7 @@ kleinkram.upload(
 )
 
 # Download files
+# Note: The destination directory (`dest`) must already exist before downloading.
 kleinkram.download(
     project_name="my-project",
     mission_name="my-mission",
