@@ -127,7 +127,7 @@ export class FileIngestionService {
 
         // Start Tagging in the Background
         const taggingPromise = this.storageService
-            .addTags(env.MINIO_DATA_BUCKET_NAME, queueItem.identifier, {
+            .addTags(env.S3_DATA_BUCKET_NAME, queueItem.identifier, {
                 missionUuid: queueItem.mission?.uuid ?? '',
                 projectUuid: queueItem.mission?.project?.uuid ?? '',
                 filename: source.filename,
@@ -221,7 +221,7 @@ export class FileIngestionService {
     ): Promise<void> {
         if (queueItem.location === FileLocation.DRIVE) {
             await this.storageService.uploadFile(
-                env.MINIO_DATA_BUCKET_NAME,
+                env.S3_DATA_BUCKET_NAME,
                 file.uuid,
                 filePath,
             );

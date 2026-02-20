@@ -416,7 +416,7 @@ export class ActionService {
         currentUrl: string,
         action: ActionEntity,
     ): Promise<string> {
-        const bucketName = environment.MINIO_ARTIFACTS_BUCKET_NAME;
+        const bucketName = environment.S3_ARTIFACTS_BUCKET_NAME;
 
         if (currentUrl && !currentUrl.includes(bucketName)) {
             return currentUrl;

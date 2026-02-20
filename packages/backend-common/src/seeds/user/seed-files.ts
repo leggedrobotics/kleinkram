@@ -109,16 +109,16 @@ export const seedFiles = async (
     // Minio Client Setup
     const minioClient = new Minio.Client({
         endPoint:
-            process.env.MINIO_ENDPOINT_INTERNAL ??
-            process.env.MINIO_ENDPOINT ??
+            process.env.S3_ENDPOINT_INTERNAL ??
+            process.env.S3_ENDPOINT ??
             'minio',
         port: 9000,
         useSSL: false,
-        accessKey: process.env.MINIO_ACCESS_KEY ?? '',
-        secretKey: process.env.MINIO_SECRET_KEY ?? '',
+        accessKey: process.env.S3_ACCESS_KEY ?? '',
+        secretKey: process.env.S3_SECRET_KEY ?? '',
     });
 
-    const bucketName = process.env.MINIO_DATA_BUCKET_NAME ?? 'data';
+    const bucketName = process.env.S3_DATA_BUCKET_NAME ?? 'data';
     const dataDirectory = '/app/cli/tests/data';
 
     if (fs.existsSync(dataDirectory)) {

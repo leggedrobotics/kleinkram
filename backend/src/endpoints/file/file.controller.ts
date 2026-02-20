@@ -451,9 +451,9 @@ export class FileController {
         description: 'Resetting Minio tags completed',
     })
     async resetMinioTags(): Promise<void> {
-        logger.debug('Resetting Minio tags');
-        await this.fileService.renameTags(env.MINIO_DATA_BUCKET_NAME);
-        logger.debug('Resetting Minio tags done');
+        logger.debug('Resetting S3 tags');
+        await this.fileService.renameTags(env.S3_DATA_BUCKET_NAME);
+        logger.debug('Resetting S3 tags done');
     }
 
     @Post('recomputeFileSizes')

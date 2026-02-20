@@ -120,30 +120,30 @@ export default {
         return asNumber('SERVER_PORT');
     },
 
-    get MINIO_ACCESS_KEY(): string {
-        return asString('MINIO_ACCESS_KEY');
+    get S3_ACCESS_KEY(): string {
+        return asString('S3_ACCESS_KEY');
     },
 
-    get MINIO_SECRET_KEY(): string {
-        return asString('MINIO_SECRET_KEY');
+    get S3_SECRET_KEY(): string {
+        return asString('S3_SECRET_KEY');
     },
 
-    get MINIO_DATA_BUCKET_NAME(): string {
-        return asString('MINIO_DATA_BUCKET_NAME');
+    get S3_DATA_BUCKET_NAME(): string {
+        return asString('S3_DATA_BUCKET_NAME');
     },
-    get MINIO_DB_BUCKET_NAME(): string {
-        return asString('MINIO_DB_BUCKET_NAME');
+    get S3_DB_BUCKET_NAME(): string {
+        return asString('S3_DB_BUCKET_NAME');
     },
-    get MINIO_ENDPOINT(): string {
-        return asString('MINIO_ENDPOINT');
-    },
-
-    get MINIO_USER(): string {
-        return asString('MINIO_USER');
+    get S3_ENDPOINT(): string {
+        return asString('S3_ENDPOINT');
     },
 
-    get MINIO_PASSWORD(): string {
-        return asString('MINIO_PASSWORD');
+    get S3_USER(): string {
+        return asString('S3_USER');
+    },
+
+    get S3_PASSWORD(): string {
+        return asString('S3_PASSWORD');
     },
 
     get GOOGLE_CLIENT_ID(): string | undefined {
@@ -181,8 +181,8 @@ export default {
         return asString('ARTIFACTS_UPLOADER_IMAGE');
     },
 
-    get MINIO_ARTIFACTS_BUCKET_NAME(): string {
-        return asString('MINIO_ARTIFACTS_BUCKET_NAME');
+    get S3_ARTIFACTS_BUCKET_NAME(): string {
+        return asString('S3_ARTIFACTS_BUCKET_NAME');
     },
 
     get DOCS_URL(): string {

@@ -21,7 +21,8 @@ MinIO is a high-performance object storage server compatible with the Amazon S3 
 The API server should never download or upload files directly to avoid performance bottlenecks. Instead, it issues presigned URLs or temporary credentials for clients to interact with MinIO directly.
 
 **Development Access:**
-MinIO Console: `http://localhost:9001`
+MinIO Console: `http://localhost:9001` SeaweedFS (Object Storage)
+
 Default Credentials: `minioadmin` / `minioadmin`
 
 ### Redis (Queue & Cache)

@@ -5,7 +5,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StorageAuthService } from './storage-auth.service';
-import { MinioClientFactory } from './storage-config.factory';
+import { S3ClientFactory } from './storage-config.factory';
 import { StorageMetricsService } from './storage-metrics.service';
 import { StorageService } from './storage.service';
 
@@ -16,7 +16,7 @@ import { StorageService } from './storage.service';
     providers: [
         FileAuditService,
         StorageService,
-        MinioClientFactory,
+        S3ClientFactory,
         StorageMetricsService,
         StorageAuthService,
     ],

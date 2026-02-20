@@ -11,7 +11,7 @@ import { Repository } from 'typeorm';
 import logger from '../logger';
 import { FileIngestionService } from './file-ingestion.service';
 import { GoogleDriveStrategy } from './strategies/google-drive.strategy';
-import { MinioStrategy } from './strategies/minio.strategy';
+import { S3Strategy } from './strategies/s3.strategy';
 
 import { createHash } from 'node:crypto';
 
@@ -26,7 +26,7 @@ export class FileQueueProcessorProvider {
         private readonly storageService: StorageService,
         private readonly fileIngestionService: FileIngestionService,
         private readonly driveStrategy: GoogleDriveStrategy,
-        private readonly minioStrategy: MinioStrategy,
+        private readonly s3Strategy: S3Strategy,
         @InjectQueue('file-queue') private fileQueue: Queue,
     ) {}
 
@@ -57,9 +57,9 @@ export class FileQueueProcessorProvider {
         return this.runPipeline(queueItem);
     }
 
-    @Process({ name: 'processMinioFile', concurrency: 1 })
+    @Process({ name: 'processS3File', concurrency: 1 })
     async processMinioFile(job: Job<{ queueUuid: string }>): Promise<void> {
-        logger.debug(`Processing Minio File Job: ${job.data.queueUuid}`);
+        logger.debug(`Processing S3 File Job: ${job.data.queueUuid}`);
         const queueItem = await this.queueRepo.findOneOrFail({
             where: { uuid: job.data.queueUuid },
             relations: ['mission', 'creator', 'mission.project'],
@@ -67,7 +67,7 @@ export class FileQueueProcessorProvider {
         return this.runPipeline(queueItem);
     }
 
-    @Process({ name: 'extractHashFromMinio' })
+    @Process({ name: 'extractHashFromS3' })
     async extractHashFromMinio(job: Job<{ fileUuid: string }>): Promise<void> {
         const { fileUuid } = job.data;
         logger.debug(`Extracting hash for file ${fileUuid}`);
@@ -82,7 +82,7 @@ export class FileQueueProcessorProvider {
 
         try {
             const stat = await this.storageService.getFileInfo(
-                env.MINIO_DATA_BUCKET_NAME,
+                env.S3_DATA_BUCKET_NAME,
                 file.uuid,
             );
             // ETag is often surrounded by quotes in S3/Minio, e.g. "5b3...c6"
@@ -94,7 +94,7 @@ export class FileQueueProcessorProvider {
 
             if (hash && ismd5) {
                 logger.debug(
-                    `Found MD5 hash in Minio metadata for ${fileUuid}: ${hash}`,
+                    `Found MD5 hash in metadata for ${fileUuid}: ${hash}`,
                 );
                 // Convert Hex MD5 to Base64 to match CLI/Frontend expectation
                 hash = Buffer.from(hash, 'hex').toString('base64');
@@ -103,7 +103,7 @@ export class FileQueueProcessorProvider {
                     `Calculating hash for ${fileUuid} (ETag: ${String(hash)})`,
                 );
                 const stream = await this.storageService.getFileStream(
-                    env.MINIO_DATA_BUCKET_NAME,
+                    env.S3_DATA_BUCKET_NAME,
                     file.uuid,
                 );
                 hash = await this.calculateHash(stream);
@@ -183,7 +183,7 @@ export class FileQueueProcessorProvider {
         const strategy =
             queueItem.location === FileLocation.DRIVE
                 ? this.driveStrategy
-                : this.minioStrategy;
+                : this.s3Strategy;
 
         await this.fileIngestionService.processJob(queueItem, strategy);
     }

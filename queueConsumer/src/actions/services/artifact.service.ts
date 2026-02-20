@@ -58,7 +58,7 @@ export class ArtifactService {
 
         await this.dockerDaemon.removeArtifactVolume(runnerId, actionUuid);
 
-        const bucketName = environment.MINIO_ARTIFACTS_BUCKET_NAME;
+        const bucketName = environment.S3_ARTIFACTS_BUCKET_NAME;
         const filename = `${actionUuid}.tar.gz`;
         const artifactPath = `/${bucketName}/${filename}`;
 

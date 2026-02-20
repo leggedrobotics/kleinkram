@@ -11,7 +11,7 @@ import { Stream } from 'node:stream';
 @Injectable()
 export class StorageService {
     constructor(
-        @Inject('MINIO_CLIENTS')
+        @Inject('S3_CLIENTS')
         private clients: { external: Client; internal: Client },
         private readonly metricsService: StorageMetricsService,
         private readonly authService: StorageAuthService,

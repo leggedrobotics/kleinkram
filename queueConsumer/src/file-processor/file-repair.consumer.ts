@@ -43,7 +43,7 @@ export class FileRepairProcessor {
             // Get an internal presigned URL (valid for 60 minutes)
             const presignedUrl =
                 await this.storageService.getInternalPresignedDownloadUrl(
-                    env.MINIO_DATA_BUCKET_NAME,
+                    env.S3_DATA_BUCKET_NAME,
                     fileUuid,
                     60 * 60,
                 );

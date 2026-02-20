@@ -11,7 +11,7 @@ environment variables are in the `common` folder.
 
 ## Structure
 
-In `src/entities` are the entities. In `src/helper` are helper function for Google Drive handling and Minio handling.
+In `src/entities` are the entities. In `src/helper` are helper function for Google Drive handling and S3 handling.
 
 In `src/files/fileQueueProcessor.provider.ts` is the logic for Bag -> MCap conversion.
 In `src/actions/fileQueueProcessor.provider.ts` is the logic for the actions.

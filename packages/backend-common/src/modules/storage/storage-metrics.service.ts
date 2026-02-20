@@ -38,10 +38,10 @@ export class StorageMetricsService {
     private generateMetricToken(): string {
         const payload = {
             exp: Math.floor(Date.now() / 1000) + this.EXPIRATION_SECONDS,
-            sub: environment.MINIO_ACCESS_KEY,
+            sub: environment.S3_ACCESS_KEY,
             iss: 'prometheus',
         };
-        return jwt.sign(payload, environment.MINIO_SECRET_KEY, {
+        return jwt.sign(payload, environment.S3_SECRET_KEY, {
             algorithm: 'HS512',
         });
     }

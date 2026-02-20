@@ -148,14 +148,14 @@ export class RosBagHandler implements FileHandler {
             await this.jobRepo.save(job);
 
             await this.storageService.uploadFile(
-                env.MINIO_DATA_BUCKET_NAME,
+                env.S3_DATA_BUCKET_NAME,
                 savedMcapEntity.uuid,
                 mcapPath,
             );
 
             // Add Tags logic...
             await this.storageService
-                .addTags(env.MINIO_DATA_BUCKET_NAME, savedMcapEntity.uuid, {
+                .addTags(env.S3_DATA_BUCKET_NAME, savedMcapEntity.uuid, {
                     missionUuid: job.mission?.uuid ?? '',
                     filename: mcapFilename,
                 })

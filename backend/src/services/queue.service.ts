@@ -197,7 +197,7 @@ export class QueueService implements OnModuleInit {
         });
 
         const fileInfo = await this.storageService
-            .getFileInfo(env.MINIO_DATA_BUCKET_NAME, file.uuid)
+            .getFileInfo(env.S3_DATA_BUCKET_NAME, file.uuid)
             .catch((): void => {
                 throw new ConflictException('File not found in Minio');
             });
@@ -317,7 +317,7 @@ export class QueueService implements OnModuleInit {
 
         if (file) {
             await this.storageService
-                .deleteFile(env.MINIO_DATA_BUCKET_NAME, file.uuid)
+                .deleteFile(env.S3_DATA_BUCKET_NAME, file.uuid)
                 .catch(logger.log);
             await this.fileRepository.remove(file);
 
@@ -330,7 +330,7 @@ export class QueueService implements OnModuleInit {
                 });
                 if (mcap) {
                     await this.storageService
-                        .deleteFile(env.MINIO_DATA_BUCKET_NAME, mcap.uuid)
+                        .deleteFile(env.S3_DATA_BUCKET_NAME, mcap.uuid)
                         .catch(logger.log);
                     await this.fileRepository.remove(mcap);
                 }

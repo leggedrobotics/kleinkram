@@ -1,32 +1,32 @@
 import environment from '@backend-common/environment';
 import { Client } from 'minio';
 
-export interface MinioClientContainer {
+export interface S3ClientContainer {
     external: Client;
     internal: Client;
 }
 
-export const MinioClientFactory = {
-    provide: 'MINIO_CLIENTS',
-    useFactory: (): MinioClientContainer => {
+export const S3ClientFactory = {
+    provide: 'S3_CLIENTS',
+    useFactory: (): S3ClientContainer => {
         const baseConfig = {
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            endPoint: environment.MINIO_ENDPOINT ?? 'minio',
-            accessKey: environment.MINIO_ACCESS_KEY,
-            secretKey: environment.MINIO_SECRET_KEY,
+            endPoint: environment.S3_ENDPOINT ?? 'seaweedfs',
+            accessKey: environment.S3_ACCESS_KEY,
+            secretKey: environment.S3_SECRET_KEY,
             region: 'just-a-placeholder', // not used but required by the lib
         };
 
         return {
             external: new Client({
                 ...baseConfig,
-                endPoint: environment.MINIO_ENDPOINT,
+                endPoint: environment.S3_ENDPOINT,
                 useSSL: !environment.DEV,
                 port: environment.DEV ? 9000 : 443,
             }),
             internal: new Client({
                 ...baseConfig,
-                endPoint: 'minio', // internal network address
+                endPoint: 'seaweedfs', // internal network address
                 useSSL: false,
                 port: 9000,
             }),

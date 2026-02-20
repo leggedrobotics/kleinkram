@@ -43,7 +43,7 @@ export class DBDumper {
             await execAsync(command);
 
             await this.storageService.uploadFile(
-                env.MINIO_DB_BUCKET_NAME,
+                env.S3_DB_BUCKET_NAME,
                 dumpFile, // object name (in bucket)
                 dumpFile, // file path (local system)
             );

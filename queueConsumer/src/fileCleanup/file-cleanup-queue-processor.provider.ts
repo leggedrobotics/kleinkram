@@ -141,7 +141,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
                     // REFACTORED: Use StorageService to get stream
                     const datastream = await this.storageService.getFileStream(
-                        env.MINIO_DATA_BUCKET_NAME,
+                        env.S3_DATA_BUCKET_NAME,
                         `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
                     );
                     await new Promise((resolve, reject) => {

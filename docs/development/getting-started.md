@@ -76,7 +76,7 @@ In principle the setup works similar to running the project locally, however, th
 
 3. You can now open the projects:
     - frontend at `http://localhost:8003`.
-    - minio console at `http://localhost:9001`.
+    - seaweedfs console at `http://localhost:9333`.
     - documentation at `http://localhost:4000`.
 
     ::: warning

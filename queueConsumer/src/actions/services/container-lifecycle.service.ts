@@ -72,7 +72,7 @@ export class ContainerLifecycleService {
             KLEINKRAM_MISSION_UUID: action.mission.uuid,
             KLEINKRAM_ACTION_UUID: action.uuid,
             KLEINKRAM_API_ENDPOINT: environment.BACKEND_URL,
-            KLEINKRAM_S3_ENDPOINT: `https://${environment.MINIO_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+            KLEINKRAM_S3_ENDPOINT: `https://${environment.S3_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
         };
 
         const labels: Record<string, string> = {

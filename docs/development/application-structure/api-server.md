@@ -10,7 +10,7 @@ Read the [NestJS Documentation](https://docs.nestjs.com/) and the [TypeORM Docum
 It has a direct connection to the Postgres database. It also has a direct connection to the Redis database to add items
 to the queue.
 
-In its environment variables it has the keys to access Minio and can thus list and move files in Minio. It should never
+In its environment variables it has the keys to access S3 (SeaweedFS) and can thus list and move files in it. It should never
 download or upload files directly.
 
 ## Structure
@@ -45,7 +45,7 @@ Are we using this? Should we?
 
 Some functions were extracted into services. They are currently in the root of the `src` directory. Logger & Tracing
 handle the respective tasks.
-The minioHelper is a helper function to interact with the Minio storage.
+The StorageService is a helper provider to interact with the S3 storage.
 
 ## Development
 
@@ -53,7 +53,7 @@ The API should remain stateless (besides the database connections). This will al
 API.
 
 The API should never handle files directly. These files can be to large and slow down the API. Instead, the API should
-use issue temporary credential for Minio so that files are directly uploaded to & downloaded from Minio.
+use issue temporary credential for S3 so that files are directly uploaded to & downloaded from S3.
 
 Similarly, the API should never do heavy processing. Tasks that require this should be offloaded to the QueingService.
 The QueingService will then schedule the task.

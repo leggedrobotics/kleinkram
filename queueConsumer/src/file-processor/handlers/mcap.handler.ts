@@ -26,7 +26,7 @@ export class McapHandler implements FileHandler {
         try {
             const presignedUrl =
                 await this.storageService.getInternalPresignedDownloadUrl(
-                    env.MINIO_DATA_BUCKET_NAME,
+                    env.S3_DATA_BUCKET_NAME,
                     primaryFile.uuid,
                     15 * 60,
                 );

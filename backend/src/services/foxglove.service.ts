@@ -94,7 +94,7 @@ export class FoxgloveService {
             throw new BadRequestException('Invalid signature');
 
         return await this.storageService.getPresignedDownloadUrl(
-            environment.MINIO_DATA_BUCKET_NAME,
+            environment.S3_DATA_BUCKET_NAME,
             file.uuid,
             3600,
             {

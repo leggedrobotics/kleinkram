@@ -17,9 +17,9 @@ def upload_to_minio(file_path, bucket_name, object_name):
     # Initialize MinIO client
     # Ensure these ENVs are passed to the container
     client = Minio(
-        endpoint=os.getenv("MINIO_ENDPOINT", "minio:9000"),
-        access_key=os.getenv("MINIO_ACCESS_KEY"),
-        secret_key=os.getenv("MINIO_SECRET_KEY"),
+        endpoint=os.getenv("S3_ENDPOINT", "seaweedfs:9000"),
+        access_key=os.getenv("S3_ACCESS_KEY"),
+        secret_key=os.getenv("S3_SECRET_KEY"),
         secure=False,  # Set to True if using HTTPS inside the network
     )
 
@@ -41,7 +41,7 @@ def upload_to_minio(file_path, bucket_name, object_name):
 if __name__ == "__main__":
     # Configuration
     SOURCE_DIR = "/out"
-    BUCKET_NAME = os.getenv("MINIO_ARTIFACTS_BUCKET_NAME", "action-artifacts")
+    BUCKET_NAME = os.getenv("S3_ARTIFACTS_BUCKET_NAME", "action-artifacts")
     ACTION_UUID = os.getenv("KLEINKRAM_ACTION_UUID")
 
     if not ACTION_UUID:

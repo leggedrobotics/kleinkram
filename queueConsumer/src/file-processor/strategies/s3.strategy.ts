@@ -7,7 +7,7 @@ import { Repository } from 'typeorm';
 import { FileSourceResult, FileSourceStrategy } from './file-source.interface';
 
 @Injectable()
-export class MinioStrategy implements FileSourceStrategy {
+export class S3Strategy implements FileSourceStrategy {
     constructor(
         private readonly storageService: StorageService,
         @InjectRepository(FileEntity)
@@ -25,7 +25,7 @@ export class MinioStrategy implements FileSourceStrategy {
         });
 
         const stream = await this.storageService.getFileStream(
-            env.MINIO_DATA_BUCKET_NAME,
+            env.S3_DATA_BUCKET_NAME,
             identifier,
         );
 

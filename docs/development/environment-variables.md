@@ -22,16 +22,16 @@ These URLs are used for communication between services and for generating links.
 
 Configuration for MinIO, which is used for S3-compatible object storage.
 
-| Variable                      | Description                                      | Default                                    |
-| :---------------------------- | :----------------------------------------------- | :----------------------------------------- |
-| `MINIO_USER`                  | The username for MinIO access.                   | `minioadmin`                               |
-| `MINIO_PASSWORD`              | The password for MinIO access.                   | `minioadmin`                               |
-| `MINIO_ACCESS_KEY`            | The access key for S3 clients.                   | `pMEKIOCnYJhmssiKZDGU`                     |
-| `MINIO_SECRET_KEY`            | The secret key for S3 clients.                   | `ECnXGyUR5ZrPsxeD5JEWxtI1CMZFMJ8kTJMMAQ5B` |
-| `MINIO_DATA_BUCKET_NAME`      | The bucket name for main data storage.           | `data`                                     |
-| `MINIO_DB_BUCKET_NAME`        | The bucket name for database dumps/backups.      | `dbdumps`                                  |
-| `MINIO_ARTIFACTS_BUCKET_NAME` | The bucket name for build artifacts.             | `artifacts`                                |
-| `MINIO_ENDPOINT`              | The hostname or IP address of the MinIO service. | `localhost`                                |
+| Variable                   | Description                                   | Default                                    |
+| :------------------------- | :-------------------------------------------- | :----------------------------------------- |
+| `S3_USER`                  | The username for S3 access.                   | `minioadmin`                               |
+| `S3_PASSWORD`              | The password for S3 access.                   | `minioadmin`                               |
+| `S3_ACCESS_KEY`            | The access key for S3 clients.                | `pMEKIOCnYJhmssiKZDGU`                     |
+| `S3_SECRET_KEY`            | The secret key for S3 clients.                | `ECnXGyUR5ZrPsxeD5JEWxtI1CMZFMJ8kTJMMAQ5B` |
+| `S3_DATA_BUCKET_NAME`      | The bucket name for main data storage.        | `data`                                     |
+| `S3_DB_BUCKET_NAME`        | The bucket name for database dumps/backups.   | `dbdumps`                                  |
+| `S3_ARTIFACTS_BUCKET_NAME` | The bucket name for build artifacts.          | `artifacts`                                |
+| `S3_ENDPOINT`              | The hostname or IP address of the S3 service. | `localhost`                                |
 
 ## Database Configuration
 

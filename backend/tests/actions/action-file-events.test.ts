@@ -156,14 +156,14 @@ describe('Action File Events', () => {
 
         // Upload file to MinIO to avoid 500 error during update (which tries to tag the object)
         const minioClient = new Minio.Client({
-            endPoint: environment.MINIO_ENDPOINT || 'localhost',
+            endPoint: environment.S3_ENDPOINT || 'localhost',
             port: 9000,
             useSSL: false,
-            accessKey: environment.MINIO_ACCESS_KEY,
-            secretKey: environment.MINIO_SECRET_KEY,
+            accessKey: environment.S3_ACCESS_KEY,
+            secretKey: environment.S3_SECRET_KEY,
         });
 
-        const bucketName = environment.MINIO_DATA_BUCKET_NAME;
+        const bucketName = environment.S3_DATA_BUCKET_NAME;
         // Bucket is created on container start
         await minioClient.putObject(
             bucketName,

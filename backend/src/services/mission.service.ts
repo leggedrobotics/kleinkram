@@ -442,7 +442,7 @@ export class MissionService {
             mission.files.map(async (file) =>
                 // REFACTORED: Use storage service
                 this.storageService.addTags(
-                    env.MINIO_DATA_BUCKET_NAME,
+                    env.S3_DATA_BUCKET_NAME,
                     file.uuid,
                     {
                         filename: file.filename,
@@ -515,7 +515,7 @@ export class MissionService {
             mission.files.map(async (f) => ({
                 filename: f.filename,
                 link: await this.storageService.getPresignedDownloadUrl(
-                    env.MINIO_DATA_BUCKET_NAME,
+                    env.S3_DATA_BUCKET_NAME,
                     f.uuid,
                     4 * 60 * 60,
                     {

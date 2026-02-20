@@ -24,7 +24,7 @@ The operational containers are again split into publicly accessible and non-publ
 
 - [frontend](./application-structure/frontend.md) - the web application written using Vue3 and Quasar
 - [api-server](./application-structure/api-server.md) - the backend application written using NestJS
-- [minio](application-structure/infrastructure.md#minio-object-storage) - the file storage
+- [seaweedfs](application-structure/infrastructure.md#seaweedfs-object-storage) - the file storage
 
 #### Private Network (Not Publicly Accessible)
 

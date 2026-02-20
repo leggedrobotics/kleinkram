@@ -80,13 +80,13 @@ services:
 
         environment:
             DEVBUILD: 'true'
-            MINIO_ENDPOINT_INTERNAL: 'minio'
+            S3_ENDPOINT_INTERNAL: 'seaweedfs'
             REDIS_HOST: redis
 
         depends_on:
             database:
                 condition: service_started
-            minio:
+            seaweedfs:
                 condition: service_healthy
             redis:
                 condition: service_started
@@ -127,34 +127,32 @@ services:
         volumes:
             - db_data:/var/lib/postgresql/data
 
-    minio:
-        image: minio/minio
+    seaweedfs:
+        image: chrislusf/seaweedfs:latest
 
-        container_name: kleinkram-minio
+        container_name: kleinkram-seaweedfs
+
+        command: server -dir=/data -s3 -s3.port=9000
 
         volumes:
-            - minio_data:/data
-            - ./docker/minio-entrypoint.sh:/docker-entrypoint.sh:ro
+            - seaweedfs_data:/data
+            - ./docker/seaweedfs-entrypoint.sh:/docker-entrypoint.sh:ro
 
         environment:
-            MINIO_ROOT_USER: ${MINIO_USER}
-            MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
-            MINIO_PROMETHEUS_AUTH_TYPE: 'public'
-            MINIO_DATA_BUCKET_NAME: ${MINIO_DATA_BUCKET_NAME}
-            MINIO_DB_BUCKET_NAME: ${MINIO_DB_BUCKET_NAME}
-            MINIO_ARTIFACTS_BUCKET_NAME: ${MINIO_ARTIFACTS_BUCKET_NAME}
-            MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-            MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+            S3_DATA_BUCKET_NAME: ${S3_DATA_BUCKET_NAME}
+            S3_DB_BUCKET_NAME: ${S3_DB_BUCKET_NAME}
+            S3_ARTIFACTS_BUCKET_NAME: ${S3_ARTIFACTS_BUCKET_NAME}
+            S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+            S3_SECRET_KEY: ${S3_SECRET_KEY}
 
         entrypoint: ['/docker-entrypoint.sh']
 
         ports:
             - '127.0.0.1:9000:9000'
-            - '127.0.0.1:9001:9001'
+            - '127.0.0.1:9333:9333'
 
         healthcheck:
-            test:
-                ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+            test: ['CMD', 'curl', '-f', 'http://localhost:9333/cluster/status']
             interval: 30s
             timeout: 20s
             retries: 3
@@ -236,7 +234,7 @@ services:
                   path: ./pnpm-lock.yaml
 
         depends_on:
-            - minio
+            - seaweedfs
 
         networks:
             - public-network
@@ -468,7 +466,7 @@ services:
             - public-network
 volumes:
     db_data:
-    minio_data:
+    seaweedfs_data:
     logging-prometheus-storage:
     logging-grafana-storage:
     logging-tempo-data:

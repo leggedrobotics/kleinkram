@@ -1033,7 +1033,7 @@ export class FileService implements OnModuleInit {
         }
 
         await this.storageService.addTags(
-            env.MINIO_DATA_BUCKET_NAME,
+            env.S3_DATA_BUCKET_NAME,
             databaseFile.uuid,
             {
                 // @ts-expect-error
@@ -1082,7 +1082,7 @@ export class FileService implements OnModuleInit {
             throw new BadRequestException('File not found');
 
         const stats = await this.storageService.getFileInfo(
-            env.MINIO_DATA_BUCKET_NAME,
+            env.S3_DATA_BUCKET_NAME,
             file.uuid,
         );
 
@@ -1107,7 +1107,7 @@ export class FileService implements OnModuleInit {
         }
 
         return await this.storageService.getPresignedDownloadUrl(
-            env.MINIO_DATA_BUCKET_NAME,
+            env.S3_DATA_BUCKET_NAME,
             file.uuid,
             expires ? 4 * 60 * 60 : 604_800,
             {
@@ -1174,7 +1174,7 @@ export class FileService implements OnModuleInit {
                         relations: ['mission', 'mission.project'],
                     });
                     await this.storageService.addTags(
-                        env.MINIO_DATA_BUCKET_NAME,
+                        env.S3_DATA_BUCKET_NAME,
                         file.uuid,
                         {
                             filename: file.filename,
@@ -1234,7 +1234,7 @@ export class FileService implements OnModuleInit {
                     await transactionalEntityManager.findOneOrFail(FileEntity, {
                         where: { uuid },
                     });
-                const bucket = env.MINIO_DATA_BUCKET_NAME;
+                const bucket = env.S3_DATA_BUCKET_NAME;
                 await this.storageService
                     .deleteFile(bucket, fileToDelete.uuid)
                     .catch(() => {
@@ -1425,13 +1425,13 @@ export class FileService implements OnModuleInit {
                         );
 
                         credentials.push({
-                            bucket: env.MINIO_DATA_BUCKET_NAME,
+                            bucket: env.S3_DATA_BUCKET_NAME,
                             fileUUID: file.uuid,
                             fileName: filename,
                             accessCredentials:
                                 await this.storageService.generateTemporaryCredential(
                                     file.uuid,
-                                    env.MINIO_DATA_BUCKET_NAME,
+                                    env.S3_DATA_BUCKET_NAME,
                                 ),
                         });
 
@@ -1528,7 +1528,7 @@ export class FileService implements OnModuleInit {
 
                 await Promise.all(
                     files.map(async (file) => {
-                        const bucket = env.MINIO_DATA_BUCKET_NAME;
+                        const bucket = env.S3_DATA_BUCKET_NAME;
                         await this.storageService
                             .deleteFile(bucket, file.uuid)
                             .catch(() => {
