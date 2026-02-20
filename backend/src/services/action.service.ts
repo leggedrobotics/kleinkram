@@ -219,9 +219,10 @@ export class ActionService {
 
         try {
             let response;
+            const lokiUrl = process.env.LOKI_URL ?? 'http://loki:3100';
             try {
                 response = await axios.get<LokiResponse>(
-                    'http://loki:3100/loki/api/v1/query_range',
+                    `${lokiUrl}/loki/api/v1/query_range`,
                     {
                         params: {
                             query: logQl,
@@ -230,6 +231,7 @@ export class ActionService {
                             limit: 50_000,
                             direction: 'FORWARD',
                         },
+                        timeout: 2000,
                     },
                 );
             } catch (error) {
@@ -241,7 +243,7 @@ export class ActionService {
                         `Loki query with limit 50000 failed, retrying with 5000. Verify Loki config "max_entries_limit_per_query".`,
                     );
                     response = await axios.get<LokiResponse>(
-                        'http://loki:3100/loki/api/v1/query_range',
+                        `${lokiUrl}/loki/api/v1/query_range`,
                         {
                             params: {
                                 query: logQl,
@@ -250,6 +252,7 @@ export class ActionService {
                                 limit: 5000,
                                 direction: 'FORWARD',
                             },
+                            timeout: 2000,
                         },
                     );
                 } else {

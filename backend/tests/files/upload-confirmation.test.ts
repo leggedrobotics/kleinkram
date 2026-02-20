@@ -10,14 +10,19 @@ import {
     MissionEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
+import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
     FileEventType,
     FileOrigin,
     FileState,
     FileType,
 } from '@kleinkram/shared';
+import { Gauge } from 'prom-client';
 import { Repository } from 'typeorm';
 import QueueService from '../../src/services/queue.service';
+import { TriggerService } from '../../src/services/trigger.service';
+import { UserService } from '../../src/services/user.service';
 import {
     clearAllData,
     database,
@@ -89,22 +94,14 @@ describe('Reproduction Issue: File Hash Not Saved', () => {
             queueRepository,
             missionRepository,
             fileRepository,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            { findOneByUUID: jest.fn() } as any, // UserService
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            mockDataStorage as any,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            mockFileAuditService as any,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            mockGauge as any, // pendingJobs
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            mockGauge as any, // activeJobs
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            mockGauge as any, // completedJobs
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            mockGauge as any, // failedJobs
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            mockTriggerService as any, // triggerService
+            { findOneByUUID: jest.fn() } as unknown as UserService, // UserService
+            mockFileAuditService as unknown as FileAuditService, // auditService
+            mockGauge as unknown as Gauge, // pendingJobs
+            mockGauge as unknown as Gauge, // activeJobs
+            mockGauge as unknown as Gauge, // completedJobs
+            mockGauge as unknown as Gauge, // failedJobs
+            mockTriggerService as unknown as TriggerService, // triggerService
+            mockDataStorage as unknown as IStorageBucket, // dataStorage
         );
 
         // Mock the fileQueue property
