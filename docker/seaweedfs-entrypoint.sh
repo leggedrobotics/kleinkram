@@ -7,12 +7,12 @@ mkdir -p /etc/seaweedfs
 cat <<EOF > /etc/seaweedfs/s3.json
 {
   "identities": [
-    {
+    {§
       "name": "kleinkram-backend",
       "credentials": [
         {
-          "accessKey": "${S3_ACCESS_KEY:-S3_ACCESS_KEY}",
-          "secretKey": "${S3_SECRET_KEY:-S3_SECRET_KEY}"
+          "accessKey": "${S3_ACCESS_KEY}",
+          "secretKey": "${S3_SECRET_KEY}"
         }
       ],
       "actions": [
