@@ -26,6 +26,12 @@ S3 API: `http://localhost:9000`
 
 Default Credentials: `seaweed` / `seaweed` (configured via environment)
 
+::: warning Production Deployment
+The default provided `docker-compose.prod.yml` runs SeaweedFS with a single `server` command that includes all components (master, volume, filer, and S3 gateway) in one process. This setup is convenient for development but may have scalability and reliability implications for production.
+
+In production deployments, you should typically run these components separately instead of using our default configuration. This provides better fault isolation and horizontal scaling. For more information, please see the [official SeaweedFS Components Documentation](https://github.com/seaweedfs/seaweedfs/wiki/Components).
+:::
+
 ### Redis (Queue & Cache)
 
 Redis is an in-memory key-value store used primarily for managing the job queue.

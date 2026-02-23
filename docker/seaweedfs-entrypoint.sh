@@ -53,10 +53,32 @@ done
 
 # 4. Create Buckets
 echo "Creating buckets via Filer..."
+
+create_bucket() {
+  local bucket_name=$1
+  echo "Creating bucket: ${bucket_name}"
+
+  # Perform request, capture output and HTTP code
+  local response
+  response=$(curl -s -w "\n%{http_code}" -X POST "http://127.0.0.1:8888/buckets/${bucket_name}/")
+
+  # Extract HTTP code (last line) and body
+  local http_code=$(echo "$response" | tail -n1)
+  local body=$(echo "$response" | sed '$d')
+
+  if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
+    echo "-> Bucket ${bucket_name} created successfully."
+  elif [ "$http_code" = "409" ] || echo "$body" | grep -q 'already exists'; then
+    echo "-> Bucket ${bucket_name} already exists."
+  else
+    echo "-> WARNING: Failed to create bucket ${bucket_name}. HTTP Status: ${http_code}. Response: $body"
+  fi
+}
+
 # S3 Buckets are mounted as directories inside SeaweedFS's Filer under /buckets/
-curl -X POST "http://127.0.0.1:8888/buckets/${S3_DATA_BUCKET_NAME:-data}/" || true
-curl -X POST "http://127.0.0.1:8888/buckets/${S3_DB_BUCKET_NAME:-dbdumps}/" || true
-curl -X POST "http://127.0.0.1:8888/buckets/${S3_ARTIFACTS_BUCKET_NAME:-action-artifacts}/" || true
+create_bucket "${S3_DATA_BUCKET_NAME:-data}"
+create_bucket "${S3_DB_BUCKET_NAME:-dbdumps}"
+create_bucket "${S3_ARTIFACTS_BUCKET_NAME:-action-artifacts}"
 
 echo "Configuring Bucket TTL..."
 # Apply a 90-day TTL to the action-artifacts bucket so all objects inside inherit it
