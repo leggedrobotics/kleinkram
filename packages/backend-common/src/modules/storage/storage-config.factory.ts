@@ -32,7 +32,8 @@ export const S3ClientFactory = {
                 forcePathStyle: true,
             }),
             internal: new S3Client({
-                endpoint: 'http://seaweedfs:9000',
+                endpoint:
+                    environment.S3_ENDPOINT_INTERNAL ?? 'http://seaweedfs:9000',
                 credentials,
                 region: 'us-east-1',
                 forcePathStyle: true,
