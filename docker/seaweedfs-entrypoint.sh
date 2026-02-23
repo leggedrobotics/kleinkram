@@ -7,7 +7,7 @@ mkdir -p /etc/seaweedfs
 cat <<EOF > /etc/seaweedfs/s3.json
 {
   "identities": [
-    {§
+    {
       "name": "kleinkram-backend",
       "credentials": [
         {
