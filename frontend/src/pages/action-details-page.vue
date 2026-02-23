@@ -169,7 +169,6 @@
                         outlined
                         placeholder="Search logs..."
                         debounce="300"
-                        class="q-mr-sm"
                         style="width: 200px"
                     >
                         <template #append>
