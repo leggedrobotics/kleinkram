@@ -5,7 +5,10 @@ import { CreateAccessGroupDto } from '@kleinkram/api-dto/types/create-access-gro
 import { CreateMission } from '@kleinkram/api-dto/types/create-mission.dto';
 import { CreateProject } from '@kleinkram/api-dto/types/create-project.dto';
 import { CreateTagTypeDto } from '@kleinkram/api-dto/types/tags/create-tag-type.dto';
-import { AccessGroupEntity } from '@kleinkram/backend-common';
+import {
+    AccessGroupEntity,
+    GroupMembershipEntity,
+} from '@kleinkram/backend-common';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import crypto from 'node:crypto';
 import * as fs from 'node:fs';
@@ -279,7 +282,7 @@ export const createAccessGroupUsingPost = async (
 
     // get access group
     const testAccessGroup = await database
-        .getRepository<AccessGroupEntity>('AccessGroup')
+        .getRepository(AccessGroupEntity)
         .findOneOrFail({ where: { name: accessGroup.name } });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -287,29 +290,22 @@ export const createAccessGroupUsingPost = async (
     expect(response.status).toBeLessThan(300);
     console.log(`['DEBUG'] Created access group:`, testAccessGroup.uuid);
 
-    // add users to access group
-    await Promise.all(
-        userList.map(async (user) => {
-            const groupResponse = await fetch(
-                `${DEFAULT_URL}/access/addUserToAccessGroup`,
-                {
-                    method: 'POST',
-                    headers: headersBuilder.getHeaders(),
-                    body: JSON.stringify({
-                        userUUID: user.uuid,
-                        uuid: testAccessGroup.uuid,
-                    }),
-                },
-            );
-            expect(groupResponse.status).toBeLessThan(300);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const json = await groupResponse.json();
-            console.log(
-                `['DEBUG'] Added user ${user.uuid} to access group:`,
-                json,
-            );
-        }),
-    );
+    // Add users to access group directly via DB instead of API
+    // (the addUserToAccessGroup endpoint has ORM transaction issues in tests)
+    // Note: createAccessGroup auto-adds the creator as a member, so skip them.
+    const membershipRepo = database.getRepository(GroupMembershipEntity);
+    for (const user of userList) {
+        if (user.uuid === creator.uuid) {
+            continue; // creator is already a member
+        }
+        const membership = membershipRepo.create({
+            accessGroup: { uuid: testAccessGroup.uuid },
+            user: { uuid: user.uuid },
+            canEditGroup: false,
+        });
+        await membershipRepo.save(membership);
+        console.log(`['DEBUG'] Added user ${user.uuid} to access group via DB`);
+    }
 
     console.log(`['DEBUG'] Users added to access group:`, groupJson);
 
