@@ -1,16 +1,16 @@
-# Kleinkram CLI Usage
+# Command-Line Interface (CLI)
 
-Ensure you have installed the CLI and authenticated as described in the [Setup Guide](./setup.md).
+Ensure you have installed the Kleinkram CLI and authenticated as described in the [Setup Guide](./setup.md).
 
 ## Getting Started
 
-Here is a quick example of how to create a project, upload data, and run an action.
+Here is a quick example of a common automated workflow: creating a project, uploading data, and building a Kleinkram action.
 
 ```bash
 # 1. Create a Project and Mission
-klein project create -p testProject -d "Just a Test Project for running actions"
+klein project create --project testProject --description "Just a Test Project for running actions"
 echo "123" > test.yml
-klein upload -p testProject -m testMission --create test.yml
+klein upload --project testProject --mission testMission --create test.yml
 
 # 2. Build a test Action
 # (Assuming you have an action definition in the current directory)
@@ -18,39 +18,54 @@ docker build -t <your-docker-hub-account>/test_action .
 docker push <your-docker-hub-account>/test_action
 ```
 
-## Common Commands
+## Core Workflows
 
-Most commands require you to specify the **Project** and **Mission** you want to interact with. You can do this using the `-p` (or `--project`) and `-m` (or `--mission`) flags.
+Most commands require you to specify the target **Project** and **Mission**. You can provide these using the `--project` (or `-p` shorthand) and `--mission` (or `-m` shorthand) flags.
 
-### Uploading Files
+### Listing Resources
 
-Use the `upload` command to send files to a mission.
+You can list available projects, missions, and files using the `list` command to explore your workspace.
 
 ```bash
-klein upload -p myproject -m mymission data.bag metadata.yaml
+# List all projects your user has access to
+klein list projects
+
+# List all missions within a specific project
+klein list missions --project myproject
+
+# List all files currently inside a mission
+klein list files --project myproject --mission mymission
 ```
 
-You can also use wildcards:
+### Uploading Resources
+
+Use the `upload` command to send local files to a mission.
 
 ```bash
-klein upload -p myproject -m mymission *.bag
+klein upload --project myproject --mission mymission data.bag metadata.yaml
 ```
 
-::: tip Creating Mission on Upload
-To create a mission automatically during upload, use the `--create` flag. The project must already exist.
+You can also use glob patterns and wildcards to upload multiple files efficiently:
 
 ```bash
-klein upload --create -p myproject -m mymission *.bag
+klein upload --project myproject --mission mymission *.bag
+```
+
+::: tip Creating Missions on Upload
+To create a mission automatically during upload if it doesn't already exist, use the `--create` flag. Note that the target project must already exist.
+
+```bash
+klein upload --create --project myproject --mission mymission *.bag
 ```
 
 :::
 
-### Downloading Files
+### Downloading Resources
 
-Use the `download` command to retrieve files from a mission.
+Use the `download` command to retrieve files from a mission to your local machine.
 
 ```bash
-klein download -p myproject -m mymission --dest ./downloaded_data
+klein download --project myproject --mission mymission --dest ./downloaded_data
 ```
 
 ::: tip Nested Directories
@@ -62,36 +77,21 @@ klein download -p myproject -m mymission --dest ./downloaded_data --nested
 
 :::
 
-### Verifying Files
+### Verifying Resources
 
-Use the `verify` command to check if files were uploaded correctly.
-
-```bash
-klein verify -p myproject -m mymission data.bag
-```
-
-### Listing Resources
-
-You can list projects, missions, and files using the `list` command.
+Use the `verify` command to double-check if your local files were successfully uploaded and processed by the Kleinkram backend.
 
 ```bash
-# List all projects
-klein list projects
-
-# List missions in a project
-klein list missions -p myproject
-
-# List files in a mission
-klein list files -p myproject -m mymission
+klein verify --project myproject --mission mymission data.bag
 ```
 
 ## Supported File Types
 
-The CLI supports uploading and verifying all supported file types. See the [Files documentation](../files/files.md) for a complete list of supported formats.
+The Kleinkram CLI supports uploading and verifying all standard file types. See the detailed [Files documentation](../files/files.md) for a comprehensive list of supported data formats and sizes.
 
-## Other Commands
+## Additional Commands
 
-For a full list of available commands and options, you can always use the `--help` flag:
+For a full list of available commands and their sub-options, you can always use the standard `--help` flag:
 
 ```bash
 klein --help
