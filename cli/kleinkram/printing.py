@@ -674,8 +674,12 @@ def follow_run_logs(client: AuthenticatedClient, run_uuid: str) -> int:
                 f"\nRun finished with state: {state_display}{state_cause_str}",
                 fg=color,
             )
-        except Exception:
-            pass
+        except httpx.HTTPStatusError as e:
+            typer.secho(f"\nFailed to fetch final run details (API error): {e}", fg=typer.colors.RED)
+        except httpx.RequestError as e:
+            typer.secho(f"\nFailed to fetch final run details (network error): {e}", fg=typer.colors.RED)
+        except Exception as e:
+            typer.secho(f"\nFailed to fetch final run details: {e}", fg=typer.colors.RED)
 
     except KeyboardInterrupt:
         typer.secho(
