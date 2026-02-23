@@ -14,10 +14,10 @@ If you wish to use the CLI follow the [Getting Started](../../usage/python/cli.m
 First you need to follow the steps described in the [Getting Started (For Developers)](../getting-started.md) guide.
 
 Next make sure to navigate to the `/cli` directory of repository.
-Now setup a `python3.8` virtual enviroment and install the dependencies:
+Now setup a `python3.10` virtual enviroment and install the dependencies:
 
 ```bash
-virtualenv -p python3.8 .venv
+virtualenv -p python3.10 .venv
 source .venv/bin/activate
 pip install -e . -r requirements-dev.txt
 ```

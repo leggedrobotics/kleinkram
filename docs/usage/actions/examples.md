@@ -65,7 +65,7 @@ Kleinkram CLI directly.
 **Dockerfile**
 
 ```Dockerfile [Dockerfile]
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 # Install Kleinkram CLI
 RUN pip install kleinkram
@@ -106,7 +106,7 @@ This example demonstrates how to use the Python SDK to interact with Kleinkram. 
 **Dockerfile**
 
 ```Dockerfile [Dockerfile]
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 # Install Kleinkram CLI
 RUN pip install kleinkram

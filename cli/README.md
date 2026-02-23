@@ -64,7 +64,7 @@ cd kleinkram/cli
 Setup the environment
 
 ```bash
-virtualenv -ppython3.8 .venv
+virtualenv -ppython3.10 .venv
 source .venv/bin/activate
 pip install -e . -r requirements.txt
 ```
