@@ -45,11 +45,11 @@ limits_config:
     max_entries_limit_per_query: 50000
     retention_period: 720h # Default 30 days
     retention_stream:
-        - selector: '{action_run_uuid=~".+"}'
+        - selector: '{job="queue-consumer"}'
           priority: 1
           period: 2160h # 90 days for action logs
 
 compactor:
     working_directory: /tmp/loki/boltdb-shipper-compactor
-    shared_store: filesystem
     retention_enabled: true
+    delete_request_store: filesystem

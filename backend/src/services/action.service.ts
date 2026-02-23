@@ -207,7 +207,7 @@ export class ActionService {
             (action.executionEndedAt?.getTime() ?? Date.now()) * 1_000_000 +
             60_000_000_000;
 
-        let logQl = `{job="queue-consumer", action_run_uuid="${actionUuid}"}`;
+        let logQl = `{job="queue-consumer"} | json action_run_uuid="labels.action_run_uuid" | action_run_uuid="${actionUuid}"`;
         if (query.search) {
             logQl += ` |= "${query.search}"`;
         }
@@ -285,7 +285,6 @@ export class ActionService {
                             message: string;
                             type?: LogType;
                         };
-
                         return {
                             timestamp:
                                 validParsed.timestamp ??
@@ -294,6 +293,7 @@ export class ActionService {
                                 ).toISOString(),
                             message: validParsed.message,
                             type: validParsed.type ?? ('stdout' as LogType),
+                            _tsNs: tsNs,
                         };
                     } catch {
                         return {
@@ -305,17 +305,43 @@ export class ActionService {
                                     ? lineJson
                                     : JSON.stringify(lineJson),
                             type: 'stdout' as LogType,
+                            _tsNs: tsNs,
                         };
                     }
                 }),
             );
 
-            // Sort by timestamp (Loki might return multiple streams interleaved)
-            allLogs.sort(
-                (a, b) =>
-                    new Date(a.timestamp).getTime() -
-                    new Date(b.timestamp).getTime(),
-            );
+            // First strictly compare exact ISO strings (Docker log timestamp has nanosec encoding format).
+            // Then fallback to tsNs Loki timestamps.
+            allLogs.sort((a, b) => {
+                const cmp = a.timestamp.localeCompare(b.timestamp);
+                if (cmp !== 0) {
+                    return cmp;
+                }
+
+                const tsNsA =
+                    '_tsNs' in a && typeof a._tsNs === 'string'
+                        ? BigInt(a._tsNs)
+                        : BigInt(new Date(a.timestamp).getTime()) * 1_000_000n;
+                const tsNsB =
+                    '_tsNs' in b && typeof b._tsNs === 'string'
+                        ? BigInt(b._tsNs)
+                        : BigInt(new Date(b.timestamp).getTime()) * 1_000_000n;
+
+                if (tsNsA < tsNsB) {
+                    return -1;
+                }
+                if (tsNsA > tsNsB) {
+                    return 1;
+                }
+                return 0;
+            });
+
+            for (const log of allLogs) {
+                if ('_tsNs' in log) {
+                    delete (log as Record<string, unknown>)._tsNs;
+                }
+            }
 
             const count = allLogs.length;
             const data = allLogs.slice(query.skip, query.skip + query.take);
