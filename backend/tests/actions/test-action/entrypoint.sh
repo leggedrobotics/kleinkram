@@ -13,7 +13,6 @@ klein endpoint set $ENDPOINT
 klein login --key $APIKEY
 klein list files -m $MISSION_UUID
 
-# TODO... this Endpoint needs to be fixed
 mkdir data
 klein download -m $MISSION_UUID --dest ./data
 
