@@ -105,7 +105,7 @@ machine. This is necessary for code completion and linting in your IDE.
     ```bash
     cd kleinkram/cli
 
-    virtualenv -ppython3.8 .venv
+    virtualenv -ppython3.10 .venv
     source .venv/bin/activate
     pip install -e . -r requirements.txt
     ```
