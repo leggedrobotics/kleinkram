@@ -20,7 +20,7 @@
     },
     "devDependencies": {
         "@types/node": "^25.0.9",
-        "mermaid": "^11.12.1",
+        "mermaid": "^11.12.3",
         "ts-morph": "^27.0.2",
         "tsx": "^4.21.0",
         "vite": "^7.3.1",
