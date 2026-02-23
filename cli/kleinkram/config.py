@@ -245,7 +245,7 @@ def endpoint_table(config: Config) -> Table:
 @dataclass
 class SharedState:
     log_file: Optional[Path] = None
-    verbose: bool = True
+    verbose: bool = False
     debug: bool = False
     max_table_size: int = MAX_TABLE_SIZE
 

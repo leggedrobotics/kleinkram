@@ -5,6 +5,7 @@ import sys
 import time
 from dataclasses import asdict
 from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 from typing import List
 from typing import Mapping
@@ -17,6 +18,10 @@ import dateutil.parser
 import httpx
 import typer
 from rich.console import Console
+from rich.console import Group
+from rich.live import Live
+from rich.panel import Panel
+from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
 
@@ -539,6 +544,71 @@ def print_action_templates_table(templates: Sequence[ActionTemplate], *, pprint:
             print(template.uuid)
 
 
+def generate_live_layout(run_details: Run) -> Group:
+    verbose = get_shared_state().verbose
+
+    # Calculate elapsed time
+    if run_details.updated_at:
+        elapsed = run_details.updated_at - run_details.created_at
+    else:
+        elapsed = datetime.now(timezone.utc) - run_details.created_at
+
+    elapsed_seconds = int(elapsed.total_seconds())
+    hours, remainder = divmod(elapsed_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    elapsed_str = f"{hours}:{minutes:02}:{seconds:02}"
+
+    state_upper = run_details.state.upper()
+
+    if state_upper == "DONE":
+        status_color = "green"
+        icon = Text("[✔]", style="green")
+        state_text = "DONE"
+    elif state_upper in {"FAILED", "UNPROCESSABLE"}:
+        status_color = "red"
+        icon = Text("[✘]", style="red")
+        state_text = f"{run_details.state}"
+    else:
+        status_color = "yellow"
+        icon = Spinner("dots", style="blue")
+        state_text = f"{run_details.state}"
+
+    header_text = Text()
+    header_text.append(f"Running Action {run_details.uuid} ", style="bold")
+    header_text.append(f"{elapsed_str} ", style="dim")
+    header_text.append(f"({state_text})", style=status_color)
+
+    header_table = Table.grid(padding=(0, 1))
+    header_table.add_column()
+    header_table.add_column()
+    header_table.add_row(icon, header_text)
+
+    logs_text = Text()
+    last_logs = run_details.logs[-20:]
+    if not last_logs:
+        logs_text.append(" => ", style="blue")
+        if state_upper in {"DONE", "FAILED", "UNPROCESSABLE"}:
+            logs_text.append("No logs produced.", style="dim")
+        else:
+            logs_text.append("Waiting for logs...", style="dim")
+    else:
+        for i, log in enumerate(last_logs):
+            logs_text.append(" => ", style="blue")
+
+            if verbose:
+                level = log.level.upper().strip()
+                color = LOG_LEVEL_COLORS.get(level, "white")
+                timestamp_str = log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                level_str = f"[{level.ljust(8)}]"
+                logs_text.append(f"[{timestamp_str}] {level_str} ", style=str(color))
+
+            logs_text.append(log.message.strip())
+            if i < len(last_logs) - 1:
+                logs_text.append("\n")
+
+    return Group(header_table, logs_text)
+
+
 def follow_run_logs(client: AuthenticatedClient, run_uuid: str) -> int:
     """
     Polls the API for run details and prints new logs as they arrive.
@@ -549,40 +619,63 @@ def follow_run_logs(client: AuthenticatedClient, run_uuid: str) -> int:
     typer.echo(f"Following logs for run {run_uuid}...")
 
     TERMINAL_STATES = {"DONE", "FAILED", "UNPROCESSABLE"}
-    printed_log_count = 0
     current_run_state = None
     exit_code = 0  # Assume success
 
     try:
-        while current_run_state not in TERMINAL_STATES:
-            try:
-                run_details: Run = kleinkram.api.routes.get_run(client, run_uuid)
-                current_run_state = run_details.state.upper()
+        with Live(refresh_per_second=10) as live:
+            while current_run_state not in TERMINAL_STATES:
+                try:
+                    run_details: Run = kleinkram.api.routes.get_run(client, run_uuid)
+                    current_run_state = run_details.state.upper()
 
-                # Print only new logs
-                new_logs = run_details.logs[printed_log_count:]
-                if new_logs:
-                    # Always pretty-print when following
-                    print_run_logs(new_logs, pprint=True)
-                    printed_log_count = len(run_details.logs)
+                    live.update(generate_live_layout(run_details), refresh=True)
 
-                if current_run_state in TERMINAL_STATES:
-                    color = typer.colors.GREEN if run_details.state.upper() == "DONE" else typer.colors.RED
-                    typer.secho(
-                        f"\nRun finished with state: {run_details.state} ({run_details.state_cause})",
-                        fg=color,
-                    )
-                    if run_details.state.upper() != "DONE":
-                        exit_code = 1  # Set failure exit code
+                    if current_run_state in TERMINAL_STATES:
+                        if current_run_state != "DONE":
+                            exit_code = 1  # Set failure exit code
+                        break
+
+                    time.sleep(1)  # Poll every 1 seconds for a more responsive timer
+
+                except kleinkram.errors.RunNotFound:
+                    time.sleep(1)
+                except httpx.HTTPStatusError:
+                    time.sleep(3)  # Wait longer on API errors
+                except httpx.RequestError as e:
+                    # Catch raw socket errors (like Connection reset by peer)
+                    err_msg = Text(f"\nConnection lost. Please check your network and try again. ({e})", style="red")
+                    live.console.print(err_msg)
+                    time.sleep(3)
+
+        # After the Live block finishes, print the final state clearly
+        try:
+            run_details: Run = kleinkram.api.routes.get_run(client, run_uuid)
+            state_upper = run_details.state.upper()
+
+            has_warnings = False
+            for log in run_details.logs:
+                if "CORRUPTED" in log.message.upper() or log.level.upper() in {"WARN", "WARNING", "ERROR"}:
+                    has_warnings = True
                     break
 
-                time.sleep(2)  # Poll every 2 seconds
+            if state_upper == "DONE" and has_warnings:
+                color = typer.colors.YELLOW
+                state_display = "DONE (Completed with Warnings)"
+            elif state_upper == "DONE":
+                color = typer.colors.GREEN
+                state_display = "DONE"
+            else:
+                color = typer.colors.RED
+                state_display = run_details.state
 
-            except kleinkram.errors.RunNotFound:
-                time.sleep(1)
-            except httpx.HTTPStatusError as e:
-                typer.secho(f"Error fetching run status: {e}", fg=typer.colors.RED)
-                time.sleep(5)  # Wait longer on API errors
+            state_cause_str = f" ({run_details.state_cause})" if run_details.state_cause else ""
+            typer.secho(
+                f"\nRun finished with state: {state_display}{state_cause_str}",
+                fg=color,
+            )
+        except Exception:
+            pass
 
     except KeyboardInterrupt:
         typer.secho(

@@ -401,16 +401,12 @@ export class DockerDaemon {
         line: string,
         sanitizeCallback?: (string_: string) => string,
     ): ContainerLog {
-        const logLevel = line.codePointAt(0) ?? 0;
-
         // Strip ANSI codes first
-
         const ansiRegex =
             /[\u001B\u009B][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
         line = line.replaceAll(ansiRegex, '');
 
         // remove all non-printable characters
-
         line = line.replace(/[\u0000-\u001F\u007F]/u, '');
 
         const dateStartIndex = line.indexOf('20');
@@ -424,15 +420,22 @@ export class DockerDaemon {
         } else {
             let dateEndIndex = line.indexOf(' ', dateStartIndex);
             dateEndIndex = dateEndIndex === -1 ? line.length : dateEndIndex;
-
             const dateString = line.slice(dateStartIndex, dateEndIndex);
-            try {
-                timestamp = new Date(dateString).toISOString();
-            } catch {
-                timestamp = new Date().toISOString();
+
+            // Retain full nanosecond timestamp format straight from Docker Engine without truncation.
+            if (dateString.length >= 20 && dateString.endsWith('Z')) {
+                timestamp = dateString;
+            } else {
+                try {
+                    timestamp = new Date(dateString).toISOString();
+                } catch {
+                    timestamp = new Date().toISOString();
+                }
             }
 
-            message = line.slice(Math.max(0, dateEndIndex));
+            message = line.slice(
+                dateEndIndex === line.length ? dateEndIndex : dateEndIndex + 1,
+            );
         }
 
         if (sanitizeCallback && message !== '') {
@@ -442,7 +445,7 @@ export class DockerDaemon {
         return {
             timestamp: timestamp,
             message: message,
-            type: logLevel === 2 ? LogType.STDERR : LogType.STDOUT,
+            type: LogType.STDOUT, // Will be statically assigned securely by the demultiplexer.
         };
     }
 
@@ -472,28 +475,61 @@ export class DockerDaemon {
         });
 
         return new Observable<ContainerLog>((observer) => {
-            dockerodeLogStream.on('data', (chunk: Buffer) => {
-                const lines = chunk
-                    .toString()
-                    .split(/[\r\n]+/)
-                    .filter((line: string) => line !== '')
-                    .map((line: string) =>
-                        DockerDaemon.parseContainerLogLine(
-                            line,
-                            sanitizeCallback,
-                        ),
+            let stdoutBuffer = '';
+            let stderrBuffer = '';
+
+            const processLines = (buffer: string, type: LogType): string => {
+                const lines = buffer.split('\n');
+                const remainder = lines.pop() ?? '';
+                for (let line of lines) {
+                    line = line.replace(/\r$/, '');
+                    if (line === '') continue;
+                    const logEntry = DockerDaemon.parseContainerLogLine(
+                        line,
+                        sanitizeCallback,
                     );
-                for (const logEntry of lines) {
+                    logEntry.type = type;
                     observer.next(logEntry);
                 }
-            });
+                return remainder;
+            };
+
+            const stdoutWritable = {
+                write: (chunk: Buffer) => {
+                    stdoutBuffer += chunk.toString();
+                    stdoutBuffer = processLines(stdoutBuffer, LogType.STDOUT);
+                    return true;
+                },
+            };
+
+            const stderrWritable = {
+                write: (chunk: Buffer) => {
+                    stderrBuffer += chunk.toString();
+                    stderrBuffer = processLines(stderrBuffer, LogType.STDERR);
+                    return true;
+                },
+            };
 
             dockerodeLogStream.on('end', () => {
+                if (stdoutBuffer) {
+                    processLines(stdoutBuffer + '\n', LogType.STDOUT);
+                }
+                if (stderrBuffer) {
+                    processLines(stderrBuffer + '\n', LogType.STDERR);
+                }
                 observer.complete();
             });
+
             dockerodeLogStream.on('error', (error) => {
                 observer.error(error);
             });
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            container.modem.demuxStream(
+                dockerodeLogStream,
+                stdoutWritable as unknown as NodeJS.WritableStream,
+                stderrWritable as unknown as NodeJS.WritableStream,
+            );
         });
     }
 
