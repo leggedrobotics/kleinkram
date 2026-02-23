@@ -412,9 +412,13 @@ export class MissionService {
     }
 
     async moveMission(missionUUID: string, projectUUID: string): Promise<void> {
-        const project = await this.projectRepository.findOneOrFail({
+        // Validate that the target project exists
+        const projectExists = await this.projectRepository.exists({
             where: { uuid: projectUUID },
         });
+        if (!projectExists) {
+            throw new ConflictException('Target project not found');
+        }
 
         // verify that the no mission with the same name exists in the project
         const mission = await this.missionRepository.findOneOrFail({
@@ -423,7 +427,7 @@ export class MissionService {
         });
 
         const exists = await this.missionRepository.exists({
-            where: { name: mission.name, project: project },
+            where: { name: mission.name, project: { uuid: projectUUID } },
         });
         if (exists) {
             throw new ConflictException(
@@ -431,16 +435,16 @@ export class MissionService {
             );
         }
 
-        await this.missionRepository.update(missionUUID, {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-            project: { uuid: project.uuid } as any,
-        });
+        await this.missionRepository
+            .createQueryBuilder()
+            .relation(MissionEntity, 'project')
+            .of(missionUUID)
+            .set(projectUUID);
 
         if (mission.files === undefined) throw new Error('Files not loaded');
 
         await Promise.all(
             mission.files.map(async (file) =>
-                // REFACTORED: Use storage service
                 this.dataStorage.addTags(file.uuid, {
                     filename: file.filename,
                     missionUuid: missionUUID,

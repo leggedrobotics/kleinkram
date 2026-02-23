@@ -139,12 +139,17 @@ describe('Trigger System API Tests', () => {
             uuid: missionUuid,
         });
 
+        let type = FileType.YAML;
+        if (filename.endsWith('.bag')) type = FileType.BAG;
+        else if (filename.endsWith('.mcap')) type = FileType.MCAP;
+        else if (filename.endsWith('.db3')) type = FileType.DB3;
+
         return await fileRepo.save(
             fileRepo.create({
                 filename,
                 mission,
                 creator: user,
-                type: filename.endsWith('.bag') ? FileType.BAG : FileType.YAML,
+                type,
                 size: 123,
                 date: new Date(),
                 state: FileState.OK,
@@ -364,6 +369,80 @@ describe('Trigger System API Tests', () => {
 
             const countAfter = await actionRepo.count();
             expect(countAfter).toBe(countBefore + 1);
+        });
+
+        test('should match 2026-*.yaml pattern for 2026-data.yaml', async () => {
+            await createTrigger({
+                name: 'Year Prefix Trigger',
+                description: 'Matches 2026-*.yaml files',
+                type: TriggerType.FILE,
+                missionUuid: missionUuid,
+                templateUuid: templateUuid,
+                config: {
+                    patterns: ['2026-*.yaml'],
+                    event: [TriggerEvent.UPLOAD],
+                },
+            });
+
+            const file = await createMockFile('2026-data.yaml');
+            const actionRepo = database.getRepository(ActionEntity);
+            const countBefore = await actionRepo.count();
+
+            await simulateFileEventJob(file.uuid, TriggerEvent.UPLOAD);
+
+            const countAfter = await actionRepo.count();
+            expect(countAfter).toBe(countBefore + 1);
+        });
+
+        test('should match *_processed.db3 pattern for sensor_processed.db3', async () => {
+            await createTrigger({
+                name: 'Processed DB3 Trigger',
+                description: 'Matches *_processed.db3 files',
+                type: TriggerType.FILE,
+                missionUuid: missionUuid,
+                templateUuid: templateUuid,
+                config: {
+                    patterns: ['*_processed.db3'],
+                    event: [TriggerEvent.UPLOAD],
+                },
+            });
+
+            const file = await createMockFile('sensor_processed.db3');
+            const actionRepo = database.getRepository(ActionEntity);
+            const countBefore = await actionRepo.count();
+
+            await simulateFileEventJob(file.uuid, TriggerEvent.UPLOAD);
+
+            const countAfter = await actionRepo.count();
+            expect(countAfter).toBe(countBefore + 1);
+        });
+
+        test('should match mission-10-?.mcap pattern using single-character wildcard', async () => {
+            await createTrigger({
+                name: 'Single Char Wildcard Trigger',
+                description: 'Matches mission-10-?.mcap',
+                type: TriggerType.FILE,
+                missionUuid: missionUuid,
+                templateUuid: templateUuid,
+                config: {
+                    patterns: ['mission-10-?.mcap'],
+                    event: [TriggerEvent.UPLOAD],
+                },
+            });
+
+            const file1 = await createMockFile('mission-10-A.mcap');
+            const file2 = await createMockFile('mission-10-1.mcap');
+            const file3 = await createMockFile('mission-10-AB.mcap'); // Should NOT match
+
+            const actionRepo = database.getRepository(ActionEntity);
+            const countBefore = await actionRepo.count();
+
+            await simulateFileEventJob(file1.uuid, TriggerEvent.UPLOAD);
+            await simulateFileEventJob(file2.uuid, TriggerEvent.UPLOAD);
+            await simulateFileEventJob(file3.uuid, TriggerEvent.UPLOAD);
+
+            const countAfter = await actionRepo.count();
+            expect(countAfter).toBe(countBefore + 2); // Only file1 and file2 should match
         });
     });
 

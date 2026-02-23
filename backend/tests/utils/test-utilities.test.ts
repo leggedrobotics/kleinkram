@@ -38,8 +38,6 @@ describe('Test Suite Utils', () => {
     });
 
     test('Create User with Valid Token', async () => {
-        // TODO: Finish this test
-
         await mockDatabaseUser('test-01@kleinkram.dev');
 
         const userRepository = database.getRepository(UserEntity);
