@@ -1439,6 +1439,11 @@ export class FileService implements OnModuleInit {
             }
 
             if (invalidFiles.length > 0) {
+                logger.warn(
+                    `getTemporaryAccess: user="${userUUID}" mission="${missionUUID}" ` +
+                        `denied upload for ${invalidFiles.length.toString()} already-existing file(s): ` +
+                        invalidFiles.map((f) => `"${f.filename}"`).join(', '),
+                );
                 throw new ConflictException({
                     message: 'Files already exist',
                     errors: invalidFiles,
