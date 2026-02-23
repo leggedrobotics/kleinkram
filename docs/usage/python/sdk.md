@@ -26,18 +26,18 @@ Retrieve lists of your projects, missions, and files based on specific query par
 
 ```python
 # List all projects matching a name pattern
-projects = kleinkram.list_projects(project_names=["my-project"])
+projects = kleinkram.list_projects(project_names=["testProject"])
 
 # List missions within specific projects
 missions = kleinkram.list_missions(
-    project_names=["my-project"],
-    mission_names=["my-mission"]
+    project_names=["testProject"],
+    mission_names=["testMission"]
 )
 
 # List files within specific missions
 files = kleinkram.list_files(
-    project_names=["my-project"],
-    mission_names=["my-mission"],
+    project_names=["testProject"],
+    mission_names=["testMission"],
     file_names=["*.bag"]
 )
 ```
@@ -78,8 +78,8 @@ Transfer data locally via Python scripts.
 ```python
 # Upload files to a specific mission
 kleinkram.upload(
-    project_name="my-project",
-    mission_name="my-mission",
+    project_name="testProject",
+    mission_name="testMission",
     files=["data.bag", "metadata.yaml"],
     create=True  # Automatically create the mission if it doesn't exist
 )
@@ -87,8 +87,8 @@ kleinkram.upload(
 # Download files from a specific mission
 # Note: The destination directory (`dest`) must already exist before downloading.
 kleinkram.download(
-    project_name="my-project",
-    mission_name="my-mission",
+    project_name="testProject",
+    mission_name="testMission",
     dest="./downloaded_data",
     nested=True # Organizes files into dest/project-name/mission-name subdirectories
 )
@@ -101,8 +101,8 @@ Check the verification status of your uploaded files.
 ```python
 # Verify if files were successfully uploaded and processed
 status = kleinkram.verify(
-    project_name="my-project",
-    mission_name="my-mission",
+    project_name="testProject",
+    mission_name="testMission",
     files=["data.bag"]
 )
 ```

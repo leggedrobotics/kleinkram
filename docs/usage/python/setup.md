@@ -11,6 +11,8 @@ It is best practice to always install Python packages inside a virtual environme
 ```bash
 # Create a virtual environment using your default python version
 python -m venv .venv
+
+# Activate the virtual environment
 source .venv/bin/activate
 ```
 
