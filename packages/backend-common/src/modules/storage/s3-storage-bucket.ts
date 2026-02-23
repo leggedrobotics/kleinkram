@@ -238,8 +238,11 @@ export class S3StorageBucket implements IStorageBucket {
     }
 
     async generateTemporaryCredential(
-        filename: string,
+        filename: string, // This is usually the UUID/object name used for the ARN
     ): Promise<StorageCredentials> {
-        return this.authService.generateTemporaryCredential(filename);
+        return this.authService.generateTemporaryCredential(
+            filename,
+            this.bucketName,
+        );
     }
 }

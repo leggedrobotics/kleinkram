@@ -216,8 +216,12 @@ export class StorageService {
     }
 
     async generateTemporaryCredential(
+        bucketName: string,
         filename: string,
     ): Promise<StorageCredentials> {
-        return this.authService.generateTemporaryCredential(filename);
+        return this.authService.generateTemporaryCredential(
+            filename,
+            bucketName,
+        );
     }
 }
