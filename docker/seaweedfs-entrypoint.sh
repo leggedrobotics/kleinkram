@@ -1,6 +1,12 @@
 #!/bin/sh
 set -e
 
+# 0. Validate required environment variables
+if [ -z "$S3_ACCESS_KEY" ] || [ -z "$S3_SECRET_KEY" ]; then
+  echo "ERROR: S3_ACCESS_KEY and S3_SECRET_KEY must be set"
+  exit 1
+fi
+
 # 1. Create S3 Configuration
 echo "Configuring SeaweedFS S3 API authentication..."
 mkdir -p /etc/seaweedfs

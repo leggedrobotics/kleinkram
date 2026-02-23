@@ -139,9 +139,9 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         continue;
                     }
 
-                    // Use DataStorageBucket to get stream
+                    // Use DataStorageBucket to get stream (files are stored by UUID)
                     const datastream = await this.dataStorage.getFileStream(
-                        `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
+                        file.uuid,
                     );
                     await new Promise((resolve, reject) => {
                         datastream.on('error', (error) => {
