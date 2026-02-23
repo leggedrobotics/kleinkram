@@ -2,7 +2,6 @@ import os
 import tarfile
 import json
 import boto3
-from urllib.parse import urlparse
 import botocore.config
 
 
