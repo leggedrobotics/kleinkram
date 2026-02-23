@@ -92,7 +92,10 @@ describe('StorageAuthService - STS Security Enforcement (Integration)', () => {
                 /Access ?Denied|Forbidden/i,
             );
 
-            // 5. Negative Test: Putting a DIFFERENT object should FAIL (not in the Resource ARN Policy)
+            // 5. Negative Test: Putting a completely unrelated object should FAIL
+            //    (does not match the Resource ARN wildcard `${filename}*`)
+            //    Note: The wildcard is intentional to support multipart upload part keys.
+            //    The "filename" is actually a server-generated UUID, so prefix abuse is not possible.
             const putOtherCommand = new PutObjectCommand({
                 Bucket: bucket,
                 Key: 'some-other-filename.txt',
