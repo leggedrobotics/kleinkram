@@ -10,6 +10,7 @@ import {
     _Object,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Logger } from '@nestjs/common';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -174,18 +175,26 @@ export class S3StorageBucket implements IStorageBucket {
         const volRecord = raw.SeaweedFS_volumeServer_resource as
             | MetricPoint[]
             | undefined;
-        const total =
+
+        const totalValue =
             totalRaw?.[0]?.value ??
-            volRecord?.find((m) => m.labels.type === 'all')?.value ??
-            0;
+            volRecord?.find((m) => m.labels.type === 'all')?.value;
+        const total = totalValue ?? 0;
 
         const freeRaw = raw.seaweedfs_master_disk_free_bytes as
             | MetricPoint[]
             | undefined;
-        const free =
+        const freeValue =
             freeRaw?.[0]?.value ??
-            volRecord?.find((m) => m.labels.type === 'free')?.value ??
-            0;
+            volRecord?.find((m) => m.labels.type === 'free')?.value;
+        const free = freeValue ?? 0;
+
+        if (totalValue === undefined && freeValue === undefined) {
+            Logger.warn(
+                'SeaweedFS storage metrics (seaweedfs_master_disk_total_bytes or SeaweedFS_volumeServer_resource) were not found in the parsed response. Storage capacity views may read zero.',
+                'S3StorageBucket:getSystemMetrics',
+            );
+        }
 
         return {
             usedBytes: total - free,
