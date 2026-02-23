@@ -1,3 +1,5 @@
+# This file describes the local dev environment for Kleinkram
+# It is intended to be run using docker compose up --build --watch
 services:
     base:
         image: kleinkram-base

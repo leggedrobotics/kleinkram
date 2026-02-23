@@ -1,3 +1,4 @@
+# this file defines a reference integration (dev branch) setup of Kleinkram
 services:
     base:
         image: kleinkram-base

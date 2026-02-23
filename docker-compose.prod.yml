@@ -1,3 +1,4 @@
+# this file described a reference production setup of Kleinkram
 services:
     base:
         image: kleinkram-base
