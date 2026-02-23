@@ -20,8 +20,37 @@ export const S3ClientFactory = {
             !externalEndpoint.startsWith('https://')
         ) {
             const externalProtocol = environment.DEV ? 'http' : 'https';
-            const externalPort = environment.DEV ? ':9000' : '';
-            externalEndpoint = `${externalProtocol}://${environment.S3_ENDPOINT}${externalPort}`;
+            externalEndpoint = `${externalProtocol}://${environment.S3_ENDPOINT}`;
+        }
+
+        try {
+            const url = new URL(externalEndpoint);
+            if (environment.DEV && !url.port) {
+                url.port = '9000';
+            }
+            // Remove trailing slash to be safe
+            externalEndpoint = url.toString().replace(/\/$/, '');
+        } catch {
+            // ignore if invalid URL, S3Client will throw later
+        }
+
+        let internalEndpoint =
+            environment.S3_ENDPOINT_INTERNAL ?? 'seaweedfs:9000';
+        if (
+            !internalEndpoint.startsWith('http://') &&
+            !internalEndpoint.startsWith('https://')
+        ) {
+            internalEndpoint = `http://${internalEndpoint}`;
+        }
+
+        try {
+            const url = new URL(internalEndpoint);
+            if (!url.port) {
+                url.port = '9000';
+            }
+            internalEndpoint = url.toString().replace(/\/$/, '');
+        } catch {
+            // ignore if invalid URL
         }
 
         return {
@@ -32,8 +61,7 @@ export const S3ClientFactory = {
                 forcePathStyle: true,
             }),
             internal: new S3Client({
-                endpoint:
-                    environment.S3_ENDPOINT_INTERNAL ?? 'http://seaweedfs:9000',
+                endpoint: internalEndpoint,
                 credentials,
                 region: 'us-east-1',
                 forcePathStyle: true,

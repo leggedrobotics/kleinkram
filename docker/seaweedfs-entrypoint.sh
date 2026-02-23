@@ -6,6 +6,20 @@ echo "Configuring SeaweedFS S3 API authentication..."
 mkdir -p /etc/seaweedfs
 cat <<EOF > /etc/seaweedfs/s3.json
 {
+  "roles": [
+    {
+      "name": "S3Access",
+      "policies": [
+        "UploadPolicy"
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "name": "UploadPolicy",
+      "document": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:PutObject\",\"s3:AbortMultipartUpload\"],\"Resource\":[\"*\"]}]}"
+    }
+  ],
   "identities": [
     {
       "name": "kleinkram-backend",
@@ -20,7 +34,8 @@ cat <<EOF > /etc/seaweedfs/s3.json
         "Read",
         "Write",
         "List",
-        "Tagging"
+        "Tagging",
+        "sts:AssumeRole"
       ]
     }
   ]

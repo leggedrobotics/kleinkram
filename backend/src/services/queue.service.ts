@@ -200,11 +200,18 @@ export class QueueService implements OnModuleInit {
 
         const fileInfo = await this.dataStorage
             .getFileInfo(file.uuid)
-            .catch((): void => {
+            .catch((error: unknown): void => {
+                logger.error(
+                    `Error in getFileInfo for ${file.uuid}: ${error instanceof Error ? error.message : String(error)}`,
+                    error,
+                );
                 throw new ConflictException('File not found in storage');
             });
 
-        if (!fileInfo) throw new Error('File not found in storage');
+        if (!fileInfo) {
+            logger.error(`getFileInfo returned undefined for ${file.uuid}`);
+            throw new Error('File not found in storage');
+        }
 
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;

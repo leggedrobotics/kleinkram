@@ -138,6 +138,10 @@ export default {
         return asString('S3_ENDPOINT');
     },
 
+    get S3_REGION(): string | undefined {
+        return asOptionalString('S3_REGION');
+    },
+
     get S3_ENDPOINT_INTERNAL(): string | undefined {
         return asOptionalString('S3_ENDPOINT_INTERNAL');
     },
