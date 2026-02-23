@@ -3,6 +3,7 @@ import tarfile
 import json
 import boto3
 from urllib.parse import urlparse
+import botocore.config
 
 
 def compress_directory(source_dir, output_filename):
@@ -21,17 +22,27 @@ def upload_to_storage(file_path, bucket_name, object_name):
     if not endpoint_url.startswith("http"):
         endpoint_url = f"http://{endpoint_url}"
 
+    config = botocore.config.Config(
+        retries={"max_attempts": 60},
+        read_timeout=300,
+    )
+
     service_client = boto3.client(
         "s3",
         endpoint_url=endpoint_url,
         aws_access_key_id=os.getenv("S3_ACCESS_KEY"),
         aws_secret_access_key=os.getenv("S3_SECRET_KEY"),
         region_name="us-east-1",
+        config=config,
     )
 
     # Upload
-    service_client.upload_file(file_path, bucket_name, object_name)
-    print(f"Successfully uploaded {object_name} to {bucket_name}")
+    try:
+        service_client.upload_file(file_path, bucket_name, object_name)
+        print(f"Successfully uploaded {object_name} to {bucket_name}")
+    except Exception as e:
+        print(f"Failed to upload {object_name} to {bucket_name}: {e}")
+        raise
 
 
 if __name__ == "__main__":
