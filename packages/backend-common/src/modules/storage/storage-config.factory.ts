@@ -14,9 +14,15 @@ export const S3ClientFactory = {
             secretAccessKey: environment.S3_SECRET_KEY,
         };
 
-        const externalProtocol = environment.DEV ? 'http' : 'https';
-        const externalPort = environment.DEV ? ':9000' : '';
-        const externalEndpoint = `${externalProtocol}://${environment.S3_ENDPOINT}${externalPort}`;
+        let externalEndpoint = environment.S3_ENDPOINT;
+        if (
+            !externalEndpoint.startsWith('http://') &&
+            !externalEndpoint.startsWith('https://')
+        ) {
+            const externalProtocol = environment.DEV ? 'http' : 'https';
+            const externalPort = environment.DEV ? ':9000' : '';
+            externalEndpoint = `${externalProtocol}://${environment.S3_ENDPOINT}${externalPort}`;
+        }
 
         return {
             external: new S3Client({
