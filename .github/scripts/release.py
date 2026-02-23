@@ -5,7 +5,6 @@ from pathlib import Path
 from argparse import ArgumentParser
 import configparser
 
-
 VERSION_FILE_PATH = Path() / "cli" / "kleinkram" / "_version.py"
 CFG_FILE_PATH = Path() / "cli" / "setup.cfg"
 
