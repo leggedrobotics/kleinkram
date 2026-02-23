@@ -1,6 +1,7 @@
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import environment from '@backend-common/environment';
 import { Injectable, Logger } from '@nestjs/common';
+import * as crypto from 'node:crypto';
 import { StorageCredentials } from './types';
 
 @Injectable()
@@ -57,9 +58,11 @@ export class StorageAuthService {
                 },
             ],
         };
+        const sessionName = `UploadSession-${crypto.randomUUID()}`;
+
         // @ts-expect-error SeaweedFS supports omitting RoleArn for self-assumption
         const command = new AssumeRoleCommand({
-            RoleSessionName: 'TemporaryUploadSession',
+            RoleSessionName: sessionName,
             Policy: JSON.stringify(policy),
             DurationSeconds: 60 * 60 * 4, // 4 hours
         });
