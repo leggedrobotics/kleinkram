@@ -264,9 +264,9 @@ export class DeleteTagGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const body = request.body as MissionBody;
+        const body = request.body as MissionBody | undefined;
         const params = request.params as TagParameters;
-        const tagUuid = body.uuid ?? params.uuid;
+        const tagUuid = body?.uuid ?? params.uuid;
 
         if (!tagUuid) {
             return false; // Deny access if tag UUID not provided
