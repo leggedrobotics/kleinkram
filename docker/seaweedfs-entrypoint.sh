@@ -58,6 +58,10 @@ curl -X POST "http://127.0.0.1:8888/buckets/${S3_DATA_BUCKET_NAME:-data}/" || tr
 curl -X POST "http://127.0.0.1:8888/buckets/${S3_DB_BUCKET_NAME:-dbdumps}/" || true
 curl -X POST "http://127.0.0.1:8888/buckets/${S3_ARTIFACTS_BUCKET_NAME:-action-artifacts}/" || true
 
+echo "Configuring Bucket TTL..."
+# Apply a 90-day TTL to the action-artifacts bucket so all objects inside inherit it
+echo "fs.configure -locationPrefix=/buckets/${S3_ARTIFACTS_BUCKET_NAME:-action-artifacts}/ -ttl=90d -apply" | /usr/bin/weed shell -master=127.0.0.1:9333 || true
+
 echo "SeaweedFS is ready!"
 
 # 5. Keep the container running
