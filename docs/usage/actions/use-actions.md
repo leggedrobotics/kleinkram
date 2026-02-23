@@ -52,7 +52,7 @@ a specific version of the template, ensuring consistency and reproducibility.
 
 ::: tip
 We recommend using version tags while specifying Docker images in your action templates. This ensures that your actions
-are always reproducible and not affected by changes in the `latest` image. E.g., use `python:3.9-slim` instead of
+are always reproducible and not affected by changes in the `latest` image. E.g., use `python:3.10-slim` instead of
 `python:latest`.
 :::
 
