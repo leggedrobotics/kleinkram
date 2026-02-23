@@ -357,14 +357,7 @@ async function _createFileAction(
         if (api.includes('localhost')) {
             s3Endpoint = 'http://localhost:9000';
         } else {
-            // Fallback: try to derive it by replacing the hostname part or similar
-            // This is still a bit guessy but better than a blind string replace on the whole URL
-            const url = new URL(api);
-            url.hostname = url.hostname.startsWith('api.')
-                ? url.hostname.replace('api.', 's3.')
-                : `s3.${url.hostname}`;
-            // For production usually we use https and no port or standard port
-            s3Endpoint = url.origin;
+            throw new Error('S3_ENDPOINT environment variable is missing.');
         }
     }
 
