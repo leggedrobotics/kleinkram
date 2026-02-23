@@ -130,7 +130,7 @@ describe('Verify Mission Level Admin Access', () => {
         expect(response.status).toBeLessThan(300);
     });
 
-    test('if admin can edit metadata of an mission', async () => {
+    test('if admin can edit metadata of a mission', async () => {
         const { user: admin } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -488,7 +488,7 @@ describe('Verify Mission Level User Access', () => {
 
     // user: read/create access
 
-    test('if user with create access on an project can create a mission', async () => {
+    test('if user with create access on a project can create a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -526,7 +526,7 @@ describe('Verify Mission Level User Access', () => {
         expect(missionUuid).toBeDefined();
     });
 
-    test('if user with read access on an project can view any mission', async () => {
+    test('if user with read access on a project can view any mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -550,7 +550,7 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBeLessThan(300);
     });
 
-    test('if user with read access on an project cannot edit a mission', async () => {
+    test('if user with read access on a project cannot edit a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -580,7 +580,7 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBe(403);
     });
 
-    test('if user with read access on an project cannot edit metadata of an mission', async () => {
+    test('if user with read access on a project cannot edit metadata of a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -609,7 +609,7 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBe(403);
     });
 
-    test('if user with read access on an project cannot move a mission', async () => {
+    test('if user with read access on a project cannot move a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -642,7 +642,7 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBe(403);
     });
 
-    test('if user with read access on an project cannot delete a mission', async () => {
+    test('if user with read access on a project cannot delete a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -667,7 +667,7 @@ describe('Verify Mission Level User Access', () => {
     });
 
     // user: modify access
-    test('if user with modify/edit access on an project can edit a mission', async () => {
+    test('if user with modify/edit access on a project can edit a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -696,7 +696,7 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBeLessThan(300);
     });
 
-    test('if user with modify/edit access on an project can edit metadata of an mission', async () => {
+    test('if user with modify/edit access on a project can edit metadata of a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -730,7 +730,7 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBeLessThan(300);
     });
 
-    test('if user with modify/edit access on an project can move a mission', async () => {
+    test('if user with modify/edit access on a project can move a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -763,7 +763,7 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBe(403);
     });
 
-    test('if user with modify/edit access on an project cannot delete a mission', async () => {
+    test('if user with modify/edit access on a project cannot delete a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -788,7 +788,7 @@ describe('Verify Mission Level User Access', () => {
     });
 
     // user: delete access
-    test('if user with delete access on an project can move a mission', async () => {
+    test('if user with delete access on a project can move a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -846,7 +846,7 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBeLessThan(300);
     });
 
-    test('if user with delete access on an project can delete a mission', async () => {
+    test('if user with delete access on a project can delete a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -969,7 +969,7 @@ describe('Verify Mission File Level User Access', () => {
         expect(response.status).not.toBe(403);
     });
 
-    test('if user with read access on a mission can upload file from google drive into mission', async () => {
+    test('if user with read access on a mission cannot upload file from google drive into mission', async () => {
         // Google Drive import requires CanCreateInMissionByBody which requires CREATE rights
         // A READ user should NOT be able to do this
         const { user: creator } = await generateAndFetchDatabaseUser(
@@ -1101,7 +1101,7 @@ describe('Verify Mission File Level User Access', () => {
         expect(response.status).toBe(403);
     });
 
-    test('if user with read access on a mission cannot delete an file in a mission', async () => {
+    test('if user with read access on a mission cannot delete a file in a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -1235,7 +1235,7 @@ describe('Verify Mission File Level User Access', () => {
         expect(response.status).toBe(403);
     });
 
-    test('if user with edit access on a mission cannot delete an file in a mission', async () => {
+    test('if user with edit access on a mission cannot delete a file in a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -1330,7 +1330,7 @@ describe('Verify Mission File Level User Access', () => {
         expect(response.status).toBeLessThan(300);
     });
 
-    test('if user with delete access on a mission can delete an file in a mission', async () => {
+    test('if user with delete access on a mission can delete a file in a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
