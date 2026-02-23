@@ -351,15 +351,7 @@ async function _createFileAction(
         (item) => item.virtualName,
     ) as unknown as Record<string, Record<string, string>>;
 
-    const api = ENV.BACKEND_URL;
-    let s3Endpoint = ENV.S3_ENDPOINT;
-    if (!s3Endpoint) {
-        if (api.includes('localhost')) {
-            s3Endpoint = 'http://localhost:9000';
-        } else {
-            throw new Error('S3_ENDPOINT environment variable is missing.');
-        }
-    }
+    const s3Endpoint = ENV.S3_ENDPOINT;
 
     await queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === 'files',

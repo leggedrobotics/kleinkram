@@ -111,9 +111,15 @@ export default {
         );
     },
     get S3_ENDPOINT(): string {
-        return asString(
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            import.meta.env.VITE_S3_ENDPOINT ?? '',
-        );
+        const endpoint = import.meta.env.VITE_S3_ENDPOINT as string | undefined;
+        if (endpoint) {
+            return asString(endpoint);
+        }
+
+        if (this.BACKEND_URL.includes('localhost')) {
+            return asString('http://localhost:9000');
+        } else {
+            throw new Error('S3_ENDPOINT environment variable is missing.');
+        }
     },
 };
