@@ -14,6 +14,8 @@ export class UniversalHttpReader implements IReadable {
 
     private optimizer = new AdaptiveChunkOptimizer();
     private cachedBlocks: CachedBlock[] = [];
+    private currentCacheSize = 0;
+    private readonly MAX_CACHE_SIZE = 256 * 1024 * 1024; // 256 MB limit
     private activeRequests = new Map<string, Promise<Uint8Array>>();
     private logInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -25,7 +27,7 @@ export class UniversalHttpReader implements IReadable {
     async init(): Promise<void> {
         const response = await fetch(this.url, {
             headers: {
-                Range: 'bytes=0-', // Use open-ended range for better compatibility
+                Range: 'bytes=0-0', // Request only 1 byte to get Content-Range
                 ...this.additionalHeaders,
             },
         });
@@ -57,6 +59,38 @@ export class UniversalHttpReader implements IReadable {
 
     get sizeBytes(): number {
         return this._size ?? 0;
+    }
+
+    private addToCache(offset: bigint, data: Uint8Array): void {
+        const itemSize = data.length;
+
+        // Per-item size limit to prevent memory exhaustion
+        if (itemSize > this.MAX_CACHE_SIZE) {
+            return;
+        }
+
+        // Deduplication
+        if (
+            this.cachedBlocks.some(
+                (b) => b.offset === offset && b.data.length === itemSize,
+            )
+        ) {
+            return;
+        }
+
+        this.cachedBlocks.push({ offset, data });
+        this.currentCacheSize += itemSize;
+
+        // Prune oldest items if we exceed item count or total memory limit
+        while (
+            this.cachedBlocks.length > 50 ||
+            this.currentCacheSize > this.MAX_CACHE_SIZE
+        ) {
+            const removed = this.cachedBlocks.shift();
+            if (removed) {
+                this.currentCacheSize -= removed.data.length;
+            }
+        }
     }
 
     prefetch(offset: bigint, length: bigint): void {
@@ -106,18 +140,7 @@ export class UniversalHttpReader implements IReadable {
             this._size ??= data.length;
 
             // Cache the whole file to avoid future full downloads if range isn't supported
-            if (
-                this.cachedBlocks.length > 0 &&
-                this.cachedBlocks[0].offset === 0n &&
-                this.cachedBlocks[0].data.length === this._size
-            ) {
-                // Already cached
-            } else {
-                this.cachedBlocks.unshift({ offset: 0n, data });
-                if (this.cachedBlocks.length > 50) {
-                    this.cachedBlocks.pop();
-                }
-            }
+            this.addToCache(0n, data);
 
             // Slice to the requested range
             data = data.subarray(start, start + Number(length));
@@ -180,19 +203,7 @@ export class UniversalHttpReader implements IReadable {
                         this.stopLogging();
                     }
                     // Add to cache if not already cached as part of a 200 response
-                    if (
-                        !this.cachedBlocks.some(
-                            (b) =>
-                                b.offset === offset &&
-                                b.data.length === data.length,
-                        )
-                    ) {
-                        this.cachedBlocks.push({ offset, data });
-                        // Optional: Prune cache if too big
-                        if (this.cachedBlocks.length > 50) {
-                            this.cachedBlocks.shift(); // Remove oldest
-                        }
-                    }
+                    this.addToCache(offset, data);
                 })
                 .catch(() => {
                     this.activeRequests.delete(key);
