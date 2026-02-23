@@ -8,8 +8,7 @@ import { Repository } from 'typeorm';
 
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
     FileLocation,
     FileOrigin,
@@ -41,7 +40,8 @@ export class FileIngestionService {
         @InjectRepository(FileEntity) private fileRepo: Repository<FileEntity>,
         @InjectRepository(IngestionJobEntity)
         private queueRepo: Repository<IngestionJobEntity>,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
     ) {}
 
     async processJob(
@@ -62,7 +62,7 @@ export class FileIngestionService {
                         fileData,
                     );
 
-                    await this.ensureFileIsInMinio(
+                    await this.ensureFileIsInS3(
                         queueItem,
                         primaryFile,
                         fileData.filePath,
@@ -126,8 +126,8 @@ export class FileIngestionService {
         const downloadPath = path.join(workDirectory, source.filename);
 
         // Start Tagging in the Background
-        const taggingPromise = this.storageService
-            .addTags(env.MINIO_DATA_BUCKET_NAME, queueItem.identifier, {
+        const taggingPromise = this.dataStorage
+            .addTags(queueItem.identifier, {
                 missionUuid: queueItem.mission?.uuid ?? '',
                 projectUuid: queueItem.mission?.project?.uuid ?? '',
                 filename: source.filename,
@@ -214,17 +214,13 @@ export class FileIngestionService {
         return await this.fileRepo.save(entity);
     }
 
-    private async ensureFileIsInMinio(
+    private async ensureFileIsInS3(
         queueItem: IngestionJobEntity,
         file: FileEntity,
         filePath: string,
     ): Promise<void> {
         if (queueItem.location === FileLocation.DRIVE) {
-            await this.storageService.uploadFile(
-                env.MINIO_DATA_BUCKET_NAME,
-                file.uuid,
-                filePath,
-            );
+            await this.dataStorage.uploadFile(file.uuid, filePath);
         }
     }
 

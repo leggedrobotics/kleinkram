@@ -116,7 +116,7 @@ Kleinkram's system architecture is modular, comprising several interacting micro
 - **Data Store**
   The raw robotic data files (ROSbags, MCAPs) are stored on an S3-compatible object storage backend. This provides
   scalability and flexibility. Users can easily deploy and manage their own storage using self-hosted solutions like
-  MinIO, or utilise public cloud S3 services. Kleinkram interacts with the data store via the S3 API.
+  S3-compatible storage (e.g. SeaweedFS), or utilise public cloud S3 services. Kleinkram interacts with the data store via the S3 API.
 
 - **Action Runner**
   This component enables the execution of customisable data processing and analysis tasks directly on the data stored

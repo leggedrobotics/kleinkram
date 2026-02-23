@@ -11,7 +11,7 @@ export async function uploadFileMultipart(
     file: Buffer,
     bucket: string,
     key: string,
-    minioClient: S3Client,
+    s3Client: S3Client,
 ) {
     let uploadId: string | undefined;
     try {
@@ -21,7 +21,7 @@ export async function uploadFileMultipart(
 
             Key: key,
         });
-        const { UploadId: _uploadID } = await minioClient.send(
+        const { UploadId: _uploadID } = await s3Client.send(
             createMultipartUploadCommand,
         );
         uploadId = _uploadID;
@@ -50,7 +50,7 @@ export async function uploadFileMultipart(
                 Body: partBlob,
             });
 
-            const { ETag } = await minioClient.send(uploadPartCommand);
+            const { ETag } = await s3Client.send(uploadPartCommand);
 
             parts.push({ PartNumber: partNumber, ETag });
         }
@@ -66,7 +66,7 @@ export async function uploadFileMultipart(
 
                 MultipartUpload: { Parts: parts },
             });
-        return await minioClient.send(completeMultipartUploadCommand);
+        return await s3Client.send(completeMultipartUploadCommand);
     } catch (error) {
         logger.error('Multipart upload failed:', error);
 
@@ -81,7 +81,7 @@ export async function uploadFileMultipart(
                     UploadId: uploadId,
                 },
             );
-            await minioClient.send(abortMultipartUploadCommand);
+            await s3Client.send(abortMultipartUploadCommand);
             logger.debug('Multipart upload aborted.');
         }
 

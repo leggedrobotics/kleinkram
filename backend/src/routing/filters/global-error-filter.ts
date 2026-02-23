@@ -5,6 +5,7 @@ import {
     ArgumentsHost,
     BadRequestException,
     Catch,
+    ConflictException,
     ExceptionFilter,
     ForbiddenException,
     UnauthorizedException,
@@ -111,6 +112,32 @@ export class GlobalErrorFilter implements ExceptionFilter {
         //////////////////////////////
 
         const request: Request = host.switchToHttp().getRequest();
+
+        if (exception instanceof ConflictException) {
+            const resp: unknown = exception.getResponse();
+            const rawUser = (
+                request as unknown as { user?: Record<string, unknown> }
+            ).user;
+            const userLabel: string =
+                (rawUser?.uuid as string | undefined) ??
+                (rawUser?.email as string | undefined) ??
+                'unauthenticated';
+            const details =
+                resp !== null && typeof resp === 'object' && 'errors' in resp
+                    ? (resp as { errors: unknown }).errors
+                    : exception.message;
+            logger.warn(
+                `ConflictException: user="${userLabel}" endpoint="${request.method} ${request.url}" reason=${JSON.stringify(details)}`,
+            );
+            response.status(409).json({
+                statusCode: 409,
+                ...(typeof resp === 'object' && resp !== null
+                    ? resp
+                    : { message: exception.message }),
+            });
+            return;
+        }
+
         logger.error(
             `GlobalErrorFilter: ${exception.name} on kleinkram-version ${appVersion} on endpoint ${request.url} with method ${request.method}`,
         );

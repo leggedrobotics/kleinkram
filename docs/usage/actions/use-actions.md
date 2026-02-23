@@ -86,7 +86,7 @@ Actions can generate output files, such as reports, converted data, or logs. The
 can be downloaded from the action execution page.
 
 ::: tip Artifact Retention Policy
-Artifacts are kept for 3 months before being automatically deleted.
+Artifacts are kept for 3 months (90 days) before being automatically deleted by the system.
 :::
 
 ### Audit Logs

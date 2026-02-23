@@ -7,7 +7,7 @@ import { FileIngestionService } from './file-ingestion.service';
 import { FILE_HANDLER, FileHandler } from './handlers/file-handler.interface';
 import { McapHandler } from './handlers/mcap.handler';
 import { GoogleDriveStrategy } from './strategies/google-drive.strategy';
-import { MinioStrategy } from './strategies/minio.strategy';
+import { S3Strategy } from './strategies/s3.strategy';
 
 import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
@@ -49,7 +49,7 @@ import { Db3Handler } from './handlers/db3.handler';
         FileRepairProcessor,
         FileIngestionService,
         GoogleDriveStrategy,
-        MinioStrategy,
+        S3Strategy,
 
         RosBagMetadataService,
         McapMetadataService,

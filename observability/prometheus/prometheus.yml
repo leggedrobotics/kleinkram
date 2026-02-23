@@ -8,19 +8,12 @@ scrape_configs:
       static_configs:
           - targets: ['tempo:3200']
 
-    - job_name: minio-job
-      metrics_path: /minio/v2/metrics/cluster
+    - job_name: storage-job
+      metrics_path: /metrics
       scrape_interval: 10s
       scheme: http
       static_configs:
-          - targets: ['minio:9000']
-
-    - job_name: minio-job-bucket
-      scrape_interval: 10s
-      metrics_path: /minio/v2/metrics/bucket
-      scheme: http
-      static_configs:
-          - targets: ['minio:9000']
+          - targets: ['seaweedfs:9324']
 
     - job_name: postgres-exporter
       scrape_interval: 10s

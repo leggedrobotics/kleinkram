@@ -43,7 +43,7 @@ export class IngestionJobEntity extends BaseEntity {
     @Column({
         type: 'enum',
         enum: FileLocation,
-        default: FileLocation.MINIO,
+        default: FileLocation.S3,
     })
     location!: FileLocation;
 

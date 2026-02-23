@@ -9,7 +9,7 @@ import { ContainerLimits, DockerDaemon } from './docker-daemon.service';
 
 /**
  * Service for handling artifact uploads after action completion.
- * Encapsulates the artifact upload container logic and MinIO path management.
+ * Encapsulates the artifact upload container logic and s3 path management.
  */
 @Injectable()
 export class ArtifactService {
@@ -58,7 +58,7 @@ export class ArtifactService {
 
         await this.dockerDaemon.removeArtifactVolume(runnerId, actionUuid);
 
-        const bucketName = environment.MINIO_ARTIFACTS_BUCKET_NAME;
+        const bucketName = environment.S3_ARTIFACTS_BUCKET_NAME;
         const filename = `${actionUuid}.tar.gz`;
         const artifactPath = `/${bucketName}/${filename}`;
 

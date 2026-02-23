@@ -188,7 +188,7 @@ export async function uploadFile(
     const hash = crypto.createHash('md5');
     hash.update(fileFile);
 
-    const minioClient = new S3Client({
+    const s3Client = new S3Client({
         endpoint: 'http://localhost:9000',
         forcePathStyle: true,
         region: 'us-east-1',
@@ -208,7 +208,7 @@ export async function uploadFile(
         fileresponseponse.bucket,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         fileresponseponse.fileUUID,
-        minioClient,
+        s3Client,
     );
     expect(responsei).toBeDefined();
 

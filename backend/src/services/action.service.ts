@@ -18,9 +18,9 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { ArtifactState, LogType, UserRole } from '@kleinkram/shared';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import {
@@ -57,7 +57,8 @@ export class ActionService {
         private missionRepository: Repository<MissionEntity>,
 
         private readonly actionDispatcher: ActionDispatcherService,
-        private readonly storageService: StorageService,
+        @Inject('ArtifactStorageBucket')
+        private readonly artifactStorage: IStorageBucket,
     ) {}
 
     async submit(
@@ -218,9 +219,10 @@ export class ActionService {
 
         try {
             let response;
+            const lokiUrl = process.env.LOKI_URL ?? 'http://loki:3100';
             try {
                 response = await axios.get<LokiResponse>(
-                    'http://loki:3100/loki/api/v1/query_range',
+                    `${lokiUrl}/loki/api/v1/query_range`,
                     {
                         params: {
                             query: logQl,
@@ -229,6 +231,7 @@ export class ActionService {
                             limit: 50_000,
                             direction: 'FORWARD',
                         },
+                        timeout: 2000,
                     },
                 );
             } catch (error) {
@@ -240,7 +243,7 @@ export class ActionService {
                         `Loki query with limit 50000 failed, retrying with 5000. Verify Loki config "max_entries_limit_per_query".`,
                     );
                     response = await axios.get<LokiResponse>(
-                        'http://loki:3100/loki/api/v1/query_range',
+                        `${lokiUrl}/loki/api/v1/query_range`,
                         {
                             params: {
                                 query: logQl,
@@ -249,6 +252,7 @@ export class ActionService {
                                 limit: 5000,
                                 direction: 'FORWARD',
                             },
+                            timeout: 2000,
                         },
                     );
                 } else {
@@ -416,7 +420,7 @@ export class ActionService {
         currentUrl: string,
         action: ActionEntity,
     ): Promise<string> {
-        const bucketName = environment.MINIO_ARTIFACTS_BUCKET_NAME;
+        const bucketName = environment.S3_ARTIFACTS_BUCKET_NAME;
 
         if (currentUrl && !currentUrl.includes(bucketName)) {
             return currentUrl;
@@ -425,8 +429,7 @@ export class ActionService {
         try {
             const friendlyFilename = `${action.template?.name ?? 'artifact'}-${action.uuid}.tar.gz`;
 
-            return await this.storageService.getPresignedDownloadUrl(
-                bucketName,
+            return await this.artifactStorage.getPresignedDownloadUrl(
                 `${action.uuid}.tar.gz`,
                 4 * 60 * 60,
                 {

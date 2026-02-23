@@ -4,9 +4,9 @@ The application relies on several infrastructure services running alongside the 
 
 ## Storage & Caching
 
-### MinIO (Object Storage)
+### SeaweedFS (Object Storage)
 
-MinIO is a high-performance object storage server compatible with the Amazon S3 API. It is used to store unstructured data such as mission files (`.bag`, `.mcap`) and artifacts.
+SeaweedFS is a high-performance distributed storage system for blobs, objects, files, and data lake, compatible with the Amazon S3 API. It is used to store unstructured data such as mission files (`.bag`, `.mcap`) and artifacts.
 
 **Key Buckets:**
 
@@ -18,11 +18,19 @@ MinIO is a high-performance object storage server compatible with the Amazon S3 
 - `dbdump`: Stores scheduled PostgreSQL database dumps.
     - Filenames follow the pattern `backup-<timestamp>.sql`.
 
-The API server should never download or upload files directly to avoid performance bottlenecks. Instead, it issues presigned URLs or temporary credentials for clients to interact with MinIO directly.
+The API server should never download or upload files directly to avoid performance bottlenecks. Instead, it issues presigned URLs or temporary credentials for clients to interact with SeaweedFS directly.
 
 **Development Access:**
-MinIO Console: `http://localhost:9001`
-Default Credentials: `minioadmin` / `minioadmin`
+Dashboard: `http://localhost:9333`
+S3 API: `http://localhost:9000`
+
+Default Credentials: `seaweed` / `seaweed` (configured via environment)
+
+::: warning Production Deployment
+The default provided `docker-compose.prod.yml` runs SeaweedFS with a single `server` command that includes all components (master, volume, filer, and S3 gateway) in one process. This setup is convenient for development but may have scalability and reliability implications for production.
+
+In production deployments, you should typically run these components separately instead of using our default configuration. This provides better fault isolation and horizontal scaling. For more information, please see the [official SeaweedFS Components Documentation](https://github.com/seaweedfs/seaweedfs/wiki/Components).
+:::
 
 ### Redis (Queue & Cache)
 

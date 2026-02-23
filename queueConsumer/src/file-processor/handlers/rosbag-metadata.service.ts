@@ -39,7 +39,7 @@ class LocalBagReader implements BagReader {
 }
 
 /**
- * Adapter for UniversalHttpReader (streaming from MinIO/URL)
+ * Adapter for UniversalHttpReader (streaming from s3)
  */
 class HttpBagReader implements BagReader {
     constructor(private reader: UniversalHttpReader) {}
@@ -66,7 +66,7 @@ export class RosBagMetadataService extends AbstractMetadataService {
     }
 
     /**
-     * Streams metadata directly from a URL (e.g., MinIO presigned URL)
+     * Streams metadata directly from a presigned URL
      */
     async extractFromUrl(
         presignedUrl: string,

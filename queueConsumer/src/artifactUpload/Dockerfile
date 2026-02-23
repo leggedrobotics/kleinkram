@@ -8,5 +8,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Run the new MinIO upload script
+# Run the S3 upload script
 CMD ["python", "upload_artifacts.py"]

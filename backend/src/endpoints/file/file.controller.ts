@@ -45,7 +45,6 @@ import {
     TemporaryFileAccessesDto,
     UpdateFile,
 } from '@kleinkram/api-dto';
-import env from '@kleinkram/backend-common/environment';
 import {
     BodyOptionalSource,
     BodyString,
@@ -445,15 +444,15 @@ export class FileController {
         return this.fileService.exists(uuid);
     }
 
-    @Post('resetMinioTags')
+    @Post('resetS3Tags')
     @AdminOnly()
     @ApiOkResponse({
-        description: 'Resetting Minio tags completed',
+        description: 'Resetting S3 tags completed',
     })
-    async resetMinioTags(): Promise<void> {
-        logger.debug('Resetting Minio tags');
-        await this.fileService.renameTags(env.MINIO_DATA_BUCKET_NAME);
-        logger.debug('Resetting Minio tags done');
+    async resetS3Tags(): Promise<void> {
+        logger.debug('Resetting S3 tags');
+        await this.fileService.renameTags();
+        logger.debug('Resetting S3 tags done');
     }
 
     @Post('recomputeFileSizes')
