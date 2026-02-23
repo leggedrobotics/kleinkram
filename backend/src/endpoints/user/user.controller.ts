@@ -2,16 +2,20 @@ import { ApiOkResponse, OutputDto } from '@/decorators';
 import { UserService } from '@/services/user.service';
 import {
     QuerySkip,
+    QuerySortBy,
+    QuerySortDirection,
     QueryString,
     QueryTake,
 } from '@/validation/query-decorators';
 import {
+    ApiKeysDto,
     CurrentAPIUserDto,
     NoQueryParametersDto,
     PermissionsDto,
     UserDto,
     UsersDto,
 } from '@kleinkram/api-dto';
+import { SortOrder } from '@kleinkram/api-dto/types/pagination';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
@@ -99,5 +103,35 @@ export class UserController {
         @AddUser() authHeader: AuthHeader,
     ): Promise<PermissionsDto> {
         return this.userService.getUserPermissions(authHeader.user.uuid);
+    }
+
+    @Get('api-keys')
+    @LoggedIn()
+    @ApiOperation({ summary: 'Get API key metadata for the current user' })
+    @ApiOkResponse({
+        description: 'API key metadata (excluding secret key values)',
+        type: ApiKeysDto,
+    })
+    async apiKeys(
+        @AddUser() authHeader: AuthHeader,
+        @QuerySkip('skip') skip: number,
+        @QueryTake('take') take: number,
+        @QuerySortBy('sortBy', 'Sort by field', [
+            'uuid',
+            'key_type',
+            'rights',
+            'deletedAt',
+            'createdAt',
+        ])
+        sortBy: string,
+        @QuerySortDirection('sortOrder') sortOrder: string,
+    ): Promise<ApiKeysDto> {
+        return this.userService.getApiKeysForUser(
+            authHeader.user.uuid,
+            skip,
+            take,
+            sortBy,
+            sortOrder === 'ASC' ? SortOrder.ASC : SortOrder.DESC,
+        );
     }
 }

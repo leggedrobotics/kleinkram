@@ -1,14 +1,17 @@
 import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
+    apiKeyEntityToMetadataDto,
     userEntityToCurrentAPIUserDto,
     userEntityToDto,
 } from '@/serialization';
 import {
+    ApiKeysDto,
     CurrentAPIUserDto,
     PermissionsDto,
     UserDto,
     UsersDto,
 } from '@kleinkram/api-dto';
+import { SortOrder } from '@kleinkram/api-dto/types/pagination';
 import {
     ApiKeyEntity,
     MissionAccessViewEntity,
@@ -278,6 +281,58 @@ export class UserService implements OnModuleInit {
             },
         });
         return { user, apiKey };
+    }
+
+    /**
+     * Get all API keys (including soft-deleted) for a user.
+     * Returns only metadata, never the actual key value.
+     *
+     * @param userUuid
+     * @param skip
+     * @param take
+     * @param sortBy
+     * @param sortOrder
+     */
+    async getApiKeysForUser(
+        userUuid: string,
+        skip: number,
+        take: number,
+        sortBy?: string,
+        sortOrder: SortOrder = SortOrder.DESC,
+    ): Promise<ApiKeysDto> {
+        const order: Record<string, 'ASC' | 'DESC'> = {};
+        const sortField = sortBy ?? 'createdAt';
+        order[sortField] = sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+
+        const [keys, count] = await this.apikeyRepository.findAndCount({
+            withDeleted: true,
+            where: { user: { uuid: userUuid } },
+            select: {
+                uuid: true,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                key_type: true,
+                rights: true,
+                createdAt: true,
+                updatedAt: true,
+                deletedAt: true,
+            },
+            relations: [
+                'mission',
+                'mission.project',
+                'action',
+                'action.template',
+            ],
+            order,
+            skip,
+            take,
+        });
+
+        return {
+            data: keys.map((key) => apiKeyEntityToMetadataDto(key)),
+            count,
+            skip,
+            take,
+        };
     }
 
     /**

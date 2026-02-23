@@ -1,4 +1,5 @@
 import type { PermissionsDto } from '@kleinkram/api-dto/types/permissions.dto';
+import type { ApiKeysDto } from '@kleinkram/api-dto/types/user/api-keys.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
 import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
 import { AxiosResponse } from 'axios';
@@ -29,5 +30,24 @@ export const getMe = async (): Promise<CurrentAPIUserDto> => {
 export const getPermissions = async (): Promise<PermissionsDto> => {
     const response: AxiosResponse<PermissionsDto> =
         await axios.get('/user/permissions');
+    return response.data;
+};
+
+export const getMyApiKeys = async (
+    take: number,
+    skip: number,
+    sortBy: string,
+    descending = false,
+): Promise<ApiKeysDto> => {
+    const parameters: Record<string, string> = {
+        take: take.toString(),
+        skip: skip.toString(),
+        sortBy: sortBy,
+        sortOrder: descending ? 'DESC' : 'ASC',
+    };
+
+    const response = await axios.get<ApiKeysDto>('/user/api-keys', {
+        params: parameters,
+    });
     return response.data;
 };

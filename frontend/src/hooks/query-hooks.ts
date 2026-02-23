@@ -20,6 +20,7 @@ import type {
     TagsDto,
     TagTypeDto,
 } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { ApiKeysDto } from '@kleinkram/api-dto/types/user/api-keys.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
 import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
 import {
@@ -60,7 +61,11 @@ import {
     getProjectDefaultAccess,
 } from 'src/services/queries/project';
 import { getFilteredTagTypes, getTagTypes } from 'src/services/queries/tag';
-import { getPermissions, searchUsers } from 'src/services/queries/user';
+import {
+    getMyApiKeys,
+    getPermissions,
+    searchUsers,
+} from 'src/services/queries/user';
 import { allWorkers } from 'src/services/queries/worker';
 import { QueryURLHandler } from 'src/services/query-handler';
 import { computed, ComputedRef, ref, Ref, unref, watch } from 'vue';
@@ -88,6 +93,31 @@ export const useUser = (): UseQueryReturnType<
     return useQuery<CurrentAPIUserDto | null>({
         queryKey: ['user'],
         queryFn: () => getUser(),
+    });
+};
+
+/**
+ * Fetches API key metadata for the current user
+ * @param take
+ * @param skip
+ * @param sortBy
+ * @param descending
+ */
+export const useMyApiKeys = (
+    take: Ref<number>,
+    skip: Ref<number>,
+    sortBy: Ref<string>,
+    descending: Ref<boolean>,
+): UseQueryReturnType<ApiKeysDto | null, Error> => {
+    return useQuery<ApiKeysDto | null>({
+        queryKey: ['apiKeys', { take, skip, sortBy, descending }],
+        queryFn: () =>
+            getMyApiKeys(
+                take.value,
+                skip.value,
+                sortBy.value,
+                descending.value,
+            ),
     });
 };
 
