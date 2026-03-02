@@ -18,7 +18,7 @@ system:
 - Chrome or Firefox Browser (Safari might cause issues while developing locally)
 
 ::: info Additional Tools
-To enable code completion and linting in your IDE, you may also need a NodeJS, yarn, and python installation.
+To enable code completion and linting in your IDE, you may also need a NodeJS, pnpm and python installation.
 :::
 
 ## Pre-commit Hooks
@@ -85,14 +85,14 @@ In principle the setup works similar to running the project locally, however, th
     :::
 
 4. In order to enable code completion and linting in your IDE, you may need to install additional tools.
-    - For JavaScript/TypeScript, you may need to install NodeJS and yarn.
+    - For JavaScript/TypeScript, you may need to install NodeJS and pnpm.
     - For Python, you may need to install python and pip.
 
 5. You can now install the dependencies for the frontend and the backend by running the following command in the
    top-level directory of the project:
 
     ```bash
-    yarn install
+    pnpm install
     ```
 
 ::: info
