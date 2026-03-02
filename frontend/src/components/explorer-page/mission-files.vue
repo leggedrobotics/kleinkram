@@ -135,7 +135,6 @@
                 <explorer-page-files-table
                     v-if="handler"
                     v-model:selected="selectedFiles"
-                    :url-handler="handler"
                     @reset-filter="resetFilter"
                 />
 
