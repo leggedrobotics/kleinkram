@@ -35,7 +35,7 @@ This command will start the application stack in test mode and optionally watche
 You can then run the tests by executing the following command:
 
 ```bash
-yarn run test[:verbose]
+pnpm run test[:verbose]
 ```
 
 ::: info
