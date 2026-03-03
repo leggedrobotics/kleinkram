@@ -14,6 +14,7 @@ interface MissionBody {
     missionUuid?: string;
     uuid?: string;
     mission?: string;
+    targetProjectUUID?: string;
 }
 
 interface TagParameters {
@@ -313,6 +314,48 @@ export class MoveMissionToProjectGuard extends BaseGuard {
             (await this.projectGuardService.canAccessProject(
                 user,
                 projectUUID,
+                AccessGroupRights.CREATE,
+            )) &&
+            (await this.missionGuardService.canAccessMission(
+                user,
+                missionUUID,
+                AccessGroupRights.DELETE,
+            ))
+        );
+    }
+}
+
+@Injectable()
+export class MigrateMissionByBodyGuard extends BaseGuard {
+    constructor(
+        private projectGuardService: ProjectGuardService,
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+
+        const body = request.body as MissionBody | undefined;
+        const missionUUID = body?.missionUUID;
+        const targetProjectUUID = body?.targetProjectUUID;
+
+        if (!missionUUID || !targetProjectUUID) {
+            throw new BadRequestException(
+                'missionUUID and targetProjectUUID are required',
+            );
+        }
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot move missions');
+        }
+
+        return (
+            (await this.projectGuardService.canAccessProject(
+                user,
+                targetProjectUUID,
                 AccessGroupRights.CREATE,
             )) &&
             (await this.missionGuardService.canAccessMission(

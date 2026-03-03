@@ -24,6 +24,7 @@ CREATE_HELP = "create a project"
 INFO_HELP = "get information about a project"
 UPDATE_HELP = "update a project"
 DELETE_HELP = "delete a project"
+MIGRATE_HELP = "migrate all missions from one project to another"
 
 
 @project_typer.command(help=CREATE_HELP)
@@ -76,6 +77,50 @@ def delete(project: str = typer.Option(..., "--project", "-p", help="project id 
     client = AuthenticatedClient()
     project_id = get_project(client=client, query=project_query, exact_match=True).id
     kleinkram.core.delete_project(client=client, project_id=project_id)
+
+
+@project_typer.command(help=MIGRATE_HELP)
+def migrate(
+    source_project: str = typer.Option(
+        ...,
+        "--source-project",
+        "-s",
+        help="source project id or name",
+    ),
+    target_project: str = typer.Option(
+        ...,
+        "--target-project",
+        "-t",
+        help="target project id or name",
+    ),
+    archive_source_as: Optional[str] = typer.Option(
+        None,
+        "--archive-source-as",
+        help="optional new name for source project after migration",
+    ),
+) -> None:
+    source_project_ids, source_project_patterns = split_args([source_project])
+    target_project_ids, target_project_patterns = split_args([target_project])
+    source_project_query = ProjectQuery(ids=source_project_ids, patterns=source_project_patterns)
+    target_project_query = ProjectQuery(ids=target_project_ids, patterns=target_project_patterns)
+
+    client = AuthenticatedClient()
+    source_project_parsed = get_project(client=client, query=source_project_query, exact_match=True)
+    target_project_parsed = get_project(client=client, query=target_project_query, exact_match=True)
+    if source_project_parsed.id == target_project_parsed.id:
+        raise typer.BadParameter("source and target projects must be different")
+
+    kleinkram.core.migrate_project(
+        client=client,
+        source_project_id=source_project_parsed.id,
+        target_project_id=target_project_parsed.id,
+        archive_source_as=archive_source_as,
+    )
+
+    print_project_info(
+        get_project(client, ProjectQuery(ids=[target_project_parsed.id])),
+        pprint=get_shared_state().verbose,
+    )
 
 
 @project_typer.command(help=NOT_IMPLEMENTED_YET)

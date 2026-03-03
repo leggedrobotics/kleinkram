@@ -8,6 +8,8 @@ import {
     CreateProject,
     DefaultRights,
     DeleteProjectResponseDto,
+    MigrateProjectDto,
+    MigrateProjectResponseDto,
     ProjectAccessDto,
     ProjectAccessListDto,
     ProjectDto,
@@ -34,6 +36,7 @@ import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreate,
     CanDeleteProject,
+    CanMigrateProjectByBody,
     CanReadProject,
     CanWriteProject,
     LoggedIn,
@@ -194,6 +197,18 @@ export class ProjectController {
         @AddUser() auth: AuthHeader,
     ): Promise<ProjectAccessListDto> {
         return this.accessService.updateProjectAccess(uuid, body, auth);
+    }
+
+    @Post('migrate')
+    @CanMigrateProjectByBody()
+    @ApiOkResponse({
+        description: 'Project missions migrated to another project',
+        type: MigrateProjectResponseDto,
+    })
+    async migrateProject(
+        @Body() dto: MigrateProjectDto,
+    ): Promise<MigrateProjectResponseDto> {
+        return this.projectService.migrateProject(dto);
     }
 }
 

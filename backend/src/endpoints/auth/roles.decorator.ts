@@ -23,6 +23,8 @@ import {
     DeleteProjectGuard,
     DeleteTagGuard,
     LoggedInUserGuard,
+    MigrateMissionByBodyGuard,
+    MigrateProjectByBodyGuard,
     MoveFilesGuard,
     MoveMissionToProjectGuard,
     ReadActionGuard,
@@ -143,6 +145,19 @@ export function CanDeleteProject() {
     );
 }
 
+export function CanMigrateProjectByBody() {
+    return applyDecorators(
+        SetMetadata('CanMigrateProjectByBody', true),
+        UseGuards(MigrateProjectByBodyGuard),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedExceptionDto,
+            description:
+                'User does not have permissions to migrate between the specified projects.',
+        }),
+    );
+}
+
 export function CanCreate() {
     return applyDecorators(
         SetMetadata('CanCreate', true),
@@ -191,6 +206,19 @@ export function CanMoveMission() {
             type: ForbiddenException,
             description:
                 'User does not have Read permissions on the specified project.',
+        }),
+    );
+}
+
+export function CanMigrateMissionByBody() {
+    return applyDecorators(
+        SetMetadata('CanMigrateMissionByBody', true),
+        UseGuards(MigrateMissionByBodyGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have permissions to migrate the specified mission.',
         }),
     );
 }

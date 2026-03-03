@@ -7,6 +7,8 @@ this file contains the main functionality of kleinkram cli
 - update_file
 - update_mission
 - update_project
+- migrate_mission
+- migrate_project
 - delete_files
 - delete_mission
 - delete_project
@@ -224,6 +226,36 @@ def update_project(
 ) -> None:
     # TODO: this function should do more in the future
     kleinkram.api.routes._update_project(client, project_id, description=description, new_name=new_name)
+
+
+def migrate_mission(
+    *,
+    client: AuthenticatedClient,
+    mission_id: UUID,
+    target_project_id: UUID,
+    new_name: Optional[str] = None,
+) -> None:
+    kleinkram.api.routes._migrate_mission(
+        client,
+        mission_id=mission_id,
+        target_project_id=target_project_id,
+        new_name=new_name,
+    )
+
+
+def migrate_project(
+    *,
+    client: AuthenticatedClient,
+    source_project_id: UUID,
+    target_project_id: UUID,
+    archive_source_as: Optional[str] = None,
+) -> None:
+    kleinkram.api.routes._migrate_project(
+        client,
+        source_project_id=source_project_id,
+        target_project_id=target_project_id,
+        archive_source_as=archive_source_as,
+    )
 
 
 def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> None:

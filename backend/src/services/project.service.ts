@@ -3,6 +3,8 @@ import {
     CreateProject,
     DefaultRightDto,
     DefaultRights,
+    MigrateProjectDto,
+    MigrateProjectResponseDto,
     ProjectDto,
     ProjectsDto,
     ProjectWithRequiredTagsDto,
@@ -16,7 +18,14 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
+import {
+    DataSource,
+    EntityManager,
+    ILike,
+    Not,
+    QueryFailedError,
+    Repository,
+} from 'typeorm';
 import { UserService } from './user.service';
 
 import {
@@ -41,6 +50,8 @@ import {
     TagTypeEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
+import env from '@kleinkram/backend-common/environment';
+import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {
     AccessGroupConfig,
     AccessGroupRights,
@@ -72,8 +83,11 @@ export class ProjectService {
         private tagTypeRepository: Repository<TagTypeEntity>,
         @InjectRepository(AccessGroupEntity)
         private accessGroupRepository: Repository<AccessGroupEntity>,
+        @InjectRepository(MissionEntity)
+        private missionRepository: Repository<MissionEntity>,
         private configService: ConfigService,
         private readonly dataSource: DataSource,
+        private readonly storageService: StorageService,
     ) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const config = this.configService.get('accessConfig');
@@ -528,6 +542,150 @@ export class ProjectService {
                 }
             },
         );
+    }
+
+    async migrateProject(
+        dto: MigrateProjectDto,
+    ): Promise<MigrateProjectResponseDto> {
+        const { sourceProjectUUID, targetProjectUUID, archiveSourceProjectAs } =
+            dto;
+
+        if (sourceProjectUUID === targetProjectUUID) {
+            throw new BadRequestException(
+                'Source and target project must be different',
+            );
+        }
+
+        const sourceProject = await this.projectRepository.findOne({
+            where: { uuid: sourceProjectUUID },
+        });
+        if (!sourceProject) {
+            throw new NotFoundException(
+                `Project with UUID ${sourceProjectUUID} not found`,
+            );
+        }
+
+        const targetProject = await this.projectRepository.findOne({
+            where: { uuid: targetProjectUUID },
+        });
+        if (!targetProject) {
+            throw new NotFoundException(
+                `Project with UUID ${targetProjectUUID} not found`,
+            );
+        }
+
+        if (archiveSourceProjectAs !== undefined) {
+            const archiveNameTaken = await this.projectRepository.exists({
+                where: {
+                    uuid: Not(sourceProjectUUID),
+                    name: ILike(archiveSourceProjectAs),
+                },
+            });
+            if (archiveNameTaken) {
+                throw new ConflictException(
+                    `Project with name '${archiveSourceProjectAs}' already exists`,
+                );
+            }
+        }
+
+        const sourceMissions = await this.missionRepository.find({
+            where: { project: { uuid: sourceProjectUUID } },
+            relations: ['files'],
+        });
+
+        const targetMissions = await this.missionRepository.find({
+            where: { project: { uuid: targetProjectUUID } },
+        });
+        const targetMissionNames = new Set(targetMissions.map((m) => m.name));
+        const collidingMissionNames = sourceMissions
+            .map((mission) => mission.name)
+            .filter((name) => targetMissionNames.has(name));
+
+        if (collidingMissionNames.length > 0) {
+            throw new ConflictException(
+                `Target project already contains mission names: ${collidingMissionNames.join(', ')}`,
+            );
+        }
+
+        const movedMissionUUIDs = sourceMissions.map((mission) => mission.uuid);
+        const movedFiles = sourceMissions.flatMap((mission) =>
+            (mission.files ?? []).map((file) => ({
+                fileUUID: file.uuid,
+                filename: file.filename,
+                missionUUID: mission.uuid,
+                sourceProjectUUID,
+            })),
+        );
+
+        try {
+            await this.dataSource.transaction(async (manager) => {
+                for (const mission of sourceMissions) {
+                    await manager.getRepository(MissionEntity).update(
+                        mission.uuid,
+                        {
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+                            project: { uuid: targetProjectUUID } as any,
+                        },
+                    );
+                }
+
+                if (archiveSourceProjectAs !== undefined) {
+                    await manager.getRepository(ProjectEntity).update(
+                        sourceProjectUUID,
+                        {
+                            name: archiveSourceProjectAs,
+                        },
+                    );
+                }
+
+                await Promise.all(
+                    movedFiles.map(async (file) => {
+                        await this.storageService.addTags(
+                            env.MINIO_DATA_BUCKET_NAME,
+                            file.fileUUID,
+                            {
+                                filename: file.filename,
+                                missionUuid: file.missionUUID,
+                                projectUuid: targetProjectUUID,
+                            },
+                        );
+                    }),
+                );
+            });
+        } catch (error) {
+            await Promise.all(
+                movedFiles.map(async (file) => {
+                    await this.storageService.addTags(
+                        env.MINIO_DATA_BUCKET_NAME,
+                        file.fileUUID,
+                        {
+                            filename: file.filename,
+                            missionUuid: file.missionUUID,
+                            projectUuid: file.sourceProjectUUID,
+                        },
+                    );
+                }),
+            );
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError?.code === '23505'
+            ) {
+                throw new ConflictException(
+                    'Project migration conflicted with existing names',
+                );
+            }
+            throw error;
+        }
+
+        return {
+            success: true,
+            sourceProjectUUID,
+            targetProjectUUID,
+            movedMissionCount: movedMissionUUIDs.length,
+            movedFileCount: movedFiles.length,
+            movedMissionUUIDs,
+        };
     }
 
     async createDefaultAccessGroups(

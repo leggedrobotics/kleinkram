@@ -64,6 +64,8 @@ __all__ = [
     "_create_project",
     "_update_mission",
     "_update_project",
+    "_migrate_mission",
+    "_migrate_project",
     "_delete_files",
     "_delete_mission",
     "_delete_project",
@@ -81,6 +83,8 @@ GET_STATUS = "/user/me"
 
 UPDATE_PROJECT = "/projects"
 UPDATE_MISSION = "/missions/tags"  # TODO: just metadata for now
+MIGRATE_MISSION = "/missions/migrate"
+MIGRATE_PROJECT = "/projects/migrate"
 CREATE_MISSION = "/missions/create"
 CREATE_PROJECT = "/projects"
 
@@ -114,6 +118,21 @@ def _handle_list_params(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             new_params[k] = json.dumps(v)
     return new_params
+
+
+def _extract_error_message(response: httpx.Response) -> str:
+    try:
+        payload = response.json()
+    except Exception:
+        return response.text
+
+    if isinstance(payload, dict):
+        message = payload.get("message")
+        if isinstance(message, str):
+            return message
+        if isinstance(message, list):
+            return ", ".join(str(part) for part in message)
+    return str(payload)
 
 
 def _project_query_to_params(
@@ -488,6 +507,76 @@ def _update_project(
     if new_name is not None:
         body["name"] = new_name
     resp = client.put(f"{UPDATE_PROJECT}/{project_id}", json=body)
+    resp.raise_for_status()
+
+
+def _migrate_mission(
+    client: AuthenticatedClient,
+    mission_id: UUID,
+    target_project_id: UUID,
+    *,
+    new_name: Optional[str] = None,
+) -> None:
+    payload = {
+        "missionUUID": str(mission_id),
+        "targetProjectUUID": str(target_project_id),
+    }
+    if new_name is not None:
+        payload["newName"] = new_name
+
+    resp = client.post(MIGRATE_MISSION, json=payload)
+
+    if resp.status_code == 404:
+        message = _extract_error_message(resp)
+        if "Project with UUID" in message:
+            raise ProjectNotFound(f"project not found: {target_project_id}")
+        raise MissionNotFound(f"mission not found: {mission_id}")
+    if resp.status_code == 400:
+        raise MissionValidationError(
+            f"invalid mission migration request for mission={mission_id} target={target_project_id}"
+        )
+    if resp.status_code == 403:
+        raise AccessDenied(f"cannot migrate mission: {mission_id}")
+    if resp.status_code == 409:
+        raise MissionExists(
+            f"target project already has a mission with the requested name: {mission_id}"
+        )
+
+    resp.raise_for_status()
+
+
+def _migrate_project(
+    client: AuthenticatedClient,
+    source_project_id: UUID,
+    target_project_id: UUID,
+    *,
+    archive_source_as: Optional[str] = None,
+) -> None:
+    payload = {
+        "sourceProjectUUID": str(source_project_id),
+        "targetProjectUUID": str(target_project_id),
+    }
+    if archive_source_as is not None:
+        payload["archiveSourceProjectAs"] = archive_source_as
+
+    resp = client.post(MIGRATE_PROJECT, json=payload)
+
+    if resp.status_code == 404:
+        message = _extract_error_message(resp)
+        if str(target_project_id) in message:
+            raise ProjectNotFound(f"project not found: {target_project_id}")
+        raise ProjectNotFound(f"project not found: {source_project_id}")
+    if resp.status_code == 400:
+        raise ProjectValidationError(
+            f"invalid project migration request for source={source_project_id} target={target_project_id}"
+        )
+    if resp.status_code == 403:
+        raise AccessDenied(f"cannot migrate project: {source_project_id}")
+    if resp.status_code == 409:
+        raise ProjectValidationError(
+            f"project migration conflict for source={source_project_id} target={target_project_id}"
+        )
+
     resp.raise_for_status()
 
 

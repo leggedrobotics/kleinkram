@@ -21,9 +21,14 @@ import { ProjectEntity } from '@kleinkram/backend-common/entities/project/projec
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { UserRole } from '@kleinkram/shared';
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+    ConflictException,
+    Inject,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Not, Repository } from 'typeorm';
+import { DataSource, ILike, Not, QueryFailedError, Repository } from 'typeorm';
 import logger from '../logger';
 import { TagService } from './tag.service';
 import { UserService } from './user.service';
@@ -58,6 +63,7 @@ export class MissionService {
         private tagService: TagService,
         @Inject('DataStorageBucket')
         private readonly dataStorage: IStorageBucket,
+        private readonly dataSource: DataSource,
     ) {}
 
     async create(
@@ -411,23 +417,38 @@ export class MissionService {
         };
     }
 
-    async moveMission(missionUUID: string, projectUUID: string): Promise<void> {
-        // Validate that the target project exists
-        const projectExists = await this.projectRepository.exists({
-            where: { uuid: projectUUID },
+    async migrateMission(
+        missionUUID: string,
+        targetProjectUUID: string,
+        newName?: string,
+    ): Promise<void> {
+        const targetProject = await this.projectRepository.findOne({
+            where: { uuid: targetProjectUUID },
         });
-        if (!projectExists) {
-            throw new ConflictException('Target project not found');
+        if (!targetProject) {
+            throw new NotFoundException(
+                `Project with UUID ${targetProjectUUID} not found`,
+            );
         }
 
-        // verify that the no mission with the same name exists in the project
-        const mission = await this.missionRepository.findOneOrFail({
+        const mission = await this.missionRepository.findOne({
             where: { uuid: missionUUID },
-            relations: ['files'],
+            relations: ['files', 'project'],
         });
+        if (!mission) {
+            throw new NotFoundException(
+                `Mission with UUID ${missionUUID} not found`,
+            );
+        }
+
+        const targetMissionName = newName ?? mission.name;
 
         const exists = await this.missionRepository.exists({
-            where: { name: mission.name, project: { uuid: projectUUID } },
+            where: {
+                name: targetMissionName,
+                uuid: Not(missionUUID),
+                project: { uuid: targetProjectUUID },
+            },
         });
         if (exists) {
             throw new ConflictException(
@@ -435,23 +456,65 @@ export class MissionService {
             );
         }
 
-        await this.missionRepository
-            .createQueryBuilder()
-            .relation(MissionEntity, 'project')
-            .of(missionUUID)
-            .set(projectUUID);
-
         if (mission.files === undefined) throw new Error('Files not loaded');
+        if (mission.project === undefined) throw new Error('Project not loaded');
+        if (mission.project.uuid === targetProject.uuid) {
+            throw new ConflictException(
+                'Mission is already part of the target project',
+            );
+        }
+        const missionFiles = mission.files;
 
-        await Promise.all(
-            mission.files.map(async (file) =>
-                this.dataStorage.addTags(file.uuid, {
-                    filename: file.filename,
-                    missionUuid: missionUUID,
-                    projectUuid: projectUUID,
-                }),
-            ),
-        );
+        const rollbackTags = missionFiles.map((file) => ({
+            fileUUID: file.uuid,
+            filename: file.filename,
+            missionUUID: missionUUID,
+            projectUUID: mission.project?.uuid ?? '',
+        }));
+
+        try {
+            await this.dataSource.transaction(async (manager) => {
+                await manager.getRepository(MissionEntity).update(missionUUID, {
+                    name: targetMissionName,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+                    project: { uuid: targetProjectUUID } as any,
+                });
+
+                await Promise.all(
+                    missionFiles.map(async (file) =>
+                        this.dataStorage.addTags(file.uuid, {
+                            filename: file.filename,
+                            missionUuid: missionUUID,
+                            projectUuid: targetProjectUUID,
+                        }),
+                    ),
+                );
+            });
+        } catch (error) {
+            await Promise.all(
+                rollbackTags.map(async (file) =>
+                    this.dataStorage.addTags(file.fileUUID, {
+                        filename: file.filename,
+                        missionUuid: file.missionUUID,
+                        projectUuid: file.projectUUID,
+                    }),
+                ),
+            );
+            if (
+                error instanceof QueryFailedError &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                error.driverError?.code === '23505'
+            ) {
+                throw new ConflictException(
+                    'Mission with that name already exists in the target project',
+                );
+            }
+            throw error;
+        }
+    }
+
+    async moveMission(missionUUID: string, projectUUID: string): Promise<void> {
+        await this.migrateMission(missionUUID, projectUUID);
     }
 
     async deleteMission(uuid: string): Promise<void> {

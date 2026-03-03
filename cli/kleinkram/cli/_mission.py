@@ -21,6 +21,7 @@ from kleinkram.utils import split_args
 CREATE_HELP = "create a mission"
 UPDATE_HELP = "update a mission"
 DELETE_HELP = "delete a mission"
+MIGRATE_HELP = "migrate a mission to another project"
 INFO_HELP = "get information about a mission"
 NOT_IMPLEMENTED_YET = """\
 Not implemented yet, open an issue if you want specific functionality
@@ -134,6 +135,72 @@ def delete(
             typer.confirm(f"delete {mission_parsed.name} {mission}", abort=True)
 
     kleinkram.core.delete_mission(client=client, mission_id=mission_parsed.id)
+
+
+@mission_typer.command(help=MIGRATE_HELP)
+def migrate(
+    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
+    target_project: str = typer.Option(
+        ...,
+        "--target-project",
+        "-t",
+        help="target project id or name",
+    ),
+    source_project: Optional[str] = typer.Option(
+        None,
+        "--source-project",
+        "-p",
+        help="source project id or name (required when --mission is a name)",
+    ),
+    new_name: Optional[str] = typer.Option(
+        None, "--new-name", "-n", help="optional new mission name in target project"
+    ),
+) -> None:
+    client = AuthenticatedClient()
+
+    source_project_query = ProjectQuery()
+    if source_project:
+        source_project_ids, source_project_patterns = split_args([source_project])
+        source_project_query = ProjectQuery(
+            ids=source_project_ids,
+            patterns=source_project_patterns,
+        )
+        source_project_uuid = get_project(
+            client=client,
+            query=source_project_query,
+            exact_match=True,
+        ).id
+        source_project_query = ProjectQuery(ids=[source_project_uuid])
+
+    mission_ids, mission_patterns = split_args([mission])
+    mission_query = MissionQuery(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_query=source_project_query,
+    )
+    if mission_patterns and not source_project:
+        raise InvalidMissionQuery(
+            "Mission query does not uniquely determine mission. "
+            "Source project name or id must be specified when migrating by mission name"
+        )
+
+    target_project_ids, target_project_patterns = split_args([target_project])
+    target_project_query = ProjectQuery(
+        ids=target_project_ids,
+        patterns=target_project_patterns,
+    )
+
+    mission_parsed = get_mission(client, mission_query)
+    target_project_parsed = get_project(client, target_project_query, exact_match=True)
+    kleinkram.core.migrate_mission(
+        client=client,
+        mission_id=mission_parsed.id,
+        target_project_id=target_project_parsed.id,
+        new_name=new_name,
+    )
+
+    migrated_mission = get_mission(client, MissionQuery(ids=[mission_parsed.id]))
+    print_mission_info(migrated_mission, pprint=get_shared_state().verbose)
 
 
 @mission_typer.command(help=NOT_IMPLEMENTED_YET)

@@ -11,6 +11,8 @@ import {
 import {
     CreateMission,
     FlatMissionDto,
+    MigrateMissionDto,
+    MigrateMissionResponseDto,
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
@@ -21,6 +23,7 @@ import { ParameterUuid as ParameterUID } from '../../validation/parameter-decora
 import {
     CanCreateInProjectByBody,
     CanDeleteMission,
+    CanMigrateMissionByBody,
     CanMoveMission,
     CanReadMission,
     CanWriteMissionByBody,
@@ -170,6 +173,27 @@ export class MissionController {
         @QueryUUID('projectUUID', 'Project UUID') projectUUID: string,
     ): Promise<void> {
         return this.missionService.moveMission(missionUUID, projectUUID);
+    }
+
+    @Post('migrate')
+    @CanMigrateMissionByBody()
+    @ApiOkResponse({
+        description: 'Mission migrated to another project',
+        type: MigrateMissionResponseDto,
+    })
+    async migrateMission(
+        @Body() dto: MigrateMissionDto,
+    ): Promise<MigrateMissionResponseDto> {
+        await this.missionService.migrateMission(
+            dto.missionUUID,
+            dto.targetProjectUUID,
+            dto.newName,
+        );
+        return {
+            success: true,
+            missionUUID: dto.missionUUID,
+            targetProjectUUID: dto.targetProjectUUID,
+        };
     }
 
     @Delete(':uuid')
