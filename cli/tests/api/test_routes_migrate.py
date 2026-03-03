@@ -6,8 +6,8 @@ import httpx
 import pytest
 
 import kleinkram.errors
-from kleinkram.api.routes import _move_missions
 from kleinkram.api.routes import _migrate_project
+from kleinkram.api.routes import _move_missions
 
 
 class DummyClient:
