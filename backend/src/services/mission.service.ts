@@ -486,17 +486,18 @@ export class MissionService {
                 movedMissionUUIDs = missions.map((mission) => mission.uuid);
 
                 const fullyLoadedMissions = missions.map((mission) => {
-                    if (mission.files === undefined)
-                        throw new Error('Files not loaded');
-                    if (mission.project === undefined)
-                        throw new Error('Project not loaded');
+                    if (!mission.project) {
+                        throw new NotFoundException(
+                            `Mission project missing for ${mission.uuid}`,
+                        );
+                    }
                     if (mission.project.uuid === targetProject.uuid) {
                         throw new ConflictException(
                             'Mission is already part of the target project',
                         );
                     }
                     return mission as MissionEntity & {
-                        files: NonNullable<MissionEntity['files']>;
+                        files: NonNullable<MissionEntity['files']> | [];
                         project: NonNullable<MissionEntity['project']>;
                     };
                 });
@@ -543,7 +544,7 @@ export class MissionService {
                 }
 
                 rollbackTags = fullyLoadedMissions.flatMap((mission) =>
-                    mission.files.map((file) => ({
+                    (mission.files ?? []).map((file) => ({
                         fileUUID: file.uuid,
                         filename: file.filename,
                         missionUUID: mission.uuid,
