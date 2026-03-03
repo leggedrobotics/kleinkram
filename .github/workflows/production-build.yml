@@ -23,6 +23,7 @@ jobs:
                   BACKEND_URL: ${{ vars.BACKEND_URL }}
                   GIT_BRANCH: ${{ github.ref_name }}
                   GIT_COMMIT: ${{ github.sha }}
+                  S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
             - working-directory: .
               name: push the docker image
               run: docker compose -f docker-compose.prod.yml push api-server frontend queue-consumer documentation artifact-uploader
