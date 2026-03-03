@@ -564,10 +564,7 @@ export class MissionService {
                     }
 
                     const updateResult = await missionRepository.update(
-                        {
-                            uuid: mission.uuid,
-                            project: { uuid: mission.project.uuid },
-                        },
+                        { uuid: mission.uuid },
                         {
                             name: targetMissionName,
                             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any

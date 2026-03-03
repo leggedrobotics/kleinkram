@@ -112,10 +112,7 @@ describe('MissionService.moveMissions', () => {
         );
 
         expect(updateMock).toHaveBeenCalledWith(
-            {
-                uuid: missionUUID,
-                project: { uuid: sourceProjectUUID },
-            },
+            { uuid: missionUUID },
             {
                 name: 'renamed_mission',
                 project: { uuid: targetProjectUUID },
