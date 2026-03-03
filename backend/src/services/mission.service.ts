@@ -528,19 +528,13 @@ export class MissionService {
                     missionUUID,
                     targetMissionName,
                 ] of targetMissionNames) {
-                    const exists = await missionRepository
-                        .createQueryBuilder('mission')
-                        .leftJoin('mission.project', 'project')
-                        .where('LOWER(mission.name) = LOWER(:name)', {
+                    const exists = await missionRepository.exists({
+                        where: {
                             name: targetMissionName,
-                        })
-                        .andWhere('mission.uuid != :missionUUID', {
-                            missionUUID,
-                        })
-                        .andWhere('project.uuid = :targetProjectUUID', {
-                            targetProjectUUID,
-                        })
-                        .getExists();
+                            uuid: Not(missionUUID),
+                            project: { uuid: targetProjectUUID },
+                        },
+                    });
                     if (exists) {
                         throw new ConflictException(
                             `Mission name '${targetMissionName}' already exists in the target project`,
