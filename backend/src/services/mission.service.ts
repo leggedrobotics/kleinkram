@@ -497,8 +497,9 @@ export class MissionService {
                         );
                     }
                     return {
-                        ...mission,
+                        uuid: mission.uuid,
                         files: mission.files ?? [],
+                        name: mission.name,
                         project: mission.project,
                     };
                 });
