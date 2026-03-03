@@ -311,9 +311,7 @@ export class MoveMissionsByBodyGuard extends BaseGuard {
             );
         }
         if (!targetProjectUUID) {
-            throw new BadRequestException(
-                'targetProjectUUID is required',
-            );
+            throw new BadRequestException('targetProjectUUID is required');
         }
         if (
             missionUUIDs.some((missionUUID) => !isUUID(missionUUID)) ||
