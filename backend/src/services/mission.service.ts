@@ -480,26 +480,22 @@ export class MissionService {
                     project: { uuid: targetProjectUUID } as any,
                 });
 
-                await Promise.all(
-                    missionFiles.map(async (file) =>
-                        this.dataStorage.addTags(file.uuid, {
-                            filename: file.filename,
-                            missionUuid: missionUUID,
-                            projectUuid: targetProjectUUID,
-                        }),
-                    ),
-                );
+                for (const file of missionFiles) {
+                    await this.dataStorage.addTags(file.uuid, {
+                        filename: file.filename,
+                        missionUuid: missionUUID,
+                        projectUuid: targetProjectUUID,
+                    });
+                }
             });
         } catch (error) {
-            await Promise.all(
-                rollbackTags.map(async (file) =>
-                    this.dataStorage.addTags(file.fileUUID, {
-                        filename: file.filename,
-                        missionUuid: file.missionUUID,
-                        projectUuid: file.projectUUID,
-                    }),
-                ),
-            );
+            for (const file of rollbackTags) {
+                await this.dataStorage.addTags(file.fileUUID, {
+                    filename: file.filename,
+                    missionUuid: file.missionUUID,
+                    projectUuid: file.projectUUID,
+                });
+            }
             if (
                 error instanceof QueryFailedError &&
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

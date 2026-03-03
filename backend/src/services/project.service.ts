@@ -14,6 +14,7 @@ import {
 import {
     BadRequestException,
     ConflictException,
+    Inject,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
@@ -50,8 +51,7 @@ import {
     TagTypeEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
     AccessGroupConfig,
     AccessGroupRights,
@@ -87,7 +87,8 @@ export class ProjectService {
         private missionRepository: Repository<MissionEntity>,
         private configService: ConfigService,
         private readonly dataSource: DataSource,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
     ) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const config = this.configService.get('accessConfig');
@@ -616,7 +617,6 @@ export class ProjectService {
                 sourceProjectUUID,
             })),
         );
-
         try {
             await this.dataSource.transaction(async (manager) => {
                 for (const mission of sourceMissions) {
@@ -638,34 +638,22 @@ export class ProjectService {
                     );
                 }
 
-                await Promise.all(
-                    movedFiles.map(async (file) => {
-                        await this.storageService.addTags(
-                            env.MINIO_DATA_BUCKET_NAME,
-                            file.fileUUID,
-                            {
-                                filename: file.filename,
-                                missionUuid: file.missionUUID,
-                                projectUuid: targetProjectUUID,
-                            },
-                        );
-                    }),
-                );
+                for (const file of movedFiles) {
+                    await this.dataStorage.addTags(file.fileUUID, {
+                        filename: file.filename,
+                        missionUuid: file.missionUUID,
+                        projectUuid: targetProjectUUID,
+                    });
+                }
             });
         } catch (error) {
-            await Promise.all(
-                movedFiles.map(async (file) => {
-                    await this.storageService.addTags(
-                        env.MINIO_DATA_BUCKET_NAME,
-                        file.fileUUID,
-                        {
-                            filename: file.filename,
-                            missionUuid: file.missionUUID,
-                            projectUuid: file.sourceProjectUUID,
-                        },
-                    );
-                }),
-            );
+            for (const file of movedFiles) {
+                await this.dataStorage.addTags(file.fileUUID, {
+                    filename: file.filename,
+                    missionUuid: file.missionUUID,
+                    projectUuid: file.sourceProjectUUID,
+                });
+            }
             if (
                 error instanceof QueryFailedError &&
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

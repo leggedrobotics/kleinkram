@@ -1,4 +1,6 @@
 import { ProjectService } from '@/services/project.service';
+import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { ConflictException } from '@nestjs/common';
 
 const createService = () => {
@@ -12,24 +14,33 @@ const createService = () => {
     const storageService = {
         addTags: jest.fn().mockResolvedValue(null),
     };
-    const updateMock = jest.fn().mockResolvedValue(null);
+    const missionUpdateMock = jest.fn().mockResolvedValue(null);
+    const projectUpdateMock = jest.fn().mockResolvedValue(null);
     const dataSource = {
         transaction: jest.fn(
             async (
                 callback: (manager: {
-                    getRepository: () => { update: jest.Mock };
+                    getRepository: (
+                        repository: unknown,
+                    ) => { update: jest.Mock };
                 }) => Promise<void>,
             ) => {
                 await callback({
-                    getRepository: () => ({
-                        update: updateMock,
-                    }),
+                    getRepository: (repository: unknown) => {
+                        if (repository === MissionEntity) {
+                            return { update: missionUpdateMock };
+                        }
+                        if (repository === ProjectEntity) {
+                            return { update: projectUpdateMock };
+                        }
+                        throw new Error('Unexpected repository requested');
+                    },
                 });
             },
         ),
     };
     const configService = {
-        get: jest.fn().mockReturnValue({ accessGroups: [] }),
+        get: jest.fn().mockReturnValue({ ['access_groups']: [] }),
     };
 
     const service = new ProjectService(
@@ -50,7 +61,8 @@ const createService = () => {
         missionRepository,
         storageService,
         dataSource,
-        updateMock,
+        missionUpdateMock,
+        projectUpdateMock,
     };
 };
 
@@ -95,7 +107,8 @@ describe('ProjectService.migrateProject', () => {
             projectRepository,
             missionRepository,
             storageService,
-            updateMock,
+            missionUpdateMock,
+            projectUpdateMock,
         } = createService();
 
         projectRepository.findOne.mockResolvedValue({});
@@ -137,8 +150,32 @@ describe('ProjectService.migrateProject', () => {
                 'bbbb2222-2222-4222-8222-222222222222',
             ],
         });
-        expect(updateMock).toHaveBeenCalledTimes(3);
+        expect(missionUpdateMock).toHaveBeenCalledTimes(2);
+        expect(missionUpdateMock).toHaveBeenCalledWith(
+            'aaaa1111-1111-4111-8111-111111111111',
+            {
+                project: { uuid: targetProjectUUID },
+            },
+        );
+        expect(missionUpdateMock).toHaveBeenCalledWith(
+            'bbbb2222-2222-4222-8222-222222222222',
+            {
+                project: { uuid: targetProjectUUID },
+            },
+        );
+        expect(projectUpdateMock).toHaveBeenCalledTimes(1);
+        expect(projectUpdateMock).toHaveBeenCalledWith(sourceProjectUUID, {
+            name: 'legacy_source',
+        });
         expect(storageService.addTags).toHaveBeenCalledTimes(1);
+        expect(storageService.addTags).toHaveBeenCalledWith(
+            'cccc3333-3333-4333-8333-333333333333',
+            {
+                filename: 'a.mcap',
+                missionUuid: 'aaaa1111-1111-4111-8111-111111111111',
+                projectUuid: targetProjectUUID,
+            },
+        );
     });
 
     test('restores file tags if migration tagging fails', async () => {
@@ -175,7 +212,6 @@ describe('ProjectService.migrateProject', () => {
 
         expect(storageService.addTags).toHaveBeenNthCalledWith(
             2,
-            expect.any(String),
             'cccc3333-3333-4333-8333-333333333333',
             {
                 filename: 'a.mcap',

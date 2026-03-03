@@ -95,6 +95,24 @@ describe('MissionService.migrateMission', () => {
             project: { uuid: targetProjectUUID },
         });
         expect(storageService.addTags).toHaveBeenCalledTimes(2);
+        expect(storageService.addTags).toHaveBeenNthCalledWith(
+            1,
+            'aaaa1111-1111-4111-8111-111111111111',
+            {
+                filename: 'a.mcap',
+                missionUuid: missionUUID,
+                projectUuid: targetProjectUUID,
+            },
+        );
+        expect(storageService.addTags).toHaveBeenNthCalledWith(
+            2,
+            'bbbb2222-2222-4222-8222-222222222222',
+            {
+                filename: 'b.mcap',
+                missionUuid: missionUUID,
+                projectUuid: targetProjectUUID,
+            },
+        );
     });
 
     test('throws on target name collision before update', async () => {
@@ -169,7 +187,6 @@ describe('MissionService.migrateMission', () => {
 
         expect(storageService.addTags).toHaveBeenNthCalledWith(
             2,
-            expect.any(String),
             'aaaa1111-1111-4111-8111-111111111111',
             {
                 filename: 'a.mcap',
