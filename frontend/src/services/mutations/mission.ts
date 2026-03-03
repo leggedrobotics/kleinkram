@@ -15,12 +15,16 @@ export const createMission = async (
     return response.data;
 };
 
-export const moveMission = async (missionUUID: string, projectUUID: string) => {
-    const response = await axios.post(
-        '/mission/move',
-        {},
-        { params: { missionUUID, projectUUID } },
-    );
+export const moveMissions = async (
+    missionUUIDs: string[],
+    targetProjectUUID: string,
+    newName?: string,
+) => {
+    const response = await axios.post('/mission/move', {
+        missionUUIDs,
+        targetProjectUUID,
+        newName,
+    });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

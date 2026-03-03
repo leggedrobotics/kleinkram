@@ -1,10 +1,11 @@
 import { MissionService } from '@/services/mission.service';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { ConflictException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 
 const createService = () => {
-    const missionFindOneInTx = jest.fn();
+    const missionFindInTx = jest.fn();
     const missionExistsInTx = jest.fn();
     const projectRepository = {
         findOne: jest.fn(),
@@ -17,15 +18,30 @@ const createService = () => {
         transaction: jest.fn(
             async (
                 callback: (manager: {
-                    getRepository: () => { update: jest.Mock };
+                    getRepository: (repository: unknown) => {
+                        update?: jest.Mock;
+                        find?: jest.Mock;
+                        findOne?: jest.Mock;
+                        exists?: jest.Mock;
+                    };
                 }) => Promise<void>,
             ) => {
                 await callback({
-                    getRepository: () => ({
-                        findOne: missionFindOneInTx,
-                        exists: missionExistsInTx,
-                        update: updateMock,
-                    }),
+                    getRepository: (repository: unknown) => {
+                        if (repository === MissionEntity) {
+                            return {
+                                find: missionFindInTx,
+                                exists: missionExistsInTx,
+                                update: updateMock,
+                            };
+                        }
+                        if (repository === ProjectEntity) {
+                            return {
+                                findOne: projectRepository.findOne,
+                            };
+                        }
+                        throw new Error('Unexpected repository requested');
+                    },
                 });
             },
         ),
@@ -43,7 +59,7 @@ const createService = () => {
 
     return {
         service,
-        missionFindOneInTx,
+        missionFindInTx,
         missionExistsInTx,
         projectRepository,
         storageService,
@@ -52,7 +68,7 @@ const createService = () => {
     };
 };
 
-describe('MissionService.migrateMission', () => {
+describe('MissionService.moveMissions', () => {
     const missionUUID = '11111111-1111-4111-8111-111111111111';
     const targetProjectUUID = '22222222-2222-4222-8222-222222222222';
     const sourceProjectUUID = '33333333-3333-4333-8333-333333333333';
@@ -60,35 +76,37 @@ describe('MissionService.migrateMission', () => {
     test('migrates mission and retags files', async () => {
         const {
             service,
-            missionFindOneInTx,
+            missionFindInTx,
             missionExistsInTx,
             projectRepository,
             storageService,
             updateMock,
         } = createService();
 
-        missionFindOneInTx.mockResolvedValue({
-            uuid: missionUUID,
-            name: 'source_mission',
-            project: { uuid: sourceProjectUUID },
-            files: [
-                {
-                    uuid: 'aaaa1111-1111-4111-8111-111111111111',
-                    filename: 'a.mcap',
-                },
-                {
-                    uuid: 'bbbb2222-2222-4222-8222-222222222222',
-                    filename: 'b.mcap',
-                },
-            ],
-        } as unknown as MissionEntity);
+        missionFindInTx.mockResolvedValue([
+            {
+                uuid: missionUUID,
+                name: 'source_mission',
+                project: { uuid: sourceProjectUUID },
+                files: [
+                    {
+                        uuid: 'aaaa1111-1111-4111-8111-111111111111',
+                        filename: 'a.mcap',
+                    },
+                    {
+                        uuid: 'bbbb2222-2222-4222-8222-222222222222',
+                        filename: 'b.mcap',
+                    },
+                ],
+            },
+        ] as unknown as MissionEntity[]);
         missionExistsInTx.mockResolvedValue(false);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
         });
 
-        await service.migrateMission(
-            missionUUID,
+        await service.moveMissions(
+            [missionUUID],
             targetProjectUUID,
             'renamed_mission',
         );
@@ -127,25 +145,27 @@ describe('MissionService.migrateMission', () => {
     test('throws on target name collision before update', async () => {
         const {
             service,
-            missionFindOneInTx,
+            missionFindInTx,
             missionExistsInTx,
             projectRepository,
             updateMock,
         } = createService();
 
-        missionFindOneInTx.mockResolvedValue({
-            uuid: missionUUID,
-            name: 'source_mission',
-            project: { uuid: sourceProjectUUID },
-            files: [],
-        } as unknown as MissionEntity);
+        missionFindInTx.mockResolvedValue([
+            {
+                uuid: missionUUID,
+                name: 'source_mission',
+                project: { uuid: sourceProjectUUID },
+                files: [],
+            },
+        ] as unknown as MissionEntity[]);
         missionExistsInTx.mockResolvedValue(true);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
         });
 
         await expect(
-            service.migrateMission(missionUUID, targetProjectUUID),
+            service.moveMissions([missionUUID], targetProjectUUID),
         ).rejects.toThrow(ConflictException);
         expect(updateMock).not.toHaveBeenCalled();
     });
@@ -153,25 +173,27 @@ describe('MissionService.migrateMission', () => {
     test('throws when target project matches current project', async () => {
         const {
             service,
-            missionFindOneInTx,
+            missionFindInTx,
             missionExistsInTx,
             projectRepository,
             updateMock,
         } = createService();
 
-        missionFindOneInTx.mockResolvedValue({
-            uuid: missionUUID,
-            name: 'source_mission',
-            project: { uuid: targetProjectUUID },
-            files: [],
-        } as unknown as MissionEntity);
+        missionFindInTx.mockResolvedValue([
+            {
+                uuid: missionUUID,
+                name: 'source_mission',
+                project: { uuid: targetProjectUUID },
+                files: [],
+            },
+        ] as unknown as MissionEntity[]);
         missionExistsInTx.mockResolvedValue(false);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
         });
 
         await expect(
-            service.migrateMission(missionUUID, targetProjectUUID),
+            service.moveMissions([missionUUID], targetProjectUUID),
         ).rejects.toThrow(ConflictException);
         expect(updateMock).not.toHaveBeenCalled();
     });
@@ -179,23 +201,25 @@ describe('MissionService.migrateMission', () => {
     test('restores tags when migration tagging fails', async () => {
         const {
             service,
-            missionFindOneInTx,
+            missionFindInTx,
             missionExistsInTx,
             projectRepository,
             storageService,
         } = createService();
 
-        missionFindOneInTx.mockResolvedValue({
-            uuid: missionUUID,
-            name: 'source_mission',
-            project: { uuid: sourceProjectUUID },
-            files: [
-                {
-                    uuid: 'aaaa1111-1111-4111-8111-111111111111',
-                    filename: 'a.mcap',
-                },
-            ],
-        } as unknown as MissionEntity);
+        missionFindInTx.mockResolvedValue([
+            {
+                uuid: missionUUID,
+                name: 'source_mission',
+                project: { uuid: sourceProjectUUID },
+                files: [
+                    {
+                        uuid: 'aaaa1111-1111-4111-8111-111111111111',
+                        filename: 'a.mcap',
+                    },
+                ],
+            },
+        ] as unknown as MissionEntity[]);
         missionExistsInTx.mockResolvedValue(false);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
@@ -206,7 +230,7 @@ describe('MissionService.migrateMission', () => {
             .mockResolvedValue(null);
 
         await expect(
-            service.migrateMission(missionUUID, targetProjectUUID),
+            service.moveMissions([missionUUID], targetProjectUUID),
         ).rejects.toThrow('failed to set tags');
 
         expect(storageService.addTags).toHaveBeenNthCalledWith(
@@ -223,24 +247,26 @@ describe('MissionService.migrateMission', () => {
     test('maps unique-violation to conflict without rollback masking', async () => {
         const {
             service,
-            missionFindOneInTx,
+            missionFindInTx,
             missionExistsInTx,
             projectRepository,
             storageService,
             updateMock,
         } = createService();
 
-        missionFindOneInTx.mockResolvedValue({
-            uuid: missionUUID,
-            name: 'source_mission',
-            project: { uuid: sourceProjectUUID },
-            files: [
-                {
-                    uuid: 'aaaa1111-1111-4111-8111-111111111111',
-                    filename: 'a.mcap',
-                },
-            ],
-        } as unknown as MissionEntity);
+        missionFindInTx.mockResolvedValue([
+            {
+                uuid: missionUUID,
+                name: 'source_mission',
+                project: { uuid: sourceProjectUUID },
+                files: [
+                    {
+                        uuid: 'aaaa1111-1111-4111-8111-111111111111',
+                        filename: 'a.mcap',
+                    },
+                ],
+            },
+        ] as unknown as MissionEntity[]);
         missionExistsInTx.mockResolvedValue(false);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
@@ -252,7 +278,7 @@ describe('MissionService.migrateMission', () => {
         );
 
         await expect(
-            service.migrateMission(missionUUID, targetProjectUUID),
+            service.moveMissions([missionUUID], targetProjectUUID),
         ).rejects.toThrow(ConflictException);
         expect(storageService.addTags).not.toHaveBeenCalled();
     });

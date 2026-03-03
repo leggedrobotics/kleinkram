@@ -4,7 +4,12 @@
             class="q-pa-sm text-center"
             style="width: 80%; min-height: 100px; max-width: 500px"
         >
-            <h5>Move mission {{ mission?.name }} to another project</h5>
+            <h5 v-if="selectedMissions.length === 1">
+                Move mission {{ selectedMissions[0]?.name }} to another project
+            </h5>
+            <h5 v-else>
+                Move {{ selectedMissions.length }} missions to another project
+            </h5>
 
             <div class="column q-gutter-y-md q-ma-md">
                 <ScopeSelector
@@ -18,7 +23,7 @@
                         label="Cancel"
                         flat
                         class="button-border"
-                        @click="onDialogOK"
+                        @click="onDialogCancel"
                     />
                     <q-btn
                         label="OK"
@@ -26,7 +31,8 @@
                         unelevated
                         :disable="
                             !selectedProjectUuid ||
-                            selectedProjectUuid === mission?.project?.uuid
+                            selectedMissions.length === 0 ||
+                            isNoopMove
                         "
                         @click="onOk"
                     />
@@ -37,44 +43,68 @@
 </template>
 
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type {
+    FlatMissionDto,
+    MissionWithFilesDto,
+} from '@kleinkram/api-dto/types/mission/mission.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
-import { moveMission } from 'src/services/mutations/mission';
-import { ref } from 'vue';
+import { moveMissions } from 'src/services/mutations/mission';
+import { computed, ref } from 'vue';
 
-const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
+const { dialogRef, onDialogOK, onDialogCancel, onDialogHide } =
+    useDialogPluginComponent();
 
 const properties = defineProps<{
-    mission?: MissionWithFilesDto;
+    mission?: MissionWithFilesDto | FlatMissionDto;
+    missions?: FlatMissionDto[];
 }>();
+
+const selectedMissions = computed<FlatMissionDto[]>(() => {
+    if (properties.missions && properties.missions.length > 0) {
+        return properties.missions;
+    }
+    if (properties.mission) {
+        return [properties.mission];
+    }
+    return [];
+});
 
 const queryClient = useQueryClient();
 
 const selectedProjectUuid = ref<string | undefined>(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-    properties.mission?.project?.uuid,
+    selectedMissions.value[0]?.project?.uuid,
 );
 
 const { selectedProject } = useScopeSelection(selectedProjectUuid);
-
-async function onOk(): Promise<void> {
-    if (
-        !properties.mission ||
-        !selectedProjectUuid.value ||
-        !selectedProject.value
-    ) {
-        return;
+const isNoopMove = computed<boolean>(() => {
+    if (!selectedProjectUuid.value || selectedMissions.value.length === 0) {
+        return false;
     }
 
+    return selectedMissions.value.every(
+        (mission) => mission.project?.uuid === selectedProjectUuid.value,
+    );
+});
+
+async function onOk(): Promise<void> {
+    if (!selectedProjectUuid.value || !selectedProject.value) {
+        return;
+    }
+    if (selectedMissions.value.length === 0) return;
+
     const targetProjectName = selectedProject.value.name;
+    const missionUUIDs = selectedMissions.value.map((mission) => mission.uuid);
+    const isSingleMission = missionUUIDs.length === 1;
+    const missionMessage = isSingleMission
+        ? selectedMissions.value[0]?.name
+        : `${missionUUIDs.length} missions`;
 
     const creating = Notify.create({
         group: false,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
-        message: `Moving mission ${properties.mission.name} to project ${targetProjectName}`,
+        message: `Moving ${missionMessage} to project ${targetProjectName}`,
         color: 'grey',
         spinner: true,
         timeout: 4000,
@@ -82,12 +112,10 @@ async function onOk(): Promise<void> {
     });
 
     try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-        await moveMission(properties.mission.uuid, selectedProjectUuid.value);
+        await moveMissions(missionUUIDs, selectedProjectUuid.value);
 
         creating({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
-            message: `Mission ${properties.mission.name} moved to project ${targetProjectName}`,
+            message: `Moved ${missionMessage} to project ${targetProjectName}`,
             color: 'positive',
             spinner: false,
             timeout: 4000,
@@ -113,8 +141,7 @@ async function onOk(): Promise<void> {
         onDialogOK(selectedProjectUuid.value);
     } catch (error: unknown) {
         creating({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
-            message: `Error moving mission ${properties.mission.name} to project ${targetProjectName}`,
+            message: `Error moving ${missionMessage} to project ${targetProjectName}`,
             color: 'negative',
             spinner: false,
             timeout: 4000,

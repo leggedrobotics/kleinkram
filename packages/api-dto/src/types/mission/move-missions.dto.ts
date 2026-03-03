@@ -1,11 +1,19 @@
 import { IsNoValidUUID, IsValidMissionName } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
+import {
+    ArrayNotEmpty,
+    IsArray,
+    IsBoolean,
+    IsOptional,
+    IsUUID,
+} from 'class-validator';
 
-export class MigrateMissionDto {
-    @ApiProperty()
-    @IsUUID('4')
-    missionUUID!: string;
+export class MoveMissionsDto {
+    @ApiProperty({ type: [String] })
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsUUID('4', { each: true })
+    missionUUIDs!: string[];
 
     @ApiProperty()
     @IsUUID('4')
@@ -18,16 +26,14 @@ export class MigrateMissionDto {
     newName?: string;
 }
 
-export class MigrateMissionResponseDto {
+export class MoveMissionsResponseDto {
     @ApiProperty()
     @IsBoolean()
     success!: boolean;
 
     @ApiProperty()
-    @IsUUID('4')
-    missionUUID!: string;
+    movedMissionCount!: number;
 
     @ApiProperty()
-    @IsUUID('4')
     targetProjectUUID!: string;
 }

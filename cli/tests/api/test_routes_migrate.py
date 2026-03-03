@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 import kleinkram.errors
-from kleinkram.api.routes import _migrate_mission
+from kleinkram.api.routes import _move_missions
 from kleinkram.api.routes import _migrate_project
 
 
@@ -22,23 +22,23 @@ class DummyClient:
         return httpx.Response(self.status_code, request=request, json=self.json_body)
 
 
-def test_migrate_mission_uses_expected_route_and_payload():
+def test_move_missions_uses_expected_route_and_payload():
     client = DummyClient()
     mission_id = uuid4()
     target_project_id = uuid4()
 
-    _migrate_mission(
+    _move_missions(
         client,  # type: ignore[arg-type]
-        mission_id=mission_id,
+        mission_ids=[mission_id],
         target_project_id=target_project_id,
         new_name="renamed_mission",
     )
 
     assert client.calls == [
         (
-            "/missions/migrate",
+            "/missions/move",
             {
-                "missionUUID": str(mission_id),
+                "missionUUIDs": [str(mission_id)],
                 "targetProjectUUID": str(target_project_id),
                 "newName": "renamed_mission",
             },
@@ -62,23 +62,32 @@ def test_migrate_mission_maps_http_errors(status_code, error_type):  # noqa: ANN
     target_project_id = uuid4()
 
     with pytest.raises(error_type):
-        _migrate_mission(
+        _move_missions(
             client,  # type: ignore[arg-type]
-            mission_id=mission_id,
+            mission_ids=[mission_id],
             target_project_id=target_project_id,
         )
 
 
-def test_migrate_mission_maps_project_not_found_detail():
+def test_move_missions_maps_project_not_found_detail():
     client = DummyClient(
         status_code=404,
         json_body={"message": "Project with UUID deadbeef not found"},
     )
 
     with pytest.raises(kleinkram.errors.ProjectNotFound):
-        _migrate_mission(
+        _move_missions(
             client,  # type: ignore[arg-type]
-            mission_id=uuid4(),
+            mission_ids=[uuid4()],
+            target_project_id=uuid4(),
+        )
+
+
+def test_move_missions_requires_non_empty_ids():
+    with pytest.raises(kleinkram.errors.MissionValidationError):
+        _move_missions(
+            DummyClient(),  # type: ignore[arg-type]
+            mission_ids=[],
             target_project_id=uuid4(),
         )
 

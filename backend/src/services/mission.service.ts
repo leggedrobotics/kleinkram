@@ -22,13 +22,22 @@ import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-ty
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { UserRole } from '@kleinkram/shared';
 import {
+    BadRequestException,
     ConflictException,
     Inject,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, ILike, Not, QueryFailedError, Repository } from 'typeorm';
+import {
+    DataSource,
+    ILike,
+    In,
+    Not,
+    QueryFailedError,
+    Raw,
+    Repository,
+} from 'typeorm';
 import logger from '../logger';
 import { TagService } from './tag.service';
 import { UserService } from './user.service';
@@ -417,20 +426,26 @@ export class MissionService {
         };
     }
 
-    async migrateMission(
-        missionUUID: string,
+    async moveMissions(
+        missionUUIDs: string[],
         targetProjectUUID: string,
         newName?: string,
-    ): Promise<void> {
-        const targetProject = await this.projectRepository.findOne({
-            where: { uuid: targetProjectUUID },
-        });
-        if (!targetProject) {
-            throw new NotFoundException(
-                `Project with UUID ${targetProjectUUID} not found`,
+    ): Promise<{ movedMissionCount: number; movedMissionUUIDs: string[] }> {
+        if (missionUUIDs.length === 0) {
+            throw new BadRequestException('missionUUIDs must not be empty');
+        }
+
+        const uniqueMissionUUIDs = [...new Set(missionUUIDs)];
+        if (uniqueMissionUUIDs.length !== missionUUIDs.length) {
+            throw new BadRequestException('missionUUIDs must be unique');
+        }
+        if (newName !== undefined && uniqueMissionUUIDs.length !== 1) {
+            throw new BadRequestException(
+                'newName is only allowed when moving a single mission',
             );
         }
 
+        let movedMissionUUIDs: string[] = [];
         let rollbackTags: {
             fileUUID: string;
             filename: string;
@@ -440,68 +455,136 @@ export class MissionService {
 
         try {
             await this.dataSource.transaction(async (manager) => {
+                const projectRepository = manager.getRepository(ProjectEntity);
                 const missionRepository = manager.getRepository(MissionEntity);
-                const mission = await missionRepository.findOne({
-                    where: { uuid: missionUUID },
+
+                const targetProject = await projectRepository.findOne({
+                    where: { uuid: targetProjectUUID },
+                });
+                if (!targetProject) {
+                    throw new NotFoundException(
+                        `Project with UUID ${targetProjectUUID} not found`,
+                    );
+                }
+
+                const missions = await missionRepository.find({
+                    where: { uuid: In(uniqueMissionUUIDs) },
                     relations: ['files', 'project'],
                 });
-                if (!mission) {
+
+                if (missions.length !== uniqueMissionUUIDs.length) {
+                    const foundUUIDs = new Set(
+                        missions.map((mission) => mission.uuid),
+                    );
+                    const missing = uniqueMissionUUIDs.filter(
+                        (missionUUID) => !foundUUIDs.has(missionUUID),
+                    );
                     throw new NotFoundException(
-                        `Mission with UUID ${missionUUID} not found`,
-                    );
-                }
-                if (mission.files === undefined)
-                    throw new Error('Files not loaded');
-                if (mission.project === undefined)
-                    throw new Error('Project not loaded');
-                if (mission.project.uuid === targetProject.uuid) {
-                    throw new ConflictException(
-                        'Mission is already part of the target project',
+                        `Missions not found: ${missing.join(', ')}`,
                     );
                 }
 
-                const targetMissionName = newName ?? mission.name;
-                const exists = await missionRepository.exists({
-                    where: {
-                        name: targetMissionName,
-                        uuid: Not(missionUUID),
-                        project: { uuid: targetProjectUUID },
-                    },
+                movedMissionUUIDs = missions.map((mission) => mission.uuid);
+
+                const fullyLoadedMissions = missions.map((mission) => {
+                    if (mission.files === undefined)
+                        throw new Error('Files not loaded');
+                    if (mission.project === undefined)
+                        throw new Error('Project not loaded');
+                    if (mission.project.uuid === targetProject.uuid) {
+                        throw new ConflictException(
+                            'Mission is already part of the target project',
+                        );
+                    }
+                    return mission as MissionEntity & {
+                        files: NonNullable<MissionEntity['files']>;
+                        project: NonNullable<MissionEntity['project']>;
+                    };
                 });
-                if (exists) {
-                    throw new ConflictException(
-                        'Mission with that name already exists in the project',
+
+                const targetMissionNames = new Map<string, string>();
+                for (const mission of fullyLoadedMissions) {
+                    targetMissionNames.set(
+                        mission.uuid,
+                        mission.uuid === uniqueMissionUUIDs[0] && newName
+                            ? newName
+                            : mission.name,
                     );
                 }
 
-                rollbackTags = mission.files.map((file) => ({
-                    fileUUID: file.uuid,
-                    filename: file.filename,
-                    missionUUID: missionUUID,
-                    projectUUID: mission.project?.uuid ?? '',
-                }));
-
-                const updateResult = await missionRepository.update(
-                    {
-                        uuid: missionUUID,
-                        project: { uuid: mission.project.uuid },
-                    },
-                    {
-                        name: targetMissionName,
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-                        project: { uuid: targetProjectUUID } as any,
-                    },
+                const normalizedTargetNames = Array.from(
+                    targetMissionNames.values(),
+                    (name) => name.toLowerCase(),
                 );
-                if (updateResult.affected !== 1) {
+                if (
+                    new Set(normalizedTargetNames).size !==
+                    normalizedTargetNames.length
+                ) {
                     throw new ConflictException(
-                        'Mission changed during migration. Retry the migration request.',
+                        'Requested mission names must be unique in the target project',
                     );
                 }
 
-                for (const file of mission.files) {
-                    await this.dataStorage.addTags(file.uuid, {
+                for (const [
+                    missionUUID,
+                    targetMissionName,
+                ] of targetMissionNames) {
+                    const exists = await missionRepository.exists({
+                        where: {
+                            name: Raw(
+                                (alias) => `LOWER(${alias}) = LOWER(:name)`,
+                                { name: targetMissionName },
+                            ),
+                            uuid: Not(missionUUID),
+                            project: { uuid: targetProjectUUID },
+                        },
+                    });
+                    if (exists) {
+                        throw new ConflictException(
+                            `Mission name '${targetMissionName}' already exists in the target project`,
+                        );
+                    }
+                }
+
+                rollbackTags = fullyLoadedMissions.flatMap((mission) =>
+                    mission.files.map((file) => ({
+                        fileUUID: file.uuid,
                         filename: file.filename,
-                        missionUuid: missionUUID,
+                        missionUUID: mission.uuid,
+                        projectUUID: mission.project.uuid,
+                    })),
+                );
+
+                for (const mission of fullyLoadedMissions) {
+                    const targetMissionName = targetMissionNames.get(
+                        mission.uuid,
+                    );
+                    if (!targetMissionName) {
+                        throw new Error('Target mission name not found');
+                    }
+
+                    const updateResult = await missionRepository.update(
+                        {
+                            uuid: mission.uuid,
+                            project: { uuid: mission.project.uuid },
+                        },
+                        {
+                            name: targetMissionName,
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+                            project: { uuid: targetProjectUUID } as any,
+                        },
+                    );
+                    if (updateResult.affected !== 1) {
+                        throw new ConflictException(
+                            'Mission changed during move. Retry the move request.',
+                        );
+                    }
+                }
+
+                for (const file of rollbackTags) {
+                    await this.dataStorage.addTags(file.fileUUID, {
+                        filename: file.filename,
+                        missionUuid: file.missionUUID,
                         projectUuid: targetProjectUUID,
                     });
                 }
@@ -529,10 +612,10 @@ export class MissionService {
             }
             throw error;
         }
-    }
-
-    async moveMission(missionUUID: string, projectUUID: string): Promise<void> {
-        await this.migrateMission(missionUUID, projectUUID);
+        return {
+            movedMissionCount: movedMissionUUIDs.length,
+            movedMissionUUIDs,
+        };
     }
 
     async deleteMission(uuid: string): Promise<void> {

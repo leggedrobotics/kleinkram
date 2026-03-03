@@ -11,11 +11,11 @@ import {
 import {
     CreateMission,
     FlatMissionDto,
-    MigrateMissionDto,
-    MigrateMissionResponseDto,
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
+    MoveMissionsDto,
+    MoveMissionsResponseDto,
 } from '@kleinkram/api-dto';
 import { BodyUUID, MISSION_NAME_REGEX } from '@kleinkram/validation';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
@@ -23,7 +23,6 @@ import { ParameterUuid as ParameterUID } from '../../validation/parameter-decora
 import {
     CanCreateInProjectByBody,
     CanDeleteMission,
-    CanMigrateMissionByBody,
     CanMoveMission,
     CanReadMission,
     CanWriteMissionByBody,
@@ -167,31 +166,21 @@ export class MissionController {
 
     @Post('move')
     @CanMoveMission()
-    @OutputDto(null) // TODO: type API response
-    async moveMission(
-        @QueryUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @QueryUUID('projectUUID', 'Project UUID') projectUUID: string,
-    ): Promise<void> {
-        return this.missionService.moveMission(missionUUID, projectUUID);
-    }
-
-    @Post('migrate')
-    @CanMigrateMissionByBody()
     @ApiOkResponse({
-        description: 'Mission migrated to another project',
-        type: MigrateMissionResponseDto,
+        description: 'Missions moved to another project',
+        type: MoveMissionsResponseDto,
     })
-    async migrateMission(
-        @Body() dto: MigrateMissionDto,
-    ): Promise<MigrateMissionResponseDto> {
-        await this.missionService.migrateMission(
-            dto.missionUUID,
+    async moveMission(
+        @Body() dto: MoveMissionsDto,
+    ): Promise<MoveMissionsResponseDto> {
+        const result = await this.missionService.moveMissions(
+            dto.missionUUIDs,
             dto.targetProjectUUID,
             dto.newName,
         );
         return {
             success: true,
-            missionUUID: dto.missionUUID,
+            movedMissionCount: result.movedMissionCount,
             targetProjectUUID: dto.targetProjectUUID,
         };
     }

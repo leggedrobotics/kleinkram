@@ -12,10 +12,12 @@ import { BaseGuard } from './base.guards';
 
 interface MissionBody {
     missionUUID?: string;
+    missionUUIDs?: string[];
     missionUuid?: string;
     uuid?: string;
     mission?: string;
     targetProjectUUID?: string;
+    newName?: string;
 }
 
 interface TagParameters {
@@ -287,44 +289,7 @@ export class DeleteTagGuard extends BaseGuard {
 }
 
 @Injectable()
-export class MoveMissionToProjectGuard extends BaseGuard {
-    constructor(
-        private projectGuardService: ProjectGuardService,
-        private missionGuardService: MissionGuardService,
-    ) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-
-        const missionUUID = request.query.missionUUID as string | undefined;
-        const projectUUID = request.query.projectUUID as string | undefined;
-
-        if (!missionUUID || !projectUUID) {
-            return false; // Deny access if required parameters not provided
-        }
-
-        if (apiKey) {
-            throw new UnauthorizedException('CLI Keys cannot move missions');
-        }
-        return (
-            (await this.projectGuardService.canAccessProject(
-                user,
-                projectUUID,
-                AccessGroupRights.CREATE,
-            )) &&
-            (await this.missionGuardService.canAccessMission(
-                user,
-                missionUUID,
-                AccessGroupRights.DELETE,
-            ))
-        );
-    }
-}
-
-@Injectable()
-export class MigrateMissionByBodyGuard extends BaseGuard {
+export class MoveMissionsByBodyGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
@@ -336,35 +301,59 @@ export class MigrateMissionByBodyGuard extends BaseGuard {
         const { user, apiKey, request } = await this.getUser(context);
 
         const body = request.body as MissionBody | undefined;
-        const missionUUID = body?.missionUUID;
+        const missionUUIDs = body?.missionUUIDs;
         const targetProjectUUID = body?.targetProjectUUID;
+        const newName = body?.newName;
 
-        if (!missionUUID || !targetProjectUUID) {
+        if (!Array.isArray(missionUUIDs) || missionUUIDs.length === 0) {
             throw new BadRequestException(
-                'missionUUID and targetProjectUUID are required',
+                'missionUUIDs must be a non-empty array',
             );
         }
-        if (!isUUID(missionUUID) || !isUUID(targetProjectUUID)) {
+        if (!targetProjectUUID) {
             throw new BadRequestException(
-                'missionUUID and targetProjectUUID must be valid UUIDs',
+                'targetProjectUUID is required',
+            );
+        }
+        if (
+            missionUUIDs.some((missionUUID) => !isUUID(missionUUID)) ||
+            !isUUID(targetProjectUUID)
+        ) {
+            throw new BadRequestException(
+                'missionUUIDs and targetProjectUUID must be valid UUIDs',
+            );
+        }
+        if (newName !== undefined && missionUUIDs.length !== 1) {
+            throw new BadRequestException(
+                'newName is only allowed when moving a single mission',
             );
         }
 
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot move missions');
         }
-
-        return (
-            (await this.projectGuardService.canAccessProject(
+        const canWriteTargetProject =
+            await this.projectGuardService.canAccessProject(
                 user,
                 targetProjectUUID,
                 AccessGroupRights.CREATE,
-            )) &&
-            (await this.missionGuardService.canAccessMission(
-                user,
-                missionUUID,
-                AccessGroupRights.DELETE,
-            ))
-        );
+            );
+        if (!canWriteTargetProject) {
+            return false;
+        }
+
+        for (const missionUUID of missionUUIDs) {
+            const canDeleteSourceMission =
+                await this.missionGuardService.canAccessMission(
+                    user,
+                    missionUUID,
+                    AccessGroupRights.DELETE,
+                );
+            if (!canDeleteSourceMission) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

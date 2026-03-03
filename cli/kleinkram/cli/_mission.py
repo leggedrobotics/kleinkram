@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import List
 from typing import Optional
 
 import typer
@@ -21,7 +22,7 @@ from kleinkram.utils import split_args
 CREATE_HELP = "create a mission"
 UPDATE_HELP = "update a mission"
 DELETE_HELP = "delete a mission"
-MIGRATE_HELP = "migrate a mission to another project"
+MOVE_HELP = "move mission(s) to another project"
 INFO_HELP = "get information about a mission"
 NOT_IMPLEMENTED_YET = """\
 Not implemented yet, open an issue if you want specific functionality
@@ -137,9 +138,14 @@ def delete(
     kleinkram.core.delete_mission(client=client, mission_id=mission_parsed.id)
 
 
-@mission_typer.command(help=MIGRATE_HELP)
-def migrate(
-    mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
+@mission_typer.command(help=MOVE_HELP)
+def move(
+    mission: List[str] = typer.Option(
+        ...,
+        "--mission",
+        "-m",
+        help="mission id or name (repeatable)",
+    ),
     target_project: str = typer.Option(
         ...,
         "--target-project",
@@ -170,17 +176,22 @@ def migrate(
         ).id
         source_project_query = ProjectQuery(ids=[source_project_uuid])
 
-    mission_ids, mission_patterns = split_args([mission])
-    mission_query = MissionQuery(
-        ids=mission_ids,
-        patterns=mission_patterns,
-        project_query=source_project_query,
-    )
+    mission_ids, mission_patterns = split_args(mission)
     if mission_patterns and not source_project:
         raise InvalidMissionQuery(
             "Mission query does not uniquely determine mission. "
-            "Source project name or id must be specified when migrating by mission name"
+            "Source project name or id must be specified when moving by mission name"
         )
+
+    mission_parsed = []
+    for mission_selector in mission:
+        single_mission_ids, single_mission_patterns = split_args([mission_selector])
+        mission_query = MissionQuery(
+            ids=single_mission_ids,
+            patterns=single_mission_patterns,
+            project_query=source_project_query,
+        )
+        mission_parsed.append(get_mission(client, mission_query))
 
     target_project_ids, target_project_patterns = split_args([target_project])
     target_project_query = ProjectQuery(
@@ -188,17 +199,28 @@ def migrate(
         patterns=target_project_patterns,
     )
 
-    mission_parsed = get_mission(client, mission_query)
+    mission_uuids = [mission.id for mission in mission_parsed]
+    if len(set(mission_uuids)) != len(mission_uuids):
+        raise InvalidMissionQuery("Each --mission input must resolve to a distinct mission")
+    if new_name is not None and len(mission_parsed) != 1:
+        raise typer.BadParameter("new-name is only supported when moving exactly one mission")
+
     target_project_parsed = get_project(client, target_project_query, exact_match=True)
-    kleinkram.core.migrate_mission(
+    kleinkram.core.move_missions(
         client=client,
-        mission_id=mission_parsed.id,
+        mission_ids=mission_uuids,
         target_project_id=target_project_parsed.id,
         new_name=new_name,
     )
 
-    migrated_mission = get_mission(client, MissionQuery(ids=[mission_parsed.id]))
-    print_mission_info(migrated_mission, pprint=get_shared_state().verbose)
+    if len(mission_parsed) == 1:
+        moved_mission = get_mission(client, MissionQuery(ids=[mission_parsed[0].id]))
+        print_mission_info(moved_mission, pprint=get_shared_state().verbose)
+        return
+
+    typer.echo(
+        f"Moved {len(mission_parsed)} missions to project {target_project_parsed.name}",
+    )
 
 
 @mission_typer.command(help=NOT_IMPLEMENTED_YET)

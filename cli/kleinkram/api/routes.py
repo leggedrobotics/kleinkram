@@ -64,7 +64,7 @@ __all__ = [
     "_create_project",
     "_update_mission",
     "_update_project",
-    "_migrate_mission",
+    "_move_missions",
     "_migrate_project",
     "_delete_files",
     "_delete_mission",
@@ -83,7 +83,7 @@ GET_STATUS = "/user/me"
 
 UPDATE_PROJECT = "/projects"
 UPDATE_MISSION = "/missions/tags"  # TODO: just metadata for now
-MIGRATE_MISSION = "/missions/migrate"
+MOVE_MISSIONS = "/missions/move"
 MIGRATE_PROJECT = "/projects/migrate"
 CREATE_MISSION = "/missions/create"
 CREATE_PROJECT = "/projects"
@@ -508,35 +508,45 @@ def _update_project(
     resp.raise_for_status()
 
 
-def _migrate_mission(
+def _move_missions(
     client: AuthenticatedClient,
-    mission_id: UUID,
+    mission_ids: Sequence[UUID],
     target_project_id: UUID,
     *,
     new_name: Optional[str] = None,
 ) -> None:
+    if not mission_ids:
+        raise MissionValidationError("mission_ids must not be empty")
+    if new_name is not None and len(mission_ids) != 1:
+        raise MissionValidationError("new_name is only allowed when moving a single mission")
+
     payload = {
-        "missionUUID": str(mission_id),
+        "missionUUIDs": [str(mission_id) for mission_id in mission_ids],
         "targetProjectUUID": str(target_project_id),
     }
     if new_name is not None:
         payload["newName"] = new_name
 
-    resp = client.post(MIGRATE_MISSION, json=payload)
+    resp = client.post(MOVE_MISSIONS, json=payload)
 
     if resp.status_code == 404:
         message = _extract_error_message(resp)
         if "Project with UUID" in message:
             raise ProjectNotFound(f"project not found: {target_project_id}")
-        raise MissionNotFound(f"mission not found: {mission_id}")
+        raise MissionNotFound("mission not found: " + ", ".join(str(mission_id) for mission_id in mission_ids))
     if resp.status_code == 400:
-        raise MissionValidationError(f"invalid mission migration request for mission={mission_id} target={target_project_id}")
+        raise MissionValidationError(
+            f"invalid mission move request for missions={list(mission_ids)} target={target_project_id}"
+        )
     if resp.status_code == 401:
-        raise AccessDenied("mission migration requires user login; API key auth is not allowed")
+        raise AccessDenied("mission move requires user login; API key auth is not allowed")
     if resp.status_code == 403:
-        raise AccessDenied(f"cannot migrate mission: {mission_id}")
+        raise AccessDenied("cannot move mission(s): " + ", ".join(str(mission_id) for mission_id in mission_ids))
     if resp.status_code == 409:
-        raise MissionExists(f"target project already has a mission with the requested name: {mission_id}")
+        raise MissionExists(
+            "target project already has a mission with one of the requested names: "
+            + ", ".join(str(mission_id) for mission_id in mission_ids)
+        )
 
     resp.raise_for_status()
 

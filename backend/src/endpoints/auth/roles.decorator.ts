@@ -23,10 +23,9 @@ import {
     DeleteProjectGuard,
     DeleteTagGuard,
     LoggedInUserGuard,
-    MigrateMissionByBodyGuard,
     MigrateProjectByBodyGuard,
     MoveFilesGuard,
-    MoveMissionToProjectGuard,
+    MoveMissionsByBodyGuard,
     ReadActionGuard,
     ReadFileByNameGuard,
     ReadFileGuard,
@@ -200,31 +199,18 @@ export function CanReadMissionByName() {
 export function CanMoveMission() {
     return applyDecorators(
         SetMetadata('CanMoveMission', true),
-        UseGuards(MoveMissionToProjectGuard),
-        ApiResponse({
-            status: 403,
-            type: ForbiddenException,
-            description:
-                'User does not have Read permissions on the specified project.',
-        }),
-    );
-}
-
-export function CanMigrateMissionByBody() {
-    return applyDecorators(
-        SetMetadata('CanMigrateMissionByBody', true),
-        UseGuards(MigrateMissionByBodyGuard),
+        UseGuards(MoveMissionsByBodyGuard),
         ApiResponse({
             status: 401,
             type: UnauthorizedExceptionDto,
             description:
-                'User does not have permissions to migrate the specified mission. API keys are not valid on this endpoint.',
+                'User does not have permissions to move the specified missions. API keys are not valid on this endpoint.',
         }),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
             description:
-                'User does not have permissions to migrate the specified mission.',
+                'User does not have permissions to move the specified missions.',
         }),
     );
 }

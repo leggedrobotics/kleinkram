@@ -164,6 +164,16 @@
                             flat
                             dense
                             padding="6px"
+                            icon="sym_o_move_down"
+                            color="white"
+                            @click="moveMissions"
+                        >
+                            Move
+                        </q-btn>
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
                             icon="sym_o_analytics"
                             color="white"
                             @click="openMultiActions"
@@ -256,6 +266,7 @@ import TitleSection from 'components/title-section.vue';
 import UploadMissionFolder from 'components/upload-mission-folder.vue';
 import { copyToClipboard, useQuasar } from 'quasar';
 import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
+import MoveMissionDialog from 'src/dialogs/modify-mission-location-dialog.vue';
 import {
     registerNoPermissionErrorHandler,
     useHandler,
@@ -297,6 +308,28 @@ const deleteMission = (): void => {
     });
 
     deselect();
+};
+
+const moveMissions = (): void => {
+    if (selectedMissions.value.length === 0) {
+        $q.notify({
+            type: 'negative',
+            message: 'Please select at least one mission to move',
+        });
+        return;
+    }
+
+    $q.dialog({
+        title: 'Move Missions',
+        component: MoveMissionDialog,
+        persistent: false,
+        style: 'max-width: 1500px',
+        componentProps: {
+            missions: selectedMissions.value,
+        },
+    }).onOk(() => {
+        deselect();
+    });
 };
 
 const selectedMissions: Ref<FlatMissionDto[]> = ref([]);

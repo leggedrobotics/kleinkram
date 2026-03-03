@@ -142,7 +142,6 @@ def verify(
     check_file_size: bool = False,
     verbose: bool = False,
 ) -> Dict[Path, FileVerificationStatus]:
-
     # add deprecated warning for skip_hash
     if skip_hash is not None:
         print(
@@ -177,7 +176,6 @@ def verify(
         if remote_file.state == FileState.UPLOADING:
             file_status[file] = FileVerificationStatus.UPLOADING
         elif remote_file.state == FileState.OK:
-
             # default case, will be overwritten if we find a mismatch
             file_status[file] = FileVerificationStatus.UPLOADED
 
@@ -228,16 +226,16 @@ def update_project(
     kleinkram.api.routes._update_project(client, project_id, description=description, new_name=new_name)
 
 
-def migrate_mission(
+def move_missions(
     *,
     client: AuthenticatedClient,
-    mission_id: UUID,
+    mission_ids: Collection[UUID],
     target_project_id: UUID,
     new_name: Optional[str] = None,
 ) -> None:
-    kleinkram.api.routes._migrate_mission(
+    kleinkram.api.routes._move_missions(
         client,
-        mission_id=mission_id,
+        mission_ids=list(mission_ids),
         target_project_id=target_project_id,
         new_name=new_name,
     )
