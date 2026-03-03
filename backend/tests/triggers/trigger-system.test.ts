@@ -36,12 +36,10 @@ describe('Trigger System API Tests', () => {
     let templateUuid: string;
     let projectUuid: string;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         // Seed a stable worker for the dispatcher
         const workerRepo = database.getRepository(WorkerEntity);
         const identifier = 'test-worker-trigger-system';
-        const existing = await workerRepo.findOneBy({ identifier });
-
         const workerData = {
             identifier,
             hostname: 'test-host',
@@ -53,16 +51,8 @@ describe('Trigger System API Tests', () => {
             cpuModel: 'Test CPU',
             storage: 1000,
         };
+        await workerRepo.save(workerRepo.create(workerData));
 
-        if (existing) {
-            Object.assign(existing, workerData);
-            await workerRepo.save(existing);
-        } else {
-            await workerRepo.save(workerRepo.create(workerData));
-        }
-    });
-
-    beforeEach(async () => {
         const setup = await generateAndFetchDatabaseUser('internal', 'admin');
         user = setup.user;
 
@@ -223,7 +213,9 @@ describe('Trigger System API Tests', () => {
             {
                 method: 'POST',
                 headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'Content-Type': 'application/json',
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'kleinkram-client-version': appVersion,
                 },
                 body: JSON.stringify({ key: 'value' }),
