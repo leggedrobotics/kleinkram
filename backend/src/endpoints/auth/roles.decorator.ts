@@ -215,6 +215,12 @@ export function CanMigrateMissionByBody() {
         SetMetadata('CanMigrateMissionByBody', true),
         UseGuards(MigrateMissionByBodyGuard),
         ApiResponse({
+            status: 401,
+            type: UnauthorizedExceptionDto,
+            description:
+                'User does not have permissions to migrate the specified mission. API keys are not valid on this endpoint.',
+        }),
+        ApiResponse({
             status: 403,
             type: ForbiddenException,
             description:

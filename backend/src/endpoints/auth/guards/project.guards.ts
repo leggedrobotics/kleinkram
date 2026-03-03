@@ -205,10 +205,6 @@ export class MigrateProjectByBodyGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        if (apiKey) {
-            throw new UnauthorizedException('CLI Keys cannot migrate projects');
-        }
-
         const body = request.body as ProjectBody | undefined;
         const sourceProjectUUID = body?.sourceProjectUUID;
         const targetProjectUUID = body?.targetProjectUUID;
@@ -222,6 +218,10 @@ export class MigrateProjectByBodyGuard extends BaseGuard {
             throw new BadRequestException(
                 'sourceProjectUUID and targetProjectUUID must be valid UUIDs',
             );
+        }
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot migrate projects');
         }
 
         return (
