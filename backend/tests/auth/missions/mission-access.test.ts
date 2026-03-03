@@ -205,6 +205,14 @@ describe('Verify Mission Level Admin Access', () => {
                 targetProjectUUID: projectUuid2,
             }),
         });
+        if (response.status >= 400) {
+            // eslint-disable-next-line no-console
+            console.error(
+                'mission move failed (admin)',
+                response.status,
+                await response.text(),
+            );
+        }
         expect(response.status).toBeLessThan(300);
     });
 
@@ -863,6 +871,14 @@ describe('Verify Mission Level User Access', () => {
                 targetProjectUUID: targetProject,
             }),
         });
+        if (response.status >= 400) {
+            // eslint-disable-next-line no-console
+            console.error(
+                'mission move failed (delete user)',
+                response.status,
+                await response.text(),
+            );
+        }
         expect(response.status).toBeLessThan(300);
     });
 
