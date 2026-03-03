@@ -55,6 +55,7 @@
                 :messages="messages"
                 :topic-name="topicName"
                 :total-count="totalCount"
+                :is-loading="isLoading"
                 @load-required="loadRequired"
                 @load-more="loadMore"
                 @pause-preview="emitPausePreview"

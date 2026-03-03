@@ -98,9 +98,17 @@ import { computed, ref } from 'vue';
 import { detectPreviewType, PreviewType } from '../../services/message-factory';
 import MessageViewer from './message-viewer.vue';
 
+export interface TopicRow {
+    name: string;
+    type: string;
+    nrMessages: number;
+    size?: number;
+    protocol?: string;
+    expand?: boolean;
+}
+
 const properties = defineProps<{
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    topics: any[];
+    topics: TopicRow[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     previews: Record<string, any[]>;
     loadingState: Record<string, boolean>;
@@ -112,15 +120,11 @@ const emit = defineEmits(['load-preview', 'pause-preview', 'resume-preview']);
 const search = ref('');
 
 const filteredTopics = computed(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     if (!search.value) return properties.topics;
     const s = search.value.toLowerCase();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return properties.topics.filter(
         (t) =>
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            t.name.toLowerCase().includes(s) ??
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            t.name.toLowerCase().includes(s) ||
             t.type.toLowerCase().includes(s),
     );
 });
@@ -163,9 +167,7 @@ const columns: QTableColumn[] = [
     },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getSmartLimit = (row: any): number => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+const getSmartLimit = (row: TopicRow): number => {
     const type = detectPreviewType(row.type);
 
     // 1. Full Load (Visual Plots / Images)
@@ -174,7 +176,6 @@ const getSmartLimit = (row: any): number => {
     }
     // 1. Full Load (Visual Plots / Images)
     if (
-        type === PreviewType.IMAGE ||
         type === PreviewType.TWIST ||
         type === PreviewType.TEMPERATURE ||
         type === PreviewType.IMU ||
@@ -184,13 +185,17 @@ const getSmartLimit = (row: any): number => {
         type === PreviewType.PATH ||
         type === PreviewType.TRANSFORM_STAMPED
     ) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
         return row.nrMessages;
     }
 
     // 2. Medium Load (Logs)
     if (type === PreviewType.ROS_LOG || type === PreviewType.STRING) {
         return 100;
+    }
+
+    // 2.5 Sequence Viewer Streaming (Video)
+    if (type === PreviewType.IMAGE) {
+        return 1;
     }
 
     // 3. Light Load (TimeReference)
@@ -207,35 +212,24 @@ const getSmartLimit = (row: any): number => {
     return 5;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toggleExpand = (props: any): void => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+const toggleExpand = (props: { row: TopicRow; expand: boolean }): void => {
     props.expand = !props.expand;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (props.expand) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         const type = detectPreviewType(props.row.type);
         const hasData =
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-condition
-            properties.previews?.[props.row.name] &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            properties.previews[props.row.name] &&
             (properties.previews[props.row.name]?.length ?? 0) > 0;
 
         // Only resume fetching for video/image topics (buffering)
         // For others, only fetch if no data exists (initial load)
         if (type === PreviewType.IMAGE) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const limit = getSmartLimit(props.row);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             emit('resume-preview', props.row.name, limit);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             if (!hasData) loadSmart(props.row);
         } else if (!hasData) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             loadSmart(props.row);
         }
     } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         emit('pause-preview', props.row.name);
     }
 };
@@ -247,15 +241,17 @@ const loadData = (topic: string, count: number, append = false): void => {
 
 // In file-topic-table.vue > script > loadSmart
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadSmart = (row: any): void => {
+const loadSmart = (row: TopicRow): void => {
     const limit = getSmartLimit(row);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     loadData(row.name, limit);
 };
 
 // Incremental Load (Load More button)
 const loadMore = (topicName: string): void => {
-    loadData(topicName, 20, true);
+    // If it's an image stream, load a larger background buffer, else default back to 20
+    const t = properties.topics.find((x) => x.name === topicName);
+    const type = t ? detectPreviewType(t.type) : PreviewType.STRING;
+    const limit = type === PreviewType.IMAGE ? 50 : 20;
+    loadData(topicName, limit, true);
 };
 </script>

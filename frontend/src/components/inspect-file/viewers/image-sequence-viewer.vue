@@ -89,6 +89,7 @@ const properties = defineProps<{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[];
     totalCount: number;
+    isLoading?: boolean;
 }>();
 
 const emit = defineEmits(['load-more', 'pause-preview']);
@@ -161,6 +162,22 @@ watch(
                 'Timeout: No valid frame found after 100 messages';
         }
     },
+);
+
+// Auto-buffer continuously in the background
+// We watch isLoading transitioning to false (a fetch finished), or the initial state
+watch(
+    () => properties.isLoading,
+    (loading) => {
+        if (
+            !loading &&
+            properties.messages.length > 0 &&
+            properties.messages.length < properties.totalCount
+        ) {
+            emitLoadMore();
+        }
+    },
+    { immediate: true },
 );
 
 watch(renderError, (error) => {
