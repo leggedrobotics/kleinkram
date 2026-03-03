@@ -18,6 +18,11 @@ jest.mock('@kleinkram/backend-common/scheduling-logic', () => ({
     addActionQueue: jest.fn(),
 }));
 
+// Mock axios for Loki health check
+jest.mock('axios', () => ({
+    get: jest.fn().mockResolvedValue({ status: 200 }),
+}));
+
 describe('ActionDispatcherService Unit Tests', () => {
     let service: ActionDispatcherService;
     let actionRepo: Repository<ActionEntity>;
