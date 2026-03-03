@@ -152,9 +152,7 @@ def migrate(
         "-p",
         help="source project id or name (required when --mission is a name)",
     ),
-    new_name: Optional[str] = typer.Option(
-        None, "--new-name", "-n", help="optional new mission name in target project"
-    ),
+    new_name: Optional[str] = typer.Option(None, "--new-name", "-n", help="optional new mission name in target project"),
 ) -> None:
     client = AuthenticatedClient()
 

@@ -208,7 +208,6 @@ def get_runs(
     client: AuthenticatedClient,
     query: RunQuery,
 ) -> Generator[Run, None, None]:
-
     response_stream = paginated_request(client, LIST_ACTIONS_ENDPOINT)
     yield from map(lambda p: _parse_run(RunObject(p)), response_stream)
 
@@ -413,7 +412,6 @@ def _create_mission(
 
 
 def _create_project(client: AuthenticatedClient, project_name: str, description: str) -> UUID:
-
     _validate_project_name(client, project_name, description)
     payload = {"name": project_name, "description": description}
     resp = client.post(CREATE_PROJECT, json=payload)
@@ -532,15 +530,11 @@ def _migrate_mission(
             raise ProjectNotFound(f"project not found: {target_project_id}")
         raise MissionNotFound(f"mission not found: {mission_id}")
     if resp.status_code == 400:
-        raise MissionValidationError(
-            f"invalid mission migration request for mission={mission_id} target={target_project_id}"
-        )
+        raise MissionValidationError(f"invalid mission migration request for mission={mission_id} target={target_project_id}")
     if resp.status_code == 403:
         raise AccessDenied(f"cannot migrate mission: {mission_id}")
     if resp.status_code == 409:
-        raise MissionExists(
-            f"target project already has a mission with the requested name: {mission_id}"
-        )
+        raise MissionExists(f"target project already has a mission with the requested name: {mission_id}")
 
     resp.raise_for_status()
 
@@ -573,9 +567,7 @@ def _migrate_project(
     if resp.status_code == 403:
         raise AccessDenied(f"cannot migrate project: {source_project_id}")
     if resp.status_code == 409:
-        raise ProjectValidationError(
-            f"project migration conflict for source={source_project_id} target={target_project_id}"
-        )
+        raise ProjectValidationError(f"project migration conflict for source={source_project_id} target={target_project_id}")
 
     resp.raise_for_status()
 
