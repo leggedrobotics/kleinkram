@@ -43,10 +43,8 @@
 </template>
 
 <script setup lang="ts">
-import type {
-    FlatMissionDto,
-    MissionWithFilesDto,
-} from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
+import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
@@ -75,7 +73,7 @@ const selectedMissions = computed<FlatMissionDto[]>(() => {
 const queryClient = useQueryClient();
 
 const selectedProjectUuid = ref<string | undefined>(
-    selectedMissions.value[0]?.project?.uuid,
+    selectedMissions.value[0]?.project.uuid,
 );
 
 const { selectedProject } = useScopeSelection(selectedProjectUuid);
@@ -85,7 +83,7 @@ const isNoopMove = computed<boolean>(() => {
     }
 
     return selectedMissions.value.every(
-        (mission) => mission.project?.uuid === selectedProjectUuid.value,
+        (mission) => mission.project.uuid === selectedProjectUuid.value,
     );
 });
 
@@ -99,8 +97,8 @@ async function onOk(): Promise<void> {
     const missionUUIDs = selectedMissions.value.map((mission) => mission.uuid);
     const isSingleMission = missionUUIDs.length === 1;
     const missionMessage = isSingleMission
-        ? selectedMissions.value[0]?.name
-        : `${missionUUIDs.length} missions`;
+        ? (selectedMissions.value[0]?.name ?? 'mission')
+        : `${String(missionUUIDs.length)} missions`;
 
     const creating = Notify.create({
         group: false,
