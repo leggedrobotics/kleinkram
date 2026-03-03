@@ -431,56 +431,73 @@ export class MissionService {
             );
         }
 
-        const mission = await this.missionRepository.findOne({
-            where: { uuid: missionUUID },
-            relations: ['files', 'project'],
-        });
-        if (!mission) {
-            throw new NotFoundException(
-                `Mission with UUID ${missionUUID} not found`,
-            );
-        }
-
-        const targetMissionName = newName ?? mission.name;
-
-        const exists = await this.missionRepository.exists({
-            where: {
-                name: targetMissionName,
-                uuid: Not(missionUUID),
-                project: { uuid: targetProjectUUID },
-            },
-        });
-        if (exists) {
-            throw new ConflictException(
-                'Mission with that name already exists in the project',
-            );
-        }
-
-        if (mission.files === undefined) throw new Error('Files not loaded');
-        if (mission.project === undefined) throw new Error('Project not loaded');
-        if (mission.project.uuid === targetProject.uuid) {
-            throw new ConflictException(
-                'Mission is already part of the target project',
-            );
-        }
-        const missionFiles = mission.files;
-
-        const rollbackTags = missionFiles.map((file) => ({
-            fileUUID: file.uuid,
-            filename: file.filename,
-            missionUUID: missionUUID,
-            projectUUID: mission.project?.uuid ?? '',
-        }));
+        let rollbackTags: {
+            fileUUID: string;
+            filename: string;
+            missionUUID: string;
+            projectUUID: string;
+        }[] = [];
 
         try {
             await this.dataSource.transaction(async (manager) => {
-                await manager.getRepository(MissionEntity).update(missionUUID, {
-                    name: targetMissionName,
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-                    project: { uuid: targetProjectUUID } as any,
+                const missionRepository = manager.getRepository(MissionEntity);
+                const mission = await missionRepository.findOne({
+                    where: { uuid: missionUUID },
+                    relations: ['files', 'project'],
                 });
+                if (!mission) {
+                    throw new NotFoundException(
+                        `Mission with UUID ${missionUUID} not found`,
+                    );
+                }
+                if (mission.files === undefined) throw new Error('Files not loaded');
+                if (mission.project === undefined)
+                    throw new Error('Project not loaded');
+                if (mission.project.uuid === targetProject.uuid) {
+                    throw new ConflictException(
+                        'Mission is already part of the target project',
+                    );
+                }
 
-                for (const file of missionFiles) {
+                const targetMissionName = newName ?? mission.name;
+                const exists = await missionRepository.exists({
+                    where: {
+                        name: targetMissionName,
+                        uuid: Not(missionUUID),
+                        project: { uuid: targetProjectUUID },
+                    },
+                });
+                if (exists) {
+                    throw new ConflictException(
+                        'Mission with that name already exists in the project',
+                    );
+                }
+
+                rollbackTags = mission.files.map((file) => ({
+                    fileUUID: file.uuid,
+                    filename: file.filename,
+                    missionUUID: missionUUID,
+                    projectUUID: mission.project?.uuid ?? '',
+                }));
+
+                const updateResult = await missionRepository.update(
+                    {
+                        uuid: missionUUID,
+                        project: { uuid: mission.project.uuid },
+                    },
+                    {
+                        name: targetMissionName,
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+                        project: { uuid: targetProjectUUID } as any,
+                    },
+                );
+                if (updateResult.affected !== 1) {
+                    throw new ConflictException(
+                        'Mission changed during migration. Retry the migration request.',
+                    );
+                }
+
+                for (const file of mission.files) {
                     await this.dataStorage.addTags(file.uuid, {
                         filename: file.filename,
                         missionUuid: missionUUID,
@@ -489,13 +506,6 @@ export class MissionService {
                 }
             });
         } catch (error) {
-            for (const file of rollbackTags) {
-                await this.dataStorage.addTags(file.fileUUID, {
-                    filename: file.filename,
-                    missionUuid: file.missionUUID,
-                    projectUuid: file.projectUUID,
-                });
-            }
             if (
                 error instanceof QueryFailedError &&
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -504,6 +514,17 @@ export class MissionService {
                 throw new ConflictException(
                     'Mission with that name already exists in the target project',
                 );
+            }
+            for (const file of rollbackTags) {
+                try {
+                    await this.dataStorage.addTags(file.fileUUID, {
+                        filename: file.filename,
+                        missionUuid: file.missionUUID,
+                        projectUuid: file.projectUUID,
+                    });
+                } catch {
+                    // Best-effort rollback; keep propagating the original migration error.
+                }
             }
             throw error;
         }

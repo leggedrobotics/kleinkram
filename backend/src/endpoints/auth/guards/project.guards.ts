@@ -7,6 +7,7 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
+import { isUUID } from 'class-validator';
 import { BaseGuard } from './base.guards';
 
 interface ProjectBody {
@@ -215,6 +216,11 @@ export class MigrateProjectByBodyGuard extends BaseGuard {
         if (!sourceProjectUUID || !targetProjectUUID) {
             throw new BadRequestException(
                 'sourceProjectUUID and targetProjectUUID are required',
+            );
+        }
+        if (!isUUID(sourceProjectUUID) || !isUUID(targetProjectUUID)) {
+            throw new BadRequestException(
+                'sourceProjectUUID and targetProjectUUID must be valid UUIDs',
             );
         }
 

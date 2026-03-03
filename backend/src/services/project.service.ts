@@ -83,8 +83,6 @@ export class ProjectService {
         private tagTypeRepository: Repository<TagTypeEntity>,
         @InjectRepository(AccessGroupEntity)
         private accessGroupRepository: Repository<AccessGroupEntity>,
-        @InjectRepository(MissionEntity)
-        private missionRepository: Repository<MissionEntity>,
         private configService: ConfigService,
         private readonly dataSource: DataSource,
         @Inject('DataStorageBucket')
@@ -557,81 +555,100 @@ export class ProjectService {
             );
         }
 
-        const sourceProject = await this.projectRepository.findOne({
-            where: { uuid: sourceProjectUUID },
-        });
-        if (!sourceProject) {
-            throw new NotFoundException(
-                `Project with UUID ${sourceProjectUUID} not found`,
-            );
-        }
-
-        const targetProject = await this.projectRepository.findOne({
-            where: { uuid: targetProjectUUID },
-        });
-        if (!targetProject) {
-            throw new NotFoundException(
-                `Project with UUID ${targetProjectUUID} not found`,
-            );
-        }
-
-        if (archiveSourceProjectAs !== undefined) {
-            const archiveNameTaken = await this.projectRepository.exists({
-                where: {
-                    uuid: Not(sourceProjectUUID),
-                    name: ILike(archiveSourceProjectAs),
-                },
-            });
-            if (archiveNameTaken) {
-                throw new ConflictException(
-                    `Project with name '${archiveSourceProjectAs}' already exists`,
-                );
-            }
-        }
-
-        const sourceMissions = await this.missionRepository.find({
-            where: { project: { uuid: sourceProjectUUID } },
-            relations: ['files'],
-        });
-
-        const targetMissions = await this.missionRepository.find({
-            where: { project: { uuid: targetProjectUUID } },
-        });
-        const targetMissionNames = new Set(targetMissions.map((m) => m.name));
-        const collidingMissionNames = sourceMissions
-            .map((mission) => mission.name)
-            .filter((name) => targetMissionNames.has(name));
-
-        if (collidingMissionNames.length > 0) {
-            throw new ConflictException(
-                `Target project already contains mission names: ${collidingMissionNames.join(', ')}`,
-            );
-        }
-
-        const movedMissionUUIDs = sourceMissions.map((mission) => mission.uuid);
-        const movedFiles = sourceMissions.flatMap((mission) =>
-            (mission.files ?? []).map((file) => ({
-                fileUUID: file.uuid,
-                filename: file.filename,
-                missionUUID: mission.uuid,
-                sourceProjectUUID,
-            })),
-        );
+        let movedMissionUUIDs: string[] = [];
+        let movedFiles: {
+            fileUUID: string;
+            filename: string;
+            missionUUID: string;
+            sourceProjectUUID: string;
+        }[] = [];
         try {
             await this.dataSource.transaction(async (manager) => {
+                const projectRepository = manager.getRepository(ProjectEntity);
+                const missionRepository = manager.getRepository(MissionEntity);
+
+                const sourceProject = await projectRepository.findOne({
+                    where: { uuid: sourceProjectUUID },
+                });
+                if (!sourceProject) {
+                    throw new NotFoundException(
+                        `Project with UUID ${sourceProjectUUID} not found`,
+                    );
+                }
+                const targetProject = await projectRepository.findOne({
+                    where: { uuid: targetProjectUUID },
+                });
+                if (!targetProject) {
+                    throw new NotFoundException(
+                        `Project with UUID ${targetProjectUUID} not found`,
+                    );
+                }
+
+                if (archiveSourceProjectAs !== undefined) {
+                    const archiveNameTaken = await projectRepository.exists({
+                        where: {
+                            uuid: Not(sourceProjectUUID),
+                            name: ILike(archiveSourceProjectAs),
+                        },
+                    });
+                    if (archiveNameTaken) {
+                        throw new ConflictException(
+                            `Project with name '${archiveSourceProjectAs}' already exists`,
+                        );
+                    }
+                }
+
+                const sourceMissions = await missionRepository.find({
+                    where: { project: { uuid: sourceProjectUUID } },
+                    relations: ['files'],
+                });
+                const targetMissions = await missionRepository.find({
+                    where: { project: { uuid: targetProjectUUID } },
+                });
+                const targetMissionNames = new Set(
+                    targetMissions.map((m) => m.name),
+                );
+                const collidingMissionNames = sourceMissions
+                    .map((mission) => mission.name)
+                    .filter((name) => targetMissionNames.has(name));
+
+                if (collidingMissionNames.length > 0) {
+                    throw new ConflictException(
+                        `Target project already contains mission names: ${collidingMissionNames.join(', ')}`,
+                    );
+                }
+
+                movedMissionUUIDs = sourceMissions.map((mission) => mission.uuid);
+                movedFiles = sourceMissions.flatMap((mission) =>
+                    (mission.files ?? []).map((file) => ({
+                        fileUUID: file.uuid,
+                        filename: file.filename,
+                        missionUUID: mission.uuid,
+                        sourceProjectUUID,
+                    })),
+                );
+
                 for (const mission of sourceMissions) {
-                    await manager.getRepository(MissionEntity).update(
-                        mission.uuid,
+                    const updateResult = await missionRepository.update(
+                        {
+                            uuid: mission.uuid,
+                            project: { uuid: sourceProjectUUID },
+                        },
                         {
                             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                             project: { uuid: targetProjectUUID } as any,
                         },
                     );
+                    if (updateResult.affected !== 1) {
+                        throw new ConflictException(
+                            'Source project changed during migration. Retry the migration request.',
+                        );
+                    }
                 }
 
                 if (archiveSourceProjectAs !== undefined) {
-                    await manager.getRepository(ProjectEntity).update(
-                        sourceProjectUUID,
+                    await projectRepository.update(
+                        { uuid: sourceProjectUUID },
                         {
                             name: archiveSourceProjectAs,
                         },
@@ -647,13 +664,6 @@ export class ProjectService {
                 }
             });
         } catch (error) {
-            for (const file of movedFiles) {
-                await this.dataStorage.addTags(file.fileUUID, {
-                    filename: file.filename,
-                    missionUuid: file.missionUUID,
-                    projectUuid: file.sourceProjectUUID,
-                });
-            }
             if (
                 error instanceof QueryFailedError &&
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -662,6 +672,17 @@ export class ProjectService {
                 throw new ConflictException(
                     'Project migration conflicted with existing names',
                 );
+            }
+            for (const file of movedFiles) {
+                try {
+                    await this.dataStorage.addTags(file.fileUUID, {
+                        filename: file.filename,
+                        missionUuid: file.missionUUID,
+                        projectUuid: file.sourceProjectUUID,
+                    });
+                } catch {
+                    // Best-effort rollback; keep propagating the original migration error.
+                }
             }
             throw error;
         }

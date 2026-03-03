@@ -151,6 +151,14 @@ class AuthenticatedClient(httpx.Client):
             logger.info("got 401, not logged in...")
             raise NotAuthenticated
 
+        # API key sessions cannot refresh tokens; let callers map 401 semantics.
+        if (
+            response.status_code == 401
+            and self._config.credentials is not None
+            and self._config.credentials.api_key is not None
+        ):
+            return response
+
         # otherwise we try to refresh the token
         if response.status_code == 401:
             logger.info("got 401, trying to refresh token...")

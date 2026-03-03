@@ -1,19 +1,18 @@
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ConflictException } from '@nestjs/common';
 import { MissionService } from '@/services/mission.service';
+import { QueryFailedError } from 'typeorm';
 
 const createService = () => {
-    const missionRepository = {
-        findOne: jest.fn(),
-        exists: jest.fn(),
-    };
+    const missionFindOneInTx = jest.fn();
+    const missionExistsInTx = jest.fn();
     const projectRepository = {
         findOne: jest.fn(),
     };
     const storageService = {
         addTags: jest.fn().mockResolvedValue(null),
     };
-    const updateMock = jest.fn().mockResolvedValue(null);
+    const updateMock = jest.fn().mockResolvedValue({ affected: 1 });
     const dataSource = {
         transaction: jest.fn(
             async (
@@ -23,6 +22,8 @@ const createService = () => {
             ) => {
                 await callback({
                     getRepository: () => ({
+                        findOne: missionFindOneInTx,
+                        exists: missionExistsInTx,
                         update: updateMock,
                     }),
                 });
@@ -31,7 +32,7 @@ const createService = () => {
     };
 
     const service = new MissionService(
-        missionRepository as never,
+        {} as never,
         projectRepository as never,
         {} as never,
         {} as never,
@@ -42,7 +43,8 @@ const createService = () => {
 
     return {
         service,
-        missionRepository,
+        missionFindOneInTx,
+        missionExistsInTx,
         projectRepository,
         storageService,
         dataSource,
@@ -58,13 +60,14 @@ describe('MissionService.migrateMission', () => {
     test('migrates mission and retags files', async () => {
         const {
             service,
-            missionRepository,
+            missionFindOneInTx,
+            missionExistsInTx,
             projectRepository,
             storageService,
             updateMock,
         } = createService();
 
-        missionRepository.findOne.mockResolvedValue({
+        missionFindOneInTx.mockResolvedValue({
             uuid: missionUUID,
             name: 'source_mission',
             project: { uuid: sourceProjectUUID },
@@ -79,7 +82,7 @@ describe('MissionService.migrateMission', () => {
                 },
             ],
         } as unknown as MissionEntity);
-        missionRepository.exists.mockResolvedValue(false);
+        missionExistsInTx.mockResolvedValue(false);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
         });
@@ -90,10 +93,16 @@ describe('MissionService.migrateMission', () => {
             'renamed_mission',
         );
 
-        expect(updateMock).toHaveBeenCalledWith(missionUUID, {
-            name: 'renamed_mission',
-            project: { uuid: targetProjectUUID },
-        });
+        expect(updateMock).toHaveBeenCalledWith(
+            {
+                uuid: missionUUID,
+                project: { uuid: sourceProjectUUID },
+            },
+            {
+                name: 'renamed_mission',
+                project: { uuid: targetProjectUUID },
+            },
+        );
         expect(storageService.addTags).toHaveBeenCalledTimes(2);
         expect(storageService.addTags).toHaveBeenNthCalledWith(
             1,
@@ -116,16 +125,22 @@ describe('MissionService.migrateMission', () => {
     });
 
     test('throws on target name collision before update', async () => {
-        const { service, missionRepository, projectRepository, updateMock } =
+        const {
+            service,
+            missionFindOneInTx,
+            missionExistsInTx,
+            projectRepository,
+            updateMock,
+        } =
             createService();
 
-        missionRepository.findOne.mockResolvedValue({
+        missionFindOneInTx.mockResolvedValue({
             uuid: missionUUID,
             name: 'source_mission',
             project: { uuid: sourceProjectUUID },
             files: [],
         } as unknown as MissionEntity);
-        missionRepository.exists.mockResolvedValue(true);
+        missionExistsInTx.mockResolvedValue(true);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
         });
@@ -137,16 +152,22 @@ describe('MissionService.migrateMission', () => {
     });
 
     test('throws when target project matches current project', async () => {
-        const { service, missionRepository, projectRepository, updateMock } =
+        const {
+            service,
+            missionFindOneInTx,
+            missionExistsInTx,
+            projectRepository,
+            updateMock,
+        } =
             createService();
 
-        missionRepository.findOne.mockResolvedValue({
+        missionFindOneInTx.mockResolvedValue({
             uuid: missionUUID,
             name: 'source_mission',
             project: { uuid: targetProjectUUID },
             files: [],
         } as unknown as MissionEntity);
-        missionRepository.exists.mockResolvedValue(false);
+        missionExistsInTx.mockResolvedValue(false);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
         });
@@ -158,10 +179,15 @@ describe('MissionService.migrateMission', () => {
     });
 
     test('restores tags when migration tagging fails', async () => {
-        const { service, missionRepository, projectRepository, storageService } =
-            createService();
+        const {
+            service,
+            missionFindOneInTx,
+            missionExistsInTx,
+            projectRepository,
+            storageService,
+        } = createService();
 
-        missionRepository.findOne.mockResolvedValue({
+        missionFindOneInTx.mockResolvedValue({
             uuid: missionUUID,
             name: 'source_mission',
             project: { uuid: sourceProjectUUID },
@@ -172,7 +198,7 @@ describe('MissionService.migrateMission', () => {
                 },
             ],
         } as unknown as MissionEntity);
-        missionRepository.exists.mockResolvedValue(false);
+        missionExistsInTx.mockResolvedValue(false);
         projectRepository.findOne.mockResolvedValue({
             uuid: targetProjectUUID,
         });
@@ -194,5 +220,42 @@ describe('MissionService.migrateMission', () => {
                 projectUuid: sourceProjectUUID,
             },
         );
+    });
+
+    test('maps unique-violation to conflict without rollback masking', async () => {
+        const {
+            service,
+            missionFindOneInTx,
+            missionExistsInTx,
+            projectRepository,
+            storageService,
+            updateMock,
+        } = createService();
+
+        missionFindOneInTx.mockResolvedValue({
+            uuid: missionUUID,
+            name: 'source_mission',
+            project: { uuid: sourceProjectUUID },
+            files: [
+                {
+                    uuid: 'aaaa1111-1111-4111-8111-111111111111',
+                    filename: 'a.mcap',
+                },
+            ],
+        } as unknown as MissionEntity);
+        missionExistsInTx.mockResolvedValue(false);
+        projectRepository.findOne.mockResolvedValue({
+            uuid: targetProjectUUID,
+        });
+        updateMock.mockRejectedValue(
+            new QueryFailedError('UPDATE mission', [], {
+                code: '23505',
+            } as unknown as Error),
+        );
+
+        await expect(
+            service.migrateMission(missionUUID, targetProjectUUID),
+        ).rejects.toThrow(ConflictException);
+        expect(storageService.addTags).not.toHaveBeenCalled();
     });
 });

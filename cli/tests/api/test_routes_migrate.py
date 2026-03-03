@@ -49,6 +49,7 @@ def test_migrate_mission_uses_expected_route_and_payload():
 @pytest.mark.parametrize(
     "status_code,error_type",
     [
+        pytest.param(401, kleinkram.errors.AccessDenied, id="401-api-key-not-allowed"),
         pytest.param(403, kleinkram.errors.AccessDenied, id="403-access-denied"),
         pytest.param(404, kleinkram.errors.MissionNotFound, id="404-mission-not-found"),
         pytest.param(400, kleinkram.errors.MissionValidationError, id="400-invalid-request"),
@@ -125,6 +126,7 @@ def test_migrate_project_uses_expected_route_and_payload():
 @pytest.mark.parametrize(
     "status_code,error_type",
     [
+        pytest.param(401, kleinkram.errors.AccessDenied, id="401-api-key-not-allowed"),
         pytest.param(403, kleinkram.errors.AccessDenied, id="403-access-denied"),
         pytest.param(404, kleinkram.errors.ProjectNotFound, id="404-project-not-found"),
         pytest.param(400, kleinkram.errors.ProjectValidationError, id="400-invalid-request"),

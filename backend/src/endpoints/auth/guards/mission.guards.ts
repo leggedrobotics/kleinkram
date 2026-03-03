@@ -7,6 +7,7 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
+import { isUUID } from 'class-validator';
 import { BaseGuard } from './base.guards';
 
 interface MissionBody {
@@ -121,10 +122,6 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
         const body = request.body as MissionBody;
         const missionUUID = body.missionUUID ?? body.missionUuid;
 
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
         }
@@ -135,6 +132,9 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
                 missionUUID,
                 AccessGroupRights.CREATE,
             );
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
         return this.missionGuardService.canAccessMission(
             user,
@@ -156,10 +156,6 @@ export class WriteMissionByBodyGuard extends BaseGuard {
         const body = request.body as MissionBody;
         const missionUUID = body.missionUUID ?? body.missionUuid;
 
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
         }
@@ -170,6 +166,9 @@ export class WriteMissionByBodyGuard extends BaseGuard {
                 missionUUID,
                 AccessGroupRights.WRITE,
             );
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
         return this.missionGuardService.canAccessMission(
             user,
@@ -196,10 +195,6 @@ export class CanDeleteMissionGuard extends BaseGuard {
             missionUUID = body.uuid ?? body.missionUUID ?? body.missionUuid;
         }
 
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
         if (!missionUUID && params) {
             missionUUID = params.uuid;
         }
@@ -216,6 +211,9 @@ export class CanDeleteMissionGuard extends BaseGuard {
                 missionUUID,
                 AccessGroupRights.DELETE,
             );
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
         return this.missionGuardService.canAccessMission(
             user,
@@ -344,6 +342,11 @@ export class MigrateMissionByBodyGuard extends BaseGuard {
         if (!missionUUID || !targetProjectUUID) {
             throw new BadRequestException(
                 'missionUUID and targetProjectUUID are required',
+            );
+        }
+        if (!isUUID(missionUUID) || !isUUID(targetProjectUUID)) {
+            throw new BadRequestException(
+                'missionUUID and targetProjectUUID must be valid UUIDs',
             );
         }
 

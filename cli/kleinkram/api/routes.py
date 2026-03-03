@@ -531,6 +531,8 @@ def _migrate_mission(
         raise MissionNotFound(f"mission not found: {mission_id}")
     if resp.status_code == 400:
         raise MissionValidationError(f"invalid mission migration request for mission={mission_id} target={target_project_id}")
+    if resp.status_code == 401:
+        raise AccessDenied("mission migration requires user login; API key auth is not allowed")
     if resp.status_code == 403:
         raise AccessDenied(f"cannot migrate mission: {mission_id}")
     if resp.status_code == 409:
@@ -564,6 +566,8 @@ def _migrate_project(
         raise ProjectValidationError(
             f"invalid project migration request for source={source_project_id} target={target_project_id}"
         )
+    if resp.status_code == 401:
+        raise AccessDenied("project migration requires user login; API key auth is not allowed")
     if resp.status_code == 403:
         raise AccessDenied(f"cannot migrate project: {source_project_id}")
     if resp.status_code == 409:
