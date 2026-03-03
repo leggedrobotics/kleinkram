@@ -13,21 +13,7 @@ export class UpdateIngestionJobLocation1769507204860 implements MigrationInterfa
                      WHERE t.typname = 'ingestion_job_location_enum'
                        AND e.enumlabel = 'MINIO'
                  ) THEN
-                     ALTER TYPE "ingestion_job_location_enum" ADD VALUE IF NOT EXISTS 'S3';
-                 END IF;
-             END
-             $$`,
-        );
-        await queryRunner.query(
-            `DO $$
-             BEGIN
-                 IF EXISTS (
-                     SELECT 1 FROM pg_enum e
-                     JOIN pg_type t ON t.oid = e.enumtypid
-                     WHERE t.typname = 'ingestion_job_location_enum'
-                       AND e.enumlabel = 'MINIO'
-                 ) THEN
-                     EXECUTE 'UPDATE "ingestion_job" SET "location" = ''S3'' WHERE "location" = ''MINIO''';
+                     ALTER TYPE "ingestion_job_location_enum" RENAME VALUE 'MINIO' TO 'S3';
                  END IF;
              END
              $$`,
@@ -42,9 +28,9 @@ export class UpdateIngestionJobLocation1769507204860 implements MigrationInterfa
                      SELECT 1 FROM pg_enum e
                      JOIN pg_type t ON t.oid = e.enumtypid
                      WHERE t.typname = 'ingestion_job_location_enum'
-                       AND e.enumlabel = 'MINIO'
+                       AND e.enumlabel = 'S3'
                  ) THEN
-                     EXECUTE 'UPDATE "ingestion_job" SET "location" = ''MINIO'' WHERE "location" = ''S3''';
+                     ALTER TYPE "ingestion_job_location_enum" RENAME VALUE 'S3' TO 'MINIO';
                  END IF;
              END
              $$`,
