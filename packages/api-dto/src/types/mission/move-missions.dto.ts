@@ -4,6 +4,7 @@ import {
     ArrayNotEmpty,
     IsArray,
     IsBoolean,
+    IsInt,
     IsOptional,
     IsUUID,
 } from 'class-validator';
@@ -32,8 +33,10 @@ export class MoveMissionsResponseDto {
     success!: boolean;
 
     @ApiProperty()
+    @IsInt()
     movedMissionCount!: number;
 
     @ApiProperty()
+    @IsUUID('4')
     targetProjectUUID!: string;
 }
