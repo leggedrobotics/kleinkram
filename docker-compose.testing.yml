@@ -39,6 +39,21 @@ services:
             - privatenet
         depends_on:
             - database
+            - loki
+
+    loki:
+        image: grafana/loki
+        container_name: kleinkram-loki-test
+        ports:
+            - '3100:3100'
+        command:
+            - --config.file=/mnt/config/loki-config.yml
+            - -log.level=error
+        volumes:
+            - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
+        networks:
+            - privatenet
+            - webnet
 
     database:
         image: postgres:17
