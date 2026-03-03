@@ -328,20 +328,32 @@ export class QueryURLHandler extends QueryHandler {
             }
         }
 
-        this.searchParams = searchParameters;
+        // Only update if actually changed to avoid triggering watchers
+        if (
+            JSON.stringify(this.searchParams) !==
+            JSON.stringify(searchParameters)
+        ) {
+            this.searchParams = searchParameters;
+        }
 
         const queryFileTypes = route.query.file_type as string | undefined;
-        this.fileTypes =
+        const newFileTypes =
             queryFileTypes && queryFileTypes.length > 0
                 ? (queryFileTypes.split(',') as FileType[])
                 : [...DEFAULT_FILE_TYPES];
+        if (JSON.stringify(this.fileTypes) !== JSON.stringify(newFileTypes)) {
+            this.fileTypes = newFileTypes;
+        }
 
         const queryCategories = route.query.categories;
-        this.categories = queryCategories
+        const newCategories = queryCategories
             ? ((Array.isArray(queryCategories)
                   ? queryCategories
                   : [queryCategories]) as string[])
             : [];
+        if (JSON.stringify(this.categories) !== JSON.stringify(newCategories)) {
+            this.categories = newCategories;
+        }
     }
 
     /**

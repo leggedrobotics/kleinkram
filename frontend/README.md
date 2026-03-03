@@ -5,9 +5,7 @@ Data storage of ROS bags
 ## Install the dependencies
 
 ```bash
-yarn
-# or
-npm install
+pnpm install
 ```
 
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
@@ -19,17 +17,13 @@ quasar dev
 ### Lint the files
 
 ```bash
-yarn lint
-# or
-npm file lint
+pnpm file lint
 ```
 
 ### Format the files
 
 ```bash
-yarn format
-# or
-npm file format
+pnpm file format
 ```
 
 ### Build the app for production

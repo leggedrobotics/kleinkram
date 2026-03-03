@@ -184,7 +184,18 @@ def _load_config_if_compatible(path: Path) -> Optional[Config]:
         return None
     with open(path, "r") as f:
         try:
-            return _config_from_dict(json.load(f))
+            dct = json.load(f)
+
+            migrated = False
+            for key, value in dct.get("endpoints", {}).items():
+                if "s3" in value and "minio.datasets." in value["s3"]:
+                    value["s3"] = value["s3"].replace("minio.datasets.", "s3.datasets.")
+                    migrated = True
+
+            config = _config_from_dict(dct)
+            if migrated:
+                save_config(config, path)
+            return config
         except Exception:
             return None
 
