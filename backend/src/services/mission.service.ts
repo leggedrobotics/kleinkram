@@ -496,9 +496,10 @@ export class MissionService {
                             'Mission is already part of the target project',
                         );
                     }
-                    return mission as MissionEntity & {
-                        files: NonNullable<MissionEntity['files']> | [];
-                        project: NonNullable<MissionEntity['project']>;
+                    return {
+                        ...mission,
+                        files: mission.files ?? [],
+                        project: mission.project,
                     };
                 });
 
@@ -544,7 +545,7 @@ export class MissionService {
                 }
 
                 rollbackTags = fullyLoadedMissions.flatMap((mission) =>
-                    (mission.files ?? []).map((file) => ({
+                    mission.files.map((file) => ({
                         fileUUID: file.uuid,
                         filename: file.filename,
                         missionUUID: mission.uuid,
