@@ -618,7 +618,9 @@ export class ProjectService {
                     );
                 }
 
-                movedMissionUUIDs = sourceMissions.map((mission) => mission.uuid);
+                movedMissionUUIDs = sourceMissions.map(
+                    (mission) => mission.uuid,
+                );
                 movedFiles = sourceMissions.flatMap((mission) =>
                     (mission.files ?? []).map((file) => ({
                         fileUUID: file.uuid,

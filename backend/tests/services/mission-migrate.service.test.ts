@@ -1,6 +1,6 @@
+import { MissionService } from '@/services/mission.service';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ConflictException } from '@nestjs/common';
-import { MissionService } from '@/services/mission.service';
 import { QueryFailedError } from 'typeorm';
 
 const createService = () => {
@@ -131,8 +131,7 @@ describe('MissionService.migrateMission', () => {
             missionExistsInTx,
             projectRepository,
             updateMock,
-        } =
-            createService();
+        } = createService();
 
         missionFindOneInTx.mockResolvedValue({
             uuid: missionUUID,
@@ -158,8 +157,7 @@ describe('MissionService.migrateMission', () => {
             missionExistsInTx,
             projectRepository,
             updateMock,
-        } =
-            createService();
+        } = createService();
 
         missionFindOneInTx.mockResolvedValue({
             uuid: missionUUID,

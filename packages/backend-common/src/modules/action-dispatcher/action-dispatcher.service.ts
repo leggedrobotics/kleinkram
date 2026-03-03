@@ -112,9 +112,8 @@ export class ActionDispatcherService implements OnModuleInit {
             const { default: axios } = await import('axios');
             await axios.get(`${lokiUrl}/ready`, { timeout: 2000 });
         } catch {
-            this.logger.error('Loki logging system is down or unreachable');
-            throw new ConflictException(
-                'Logging system (Loki) is not available. Please try again later.',
+            this.logger.warn(
+                'Loki logging system is down or unreachable; continuing action dispatch',
             );
         }
 

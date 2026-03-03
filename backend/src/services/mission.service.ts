@@ -450,7 +450,8 @@ export class MissionService {
                         `Mission with UUID ${missionUUID} not found`,
                     );
                 }
-                if (mission.files === undefined) throw new Error('Files not loaded');
+                if (mission.files === undefined)
+                    throw new Error('Files not loaded');
                 if (mission.project === undefined)
                     throw new Error('Project not loaded');
                 if (mission.project.uuid === targetProject.uuid) {

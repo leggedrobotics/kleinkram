@@ -17,9 +17,9 @@ const createService = () => {
         transaction: jest.fn(
             async (
                 callback: (manager: {
-                    getRepository: (
-                        repository: unknown,
-                    ) => { update: jest.Mock };
+                    getRepository: (repository: unknown) => {
+                        update: jest.Mock;
+                    };
                 }) => Promise<void>,
             ) => {
                 await callback({
@@ -81,8 +81,7 @@ describe('ProjectService.migrateProject', () => {
             projectExistsInTx,
             missionFindInTx,
             dataSource,
-        } =
-            createService();
+        } = createService();
 
         projectFindOneInTx.mockResolvedValue({});
         projectExistsInTx.mockResolvedValue(false);
