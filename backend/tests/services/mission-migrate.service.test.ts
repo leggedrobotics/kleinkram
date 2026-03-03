@@ -35,12 +35,26 @@ const createService = () => {
                                 exists: missionExistsInTx,
                                 update: updateMock,
                                 createQueryBuilder: jest.fn(() => {
-                                    const queryBuilder = {
-                                        leftJoin: jest.fn(() => queryBuilder),
-                                        where: jest.fn(() => queryBuilder),
-                                        andWhere: jest.fn(() => queryBuilder),
+                                    const queryBuilder: {
+                                        leftJoin: jest.Mock;
+                                        where: jest.Mock;
+                                        andWhere: jest.Mock;
+                                        getExists: jest.Mock;
+                                    } = {
+                                        leftJoin: jest.fn(),
+                                        where: jest.fn(),
+                                        andWhere: jest.fn(),
                                         getExists: missionExistsInTx,
                                     };
+                                    queryBuilder.leftJoin.mockReturnValue(
+                                        queryBuilder,
+                                    );
+                                    queryBuilder.where.mockReturnValue(
+                                        queryBuilder,
+                                    );
+                                    queryBuilder.andWhere.mockReturnValue(
+                                        queryBuilder,
+                                    );
                                     return queryBuilder;
                                 }),
                             };
