@@ -330,7 +330,6 @@ export class MigrateMissionByBodyGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
     ) {
         super();
     }
