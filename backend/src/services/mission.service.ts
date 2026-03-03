@@ -35,7 +35,6 @@ import {
     In,
     Not,
     QueryFailedError,
-    Raw,
     Repository,
 } from 'typeorm';
 import logger from '../logger';
@@ -529,16 +528,19 @@ export class MissionService {
                     missionUUID,
                     targetMissionName,
                 ] of targetMissionNames) {
-                    const exists = await missionRepository.exists({
-                        where: {
-                            name: Raw(
-                                (alias) => `LOWER(${alias}) = LOWER(:name)`,
-                                { name: targetMissionName },
-                            ),
-                            uuid: Not(missionUUID),
-                            project: { uuid: targetProjectUUID },
-                        },
-                    });
+                    const exists = await missionRepository
+                        .createQueryBuilder('mission')
+                        .leftJoin('mission.project', 'project')
+                        .where('LOWER(mission.name) = LOWER(:name)', {
+                            name: targetMissionName,
+                        })
+                        .andWhere('mission.uuid != :missionUUID', {
+                            missionUUID,
+                        })
+                        .andWhere('project.uuid = :targetProjectUUID', {
+                            targetProjectUUID,
+                        })
+                        .getExists();
                     if (exists) {
                         throw new ConflictException(
                             `Mission name '${targetMissionName}' already exists in the target project`,

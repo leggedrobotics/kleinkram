@@ -23,6 +23,7 @@ const createService = () => {
                         find?: jest.Mock;
                         findOne?: jest.Mock;
                         exists?: jest.Mock;
+                        createQueryBuilder?: jest.Mock;
                     };
                 }) => Promise<void>,
             ) => {
@@ -33,6 +34,15 @@ const createService = () => {
                                 find: missionFindInTx,
                                 exists: missionExistsInTx,
                                 update: updateMock,
+                                createQueryBuilder: jest.fn(() => {
+                                    const queryBuilder = {
+                                        leftJoin: jest.fn(() => queryBuilder),
+                                        where: jest.fn(() => queryBuilder),
+                                        andWhere: jest.fn(() => queryBuilder),
+                                        getExists: missionExistsInTx,
+                                    };
+                                    return queryBuilder;
+                                }),
                             };
                         }
                         if (repository === ProjectEntity) {
