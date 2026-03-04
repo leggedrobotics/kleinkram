@@ -65,7 +65,7 @@
 
                 <q-tr v-if="props.expand" :props="props">
                     <q-td colspan="100%" class="q-pa-none">
-                        <div class="q-pa-md bg-grey-1">
+                        <div class="q-pa-md">
                             <MessageViewer
                                 :topic-name="props.row.name"
                                 :message-type="props.row.type"
@@ -223,8 +223,7 @@ const toggleExpand = (props: { row: TopicRow; expand: boolean }): void => {
         // Only resume fetching for video/image topics (buffering)
         // For others, only fetch if no data exists (initial load)
         if (type === PreviewType.IMAGE) {
-            const limit = getSmartLimit(props.row);
-            emit('resume-preview', props.row.name, limit);
+            emit('resume-preview', props.row.name, 50);
             if (!hasData) loadSmart(props.row);
         } else if (!hasData) {
             loadSmart(props.row);

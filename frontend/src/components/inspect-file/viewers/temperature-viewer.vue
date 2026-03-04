@@ -74,7 +74,7 @@ onMounted(() => {
 });
 
 const { startTime, getNormalizedTime, duration } = useViewer(
-    properties.messages,
+    () => properties.messages,
 );
 
 const temperatureSeries = shallowRef<ChartSeries[]>([]);

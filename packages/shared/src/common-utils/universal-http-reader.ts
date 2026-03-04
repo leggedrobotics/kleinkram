@@ -115,10 +115,6 @@ export class UniversalHttpReader implements IReadable {
         }
 
         const startTime = performance.now();
-        // eslint-disable-next-line no-console
-        console.log(
-            `[UniversalHttpReader] fetchRange: Requesting bytes=${String(start)}-${String(end)} (length: ${String(length)}) from server...`,
-        );
 
         const response = await fetch(this.url, {
             headers: {
@@ -134,10 +130,6 @@ export class UniversalHttpReader implements IReadable {
 
         const buffer = await response.arrayBuffer();
         const duration = performance.now() - startTime;
-        // eslint-disable-next-line no-console
-        console.log(
-            `[UniversalHttpReader] fetchRange: Received ${String(buffer.byteLength)} bytes in ${duration.toFixed(1)}ms (status: ${String(response.status)})`,
-        );
 
         this.optimizer.updateMetrics(buffer.byteLength, duration);
 
@@ -186,10 +178,6 @@ export class UniversalHttpReader implements IReadable {
             const activeLength = BigInt(activeLengthString);
 
             if (offset >= activeOffset && end <= activeOffset + activeLength) {
-                // eslint-disable-next-line no-console
-                console.log(
-                    `[UniversalHttpReader] read: Overlap HIT with active request ${activeKey} for offset=${String(offset)}, length=${String(length)}`,
-                );
                 const data = await activePromise;
                 const relativeOffset = Number(offset - activeOffset);
 
@@ -241,11 +229,6 @@ export class UniversalHttpReader implements IReadable {
             fetchLength = BigInt(this._size) - offset;
             if (fetchLength < length) fetchLength = length; // Ensure we at least get what's requested
         }
-
-        // eslint-disable-next-line no-console
-        console.log(
-            `[UniversalHttpReader] read: Optimal fetch length calculated as ${String(fetchLength)} (requested ${String(length)}, isSequential: ${String(isSequential)})`,
-        );
 
         // 4. Initiating new request
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -312,6 +295,5 @@ export class UniversalHttpReader implements IReadable {
             clearInterval(this.logInterval);
             this.logInterval = null;
         }
-        this.optimizer.logStats('End of period');
     }
 }

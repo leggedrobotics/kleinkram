@@ -140,7 +140,7 @@ const isLoading = computed(
 );
 
 const { startTime, getNormalizedTime, duration } = useViewer(
-    properties.messages,
+    () => properties.messages,
 );
 
 const frameId = computed(

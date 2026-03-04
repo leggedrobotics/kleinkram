@@ -65,7 +65,7 @@ onMounted(() => {
     if (properties.messages.length === 0) emit('load-required');
 });
 
-const { startTime, getNormalizedTime } = useViewer(properties.messages);
+const { startTime, getNormalizedTime } = useViewer(() => properties.messages);
 
 const extractSeries = (category: 'linear' | 'angular'): ChartSeries[] => {
     const xData: { time: number; value: number }[] = [];

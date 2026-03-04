@@ -169,13 +169,15 @@ watch(
 watch(
     () => properties.isLoading,
     (loading) => {
+        /* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
         if (
-            !loading &&
+            loading === false &&
             properties.messages.length > 0 &&
             properties.messages.length < properties.totalCount
         ) {
             emitLoadMore();
         }
+        /* eslint-enable @typescript-eslint/no-unnecessary-boolean-literal-compare */
     },
     { immediate: true },
 );
