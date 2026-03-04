@@ -1,6 +1,5 @@
 import { ApiOkResponse, ApiResponse, OutputDto } from '@/decorators';
 import { AccessService } from '@/services/access.service';
-import { QueryUUID } from '@/validation/query-decorators';
 import {
     AccessGroupDto,
     AccessGroupsDto,
@@ -11,7 +10,6 @@ import {
     GetFilteredAccessGroupsDto,
     GroupMembershipDto,
     ProjectDto,
-    RemoveAccessGroupFromProjectDto,
     RemoveUsersFromAccessGroupDto,
     SetAccessGroupUserExpirationDto,
 } from '@kleinkram/api-dto';
@@ -25,6 +23,7 @@ import {
     Get,
     NotFoundException,
     Post,
+    Put,
     Query,
 } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
@@ -43,7 +42,30 @@ import {
 export class AccessController {
     constructor(private readonly accessService: AccessService) {}
 
-    @Get('one')
+    @ApiOperation({
+        summary: 'Get filtered AccessGroups',
+        description:
+            'Joins: memberships, memberships.user, project_access, project_access.project, creator',
+    })
+    @ApiOkResponse({
+        description: 'Returns the AccessGroups',
+        type: AccessGroupsDto,
+    })
+    @Get()
+    @CanCreate()
+    @UserOnly()
+    async search(
+        @Query() query: GetFilteredAccessGroupsDto,
+    ): Promise<AccessGroupsDto> {
+        return this.accessService.searchAccessGroup(
+            query.search,
+            query.type,
+            query.skip,
+            query.take,
+        );
+    }
+
+    @Get(':uuid')
     @UserOnly()
     @ApiOkResponse({
         type: AccessGroupDto,
@@ -60,7 +82,7 @@ export class AccessController {
             'Joins: memberships, memberships.user, project_access, project_access.project,  project_access.project.creator',
     })
     async getAccessGroup(
-        @QueryUUID('uuid', 'AccessGroup UUID') uuid: string,
+        @ParameterUID('uuid', 'AccessGroup UUID') uuid: string,
         @AddUser() user: AuthHeader,
     ): Promise<AccessGroupDto> {
         return await this.accessService
@@ -73,10 +95,10 @@ export class AccessController {
             });
     }
 
-    @Post('create')
+    @Post()
     @CanCreate()
     @ApiOkResponse({
-        type: CreateAccessGroupDto,
+        type: AccessGroupDto,
         description: 'Returns the created AccessGroup',
     })
     @ApiOperation({
@@ -87,14 +109,15 @@ export class AccessController {
     async createAccessGroup(
         @Body() body: CreateAccessGroupDto,
         @AddUser() user: AuthHeader,
-    ): Promise<CreateAccessGroupDto> {
+    ): Promise<AccessGroupDto> {
         const accessGroup = await this.accessService.createAccessGroup(
             body.name,
             user,
         );
-        return {
-            name: accessGroup.name,
-        };
+        return this.accessService.getAccessGroup(
+            accessGroup.uuid,
+            user.user.uuid,
+        );
     }
 
     @ApiOperation({
@@ -139,25 +162,23 @@ export class AccessController {
         type: NotFoundException,
         description: 'Access Group not found.',
     })
-    @Post('addUserToAccessGroup')
+    @Post(':uuid/users')
     @CanEditGroup()
     @OutputDto(AccessGroupDto)
     async addUserToAccessGroup(
+        @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @Body() body: AddUserToAccessGroupDto,
         @AddUser() requestUser: AuthHeader,
     ) {
         await this.accessService
-            .addUserToAccessGroup(body.uuid, body.userUUID)
+            .addUserToAccessGroup(uuid, body.userUUID)
             .catch((error: unknown) => {
                 if (error instanceof EntityNotFoundError) {
                     throw new NotFoundException('AccessGroup not found');
                 }
                 throw error;
             });
-        return this.accessService.getAccessGroup(
-            body.uuid,
-            requestUser.user.uuid,
-        );
+        return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
     }
 
     @ApiOperation({
@@ -204,29 +225,6 @@ export class AccessController {
     }
 
     @ApiOperation({
-        summary: 'Get filtered AccessGroups',
-        description:
-            'Joins: memberships, memberships.user, project_access, project_access.project, creator',
-    })
-    @ApiOkResponse({
-        description: 'Returns the AccessGroups',
-        type: AccessGroupsDto,
-    })
-    @Get('filtered')
-    @CanCreate()
-    @UserOnly()
-    async search(
-        @Query() query: GetFilteredAccessGroupsDto,
-    ): Promise<AccessGroupsDto> {
-        return this.accessService.searchAccessGroup(
-            query.search,
-            query.type,
-            query.skip,
-            query.take,
-        );
-    }
-
-    @ApiOperation({
         summary: 'Add Access Group to Project',
         description: 'Adds an Access Group to a Project with the given rights.',
     })
@@ -234,31 +232,34 @@ export class AccessController {
         description: 'Returns the Project',
         type: ProjectDto,
     })
-    @Post('addAccessGroupToProject')
+    @Post(':uuid/projects/:projectUuid')
     @CanWriteProject()
     @OutputDto(ProjectDto)
     async addAccessGroupToProject(
+        @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
+        @ParameterUID('projectUuid', 'UUID of Project') projectUuid: string,
         @Body() body: AddAccessGroupToProjectDto,
         @AddUser() user: AuthHeader,
     ): Promise<ProjectDto> {
         return this.accessService.addAccessGroupToProject(
-            body.uuid,
-            body.accessGroupUUID,
+            projectUuid,
+            uuid,
             body.rights,
             user,
         );
     }
 
-    @Post('removeAccessGroupFromProject')
+    @Delete(':uuid/projects/:projectUuid')
     @CanDeleteProject()
     @OutputDto(null) // TODO: type API response
     async removeAccessGroupFromProject(
-        @Body() body: RemoveAccessGroupFromProjectDto,
+        @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
+        @ParameterUID('projectUuid', 'UUID of Project') projectUuid: string,
         @AddUser() user: AuthHeader,
     ): Promise<void> {
         return this.accessService.removeAccessGroupFromProject(
-            body.uuid,
-            body.accessGroupUUID,
+            projectUuid,
+            uuid,
             user,
         );
     }
@@ -272,7 +273,7 @@ export class AccessController {
         return this.accessService.deleteAccessGroup(uuid);
     }
 
-    @Post('setExpireDate')
+    @Put(':uuid/users/:userUuid/expiration')
     @CanEditGroup()
     @ApiOkResponse({
         description: 'Returns the updated GroupMembership',
@@ -283,11 +284,14 @@ export class AccessController {
         description: 'Sets the expiration date for the user in the AccessGroup',
     })
     async setExpireDate(
+        @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
+        @ParameterUID('userUuid', 'UUID of User to set expiration')
+        userUuid: string,
         @Body() body: SetAccessGroupUserExpirationDto,
     ): Promise<GroupMembershipDto> {
         return this.accessService.setExpireDate(
-            body.uuid,
-            body.userUuid,
+            uuid,
+            userUuid,
             body.expireDate,
         );
     }
