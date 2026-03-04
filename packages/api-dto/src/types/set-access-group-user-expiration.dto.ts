@@ -1,4 +1,3 @@
-import { ApiUUIDProperty } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import {
     Validate,
@@ -26,12 +25,6 @@ class IsDateOrNeverConstraint implements ValidatorConstraintInterface {
 }
 
 export class SetAccessGroupUserExpirationDto {
-    @ApiUUIDProperty('Access Group UUID')
-    uuid!: string;
-
-    @ApiUUIDProperty('User UUID')
-    userUuid!: string;
-
     @Validate(IsDateOrNeverConstraint)
     @ApiProperty({ description: 'Expiration Date', format: 'dateString' })
     expireDate!: Date | 'never';

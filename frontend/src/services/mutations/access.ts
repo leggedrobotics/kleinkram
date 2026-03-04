@@ -1,6 +1,5 @@
 import type {
     AccessGroupDto,
-    CreateAccessGroupDto,
     GroupMembershipDto,
     ProjectAccessDto,
     ProjectAccessListDto,
@@ -26,7 +25,7 @@ export const addUsersToProject = async (
 };
 
 export const createAccessGroup = async (name: string) => {
-    const { data } = await axios.post<CreateAccessGroupDto>('/access/create', {
+    const { data } = await axios.post<AccessGroupDto>('/access', {
         name,
     });
     return data;
@@ -37,10 +36,9 @@ export const addUserToAccessGroup = async (
     accessGroupUUID: string,
 ) => {
     const { data } = await axios.post<AccessGroupDto>(
-        '/access/addUserToAccessGroup',
+        `/access/${accessGroupUUID}/users`,
         {
             userUUID,
-            uuid: accessGroupUUID,
         },
     );
     return data;
@@ -52,10 +50,8 @@ export const addAccessGroupToProject = async (
     rights: AccessGroupRights,
 ) => {
     const { data } = await axios.post<ProjectDto>(
-        '/access/addAccessGroupToProject',
+        `/access/${accessGroupUUID}/projects/${projectUUID}`,
         {
-            uuid: projectUUID,
-            accessGroupUUID,
             rights,
         },
     );
@@ -77,10 +73,7 @@ export const removeAccessGroupFromProject = async (
     projectUUID: string,
     accessGroupUUID: string,
 ) => {
-    await axios.post('/access/removeAccessGroupFromProject', {
-        uuid: projectUUID,
-        accessGroupUUID,
-    });
+    await axios.delete(`/access/${accessGroupUUID}/projects/${projectUUID}`);
 };
 
 export const removeUsersFromAccessGroup = async (
@@ -105,11 +98,9 @@ export const setAccessGroupExpiry = async (
     userUuid: string,
     expiryDate: Date | null,
 ) => {
-    const { data } = await axios.post<GroupMembershipDto>(
-        '/access/setExpireDate',
+    const { data } = await axios.put<GroupMembershipDto>(
+        `/access/${uuid}/users/${userUuid}/expiration`,
         {
-            uuid,
-            userUuid,
             expireDate: expiryDate ?? 'never',
         },
     );

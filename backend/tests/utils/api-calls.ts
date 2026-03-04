@@ -272,7 +272,7 @@ export const createAccessGroupUsingPost = async (
     const headersBuilder = new HeaderCreator(creator);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const response = await fetch(`${DEFAULT_URL}/access/create`, {
+    const response = await fetch(`${DEFAULT_URL}/access`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
