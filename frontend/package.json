@@ -43,7 +43,7 @@
         "sql.js": "^1.13.0",
         "vite-plugin-node-polyfills": "^0.24.0",
         "vue": "^3.5.27",
-        "vue-echarts": "^7.0.3",
+        "vue-echarts": "^8.0.1",
         "vue-json-pretty": "^2.6.0",
         "vue-router": "^4.6.4"
     },
