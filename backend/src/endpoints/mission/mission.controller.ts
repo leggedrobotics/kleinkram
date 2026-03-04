@@ -167,10 +167,11 @@ export class MissionController {
     @Post('move')
     @CanMoveMission()
     @ApiOkResponse({
-        description: 'Missions moved to another project',
+        description:
+            'Explicitly selected mission(s) moved to the target project',
         type: MoveMissionsResponseDto,
     })
-    async moveMission(
+    async moveSelectedMissions(
         @Body() dto: MoveMissionsDto,
     ): Promise<MoveMissionsResponseDto> {
         const result = await this.missionService.moveMissions(

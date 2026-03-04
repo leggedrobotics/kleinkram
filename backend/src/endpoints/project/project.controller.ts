@@ -202,7 +202,8 @@ export class ProjectController {
     @Post('migrate')
     @CanMigrateProjectByBody()
     @ApiOkResponse({
-        description: 'Project missions migrated to another project',
+        description:
+            'All missions from the source project migrated to the target project',
         type: MigrateProjectResponseDto,
     })
     async migrateProject(

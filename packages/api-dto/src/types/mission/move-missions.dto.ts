@@ -10,17 +10,27 @@ import {
 } from 'class-validator';
 
 export class MoveMissionsDto {
-    @ApiProperty({ type: [String] })
+    @ApiProperty({
+        type: [String],
+        description:
+            'Explicit mission UUIDs to move. This endpoint does not migrate all missions of a project.',
+    })
     @IsArray()
     @ArrayNotEmpty()
     @IsUUID('4', { each: true })
     missionUUIDs!: string[];
 
-    @ApiProperty()
+    @ApiProperty({
+        description: 'Target project UUID for the selected missions.',
+    })
     @IsUUID('4')
     targetProjectUUID!: string;
 
-    @ApiProperty({ required: false })
+    @ApiProperty({
+        required: false,
+        description:
+            'Optional new name, allowed only when moving exactly one mission.',
+    })
     @IsOptional()
     @IsValidMissionName()
     @IsNoValidUUID()

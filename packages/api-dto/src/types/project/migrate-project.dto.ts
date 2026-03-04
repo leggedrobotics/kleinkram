@@ -10,15 +10,23 @@ import {
 } from 'class-validator';
 
 export class MigrateProjectDto {
-    @ApiProperty()
+    @ApiProperty({
+        description: 'Source project UUID. All missions from this project are moved.',
+    })
     @IsUUID('4')
     sourceProjectUUID!: string;
 
-    @ApiProperty()
+    @ApiProperty({
+        description: 'Target project UUID receiving all source missions.',
+    })
     @IsUUID('4')
     targetProjectUUID!: string;
 
-    @ApiProperty({ required: false })
+    @ApiProperty({
+        required: false,
+        description:
+            'Optional new name for the source project after migration (archive rename).',
+    })
     @IsOptional()
     @IsValidName()
     @IsNoValidUUID()
