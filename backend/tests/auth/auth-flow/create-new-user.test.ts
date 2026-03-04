@@ -26,24 +26,29 @@ describe('createNewUser affiliation sync', () => {
     test('links existing user without account and backfills affiliation membership', async () => {
         const existingUser = {
             uuid: 'user-1',
-            email: 'marina@leggedrobotics.com',
+            email: 'internal-user@leggedrobotics.com',
             account: undefined,
         } as unknown as UserEntity;
 
         const createdAccount = { uuid: 'account-1' } as AccountEntity;
+        const findUser = jest.fn().mockResolvedValue(existingUser);
+        const createAccount = jest.fn().mockReturnValue(createdAccount);
+        const saveAccount = jest.fn().mockResolvedValue(createdAccount);
+        const addToAffiliationGroups = jest.fn().mockResolvedValue();
+        const createPrimaryGroup = jest.fn().mockResolvedValue();
 
         const userRepository = {
-            findOne: jest.fn().mockResolvedValue(existingUser),
+            findOne: findUser,
         } as unknown as Repository<UserEntity>;
 
         const accountRepository = {
-            create: jest.fn().mockReturnValue(createdAccount),
-            save: jest.fn().mockResolvedValue(createdAccount),
+            create: createAccount,
+            save: saveAccount,
         } as unknown as Repository<AccountEntity>;
 
         const affiliationGroupService = {
-            addToAffiliationGroups: jest.fn().mockResolvedValue(undefined),
-            createPrimaryGroup: jest.fn().mockResolvedValue(undefined),
+            addToAffiliationGroups,
+            createPrimaryGroup,
         } as unknown as AffiliationGroupService;
 
         const user = await createNewUser(
@@ -54,19 +59,16 @@ describe('createNewUser affiliation sync', () => {
             {
                 oauthID: 'oauth-id',
                 provider: Providers.GOOGLE,
-                email: 'marina@leggedrobotics.com',
-                username: 'Marina',
+                email: 'internal-user@leggedrobotics.com',
+                username: 'Internal User',
                 picture: '',
             },
         );
 
         expect(user).toBe(existingUser);
-        expect(accountRepository.save).toHaveBeenCalledWith(createdAccount);
-        expect(affiliationGroupService.addToAffiliationGroups).toHaveBeenCalledWith(
-            config,
-            existingUser,
-        );
-        expect(affiliationGroupService.createPrimaryGroup).not.toHaveBeenCalled();
+        expect(saveAccount).toHaveBeenCalledWith(createdAccount);
+        expect(addToAffiliationGroups).toHaveBeenCalledWith(config, existingUser);
+        expect(createPrimaryGroup).not.toHaveBeenCalled();
     });
 
     test('throws when user already exists with a linked account', async () => {
@@ -75,19 +77,24 @@ describe('createNewUser affiliation sync', () => {
             email: 'already@leggedrobotics.com',
             account: { uuid: 'account-existing' },
         } as unknown as UserEntity;
+        const findUser = jest.fn().mockResolvedValue(existingUser);
+        const createAccount = jest.fn();
+        const saveAccount = jest.fn();
+        const addToAffiliationGroups = jest.fn();
+        const createPrimaryGroup = jest.fn();
 
         const userRepository = {
-            findOne: jest.fn().mockResolvedValue(existingUser),
+            findOne: findUser,
         } as unknown as Repository<UserEntity>;
 
         const accountRepository = {
-            create: jest.fn(),
-            save: jest.fn(),
+            create: createAccount,
+            save: saveAccount,
         } as unknown as Repository<AccountEntity>;
 
         const affiliationGroupService = {
-            addToAffiliationGroups: jest.fn(),
-            createPrimaryGroup: jest.fn(),
+            addToAffiliationGroups,
+            createPrimaryGroup,
         } as unknown as AffiliationGroupService;
 
         await expect(
@@ -106,7 +113,7 @@ describe('createNewUser affiliation sync', () => {
             ),
         ).rejects.toBeInstanceOf(AuthFlowException);
 
-        expect(affiliationGroupService.addToAffiliationGroups).not.toHaveBeenCalled();
-        expect(accountRepository.save).not.toHaveBeenCalled();
+        expect(addToAffiliationGroups).not.toHaveBeenCalled();
+        expect(saveAccount).not.toHaveBeenCalled();
     });
 });
