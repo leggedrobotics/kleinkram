@@ -94,10 +94,7 @@ export class FoxgloveService {
         if (signature !== expectedSignature)
             throw new BadRequestException('Invalid signature');
 
-        return await this.dataStorage.getPresignedDownloadUrl(file.uuid, 3600, {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'response-content-disposition': `attachment; filename="${file.filename}"`,
-        });
+        return await this.dataStorage.getPresignedDownloadUrl(file.uuid, 3600);
     }
 
     private generateSignature(data: string): string {

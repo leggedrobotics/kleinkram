@@ -49,12 +49,18 @@
 <script setup lang="ts">
 import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed, markRaw, onMounted, shallowRef, watch } from 'vue';
+import { useViewer, type BaseMessage } from './common/use-viewer';
 import SimpleTimeChart, { type ChartSeries } from './simple-time-chart.vue';
 import SkeletonTimeChart from './skeleton-time-chart.vue';
 
+interface TemperatureMessage extends BaseMessage {
+    data: {
+        temperature?: number;
+    };
+}
+
 const properties = defineProps<{
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: any[];
+    messages: TemperatureMessage[];
     totalCount: number;
     topicName: string;
 }>();
@@ -62,35 +68,24 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required', 'load-more']);
 
 onMounted(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!properties.messages || properties.messages.length === 0)
+    if (properties.messages.length === 0) {
         emit('load-required');
+    }
 });
 
-// --- Data Processing ---
-// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-const startTime = computed(() => properties.messages[0]?.logTime ?? 0n);
-
-const duration = computed(() => {
-    if (properties.messages.length < 2) return 0;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const end = properties.messages.at(-1).logTime;
-    return (end - startTime.value) / 1_000_000_000;
-});
+const { startTime, getNormalizedTime, duration } = useViewer(
+    () => properties.messages,
+);
 
 const temperatureSeries = shallowRef<ChartSeries[]>([]);
 
 watch(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     () => properties.messages,
     () => {
         const data = [];
         for (const message of properties.messages) {
-            if (!message) continue;
             data.push({
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                time: (message.logTime - startTime.value) / 1_000_000_000,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                time: getNormalizedTime(message.logTime),
                 value: message.data.temperature ?? 0,
             });
         }

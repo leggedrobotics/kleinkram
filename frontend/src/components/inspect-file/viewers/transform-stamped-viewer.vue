@@ -43,7 +43,7 @@
                 </div>
             </div>
 
-            <div v-if="isLoading" class="row q-col-gutter-md">
+            <div v-if="isLoading" key="loading" class="row q-col-gutter-md">
                 <div class="col-12">
                     <SkeletonTimeChart
                         title="Translation (m)"
@@ -60,7 +60,7 @@
                 </div>
             </div>
 
-            <div v-else class="row q-col-gutter-md">
+            <div v-else key="loaded" class="row q-col-gutter-md">
                 <!-- Translation -->
                 <div class="col-12">
                     <SimpleTimeChart
@@ -89,12 +89,40 @@
 <script setup lang="ts">
 import { debounce, Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed, markRaw, onMounted, shallowRef, watch } from 'vue';
-import SimpleTimeChart, { ChartSeries } from './simple-time-chart.vue';
+import { useViewer, type BaseMessage } from './common/use-viewer';
+import SimpleTimeChart, { type ChartSeries } from './simple-time-chart.vue';
 import SkeletonTimeChart from './skeleton-time-chart.vue';
 
+interface Vector3 {
+    x?: number;
+    y?: number;
+    z?: number;
+}
+
+interface Quaternion {
+    x?: number;
+    y?: number;
+    z?: number;
+    w?: number;
+}
+
+interface TransformMessage extends BaseMessage {
+    data: {
+        header?: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            frame_id?: string;
+        };
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        child_frame_id?: string;
+        transform?: {
+            translation?: Vector3;
+            rotation?: Quaternion;
+        };
+    };
+}
+
 const properties = defineProps<{
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: any[];
+    messages: TransformMessage[];
     totalCount: number;
     topicName: string;
 }>();
@@ -102,37 +130,24 @@ const properties = defineProps<{
 const emit = defineEmits(['load-required']);
 
 onMounted(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!properties.messages || properties.messages.length === 0)
+    if (properties.messages.length === 0) {
         emit('load-required');
+    }
 });
 
 const isLoading = computed(
     () => properties.messages.length < properties.totalCount,
 );
 
-const duration = computed(() => {
-    if (properties.messages.length < 2) return 0;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const start = properties.messages[0].logTime;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const end = properties.messages.at(-1).logTime;
-    return (end - start) / 1_000_000_000;
-});
-
-const startTime = computed(() => {
-    if (properties.messages.length === 0) return;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-    return properties.messages[0].logTime;
-});
+const { startTime, getNormalizedTime, duration } = useViewer(
+    () => properties.messages,
+);
 
 const frameId = computed(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-    () => properties.messages[0]?.data?.header?.frame_id ?? '-',
+    () => properties.messages[0]?.data.header?.frame_id ?? '-',
 );
 const childFrameId = computed(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-    () => properties.messages[0]?.data?.child_frame_id ?? '-',
+    () => properties.messages[0]?.data.child_frame_id ?? '-',
 );
 
 const translationSeries = shallowRef<ChartSeries[]>([]);
@@ -145,56 +160,45 @@ const updateCharts = debounce(() => {
         return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const logStartTime = properties.messages[0].logTime;
+    const messageLength = properties.messages.length;
 
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const length_ = properties.messages.length;
+    const t = new Float32Array(messageLength);
+    const tx = new Float32Array(messageLength);
+    const ty = new Float32Array(messageLength);
+    const tz = new Float32Array(messageLength);
 
-    const t = new Float32Array(length_);
-    const tx = new Float32Array(length_);
-    const ty = new Float32Array(length_);
-    const tz = new Float32Array(length_);
+    const rx = new Float32Array(messageLength);
+    const ry = new Float32Array(messageLength);
+    const rz = new Float32Array(messageLength);
+    const rw = new Float32Array(messageLength);
 
-    const rx = new Float32Array(length_);
-    const ry = new Float32Array(length_);
-    const rz = new Float32Array(length_);
-    const rw = new Float32Array(length_);
-
-    for (let index = 0; index < length_; index++) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    for (let index = 0; index < messageLength; index++) {
         const message = properties.messages[index];
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        t[index] = (message.logTime - logStartTime) / 1_000_000_000;
+        if (!message) continue;
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        t[index] = getNormalizedTime(message.logTime);
+
         const trans = message.data.transform?.translation ?? {};
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         tx[index] = trans.x ?? 0;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         ty[index] = trans.y ?? 0;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         tz[index] = trans.z ?? 0;
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const rot = message.data.transform?.rotation ?? {};
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         rx[index] = rot.x ?? 0;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         ry[index] = rot.y ?? 0;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         rz[index] = rot.z ?? 0;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        rw[index] = rot.w === undefined ? 1 : rot.w;
+        rw[index] = rot.w ?? 1;
     }
 
     const makeData = (values: Float32Array) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result: any[] = Array.from({ length: length_ });
-        for (let index = 0; index < length_; index++) {
-            result[index] = { time: t[index], value: values[index] };
+        const result: { time: number; value: number }[] = Array.from({
+            length: messageLength,
+        });
+        for (let index = 0; index < messageLength; index++) {
+            const timeValue = t[index];
+            const value = values[index];
+            result[index] = { time: timeValue ?? 0, value: value ?? 0 };
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return result;
     };
 
@@ -216,9 +220,8 @@ watch(() => properties.messages.length, updateCharts, { immediate: true });
 
 async function copyRaw(): Promise<void> {
     if (properties.messages.length === 0) return;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const last = properties.messages.at(-1);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (!last) return;
     await quasarCopy(JSON.stringify(last.data, null, 2));
     Notify.create({
         message: 'Latest message copied',
