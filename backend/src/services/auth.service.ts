@@ -40,6 +40,16 @@ export class AuthService implements OnModuleInit {
         await this.affiliationGroupService.createAccessGroups(this.config);
     }
 
+    private async syncAffiliationMembership(
+        user: UserEntity,
+    ): Promise<UserEntity> {
+        await this.affiliationGroupService.addToAffiliationGroups(
+            this.config,
+            user,
+        );
+        return user;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async validateAndCreateUserByGitHub(profile: any): Promise<UserEntity> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -62,7 +72,7 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return this.syncAffiliationMembership(account.user);
         }
 
         return this.create(
@@ -98,7 +108,7 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return this.syncAffiliationMembership(account.user);
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -127,7 +137,7 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return this.syncAffiliationMembership(account.user);
         }
 
         return this.create(
@@ -238,7 +248,12 @@ export const createNewUser = async (
             `Linking account ${account.uuid} to existing user ${existingUser.uuid}`,
         );
         account.user = existingUser;
-        return accountRepository.save(account).then(() => existingUser);
+        await accountRepository.save(account);
+        await affiliationGroupService.addToAffiliationGroups(
+            config,
+            existingUser,
+        );
+        return existingUser;
     }
 
     /////////////////////////////////////////////////////////
