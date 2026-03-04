@@ -242,8 +242,6 @@ export class UniversalHttpReader implements IReadable {
             if (fetchLength < length) fetchLength = length; // Ensure we at least get what's requested
         }
 
-        this.lastFetchEnd = offset + fetchLength;
-
         // eslint-disable-next-line no-console
         console.log(
             `[UniversalHttpReader] read: Optimal fetch length calculated as ${String(fetchLength)} (requested ${String(length)}, isSequential: ${String(isSequential)})`,
@@ -279,6 +277,9 @@ export class UniversalHttpReader implements IReadable {
             });
 
         const data = await promise;
+
+        // Update tracking only after successful fetch
+        this.lastFetchEnd = offset + BigInt(data.length);
 
         // Return the requested slice
         // The data we got starts at `offset`
