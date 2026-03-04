@@ -102,5 +102,9 @@ function toBigIntOrUndefined(
     value: string | null | undefined,
 ): bigint | undefined {
     if (!value) return undefined;
-    return BigInt(value);
+    try {
+        return BigInt(value);
+    } catch {
+        return undefined;
+    }
 }

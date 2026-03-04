@@ -15,5 +15,5 @@ export function getDurationSeconds(
     if (startTimeNs === undefined || endTimeNs === undefined) return 0;
     const durationNs = endTimeNs - startTimeNs;
     if (durationNs <= 0n) return 0;
-    return Number(durationNs) / 1_000_000_000;
+    return Number(durationNs / 1_000_000n) / 1000;
 }
