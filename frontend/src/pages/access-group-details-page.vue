@@ -246,7 +246,9 @@
                                         :disable="!currentUserCanEdit"
                                         @click="
                                             () =>
-                                                removeUser(props.row.user.uuid)
+                                                removeSingleUser(
+                                                    props.row.user.uuid,
+                                                )
                                         "
                                     >
                                         <q-item-section>Remove</q-item-section>
@@ -280,7 +282,6 @@ import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expira
 import { useAccessGroup, useUser } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import {
-    removeUserFromAccessGroup,
     removeUsersFromAccessGroup,
     setAccessGroupExpiry,
 } from 'src/services/mutations/access';
@@ -326,29 +327,7 @@ function isExpired(date: Date | null): boolean {
     return date < new Date();
 }
 
-const { mutate: removeUser } = useMutation({
-    mutationFn: (userUUID: string) =>
-        removeUserFromAccessGroup(userUUID, uuid.value),
-    onSuccess: async () => {
-        await queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', uuid],
-        });
-        Notify.create({
-            message: 'User removed from access group',
-            color: 'positive',
-            position: 'bottom',
-        });
-    },
-    onError: () => {
-        Notify.create({
-            message: 'Error removing user from access group',
-            color: 'negative',
-            position: 'bottom',
-        });
-    },
-});
-
-const { mutate: removeSelectedUsers } = useMutation({
+const { mutate: removeUsers } = useMutation({
     mutationFn: (userUuids: string[]) =>
         removeUsersFromAccessGroup(userUuids, uuid.value),
     onSuccess: async () => {
@@ -357,24 +336,27 @@ const { mutate: removeSelectedUsers } = useMutation({
             queryKey: ['AccessGroup', uuid],
         });
         Notify.create({
-            message: 'Users removed from access group',
+            message: 'User(s) removed successfully',
             color: 'positive',
             position: 'bottom',
         });
     },
     onError: () => {
         Notify.create({
-            message: 'Error removing users from access group',
+            message: 'Error removing user(s) from access group',
             color: 'negative',
             position: 'bottom',
         });
     },
 });
 
+const removeSingleUser = (userUuid: string): void => {
+    removeUsers([userUuid]);
+};
+
 const deleteSelectedUsers = (): void => {
-    const userUuids = selectedUsers.value.map((m) => m.user.uuid);
-    if (userUuids.length > 0) {
-        removeSelectedUsers(userUuids);
+    if (selectedUsers.value.length > 0) {
+        removeUsers(selectedUsers.value.map((m) => m.user.uuid));
     }
 };
 
