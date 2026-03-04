@@ -4,12 +4,24 @@ Kleinkram Actions are powerful tools that allow you to process, verify, and anal
 Kleinkram instance using hosted action runners. Kleinkram Actions can automate tasks such as data validation, format
 conversion, and metadata extraction.
 
+::: tip Core Concepts of Kleinkram Actions
+
+- **Action Template**: This is the _definition_ or _blueprint_ of an action. It includes the Docker image to run, the
+  default command, resource limits (CPU/Memory), and access rights. You create a template once and can reuse it many
+  times. [-> Learn more](use-actions#action-templates).
+- **Action Execution**: This is a specific _instance_ of an action running on a specific mission scope. When you
+  click the "Play" button on a template, you create an execution. Each execution has its own logs, status, and output
+  artifacts. [-> Learn more](use-actions#action-execution).
+- **Action Trigger**: Action triggers allow you to automate the execution of your actions based on specific events or schedules. [-> Learn more](triggers.md).
+
+:::
+
 ## Launch Actions via Web Interface
 
 Actions can be configured and launched directly within the Kleinkram web interface. For that you must navigate to the
 "Actions" page in the main menu.
 
-In the "Action Templates" tab, you will see a list of available [Action Templates](#action-templates). To launch an
+In the "Templates" tab, you will see a list of available [Action Templates](#action-templates). To launch an
 action simply click on the play icon, which opens a side panel where you can select the scope of the action execution
 and confirm the launch.
 
@@ -21,20 +33,7 @@ within that mission. For your convenience, you can also access files of other mi
 Actions are queued and executed on hosted action runners within your Kleinkram instance. You can monitor the progress of
 your actions in the "Executions" tab.
 
-## Core Concepts of Kleinkram Actions
-
-::: tip Action Templates vs Action Executions
-
-- **Action Template**: This is the _definition_ or _blueprint_ of an action. It includes the Docker image to run, the
-  default command, resource limits (CPU/Memory), and access rights. You create a template once and can reuse it many
-  times.
-- **Action Execution**: This is a specific _instance_ of an action running on a specific mission scope. When you
-  click the "Play" button on a template, you create an execution. Each execution has its own logs, status, and output
-  artifacts.
-
-:::
-
-### Action Templates
+## Action Templates
 
 Action Templates define the behavior of an action, including the Docker image to use, resource limits, and default
 entrypoint/command. You can create your own custom action templates or use the provided example actions.
@@ -45,7 +44,7 @@ action templates. By default, Kleinkram comes with several pre-defined action te
 out of the box to try out the functionality of the Kleinkram Actions system.
 :::
 
-#### Version Control for Action Templates
+### Version Control for Action Templates
 
 Action Templates are version-controlled. When you create or modify an action template, a new version is created. This
 allows you to track changes over time and revert to previous versions if needed. Each execution of an action is tied to
@@ -53,7 +52,7 @@ a specific version of the template, ensuring consistency and reproducibility.
 
 ::: tip
 We recommend using version tags while specifying Docker images in your action templates. This ensures that your actions
-are always reproducible and not affected by changes in the `latest` image. E.g., use `python:3.9-slim` instead of
+are always reproducible and not affected by changes in the `latest` image. E.g., use `python:3.10-slim` instead of
 `python:latest`.
 :::
 
@@ -61,6 +60,10 @@ Versions of an action template can be viewed by clicking on the version icon nex
 template list:
 
 ![Action Versions](../../assets/action_versions.png)
+
+### Automating Actions using Action Triggers
+
+You can automate action execution using Triggers. Triggers can schedule actions (Cron), run them on external events (Webhook), or react to file uploads (File Pattern). Learn more in the [Action Triggers](triggers.md) guide.
 
 ## Action Execution
 
@@ -74,7 +77,7 @@ steps occur behind the scenes:
     - The action's entrypoint/command is executed.
 3. Any output files placed in `/out` are saved as artifacts.
 4. The action's status is updated based on the exit code of the
-   container ([see Action Exit Codes](/usage/actions/write-actions#action-status-exit-codes)).
+   container ([-> Action Exit Codes](/usage/actions/write-actions#action-status-exit-codes)).
 5. Logs and artifacts are made available for download.
 
 ### Artifacts and Output Files
@@ -83,7 +86,7 @@ Actions can generate output files, such as reports, converted data, or logs. The
 can be downloaded from the action execution page.
 
 ::: tip Artifact Retention Policy
-Artifacts are kept for 3 months before being automatically deleted.
+Artifacts are kept for 3 months (90 days) before being automatically deleted by the system.
 :::
 
 ### Audit Logs

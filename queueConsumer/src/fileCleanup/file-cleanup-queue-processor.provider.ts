@@ -3,8 +3,7 @@ import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity'
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
@@ -13,11 +12,11 @@ import {
     QueueState,
     UserRole,
 } from '@kleinkram/shared';
-import { InjectQueue, Process, Processor } from '@nestjs/bull';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Process, Processor } from '@nestjs/bull';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Job, Queue } from 'bull';
+import { Job } from 'bull';
 import { Redis } from 'ioredis';
 import crypto from 'node:crypto';
 import Redlock from 'redlock';
@@ -54,8 +53,8 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         private projectAccessView: Repository<ProjectAccessViewEntity>,
         @InjectRepository(MissionAccessViewEntity)
         private missionAccessView: Repository<MissionAccessViewEntity>,
-        @InjectQueue('file-queue') private readonly fileQueue: Queue,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
     ) {}
 
     onModuleInit(): void {
@@ -140,10 +139,9 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         continue;
                     }
 
-                    // REFACTORED: Use StorageService to get stream
-                    const datastream = await this.storageService.getFileStream(
-                        env.MINIO_DATA_BUCKET_NAME,
-                        `${file.mission.project.name}/${file.mission.name}/${file.filename}`,
+                    // Use DataStorageBucket to get stream (files are stored by UUID)
+                    const datastream = await this.dataStorage.getFileStream(
+                        file.uuid,
                     );
                     await new Promise((resolve, reject) => {
                         datastream.on('error', (error) => {

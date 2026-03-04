@@ -13,7 +13,7 @@ export interface MissionContext {
 
 setSeederFactory(
     MissionEntity,
-    (faker: Faker, context: Partial<MissionContext> = {}) => {
+    (_faker: Faker, context: Partial<MissionContext> = {}) => {
         if (!context.project) {
             throw new Error('Project is required');
         }

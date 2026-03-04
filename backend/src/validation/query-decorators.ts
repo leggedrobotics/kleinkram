@@ -455,6 +455,7 @@ export const QueryDate = (
 export const QuerySortBy = (
     parameterName: string,
     parameterDescription?: string,
+    allowedFields?: string[],
 ) =>
     createParamDecorator(
         async (data: string, context: ExecutionContext) => {
@@ -469,7 +470,7 @@ export const QuerySortBy = (
             }
 
             // check if value is a valid field
-            const fields = [
+            const fields = allowedFields ?? [
                 'uuid',
                 'name',
                 'description',
@@ -478,7 +479,6 @@ export const QuerySortBy = (
                 'createdAt',
                 'updatedAt',
                 'filename',
-                'state',
                 'size',
                 'file.date',
                 'file.createdAt',

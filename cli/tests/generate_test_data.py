@@ -296,8 +296,16 @@ def main():
     generate_bag(os.path.join(backend_fixtures_dir, "file1.bag"), 10 * 1024)
     generate_bag(os.path.join(backend_fixtures_dir, "file2.bag"), 10 * 1024)
     generate_bag(os.path.join(backend_fixtures_dir, "move_me.bag"), 10 * 1024)
-    generate_bag(os.path.join(backend_fixtures_dir, "move_me.bag"), 10 * 1024)
     generate_bag(os.path.join(backend_fixtures_dir, "state_test.bag"), 10 * 1024)
+
+    # Generate backend dummy MCAP and YAML
+    with open(os.path.join(backend_fixtures_dir, "config.yaml"), "w") as f:
+        f.write("test: true\nvalue: 123\n")
+    with open(os.path.join(backend_fixtures_dir, "config.yml"), "w") as f:
+        f.write("test: true\nvalue: 123\n")
+    with open(os.path.join(backend_fixtures_dir, "test.mcap"), "wb") as f:
+        f.write(b"\x89MCAP\x30\r\n")
+
     generate_frontend_bag(os.path.join(data_dir, "frontend_test.bag"))
 
     # Generate dummy MCAP and YAML

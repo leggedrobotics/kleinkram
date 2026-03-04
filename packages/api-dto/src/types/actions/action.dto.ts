@@ -4,12 +4,19 @@ import { AuditLogDto } from '@api-dto/actions/audit-log.dto';
 import { DockerImageDto } from '@api-dto/actions/docker-image.dto';
 import { MissionDto } from '@api-dto/mission/mission.dto';
 import { UserDto } from '@api-dto/user/user.dto';
-import { ActionState, ArtifactState } from '@kleinkram/shared';
+import {
+    ActionErrorHint,
+    ActionState,
+    ActionTriggerSource,
+    ArtifactState,
+    ResourceUsage,
+} from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
     IsDate,
     IsEnum,
+    IsInt,
     IsOptional,
     IsString,
     IsUUID,
@@ -88,4 +95,39 @@ export class ActionDto {
     @ValidateNested()
     @Type(() => ActionWorkerDto)
     worker!: ActionWorkerDto | null;
+
+    @ApiProperty()
+    @IsEnum(ActionTriggerSource)
+    triggerSource!: ActionTriggerSource;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsUUID()
+    triggerUuid?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsEnum(ActionErrorHint)
+    errorHint?: ActionErrorHint;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsInt()
+    exitCode?: number;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    resourceUsage?: ResourceUsage;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    maxMemoryBytes?: number;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    avgCpuPercent?: number;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    efficiencyScore?: number;
 }

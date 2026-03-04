@@ -25,6 +25,7 @@ module.exports = {
             '<rootDir>/../packages/validation/src/$1',
         '^@kleinkram/api-dto$': '<rootDir>/../packages/api-dto/src/index.ts',
         '^@kleinkram/api-dto/(.*)$': '<rootDir>/../packages/api-dto/src/$1',
+        '^@api-dto/(.*)$': '<rootDir>/../packages/api-dto/src/types/$1',
     },
     preset: 'ts-jest',
     modulePathIgnorePatterns: ['<rootDir>/dist/'],

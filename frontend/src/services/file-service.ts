@@ -351,11 +351,7 @@ async function _createFileAction(
         (item) => item.virtualName,
     ) as unknown as Record<string, Record<string, string>>;
 
-    const api = ENV.BACKEND_URL;
-    let minioEndpoint = api.replace('api', 'minio');
-    if (api === 'http://localhost:3000') {
-        minioEndpoint = 'http://localhost:9000';
-    }
+    const s3Endpoint = ENV.S3_ENDPOINT;
 
     await queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === 'files',
@@ -396,8 +392,8 @@ async function _createFileAction(
                     return;
                 }
 
-                const minioClient = new S3Client({
-                    endpoint: minioEndpoint,
+                const s3Client = new S3Client({
+                    endpoint: s3Endpoint,
                     forcePathStyle: true,
                     region: 'us-east-1',
                     // Workaround for https://github.com/aws/aws-sdk-js-v3/issues/6834
@@ -431,7 +427,7 @@ async function _createFileAction(
                             accessResp.bucket,
                             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.fileUUID,
-                            minioClient,
+                            s3Client,
                             newFileUploadReference,
                         );
 
@@ -547,7 +543,7 @@ async function uploadFileMultipart(
     file: File,
     bucket: string,
     key: string,
-    minioClient: S3Client,
+    s3Client: S3Client,
     newFileUpload: Ref<FileWithTopicDto>,
 ): Promise<string | undefined> {
     let uploadId: string | undefined;
@@ -556,7 +552,7 @@ async function uploadFileMultipart(
             Bucket: bucket,
             Key: key,
         });
-        const { UploadId: _uploadID } = await minioClient.send(
+        const { UploadId: _uploadID } = await s3Client.send(
             createMultipartUploadCommand,
         );
         uploadId = _uploadID;
@@ -592,7 +588,7 @@ async function uploadFileMultipart(
             let retries = 0;
             while (retries < maxRetries) {
                 try {
-                    const { ETag } = await minioClient.send(uploadPartCommand);
+                    const { ETag } = await s3Client.send(uploadPartCommand);
                     newFileUpload.value.uploaded =
                         (newFileUpload.value.uploaded ?? 0) + partBlob.size;
 
@@ -620,7 +616,7 @@ async function uploadFileMultipart(
         const finalMD5 = btoa(spark.end(true));
         // eslint-disable-next-line no-console
         console.log('Final MD5:', finalMD5);
-        await minioClient.send(completeMultipartUploadCommand);
+        await s3Client.send(completeMultipartUploadCommand);
         return finalMD5;
     } catch (error) {
         console.error('Multipart upload failed:', error);
@@ -635,7 +631,7 @@ async function uploadFileMultipart(
                     UploadId: uploadId,
                 },
             );
-            await minioClient.send(abortMultipartUploadCommand);
+            await s3Client.send(abortMultipartUploadCommand);
             // eslint-disable-next-line no-console
             console.log('Multipart upload aborted.');
         }

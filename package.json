@@ -1,6 +1,6 @@
 {
     "name": "kleinkram",
-    "version": "0.57.0",
+    "version": "0.58.0",
     "main": "index.js",
     "repository": "git@github.com:leggedrobotics/GrandTourDatasets.git",
     "author": "Johann Schwabe <johann@schwabe.dev>",
@@ -8,8 +8,8 @@
     "private": true,
     "scripts": {
         "start": "docker compose build base && docker compose up --build -d",
-        "start:infra": "docker compose up -d database minio redis",
-        "stop:infra": "docker compose stop database minio redis",
+        "start:infra": "docker compose up -d database seaweedfs redis",
+        "stop:infra": "docker compose stop database seaweedfs redis",
         "dev": "pnpm start:infra && dotenv -e .env -- pnpm --parallel --filter \"./backend\" --filter \"./frontend\" --filter \"./queueConsumer\" run start:dev",
         "lint": "NODE_OPTIONS='--max-old-space-size=8192' eslint . --fix --cache",
         "lint:check": "NODE_OPTIONS='--max-old-space-size=8192' eslint .",
@@ -51,7 +51,9 @@
     "dependencies": {
         "@mcap/core": "^2.1.7",
         "class-transformer": "^0.5.1",
+        "cron-parser": "^5.4.0",
         "fs-extra": "^11.2.0",
+        "minimatch": "^10.1.1",
         "vite-plugin-top-level-await": "^1.6.0",
         "vite-plugin-wasm": "^3.5.0"
     },

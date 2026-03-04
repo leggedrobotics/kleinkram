@@ -6,6 +6,7 @@
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import { ActionState } from '@kleinkram/shared';
 import AppInput from 'components/common/app-input.vue';
+import { formatDuration } from 'src/services/date-formating';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps<{ action: ActionDto }>();
@@ -61,8 +62,7 @@ const runtimeString = computed(() => {
         end = now.value;
     }
 
-    const seconds = ((end - start) / 1000).toFixed(0);
-    if (seconds === '0') return 'N/A';
-    return `${seconds} second${seconds === '1' ? '' : 's'}`;
+    const seconds = (end - start) / 1000;
+    return formatDuration(seconds);
 });
 </script>

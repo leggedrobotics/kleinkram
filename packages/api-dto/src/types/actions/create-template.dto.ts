@@ -1,4 +1,5 @@
 import { AccessGroupRights } from '@kleinkram/shared';
+import { IsDockerImage } from '@kleinkram/validation';
 import {
     IsEnum,
     IsNotEmpty,
@@ -22,6 +23,7 @@ export class CreateTemplateDto {
 
     @IsString()
     @IsNotEmpty()
+    @IsDockerImage()
     dockerImage!: string;
 
     @IsNumber()

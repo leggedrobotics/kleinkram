@@ -1,6 +1,7 @@
 import { ActionGuardService } from '@/endpoints/auth/action-guard.service';
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { AccessGroupRights, ActionState } from '@kleinkram/shared';
 import {
@@ -8,7 +9,6 @@ import {
     ExecutionContext,
     Injectable,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseGuard } from './base.guards';
@@ -18,6 +18,37 @@ interface ActionBody {
     templateUUID?: string;
     actionUUID?: string;
     missionUUIDs?: string[];
+}
+
+@Injectable()
+export class CanModifyTriggerGuard extends BaseGuard {
+    constructor(
+        @InjectRepository(ActionTriggerEntity)
+        private actionTriggerRepository: Repository<ActionTriggerEntity>,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, request } = await this.getUser(context);
+
+        const params = request.params as { uuid?: string } | undefined;
+        const triggerUUID = params?.uuid;
+
+        if (!triggerUUID) {
+            return false;
+        }
+
+        const trigger = await this.actionTriggerRepository.findOne({
+            where: { uuid: triggerUUID },
+        });
+
+        if (!trigger) {
+            return false;
+        }
+
+        return trigger.creatorUuid === user.uuid;
+    }
 }
 
 @Injectable()
@@ -91,7 +122,6 @@ export class CreateActionGuard extends BaseGuard {
 @Injectable()
 export class DeleteActionGuard extends BaseGuard {
     constructor(
-        private reflector: Reflector,
         private missionGuardService: MissionGuardService,
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
@@ -152,7 +182,6 @@ export class DeleteActionGuard extends BaseGuard {
 @Injectable()
 export class CreateActionsGuard extends BaseGuard {
     constructor(
-        private reflector: Reflector,
         private missionGuardService: MissionGuardService,
         @InjectRepository(ActionTemplateEntity)
         private actionTemplateRepository: Repository<ActionTemplateEntity>,

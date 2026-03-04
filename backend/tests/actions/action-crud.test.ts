@@ -87,8 +87,7 @@ describe('Action Management Tests', () => {
 
         // Submit action
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
+        await fetch(`${DEFAULT_URL}/actions`, {
             method: 'POST',
             headers: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention

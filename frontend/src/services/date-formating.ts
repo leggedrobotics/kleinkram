@@ -23,3 +23,22 @@ export function parseDate(date: string) {
 }
 
 export const dateMask = 'DD.MM.YYYY HH:mm';
+
+export function formatDuration(seconds: number): string {
+    // Handle edge cases: NaN, Infinity, or negative values
+    if (!Number.isFinite(seconds) || seconds < 0) {
+        seconds = 0;
+    }
+
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+        return `${hours.toString()}h ${minutes.toString()}m`;
+    }
+    if (minutes > 0) {
+        return `${minutes.toString()}m ${secs.toString()}s`;
+    }
+    return `${secs.toString()}s`;
+}

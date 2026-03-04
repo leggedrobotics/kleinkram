@@ -65,10 +65,10 @@ export class InitDB1765270980400 implements MigrationInterface {
             `CREATE TYPE "public"."ingestion_job_state_enum" AS ENUM('0', '10', '20', '21', '22', '23', '30', '40', '41', '42', '43', '44')`,
         );
         await queryRunner.query(
-            `CREATE TYPE "public"."ingestion_job_location_enum" AS ENUM('DRIVE', 'MINIO')`,
+            `CREATE TYPE "public"."ingestion_job_location_enum" AS ENUM('DRIVE', 'S3')`,
         );
         await queryRunner.query(
-            `CREATE TABLE "ingestion_job" ("uuid" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "identifier" character varying NOT NULL, "display_name" character varying NOT NULL DEFAULT '', "state" "public"."ingestion_job_state_enum" NOT NULL DEFAULT '0', "location" "public"."ingestion_job_location_enum" NOT NULL DEFAULT 'MINIO', "processingDuration" integer, "errorMessage" character varying, "missionUuid" uuid, "creatorUuid" uuid, "file_uuid" uuid, CONSTRAINT "PK_00938e6d7367135f29fc98a536d" PRIMARY KEY ("uuid"))`,
+            `CREATE TABLE "ingestion_job" ("uuid" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "identifier" character varying NOT NULL, "display_name" character varying NOT NULL DEFAULT '', "state" "public"."ingestion_job_state_enum" NOT NULL DEFAULT '0', "location" "public"."ingestion_job_location_enum" NOT NULL DEFAULT 'S3', "processingDuration" integer, "errorMessage" character varying, "missionUuid" uuid, "creatorUuid" uuid, "file_uuid" uuid, CONSTRAINT "PK_00938e6d7367135f29fc98a536d" PRIMARY KEY ("uuid"))`,
         );
         await queryRunner.query(
             `CREATE TABLE "project" ("uuid" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "name" character varying NOT NULL, "description" character varying NOT NULL, "autoConvert" boolean NOT NULL DEFAULT false, "creatorUuid" uuid NOT NULL, CONSTRAINT "UQ_dedfea394088ed136ddadeee89c" UNIQUE ("name"), CONSTRAINT "PK_bcbc9244374131f3ccb908aa616" PRIMARY KEY ("uuid"))`,

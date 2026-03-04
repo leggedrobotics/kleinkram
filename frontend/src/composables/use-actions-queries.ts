@@ -83,6 +83,8 @@ export function useActionLogs(
     uuid: MaybeRef<string>,
     skip: MaybeRef<number> = 0,
     take: MaybeRef<number> = 1000,
+    search?: MaybeRef<string | undefined>,
+    level?: MaybeRef<string | undefined>,
 ): UseQueryReturnType<ActionLogsDto, Error> {
     return useQuery({
         queryKey: computed(() => [
@@ -90,9 +92,17 @@ export function useActionLogs(
             'logs',
             String(unref(skip)),
             String(unref(take)),
+            unref(search) ?? 'all',
+            unref(level) ?? 'all',
         ]),
         queryFn: () =>
-            ActionService.getLogs(unref(uuid), unref(skip), unref(take)),
+            ActionService.getLogs(
+                unref(uuid),
+                unref(skip),
+                unref(take),
+                unref(search),
+                unref(level),
+            ),
         enabled: computed(() => !!unref(uuid)),
     });
 }

@@ -13,7 +13,7 @@
         >
             <h3 class="text-h4 q-ma-none">
                 {{
-                    mode === 'restore'
+                    mode === ActionDrawerMode.ACTION_RESTORE
                         ? 'Restore Action Template Version'
                         : isEditing
                           ? 'Edit Action Template'
@@ -106,7 +106,9 @@
                     </div>
 
                     <div>
-                        <label class="text-weight-bold">Description</label>
+                        <label class="text-weight-bold">
+                            Description <span class="text-negative">*</span>
+                        </label>
                         <q-input
                             v-model="localTemplate.description"
                             outlined
@@ -114,6 +116,10 @@
                             type="textarea"
                             rows="3"
                             placeholder="Describe what this action does..."
+                            lazy-rules
+                            :rules="[
+                                (val) => !!val || 'Description is required',
+                            ]"
                         />
                     </div>
 
@@ -129,6 +135,9 @@
                             lazy-rules
                             :rules="[
                                 (val) => !!val || 'Docker image is required',
+                                (val) =>
+                                    isValidDockerImageName(val) ||
+                                    'Invalid image name. Only alphanumeric, dots, hyphens, and underscores are allowed.',
                             ]"
                         />
                     </div>
@@ -166,83 +175,16 @@
                 </div>
 
                 <span class="text-h5 q-mt-lg">Compute Resources</span>
-                <div class="row q-col-gutter-md q-mt-xs">
-                    <div class="col-6">
-                        <label>
-                            Memory (GB) <span class="text-negative">*</span>
-                        </label>
-                        <q-input
-                            v-model.number="localTemplate.cpuMemory"
-                            type="number"
-                            outlined
-                            dense
-                            lazy-rules
-                            :rules="[
-                                (val) =>
-                                    (val !== null && val !== '') ||
-                                    'Memory is required',
-                            ]"
-                        />
-                    </div>
-                    <div class="col-6">
-                        <label>
-                            CPU Cores <span class="text-negative">*</span>
-                        </label>
-                        <q-input
-                            v-model.number="localTemplate.cpuCores"
-                            type="number"
-                            outlined
-                            dense
-                            lazy-rules
-                            :rules="[
-                                (val) =>
-                                    (val !== null && val !== '') ||
-                                    'CPU Cores is required',
-                            ]"
-                        />
-                    </div>
-                    <div class="col-6">
-                        <label>
-                            Max Runtime (h) <span class="text-negative">*</span>
-                        </label>
-                        <q-input
-                            v-model.number="localTemplate.maxRuntime"
-                            type="number"
-                            outlined
-                            dense
-                            lazy-rules
-                            :rules="[
-                                (val) =>
-                                    (val !== null && val !== '') ||
-                                    'Runtime is required',
-                            ]"
-                        />
-                    </div>
-
-                    <div class="col-12 flex items-center q-mt-sm">
-                        <q-toggle
-                            v-model="gpuEnabled"
-                            label="Enable GPU Acceleration"
-                        />
-                    </div>
-
-                    <div v-if="gpuEnabled" class="col-6">
-                        <label>
-                            GPU Memory (GB) <span class="text-negative">*</span>
-                        </label>
-                        <q-input
-                            v-model.number="localTemplate.gpuMemory"
-                            type="number"
-                            outlined
-                            dense
-                            lazy-rules
-                            :rules="[
-                                (val) =>
-                                    val > 0 || 'GPU Memory must be positive',
-                            ]"
-                        />
-                    </div>
-                </div>
+                <ComputeResourcesSelector
+                    :cpu-cores="localTemplate.cpuCores ?? 1"
+                    :cpu-memory="localTemplate.cpuMemory ?? 2"
+                    :gpu-memory="localTemplate.gpuMemory ?? -1"
+                    :max-runtime="localTemplate.maxRuntime ?? 2"
+                    @update:cpu-cores="onUpdateCpuCores"
+                    @update:cpu-memory="onUpdateCpuMemory"
+                    @update:gpu-memory="onUpdateGpuMemory"
+                    @update:max-runtime="onUpdateMaxRuntime"
+                />
 
                 <q-separator class="q-my-lg" />
 
@@ -257,7 +199,7 @@
                         unelevated
                         class="bg-button-secondary text-on-color"
                         :label="
-                            mode === 'restore'
+                            mode === ActionDrawerMode.ACTION_RESTORE
                                 ? 'Restore Version'
                                 : isEditing
                                   ? 'Save New Version'
@@ -278,18 +220,21 @@ import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-
 import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import type { UpdateTemplateDto } from '@kleinkram/api-dto/types/actions/update-template.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
+import { isValidDockerImageName } from '@kleinkram/validation/frontend';
+import ComputeResourcesSelector from 'components/actions/compute-resources-selector.vue';
 import { debounce, Notify, QForm } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
 import {
     useCreateTemplate,
     useUpdateTemplateVersion,
 } from 'src/composables/use-action-mutations';
+import { ActionDrawerMode } from 'src/router/enums';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { computed, nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
     open: boolean;
-    mode?: 'create' | 'edit' | 'restore';
+    mode?: ActionDrawerMode;
     initialTemplate?: ActionTemplateDto | undefined;
 }>();
 
@@ -297,7 +242,6 @@ const emits = defineEmits(['close', 'saved']);
 
 const _open = ref(false);
 const isSaving = ref(false);
-const gpuEnabled = ref(false);
 const actionForm = ref<QForm | null>();
 
 // Name Validation State
@@ -310,8 +254,8 @@ const defaultTemplate: CreateTemplateDto = {
     description: '',
     command: '',
     dockerImage: '',
-    cpuCores: 1,
-    cpuMemory: 2,
+    cpuCores: 2,
+    cpuMemory: 4,
     gpuMemory: -1,
     maxRuntime: 2,
     entrypoint: '',
@@ -414,26 +358,12 @@ watch(
                 localTemplate.value = { ...defaultTemplate };
             }
 
-            gpuEnabled.value = (localTemplate.value.gpuMemory ?? -1) > -1;
-            if (gpuEnabled.value && !localTemplate.value.gpuMemory) {
-                localTemplate.value.gpuMemory = 6;
-            }
-
             void nextTick(() => {
                 actionForm.value?.resetValidation();
             });
         }
     },
 );
-
-watch(gpuEnabled, (enabled) => {
-    if (
-        enabled &&
-        (localTemplate.value.gpuMemory === -1 || !localTemplate.value.gpuMemory)
-    ) {
-        localTemplate.value.gpuMemory = 6;
-    }
-});
 
 watch(
     () => _open.value,
@@ -444,7 +374,6 @@ watch(
 
 // --- Saving Logic ---
 
-// eslint-disable-next-line complexity
 async function saveTemplate(): Promise<void> {
     // Client side guard
     if (!isEditing.value && !isNameAvailable.value) {
@@ -464,9 +393,7 @@ async function saveTemplate(): Promise<void> {
             entrypoint: localTemplate.value.entrypoint ?? '',
             accessRights:
                 localTemplate.value.accessRights ?? AccessGroupRights.READ,
-            gpuMemory: gpuEnabled.value
-                ? (localTemplate.value.gpuMemory ?? 6)
-                : -1,
+            gpuMemory: localTemplate.value.gpuMemory ?? -1,
         };
 
         // 2. Validate Namespace
@@ -518,5 +445,21 @@ async function saveTemplate(): Promise<void> {
 
 function closeDrawer(): void {
     _open.value = false;
+}
+
+function onUpdateCpuCores(value: number): void {
+    localTemplate.value.cpuCores = value;
+}
+
+function onUpdateCpuMemory(value: number): void {
+    localTemplate.value.cpuMemory = value;
+}
+
+function onUpdateGpuMemory(value: number): void {
+    localTemplate.value.gpuMemory = value;
+}
+
+function onUpdateMaxRuntime(value: number): void {
+    localTemplate.value.maxRuntime = value;
 }
 </script>

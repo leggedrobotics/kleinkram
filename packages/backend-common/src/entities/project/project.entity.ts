@@ -4,15 +4,26 @@ import { CategoryEntity } from '@backend-common/entities/category/category.entit
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
+import {
+    Column,
+    Entity,
+    Index,
+    ManyToMany,
+    ManyToOne,
+    OneToMany,
+} from 'typeorm';
 
+@Index('unique_project_name_active', ['name'], {
+    where: '"deletedAt" IS NULL',
+    unique: true,
+})
 @Entity({ name: 'project' })
 export class ProjectEntity extends BaseEntity {
     /**
      * The name of the project. This is the name that will be displayed in the UI.
-     * The name must be globally unique.
+     * The name must be unique among active (non-deleted) projects.
      */
-    @Column({ unique: true })
+    @Column()
     name!: string;
 
     @OneToMany(() => MissionEntity, (mission: MissionEntity) => mission.project)

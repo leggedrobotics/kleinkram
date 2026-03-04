@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
@@ -7,8 +7,6 @@ import { Repository } from 'typeorm';
 
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import {
     FileEventType,
     FileOrigin,
@@ -19,11 +17,12 @@ import {
 import logger from '../../logger';
 
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { calculateFileHash } from '../helper/hash-helper';
 import { FileHandler, FileProcessingContext } from './file-handler.interface';
 import { McapMetadataService } from './mcap-metadata.service';
 import { RosBagConverter } from './rosbag-converter';
-import { RosBagMetadataService } from './rosbag-metadata.service'; //
+import { RosBagMetadataService } from './rosbag-metadata.service';
 
 @Injectable()
 export class RosBagHandler implements FileHandler {
@@ -33,7 +32,8 @@ export class RosBagHandler implements FileHandler {
         private jobRepo: Repository<IngestionJobEntity>,
         @InjectRepository(FileEventEntity)
         private fileEventRepo: Repository<FileEventEntity>,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
         private readonly mcapMetadataService: McapMetadataService,
         private readonly rosBagMetadataService: RosBagMetadataService,
     ) {}
@@ -147,15 +147,11 @@ export class RosBagHandler implements FileHandler {
             job.state = QueueState.UPLOADING;
             await this.jobRepo.save(job);
 
-            await this.storageService.uploadFile(
-                env.MINIO_DATA_BUCKET_NAME,
-                savedMcapEntity.uuid,
-                mcapPath,
-            );
+            await this.dataStorage.uploadFile(savedMcapEntity.uuid, mcapPath);
 
             // Add Tags logic...
-            await this.storageService
-                .addTags(env.MINIO_DATA_BUCKET_NAME, savedMcapEntity.uuid, {
+            await this.dataStorage
+                .addTags(savedMcapEntity.uuid, {
                     missionUuid: job.mission?.uuid ?? '',
                     filename: mcapFilename,
                 })

@@ -41,6 +41,7 @@ export {
 
 // Action guards
 export {
+    CanModifyTriggerGuard,
     CreateActionGuard,
     CreateActionsGuard,
     DeleteActionGuard,

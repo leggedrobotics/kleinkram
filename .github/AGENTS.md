@@ -14,7 +14,7 @@ docker compose up --build --watch -d
 
 - **API Server**: [http://localhost:3000](http://localhost:3000)
 - **Frontend**: [http://localhost:8003](http://localhost:8003)
-- **MinIO Console**: [http://localhost:9001](http://localhost:9001)
+- **SeaweedFS Dashboard**: [http://localhost:9333](http://localhost:9333)
 - **Documentation**: [http://localhost:4000](http://localhost:4000)
 
 > [!NOTE]
@@ -28,7 +28,7 @@ docker compose up --build --watch -d
 
 ```typescript
 headers: {
-    'kleinkram-client-version': '0.56.0', // Replace with actual version from package.json
+    'kleinkram-client-version': '0.58.0', // Replace with actual version from package.json
     ...
 }
 ```
@@ -44,10 +44,10 @@ Run these commands before submitting changes:
 black .
 
 # Format TypeScript/JavaScript/JSON/Markdown
-yarn run prettier
+pnpm run prettier
 
 # Run Linting
-yarn run eslint-full:quiet
+pnpm run eslint-full:quiet
 ```
 
 ### Testing
@@ -56,7 +56,7 @@ yarn run eslint-full:quiet
 
 ```bash
 # Run all tests
-yarn test
+pnpm test
 
 # Run specific test file
 npx jest tests/actions/action-file-events.test.ts --runInBand --detectOpenHandles --forceExit

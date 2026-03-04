@@ -3,6 +3,18 @@
 Kleinkram comes with various test suites to ensure the quality of the codebase. This document explains how to run the
 test suite.
 
+## CI/CD Checks
+
+Every Pull Request is validated by GitHub Actions. The following checks must pass:
+
+| Check               | Directory   | Command           |
+| ------------------- | ----------- | ----------------- |
+| Backend Tests       | `./backend` | `pnpm test`       |
+| CLI Tests (Python)  | `./cli`     | `pytest`          |
+| Linting             | `.` (root)  | `pnpm lint`       |
+| Formatting (JS/TS)  | `.` (root)  | `pnpm prettier`   |
+| Formatting (Python) | `./cli`     | `black --check .` |
+
 ## Running the Test Suite
 
 Currently, we are only testing the API, those test cases are located in the `backend/tests` directory.
@@ -23,7 +35,7 @@ This command will start the application stack in test mode and optionally watche
 You can then run the tests by executing the following command:
 
 ```bash
-yarn run test[:verbose]
+pnpm run test[:verbose]
 ```
 
 ::: info

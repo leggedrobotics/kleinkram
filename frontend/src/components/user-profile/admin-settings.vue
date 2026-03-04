@@ -2,14 +2,14 @@
     <div class="row">
         <div style="width: 300px">
             <q-btn
-                label="Reset Minio Tagging"
+                label="Reset S3 Tagging"
                 class="button-border bg-button-primary full-width"
                 icon="sym_o_sell"
                 flat
-                @click="resetMinioTagging"
+                @click="resetS3Tagging"
             />
             <div class="help-text q-pt-sm">
-                This will delete the Minio tags for all files in the system and
+                This will delete the S3 tags for all files in the system and
                 then regenerate them based on the current DB state. This action
                 cannot be undone. There is no confirmation!
             </div>
@@ -23,9 +23,9 @@
                 @click="resetFileSizes"
             />
             <div class="help-text q-pt-sm">
-                This will recompute the file sizes in the database by asking
-                Minio for the size of each file. This action cannot be undone.
-                There is no confirmation!
+                This will recompute the file sizes in the database by asking S3
+                for the size of each file. This action cannot be undone. There
+                is no confirmation!
             </div>
         </div>
 
@@ -38,9 +38,9 @@
                 @click="recalculateHashes"
             />
             <div class="help-text q-pt-sm">
-                This will extract the MD5 hash from the file (from minio) and
-                store it in the database. This action cannot be undone. There is
-                no confirmation!
+                This will extract the MD5 hash from the file (from S3) and store
+                it in the database. This action cannot be undone. There is no
+                confirmation!
             </div>
         </div>
 
@@ -60,17 +60,17 @@
     </div>
 </template>
 <script setup lang="ts">
-import { RecalculateHashesResponseDto } from '@kleinkram/api-dto';
+import type { RecalculateHashesResponseDto } from '@kleinkram/api-dto';
 import { useQuasar } from 'quasar';
 import axios from 'src/api/axios';
 
 const $q = useQuasar();
 
-async function resetMinioTagging(): Promise<void> {
-    await axios.post('file/resetMinioTags');
+async function resetS3Tagging(): Promise<void> {
+    await axios.post('file/resetS3Tags');
 
     $q.notify({
-        message: 'Resetting Minio tagging started',
+        message: 'Resetting S3 tagging started',
         color: 'positive',
         position: 'bottom',
         timeout: 2000,

@@ -9,8 +9,8 @@ import {
 } from '@kleinkram/backend-common';
 
 import { appVersion } from '@/app-version';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import environment from '@kleinkram/backend-common/environment';
-import * as Minio from 'minio';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createActionUsingPost,
@@ -130,8 +130,6 @@ describe('Action File Events', () => {
         });
         await apikeyRepo.save(apikeyEntity);
         const actionKey = apikeyEntity.apikey;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const apiKey = actionKey;
 
         // 4. Create a File directly in DB
         // Reuse the file created earlier
@@ -156,21 +154,25 @@ describe('Action File Events', () => {
         // });
         // await fileRepo.save(file);
 
-        // Upload file to MinIO to avoid 500 error during update (which tries to tag the object)
-        const minioClient = new Minio.Client({
-            endPoint: environment.MINIO_ENDPOINT || 'localhost',
-            port: 9000,
-            useSSL: false,
-            accessKey: environment.MINIO_ACCESS_KEY,
-            secretKey: environment.MINIO_SECRET_KEY,
+        // Upload file to S3 to avoid 500 error during update (which tries to tag the object)
+        const s3Client = new S3Client({
+            endpoint: `http://${environment.S3_ENDPOINT || 'localhost'}:9000`,
+            forcePathStyle: true,
+            region: 'us-east-1',
+            credentials: {
+                accessKeyId: environment.S3_ACCESS_KEY,
+                secretAccessKey: environment.S3_SECRET_KEY,
+            },
         });
 
-        const bucketName = environment.MINIO_DATA_BUCKET_NAME;
+        const bucketName = environment.S3_DATA_BUCKET_NAME;
         // Bucket is created on container start
-        await minioClient.putObject(
-            bucketName,
-            file.uuid,
-            Buffer.from('dummy content'),
+        await s3Client.send(
+            new PutObjectCommand({
+                Bucket: bucketName,
+                Key: file.uuid,
+                Body: Buffer.from('dummy content'),
+            }),
         );
 
         // 5. Download File using Action API Key

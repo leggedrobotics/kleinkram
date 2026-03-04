@@ -25,11 +25,35 @@
 
             <!-- Execution Info -->
             <div class="col-6">
-                <AppInput
-                    label="Submitted By"
-                    :model-value="action.creator?.name"
-                    readonly
-                />
+                <template
+                    v-if="action.triggerSource === ActionTriggerSource.MANUAL"
+                >
+                    <AppInput
+                        label="Submitted By"
+                        :model-value="action.creator?.name"
+                        readonly
+                    />
+                </template>
+                <template v-else>
+                    <AppInput
+                        label="Triggered By"
+                        :model-value="triggerSourceLabel"
+                        readonly
+                    >
+                        <template #append>
+                            <q-btn
+                                flat
+                                round
+                                dense
+                                icon="sym_o_open_in_new"
+                                color="grey-7"
+                                @click.stop="goToTriggers"
+                            >
+                                <q-tooltip>Go to Triggers</q-tooltip>
+                            </q-btn>
+                        </template>
+                    </AppInput>
+                </template>
             </div>
             <div class="col-6">
                 <AppInput
@@ -109,12 +133,7 @@
                         {{ formatBytes(action.artifactSize) }}
                     </div>
                 </div>
-                <div
-                    v-if="
-                        action.artifactFiles && action.artifactFiles.length > 0
-                    "
-                    class="q-mt-md"
-                >
+                <div v-if="showArtifactTree" class="q-mt-md">
                     <ArtifactFileTree :files="action.artifactFiles || []" />
                 </div>
             </div>
@@ -340,7 +359,12 @@
 
 <script setup lang="ts">
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
-import { ActionState, ArtifactState, ImageSource } from '@kleinkram/shared';
+import {
+    ActionState,
+    ActionTriggerSource,
+    ArtifactState,
+    ImageSource,
+} from '@kleinkram/shared';
 import ActionRuntime from 'components/actions/action-runtime.vue';
 import ArtifactFileTree from 'components/actions/artifact-file-tree.vue';
 import AppInput from 'components/common/app-input.vue';
@@ -351,6 +375,30 @@ import { useRouter } from 'vue-router';
 
 const props = defineProps<{ action: ActionDto }>();
 const $router = useRouter();
+
+const triggerSourceLabel = computed(() => {
+    switch (props.action.triggerSource) {
+        case ActionTriggerSource.CRON: {
+            return 'Cron Schedule';
+        }
+        case ActionTriggerSource.WEBHOOK: {
+            return 'Webhook';
+        }
+        case ActionTriggerSource.FILE_EVENT: {
+            return 'File Event';
+        }
+        default: {
+            return 'Trigger';
+        }
+    }
+});
+
+const goToTriggers = async (): Promise<void> => {
+    await $router.push({
+        name: ROUTES.ACTION.routeName,
+        query: { tab: 'triggers' },
+    });
+};
 
 const formatDate = (d: string | Date) => new Date(d).toLocaleString();
 
@@ -396,6 +444,19 @@ const artifactStateText = computed(() => {
             return 'N/A';
         }
     }
+});
+
+const showArtifactTree = computed(() => {
+    if (!props.action.artifactFiles || props.action.artifactFiles.length === 0)
+        return false;
+
+    // In case where an empty out folder is the only artifact,
+    // we should not display the artifact tree
+    return !(
+        props.action.artifactFiles.length === 1 &&
+        (props.action.artifactFiles[0] === 'out' ||
+            props.action.artifactFiles[0] === 'out/')
+    );
 });
 
 const isExpired = computed(() => {

@@ -20,9 +20,8 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
 import { UserRole } from '@kleinkram/shared';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
@@ -36,7 +35,7 @@ import {
 } from './utilities';
 
 import { SortOrder } from '@kleinkram/api-dto';
-import env from '@kleinkram/backend-common/environment';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 
 const FIND_MANY_SORT_KEYS = {
     missionName: 'mission.name',
@@ -57,7 +56,8 @@ export class MissionService {
         private userRepository: Repository<UserEntity>,
         private userService: UserService,
         private tagService: TagService,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
     ) {}
 
     async create(
@@ -412,9 +412,13 @@ export class MissionService {
     }
 
     async moveMission(missionUUID: string, projectUUID: string): Promise<void> {
-        const project = await this.projectRepository.findOneOrFail({
+        // Validate that the target project exists
+        const projectExists = await this.projectRepository.exists({
             where: { uuid: projectUUID },
         });
+        if (!projectExists) {
+            throw new ConflictException('Target project not found');
+        }
 
         // verify that the no mission with the same name exists in the project
         const mission = await this.missionRepository.findOneOrFail({
@@ -423,7 +427,7 @@ export class MissionService {
         });
 
         const exists = await this.missionRepository.exists({
-            where: { name: mission.name, project: project },
+            where: { name: mission.name, project: { uuid: projectUUID } },
         });
         if (exists) {
             throw new ConflictException(
@@ -431,25 +435,21 @@ export class MissionService {
             );
         }
 
-        await this.missionRepository.update(missionUUID, {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-            project: { uuid: project.uuid } as any,
-        });
+        await this.missionRepository
+            .createQueryBuilder()
+            .relation(MissionEntity, 'project')
+            .of(missionUUID)
+            .set(projectUUID);
 
         if (mission.files === undefined) throw new Error('Files not loaded');
 
         await Promise.all(
             mission.files.map(async (file) =>
-                // REFACTORED: Use storage service
-                this.storageService.addTags(
-                    env.MINIO_DATA_BUCKET_NAME,
-                    file.uuid,
-                    {
-                        filename: file.filename,
-                        missionUuid: missionUUID,
-                        projectUuid: projectUUID,
-                    },
-                ),
+                this.dataStorage.addTags(file.uuid, {
+                    filename: file.filename,
+                    missionUuid: missionUUID,
+                    projectUuid: projectUUID,
+                }),
             ),
         );
     }
@@ -466,7 +466,7 @@ export class MissionService {
                 'Mission cannot be deleted because it contains files',
             );
         }
-        await this.missionRepository.remove(mission);
+        await this.missionRepository.softRemove(mission);
     }
 
     async updateTags(
@@ -514,8 +514,7 @@ export class MissionService {
         return await Promise.all(
             mission.files.map(async (f) => ({
                 filename: f.filename,
-                link: await this.storageService.getPresignedDownloadUrl(
-                    env.MINIO_DATA_BUCKET_NAME,
+                link: await this.dataStorage.getPresignedDownloadUrl(
                     f.uuid,
                     4 * 60 * 60,
                     {

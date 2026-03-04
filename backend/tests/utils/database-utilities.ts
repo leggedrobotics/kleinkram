@@ -31,24 +31,32 @@ export const database = new DataSource({
 });
 
 export const clearAllData = async () => {
-    try {
-        const entities = database.entityMetadatas;
+    let retries = 3;
+    while (retries > 0) {
+        try {
+            const entities = database.entityMetadatas;
 
-        // filter out the tables that should not be cleared (e.g. views)
-        const tablesToClear = entities
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            .filter((entity) => entity.tableName !== undefined)
-            .filter((entity) => !entity.tableName.includes('view'))
-            .filter((entity) => !entity.tableName.includes('materialized'))
-            .filter((entity) => !entity.tableName.includes('worker'))
-            .map((entity) => `"${entity.tableName}"`)
-            .join(', ');
+            // filter out the tables that should not be cleared (e.g. views)
+            const tablesToClear = entities
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                .filter((entity) => entity.tableName !== undefined)
+                .filter((entity) => !entity.tableName.includes('view'))
+                .filter((entity) => !entity.tableName.includes('materialized'))
+                .map((entity) => `"${entity.tableName}"`)
+                .join(', ');
 
-        await database.query(`TRUNCATE ${tablesToClear} CASCADE;`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        throw new Error(`ERROR: Cleaning test database: ${error.toString()}`);
+            await database.query(`TRUNCATE ${tablesToClear} CASCADE;`);
+            return;
+        } catch (error: unknown) {
+            retries--;
+            if (retries === 0) {
+                const message =
+                    error instanceof Error ? error.message : String(error);
+                throw new Error(`ERROR: Cleaning test database: ${message}`);
+            }
+            // Wait for a short time before retrying
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
     }
 };
 

@@ -67,11 +67,22 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
 
         mission: missionEntityToDto(action.mission),
         state: action.state,
-        stateCause: action.state_cause ?? '',
+        stateCause:
+            action.state_cause === 'Container exited with code 0'
+                ? 'Completed Successfully'
+                : (action.state_cause ?? ''),
         template: actionTemplateEntityToDto(action.template),
         updatedAt: action.updatedAt,
         uuid: action.uuid,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         worker: workerEntityToDto(action.worker)!,
+        triggerSource: action.triggerSource,
+        triggerUuid: action.triggerUuid,
+        errorHint: action.errorHint,
+        exitCode: action.exit_code,
+        resourceUsage: action.resourceUsage,
+        maxMemoryBytes: action.maxMemoryBytes,
+        avgCpuPercent: action.avgCpuPercent,
+        efficiencyScore: action.efficiencyScore,
     };
 };

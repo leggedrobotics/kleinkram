@@ -45,11 +45,10 @@ export class TemplatesController {
     @ApiOperation({ summary: 'Create a new version of an existing template' })
     @ApiOkResponse({ type: ActionTemplateDto })
     async createNewTemplateVersion(
-        @ParameterUuid('uuid') uuid: string,
         @Body() dto: UpdateTemplateDto,
         @AddUser() user: AuthHeader,
     ): Promise<ActionTemplateDto> {
-        return this.templateService.createVersion(uuid, dto, user);
+        return this.templateService.createVersion(dto, user);
     }
 
     @Get()

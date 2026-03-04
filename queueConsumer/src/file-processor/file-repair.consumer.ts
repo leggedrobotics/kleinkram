@@ -1,7 +1,7 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { Process, Processor } from '@nestjs/bull';
+import { Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Job } from 'bull';
 import { Repository } from 'typeorm';
@@ -13,7 +13,8 @@ export class FileRepairProcessor {
     constructor(
         @InjectRepository(FileEntity)
         private readonly fileRepo: Repository<FileEntity>,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
         private readonly rosBagMetadataService: RosBagMetadataService,
     ) {}
 
@@ -42,13 +43,12 @@ export class FileRepairProcessor {
 
             // Get an internal presigned URL (valid for 60 minutes)
             const presignedUrl =
-                await this.storageService.getInternalPresignedDownloadUrl(
-                    env.MINIO_DATA_BUCKET_NAME,
+                await this.dataStorage.getInternalPresignedDownloadUrl(
                     fileUuid,
                     60 * 60,
                 );
 
-            // Stream directly from MinIO
+            // Stream directly from s3
             await this.rosBagMetadataService.extractFromUrl(
                 presignedUrl,
                 fileEntity,

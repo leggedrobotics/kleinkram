@@ -1,20 +1,17 @@
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ProjectGuardService } from '@/services/project-guard.service';
-import { ApiKeyEntity } from '@kleinkram/backend-common';
-import { AccessGroupRights } from '@kleinkram/shared';
+import { AccessGroupRights, UserRole } from '@kleinkram/shared';
 import {
     BadRequestException,
     ExecutionContext,
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { BaseGuard } from './base.guards';
 
 interface MissionBody {
     missionUUID?: string;
+    missionUuid?: string;
     uuid?: string;
     mission?: string;
 }
@@ -25,10 +22,7 @@ interface TagParameters {
 
 @Injectable()
 export class ReadMissionGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -55,10 +49,7 @@ export class ReadMissionGuard extends BaseGuard {
 
 @Injectable()
 export class CanReadManyMissionsGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -87,10 +78,7 @@ export class CanReadManyMissionsGuard extends BaseGuard {
 
 @Injectable()
 export class ReadMissionByNameGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -122,10 +110,7 @@ export class ReadMissionByNameGuard extends BaseGuard {
 
 @Injectable()
 export class CreateInMissionByBodyGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -133,7 +118,11 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
         const { user, apiKey, request } = await this.getUser(context);
 
         const body = request.body as MissionBody;
-        const missionUUID = body.missionUUID;
+        const missionUUID = body.missionUUID ?? body.missionUuid;
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
 
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
@@ -156,10 +145,7 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
 
 @Injectable()
 export class WriteMissionByBodyGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -167,7 +153,11 @@ export class WriteMissionByBodyGuard extends BaseGuard {
         const { user, apiKey, request } = await this.getUser(context);
 
         const body = request.body as MissionBody;
-        const missionUUID = body.missionUUID;
+        const missionUUID = body.missionUUID ?? body.missionUuid;
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
 
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
@@ -190,10 +180,7 @@ export class WriteMissionByBodyGuard extends BaseGuard {
 
 @Injectable()
 export class CanDeleteMissionGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -205,7 +192,11 @@ export class CanDeleteMissionGuard extends BaseGuard {
         let missionUUID: string | undefined;
 
         if (body) {
-            missionUUID = body.uuid ?? body.missionUUID;
+            missionUUID = body.uuid ?? body.missionUUID ?? body.missionUuid;
+        }
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
 
         if (!missionUUID && params) {
@@ -235,12 +226,7 @@ export class CanDeleteMissionGuard extends BaseGuard {
 
 @Injectable()
 export class AddTagGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        @InjectRepository(ApiKeyEntity)
-        private apikeyRepository: Repository<ApiKeyEntity>,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
@@ -271,19 +257,16 @@ export class AddTagGuard extends BaseGuard {
 
 @Injectable()
 export class DeleteTagGuard extends BaseGuard {
-    constructor(
-        private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
-    ) {
+    constructor(private missionGuardService: MissionGuardService) {
         super();
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const body = request.body as MissionBody;
+        const body = request.body as MissionBody | undefined;
         const params = request.params as TagParameters;
-        const tagUuid = body.uuid ?? params.uuid;
+        const tagUuid = body?.uuid ?? params.uuid;
 
         if (!tagUuid) {
             return false; // Deny access if tag UUID not provided
@@ -309,7 +292,6 @@ export class MoveMissionToProjectGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
-        private reflector: Reflector,
     ) {
         super();
     }

@@ -23,6 +23,11 @@ export class ProjectAccessViewEntity {
     userUuid!: string;
 
     /** The highest level of access rights the user has for the project. */
-    @ViewColumn()
+    @ViewColumn({
+        transformer: {
+            from: (value: string) => Number.parseInt(value, 10),
+            to: (value: number) => value,
+        },
+    })
     rights!: AccessGroupRights;
 }

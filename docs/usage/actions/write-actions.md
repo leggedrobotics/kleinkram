@@ -35,8 +35,7 @@ are discarded as soon as the action completes.
 ::: tip Layered Filesystem used By Docker
 Docker uses a layered filesystem, where the base image layers are read-only, and
 all files created inside a container are stored on a writable container layer that sits on top of the read-only,
-immutable image layers. For more details visit
-the [Docker Documentation](https://docs.docker.com/engine/storage/#container-layer-basics).
+immutable image layers. [-> Docker Documentation](https://docs.docker.com/engine/storage/#container-layer-basics).
 :::
 
 #### Persisting Data Beyond Action Lifetime
@@ -65,12 +64,12 @@ is backed by disk storage on the host machine and does not count towards the con
 
 Actions have certain limitations to for resource management and scheduling purposes:
 
-| Limitation     | Description                                                                                                                                     |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Execution Time | Actions have a maximum runtime.                                                                                                                 |
-| Memory Limits  | Actions are allocated a specific memory quota.                                                                                                  |
-| GPU Support    | GPU acceleration is available via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html). |
-| Access Scoping | Actions are confined to the project they are executed within.                                                                                   |
+| Limitation       | Description                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Execution Time   | Actions have a maximum runtime.                                                                                                                 |
+| Memory Limits    | Actions are allocated a specific memory quota.                                                                                                  |
+| GPU Acceleration | GPU acceleration is available via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html). |
+| Access Scoping   | Actions are confined to the project they are executed within.                                                                                   |
 
 ### Action Status (Exit Codes)
 
@@ -100,6 +99,18 @@ if [ "$some_check" = "fail" ]; then
 fi
 ```
 
+:::
+
+## Container Termination
+
+In some cases, the system may forcefully terminate your action container. This typically results in an exit code of `137` (SIGKILL) or `143` (SIGTERM). Common reasons include:
+
+- **Time Limit Exceeded**: The action ran longer than the configured `max_runtime` (default: 2 hours).
+- **Resource Limits**: The container consumed more memory or CPU than allocated (OOMKilled).
+- **Scheduler Interruption**: If the Action Runner service is updated or restarted, it may terminate containers running from previous instances to ensure system consistency. This is reported with the status cause "Interrupted by new Runner Instance".
+
+:::tip
+If you see "Interrupted by new Runner Instance", simply retry the action later. If the issue persists, contact your administrator.
 :::
 
 ## Environment Variables

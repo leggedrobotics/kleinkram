@@ -49,8 +49,6 @@ export class AffiliationGroupService {
      * @param user
      */
     async createPrimaryGroup(user: UserEntity): Promise<void> {
-        this.logger.debug(`Add user ${user.uuid} to primary access group`);
-
         let primaryGroupName = user.name;
 
         const exists = await this.accessGroupRepository.exists({

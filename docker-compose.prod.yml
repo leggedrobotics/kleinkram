@@ -1,3 +1,4 @@
+# this file described a reference production setup of Kleinkram
 services:
     base:
         image: kleinkram-base
@@ -54,29 +55,28 @@ services:
         volumes:
             - postgres_db_data:/var/lib/postgresql/data
 
-    minio:
-        image: minio/minio
-        container_name: kleinkram-minio-prod
+    seaweedfs:
+        image: chrislusf/seaweedfs:latest
+        container_name: kleinkram-seaweedfs-prod
+
+        command: server -dir=/data -s3 -s3.port=9000
 
         volumes:
-            - minio_data:/data
-            - ./docker/minio-entrypoint.sh:/docker-entrypoint.sh:ro
+            - seaweedfs_data:/data
+            - ./docker/seaweedfs-entrypoint.sh:/docker-entrypoint.sh:ro
 
         environment:
-            MINIO_ROOT_USER: ${MINIO_USER}
-            MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
-            MINIO_PROMETHEUS_AUTH_TYPE: 'public'
-            MINIO_DATA_BUCKET_NAME: ${MINIO_DATA_BUCKET_NAME}
-            MINIO_DB_BUCKET_NAME: ${MINIO_DB_BUCKET_NAME}
-            MINIO_ARTIFACTS_BUCKET_NAME: ${MINIO_ARTIFACTS_BUCKET_NAME}
-            MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-            MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+            S3_DATA_BUCKET_NAME: ${S3_DATA_BUCKET_NAME}
+            S3_DB_BUCKET_NAME: ${S3_DB_BUCKET_NAME}
+            S3_ARTIFACTS_BUCKET_NAME: ${S3_ARTIFACTS_BUCKET_NAME}
+            S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+            S3_SECRET_KEY: ${S3_SECRET_KEY}
 
         entrypoint: ['/docker-entrypoint.sh']
 
         ports:
             - '127.0.0.1:9000:9000' # file storage
-            - '127.0.0.1:9001:9001' # management console
+            - '127.0.0.1:9333:9333' # management console
         networks:
             - webnet
             - privatenet
@@ -93,6 +93,7 @@ services:
                 - BACKEND_URL=${BACKEND_URL}
                 - GIT_BRANCH=${GIT_BRANCH}
                 - GIT_COMMIT=${GIT_COMMIT}
+                - VITE_S3_ENDPOINT=${S3_ENDPOINT}
             additional_contexts:
                 kleinkram-base: service:base
 
@@ -219,7 +220,7 @@ services:
 
 volumes:
     postgres_db_data:
-    minio_data:
+    seaweedfs_data:
     logging-prometheus-storage:
     logging-grafana-storage:
     logging-tempo-data:

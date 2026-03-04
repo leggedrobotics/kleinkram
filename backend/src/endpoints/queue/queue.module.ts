@@ -13,10 +13,12 @@ import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
+import { TriggerModule } from '../trigger/trigger.module';
 
 @Module({
     imports: [
         StorageModule,
+        TriggerModule,
         TypeOrmModule.forFeature([
             IngestionJobEntity,
             FileEventEntity,

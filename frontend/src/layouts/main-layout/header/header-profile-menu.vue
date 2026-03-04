@@ -37,24 +37,6 @@
 
                     <q-separator />
 
-                    <q-item disabled>
-                        <q-item-section avatar>
-                            <q-icon name="sym_o_storage" />
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label>Storage</q-item-label>
-                        </q-item-section>
-                    </q-item>
-
-                    <q-item disabled>
-                        <q-item-section avatar>
-                            <q-icon name="sym_o_settings" />
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label>Settings</q-item-label>
-                        </q-item-section>
-                    </q-item>
-
                     <q-item clickable class="text-error" @click="logout">
                         <q-item-section avatar>
                             <q-icon

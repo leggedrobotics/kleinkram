@@ -1,4 +1,5 @@
 import { RouteRecordRaw } from 'vue-router';
+import { ActionDrawerMode } from './enums';
 import { routeWithLayout } from './routes-utilities';
 
 /**
@@ -40,24 +41,54 @@ const ROUTES = {
         layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
-    ACTION: routeWithLayout({
-        name: 'ActionPage',
-        path: '/actions/:tab?',
+    ACTION_TEMPLATE_EDIT: {
+        name: 'ActionTemplateEditLayout',
+        routeName: 'ActionTemplateEdit',
+    },
+    ACTION_TEMPLATE_HISTORY: {
+        name: 'ActionTemplateHistoryLayout',
+        routeName: 'ActionTemplateHistory',
+    },
+    ACTION_TEMPLATE_LAUNCH: {
+        name: 'ActionTemplateLaunchLayout',
+        routeName: 'ActionTemplateLaunch',
+    },
+
+    ACTION: {
+        name: 'ActionPageTabsLayout',
+        path: '/actions',
+        routeName: 'ActionPageTabsChild',
         breadcrumbs: [
             { displayName: 'Actions', to: '/actions' },
             { displayName: ':tab_name', to: undefined },
+        ],
+        component: () => import('layouts/main-layout/main-layout.vue'),
+        children: [
             {
-                displayName: ':project_name',
-                to: '/project/:projectUuid/missions',
+                name: 'ActionPageTabsChild',
+                path: ':tab?',
+                component: () => import('pages/action-page.vue'),
             },
             {
-                displayName: ':mission_name',
-                to: '/project/:projectUuid/mission/:missionUuid/files',
+                name: 'ActionTemplateEdit',
+                path: 'template/:templateId/edit',
+                component: () => import('pages/action-page.vue'),
+                meta: { drawerAction: ActionDrawerMode.ACTION_EDIT },
+            },
+            {
+                name: 'ActionTemplateHistory',
+                path: 'template/:templateId/history',
+                component: () => import('pages/action-page.vue'),
+                meta: { drawerAction: ActionDrawerMode.ACTION_HISTORY },
+            },
+            {
+                name: 'ActionTemplateLaunch',
+                path: 'template/:templateId/launch',
+                component: () => import('pages/action-page.vue'),
+                meta: { drawerAction: ActionDrawerMode.ACTION_LAUNCH },
             },
         ],
-        component: () => import('pages/action-page.vue'),
-        layout: () => import('layouts/main-layout/main-layout.vue'),
-    }),
+    },
 
     ANALYSIS_DETAILS: routeWithLayout({
         name: 'AnalysisDetailsPage',

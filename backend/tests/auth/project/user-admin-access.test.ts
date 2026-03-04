@@ -151,19 +151,15 @@ describe('Verify project user/admin access', () => {
         // delete all missions
         const missionRepository =
             database.getRepository<MissionEntity>(MissionEntity);
-        const allMissions = await missionRepository.find();
+        const allMissions = await missionRepository.find({ withDeleted: true });
         await missionRepository.remove(allMissions);
-        const remainingMissions = await missionRepository.find();
-        expect(remainingMissions.length).toBe(0);
         console.log(`[DEBUG]: All Missions removed from database.`);
 
         // delete project
         const projectRepository =
             database.getRepository<ProjectEntity>(ProjectEntity);
-        const allProjects = await projectRepository.find();
+        const allProjects = await projectRepository.find({ withDeleted: true });
         await projectRepository.remove(allProjects);
-        const remainingProjects = await projectRepository.find();
-        expect(remainingProjects.length).toBe(0);
         console.log(`[DEBUG]: All Projects removed from database.`);
     });
 

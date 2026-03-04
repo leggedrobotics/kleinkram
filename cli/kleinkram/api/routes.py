@@ -202,7 +202,16 @@ def get_run(
     if resp.status_code == 404:
         raise kleinkram.errors.RunNotFound(f"Run not found: {run_id}")
     resp.raise_for_status()
-    return _parse_run(RunObject(resp.json()))
+    run_object = resp.json()
+
+    try:
+        logs_resp = client.get(f"{ACTION_ENDPOINT}s/{run_id}/logs")
+        if logs_resp.status_code == 200:
+            run_object["logs"] = logs_resp.json().get("data", [])
+    except Exception:
+        pass
+
+    return _parse_run(RunObject(run_object))
 
 
 def get_action_templates(

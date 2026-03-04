@@ -219,8 +219,8 @@ def check_version_compatibility() -> None:
 
 @app.callback()
 def cli(
-    verbose: bool = typer.Option(True, help="Enable verbose mode."),
-    debug: bool = typer.Option(False, help="Enable debug mode."),
+    verbose: bool = typer.Option(False, help="Enable verbose mode."),
+    debug: bool = typer.Option(True, help="Enable debug mode."),
     version: Optional[bool] = typer.Option(None, "--version", "-v", callback=_version_callback),
     log_level: Optional[LogLevel] = typer.Option(None, help="Set log level."),
     max_lines: int = typer.Option(

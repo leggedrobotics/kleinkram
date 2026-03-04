@@ -26,11 +26,13 @@ import {
     FileState,
     FileType,
     HealthStatus,
+    TriggerEvent,
     UserRole,
 } from '@kleinkram/shared';
 import {
     BadRequestException,
     ConflictException,
+    Inject,
     Injectable,
     NotFoundException,
     OnModuleInit,
@@ -54,20 +56,22 @@ import {
     convertGlobToLikePattern,
 } from './utilities';
 
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
-import Queue from 'bull';
-// @ts-ignore
-import Credentials from 'minio/dist/main/Credentials';
-// @ts-ignore
+import { TriggerService } from '@/services/trigger.service';
+
 import {
     addAccessConstraints,
     addAccessConstraintsToFileQuery,
     addAccessConstraintsToMissionQuery,
     addAccessConstraintsToProjectQuery,
 } from '@/endpoints/auth/auth-helper';
-import { BucketItem } from 'minio/dist/main/internal/type';
+import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
+import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import {
+    IStorageBucket,
+    StorageCredentials,
+    StorageItem,
+} from '@kleinkram/backend-common/modules/storage/types';
+import Queue from 'bull';
 import logger from '../logger';
 
 const FIND_MANY_SORT_KEYS = {
@@ -96,6 +100,16 @@ const FIND_MANY_SORT_KEYS = {
     'file.date': 'file.date',
 };
 
+const FILE_EXTENSION_TO_FILE_TYPE_MAP: ReadonlyMap<string, FileType> = new Map([
+    ['.bag', FileType.BAG],
+    ['.mcap', FileType.MCAP],
+    ['.yaml', FileType.YAML],
+    ['.yml', FileType.YAML],
+    ['.svo2', FileType.SVO2],
+    ['.tum', FileType.TUM],
+    ['.db3', FileType.DB3],
+]);
+
 @Injectable()
 export class FileService implements OnModuleInit {
     private fileCleanupQueue!: Queue.Queue;
@@ -112,14 +126,14 @@ export class FileService implements OnModuleInit {
         private readonly dataSource: DataSource,
         @InjectRepository(TagTypeEntity)
         private tagTypeRepository: Repository<TagTypeEntity>,
-        @InjectRepository(IngestionJobEntity)
-        private queueRepository: Repository<IngestionJobEntity>,
         @InjectRepository(CategoryEntity)
         private categoryRepository: Repository<CategoryEntity>,
-        private readonly storageService: StorageService,
+        @Inject('DataStorageBucket')
+        private readonly dataStorage: IStorageBucket,
         @InjectRepository(FileEventEntity)
         private eventRepo: Repository<FileEventEntity>,
         private readonly auditService: FileAuditService,
+        private readonly triggerService: TriggerService,
     ) {}
 
     onModuleInit(): void {
@@ -929,10 +943,18 @@ export class FileService implements OnModuleInit {
         const isRenamed = file.filename !== oldFilename;
 
         // validate file ending
-        const fileEnding =
-            databaseFile.type === FileType.MCAP ? '.mcap' : '.bag';
-        if (!file.filename.endsWith(fileEnding)) {
-            throw new BadRequestException('File ending must not be changed');
+        const validExtensions = [...FILE_EXTENSION_TO_FILE_TYPE_MAP.entries()]
+            .filter(([, type]) => type === databaseFile.type)
+            .map(([extension]) => extension);
+
+        if (
+            !validExtensions.some((extension) =>
+                file.filename.endsWith(extension),
+            )
+        ) {
+            throw new BadRequestException(
+                `File ending must be one of: ${validExtensions.join(', ')}`,
+            );
         }
 
         databaseFile.filename = file.filename;
@@ -984,6 +1006,10 @@ export class FileService implements OnModuleInit {
                 },
                 true,
             );
+            await this.triggerService.addFileEvent(
+                databaseFile.uuid,
+                TriggerEvent.RENAME,
+            );
         }
 
         // Log Move Event (if done via update)
@@ -1002,18 +1028,18 @@ export class FileService implements OnModuleInit {
                 },
                 true,
             );
+            await this.triggerService.addFileEvent(
+                databaseFile.uuid,
+                TriggerEvent.MOVE,
+            );
         }
 
-        await this.storageService.addTags(
-            env.MINIO_DATA_BUCKET_NAME,
-            databaseFile.uuid,
-            {
-                // @ts-expect-error
-                projectUuid: databaseFile.mission.project.uuid,
-                missionUuid: databaseFile.mission.uuid,
-                filename: databaseFile.filename,
-            },
-        );
+        await this.dataStorage.addTags(databaseFile.uuid, {
+            // @ts-expect-error
+            projectUuid: databaseFile.mission.project.uuid,
+            missionUuid: databaseFile.mission.uuid,
+            filename: databaseFile.filename,
+        });
         return this.fileRepository.findOne({
             where: { uuid },
             relations: ['mission', 'mission.project'],
@@ -1053,12 +1079,9 @@ export class FileService implements OnModuleInit {
         if (file.uuid === undefined || file.uuid !== uuid)
             throw new BadRequestException('File not found');
 
-        const stats = await this.storageService.getFileInfo(
-            env.MINIO_DATA_BUCKET_NAME,
-            file.uuid,
-        );
+        const stats = await this.dataStorage.getFileInfo(file.uuid);
 
-        // verify that the file exists in Minio
+        // verify that the file exists in storage
         if (!stats) throw new NotFoundException('File not found');
 
         // TODO: find a better solution to avoid leaking download links without logging
@@ -1078,8 +1101,7 @@ export class FileService implements OnModuleInit {
             );
         }
 
-        return await this.storageService.getPresignedDownloadUrl(
-            env.MINIO_DATA_BUCKET_NAME,
+        return await this.dataStorage.getPresignedDownloadUrl(
             file.uuid,
             expires ? 4 * 60 * 60 : 604_800,
             {
@@ -1135,21 +1157,21 @@ export class FileService implements OnModuleInit {
                         },
                         true,
                     );
+                    await this.triggerService.addFileEvent(
+                        uuid,
+                        TriggerEvent.MOVE,
+                    );
 
                     // ... [Existing Tag Update Logic] ...
                     const newFile = await this.fileRepository.findOneOrFail({
                         where: { uuid },
                         relations: ['mission', 'mission.project'],
                     });
-                    await this.storageService.addTags(
-                        env.MINIO_DATA_BUCKET_NAME,
-                        file.uuid,
-                        {
-                            filename: file.filename,
-                            missionUuid: missionUUID,
-                            projectUuid: newFile.mission?.project?.uuid ?? '',
-                        },
-                    );
+                    await this.dataStorage.addTags(file.uuid, {
+                        filename: file.filename,
+                        missionUuid: missionUUID,
+                        projectUuid: newFile.mission?.project?.uuid ?? '',
+                    });
                 } catch (error) {
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     logger.error(`Error moving file ${uuid}: ${error}`);
@@ -1160,7 +1182,7 @@ export class FileService implements OnModuleInit {
 
     /**
      * Delete a file with the given uuid.
-     * The file will be removed from the database and from Minio.
+     * The file will be removed from the database and from storage.
      *
      * @param uuid The unique identifier of the file
      * @param actor
@@ -1202,16 +1224,15 @@ export class FileService implements OnModuleInit {
                     await transactionalEntityManager.findOneOrFail(FileEntity, {
                         where: { uuid },
                     });
-                const bucket = env.MINIO_DATA_BUCKET_NAME;
-                await this.storageService
-                    .deleteFile(bucket, fileToDelete.uuid)
+                await this.dataStorage
+                    .deleteFile(fileToDelete.uuid)
                     .catch(() => {
                         logger.error(
-                            `File ${fileToDelete.uuid} not found in Minio, deleting from database only!`,
+                            `File ${fileToDelete.uuid} not found in storage, deleting from database only!`,
                         );
                     });
 
-                await transactionalEntityManager.remove(fileToDelete);
+                await transactionalEntityManager.softRemove(fileToDelete);
             },
         );
 
@@ -1219,23 +1240,17 @@ export class FileService implements OnModuleInit {
     }
 
     async getStorage(): Promise<StorageOverviewDto> {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const metrics = await this.storageService.getSystemMetrics();
+        const metrics = await this.dataStorage.getSystemMetrics?.();
+        if (!metrics) {
+            return {
+                usedBytes: 0,
+                totalBytes: 0,
+                usedInodes: 0,
+                totalInodes: 0,
+            };
+        }
 
-        return {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            usedBytes: metrics.minio_system_drive_used_bytes?.[0]?.value ?? 0,
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            totalBytes: metrics.minio_system_drive_total_bytes?.[0]?.value ?? 0,
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            usedInodes: metrics.minio_system_drive_used_inodes?.[0]?.value ?? 0,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            totalInodes:
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                metrics.minio_system_drive_total_inodes?.[0]?.value ?? 0,
-        } as StorageOverviewDto;
+        return metrics;
     }
 
     async isUploading(userUUID: string): Promise<boolean> {
@@ -1253,7 +1268,7 @@ export class FileService implements OnModuleInit {
     }
 
     /**
-     * Get temporary access to upload files to Minio.
+     * Get temporary access to upload files to storage.
      * This function creates a new file entry in the database and a new queue entry.
      * The queue entry is used to track the upload progress.
      *
@@ -1287,7 +1302,7 @@ export class FileService implements OnModuleInit {
                 bucket: string | null;
                 fileName: string;
                 fileUUID: string | null;
-                accessCredentials: Credentials | null;
+                accessCredentials: StorageCredentials | null;
                 error?: string | null;
             }[] = [];
 
@@ -1312,7 +1327,7 @@ export class FileService implements OnModuleInit {
                     bucket: string | null;
                     fileName: string;
                     fileUUID: string | null;
-                    accessCredentials: Credentials | null;
+                    accessCredentials: StorageCredentials | null;
                     error: string | null;
                     queueUUID?: string;
                 } = {
@@ -1326,23 +1341,9 @@ export class FileService implements OnModuleInit {
                     error: null,
                 };
 
-                const fileExtensionToFileTypeMap: ReadonlyMap<
-                    string,
-                    FileType
-                > = new Map([
-                    ['.bag', FileType.BAG],
-
-                    ['.mcap', FileType.MCAP],
-                    ['.yaml', FileType.YAML],
-                    ['.yml', FileType.YAML],
-                    ['.svo2', FileType.SVO2],
-                    ['.tum', FileType.TUM],
-                    ['.db3', FileType.DB3],
-                ]);
-
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 const supported_file_endings = [
-                    ...fileExtensionToFileTypeMap.keys(),
+                    ...FILE_EXTENSION_TO_FILE_TYPE_MAP.keys(),
                 ];
 
                 if (
@@ -1361,7 +1362,7 @@ export class FileService implements OnModuleInit {
                 if (matchingFileType === undefined)
                     throw new UnsupportedMediaTypeException();
                 const fileType: FileType | undefined =
-                    fileExtensionToFileTypeMap.get(matchingFileType);
+                    FILE_EXTENSION_TO_FILE_TYPE_MAP.get(matchingFileType);
                 if (fileType === undefined)
                     throw new UnsupportedMediaTypeException();
 
@@ -1407,21 +1408,19 @@ export class FileService implements OnModuleInit {
                         );
 
                         credentials.push({
-                            bucket: env.MINIO_DATA_BUCKET_NAME,
+                            bucket: env.S3_DATA_BUCKET_NAME,
                             fileUUID: file.uuid,
                             fileName: filename,
                             accessCredentials:
-                                await this.storageService.generateTemporaryCredential(
+                                await this.dataStorage.generateTemporaryCredential(
                                     file.uuid,
-                                    env.MINIO_DATA_BUCKET_NAME,
                                 ),
                         });
 
                         // Add to local set to catch duplicates in the same batch
                         existingFilenames.add(filename);
                     });
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } catch (error: any) {
+                } catch (error: unknown) {
                     if (
                         error instanceof QueryFailedError &&
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -1440,6 +1439,11 @@ export class FileService implements OnModuleInit {
             }
 
             if (invalidFiles.length > 0) {
+                logger.warn(
+                    `getTemporaryAccess: user="${userUUID}" mission="${missionUUID}" ` +
+                        `denied upload for ${invalidFiles.length.toString()} already-existing file(s): ` +
+                        invalidFiles.map((f) => `"${f.filename}"`).join(', '),
+                );
                 throw new ConflictException({
                     message: 'Files already exist',
                     errors: invalidFiles,
@@ -1511,12 +1515,11 @@ export class FileService implements OnModuleInit {
 
                 await Promise.all(
                     files.map(async (file) => {
-                        const bucket = env.MINIO_DATA_BUCKET_NAME;
-                        await this.storageService
-                            .deleteFile(bucket, file.uuid)
+                        await this.dataStorage
+                            .deleteFile(file.uuid)
                             .catch(() => {
                                 logger.error(
-                                    `File ${file.uuid} not found in Minio, deleting from database only!`,
+                                    `File ${file.uuid} not found in storage, deleting from database only!`,
                                 );
                             });
                     }),
@@ -1539,11 +1542,11 @@ export class FileService implements OnModuleInit {
         };
     }
 
-    async renameTags(bucket: string): Promise<void> {
-        const filesList = await this.storageService.listFiles(bucket);
+    async renameTags(): Promise<void> {
+        const filesList = await this.dataStorage.listFiles();
 
         await Promise.all(
-            filesList.map(async (file: BucketItem): Promise<void> => {
+            filesList.map(async (file: StorageItem): Promise<void> => {
                 if (!file.name) {
                     logger.debug(`Filename is empty: ${JSON.stringify(file)}`);
                     return;
@@ -1557,14 +1560,14 @@ export class FileService implements OnModuleInit {
                     return;
                 }
 
-                await this.storageService.removeTags(bucket, file.name);
+                await this.dataStorage.removeTags(file.name);
 
                 if (fileEntity.mission === undefined)
                     throw new Error('Mission not found!');
                 if (fileEntity.mission.project === undefined)
                     throw new Error('Project not found!');
 
-                await this.storageService.addTags(bucket, file.name, {
+                await this.dataStorage.addTags(file.name, {
                     projectUuid: fileEntity.mission.project.uuid,
                     missionUuid: fileEntity.mission.uuid,
                     filename: fileEntity.filename,
@@ -1583,10 +1586,7 @@ export class FileService implements OnModuleInit {
         });
         await Promise.all(
             files.map(async (file) => {
-                const stats = await this.storageService.getFileInfo(
-                    file.type,
-                    file.uuid,
-                );
+                const stats = await this.dataStorage.getFileInfo(file.uuid);
 
                 if (stats) {
                     file.size = stats.size;
@@ -1596,7 +1596,7 @@ export class FileService implements OnModuleInit {
                     );
                 } else {
                     logger.error(
-                        `File ${file.uuid} not found in Minio, setting state to LOST`,
+                        `File ${file.uuid} not found in storage, setting state to LOST`,
                     );
                     file.state = FileState.LOST;
                 }

@@ -166,7 +166,7 @@ export function tracing<A extends unknown[], C>(
         | (new (...arguments_: A) => C)
         | TypedPropertyDescriptor<(...arguments_: A) => C> {
         const applyWrap = (
-            methodName: string | symbol,
+            _methodName: string | symbol,
             originalMethod: (...arguments_: A) => C,
 
             // eslint-disable-next-line unicorn/consistent-function-scoping

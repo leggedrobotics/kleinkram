@@ -226,7 +226,11 @@ import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-ope
 import MoveFileDialogOpener from 'components/button-wrapper/move-file-dialog-opener.vue';
 import { fileColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { QTable } from 'quasar';
-import { useMission, useMissionsOfProjectMinimal } from 'src/hooks/query-hooks';
+import {
+    useHandler,
+    useMission,
+    useMissionsOfProjectMinimal,
+} from 'src/hooks/query-hooks';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import ROUTES from 'src/router/routes';
 import { parseDate } from 'src/services/date-formating';
@@ -238,7 +242,7 @@ import {
     hashUUIDtoColor,
 } from 'src/services/generic';
 import { filesOfMission } from 'src/services/queries/file';
-import { QueryHandler, TableRequest } from 'src/services/query-handler';
+import { TableRequest } from 'src/services/query-handler';
 import { computed, unref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -256,7 +260,7 @@ const isMissionEmpty = computed(() => {
 });
 
 const hasActiveFilters = computed(() => {
-    const h = properties.urlHandler;
+    const h = queryHandler.value;
 
     const totalFileTypes = Object.values(FileType).filter(
         (t) => t !== FileType.ALL,
@@ -308,51 +312,49 @@ const previousMissionUuid = computed(() => {
     return previousMission ? previousMission.uuid : '';
 });
 
-const properties = defineProps<{
-    urlHandler: QueryHandler;
-}>();
+const queryHandler = useHandler();
 
-if (properties.urlHandler.sortBy === 'name') {
-    properties.urlHandler.setSort('filename');
+if (queryHandler.value.sortBy === 'name') {
+    queryHandler.value.setSort('filename');
 }
 
-function setPagination(update: TableRequest): void {
-    properties.urlHandler.setPage(update.pagination.page);
-    properties.urlHandler.setTake(update.pagination.rowsPerPage);
-    properties.urlHandler.setSort(update.pagination.sortBy);
-    properties.urlHandler.setDescending(update.pagination.descending);
+async function setPagination(update: TableRequest): Promise<void> {
+    queryHandler.value.setPage(update.pagination.page);
+    queryHandler.value.setTake(update.pagination.rowsPerPage);
+    queryHandler.value.setSort(update.pagination.sortBy);
+    queryHandler.value.setDescending(update.pagination.descending);
+    await refetch();
 }
 
 const pagination = computed({
     get: () => ({
-        page: properties.urlHandler.page,
-        rowsPerPage: properties.urlHandler.take,
-        rowsNumber: properties.urlHandler.rowsNumber,
-        sortBy: properties.urlHandler.sortBy,
-        descending: properties.urlHandler.descending,
+        page: queryHandler.value.page,
+        rowsPerPage: queryHandler.value.take,
+        rowsNumber: queryHandler.value.rowsNumber,
+        sortBy: queryHandler.value.sortBy,
+        descending: queryHandler.value.descending,
     }),
-    set: (v) => {
-        properties.urlHandler.setPage(v.page);
-        properties.urlHandler.setTake(v.rowsPerPage);
-        properties.urlHandler.setSort(v.sortBy);
-        properties.urlHandler.setDescending(v.descending);
-    },
+    set: (value) => ({
+        page: value.page,
+        rowsPerPage: value.rowsPerPage,
+        sortBy: value.sortBy,
+        descending: value.descending,
+    }),
 });
 
 const queryKey = computed(() => [
     'files',
     missionUuid.value,
-    properties.urlHandler.queryKey,
-    properties.urlHandler.fileTypes,
-    properties.urlHandler.categories,
+    queryHandler.value.queryKey,
 ]);
 const {
     data: rawData,
     isLoading,
+    refetch,
 }: UseQueryReturnType<FilesDto | undefined, Error> = useQuery({
     queryKey: queryKey,
     queryFn: () => {
-        const h = properties.urlHandler;
+        const h = queryHandler.value;
         return filesOfMission(
             missionUuid.value ?? '',
             h.take,
@@ -391,8 +393,7 @@ watch(
     () => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (data.value && !isLoading.value) {
-            // eslint-disable-next-line vue/no-mutating-props
-            properties.urlHandler.rowsNumber = total.value;
+            queryHandler.value.rowsNumber = total.value;
         }
     },
     { immediate: true },
@@ -415,7 +416,7 @@ const onRowClick = async (_: Event, row: any): Promise<void> => {
 };
 
 function chipClicked(cat: CategoryDto): void {
-    properties.urlHandler.addCategory(cat.uuid);
+    queryHandler.value.addCategory(cat.uuid);
 }
 
 watch(

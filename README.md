@@ -59,3 +59,23 @@ klein login
 <summary>Start Developing</summary>
 For a deeper dive into the project structure and development workflow, see the <a href="https://docs.datasets.leggedrobotics.com/development/application-structure">Application Structure</a> documentation. Your development environment is designed for Ubuntu 24.04.
 </details>
+
+## Community Guidelines
+
+### Contributing
+
+We welcome contributions! Please see our [Contributing Guide](https://docs.datasets.leggedrobotics.com/development/contributing) for details on how to get started, including our branching strategy and pull request workflow.
+
+> [!TIP]
+> In short: Fork the repository, create a feature branch from `dev`, and open a pull request targeting the upstream `dev` branch when ready. We will review the changes and merge them into `dev` if they are good.
+
+### Reporting Issues
+
+Found a bug or have a feature request? Please [open an issue on GitHub](https://github.com/leggedrobotics/kleinkram/issues).
+
+### Seeking Support
+
+For help and support:
+
+1. Check the [official documentation](https://docs.datasets.leggedrobotics.com/).
+2. If you can't find an answer, [open an issue on GitHub](https://github.com/leggedrobotics/kleinkram/issues).

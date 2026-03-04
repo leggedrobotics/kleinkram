@@ -1,4 +1,5 @@
 import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@backend-common/entities/action/action-trigger.entity';
 import { ApiKeyEntity } from '@backend-common/entities/auth/api-key.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
@@ -6,12 +7,22 @@ import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { RuntimeDescription } from '@backend-common/types';
 import {
+    ActionErrorHint,
     ActionState,
+    ActionTriggerSource,
     ArtifactState,
     ImageSource,
     LogType,
+    ResourceUsage,
 } from '@kleinkram/shared';
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import {
+    Column,
+    Entity,
+    Index,
+    JoinColumn,
+    ManyToOne,
+    OneToOne,
+} from 'typeorm';
 
 export interface ContainerLog {
     timestamp: string;
@@ -43,6 +54,7 @@ export interface SubmittedAction {
 
 @Entity({ name: 'action' })
 export class ActionEntity extends BaseEntity {
+    @Index()
     @Column({ type: 'enum', enum: ActionState })
     state!: ActionState;
 
@@ -75,9 +87,6 @@ export class ActionEntity extends BaseEntity {
         nullable: false,
     })
     mission?: MissionEntity;
-
-    @Column({ type: 'json', nullable: true, select: false })
-    logs?: ContainerLog[];
 
     @Column({ type: 'json', nullable: true, default: [] })
     auditLogs?: unknown[];
@@ -125,4 +134,40 @@ export class ActionEntity extends BaseEntity {
         nullable: true,
     })
     worker?: WorkerEntity;
+
+    @Column({
+        type: 'enum',
+        enum: ActionTriggerSource,
+        default: ActionTriggerSource.MANUAL,
+    })
+    triggerSource!: ActionTriggerSource;
+
+    @ManyToOne(() => ActionTriggerEntity, {
+        nullable: true,
+        onDelete: 'SET NULL',
+    })
+    @JoinColumn({ name: 'triggerUuid' })
+    trigger?: ActionTriggerEntity;
+
+    @Column({ nullable: true })
+    triggerUuid?: string;
+
+    @Column({
+        type: 'enum',
+        enum: ActionErrorHint,
+        nullable: true,
+    })
+    errorHint?: ActionErrorHint;
+
+    @Column({ type: 'json', nullable: true })
+    resourceUsage?: ResourceUsage;
+
+    @Column({ type: 'bigint', nullable: true })
+    maxMemoryBytes?: number;
+
+    @Column({ type: 'float', nullable: true })
+    avgCpuPercent?: number;
+
+    @Column({ type: 'float', nullable: true })
+    efficiencyScore?: number;
 }

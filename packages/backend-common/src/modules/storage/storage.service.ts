@@ -1,50 +1,67 @@
+import {
+    DeleteObjectCommand,
+    DeleteObjectTaggingCommand,
+    GetObjectCommand,
+    GetObjectTaggingCommand,
+    HeadObjectCommand,
+    ListObjectsV2Command,
+    PutObjectTaggingCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable } from '@nestjs/common';
-import { BucketItemStat, Client, ItemBucketMetadata } from 'minio';
+import { Readable } from 'node:stream';
+import { S3StorageBucket } from './s3-storage-bucket';
 import { StorageAuthService } from './storage-auth.service';
+import { S3ClientContainer } from './storage-config.factory';
 import { StorageMetricsService } from './storage-metrics.service';
-// @ts-ignore
-import Credentials from 'minio/dist/main/Credentials';
-// @ts-ignore
-import { BucketItem, TaggingOpts, Tags } from 'minio/dist/main/internal/type';
-import { Stream } from 'node:stream';
+import {
+    StorageCredentials,
+    StorageItem,
+    StorageItemStat,
+    StorageSystemMetrics,
+} from './types';
 
 @Injectable()
 export class StorageService {
     constructor(
-        @Inject('MINIO_CLIENTS')
-        private clients: { external: Client; internal: Client },
+        @Inject('S3_CLIENTS')
+        private readonly clients: S3ClientContainer,
         private readonly metricsService: StorageMetricsService,
         private readonly authService: StorageAuthService,
     ) {}
 
     async getPresignedDownloadUrl(
         bucketName: string,
-        objectName: string, // This is usually the file UUID
+        objectName: string,
         expirySeconds: number,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
-        return this.clients.external.presignedUrl(
-            'GET',
-            bucketName,
-            objectName,
-            expirySeconds,
-            responseDisposition,
-        );
+        const command = new GetObjectCommand({
+            Bucket: bucketName,
+            Key: objectName,
+            ResponseContentDisposition:
+                responseDisposition?.['response-content-disposition'],
+        });
+        return getSignedUrl(this.clients.external, command, {
+            expiresIn: expirySeconds,
+        });
     }
 
     async getInternalPresignedDownloadUrl(
         bucketName: string,
-        objectName: string, // This is usually the file UUID
+        objectName: string,
         expirySeconds: number,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
-        return this.clients.internal.presignedUrl(
-            'GET',
-            bucketName,
-            objectName,
-            expirySeconds,
-            responseDisposition,
-        );
+        const command = new GetObjectCommand({
+            Bucket: bucketName,
+            Key: objectName,
+            ResponseContentDisposition:
+                responseDisposition?.['response-content-disposition'],
+        });
+        return getSignedUrl(this.clients.internal, command, {
+            expiresIn: expirySeconds,
+        });
     }
 
     async downloadFile(
@@ -52,40 +69,70 @@ export class StorageService {
         objectName: string,
         destinationPath: string,
     ): Promise<void> {
-        await this.clients.internal.fGetObject(
+        // We reuse S3StorageBucket logic here but create a transient instance
+        const bucket = new S3StorageBucket(
             bucketName,
-            objectName,
-            destinationPath,
+            this.clients,
+            this.authService,
         );
+        return bucket.downloadFile(objectName, destinationPath);
     }
 
     async getFileStream(
         bucketName: string,
         objectName: string,
-    ): Promise<Stream.Readable> {
-        return this.clients.internal.getObject(bucketName, objectName);
+    ): Promise<Readable> {
+        const command = new GetObjectCommand({
+            Bucket: bucketName,
+            Key: objectName,
+        });
+        const response = await this.clients.internal.send(command);
+        if (response.Body instanceof Readable) {
+            return response.Body;
+        }
+        throw new TypeError('S3 body is not a readable stream');
     }
 
-    async listFiles(bucketName: string): Promise<BucketItem[]> {
-        const stream = this.clients.internal.listObjects(bucketName, '');
-        const result: BucketItem[] = [];
-        for await (const item of stream) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            result.push(item);
-        }
-        return result;
+    async listFiles(bucketName: string): Promise<StorageItem[]> {
+        const command = new ListObjectsV2Command({
+            Bucket: bucketName,
+        });
+        const response = await this.clients.internal.send(command);
+        return (
+            response.Contents?.map((item) => ({
+                name: item.Key ?? '',
+                lastModified: item.LastModified ?? new Date(),
+                etag: item.ETag ?? '',
+                size: item.Size ?? 0,
+            })) ?? []
+        );
     }
 
     async getFileInfo(
         bucketName: string,
-        location: string,
-    ): Promise<BucketItemStat | undefined> {
+        objectName: string,
+    ): Promise<StorageItemStat | undefined> {
+        const command = new HeadObjectCommand({
+            Bucket: bucketName,
+            Key: objectName,
+        });
         try {
-            return await this.clients.internal.statObject(bucketName, location);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            if (error.code === 'NotFound') return;
+            const response = await this.clients.internal.send(command);
+            return {
+                size: response.ContentLength ?? 0,
+                etag: response.ETag ?? '',
+                lastModified: response.LastModified ?? new Date(),
+                metaData: response.Metadata ?? {},
+            };
+        } catch (error: unknown) {
+            if (
+                error instanceof Error &&
+                (error.name === 'NotFound' ||
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+                    (error as any).$metadata?.httpStatusCode === 404)
+            ) {
+                return undefined;
+            }
             throw error;
         }
     }
@@ -94,81 +141,87 @@ export class StorageService {
         bucketName: string,
         objectName: string,
         filePath: string,
-        metaData: ItemBucketMetadata = {},
+        metaData?: Record<string, string>,
     ): Promise<void> {
-        await this.clients.internal.fPutObject(
+        const bucket = new S3StorageBucket(
             bucketName,
-            objectName,
-            filePath,
-            metaData,
+            this.clients,
+            this.authService,
         );
+        return bucket.uploadFile(objectName, filePath, metaData);
     }
 
-    async deleteFile(bucketName: string, location: string): Promise<void> {
-        await this.clients.internal.removeObject(bucketName, location);
+    async deleteFile(bucketName: string, objectName: string): Promise<void> {
+        const command = new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: objectName,
+        });
+        await this.clients.internal.send(command);
     }
 
     async getTags(
         bucketName: string,
         objectName: string,
     ): Promise<Record<string, string>> {
-        const tagList = await this.clients.internal.getObjectTagging(
-            bucketName,
-            objectName,
-        );
-        return this.normalizeTags(tagList);
+        const command = new GetObjectTaggingCommand({
+            Bucket: bucketName,
+            Key: objectName,
+        });
+        const response = await this.clients.internal.send(command);
+        const tags: Record<string, string> = {};
+        if (response.TagSet) {
+            for (const tag of response.TagSet) {
+                if (tag.Key && tag.Value) {
+                    tags[tag.Key] = tag.Value;
+                }
+            }
+        }
+        return tags;
     }
 
     async addTags(
         bucketName: string,
         objectName: string,
-        tags: Tags,
+        tags: Record<string, string>,
     ): Promise<void> {
-        await this.clients.internal.setObjectTagging(
-            bucketName,
-            objectName,
-            tags,
-            { versionId: 'null' },
-        );
+        const command = new PutObjectTaggingCommand({
+            Bucket: bucketName,
+            Key: objectName,
+            Tagging: {
+                TagSet: Object.entries(tags).map(([key, value]) => ({
+                    Key: key,
+                    Value: value,
+                })),
+            },
+        });
+        await this.clients.internal.send(command);
     }
 
     async removeTags(bucketName: string, objectName: string): Promise<void> {
-        await this.clients.internal.removeObjectTagging(
-            bucketName,
-            objectName,
-            {} as TaggingOpts,
-        );
+        const command = new DeleteObjectTaggingCommand({
+            Bucket: bucketName,
+            Key: objectName,
+        });
+        await this.clients.internal.send(command);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async getSystemMetrics(): Promise<any> {
-        return this.metricsService.getSystemMetrics();
+    async getSystemMetrics(): Promise<StorageSystemMetrics> {
+        const bucket = new S3StorageBucket(
+            'unused',
+            this.clients,
+            this.authService,
+            this.metricsService,
+        );
+        return bucket.getSystemMetrics();
     }
 
     async generateTemporaryCredential(
-        filename: string,
         bucketName: string,
-    ): Promise<Credentials> {
+        filename: string,
+    ): Promise<StorageCredentials> {
         return this.authService.generateTemporaryCredential(
             filename,
             bucketName,
         );
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private normalizeTags(tagList: any): Record<string, string> {
-        if (Array.isArray(tagList)) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, unicorn/no-array-reduce
-            return tagList.reduce((accumulator, tag) => {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                if (tag.Key && tag.Value) accumulator[tag.Key] = tag.Value;
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-                return accumulator;
-            }, {});
-        }
-        if (typeof tagList === 'object') {
-            return tagList as Record<string, string>;
-        }
-        return {};
     }
 }

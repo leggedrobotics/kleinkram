@@ -22,7 +22,7 @@ export enum FileOrigin {
 
 export enum FileLocation {
     DRIVE = 'DRIVE',
-    MINIO = 'MINIO',
+    S3 = 'S3',
 }
 
 export enum UserRole {
@@ -191,4 +191,24 @@ export enum ImageSource {
 export enum LogType {
     STDOUT = 'stdout',
     STDERR = 'stderr',
+}
+
+export enum TriggerType {
+    WEBHOOK = 'WEBHOOK',
+    TIME = 'TIME',
+    FILE = 'FILE',
+}
+
+export enum TriggerEvent {
+    UPLOAD = 'UPLOAD',
+    RENAME = 'RENAME',
+    MOVE = 'MOVE',
+    DELETE = 'DELETE',
+}
+
+export enum ActionTriggerSource {
+    MANUAL = 'MANUAL',
+    CRON = 'CRON',
+    WEBHOOK = 'WEBHOOK',
+    FILE_EVENT = 'FILE_EVENT',
 }

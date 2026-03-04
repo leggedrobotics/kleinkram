@@ -3,6 +3,10 @@
 This guide will help you get started with the development of the project. It will start with some instructions on how to
 run the project locally and how to set up the development environment.
 
+::: warning Contributing?
+If you want to contribute to Kleinkram, please read the [Contributing Guide](/development/contributing.md) first.
+:::
+
 ## Prerequisites and Dependencies
 
 In order to get started with the development of the project, you need to have the following tools installed on your
@@ -14,7 +18,7 @@ system:
 - Chrome or Firefox Browser (Safari might cause issues while developing locally)
 
 ::: info Additional Tools
-To enable code completion and linting in your IDE, you may also need a NodeJS, yarn, and python installation.
+To enable code completion and linting in your IDE, you may also need a NodeJS, pnpm and python installation.
 :::
 
 ## Pre-commit Hooks
@@ -72,7 +76,7 @@ In principle the setup works similar to running the project locally, however, th
 
 3. You can now open the projects:
     - frontend at `http://localhost:8003`.
-    - minio console at `http://localhost:9001`.
+    - seaweedfs console at `http://localhost:9333`.
     - documentation at `http://localhost:4000`.
 
     ::: warning
@@ -81,14 +85,14 @@ In principle the setup works similar to running the project locally, however, th
     :::
 
 4. In order to enable code completion and linting in your IDE, you may need to install additional tools.
-    - For JavaScript/TypeScript, you may need to install NodeJS and yarn.
+    - For JavaScript/TypeScript, you may need to install NodeJS and pnpm.
     - For Python, you may need to install python and pip.
 
 5. You can now install the dependencies for the frontend and the backend by running the following command in the
    top-level directory of the project:
 
     ```bash
-    yarn install
+    pnpm install
     ```
 
 ::: info
@@ -101,7 +105,7 @@ machine. This is necessary for code completion and linting in your IDE.
     ```bash
     cd kleinkram/cli
 
-    virtualenv -ppython3.8 .venv
+    virtualenv -ppython3.10 .venv
     source .venv/bin/activate
     pip install -e . -r requirements.txt
     ```
@@ -138,6 +142,7 @@ When seeding is enabled, the following entities are created in the database:
 |                      | `extract-metadata`            | Extracts metadata from files                                                      |
 |                      | `convert-formats`             | Converts file formats                                                             |
 |                      | `python-template`             | Basic Python action template                                                      |
+|                      | `gpu-example`                 | Python action template with GPU acceleration                                      |
 | **Files**            | Various                       | `.bag`, `.mcap`, and `.yaml` files are generated and distributed across missions. |
 
 ::: tip Source Code

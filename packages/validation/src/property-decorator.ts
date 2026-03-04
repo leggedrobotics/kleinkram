@@ -1,5 +1,10 @@
-import { Matches } from 'class-validator';
+import {
+    Matches,
+    registerDecorator,
+    ValidationArguments,
+} from 'class-validator';
 import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
+import { isValidDockerImageName } from './docker-image.validation';
 import { FILE_NAME_REGEX } from './filename.validation';
 import {
     MISSION_NAME_REGEX,
@@ -78,3 +83,27 @@ export const IsValidMissionName = (
         message: 'Mission name is not valid!',
         ...validationOptions,
     });
+
+export function IsDockerImage(validationOptions?: ValidationOptions) {
+    return function (object: object, propertyName: string) {
+        registerDecorator({
+            name: 'isDockerImage',
+
+            target: object.constructor,
+            propertyName: propertyName,
+            options: validationOptions,
+            validator: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                validate(value: any, _args: ValidationArguments) {
+                    return (
+                        typeof value === 'string' &&
+                        isValidDockerImageName(value)
+                    );
+                },
+                defaultMessage(_args: ValidationArguments) {
+                    return `Invalid Docker image name. It contains forbidden characters, has an invalid format, or exceeds the maximum length.`;
+                },
+            },
+        });
+    };
+}

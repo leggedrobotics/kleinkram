@@ -113,23 +113,18 @@ describe('Verification project endpoint', () => {
         // delete all missions
         const missionRepository =
             database.getRepository<MissionEntity>(MissionEntity);
-        const allMissions = await missionRepository.find();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const responseMission = await missionRepository.remove(allMissions);
-        const remainingMissions = await missionRepository.find();
-        expect(remainingMissions.length).toBe(0);
-        expect(remainingMissions.length).toBe(0);
+        const missionsToClear = await missionRepository.find({
+            withDeleted: true,
+        });
+        await missionRepository.remove(missionsToClear);
 
         // delete project
         const projectRepository =
             database.getRepository<ProjectEntity>(ProjectEntity);
-        const allProjects = await projectRepository.find();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const response = await projectRepository.remove(allProjects);
-        const remainingProjects = await projectRepository.find();
-
-        expect(remainingProjects.length).toBe(0);
-        expect(remainingProjects.length).toBe(0);
+        const projectsToClear = await projectRepository.find({
+            withDeleted: true,
+        });
+        await projectRepository.remove(projectsToClear);
     });
 
     // afterAll handled by setupDatabaseHooks
@@ -391,13 +386,12 @@ describe('Verification project endpoint', () => {
         // check if mission is generated
         const missionRepository =
             database.getRepository<MissionEntity>(MissionEntity);
+        const allMissions = await missionRepository.find();
+        expect(allMissions.length).toBe(1);
         const mission = await missionRepository.findOneOrFail({
             where: { uuid: missionUuid },
         });
         expect(mission.name).toBe('test_mission');
-        const missions = await missionRepository.find();
-        expect(missions.length).toBe(1);
-        expect(missions.length).toBe(1);
 
         // denied permission to delete project because of mission
         const creatorHeader = new HeaderCreator(creator);
@@ -435,7 +429,6 @@ describe('Verification project endpoint', () => {
 
         // verify mission is deleted
         const remainingMissions = await missionRepository.find();
-        expect(remainingMissions.length).toBe(0);
         expect(remainingMissions.length).toBe(0);
 
         // check if project can not be deleted by user
@@ -541,5 +534,8 @@ describe('Verification project endpoint', () => {
             database.getRepository<ProjectEntity>(ProjectEntity);
         const projects = await projectRepository.find();
         expect(projects.length).toBe(1);
+
+        // delete mission to allow cleanup
+        await missionRepository.remove(mission);
     });
 });

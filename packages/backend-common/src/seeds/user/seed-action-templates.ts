@@ -10,15 +10,25 @@ export const seedActionTemplates = async (
     const tag = 'latest';
 
     const actionTemplates = [
-        { name: 'validate-data', description: 'Validates data integrity' },
+        {
+            name: 'validate-data',
+            description: 'Validates data integrity',
+        },
         {
             name: 'extract-metadata',
             description: 'Extracts metadata from files',
         },
-        { name: 'convert-formats', description: 'Converts file formats' },
+        {
+            name: 'convert-formats',
+            description: 'Converts file formats',
+        },
         {
             name: 'python-template',
             description: 'Basic Python action template',
+        },
+        {
+            name: 'gpu-example',
+            description: 'Example action utilizing GPU resources',
         },
     ];
 

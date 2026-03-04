@@ -28,6 +28,8 @@
             "@kleinkram/shared/*": ["./packages/shared/src/*"],
             "@kleinkram/validation": ["./packages/validation/src/index.ts"],
             "@kleinkram/validation/*": ["./packages/validation/src/*"]
-        }
+        },
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
     }
 }

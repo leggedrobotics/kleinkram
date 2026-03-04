@@ -2,6 +2,7 @@ export * from './audit/audit.types';
 export * from './audit/file-audit.service';
 export * from './consts';
 export * from './entities/action/action-template.entity';
+export * from './entities/action/action-trigger.entity';
 export * from './entities/action/action.entity';
 export * from './entities/auth/access-group.entity';
 export * from './entities/auth/account.entity';
@@ -21,14 +22,15 @@ export * from './entities/tagType/tag-type.entity';
 export * from './entities/topic/topic.entity';
 export * from './entities/user/user.entity';
 export * from './entities/worker/worker.entity';
-export * from './environment';
+export { default as environment } from './environment';
+export * from './modules/access-control/access-control.module';
+export * from './modules/access-control/access-control.service';
 export * from './modules/action-dispatcher/action-dispatcher.module';
 export * from './modules/action-dispatcher/action-dispatcher.service';
 export * from './modules/storage/storage-auth.service';
 export * from './modules/storage/storage-config.factory';
 export * from './modules/storage/storage-metrics.service';
 export * from './modules/storage/storage.module';
-export * from './modules/storage/storage.service';
 export * from './scheduling-logic';
 export * from './seeds/user/seed-users';
 export * from './services/affiliation-group.service';
@@ -38,6 +40,7 @@ export * from './viewEntities/mission-access-view.entity';
 export * from './viewEntities/project-access-view.entity';
 
 import { ActionTemplateEntity } from './entities/action/action-template.entity';
+import { ActionTriggerEntity } from './entities/action/action-trigger.entity';
 import { ActionEntity } from './entities/action/action.entity';
 import { AccessGroupEntity } from './entities/auth/access-group.entity';
 import { AccountEntity } from './entities/auth/account.entity';
@@ -61,6 +64,7 @@ import { ProjectAccessViewEntity } from './viewEntities/project-access-view.enti
 
 export const ALL_ENTITIES = [
     ActionTemplateEntity,
+    ActionTriggerEntity,
     ActionEntity,
     AccessGroupEntity,
     AccountEntity,

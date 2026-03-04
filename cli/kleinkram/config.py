@@ -54,10 +54,10 @@ DEFAULT_LOCAL_API = "http://localhost:3000"
 DEFAULT_LOCAL_S3 = "http://localhost:9000"
 
 DEFAULT_DEV_API = "https://api.datasets.dev.leggedrobotics.com"
-DEFAULT_DEV_S3 = "https://minio.datasets.dev.leggedrobotics.com"
+DEFAULT_DEV_S3 = "https://s3.datasets.dev.leggedrobotics.com"
 
 DEFAULT_PROD_API = "https://api.datasets.leggedrobotics.com"
-DEFAULT_PROD_S3 = "https://minio.datasets.leggedrobotics.com"
+DEFAULT_PROD_S3 = "https://s3.datasets.leggedrobotics.com"
 
 
 DEFAULT_ENDPOINTS = {
@@ -184,7 +184,18 @@ def _load_config_if_compatible(path: Path) -> Optional[Config]:
         return None
     with open(path, "r") as f:
         try:
-            return _config_from_dict(json.load(f))
+            dct = json.load(f)
+
+            migrated = False
+            for key, value in dct.get("endpoints", {}).items():
+                if "s3" in value and "minio.datasets." in value["s3"]:
+                    value["s3"] = value["s3"].replace("minio.datasets.", "s3.datasets.")
+                    migrated = True
+
+            config = _config_from_dict(dct)
+            if migrated:
+                save_config(config, path)
+            return config
         except Exception:
             return None
 
@@ -245,7 +256,7 @@ def endpoint_table(config: Config) -> Table:
 @dataclass
 class SharedState:
     log_file: Optional[Path] = None
-    verbose: bool = True
+    verbose: bool = False
     debug: bool = False
     max_table_size: int = MAX_TABLE_SIZE
 

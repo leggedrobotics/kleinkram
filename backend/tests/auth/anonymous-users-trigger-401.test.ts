@@ -16,6 +16,7 @@ const UNAUTHENTICATED_ENDPOINTS: string[] = [
     '/swagger/',
     '/integrations/',
     '/api/health',
+    '/hooks/actions/',
 ];
 
 /**
@@ -46,17 +47,29 @@ describe('Unauthenticated users trigger 401', () => {
             const headersBuilder = new HeaderCreator();
             headersBuilder.addHeader('Content-Type', 'application/json');
             headersBuilder.addHeader('Connection', 'close');
-            const response = await fetch(
-                `http://localhost:3000${endpoint.url}`,
-                {
-                    method: endpoint.method,
-                    headers: headersBuilder.getHeaders(),
-                },
-            );
+
+            // Replace placeholders in URL with dummy values
+            const url = endpoint.url
+                .replace('{uuid}', '1b671a64-40d5-491e-99b0-da01ff1f3341')
+                .replace('{filename}', 'test.txt');
+
+            // Normalize method to uppercase
+            const method = endpoint.method.toUpperCase();
+
+            // Provide a dummy body for mutation requests to avoid 400 body-parser errors
+            const body = ['POST', 'PATCH', 'PUT'].includes(method)
+                ? JSON.stringify({})
+                : undefined;
+
+            const response = await fetch(`http://localhost:3000${url}`, {
+                method,
+                headers: headersBuilder.getHeaders(),
+                body,
+            });
             assert.equal(
                 response.status,
                 401,
-                `endpoint\t${endpoint.method.toUpperCase()}\t${endpoint.url} does not return 401`,
+                `endpoint\t${method}\t${url} does not return 401`,
             );
         });
     }

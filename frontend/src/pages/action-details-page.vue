@@ -19,6 +19,16 @@
                     style="color: #222"
                 />
                 <q-tab
+                    name="resources"
+                    label="Resource Consumption"
+                    style="color: #222"
+                    :disable="!action?.resourceUsage"
+                >
+                    <q-tooltip v-if="!action?.resourceUsage">
+                        <span>No resource data available</span>
+                    </q-tooltip>
+                </q-tab>
+                <q-tab
                     name="logs"
                     label="Logs"
                     style="color: #222"
@@ -108,14 +118,17 @@
         style="background: transparent"
     >
         <q-tab-panel name="info">
-            <InfoBanner
-                v-if="showCliWarning"
-                text="This action likely failed due to an outdated Kleinkram CLI. Please rebuild it with a newer CLI version"
-                button-label="View Logs"
-                color="orange-1"
-                text-color="orange-9"
-                @click="viewTriggeringLog"
-            />
+            <div v-if="activeHints.length > 0" class="q-mb-md">
+                <InfoBanner
+                    v-for="hint in activeHints"
+                    :key="hint.id"
+                    :text="hint.text"
+                    :button-label="hint.buttonLabel || 'View'"
+                    color="orange-1"
+                    text-color="orange-9"
+                    @click="() => executeHint(hint)"
+                />
+            </div>
             <ActionDetailsExecutionTab v-if="action" :action="action" />
         </q-tab-panel>
 
@@ -126,6 +139,10 @@
             />
         </q-tab-panel>
 
+        <q-tab-panel name="resources">
+            <ActionDetailsResourcesTab v-if="action" :action="action" />
+        </q-tab-panel>
+
         <q-tab-panel name="logs">
             <p style="max-width: 650px; color: #525252; font-size: 0.8em">
                 We capture the stdout and stderr of the action execution. In the
@@ -133,10 +150,48 @@
                 during the execution of the action.
             </p>
 
+            <div
+                v-if="isRetentionExpired && logs?.count === 0"
+                class="q-mb-md text-warning flex items-center"
+            >
+                <q-icon name="sym_o_warning" size="sm" class="q-mr-sm" />
+                <span
+                    >Logs for this action may have expired (retention limit: 90
+                    days).</span
+                >
+            </div>
+
             <div class="row justify-between items-center q-mb-md">
-                <div v-if="logs?.count" class="text-caption">
-                    Showing {{ logs.data.length }} of {{ logs.count }} log lines
+                <div class="row q-gutter-x-md items-center">
+                    <q-input
+                        v-model="logsSearch"
+                        dense
+                        outlined
+                        placeholder="Search logs..."
+                        debounce="300"
+                        style="width: 200px"
+                    >
+                        <template #append>
+                            <q-icon name="sym_o_search" />
+                        </template>
+                    </q-input>
+
+                    <q-select
+                        v-model="logsLevel"
+                        :options="['all', 'stdout', 'stderr']"
+                        dense
+                        outlined
+                        label="Level"
+                        style="width: 120px"
+                        emit-value
+                        map-options
+                    />
+
+                    <div v-if="logs?.count" class="text-caption q-ml-md">
+                        Showing {{ logs.data.length }} of {{ logs.count }} lines
+                    </div>
                 </div>
+
                 <div class="q-gutter-x-sm">
                     <q-btn
                         v-if="(logs?.count || 0) > (logs?.data.length || 0)"
@@ -278,6 +333,7 @@
 
 <script setup lang="ts">
 import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
+import ActionDetailsResourcesTab from 'components/actions/action-details-resources-tab.vue';
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import InfoBanner from 'components/info-banner.vue';
@@ -285,6 +341,7 @@ import FileHistory from 'components/inspect-file/file-history.vue';
 import TitleSection from 'components/title-section.vue';
 import { useQuasar } from 'quasar';
 import { ActionService } from 'src/api/services/action.service';
+import { useActionErrorHints } from 'src/composables/use-action-error-hints';
 import {
     useActionDetails,
     useActionFileEvents,
@@ -292,7 +349,7 @@ import {
 } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
-import { computed, nextTick, ref, watch, watchEffect } from 'vue';
+import { computed, ref, watch } from 'vue';
 import 'vue-json-pretty/lib/styles.css';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -315,9 +372,9 @@ const handleRefetch = () => {
 
 const logsLimit = ref(100);
 const totalLogsCount = ref(0);
-const isWarningDismissed = ref(false);
-const triggeringLogIndex = ref<number | null>(null);
 const highlightedLogIndex = ref<number | null>(null);
+const logsSearch = ref('');
+const logsLevel = ref('all');
 
 const logsSkip = computed(() => {
     if (totalLogsCount.value === 0) return 0;
@@ -328,7 +385,17 @@ const { data: logs, refetch: refetchLogs } = useActionLogs(
     computed(() => $route.params.id as string),
     logsSkip,
     logsLimit,
+    computed(() => logsSearch.value || undefined),
+    computed(() => (logsLevel.value === 'all' ? undefined : logsLevel.value)),
 );
+
+const isRetentionExpired = computed(() => {
+    if (!action.value?.createdAt) return false;
+    const retentionLimit = 90 * 24 * 60 * 60 * 1000; // 90 days
+    return (
+        Date.now() - new Date(action.value.createdAt).getTime() > retentionLimit
+    );
+});
 
 watch(logs, (newLogs) => {
     if (newLogs) {
@@ -336,68 +403,12 @@ watch(logs, (newLogs) => {
     }
 });
 
-const showCliWarning = ref(false);
-
-watchEffect(() => {
-    if (isWarningDismissed.value) {
-        showCliWarning.value = false;
-        return;
-    }
-
-    const currentLogs = logs.value;
-    if (!currentLogs?.data) {
-        showCliWarning.value = false;
-        return;
-    }
-
-    const lastLogs = currentLogs.data.slice(-25);
-    const startIndex = Math.max(0, currentLogs.data.length - 25);
-
-    let foundIndex = -1;
-
-    for (const [index, lastLog] of lastLogs.entries()) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        const message = lastLog?.message;
-        if (
-            message &&
-            (message.includes('Update CLIVersion') ||
-                message.includes('Please update your CLI') ||
-                message.includes(
-                    'Error downloading data: Please update your CLI',
-                ))
-        ) {
-            foundIndex = Math.max(0, startIndex + index);
-            break;
-        }
-    }
-
-    if (foundIndex === -1) {
-        triggeringLogIndex.value = null;
-        showCliWarning.value = false;
-    } else {
-        triggeringLogIndex.value = foundIndex;
-        showCliWarning.value = true;
-    }
-});
-
-const viewTriggeringLog = async () => {
-    tab.value = 'logs';
-    if (triggeringLogIndex.value !== null) {
-        highlightedLogIndex.value = triggeringLogIndex.value;
-        // Wait for tab switch and DOM update
-        await nextTick();
-        const element = document.querySelector(
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `#log-line-${triggeringLogIndex.value}`,
-        );
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        setTimeout(() => {
-            highlightedLogIndex.value = null;
-        }, 2000);
-    }
-};
+const { activeHints, executeHint } = useActionErrorHints(
+    action,
+    logs,
+    $router,
+    { tab, highlightedLogIndex },
+);
 
 const downloadLogs = async () => {
     if (!action.value) return;
@@ -405,7 +416,9 @@ const downloadLogs = async () => {
         const allLogs = await ActionService.getLogs(
             action.value.uuid,
             0,
-            totalLogsCount.value || 10_000,
+            totalLogsCount.value || 50_000,
+            logsSearch.value || undefined,
+            logsLevel.value === 'all' ? undefined : logsLevel.value,
         );
         const logContent = allLogs.data
             .map(

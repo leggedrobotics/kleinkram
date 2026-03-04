@@ -1,6 +1,5 @@
-import env from '@kleinkram/backend-common/environment';
-import { StorageService } from '@kleinkram/backend-common/modules/storage/storage.service';
-import { Injectable } from '@nestjs/common';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { exec } from 'node:child_process';
@@ -15,7 +14,8 @@ const unlinkAsync = promisify(fs.unlink);
 export class DBDumper {
     constructor(
         private readonly configService: ConfigService,
-        private readonly storageService: StorageService,
+        @Inject('DbDumpStorageBucket')
+        private readonly dbDumpStorage: IStorageBucket,
     ) {
         logger.debug('DBDumper service created');
     }
@@ -42,8 +42,7 @@ export class DBDumper {
             // Execute the command
             await execAsync(command);
 
-            await this.storageService.uploadFile(
-                env.MINIO_DB_BUCKET_NAME,
+            await this.dbDumpStorage.uploadFile(
                 dumpFile, // object name (in bucket)
                 dumpFile, // file path (local system)
             );
