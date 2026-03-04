@@ -18,11 +18,11 @@ export const FILE_HANDLER = 'FILE_HANDLER_TOKEN';
 
 /**
  * Standardized structure for a topic found during extraction.
- * Hoisted here to be shared between Mcap and Rosbag services.
+ * Hoisted here to be shared between Mcap, Rosbag, and Db3 services.
  */
 export interface ExtractedTopicInfo {
     name: string;
     type: string;
     nrMessages: bigint;
-    frequency?: number;
+    frequency: number;
 }

@@ -9,6 +9,7 @@ import * as fs from 'node:fs';
 import { Repository } from 'typeorm';
 import { AbstractMetadataService } from './abstract-metadata.service';
 import { ExtractedTopicInfo } from './file-handler.interface';
+import { getDurationSeconds } from './time';
 
 @Injectable()
 export class Db3MetadataService extends AbstractMetadataService {
@@ -102,14 +103,4 @@ function toBigIntOrUndefined(
 ): bigint | undefined {
     if (!value) return undefined;
     return BigInt(value);
-}
-
-function getDurationSeconds(
-    startTimeNs: bigint | undefined,
-    endTimeNs: bigint | undefined,
-): number {
-    if (startTimeNs === undefined || endTimeNs === undefined) return 0;
-    const durationNs = endTimeNs - startTimeNs;
-    if (durationNs <= 0n) return 0;
-    return Number(durationNs) / 1_000_000_000;
 }

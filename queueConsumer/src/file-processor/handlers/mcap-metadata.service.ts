@@ -11,6 +11,7 @@ import * as fsPromises from 'node:fs/promises';
 import { Repository } from 'typeorm';
 import { AbstractMetadataService } from './abstract-metadata.service';
 import { ExtractedTopicInfo } from './file-handler.interface';
+import { getDurationSeconds } from './time';
 
 class LocalFileReader implements IReadable {
     constructor(
@@ -135,14 +136,4 @@ export class McapMetadataService extends AbstractMetadataService {
             actor,
         );
     }
-}
-
-function getDurationSeconds(
-    startTimeNs: bigint | undefined,
-    endTimeNs: bigint | undefined,
-): number {
-    if (startTimeNs === undefined || endTimeNs === undefined) return 0;
-    const durationNs = endTimeNs - startTimeNs;
-    if (durationNs <= 0n) return 0;
-    return Number(durationNs) / 1_000_000_000;
 }

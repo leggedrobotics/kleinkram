@@ -38,9 +38,7 @@ export abstract class AbstractMetadataService {
                     const existing = uniqueTopicsMap.get(t.name);
                     if (existing === undefined) continue;
                     existing.nrMessages = existing.nrMessages + t.nrMessages;
-                    existing.frequency =
-                        this.normalizeFrequency(existing.frequency) +
-                        topicFrequency;
+                    existing.frequency = existing.frequency + topicFrequency;
                 } else {
                     uniqueTopicsMap.set(t.name, {
                         ...t,
@@ -104,8 +102,7 @@ export abstract class AbstractMetadataService {
         }
     }
 
-    private normalizeFrequency(value: number | undefined): number {
-        if (value === undefined) return 0;
+    private normalizeFrequency(value: number): number {
         if (!Number.isFinite(value)) return 0;
         if (value < 0) return 0;
         return value;
