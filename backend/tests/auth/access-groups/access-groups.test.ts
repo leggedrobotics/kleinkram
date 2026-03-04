@@ -399,14 +399,10 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(externalUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/removeUserFromAccessGroup`,
+            `${DEFAULT_URL}/access/${groupUuid}/users/${member.uuid}`,
             {
-                method: 'POST',
+                method: 'DELETE',
                 headers: headers.getHeaders(),
-                body: JSON.stringify({
-                    uuid: groupUuid,
-                    userUUID: member.uuid,
-                }),
             },
         );
         expect(response.status).toBe(403);
@@ -596,17 +592,93 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(creator);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/removeUserFromAccessGroup`,
+            `${DEFAULT_URL}/access/${groupUuid}/users/${member.uuid}`,
             {
-                method: 'POST',
+                method: 'DELETE',
+                headers: headers.getHeaders(),
+            },
+        );
+        expect(response.status).toBeLessThan(300);
+    });
+
+    test('if a user with edit/create rights can bulk remove users from access group', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member1 } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member2 } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'bulk_remove_users_group' },
+            creator,
+            [member1, member2],
+        );
+
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+        const response = await fetch(
+            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            {
+                method: 'DELETE',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    uuid: groupUuid,
-                    userUUID: member.uuid,
+                    userUuids: [member1.uuid, member2.uuid],
                 }),
             },
         );
         expect(response.status).toBeLessThan(300);
+    });
+
+    test('if bulk remove fails atomically when trying to remove last editor', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'bulk_remove_atomic_fail_group' },
+            creator,
+            [member],
+        );
+
+        // Creator tries to bulk remove themselves (last editor) AND the member
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+        const response = await fetch(
+            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            {
+                method: 'DELETE',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    userUuids: [creator.uuid, member.uuid],
+                }),
+            },
+        );
+
+        // The entire operation should fail (409 Conflict)
+        expect(response.status).toBe(409);
+
+        // Verify BOTH users are still in the group (atomicity)
+        const groupRepo = database.getRepository(AccessGroupEntity);
+        const group = await groupRepo.findOneOrFail({
+            where: { uuid: groupUuid },
+            relations: ['memberships', 'memberships.user'],
+        });
+
+        const memberUuids = group.memberships?.map((m) => m.user?.uuid) ?? [];
+        expect(memberUuids).toContain(creator.uuid);
+        expect(memberUuids).toContain(member.uuid);
     });
 
     // (no) create/edit rights on project
@@ -952,14 +1024,10 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(creator);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/removeUserFromAccessGroup`,
+            `${DEFAULT_URL}/access/${groupUuid}/users/${removable.uuid}`,
             {
-                method: 'POST',
+                method: 'DELETE',
                 headers: headers.getHeaders(),
-                body: JSON.stringify({
-                    uuid: groupUuid,
-                    userUUID: removable.uuid,
-                }),
             },
         );
         expect(response.status).toBeLessThan(300);
@@ -1057,14 +1125,10 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/removeUserFromAccessGroup`,
+            `${DEFAULT_URL}/access/${groupUuid}/users/${member.uuid}`,
             {
-                method: 'POST',
+                method: 'DELETE',
                 headers: headers.getHeaders(),
-                body: JSON.stringify({
-                    uuid: groupUuid,
-                    userUUID: member.uuid,
-                }),
             },
         );
         expect(response.status).toBeLessThan(300);
