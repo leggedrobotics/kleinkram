@@ -1,7 +1,7 @@
 import { AccessGroupConfig, AccessGroupType } from '@kleinkram/shared';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { AccessGroupEntity } from '../entities/auth/access-group.entity';
 import { GroupMembershipEntity } from '../entities/auth/group-membership.entity';
 import { UserEntity } from '../entities/user/user.entity';
@@ -16,6 +16,23 @@ export class AffiliationGroupService {
         @InjectRepository(GroupMembershipEntity)
         private groupMembershipRepository: Repository<GroupMembershipEntity>,
     ) {}
+
+    private isDuplicateMembershipError(error: unknown): boolean {
+        if (!(error instanceof QueryFailedError)) {
+            return false;
+        }
+
+        const driverError = (
+            error as QueryFailedError & {
+                driverError?: { code?: string; constraint?: string };
+            }
+        ).driverError;
+
+        return (
+            driverError?.code === '23505' ||
+            driverError?.constraint === 'no_duplicated_user_in_access_group'
+        );
+    }
 
     /**
      * Create access groups from the access group config.
@@ -113,9 +130,19 @@ export class AffiliationGroupService {
                                         user: { uuid: user.uuid },
                                         accessGroup: { uuid: group.uuid },
                                     });
-                                return this.groupMembershipRepository.save(
-                                    affiliationGroup,
-                                );
+                                try {
+                                    return await this.groupMembershipRepository.save(
+                                        affiliationGroup,
+                                    );
+                                } catch (error: unknown) {
+                                    // Concurrent auth callbacks can race on the same insert.
+                                    if (
+                                        this.isDuplicateMembershipError(error)
+                                    ) {
+                                        return;
+                                    }
+                                    throw error;
+                                }
                             }
                             return;
                         }),

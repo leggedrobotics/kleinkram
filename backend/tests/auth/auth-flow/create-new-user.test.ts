@@ -67,7 +67,10 @@ describe('createNewUser affiliation sync', () => {
 
         expect(user).toBe(existingUser);
         expect(saveAccount).toHaveBeenCalledWith(createdAccount);
-        expect(addToAffiliationGroups).toHaveBeenCalledWith(config, existingUser);
+        expect(addToAffiliationGroups).toHaveBeenCalledWith(config, {
+            uuid: existingUser.uuid,
+            email: 'internal-user@leggedrobotics.com',
+        });
         expect(createPrimaryGroup).not.toHaveBeenCalled();
     });
 

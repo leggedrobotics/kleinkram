@@ -42,10 +42,21 @@ export class AuthService implements OnModuleInit {
 
     private async syncAffiliationMembership(
         user: UserEntity,
+        emailFallback?: string,
     ): Promise<UserEntity> {
+        const email = user.email ?? emailFallback;
+
+        // UserEntity.email is `select: false`; use OAuth email fallback when needed.
+        if (email === undefined) {
+            return user;
+        }
+
         await this.affiliationGroupService.addToAffiliationGroups(
             this.config,
-            user,
+            {
+                uuid: user.uuid,
+                email,
+            } as UserEntity,
         );
         return user;
     }
@@ -72,7 +83,7 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return this.syncAffiliationMembership(account.user);
+            return this.syncAffiliationMembership(account.user, email);
         }
 
         return this.create(
@@ -108,7 +119,7 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return this.syncAffiliationMembership(account.user);
+            return this.syncAffiliationMembership(account.user, email);
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -137,7 +148,7 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return this.syncAffiliationMembership(account.user);
+            return this.syncAffiliationMembership(account.user, email);
         }
 
         return this.create(
@@ -251,7 +262,10 @@ export const createNewUser = async (
         await accountRepository.save(account);
         await affiliationGroupService.addToAffiliationGroups(
             config,
-            existingUser,
+            {
+                uuid: existingUser.uuid,
+                email: options.email,
+            } as UserEntity,
         );
         return existingUser;
     }
