@@ -75,7 +75,6 @@ export * from '@api-dto/project/recent-projects.dto';
 export * from '@api-dto/queue-active.dto';
 export * from '@api-dto/queue/bull-queue.dto';
 export * from '@api-dto/queue/stop-job-response.dto';
-export * from '@api-dto/remove-access-group-project.dto';
 export * from '@api-dto/remove-tag-type.dto';
 export * from '@api-dto/set-access-group-user-expiration.dto';
 export * from '@api-dto/storage-overview.dto';
