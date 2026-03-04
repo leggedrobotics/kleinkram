@@ -67,7 +67,7 @@ export class AuthService implements OnModuleInit {
         const { id, emails, displayName, photos } = profile;
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const email = emails[0].value;
+        const email = emails[0].value as string;
 
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -103,7 +103,10 @@ export class AuthService implements OnModuleInit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async validateAndCreateUserByFakeOAuth(profile: any): Promise<UserEntity> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const { id, email, displayName, photo } = profile;
+        const { id, email: profileEmail, displayName, photo } = profile;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const email = profileEmail as string;
 
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -132,7 +135,7 @@ export class AuthService implements OnModuleInit {
         const { id, emails, displayName, photos } = profile;
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const email = emails[0].value;
+        const email = emails[0].value as string;
 
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

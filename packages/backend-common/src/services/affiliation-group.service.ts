@@ -28,9 +28,13 @@ export class AffiliationGroupService {
             }
         ).driverError;
 
+        if (driverError === undefined) {
+            return false;
+        }
+
         return (
-            driverError?.code === '23505' ||
-            driverError?.constraint === 'no_duplicated_user_in_access_group'
+            driverError.code === '23505' ||
+            driverError.constraint === 'no_duplicated_user_in_access_group'
         );
     }
 

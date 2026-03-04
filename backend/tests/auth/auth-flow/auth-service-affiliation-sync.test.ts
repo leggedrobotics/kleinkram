@@ -39,10 +39,12 @@ describe('AuthService affiliation sync', () => {
 
         const addToAffiliationGroups = jest
             .fn()
-            .mockImplementation(async () => {});
+            .mockImplementation(() => Promise.resolve());
         const affiliationGroupService = {
             addToAffiliationGroups,
-            createAccessGroups: jest.fn().mockImplementation(async () => {}),
+            createAccessGroups: jest
+                .fn()
+                .mockImplementation(() => Promise.resolve()),
         } as unknown as AffiliationGroupService;
 
         const configService = {
