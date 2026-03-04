@@ -109,7 +109,10 @@
             </q-table>
         </q-tab-panel>
         <q-tab-panel name="members">
-            <div class="flex justify-between items-center q-mb-lg">
+            <div
+                v-if="selectedUsers.length === 0"
+                class="flex justify-between items-center q-mb-lg"
+            >
                 <div />
                 <button-group>
                     <app-search-bar
@@ -126,6 +129,41 @@
                         <app-create-button label="Add User" />
                     </DialogOpenerAddUser>
                 </button-group>
+            </div>
+            <div v-else class="q-py-lg q-mb-lg" style="background: #0f62fe">
+                <ButtonGroupOverlay>
+                    <template #start>
+                        <div style="margin: 0; font-size: 14pt; color: white">
+                            {{ selectedUsers.length }}
+                            {{ selectedUsers.length === 1 ? 'user' : 'users' }}
+                            selected
+                        </div>
+                    </template>
+                    <template #end>
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            icon="sym_o_delete"
+                            color="white"
+                            :disable="!currentUserCanEdit"
+                            @click="deleteSelectedUsers"
+                        >
+                            Delete
+                            <q-tooltip v-if="!currentUserCanEdit">
+                                You cannot edit this group
+                            </q-tooltip>
+                        </q-btn>
+                        <q-btn
+                            flat
+                            dense
+                            padding="6px"
+                            icon="sym_o_close"
+                            color="white"
+                            @click="deselectUsers"
+                        />
+                    </template>
+                </ButtonGroupOverlay>
             </div>
             <q-table
                 v-model:pagination="pagination2"
@@ -229,6 +267,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import RemoveProjectDialogOpener from 'components/button-wrapper/remove-project-dialog-opener.vue';
+import ButtonGroupOverlay from 'components/buttons/button-group-overlay.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
@@ -242,6 +281,7 @@ import { useAccessGroup, useUser } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import {
     removeUserFromAccessGroup,
+    removeUsersFromAccessGroup,
     setAccessGroupExpiry,
 } from 'src/services/mutations/access';
 import { computed, ComputedRef, ref, watch } from 'vue';
@@ -254,7 +294,7 @@ const uuid: ComputedRef<string> = computed(
     () => router.currentRoute.value.params.uuid,
 ) as ComputedRef<string>;
 const selectedProjects = ref([]);
-const selectedUsers = ref([]);
+const selectedUsers = ref<GroupMembershipDto[]>([]);
 
 const search = ref('');
 
@@ -307,6 +347,41 @@ const { mutate: removeUser } = useMutation({
         });
     },
 });
+
+const { mutate: removeSelectedUsers } = useMutation({
+    mutationFn: (userUuids: string[]) =>
+        removeUsersFromAccessGroup(userUuids, uuid.value),
+    onSuccess: async () => {
+        selectedUsers.value = [];
+        await queryClient.invalidateQueries({
+            queryKey: ['AccessGroup', uuid],
+        });
+        Notify.create({
+            message: 'Users removed from access group',
+            color: 'positive',
+            position: 'bottom',
+        });
+    },
+    onError: () => {
+        Notify.create({
+            message: 'Error removing users from access group',
+            color: 'negative',
+            position: 'bottom',
+        });
+    },
+});
+
+const deleteSelectedUsers = (): void => {
+    const userUuids = selectedUsers.value.map((m) => m.user.uuid);
+    if (userUuids.length > 0) {
+        removeSelectedUsers(userUuids);
+    }
+};
+
+const deselectUsers = (): void => {
+    selectedUsers.value = [];
+};
+
 const personal = computed(
     () => accessGroup.value?.type === AccessGroupType.PRIMARY,
 );

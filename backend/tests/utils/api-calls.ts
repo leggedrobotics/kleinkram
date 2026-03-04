@@ -267,7 +267,7 @@ export const createAccessGroupUsingPost = async (
     accessGroup: CreateAccessGroupDto,
     creator: UserEntity,
     // accessGroupType: AccessGroupType,
-    userList: [UserEntity],
+    userList: UserEntity[],
 ): Promise<string> => {
     const headersBuilder = new HeaderCreator(creator);
     headersBuilder.addHeader('Content-Type', 'application/json');
