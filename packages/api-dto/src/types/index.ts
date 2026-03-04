@@ -5,6 +5,7 @@ export * from '@api-dto/access-control/default-rights';
 export * from '@api-dto/access-control/get-filtered-access-groups.dto';
 export * from '@api-dto/access-control/group-membership.dto';
 export * from '@api-dto/access-control/project-access.dto';
+export * from '@api-dto/access-control/remove-users-access-group.dto';
 export * from '@api-dto/action-workers.dto';
 export * from '@api-dto/actions/action-logs.dto';
 export * from '@api-dto/actions/action-template-availability.dto';

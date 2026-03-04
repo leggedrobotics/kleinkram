@@ -10,8 +10,9 @@ import {
     CreateAccessGroupDto,
     GetFilteredAccessGroupsDto,
     GroupMembershipDto,
-    ProjectWithMissionsDto,
+    ProjectDto,
     RemoveAccessGroupFromProjectDto,
+    RemoveUsersFromAccessGroupDto,
     SetAccessGroupUserExpirationDto,
 } from '@kleinkram/api-dto';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
@@ -140,9 +141,12 @@ export class AccessController {
     })
     @Post('addUserToAccessGroup')
     @CanEditGroup()
-    @OutputDto(null) // TODO: type API response
-    async addUserToAccessGroup(@Body() body: AddUserToAccessGroupDto) {
-        return await this.accessService
+    @OutputDto(AccessGroupDto)
+    async addUserToAccessGroup(
+        @Body() body: AddUserToAccessGroupDto,
+        @AddUser() requestUser: AuthHeader,
+    ) {
+        await this.accessService
             .addUserToAccessGroup(body.uuid, body.userUUID)
             .catch((error: unknown) => {
                 if (error instanceof EntityNotFoundError) {
@@ -150,6 +154,10 @@ export class AccessController {
                 }
                 throw error;
             });
+        return this.accessService.getAccessGroup(
+            body.uuid,
+            requestUser.user.uuid,
+        );
     }
 
     @ApiOperation({
@@ -157,17 +165,42 @@ export class AccessController {
     })
     @ApiResponse({
         status: 200,
-        type: AccessGroupEntity,
+        type: AccessGroupDto,
         description: 'The Access Group the user was removed from.',
     })
-    @Post('removeUserFromAccessGroup')
+    @Delete(':uuid/users/:userUuid')
     @CanEditGroup()
-    @OutputDto(null) // TODO: type API response
-    async removeUserFromAccessGroup(@Body() body: AddUserToAccessGroupDto) {
-        return this.accessService.removeUserFromAccessGroup(
-            body.uuid,
-            body.userUUID,
+    @OutputDto(AccessGroupDto)
+    async removeUserFromAccessGroup(
+        @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
+        @ParameterUID('userUuid', 'UUID of User to remove') userUuid: string,
+        @AddUser() requestUser: AuthHeader,
+    ) {
+        await this.accessService.removeUsersFromAccessGroup(uuid, [userUuid]);
+        return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
+    }
+
+    @ApiOperation({
+        summary: 'Bulk Remove Users from Access Group',
+    })
+    @ApiResponse({
+        status: 200,
+        type: AccessGroupDto,
+        description: 'The Access Group the users were removed from.',
+    })
+    @Delete(':uuid/users')
+    @CanEditGroup()
+    @OutputDto(AccessGroupDto)
+    async removeUsersFromAccessGroup(
+        @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
+        @Body() body: RemoveUsersFromAccessGroupDto,
+        @AddUser() requestUser: AuthHeader,
+    ) {
+        await this.accessService.removeUsersFromAccessGroup(
+            uuid,
+            body.userUuids,
         );
+        return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
     }
 
     @ApiOperation({
@@ -199,14 +232,15 @@ export class AccessController {
     })
     @ApiOkResponse({
         description: 'Returns the Project',
-        type: ProjectWithMissionsDto,
+        type: ProjectDto,
     })
     @Post('addAccessGroupToProject')
     @CanWriteProject()
+    @OutputDto(ProjectDto)
     async addAccessGroupToProject(
         @Body() body: AddAccessGroupToProjectDto,
         @AddUser() user: AuthHeader,
-    ): Promise<ProjectWithMissionsDto> {
+    ): Promise<ProjectDto> {
         return this.accessService.addAccessGroupToProject(
             body.uuid,
             body.accessGroupUUID,
