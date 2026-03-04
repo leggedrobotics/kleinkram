@@ -1,5 +1,5 @@
-import { AuthFlowException } from '@/types/auth-flow-exception';
 import { createNewUser } from '@/services/auth.service';
+import { AuthFlowException } from '@/types/auth-flow-exception';
 import { AffiliationGroupService } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';

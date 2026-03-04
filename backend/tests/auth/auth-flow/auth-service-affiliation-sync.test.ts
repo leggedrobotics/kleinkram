@@ -68,9 +68,8 @@ describe('AuthService affiliation sync', () => {
             photos: [{ value: 'https://example.com/avatar.jpg' }],
         };
 
-        const returnedUser = await authService.validateAndCreateUserByGoogle(
-            profile,
-        );
+        const returnedUser =
+            await authService.validateAndCreateUserByGoogle(profile);
 
         expect(returnedUser).toBe(user);
         expect(addToAffiliationGroups).toHaveBeenCalledWith(config, {

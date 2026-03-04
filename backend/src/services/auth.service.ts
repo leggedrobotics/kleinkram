@@ -270,13 +270,10 @@ export const createNewUser = async (
         account.user = existingUser;
         await accountRepository.save(account);
         try {
-            await affiliationGroupService.addToAffiliationGroups(
-                config,
-                {
-                    uuid: existingUser.uuid,
-                    email: options.email,
-                } as UserEntity,
-            );
+            await affiliationGroupService.addToAffiliationGroups(config, {
+                uuid: existingUser.uuid,
+                email: options.email,
+            } as UserEntity);
         } catch (error: unknown) {
             logger.warn(
                 `Failed to backfill affiliation groups for linked user ${existingUser.uuid}: ${String(error)}`,
