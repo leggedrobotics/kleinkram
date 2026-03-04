@@ -108,11 +108,9 @@ export class ActionDispatcherService implements OnModuleInit {
         }
 
         try {
-            if (process.env.NODE_ENV !== 'test') {
-                const lokiUrl = process.env.LOKI_URL ?? 'http://loki:3100';
-                const { default: axios } = await import('axios');
-                await axios.get(`${lokiUrl}/ready`, { timeout: 2000 });
-            }
+            const lokiUrl = process.env.LOKI_URL ?? 'http://loki:3100';
+            const { default: axios } = await import('axios');
+            await axios.get(`${lokiUrl}/ready`, { timeout: 2000 });
         } catch {
             this.logger.error('Loki logging system is down or unreachable');
             throw new ConflictException(
