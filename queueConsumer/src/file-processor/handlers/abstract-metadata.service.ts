@@ -33,12 +33,19 @@ export abstract class AbstractMetadataService {
 
             for (const t of rawTopics) {
                 if (!t.name) continue;
+                const topicFrequency = this.normalizeFrequency(t.frequency);
                 if (uniqueTopicsMap.has(t.name)) {
                     const existing = uniqueTopicsMap.get(t.name);
                     if (existing === undefined) continue;
                     existing.nrMessages = existing.nrMessages + t.nrMessages;
+                    existing.frequency =
+                        this.normalizeFrequency(existing.frequency) +
+                        topicFrequency;
                 } else {
-                    uniqueTopicsMap.set(t.name, t);
+                    uniqueTopicsMap.set(t.name, {
+                        ...t,
+                        frequency: topicFrequency,
+                    });
                 }
             }
 
@@ -51,7 +58,7 @@ export abstract class AbstractMetadataService {
                         name: t.name,
                         type: t.type,
                         nrMessages: t.nrMessages,
-                        frequency: 0,
+                        frequency: this.normalizeFrequency(t.frequency),
                         file: targetEntity,
                     }),
                 );
@@ -95,5 +102,12 @@ export abstract class AbstractMetadataService {
             await this.fileRepo.save(targetEntity);
             throw error;
         }
+    }
+
+    private normalizeFrequency(value: number | undefined): number {
+        if (value === undefined) return 0;
+        if (!Number.isFinite(value)) return 0;
+        if (value < 0) return 0;
+        return value;
     }
 }

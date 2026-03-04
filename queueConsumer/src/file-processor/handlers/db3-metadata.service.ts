@@ -51,7 +51,25 @@ export class Db3MetadataService extends AbstractMetadataService {
                 countMap.set(c.topic_id, c.count);
             }
 
+            const timeRange = database
+                .prepare(
+                    `SELECT
+                        CAST(MIN(timestamp) AS TEXT) as minTimestamp,
+                        CAST(MAX(timestamp) AS TEXT) as maxTimestamp
+                    FROM messages`,
+                )
+                .get() as
+                | { minTimestamp: string | null; maxTimestamp: string | null }
+                | undefined;
+            const startTimeNs = toBigIntOrUndefined(timeRange?.minTimestamp);
+            const endTimeNs = toBigIntOrUndefined(timeRange?.maxTimestamp);
+            const durationSec = getDurationSeconds(startTimeNs, endTimeNs);
+
             const rawTopics: ExtractedTopicInfo[] = topics.map((t) => ({
+                frequency:
+                    durationSec > 0
+                        ? (countMap.get(t.id) ?? 0) / durationSec
+                        : 0,
                 name: t.name,
                 type: t.type,
                 nrMessages: BigInt(countMap.get(t.id) ?? 0),
@@ -59,17 +77,9 @@ export class Db3MetadataService extends AbstractMetadataService {
 
             // Try to get start time from messages
             let fileDate: Date | undefined;
-            const firstMessage = database
-                .prepare(
-                    'SELECT timestamp FROM messages ORDER BY timestamp ASC LIMIT 1',
-                )
-                .get() as { timestamp: number } | undefined;
-
-            if (firstMessage) {
+            if (startTimeNs !== undefined) {
                 // Timestamp is usually nanoseconds
-                fileDate = new Date(
-                    Number(BigInt(firstMessage.timestamp) / 1_000_000n),
-                );
+                fileDate = new Date(Number(startTimeNs / 1_000_000n));
             }
 
             await this.finishExtraction(
@@ -85,4 +95,19 @@ export class Db3MetadataService extends AbstractMetadataService {
             database.close();
         }
     }
+}
+
+function toBigIntOrUndefined(value: string | null | undefined): bigint | undefined {
+    if (!value) return undefined;
+    return BigInt(value);
+}
+
+function getDurationSeconds(
+    startTimeNs: bigint | undefined,
+    endTimeNs: bigint | undefined,
+): number {
+    if (startTimeNs === undefined || endTimeNs === undefined) return 0;
+    const durationNs = endTimeNs - startTimeNs;
+    if (durationNs <= 0n) return 0;
+    return Number(durationNs) / 1_000_000_000;
 }

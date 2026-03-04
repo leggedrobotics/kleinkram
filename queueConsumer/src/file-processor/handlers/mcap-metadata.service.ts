@@ -82,6 +82,10 @@ export class McapMetadataService extends AbstractMetadataService {
     ): Promise<void> {
         const reader = await McapIndexedReader.Initialize({ readable });
         const rawTopics: ExtractedTopicInfo[] = [];
+        const durationSec = getDurationSeconds(
+            reader.statistics?.messageStartTime,
+            reader.statistics?.messageEndTime,
+        );
 
         if (reader.statistics) {
             for (const [channelId, count] of reader.statistics
@@ -96,6 +100,8 @@ export class McapMetadataService extends AbstractMetadataService {
                                       ?.name ?? 'unknown')
                                 : 'unknown',
                         nrMessages: count,
+                        frequency:
+                            durationSec > 0 ? Number(count) / durationSec : 0,
                     });
                 }
             }
@@ -107,6 +113,7 @@ export class McapMetadataService extends AbstractMetadataService {
                         reader.schemasById.get(channel.schemaId)?.name ??
                         'unknown',
                     nrMessages: 0n,
+                    frequency: 0,
                 });
             }
         }
@@ -128,4 +135,14 @@ export class McapMetadataService extends AbstractMetadataService {
             actor,
         );
     }
+}
+
+function getDurationSeconds(
+    startTimeNs: bigint | undefined,
+    endTimeNs: bigint | undefined,
+): number {
+    if (startTimeNs === undefined || endTimeNs === undefined) return 0;
+    const durationNs = endTimeNs - startTimeNs;
+    if (durationNs <= 0n) return 0;
+    return Number(durationNs) / 1_000_000_000;
 }

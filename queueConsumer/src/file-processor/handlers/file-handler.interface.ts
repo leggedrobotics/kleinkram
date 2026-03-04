@@ -24,4 +24,5 @@ export interface ExtractedTopicInfo {
     name: string;
     type: string;
     nrMessages: bigint;
+    frequency?: number;
 }

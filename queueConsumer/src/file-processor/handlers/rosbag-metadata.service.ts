@@ -126,6 +126,7 @@ export class RosBagMetadataService extends AbstractMetadataService {
         await bag.open();
 
         const rawTopics: ExtractedTopicInfo[] = [];
+        const durationSec = getBagDurationSeconds(bag);
         const connectionCounts = new Map<number, number>();
 
         // Sum counts from ChunkInfos (Efficient count extraction)
@@ -155,6 +156,7 @@ export class RosBagMetadataService extends AbstractMetadataService {
                 name: connection.topic,
                 type: connection.type ?? 'unknown',
                 nrMessages: BigInt(count),
+                frequency: durationSec > 0 ? count / durationSec : 0,
             });
         }
 
@@ -177,4 +179,23 @@ export class RosBagMetadataService extends AbstractMetadataService {
             actor,
         );
     }
+}
+
+type RosTime = {
+    sec: number;
+    nsec: number;
+};
+
+function getBagDurationSeconds(bag: Bag): number {
+    const startNs = toNanoseconds(bag.startTime);
+    const endNs = toNanoseconds(bag.endTime);
+    if (startNs === undefined || endNs === undefined) return 0;
+    const durationNs = endNs - startNs;
+    if (durationNs <= 0n) return 0;
+    return Number(durationNs) / 1_000_000_000;
+}
+
+function toNanoseconds(time: RosTime | undefined): bigint | undefined {
+    if (time === undefined) return undefined;
+    return BigInt(time.sec) * 1_000_000_000n + BigInt(time.nsec);
 }
