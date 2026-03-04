@@ -37,10 +37,12 @@ describe('AuthService affiliation sync', () => {
 
         const userRepository = {} as Repository<UserEntity>;
 
-        const addToAffiliationGroups = jest.fn().mockResolvedValue();
+        const addToAffiliationGroups = jest
+            .fn()
+            .mockImplementation(async () => {});
         const affiliationGroupService = {
             addToAffiliationGroups,
-            createAccessGroups: jest.fn().mockResolvedValue(),
+            createAccessGroups: jest.fn().mockImplementation(async () => {}),
         } as unknown as AffiliationGroupService;
 
         const configService = {

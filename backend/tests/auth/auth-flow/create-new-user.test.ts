@@ -34,8 +34,10 @@ describe('createNewUser affiliation sync', () => {
         const findUser = jest.fn().mockResolvedValue(existingUser);
         const createAccount = jest.fn().mockReturnValue(createdAccount);
         const saveAccount = jest.fn().mockResolvedValue(createdAccount);
-        const addToAffiliationGroups = jest.fn().mockResolvedValue();
-        const createPrimaryGroup = jest.fn().mockResolvedValue();
+        const addToAffiliationGroups = jest
+            .fn()
+            .mockImplementation(async () => {});
+        const createPrimaryGroup = jest.fn().mockImplementation(async () => {});
 
         const userRepository = {
             findOne: findUser,
