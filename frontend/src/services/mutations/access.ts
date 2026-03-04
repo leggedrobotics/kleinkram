@@ -74,17 +74,6 @@ export const removeAccessGroupFromProject = async (
     return response.data;
 };
 
-export const removeUserFromAccessGroup = async (
-    userUUID: string,
-    accessGroupUUID: string,
-) => {
-    const response = await axios.delete(
-        `/access/${accessGroupUUID}/users/${userUUID}`,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
-};
-
 export const removeUsersFromAccessGroup = async (
     userUuids: string[],
     accessGroupUUID: string,
