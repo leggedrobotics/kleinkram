@@ -1,4 +1,11 @@
-import type { ProjectAccessDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
+import type {
+    AccessGroupDto,
+    CreateAccessGroupDto,
+    GroupMembershipDto,
+    ProjectAccessDto,
+    ProjectAccessListDto,
+    ProjectDto,
+} from '@kleinkram/api-dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 
@@ -7,33 +14,36 @@ export const addUsersToProject = async (
     projectUUID: string,
     rights: AccessGroupRights,
 ) => {
-    const response = await axios.post('/access/addUserToProject', {
-        userUUID: userUUId,
-        uuid: projectUUID,
-        rights,
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    const { data } = await axios.post<ProjectAccessDto>(
+        '/access/addUserToProject',
+        {
+            userUUID: userUUId,
+            uuid: projectUUID,
+            rights,
+        },
+    );
+    return data;
 };
 
 export const createAccessGroup = async (name: string) => {
-    const response = await axios.post('/access/create', {
+    const { data } = await axios.post<CreateAccessGroupDto>('/access/create', {
         name,
     });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    return data;
 };
 
 export const addUserToAccessGroup = async (
     userUUID: string,
     accessGroupUUID: string,
 ) => {
-    const response = await axios.post('/access/addUserToAccessGroup', {
-        userUUID,
-        uuid: accessGroupUUID,
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    const { data } = await axios.post<AccessGroupDto>(
+        '/access/addUserToAccessGroup',
+        {
+            userUUID,
+            uuid: accessGroupUUID,
+        },
+    );
+    return data;
 };
 
 export const addAccessGroupToProject = async (
@@ -41,54 +51,53 @@ export const addAccessGroupToProject = async (
     accessGroupUUID: string,
     rights: AccessGroupRights,
 ) => {
-    const response = await axios.post('/access/addAccessGroupToProject', {
-        uuid: projectUUID,
-        accessGroupUUID,
-        rights,
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    const { data } = await axios.post<ProjectDto>(
+        '/access/addAccessGroupToProject',
+        {
+            uuid: projectUUID,
+            accessGroupUUID,
+            rights,
+        },
+    );
+    return data;
 };
 
 export const updateProjectAccessRights = async (
     projectUuid: string,
     accessRights: ProjectAccessDto[],
 ) => {
-    const response = await axios.post(
+    const { data } = await axios.post<ProjectAccessListDto>(
         `/projects/${projectUuid}/access`,
         accessRights,
     );
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    return data;
 };
 
 export const removeAccessGroupFromProject = async (
     projectUUID: string,
     accessGroupUUID: string,
 ) => {
-    const response = await axios.post('/access/removeAccessGroupFromProject', {
+    await axios.post('/access/removeAccessGroupFromProject', {
         uuid: projectUUID,
         accessGroupUUID,
     });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
 };
 
 export const removeUsersFromAccessGroup = async (
     userUuids: string[],
     accessGroupUUID: string,
 ) => {
-    const response = await axios.delete(`/access/${accessGroupUUID}/users`, {
-        data: { userUuids },
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    const { data } = await axios.delete<AccessGroupDto>(
+        `/access/${accessGroupUUID}/users`,
+        {
+            data: { userUuids },
+        },
+    );
+    return data;
 };
 
 export const deleteAccessGroup = async (accessGroupUUID: string) => {
-    const response = await axios.delete(`/access/${accessGroupUUID}`);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    await axios.delete(`/access/${accessGroupUUID}`);
 };
 
 export const setAccessGroupExpiry = async (
@@ -96,11 +105,13 @@ export const setAccessGroupExpiry = async (
     userUuid: string,
     expiryDate: Date | null,
 ) => {
-    const response = await axios.post('/access/setExpireDate', {
-        uuid,
-        userUuid,
-        expireDate: expiryDate ?? 'never',
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return response.data;
+    const { data } = await axios.post<GroupMembershipDto>(
+        '/access/setExpireDate',
+        {
+            uuid,
+            userUuid,
+            expireDate: expiryDate ?? 'never',
+        },
+    );
+    return data;
 };
