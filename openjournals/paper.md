@@ -58,7 +58,7 @@ architectures (e.g., AWS ADDF, Azure DataOps) provide scalability but require co
 setups that are overkill for single labs. Finally, (3) legacy open-source tools (e.g., Marv Robotics) or raw storage
 (S3, Google Drive) either lack modern CI/CD integration or offer no content-based indexing, forcing researchers to
 manually download large bags for inspection. Thus, a gap remains for an openly available, ready-to-use, and
-easy-to-deploy solution exists for the robotics research community. Additionally, features such as data verification
+easy-to-deploy solution for the robotics research community. Additionally, features such as data verification
 and the ability to perform tailored compute jobs on newly generated datasets are highly desirable, as they facilitate
 benchmarking, reproducibility and algorithmic development.
 
@@ -100,8 +100,8 @@ Kleinkram's system architecture is modular, comprising several interacting micro
     The CLI is built using the typer library, sharing a core Python codebase with the client library.
 
 - **Web interface**
-  Serves as the primary graphical user interface for users to interact with Kleinkram. It allows for the browsing,
-  managing and structuring files and their metadata.
+  Serves as the primary graphical user interface for users to interact with Kleinkram. It allows browsing,
+  managing, and structuring files and their metadata.
 
     It is implemented as a single-page application using the Vue3 framework and the Quasar component library.
 
