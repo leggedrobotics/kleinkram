@@ -9,6 +9,7 @@
                 :mission="mission"
                 :uploads="uploads"
                 :disable-scope="!!mission"
+                :initial-files="initialFiles ?? []"
             />
         </template>
 
@@ -42,6 +43,7 @@ const { dialogRef, onDialogOK } = useDialogPluginComponent();
 defineProps<{
     mission?: FlatMissionDto;
     uploads: Ref<FileUploadDto[]>;
+    initialFiles?: File[];
 }>();
 
 const createFileAction = (): void => {
