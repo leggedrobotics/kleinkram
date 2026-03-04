@@ -1,5 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="../global.d.ts" />
+import { appVersion } from '@/app-version';
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
 import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
 import {
@@ -216,7 +217,7 @@ describe('Verify Action API Key Scope', () => {
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     'x-api-key': apiKey,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'kleinkram-client-version': '0.56.0',
+                    'kleinkram-client-version': appVersion,
                 },
             },
         );
@@ -288,7 +289,7 @@ describe('Verify Action API Key Scope', () => {
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     'x-api-key': apiKey,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'kleinkram-client-version': '0.56.0',
+                    'kleinkram-client-version': appVersion,
                 },
             },
         );
