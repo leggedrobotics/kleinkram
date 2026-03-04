@@ -22,19 +22,13 @@ export class AffiliationGroupService {
             return false;
         }
 
-        const driverError = (
-            error as QueryFailedError & {
-                driverError?: { code?: string; constraint?: string };
-            }
-        ).driverError;
-
-        if (driverError === undefined) {
-            return false;
-        }
+        const driverError = error.driverError as
+            | { code?: string; constraint?: string }
+            | undefined;
 
         return (
-            driverError.code === '23505' ||
-            driverError.constraint === 'no_duplicated_user_in_access_group'
+            driverError?.code === '23505' ||
+            driverError?.constraint === 'no_duplicated_user_in_access_group'
         );
     }
 

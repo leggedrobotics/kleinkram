@@ -51,13 +51,19 @@ export class AuthService implements OnModuleInit {
             return user;
         }
 
-        await this.affiliationGroupService.addToAffiliationGroups(
-            this.config,
-            {
-                uuid: user.uuid,
-                email,
-            } as UserEntity,
-        );
+        try {
+            await this.affiliationGroupService.addToAffiliationGroups(
+                this.config,
+                {
+                    uuid: user.uuid,
+                    email,
+                } as UserEntity,
+            );
+        } catch (error: unknown) {
+            logger.warn(
+                `Failed to sync affiliation groups for user ${user.uuid}: ${String(error)}`,
+            );
+        }
         return user;
     }
 
@@ -263,13 +269,19 @@ export const createNewUser = async (
         );
         account.user = existingUser;
         await accountRepository.save(account);
-        await affiliationGroupService.addToAffiliationGroups(
-            config,
-            {
-                uuid: existingUser.uuid,
-                email: options.email,
-            } as UserEntity,
-        );
+        try {
+            await affiliationGroupService.addToAffiliationGroups(
+                config,
+                {
+                    uuid: existingUser.uuid,
+                    email: options.email,
+                } as UserEntity,
+            );
+        } catch (error: unknown) {
+            logger.warn(
+                `Failed to backfill affiliation groups for linked user ${existingUser.uuid}: ${String(error)}`,
+            );
+        }
         return existingUser;
     }
 
