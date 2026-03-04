@@ -97,7 +97,9 @@ export class Db3MetadataService extends AbstractMetadataService {
     }
 }
 
-function toBigIntOrUndefined(value: string | null | undefined): bigint | undefined {
+function toBigIntOrUndefined(
+    value: string | null | undefined,
+): bigint | undefined {
     if (!value) return undefined;
     return BigInt(value);
 }
