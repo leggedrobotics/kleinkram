@@ -27,7 +27,7 @@ export class AffiliationGroupService {
             | undefined;
 
         return (
-            driverError?.code === '23505' ||
+            driverError?.code === '23505' &&
             driverError?.constraint === 'no_duplicated_user_in_access_group'
         );
     }

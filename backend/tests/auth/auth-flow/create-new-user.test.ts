@@ -71,6 +71,8 @@ describe('createNewUser affiliation sync', () => {
 
         expect(user).toBe(existingUser);
         expect(saveAccount).toHaveBeenCalledWith(createdAccount);
+        const savedAccount = saveAccount.mock.calls[0][0] as AccountEntity;
+        expect(savedAccount.user).toBe(existingUser);
         expect(addToAffiliationGroups).toHaveBeenCalledWith(config, {
             uuid: existingUser.uuid,
             email: 'internal-user@leggedrobotics.com',
