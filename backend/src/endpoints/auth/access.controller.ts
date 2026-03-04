@@ -7,14 +7,15 @@ import {
     AddUserToAccessGroupDto,
     AddUserToProjectDto,
     CreateAccessGroupDto,
+    DeleteAccessGroupResponseDto,
     GetFilteredAccessGroupsDto,
     GroupMembershipDto,
     ProjectDto,
+    RemoveAccessGroupFromProjectResponseDto,
     RemoveUsersFromAccessGroupDto,
     SetAccessGroupUserExpirationDto,
 } from '@kleinkram/api-dto';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
-import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import {
     Body,
     ConflictException,
@@ -126,7 +127,7 @@ export class AccessController {
     })
     @ApiResponse({
         status: 200,
-        type: ProjectEntity,
+        type: ProjectDto,
         description: 'The Project the user was added to.',
     })
     @ApiResponse({
@@ -136,7 +137,7 @@ export class AccessController {
     })
     @Post('addUserToProject')
     @CanWriteProject()
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(ProjectDto)
     async addUserToProject(
         @Body() body: AddUserToProjectDto,
         @AddUser() requestUser: AuthHeader,
@@ -251,7 +252,12 @@ export class AccessController {
 
     @Delete(':uuid/projects/:projectUuid')
     @CanDeleteProject()
-    @OutputDto(null) // TODO: type API response
+    @ApiResponse({
+        status: 204,
+        type: RemoveAccessGroupFromProjectResponseDto,
+        description: 'The Access Group was removed from the Project.',
+    })
+    @OutputDto(RemoveAccessGroupFromProjectResponseDto)
     async removeAccessGroupFromProject(
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @ParameterUID('projectUuid', 'UUID of Project') projectUuid: string,
@@ -266,7 +272,12 @@ export class AccessController {
 
     @Delete(':uuid')
     @CanEditGroup()
-    @OutputDto(null) // TODO: type API response
+    @ApiResponse({
+        status: 204,
+        type: DeleteAccessGroupResponseDto,
+        description: 'The Access Group was deleted.',
+    })
+    @OutputDto(DeleteAccessGroupResponseDto)
     async deleteAccessGroup(
         @ParameterUID('uuid', 'UUID of AccessGroup to be deleted') uuid: string,
     ) {
