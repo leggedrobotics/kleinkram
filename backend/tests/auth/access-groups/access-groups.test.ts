@@ -371,7 +371,7 @@ describe('Verify Access Groups Internal User Access', () => {
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
                     uuid: groupUuid,
-                    userUUID: targetUser.uuid,
+                    userUuid: targetUser.uuid,
                 }),
             },
         );
@@ -559,7 +559,7 @@ describe('Verify Access Groups Internal User Access', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUUID: targetUser.uuid,
+                    userUuid: targetUser.uuid,
                 }),
             },
         );
@@ -747,7 +747,7 @@ describe('Verify Access Groups Internal User Access', () => {
                 requiredTags: [],
                 accessGroups: [
                     {
-                        userUUID: readUser.uuid,
+                        userUuid: readUser.uuid,
                         rights: AccessGroupRights.READ,
                     },
                 ],
@@ -793,7 +793,7 @@ describe('Verify Access Groups Internal User Access', () => {
                 requiredTags: [],
                 accessGroups: [
                     {
-                        userUUID: writeUser.uuid,
+                        userUuid: writeUser.uuid,
                         rights: AccessGroupRights.WRITE,
                     },
                 ],
@@ -846,7 +846,7 @@ describe('Verify Access Groups Internal User Access', () => {
                     },
                     // editUser only has CREATE access via their primary group
                     {
-                        userUUID: editUser.uuid,
+                        userUuid: editUser.uuid,
                         rights: AccessGroupRights.CREATE,
                     },
                 ],
@@ -984,7 +984,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
                     uuid: groupUuid,
-                    userUUID: targetUser.uuid,
+                    userUuid: targetUser.uuid,
                 }),
             },
         );
@@ -1016,7 +1016,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUUID: newMember.uuid,
+                    userUuid: newMember.uuid,
                 }),
             },
         );
@@ -1126,7 +1126,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    userUUID: targetUser.uuid,
+                    userUuid: targetUser.uuid,
                 }),
             },
         );

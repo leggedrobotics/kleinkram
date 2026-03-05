@@ -33,13 +33,13 @@ export const createAccessGroup = async (name: string) => {
 };
 
 export const addUserToAccessGroup = async (
-    userUUID: string,
+    userUuid: string,
     accessGroupUUID: string,
 ) => {
     const { data } = await axios.post<AccessGroupDto>(
         `/access/${accessGroupUUID}/users`,
         {
-            userUUID,
+            userUuid,
         },
     );
     return data;
