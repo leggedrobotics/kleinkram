@@ -130,8 +130,8 @@ const { data: foundUsers } = useUserSearch(search);
 
 const selectedRole = ref(false);
 const roleOptions = [
-    { label: 'Viewer', value: false },
-    { label: 'Editor', value: true },
+    { label: 'Member', value: false },
+    { label: 'Owner', value: true },
 ];
 
 const expirationShortcutState = ref<string>('never');

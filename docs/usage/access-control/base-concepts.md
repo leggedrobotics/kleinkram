@@ -41,7 +41,7 @@ access is applied.
 ### Editing Access Groups
 
 The access group can be edited by the creator or any other users with the <CanEdit/> permission on the access group.
-Currently, there is no way to add additional editors to an access group (the creator is always an editor). This must be
+Currently, there is no way to add additional owners to an access group (the creator is always an owner). This must be
 done manually within the database.
 
 ## Affiliation Groups
