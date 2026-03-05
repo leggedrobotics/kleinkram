@@ -322,6 +322,7 @@ class DownloadState(Enum):
     SKIPPED_FILE_SIZE_MISMATCH = 6
     SKIPPED_CORRUPTED = 7
     DOWNLOADED_CORRUPTED = 8
+    SKIPPED_CORRUPTED_LOCAL_OK = 9
 
 
 
@@ -356,6 +357,8 @@ def download_file(
                 return DownloadState.SKIPPED_INVALID_HASH, 0
 
             elif local_hash == file.hash:
+                if is_corrupted:
+                    return DownloadState.SKIPPED_CORRUPTED_LOCAL_OK, 0
                 return DownloadState.SKIPPED_OK, 0
 
             elif verbose:
@@ -456,6 +459,7 @@ DOWNLOAD_STATE_COLOR = {
     DownloadState.SKIPPED_FILE_SIZE_MISMATCH: "yellow",
     DownloadState.SKIPPED_INVALID_REMOTE_STATE: "purple",
     DownloadState.SKIPPED_CORRUPTED: "yellow",
+    DownloadState.SKIPPED_CORRUPTED_LOCAL_OK: "yellow",
 }
 
 
@@ -495,14 +499,28 @@ def _download_handler(
         msg = f"skipped {path}, remote file has invalid state ({file.state.value})"
     elif state == DownloadState.SKIPPED_CORRUPTED:
         msg = f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt-files to override)"
+    elif state == DownloadState.SKIPPED_CORRUPTED_LOCAL_OK:
+        msg = (
+            f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; "
+            "treat as potentially harmful"
+        )
     else:
         msg = f"skipped {path} with unknown state {state}"
 
     if verbose:
         tqdm.write(styled_string(msg, style=DOWNLOAD_STATE_COLOR.get(state, "red")))
+    elif state in (
+        DownloadState.DOWNLOADED_CORRUPTED,
+        DownloadState.SKIPPED_CORRUPTED_LOCAL_OK,
+    ):
+        warning_msg = (
+            f"WARNING: {path.absolute()} downloaded but remote state is CORRUPTED; treat as potentially harmful"
+            if state == DownloadState.DOWNLOADED_CORRUPTED
+            else f"WARNING: {path.absolute()} is present locally (hash ok) and remote state is CORRUPTED; treat as potentially harmful"
+        )
+        print(warning_msg, file=sys.stderr)
     elif state not in (
         DownloadState.DOWNLOADED_OK,
-        DownloadState.DOWNLOADED_CORRUPTED,
         DownloadState.SKIPPED_OK,
     ):
         print(f"SKIP/FAIL: {path.absolute()} ({state.name})", file=sys.stderr)
@@ -608,6 +626,8 @@ def download_files(
 
         start = monotonic()
         futures: Dict[Future[Tuple[DownloadState, int]], Tuple[File, Path]] = {}
+        failed_files = 0
+        state_counts: Dict[DownloadState, int] = {}
         with ThreadPoolExecutor(max_workers=n_workers) as executor:
             for path, file in files.items():
                 future = executor.submit(
@@ -625,6 +645,11 @@ def download_files(
             total_downloaded_bytes = 0
             for future in as_completed(futures):
                 file, path = futures[future]
+                if future.exception() is not None:
+                    failed_files += 1
+                else:
+                    state, _ = future.result()
+                    state_counts[state] = state_counts.get(state, 0) + 1
                 downloaded_bytes = _download_handler(future, file, path, verbose=verbose)
                 total_downloaded_bytes += downloaded_bytes
                 pbar.update()
@@ -637,3 +662,16 @@ def download_files(
     console.print(f"Download took {elapsed_time:.2f} seconds")
     console.print(f"Total downloaded/verified: {format_bytes(total_downloaded_bytes)}")
     console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
+    console.print(
+        "Summary: "
+        f"{state_counts.get(DownloadState.DOWNLOADED_OK, 0)} downloaded OK, "
+        f"{state_counts.get(DownloadState.DOWNLOADED_CORRUPTED, 0)} downloaded corrupted, "
+        f"{state_counts.get(DownloadState.SKIPPED_OK, 0)} skipped already-present, "
+        f"{state_counts.get(DownloadState.SKIPPED_CORRUPTED, 0)} skipped corrupted (blocked), "
+        f"{state_counts.get(DownloadState.SKIPPED_CORRUPTED_LOCAL_OK, 0)} skipped corrupted (already present), "
+        f"{state_counts.get(DownloadState.SKIPPED_INVALID_HASH, 0)} skipped hash mismatch, "
+        f"{state_counts.get(DownloadState.SKIPPED_FILE_SIZE_MISMATCH, 0)} skipped size mismatch, "
+        f"{state_counts.get(DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0)} skipped invalid remote state, "
+        f"{state_counts.get(DownloadState.DOWNLOADED_INVALID_HASH, 0)} downloaded with invalid hash, "
+        f"{failed_files} failed"
+    )

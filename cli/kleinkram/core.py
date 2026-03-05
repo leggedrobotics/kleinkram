@@ -80,8 +80,14 @@ def download(
         table = files_to_table(files, title="downloading files...")
         Console().print(table)
 
-    kleinkram.api.file_transfer.download_files(client, paths, verbose=verbose, allow_corrupt_files=allow_corrupt_files, overwrite=overwrite, create_parents=nested)
-
+    kleinkram.api.file_transfer.download_files(
+        client,
+        paths,
+        verbose=verbose,
+        allow_corrupt_files=allow_corrupt_files,
+        overwrite=overwrite,
+        create_parents=nested,
+    )
 
 def upload(
     *,

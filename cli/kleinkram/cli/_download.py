@@ -32,8 +32,8 @@ def download(
     missions: Optional[List[str]] = typer.Option(None, "--mission", "-m", help="mission names, ids or patterns"),
     allow_corrupt_files: bool = typer.Option(
         False,
-        help="allow the download files that are corrupted (potentially harmful, use with caution)",
-    ),    
+        help="allow downloading corrupted files (potentially dangerous, use with caution)",
+    ),
     dest: str = typer.Option(prompt="destination", help="local path to save the files"),
     nested: bool = typer.Option(False, help="save files in nested directories, project-name/mission-name"),
     overwrite: bool = typer.Option(
@@ -41,6 +41,15 @@ def download(
         help="overwrite files if they already exist and don't match the file size or file hash",
     ),
 ) -> None:
+    if allow_corrupt_files:
+        typer.secho(
+            "Warning: --allow-corrupt-files enables downloading files marked as CORRUPTED. "
+            "These files may be harmful. Do not execute or open them blindly.",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
+        typer.confirm("Do you want to continue?", abort=True)
+
     # create destination directory
     dest_dir = Path(dest)
     if not dest_dir.exists():
