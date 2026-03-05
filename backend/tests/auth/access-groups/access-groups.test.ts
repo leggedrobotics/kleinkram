@@ -159,6 +159,9 @@ describe('Verify Access Groups Internal', () => {
         );
 
         // Server allows admin to delete primary groups (no server-side protection)
+        const responseText = await response.text();
+        if (response.status >= 300)
+            console.error('500 Error details:', responseText);
         expect(response.status).toBeLessThan(300);
     });
 
@@ -590,6 +593,89 @@ describe('Verify Access Groups Internal User Access', () => {
             },
         );
         expect(response.status).toBeLessThan(300);
+    });
+
+    test('if a user with edit/create rights can bulk remove users from access group', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member1 } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member2 } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'bulk_remove_user_group' },
+            creator,
+            [member1, member2],
+        );
+
+        // Creator bulk-removes both members from the group
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+        const response = await fetch(
+            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            {
+                method: 'DELETE',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    userUuids: [member1.uuid, member2.uuid],
+                }),
+            },
+        );
+        expect(response.status).toBeLessThan(300);
+    });
+
+    test('bulk removal fails atomically when attempting to remove the last editor from an access group', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        // Creator is the only editor; member is a regular user in the group
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'atomic_bulk_remove_group' },
+            creator,
+            [creator, member],
+        );
+
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+
+        // Attempt to bulk remove the creator (last editor) and another member
+        const response = await fetch(
+            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            {
+                method: 'DELETE',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    userUuids: [creator.uuid, member.uuid],
+                }),
+            },
+        );
+
+        // Expect the operation to fail to preserve at least one editor
+        expect(response.status).toBeGreaterThanOrEqual(400);
+
+        // Verify in the database that the creator is still a member.
+        const accessGroupRepository = database.getRepository(AccessGroupEntity);
+        const group = await accessGroupRepository.findOne({
+            where: { uuid: groupUuid },
+            relations: ['memberships', 'memberships.user'],
+        });
+        expect(group).not.toBeNull();
+        const memberUuids = group?.memberships?.map((m) => m.user?.uuid) ?? [];
+        expect(memberUuids).toContain(creator.uuid);
+        expect(memberUuids).toContain(member.uuid);
     });
 
     // (no) create/edit rights on project
