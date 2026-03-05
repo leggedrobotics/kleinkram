@@ -74,6 +74,7 @@ import { MissionGuardService } from './mission-guard.service';
         LoggedInUserGuard,
         ProjectGuardService,
         MissionGuardService,
+        AuthGuardService,
         TypeOrmModule.forFeature([
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
