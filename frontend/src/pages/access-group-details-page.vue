@@ -333,7 +333,7 @@ const { mutate: removeUsers } = useMutation({
     onSuccess: async () => {
         selectedUsers.value = [];
         await queryClient.invalidateQueries({
-            queryKey: ['AccessGroup', uuid],
+            queryKey: ['AccessGroup', uuid.value],
         });
         Notify.create({
             message: 'User(s) removed successfully',
