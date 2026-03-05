@@ -186,7 +186,8 @@ const ROUTES = {
 
     ACCESS_GROUPS: routeWithLayout({
         breadcrumbs: [
-            { displayName: 'All Access Groups', to: '/access-groups' },
+            { displayName: 'Access Control', to: '/access-groups' },
+            { displayName: ':access_groups_tab', to: undefined },
         ],
         name: 'AccessGroupsPage',
         path: '/access-groups',
@@ -196,11 +197,12 @@ const ROUTES = {
 
     ACCESS_GROUP: routeWithLayout({
         breadcrumbs: [
-            { displayName: 'All Access Groups', to: '/access-groups' },
+            { displayName: 'Access Control', to: '/access-groups' },
             {
-                displayName: 'Group Details',
-                to: undefined,
+                displayName: ':group_type',
+                to: '/access-groups?tab=:group_type_tab',
             },
+            { displayName: ':access_group_name', to: undefined },
         ],
         name: 'AccessGroupDetailPage',
         path: '/access-group/:uuid',

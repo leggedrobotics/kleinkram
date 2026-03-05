@@ -63,7 +63,7 @@ const mainMenu: MainMenu[] = [
         subpageNames: [ROUTES.ANALYSIS_DETAILS.name, ROUTES.ACTION.name],
     },
     {
-        title: 'Access Groups',
+        title: 'Access Control',
         icon: 'sym_o_lock',
         to: ROUTES.ACCESS_GROUPS.path,
         subpageNames: [ROUTES.ACCESS_GROUP.name],

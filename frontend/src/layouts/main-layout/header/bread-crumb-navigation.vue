@@ -70,13 +70,20 @@
 </template>
 
 <script setup lang="ts">
+import { AccessGroupType } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
 import { useCrumbs } from 'src/hooks/crumbs';
-import { useFile, useMission, useProjectQuery } from 'src/hooks/query-hooks';
+import {
+    useAccessGroup,
+    useFile,
+    useMission,
+    useProjectQuery,
+} from 'src/hooks/query-hooks';
 import {
     useFileUUID,
     useMissionUUID,
     useProjectUUID,
+    useUUID,
 } from 'src/hooks/router-hooks';
 import { PageBreadCrumb } from 'src/router/routes-utilities';
 import { computed } from 'vue';
@@ -89,25 +96,42 @@ const route = useRoute();
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
 const fileUuid = useFileUUID();
+const genericUuid = useUUID();
 
 const { data: project } = useProjectQuery(projectUuid);
 const { data: mission } = useMission(missionUuid);
 const { data: file } = useFile(fileUuid);
+const { data: accessGroup } = useAccessGroup(genericUuid);
 
 const resolvedCrumbs = computed(() => {
     const tab = route.params.tab as string | undefined;
     const tabName = tab === 'runs' ? 'Executions' : 'Templates';
+    const accessGroupsTab = route.query.tab === 'users' ? 'Users' : 'Groups';
 
     let _crumbs = crumbs.value.map((crumb: PageBreadCrumb) => {
         return {
             to: crumb.to
                 ?.replace(':projectUuid', projectUuid.value ?? 'undefined')
                 .replace(':missionUuid', missionUuid.value ?? 'undefined')
-                .replace(':file_uuid', fileUuid.value ?? ''),
+                .replace(':file_uuid', fileUuid.value ?? '')
+                .replace(
+                    ':group_type_tab',
+                    accessGroup.value?.type === AccessGroupType.PRIMARY
+                        ? 'users'
+                        : 'groups',
+                ),
             displayName: crumb.displayName
                 .replace(':project_name', project.value?.name ?? '')
                 .replace(':mission_name', mission.value?.name ?? '')
                 .replace(':file_name', file.value?.filename ?? '')
+                .replace(':access_groups_tab', accessGroupsTab)
+                .replace(
+                    ':group_type',
+                    accessGroup.value?.type === AccessGroupType.PRIMARY
+                        ? 'Users'
+                        : 'Groups',
+                )
+                .replace(':access_group_name', accessGroup.value?.name ?? '')
                 .replace(':tab_name', tabName),
             name: crumb.name,
         } as PageBreadCrumb;
