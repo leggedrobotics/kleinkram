@@ -15,7 +15,7 @@ export const addUsersToProject = async (
     projectUUID: string,
     rights: AccessGroupRights,
 ) => {
-    const { data } = await axios.post<ProjectAccessDto>(
+    const { data } = await axios.post<ProjectDto>(
         `/projects/${projectUUID}/users`,
         {
             userUuid: userUUId,
