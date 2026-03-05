@@ -28,14 +28,14 @@ import {
 import { ApiOperation } from '@nestjs/swagger';
 import { EntityNotFoundError } from 'typeorm';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import { AddUser, AuthHeader } from './parameter-decorator';
+import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreate,
     CanDeleteProject,
     CanEditGroup,
     CanWriteProject,
     UserOnly,
-} from './roles.decorator';
+} from '../auth/roles.decorator';
 
 @Controller('access')
 export class AccessController {
