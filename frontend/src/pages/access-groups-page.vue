@@ -226,6 +226,7 @@ const filterOptions: Ref<{
 watch(
     () => tab.value,
     (newTab) => {
+        selectedAccessGroups.value = [];
         void $router.replace({ query: { ...route.query, tab: newTab } });
         if (newTab === 'users') {
             filterOptions.value.type = AccessGroupType.PRIMARY;
