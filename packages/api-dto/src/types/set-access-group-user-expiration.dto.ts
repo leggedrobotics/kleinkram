@@ -28,9 +28,10 @@ export class SetAccessGroupUserExpirationDto {
     @IsNotEmpty()
     @Validate(IsDateOrNeverConstraint)
     @ApiProperty({
-        description: 'Expiration Date ("never" or ISO 8601 String)',
+        description:
+            'Expiration Date as an ISO 8601 string or the literal string "never".',
         type: String,
-        example: '2027-12-31T23:59:59.000Z | never',
+        example: '2027-12-31T23:59:59.000Z',
     })
     @Transform(({ value }: { value: unknown }) => {
         if (value === 'never') return 'never';
