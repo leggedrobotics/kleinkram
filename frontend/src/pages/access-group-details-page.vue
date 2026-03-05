@@ -380,6 +380,7 @@ import AddProjectToAccessGroupDialog from 'src/dialogs/add-project-access-group-
 import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expiration-date-dialog.vue';
 import { useAccessGroup, useUser } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
+import { isExpired } from 'src/services/date-formating';
 import {
     removeUsersFromAccessGroup,
     setAccessGroupExpiry,
@@ -418,13 +419,6 @@ const user = useUser();
 const refetchOnClick: (event_: Event) => void = () => refetch;
 
 const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
-
-function isExpired(date: Date | null): boolean {
-    if (!date) {
-        return false;
-    }
-    return date < new Date();
-}
 
 const { mutate: removeUsers } = useMutation({
     mutationFn: (userUuids: string[]) =>
