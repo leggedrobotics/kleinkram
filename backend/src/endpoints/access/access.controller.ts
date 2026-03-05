@@ -141,7 +141,7 @@ export class AccessController {
         @AddUser() requestUser: AuthHeader,
     ): Promise<AccessGroupDto> {
         await this.accessService
-            .addUserToAccessGroup(uuid, body.userUUID)
+            .addUserToAccessGroup(uuid, body.userUuid)
             .catch((error: unknown) => {
                 if (error instanceof EntityNotFoundError) {
                     throw new NotFoundException('AccessGroup not found');
