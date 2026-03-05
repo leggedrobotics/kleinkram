@@ -1,5 +1,23 @@
 <template>
-    <title-section :title="'Group: ' + accessGroup?.name">
+    <title-section :title="accessGroup?.name">
+        <template #title>
+            <div class="row items-center q-gutter-x-sm">
+                <q-avatar
+                    v-if="personal"
+                    size="48px"
+                    color="blue-1"
+                    text-color="primary"
+                >
+                    <q-icon name="sym_o_person" />
+                </q-avatar>
+                <q-avatar v-else size="48px" color="grey-2" text-color="grey-8">
+                    <q-icon name="sym_o_group" />
+                </q-avatar>
+                <h1 class="text-h5 text-md-h3 q-ma-none ellipsis">
+                    {{ accessGroup?.name ?? 'Loading...' }}
+                </h1>
+            </div>
+        </template>
         <template #tabs>
             <q-tabs
                 v-model="tab"
@@ -8,7 +26,12 @@
                 dense
                 class="text-grey"
             >
-                <q-tab name="members" label="Members" style="color: #222" />
+                <q-tab
+                    v-if="!personal"
+                    name="members"
+                    label="Members"
+                    style="color: #222"
+                />
                 <q-tab name="projects" label="Projects" style="color: #222" />
             </q-tabs>
         </template>
@@ -46,6 +69,26 @@
                 :filter="search"
                 binary-state-sort
             >
+                <template #no-data>
+                    <div class="full-width row flex-center q-pa-xl text-grey-8">
+                        <div class="text-center">
+                            <q-icon
+                                name="sym_o_folder_open"
+                                size="64px"
+                                color="grey-4"
+                            />
+                            <div class="text-h6 q-mt-md">
+                                This group doesn't have access to any projects
+                                yet.
+                            </div>
+                            <app-create-button
+                                class="q-mt-md"
+                                label="Assign Project"
+                                @click="openAddProject"
+                            />
+                        </div>
+                    </div>
+                </template>
                 <template #body-selection="props">
                     <q-checkbox
                         v-model="props.selected"
@@ -108,7 +151,7 @@
                 </template>
             </q-table>
         </q-tab-panel>
-        <q-tab-panel name="members">
+        <q-tab-panel v-if="!personal" name="members">
             <div
                 v-if="selectedUsers.length === 0"
                 class="flex justify-between items-center q-mb-lg"
@@ -177,6 +220,29 @@
                 flat
                 bordered
             >
+                <template #no-data>
+                    <div class="full-width row flex-center q-pa-xl text-grey-8">
+                        <div class="text-center">
+                            <q-icon
+                                name="sym_o_group"
+                                size="64px"
+                                color="grey-4"
+                            />
+                            <div class="text-h6 q-mt-md">
+                                There are no members in this group yet.
+                            </div>
+                            <DialogOpenerAddUser
+                                v-if="accessGroup"
+                                :access-group="accessGroup"
+                            >
+                                <app-create-button
+                                    class="q-mt-md"
+                                    label="Add User"
+                                />
+                            </DialogOpenerAddUser>
+                        </div>
+                    </div>
+                </template>
                 <template #body-selection="props">
                     <q-checkbox
                         v-model="props.selected"
@@ -184,26 +250,73 @@
                         class="checkbox-with-hitbox"
                     />
                 </template>
-                <template #body-cell-expiration="props">
-                    <td>
-                        <q-btn
-                            flat
-                            class="button-border"
-                            :label="
-                                props.row.expirationDate
-                                    ? props.row.expirationDate.toDateString()
-                                    : 'Never'
-                            "
-                            icon="sym_o_date_range"
+                <template #body-cell-status="props">
+                    <q-td :props="props">
+                        <q-chip
                             :color="
                                 isExpired(props.row.expirationDate)
                                     ? 'negative'
-                                    : 'primary'
+                                    : 'positive'
+                            "
+                            text-color="white"
+                            dense
+                            class="text-weight-bold q-px-sm"
+                            size="sm"
+                        >
+                            {{
+                                isExpired(props.row.expirationDate)
+                                    ? 'Expired'
+                                    : 'Active'
+                            }}
+                        </q-chip>
+                    </q-td>
+                </template>
+                <template #body-cell-accessValidUntil="props">
+                    <q-td :props="props">
+                        <q-btn
+                            flat
+                            dense
+                            no-caps
+                            class="button-border"
+                            :class="
+                                isExpired(props.row.expirationDate)
+                                    ? 'text-negative'
+                                    : 'text-grey-9'
                             "
                             :disable="!currentUserCanEdit"
                             @click="() => openSetExpirationDialog(props.row)"
-                        />
-                    </td>
+                        >
+                            <template #default>
+                                <div class="row items-center q-px-sm">
+                                    <q-icon
+                                        size="xs"
+                                        name="sym_o_date_range"
+                                        class="q-mr-sm"
+                                        :color="
+                                            isExpired(props.row.expirationDate)
+                                                ? 'negative'
+                                                : ''
+                                        "
+                                    />
+                                    <span
+                                        :class="
+                                            isExpired(props.row.expirationDate)
+                                                ? 'text-negative text-bold'
+                                                : ''
+                                        "
+                                    >
+                                        {{
+                                            props.row.expirationDate
+                                                ? new Date(
+                                                      props.row.expirationDate,
+                                                  ).toDateString()
+                                                : 'Never'
+                                        }}
+                                    </span>
+                                </div>
+                            </template>
+                        </q-btn>
+                    </q-td>
                 </template>
                 <template #body-cell-actions="props">
                     <q-td :props="props">
@@ -510,18 +623,24 @@ const userCols = [
         style: 'width: 20%; color: #666',
     },
     {
-        name: 'expiration',
+        name: 'status',
         required: true,
-        label: 'Expiration',
+        label: 'Status',
         align: 'left',
     },
     {
-        name: 'canEdit',
+        name: 'accessValidUntil',
         required: true,
-        label: 'Can Edit Group',
-        align: 'right',
+        label: 'Access Valid Until',
+        align: 'left',
+    },
+    {
+        name: 'role',
+        required: true,
+        label: 'Role',
+        align: 'left',
         field: (row: GroupMembershipDto): string =>
-            row.canEditGroup ? 'Yes' : 'No',
+            row.canEditGroup ? 'Editor' : 'Viewer',
     },
     {
         name: 'actions',

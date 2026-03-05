@@ -551,13 +551,16 @@ export const useFile = (
 };
 
 export const useAccessGroup = (
-    uuid: string,
+    uuid: Ref<string | undefined> | ComputedRef<string | undefined> | string,
 ): UseQueryReturnType<AccessGroupDto | undefined, Error> => {
     return useQuery({
-        queryKey: ['AccessGroup', uuid],
+        queryKey: computed(() => ['AccessGroup', unref(uuid)]),
         queryFn: async () => {
-            return getAccessGroup(uuid);
+            const resolvedUuid = unref(uuid);
+            if (!resolvedUuid) return undefined as unknown as AccessGroupDto;
+            return getAccessGroup(resolvedUuid);
         },
+        enabled: computed(() => !!unref(uuid)),
     });
 };
 
