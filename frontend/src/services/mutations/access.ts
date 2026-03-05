@@ -1,10 +1,11 @@
 import type {
     AccessGroupDto,
-    CreateAccessGroupDto,
+    DeleteAccessGroupResponseDto,
     GroupMembershipDto,
     ProjectAccessDto,
     ProjectAccessListDto,
     ProjectDto,
+    RemoveAccessGroupFromProjectResponseDto,
 } from '@kleinkram/api-dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import axios from 'src/api/axios';
@@ -14,11 +15,10 @@ export const addUsersToProject = async (
     projectUUID: string,
     rights: AccessGroupRights,
 ) => {
-    const { data } = await axios.post<ProjectAccessDto>(
-        '/access/addUserToProject',
+    const { data } = await axios.post<ProjectDto>(
+        `/projects/${projectUUID}/users`,
         {
-            userUUID: userUUId,
-            uuid: projectUUID,
+            userUuid: userUUId,
             rights,
         },
     );
@@ -26,21 +26,20 @@ export const addUsersToProject = async (
 };
 
 export const createAccessGroup = async (name: string) => {
-    const { data } = await axios.post<CreateAccessGroupDto>('/access/create', {
+    const { data } = await axios.post<AccessGroupDto>('/access', {
         name,
     });
     return data;
 };
 
 export const addUserToAccessGroup = async (
-    userUUID: string,
+    userUuid: string,
     accessGroupUUID: string,
 ) => {
     const { data } = await axios.post<AccessGroupDto>(
-        '/access/addUserToAccessGroup',
+        `/access/${accessGroupUUID}/users`,
         {
-            userUUID,
-            uuid: accessGroupUUID,
+            userUuid,
         },
     );
     return data;
@@ -52,10 +51,8 @@ export const addAccessGroupToProject = async (
     rights: AccessGroupRights,
 ) => {
     const { data } = await axios.post<ProjectDto>(
-        '/access/addAccessGroupToProject',
+        `/access/${accessGroupUUID}/projects/${projectUUID}`,
         {
-            uuid: projectUUID,
-            accessGroupUUID,
             rights,
         },
     );
@@ -77,10 +74,11 @@ export const removeAccessGroupFromProject = async (
     projectUUID: string,
     accessGroupUUID: string,
 ) => {
-    await axios.post('/access/removeAccessGroupFromProject', {
-        uuid: projectUUID,
-        accessGroupUUID,
-    });
+    const { data } =
+        await axios.delete<RemoveAccessGroupFromProjectResponseDto>(
+            `/access/${accessGroupUUID}/projects/${projectUUID}`,
+        );
+    return data;
 };
 
 export const removeUsersFromAccessGroup = async (
@@ -97,7 +95,10 @@ export const removeUsersFromAccessGroup = async (
 };
 
 export const deleteAccessGroup = async (accessGroupUUID: string) => {
-    await axios.delete(`/access/${accessGroupUUID}`);
+    const { data } = await axios.delete<DeleteAccessGroupResponseDto>(
+        `/access/${accessGroupUUID}`,
+    );
+    return data;
 };
 
 export const setAccessGroupExpiry = async (
@@ -105,11 +106,9 @@ export const setAccessGroupExpiry = async (
     userUuid: string,
     expiryDate: Date | null,
 ) => {
-    const { data } = await axios.post<GroupMembershipDto>(
-        '/access/setExpireDate',
+    const { data } = await axios.put<GroupMembershipDto>(
+        `/access/${uuid}/users/${userUuid}/expiration`,
         {
-            uuid,
-            userUuid,
             expireDate: expiryDate ?? 'never',
         },
     );

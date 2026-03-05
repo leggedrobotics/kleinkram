@@ -8,7 +8,6 @@ import { GoogleStrategy } from './google.strategy';
 import { AdminOnlyGuard, LoggedInUserGuard } from './guards';
 import { JwtStrategy } from './jwt.strategy';
 
-import { AccessService } from '@/services/access.service';
 import { ProjectGuardService } from '@/services/project-guard.service';
 import {
     AccessGroupEntity,
@@ -25,7 +24,7 @@ import { ProjectEntity } from '@kleinkram/backend-common/entities/project/projec
 import env from '@kleinkram/backend-common/environment';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
-import { AccessController } from './access.controller';
+
 import { AuthGuardService } from './auth-guard.service';
 import { FakeOauthStrategy } from './fake-oauth.strategy';
 import { GitHubStrategy } from './github.strategy';
@@ -58,7 +57,7 @@ import { MissionGuardService } from './mission-guard.service';
     providers: [
         AuthService,
         AffiliationGroupService,
-        AccessService,
+
         GoogleStrategy,
         GitHubStrategy,
         FakeOauthStrategy,
@@ -69,12 +68,13 @@ import { MissionGuardService } from './mission-guard.service';
         AdminOnlyGuard,
         LoggedInUserGuard,
     ],
-    controllers: [AuthController, AccessController],
+    controllers: [AuthController],
     exports: [
         AdminOnlyGuard,
         LoggedInUserGuard,
         ProjectGuardService,
         MissionGuardService,
+        AuthGuardService,
         TypeOrmModule.forFeature([
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
