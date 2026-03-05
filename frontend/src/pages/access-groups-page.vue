@@ -171,7 +171,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 
-import { formatDate } from 'src/services/date-formating';
+import { formatDate, isExpired } from 'src/services/date-formating';
 import { computed, Ref, ref, watch } from 'vue';
 
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
@@ -330,7 +330,7 @@ const usersColumns = [
         align: 'center',
         field: (row: AccessGroupDto): string => {
             const exp = row.memberships[0]?.expirationDate;
-            if (exp && new Date(exp) < new Date()) {
+            if (isExpired(exp)) {
                 return 'Expired';
             }
             return 'Active';
