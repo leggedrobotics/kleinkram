@@ -678,6 +678,50 @@ describe('Verify Access Groups Internal User Access', () => {
         expect(memberUuids).toContain(member.uuid);
     });
 
+    test('if bulk removal with empty list does nothing and returns 200', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'empty_bulk_remove_group' },
+            creator,
+            [member],
+        );
+
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+
+        const response = await fetch(
+            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            {
+                method: 'DELETE',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    userUuids: [],
+                }),
+            },
+        );
+
+        expect(response.status).toBeLessThan(300);
+
+        // Verify in the database that no one was removed
+        const accessGroupRepository = database.getRepository(AccessGroupEntity);
+        const group = await accessGroupRepository.findOne({
+            where: { uuid: groupUuid },
+            relations: ['memberships', 'memberships.user'],
+        });
+        expect(group).not.toBeNull();
+        const memberUuids = group?.memberships?.map((m) => m.user?.uuid) ?? [];
+        expect(memberUuids).toContain(creator.uuid);
+        expect(memberUuids).toContain(member.uuid);
+    });
+
     // (no) create/edit rights on project
     test('if a user with edit/create rights but read on project cannot add project to access group', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
