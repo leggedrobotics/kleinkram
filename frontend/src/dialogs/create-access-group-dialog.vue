@@ -3,13 +3,17 @@
         <template #title> Create Access Group </template>
 
         <template #content>
-            <label for="name">Group Name</label>
+            <label for="name" class="text-weight-bold">
+                Group Name<span class="text-negative">*</span>
+            </label>
             <q-input
                 v-model="name"
-                placeholder="Name"
+                placeholder="Name..."
                 name="name"
                 :error-message="errorMessagesProjectName"
                 :error="isInErrorStateProjectName"
+                outlined
+                dense
                 autofocus
             />
         </template>
