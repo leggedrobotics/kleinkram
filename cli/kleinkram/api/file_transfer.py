@@ -320,6 +320,10 @@ class DownloadState(Enum):
     SKIPPED_INVALID_HASH = 4
     SKIPPED_INVALID_REMOTE_STATE = 5
     SKIPPED_FILE_SIZE_MISMATCH = 6
+    SKIPPED_CORRUPTED = 7
+    DOWNLOADED_CORRUPTED = 8
+
+
 
 
 def download_file(
@@ -328,15 +332,20 @@ def download_file(
     file: File,
     path: Path,
     overwrite: bool = False,
+    allow_corrupt_files: bool = False,
     create_parents: bool = False,
     verbose: bool = False,
 ) -> Tuple[DownloadState, int]:
     """\
     Returns DownloadState and bytes downloaded (file.size if successful or skipped ok, 0 otherwise)
     """
-    # skip files that are not ok on remote
-    if file.state != FileState.OK:
+    is_corrupted = file.state == FileState.CORRUPTED
+
+    if file.state not in (FileState.OK, FileState.CORRUPTED):
         return DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0
+
+    if is_corrupted and not allow_corrupt_files:
+        return DownloadState.SKIPPED_CORRUPTED, 0
 
     if path.exists():
 
@@ -397,6 +406,8 @@ def download_file(
             0,
         )  # 0 bytes considered successful transfer
     # Hash matches or no remote hash to check against
+    if is_corrupted:
+        return DownloadState.DOWNLOADED_CORRUPTED, file.size
     return DownloadState.DOWNLOADED_OK, file.size
 
 
@@ -438,11 +449,13 @@ def _upload_handler(future: Future[Tuple[UploadState, int]], path: Path, *, verb
 
 DOWNLOAD_STATE_COLOR = {
     DownloadState.DOWNLOADED_OK: "green",
+    DownloadState.DOWNLOADED_CORRUPTED: "yellow",
     DownloadState.SKIPPED_OK: "green",
     DownloadState.DOWNLOADED_INVALID_HASH: "red",
     DownloadState.SKIPPED_INVALID_HASH: "yellow",
     DownloadState.SKIPPED_FILE_SIZE_MISMATCH: "yellow",
     DownloadState.SKIPPED_INVALID_REMOTE_STATE: "purple",
+    DownloadState.SKIPPED_CORRUPTED: "yellow",
 }
 
 
@@ -468,6 +481,8 @@ def _download_handler(
 
     if state == DownloadState.DOWNLOADED_OK:
         msg = f"downloaded {path}"
+    elif state == DownloadState.DOWNLOADED_CORRUPTED:
+        msg = f"downloaded {path} (remote state is CORRUPTED; treat as potentially harmful)"
     elif state == DownloadState.DOWNLOADED_INVALID_HASH:
         msg = f"downloaded {path} but failed hash check"
     elif state == DownloadState.SKIPPED_OK:
@@ -478,15 +493,25 @@ def _download_handler(
         msg = f"skipped {path}, exists with file size mismatch (use --overwrite?)"
     elif state == DownloadState.SKIPPED_INVALID_REMOTE_STATE:
         msg = f"skipped {path}, remote file has invalid state ({file.state.value})"
+    elif state == DownloadState.SKIPPED_CORRUPTED:
+        msg = f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt-files to override)"
     else:
         msg = f"skipped {path} with unknown state {state}"
 
     if verbose:
         tqdm.write(styled_string(msg, style=DOWNLOAD_STATE_COLOR.get(state, "red")))
-    elif state not in (DownloadState.DOWNLOADED_OK, DownloadState.SKIPPED_OK):
+    elif state not in (
+        DownloadState.DOWNLOADED_OK,
+        DownloadState.DOWNLOADED_CORRUPTED,
+        DownloadState.SKIPPED_OK,
+    ):
         print(f"SKIP/FAIL: {path.absolute()} ({state.name})", file=sys.stderr)
 
-    return size_bytes if state in (DownloadState.DOWNLOADED_OK, DownloadState.SKIPPED_OK) else 0
+    return size_bytes if state in (
+        DownloadState.DOWNLOADED_OK,
+        DownloadState.DOWNLOADED_CORRUPTED,
+        DownloadState.SKIPPED_OK,
+    ) else 0
 
 
 def upload_files(
@@ -568,6 +593,7 @@ def download_files(
     *,
     verbose: bool = False,
     overwrite: bool = False,
+    allow_corrupt_files: bool = False,
     create_parents: bool = False,
     n_workers: int = 2,
 ) -> None:
@@ -590,6 +616,7 @@ def download_files(
                     file=file,
                     path=path,
                     overwrite=overwrite,
+                    allow_corrupt_files=allow_corrupt_files,
                     create_parents=create_parents,
                     verbose=verbose,
                 )

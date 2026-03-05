@@ -30,6 +30,10 @@ def download(
     files: Optional[List[str]] = typer.Argument(None, help="file names, ids or patterns"),
     projects: Optional[List[str]] = typer.Option(None, "--project", "-p", help="project names, ids or patterns"),
     missions: Optional[List[str]] = typer.Option(None, "--mission", "-m", help="mission names, ids or patterns"),
+    allow_corrupt_files: bool = typer.Option(
+        False,
+        help="allow the download files that are corrupted (potentially harmful, use with caution)",
+    ),    
     dest: str = typer.Option(prompt="destination", help="local path to save the files"),
     nested: bool = typer.Option(False, help="save files in nested directories, project-name/mission-name"),
     overwrite: bool = typer.Option(
@@ -59,6 +63,7 @@ def download(
     kleinkram.core.download(
         client=AuthenticatedClient(),
         query=file_query,
+        allow_corrupt_files=allow_corrupt_files,
         base_dir=dest_dir,
         nested=nested,
         overwrite=overwrite,
