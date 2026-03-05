@@ -5,7 +5,6 @@ import {
     AccessGroupsDto,
     AddAccessGroupToProjectDto,
     AddUserToAccessGroupDto,
-    AddUserToProjectDto,
     CreateAccessGroupDto,
     DeleteAccessGroupResponseDto,
     GetFilteredAccessGroupsDto,
@@ -18,7 +17,6 @@ import {
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import {
     Body,
-    ConflictException,
     Controller,
     Delete,
     Get,
@@ -118,35 +116,6 @@ export class AccessController {
         return this.accessService.getAccessGroup(
             accessGroup.uuid,
             user.user.uuid,
-        );
-    }
-
-    @ApiOperation({
-        summary: 'Add User to Project',
-        description: 'Adds a user to a project with the given rights.',
-    })
-    @ApiResponse({
-        status: 200,
-        type: ProjectDto,
-        description: 'The Project the user was added to.',
-    })
-    @ApiResponse({
-        status: 409,
-        type: ConflictException,
-        description: 'User cannot grant the rights.',
-    })
-    @Post('addUserToProject')
-    @CanWriteProject()
-    @OutputDto(ProjectDto)
-    async addUserToProject(
-        @Body() body: AddUserToProjectDto,
-        @AddUser() requestUser: AuthHeader,
-    ) {
-        return this.accessService.addUserToProject(
-            body.uuid,
-            body.userUUID,
-            body.rights,
-            requestUser,
         );
     }
 
@@ -253,7 +222,7 @@ export class AccessController {
     @Delete(':uuid/projects/:projectUuid')
     @CanDeleteProject()
     @ApiResponse({
-        status: 204,
+        status: 200,
         type: RemoveAccessGroupFromProjectResponseDto,
         description: 'The Access Group was removed from the Project.',
     })
@@ -262,26 +231,28 @@ export class AccessController {
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @ParameterUID('projectUuid', 'UUID of Project') projectUuid: string,
         @AddUser() user: AuthHeader,
-    ): Promise<void> {
-        return this.accessService.removeAccessGroupFromProject(
+    ): Promise<RemoveAccessGroupFromProjectResponseDto> {
+        await this.accessService.removeAccessGroupFromProject(
             projectUuid,
             uuid,
             user,
         );
+        return { success: true };
     }
 
     @Delete(':uuid')
     @CanEditGroup()
     @ApiResponse({
-        status: 204,
+        status: 200,
         type: DeleteAccessGroupResponseDto,
         description: 'The Access Group was deleted.',
     })
     @OutputDto(DeleteAccessGroupResponseDto)
     async deleteAccessGroup(
         @ParameterUID('uuid', 'UUID of AccessGroup to be deleted') uuid: string,
-    ) {
-        return this.accessService.deleteAccessGroup(uuid);
+    ): Promise<DeleteAccessGroupResponseDto> {
+        await this.accessService.deleteAccessGroup(uuid);
+        return { success: true };
     }
 
     @Put(':uuid/users/:userUuid/expiration')
