@@ -621,7 +621,7 @@ const userCols = [
         label: 'Role',
         align: 'left',
         field: (row: GroupMembershipDto): string =>
-            row.canEditGroup ? 'Editor' : 'Viewer',
+            row.canEditGroup ? 'Owner' : 'Member',
     },
     {
         name: 'actions',
