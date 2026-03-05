@@ -4,12 +4,24 @@
 
         <template #content>
             <div class="column q-gutter-y-md">
-                <SelectionButtonGroup
-                    :options="options"
-                    :model-value="expirationShortcutState"
-                    type="single"
-                    @update:model-value="onExpirationSelectionUpdate"
-                />
+                <div class="row q-gutter-sm">
+                    <q-btn
+                        v-for="option in options"
+                        :key="String(option.value)"
+                        :label="option.label"
+                        :icon="option.icon"
+                        flat
+                        dense
+                        no-caps
+                        class="button-border q-px-sm"
+                        :class="
+                            expirationShortcutState === option.value
+                                ? 'bg-white text-grey-10'
+                                : 'bg-grey-2 text-grey-8'
+                        "
+                        @click="() => onExpirationSelectionUpdate(option.value)"
+                    />
+                </div>
 
                 <div style="min-height: 380px">
                     <div
@@ -77,7 +89,6 @@
 
 <script setup lang="ts">
 import type { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
-import SelectionButtonGroup from 'components/common/selection-button-group.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { formatDate, parseDate } from 'src/services/date-formating';
@@ -105,7 +116,7 @@ const options = [
     { label: '1 Month', value: '1month' },
     { label: '6 Months', value: '6months' },
     { label: '1 Year', value: '1year' },
-    { label: 'Custom', value: 'custom', icon: 'sym_o_calendar_month' },
+    { label: 'Custom', value: 'custom', icon: 'sym_o_date_range' },
 ];
 
 function applyShortcut(type: '1week' | '1month' | '6months' | '1year') {
