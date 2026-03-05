@@ -13,9 +13,46 @@
                 <q-avatar v-else size="48px" color="grey-2" text-color="grey-8">
                     <q-icon name="sym_o_group" />
                 </q-avatar>
-                <h1 class="text-h5 text-md-h3 q-ma-none ellipsis">
-                    {{ accessGroup?.name ?? 'Loading...' }}
-                </h1>
+                <div class="column q-ml-sm">
+                    <h1 class="text-h5 text-md-h3 q-ma-none ellipsis">
+                        {{ accessGroup?.name ?? 'Loading...' }}
+                    </h1>
+                    <q-chip
+                        v-if="
+                            accessGroup?.type === AccessGroupType.AFFILIATION &&
+                            accessGroup?.emailPattern
+                        "
+                        color="blue-1"
+                        text-color="primary"
+                        size="sm"
+                        class="q-ma-none q-mt-xs"
+                    >
+                        <div class="row items-center">
+                            <q-icon
+                                name="sym_o_info"
+                                size="16px"
+                                class="q-mr-sm"
+                            />
+                            <span
+                                class="text-weight-regular"
+                                style="font-size: 13px"
+                            >
+                                Email:
+                                <span class="text-weight-bold"
+                                    >*@{{ accessGroup.emailPattern }}</span
+                                >
+                            </span>
+                        </div>
+                        <q-tooltip
+                            class="bg-grey-9 text-body2"
+                            :offset="[0, 8]"
+                        >
+                            Any user logging in with an email ending in
+                            <strong>@{{ accessGroup.emailPattern }}</strong> is
+                            automatically added to this group.
+                        </q-tooltip>
+                    </q-chip>
+                </div>
             </div>
         </template>
         <template #tabs>
