@@ -160,8 +160,11 @@ describe('Verify Access Groups Internal', () => {
 
         // Server allows admin to delete primary groups (no server-side protection)
         const responseText = await response.text();
-        if (response.status >= 300)
-            console.error('500 Error details:', responseText);
+        if (response.status >= 300) {
+            throw new Error(
+                `Unexpected error response when deleting primary group: ${String(response.status)} - ${responseText}`,
+            );
+        }
         expect(response.status).toBeLessThan(300);
     });
 
@@ -665,6 +668,8 @@ describe('Verify Access Groups Internal User Access', () => {
 
         // Expect the operation to fail to preserve at least one editor
         expect(response.status).toBeGreaterThanOrEqual(400);
+        // Expect the operation to fail with a conflict to preserve at least one editor
+        expect(response.status).toBe(409);
 
         // Verify in the database that the creator is still a member.
         const accessGroupRepository = database.getRepository(AccessGroupEntity);
