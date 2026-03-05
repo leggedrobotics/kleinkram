@@ -252,23 +252,9 @@
                 </template>
                 <template #body-cell-status="props">
                     <q-td :props="props">
-                        <q-chip
-                            :color="
-                                isExpired(props.row.expirationDate)
-                                    ? 'negative'
-                                    : 'positive'
-                            "
-                            text-color="white"
-                            dense
-                            class="text-weight-bold q-px-sm"
-                            size="sm"
-                        >
-                            {{
-                                isExpired(props.row.expirationDate)
-                                    ? 'Expired'
-                                    : 'Active'
-                            }}
-                        </q-chip>
+                        <app-status-chip
+                            :expiration-date="props.row.expirationDate"
+                        />
                     </q-td>
                 </template>
                 <template #body-cell-accessValidUntil="props">
@@ -386,6 +372,7 @@ import ButtonGroup from 'components/buttons/button-group.vue';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
+import AppStatusChip from 'components/common/app-status-chip.vue';
 import TitleSection from 'components/title-section.vue';
 import { Notify, QTable, useQuasar } from 'quasar';
 import { projectAccessColumns } from 'src/components/explorer-page/explorer-page-table-columns';
