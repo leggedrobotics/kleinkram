@@ -19,41 +19,29 @@
             <button-group>
                 <div
                     v-if="tab === 'groups'"
-                    style="width: 200px"
-                    class="self-stretch"
+                    class="self-stretch flex items-center"
                 >
-                    <q-btn-dropdown
-                        :label="prefilter?.label"
-                        class="q-uploader--bordered full-width"
-                        style="height: 100%"
-                        flat
-                        auto-close
-                    >
-                        <q-list>
-                            <template
-                                v-for="option in prefilterOptions"
-                                :key="option.value"
-                            >
-                                <q-item
-                                    v-ripple
-                                    clickable
-                                    @click="() => (prefilter = option)"
-                                >
-                                    <q-item-section>
-                                        {{ option.label }}
-                                    </q-item-section>
-                                </q-item>
-                                <q-separator v-if="option.spacerAfter" />
-                            </template>
-                        </q-list>
-                    </q-btn-dropdown>
+                    <q-btn-toggle
+                        v-model="prefilter"
+                        :options="prefilterOptions"
+                        unelevated
+                        no-caps
+                        toggle-color="grey-10"
+                        toggle-text-color="white"
+                        color="white"
+                        text-color="grey-7"
+                        style="border: 1px solid #e0e0e0; border-radius: 4px"
+                        @update:model-value="updatePrefilter"
+                    />
                 </div>
             </button-group>
 
             <button-group>
                 <app-search-bar
                     v-model="filterOptions.search"
-                    placeholder="Search Users"
+                    :placeholder="
+                        tab === 'groups' ? 'Search Groups' : 'Search Users'
+                    "
                 />
 
                 <app-refresh-button @click="refetchAccessGroup" />
@@ -147,7 +135,7 @@
                                 <q-item v-ripple clickable disabled>
                                     <q-tooltip
                                         v-if="
-                                            prefilter?.value ===
+                                            filterOptions.type ===
                                             AccessGroupType.PRIMARY
                                         "
                                     >
@@ -196,14 +184,10 @@ const route = useRoute();
 const tab = ref((route.query.tab as string) || 'groups');
 
 const prefilterOptions = [
-    {
-        label: 'Custom Groups',
-        value: AccessGroupType.CUSTOM,
-        spacerAfter: true,
-    },
+    { label: 'Custom Groups', value: AccessGroupType.CUSTOM },
     { label: 'Affiliation Groups', value: AccessGroupType.AFFILIATION },
 ];
-const prefilter = ref(prefilterOptions[0]);
+const prefilter = ref<AccessGroupType>(AccessGroupType.CUSTOM);
 
 const selectedAccessGroups: Ref<ProjectWithMissionsDto[]> = ref([]);
 
@@ -248,18 +232,22 @@ watch(
     },
 );
 
-function applyPrefilter(
-    option: { label: string; value: AccessGroupType } | undefined,
-) {
-    if (!option) return;
-    if (option.value === AccessGroupType.CUSTOM) {
+function applyPrefilter(value: AccessGroupType | undefined) {
+    if (!value) return;
+    if (value === AccessGroupType.CUSTOM) {
         filterOptions.value.type = AccessGroupType.CUSTOM;
         filterOptions.value.creator = false;
         filterOptions.value.member = false;
-    } else if (option.value === AccessGroupType.AFFILIATION) {
+    } else if (value === AccessGroupType.AFFILIATION) {
         filterOptions.value.type = AccessGroupType.AFFILIATION;
         filterOptions.value.creator = true;
         filterOptions.value.member = false;
+    }
+}
+
+function updatePrefilter(value: string | string[]) {
+    if (typeof value === 'string') {
+        prefilter.value = value as AccessGroupType;
     }
 }
 

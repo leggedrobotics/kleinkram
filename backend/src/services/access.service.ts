@@ -256,6 +256,8 @@ export class AccessService {
     async addUserToAccessGroup(
         accessGroupUUID: string,
         userUUID: string,
+        canEditGroup = false,
+        expireDate?: Date | 'never',
     ): Promise<AccessGroupEntity> {
         return await this.entityManager.transaction(
             async (transactionalEntityManager) => {
@@ -278,7 +280,9 @@ export class AccessService {
                 const agu = transactionalEntityManager.create(
                     GroupMembershipEntity,
                     {
-                        expirationDate: undefined,
+                        expirationDate:
+                            expireDate === 'never' ? undefined : expireDate,
+                        canEditGroup,
                     },
                 );
                 await transactionalEntityManager.save(agu);
