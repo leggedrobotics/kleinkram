@@ -3,25 +3,67 @@
         <template #title> Membership Expiration</template>
 
         <template #content>
-            <div class="flex justify-center">
-                <q-date
-                    v-model="expirationDate"
-                    label="Expiration Date"
-                    mask="DD.MM.YYYY HH:mm"
-                    color="light-green"
-                    flat
-                    bordered
+            <div class="column q-gutter-y-md">
+                <SelectionButtonGroup
+                    :options="options"
+                    :model-value="expirationShortcutState"
+                    type="single"
+                    @update:model-value="onExpirationSelectionUpdate"
                 />
+
+                <div style="min-height: 380px">
+                    <div
+                        v-if="expirationShortcutState === 'custom'"
+                        class="flex justify-center"
+                    >
+                        <q-date
+                            v-model="expirationDate"
+                            mask="DD.MM.YYYY HH:mm"
+                            color="button-primary"
+                            flat
+                            bordered
+                        />
+                    </div>
+                    <div
+                        v-else
+                        class="flex column items-center justify-center text-grey-6"
+                        style="height: 100%; min-height: 380px"
+                    >
+                        <q-icon
+                            :name="
+                                expirationShortcutState === 'never'
+                                    ? 'sym_o_all_inclusive'
+                                    : 'sym_o_event_available'
+                            "
+                            size="64px"
+                            class="q-mb-md"
+                        />
+                        <div class="text-h6 text-weight-regular">
+                            {{
+                                expirationShortcutState === 'never'
+                                    ? 'No Expiration'
+                                    : 'Expiration Updated'
+                            }}
+                        </div>
+                        <div class="text-caption">
+                            {{
+                                expirationShortcutState === 'never'
+                                    ? 'This user will have access indefinitely.'
+                                    : `Access will expire on ${expirationDate}`
+                            }}
+                        </div>
+                    </div>
+                </div>
             </div>
         </template>
 
         <template #actions>
             <q-btn
+                v-close-popup
                 flat
-                label="Never"
-                class="bg-button-primary"
+                label="Cancel"
+                class="text-button-primary"
                 style="margin-right: 8px"
-                @click="neverExpire"
             />
             <q-btn
                 flat
@@ -35,6 +77,7 @@
 
 <script setup lang="ts">
 import type { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
+import SelectionButtonGroup from 'components/common/selection-button-group.vue';
 import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { formatDate, parseDate } from 'src/services/date-formating';
@@ -44,23 +87,60 @@ const properties = defineProps<{
     agu: GroupMembershipDto;
 }>();
 
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
+
 const expirationDate = ref<string | undefined>(
     properties.agu.expirationDate
         ? formatDate(properties.agu.expirationDate)
         : undefined,
 );
 
-const { dialogRef, onDialogOK } = useDialogPluginComponent();
+const expirationShortcutState = ref<string>(
+    properties.agu.expirationDate ? 'custom' : 'never',
+);
+
+const options = [
+    { label: 'Never', value: 'never' },
+    { label: '1 Week', value: '1week' },
+    { label: '1 Month', value: '1month' },
+    { label: '6 Months', value: '6months' },
+    { label: '1 Year', value: '1year' },
+    { label: 'Custom', value: 'custom', icon: 'sym_o_calendar_month' },
+];
+
+function applyShortcut(type: '1week' | '1month' | '6months' | '1year') {
+    const date = new Date();
+    if (type === '1week') date.setDate(date.getDate() + 7);
+    if (type === '1month') date.setMonth(date.getMonth() + 1);
+    if (type === '6months') date.setMonth(date.getMonth() + 6);
+    if (type === '1year') date.setFullYear(date.getFullYear() + 1);
+
+    expirationDate.value = formatDate(date);
+}
+
+function onExpirationSelectionUpdate(
+    value: string | string[] | number | number[] | null,
+) {
+    if (typeof value !== 'string') return;
+
+    expirationShortcutState.value = value;
+    if (value !== 'custom' && value !== 'never') {
+        applyShortcut(value as '1week' | '1month' | '6months' | '1year');
+    }
+}
 
 function saveExpiration() {
+    if (expirationShortcutState.value === 'never') {
+        onDialogOK();
+        return;
+    }
+
     if (!expirationDate.value) {
         return;
     }
     const expirationDateConverted = parseDate(expirationDate.value);
     onDialogOK(expirationDateConverted);
 }
-
-function neverExpire() {
-    onDialogOK();
-}
 </script>
+
+<style scoped></style>
