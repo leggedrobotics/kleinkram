@@ -139,7 +139,7 @@ export class AccessController {
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @Body() body: AddUserToAccessGroupDto,
         @AddUser() requestUser: AuthHeader,
-    ) {
+    ): Promise<AccessGroupDto> {
         await this.accessService
             .addUserToAccessGroup(uuid, body.userUUID)
             .catch((error: unknown) => {
@@ -166,7 +166,7 @@ export class AccessController {
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @ParameterUID('userUuid', 'UUID of User to remove') userUuid: string,
         @AddUser() requestUser: AuthHeader,
-    ) {
+    ): Promise<AccessGroupDto> {
         await this.accessService.removeUsersFromAccessGroup(uuid, [userUuid]);
         return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
     }
@@ -186,7 +186,7 @@ export class AccessController {
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @Body() body: RemoveUsersFromAccessGroupDto,
         @AddUser() requestUser: AuthHeader,
-    ) {
+    ): Promise<AccessGroupDto> {
         await this.accessService.removeUsersFromAccessGroup(
             uuid,
             body.userUuids,
