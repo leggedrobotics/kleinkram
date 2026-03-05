@@ -20,11 +20,13 @@ import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/pro
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
+    AccessGroupConfig,
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     EntityManager,
@@ -51,6 +53,7 @@ export class AccessService {
         @InjectRepository(ProjectAccessEntity)
         private projectAccessRepository: Repository<ProjectAccessEntity>,
         private readonly entityManager: EntityManager,
+        private readonly configService: ConfigService,
     ) {}
 
     async getAccessGroup(
@@ -116,6 +119,16 @@ export class AccessService {
                             autoConvert: value.project?.autoConvert ?? false,
                         }) as ProjectWithAccessRightsDto,
                 ) ?? [],
+            emailPattern:
+                rawAccessGroup.type === AccessGroupType.AFFILIATION
+                    ? this.configService
+                          .getOrThrow<AccessGroupConfig>('accessConfig')
+                          .emails.find((emailConfig) =>
+                              emailConfig.access_groups.includes(
+                                  rawAccessGroup.uuid,
+                              ),
+                          )?.email
+                    : undefined,
         };
     }
 
@@ -406,6 +419,16 @@ export class AccessService {
                     type: accessGroup.type,
                     hidden: accessGroup.hidden,
                     projectAccesses: [],
+                    emailPattern:
+                        accessGroup.type === AccessGroupType.AFFILIATION
+                            ? this.configService
+                                  .getOrThrow<AccessGroupConfig>('accessConfig')
+                                  .emails.find((emailConfig) =>
+                                      emailConfig.access_groups.includes(
+                                          accessGroup.uuid,
+                                      ),
+                                  )?.email
+                            : undefined,
                 };
             },
         );
