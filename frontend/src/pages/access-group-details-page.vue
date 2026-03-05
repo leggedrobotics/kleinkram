@@ -130,7 +130,7 @@
                     </DialogOpenerAddUser>
                 </button-group>
             </div>
-            <div v-else class="q-py-lg q-mb-lg" style="background: #0f62fe">
+            <div v-else class="q-py-lg" style="background: #0f62fe">
                 <ButtonGroupOverlay>
                     <template #start>
                         <div style="margin: 0; font-size: 14pt; color: white">
@@ -170,7 +170,6 @@
                 v-model:selected="selectedUsers"
                 :rows="accessGroup?.memberships || []"
                 :columns="userCols as any"
-                style="margin-top: 8px"
                 selection="multiple"
                 row-key="uuid"
                 :filter="search"
