@@ -53,13 +53,12 @@
             <button-group>
                 <app-search-bar
                     v-model="filterOptions.search"
-                    placeholder="Search"
+                    placeholder="Search Users"
                 />
 
                 <app-refresh-button @click="refetchAccessGroup" />
 
                 <CreateAccessGroupDialogOpener v-if="tab === 'groups'" />
-                <app-create-button v-else label="Invite User" />
             </button-group>
         </div>
 
