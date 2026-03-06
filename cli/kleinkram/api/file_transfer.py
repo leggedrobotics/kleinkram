@@ -513,7 +513,7 @@ def _download_handler(
         warning_msg = (
             f"WARNING: {path.absolute()} downloaded but remote state is CORRUPTED; treat as potentially harmful"
             if state == DownloadState.DOWNLOADED_CORRUPTED
-            else f"WARNING: {path.absolute()} is present locally (hash ok) and remote state is CORRUPTED; treat as potentially harmful"
+            else f"WARNING: {path.absolute()} local hash OK, remote state CORRUPTED: treat as harmful"
         )
         print(warning_msg, file=sys.stderr)
     elif state not in (
