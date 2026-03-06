@@ -12,6 +12,7 @@ from kleinkram.config import Credentials
 from kleinkram.config import get_config
 from kleinkram.config import save_config
 
+DEFAULT_CALLBACK_PORT = 8000
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
 OAUTH_SLUG = "/auth/"
 
@@ -69,13 +70,24 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
         pass  # suppress logging
 
 
-def _browser_auth(*, url: str) -> None:
+def _browser_auth(*, url: str, server: HTTPServer) -> None:
     webbrowser.open(url)
 
-    server = HTTPServer(("", 8000), OAuthCallbackHandler)
-    server.handle_request()
+    try:
+        server.handle_request()
+    finally:
+        server.server_close()
 
     print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
+
+
+def _create_callback_server(preferred_port: int = DEFAULT_CALLBACK_PORT) -> tuple[HTTPServer, int]:
+    try:
+        server = HTTPServer(("", preferred_port), OAuthCallbackHandler)
+        return server, preferred_port
+    except OSError:
+        server = HTTPServer(("", 0), OAuthCallbackHandler)  # bind to any available port
+        return server, int(server.server_address[1])
 
 
 def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
@@ -173,24 +185,17 @@ def login_flow(
         _direct_oauth_auth(endpoint=config.endpoint.api, provider=oAuthProvider, user=user)
         return
 
-    # Build OAuth URL with state parameter
-    oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state=cli"
-
-    # Add user parameter if provided (for fake-oauth auto-login)
-    if user is not None:
-        oauth_url += f"&user={user}"
-
-    is_port_available = True
-    try:
-        server = HTTPServer(("", 8000), OAuthCallbackHandler)
-        server.server_close()
-    except OSError:
-        is_port_available = False
-
-    if not is_port_available:
-        print("Warning: Port 8000 is not available. Falling back to headless authentication.\n\n")
-
-    if not headless and _has_browser() and is_port_available:
-        _browser_auth(url=oauth_url)
+    # normal flow: either browser-based or headless OAuth
+    # if headless is False and browser is available, use browser-based flow with callback server
+    if not headless and _has_browser():
+        server, callback_port = _create_callback_server()
+        state = "cli" if callback_port == DEFAULT_CALLBACK_PORT else f"cli-port-{callback_port}"
+        oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state={state}"
+        if user is not None:
+            oauth_url += f"&user={user}"
+        _browser_auth(url=oauth_url, server=server)
     else:
-        _headless_auth(url=f"{oauth_url}-no-redirect")
+        oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state=cli-no-redirect"
+        if user is not None:
+            oauth_url += f"&user={user}"
+        _headless_auth(url=oauth_url)
