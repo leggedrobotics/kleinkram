@@ -325,8 +325,6 @@ class DownloadState(Enum):
     SKIPPED_CORRUPTED_LOCAL_OK = 9
 
 
-
-
 def download_file(
     client: AuthenticatedClient,
     *,
@@ -501,8 +499,7 @@ def _download_handler(
         msg = f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt-files to override)"
     elif state == DownloadState.SKIPPED_CORRUPTED_LOCAL_OK:
         msg = (
-            f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; "
-            "treat as potentially harmful"
+            f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; " "treat as potentially harmful"
         )
     else:
         msg = f"skipped {path} with unknown state {state}"
@@ -525,11 +522,16 @@ def _download_handler(
     ):
         print(f"SKIP/FAIL: {path.absolute()} ({state.name})", file=sys.stderr)
 
-    return size_bytes if state in (
-        DownloadState.DOWNLOADED_OK,
-        DownloadState.DOWNLOADED_CORRUPTED,
-        DownloadState.SKIPPED_OK,
-    ) else 0
+    return (
+        size_bytes
+        if state
+        in (
+            DownloadState.DOWNLOADED_OK,
+            DownloadState.DOWNLOADED_CORRUPTED,
+            DownloadState.SKIPPED_OK,
+        )
+        else 0
+    )
 
 
 def upload_files(
