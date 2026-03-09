@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import time
 import urllib.parse
 import webbrowser
-import time
 from getpass import getpass
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
@@ -73,7 +73,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
 
 
 def _browser_auth(*, url: str, server: HTTPServer) -> None:
-    server.auth_completed = False # type: ignore[attr-defined]
+    server.auth_completed = False  # type: ignore[attr-defined]
     webbrowser.open(url)
 
     try:
@@ -85,11 +85,9 @@ def _browser_auth(*, url: str, server: HTTPServer) -> None:
                 break
     finally:
         server.server_close()
-    
+
     if not server.auth_completed:
-        raise RuntimeError(
-            "Authentication timed out or failed. Please try again."
-        )
+        raise RuntimeError("Authentication timed out or failed. Please try again.")
     print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
 
 

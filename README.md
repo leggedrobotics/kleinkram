@@ -41,6 +41,7 @@ The <code>--build</code> flag ensures that the Docker images are built before st
 > [!TIP]
 > **Troubleshooting missing modules / API not reachable on localhost:3000**
 > If logs contain `Cannot find module ...`, recreate app `node_modules` volumes and rebuild:
+>
 > ```bash
 > docker compose rm -sf api-server queue-consumer frontend docs \
 > && docker volume rm kleinkram_backend_node_modules kleinkram_frontend_node_modules kleinkram_queue_consumer_node_modules kleinkram_node_modules \
