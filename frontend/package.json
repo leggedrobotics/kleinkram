@@ -12,7 +12,7 @@
         "build": "sh ./create_build_info.sh && quasar build"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.952.0",
+        "@aws-sdk/client-s3": "3.1005.0",
         "@foxglove/rosbag": "^0.4.1",
         "@foxglove/rosmsg": "^5.0.5",
         "@foxglove/rosmsg-serialization": "^2.0.4",
