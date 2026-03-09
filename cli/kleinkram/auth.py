@@ -201,7 +201,7 @@ def login_flow(
     # if headless is False and browser is available, use browser-based flow with callback server
     if not headless and _has_browser():
         server, callback_port = _create_callback_server()
-        state = "cli" if callback_port == DEFAULT_CALLBACK_PORT else f"cli-port-{callback_port}"
+        state = f"cli-port-{callback_port}"
         oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state={state}"
         if user is not None:
             oauth_url += f"&user={user}"
