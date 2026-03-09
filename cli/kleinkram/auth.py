@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import urllib.parse
 import webbrowser
+import time
 from getpass import getpass
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
@@ -55,6 +56,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
                 config = get_config()
                 config.credentials = creds
                 save_config(config)
+                self.server.auth_completed = True  # type: ignore[attr-defined]
             except Exception:
                 raise RuntimeError("Failed to fetch authentication tokens.")
 
@@ -71,13 +73,23 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
 
 
 def _browser_auth(*, url: str, server: HTTPServer) -> None:
+    server.auth_completed = False # type: ignore[attr-defined]
     webbrowser.open(url)
 
     try:
-        server.handle_request()
+        deadline = time.monotonic() + 120
+        while time.monotonic() < deadline:
+            server.timeout = max(0, deadline - time.monotonic())
+            server.handle_request()
+            if getattr(server, "auth_completed", False):
+                break
     finally:
         server.server_close()
-
+    
+    if not server.auth_completed:
+        raise RuntimeError(
+            "Authentication timed out or failed. Please try again."
+        )
     print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
 
 

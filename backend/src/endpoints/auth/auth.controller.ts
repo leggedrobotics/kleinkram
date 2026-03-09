@@ -114,7 +114,7 @@ export class AuthController {
             const port = Number.parseInt(portString, 10);
             if (!Number.isNaN(port) && port >= 1 && port <= 65_535) {
                 response.redirect(
-                    `http://localhost:${portString}/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
+                    `http://localhost:${String(port)}/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
                 );
                 return;
             }
