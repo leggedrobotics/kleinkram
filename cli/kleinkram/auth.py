@@ -16,6 +16,7 @@ from kleinkram.config import save_config
 DEFAULT_CALLBACK_PORT = 8000
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
 OAUTH_SLUG = "/auth/"
+AUTH_TOKEN_FETCH_ERROR = "Failed to fetch authentication tokens."
 
 
 def _has_browser() -> bool:
@@ -44,28 +45,39 @@ def _headless_auth(*, url: str) -> None:
 
 class OAuthCallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path.startswith(CLI_CALLBACK_ENDPOINT):
-            query = urllib.parse.urlparse(self.path).query
-            params = urllib.parse.parse_qs(query)
-
-            try:
-                creds = Credentials(
-                    auth_token=params.get("authtoken")[0],  # type: ignore
-                    refresh_token=params.get("refreshtoken")[0],  # type: ignore
-                )
-                config = get_config()
-                config.credentials = creds
-                save_config(config)
-                self.server.auth_completed = True  # type: ignore[attr-defined]
-            except Exception:
-                raise RuntimeError("Failed to fetch authentication tokens.")
-
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
+        if not self.path.startswith(CLI_CALLBACK_ENDPOINT):
+            self.send_response(404)
+            self.send_header("Content-type", "text/plain")
             self.end_headers()
-            self.wfile.write(b"Authentication successful. You can close this window.")
-        else:
-            raise RuntimeError("Invalid path")
+            self.wfile.write(b"Invalid path")
+            return
+
+        query = urllib.parse.urlparse(self.path).query
+        params = urllib.parse.parse_qs(query)
+
+        try:
+            auth_token = params.get("authtoken")
+            refresh_token = params.get("refreshtoken")
+            if not auth_token or not refresh_token:
+                raise ValueError("Missing callback tokens")
+
+            creds = Credentials(auth_token=auth_token[0], refresh_token=refresh_token[0])
+            config = get_config()
+            config.credentials = creds
+            save_config(config)
+            self.server.auth_completed = True  # type: ignore[attr-defined]
+        except Exception:
+            self.send_response(500)
+            self.send_header("Content-type", "text/plain")
+            self.end_headers()
+            self.wfile.write(AUTH_TOKEN_FETCH_ERROR.encode("utf-8"))
+            self.server.auth_error = AUTH_TOKEN_FETCH_ERROR  # type: ignore[attr-defined]
+            return
+
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(b"Authentication successful. You can close this window.")
 
     def log_message(self, *args, **kwargs):
         _ = args, kwargs
@@ -74,6 +86,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
 
 def _browser_auth(*, url: str, server: HTTPServer) -> None:
     server.auth_completed = False  # type: ignore[attr-defined]
+    server.auth_error = None  # type: ignore[attr-defined]
     webbrowser.open(url)
 
     try:
@@ -81,6 +94,9 @@ def _browser_auth(*, url: str, server: HTTPServer) -> None:
         while time.monotonic() < deadline:
             server.timeout = max(0, deadline - time.monotonic())
             server.handle_request()
+            auth_error = getattr(server, "auth_error", None)
+            if auth_error:
+                raise RuntimeError(auth_error)
             if getattr(server, "auth_completed", False):
                 break
     finally:
