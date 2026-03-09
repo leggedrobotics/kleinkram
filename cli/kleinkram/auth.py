@@ -96,11 +96,9 @@ def _browser_auth(*, url: str, server: HTTPServer) -> None:
 def _create_callback_server(preferred_port: int = DEFAULT_CALLBACK_PORT) -> tuple[HTTPServer, int]:
     try:
         server = HTTPServer(("", preferred_port), OAuthCallbackHandler)
-        server.timeout = 120  # seconds
         return server, preferred_port
     except OSError:
         server = HTTPServer(("", 0), OAuthCallbackHandler)  # bind to any available port
-        server.timeout = 120  # seconds
         return server, int(server.server_address[1])
 
 
