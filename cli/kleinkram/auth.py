@@ -92,7 +92,10 @@ def _browser_auth(*, url: str, server: HTTPServer) -> None:
     try:
         deadline = time.monotonic() + 120
         while time.monotonic() < deadline:
-            server.timeout = max(0, deadline - time.monotonic())
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            server.timeout = max(0.1, remaining)
             server.handle_request()
             auth_error = getattr(server, "auth_error", None)
             if auth_error:
