@@ -38,6 +38,15 @@ The <code>--build</code> flag ensures that the Docker images are built before st
 > [!WARNING]
 > If you have run Kleinkram locally before, you should consider deleting all existing data. See the <a href="https://docs.datasets.leggedrobotics.com/development/try-locally">Try Kleinkram Locally</a> documentation for more details.
 
+> [!TIP]
+> **Troubleshooting missing modules / API not reachable on localhost:3000**
+> If logs contain `Cannot find module ...`, recreate app `node_modules` volumes and rebuild:
+> ```bash
+> docker compose rm -sf api-server queue-consumer frontend docs \
+> && docker volume rm kleinkram_backend_node_modules kleinkram_frontend_node_modules kleinkram_queue_consumer_node_modules kleinkram_node_modules \
+> && docker compose up -d --build api-server queue-consumer frontend docs
+> ```
+
 3. **Access the application**
 
 You can now access the frontend at `http://localhost:8003`.
