@@ -58,6 +58,7 @@ export * from '@api-dto/file/move-files-response.dto';
 export * from '@api-dto/file/recalculate-hashes-response.dto';
 export * from '@api-dto/file/reextract-topics-response.dto';
 export * from '@api-dto/file/temporary-access-request.dto';
+export * from '@api-dto/is-date-or-never.constraint';
 export * from '@api-dto/mission/mission-query.dto';
 export * from '@api-dto/mission/mission-with-files.dto';
 export * from '@api-dto/mission/mission.dto';

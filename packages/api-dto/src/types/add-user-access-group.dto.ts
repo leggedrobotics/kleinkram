@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsOptional, IsUUID, Validate } from 'class-validator';
+import { IsDateOrNeverConstraint } from './is-date-or-never.constraint';
 
 export class AddUserToAccessGroupDto {
     @IsUUID()
@@ -19,5 +21,13 @@ export class AddUserToAccessGroupDto {
         required: false,
     })
     @IsOptional()
+    @Validate(IsDateOrNeverConstraint)
+    @Transform(({ value }: { value: unknown }) => {
+        if (value === 'never') return 'never';
+        if (typeof value !== 'string' && typeof value !== 'number')
+            return value;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? value : date;
+    })
     expireDate?: Date | 'never';
 }

@@ -16,7 +16,7 @@ export const useUpdateAccessRightsMutation = (
             const accessRights = unref(newProjectAccessRights);
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (!accessRights) throw new Error('Access rights not found');
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
             return updateProjectAccessRights(projectUuid, accessRights);
         },
 
