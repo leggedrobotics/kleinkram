@@ -20,7 +20,7 @@ setSeederFactory(
         if (context.isPersonal) {
             // eslint-disable-next-line no-console
             console.assert(
-                context.user,
+                !!context.user,
                 'No user provided for personal access group',
             );
             accessGroup.name = context.user.name;
