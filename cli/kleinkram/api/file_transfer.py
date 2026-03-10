@@ -496,7 +496,7 @@ def _download_handler(
     elif state == DownloadState.SKIPPED_INVALID_REMOTE_STATE:
         msg = f"skipped {path}, remote file has invalid state ({file.state.value})"
     elif state == DownloadState.SKIPPED_CORRUPTED:
-        msg = f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt-files to override)"
+        msg = f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt to override)"
     elif state == DownloadState.SKIPPED_CORRUPTED_LOCAL_OK:
         msg = (
             f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; " "treat as potentially harmful"
