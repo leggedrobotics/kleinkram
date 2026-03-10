@@ -22,7 +22,7 @@
         "@kleinkram/shared": "workspace:*",
         "@kleinkram/validation": "workspace:*",
         "@kubernetes/client-node": "^1.0.0",
-        "@mcap/core": "^2.1.7",
+        "@mcap/core": "^2.2.0",
         "@mcap/nodejs": "^1.0.2",
         "@mcap/support": "^1.0.4",
         "@nestjs/bull": "^11.0.4",
