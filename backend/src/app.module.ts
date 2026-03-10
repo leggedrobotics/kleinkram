@@ -11,6 +11,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import accessConfig from './access_config.json';
 import { appVersion } from './app-version';
+import { AccessModule } from './endpoints/access/access.module';
 import { ActionModule } from './endpoints/action/action.module';
 import { AuthModule } from './endpoints/auth/auth.module';
 import { CategoryModule } from './endpoints/category/category.module';
@@ -79,6 +80,7 @@ import { DBDumper } from './services/dbdumper.service';
         TriggerModule,
         UserModule,
         AuthModule,
+        AccessModule,
         PassportModule,
         ActionModule,
         TemplatesModule,

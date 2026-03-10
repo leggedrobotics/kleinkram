@@ -1,12 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
 
 export class AddUserToAccessGroupDto {
     @IsUUID()
-    @ApiProperty({ description: 'Access Group UUID', format: 'uuid' })
-    uuid!: string;
-
-    @IsUUID()
     @ApiProperty({ description: 'User UUID', format: 'uuid' })
-    userUUID!: string;
+    userUuid!: string;
+
+    @ApiProperty({
+        description: 'Whether the user can edit the access group',
+        required: false,
+    })
+    @IsOptional()
+    @IsBoolean()
+    canEditGroup?: boolean;
+
+    @ApiProperty({
+        description: 'Expiration date or never',
+        required: false,
+    })
+    @IsOptional()
+    expireDate?: Date | 'never';
 }

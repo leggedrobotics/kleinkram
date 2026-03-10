@@ -1,10 +1,12 @@
 import { ApiOkResponse, ApiResponse, OutputDto } from '@/decorators';
+import { projectEntityToDto } from '@/serialization';
 import { AccessService } from '@/services/access.service';
 import { ProjectService } from '@/services/project.service';
 import { ParameterUuid as ParameterUID } from '@/validation/parameter-decorators';
 import { QueryTake, QueryUUID } from '@/validation/query-decorators';
 import {
     AddTagTypeDto,
+    AddUserToProjectDto,
     CreateProject,
     DefaultRights,
     DeleteProjectResponseDto,
@@ -122,6 +124,32 @@ export class ProjectController {
             user.user.uuid,
             exactMatch,
         );
+    }
+
+    @ApiOperation({
+        summary: 'Add User to Project',
+        description: 'Adds a user to a project with the given rights.',
+    })
+    @ApiResponse({
+        status: 200,
+        type: ProjectDto,
+        description: 'The Project the user was added to.',
+    })
+    @Post(':uuid/users')
+    @CanWriteProject()
+    @OutputDto(ProjectDto)
+    async addUserToProject(
+        @ParameterUID('uuid', 'UUID of Project') uuid: string,
+        @Body() body: AddUserToProjectDto,
+        @AddUser() requestUser: AuthHeader,
+    ): Promise<ProjectDto> {
+        const projectEntity = await this.accessService.addUserToProject(
+            uuid,
+            body.userUuid,
+            body.rights,
+            requestUser,
+        );
+        return projectEntityToDto(projectEntity);
     }
 
     @Post(':uuid/addTagType')

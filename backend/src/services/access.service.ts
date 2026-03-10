@@ -2,6 +2,7 @@ import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     groupMembershipEntityToDto,
     projectAccessEntityToDto,
+    projectEntityToDto,
     userEntityToDto,
 } from '@/serialization';
 import {
@@ -10,8 +11,8 @@ import {
     GroupMembershipDto,
     ProjectAccessDto,
     ProjectAccessListDto,
+    ProjectDto,
     ProjectWithAccessRightsDto,
-    ProjectWithMissionsDto,
 } from '@kleinkram/api-dto';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
@@ -19,16 +20,19 @@ import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/pro
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
+    AccessGroupConfig,
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     EntityManager,
     FindOptionsWhere,
     ILike,
+    In,
     MoreThanOrEqual,
     Not,
     Repository,
@@ -49,6 +53,7 @@ export class AccessService {
         @InjectRepository(ProjectAccessEntity)
         private projectAccessRepository: Repository<ProjectAccessEntity>,
         private readonly entityManager: EntityManager,
+        private readonly configService: ConfigService,
     ) {}
 
     async getAccessGroup(
@@ -114,6 +119,16 @@ export class AccessService {
                             autoConvert: value.project?.autoConvert ?? false,
                         }) as ProjectWithAccessRightsDto,
                 ) ?? [],
+            emailPattern:
+                rawAccessGroup.type === AccessGroupType.AFFILIATION
+                    ? this.configService
+                          .getOrThrow<AccessGroupConfig>('accessConfig')
+                          .emails.find((emailConfig) =>
+                              emailConfig.access_groups.includes(
+                                  rawAccessGroup.uuid,
+                              ),
+                          )?.email
+                    : undefined,
         };
     }
 
@@ -254,6 +269,8 @@ export class AccessService {
     async addUserToAccessGroup(
         accessGroupUUID: string,
         userUUID: string,
+        canEditGroup = false,
+        expireDate?: Date | 'never',
     ): Promise<AccessGroupEntity> {
         return await this.entityManager.transaction(
             async (transactionalEntityManager) => {
@@ -276,7 +293,9 @@ export class AccessService {
                 const agu = transactionalEntityManager.create(
                     GroupMembershipEntity,
                     {
-                        expirationDate: undefined,
+                        expirationDate:
+                            expireDate === 'never' ? undefined : expireDate,
+                        canEditGroup,
                     },
                 );
                 await transactionalEntityManager.save(agu);
@@ -301,34 +320,50 @@ export class AccessService {
         );
     }
 
-    async removeUserFromAccessGroup(
+    async removeUsersFromAccessGroup(
         accessGroupUUID: string,
-        userUUID: string,
+        userUuids: string[],
     ): Promise<AccessGroupEntity> {
-        const usersWithEditRights = await this.groupMembershipRepository.count({
-            where: {
-                accessGroup: { uuid: accessGroupUUID },
-                // where user is NOT matching userUUID
-                user: { uuid: Not(userUUID) },
-                canEditGroup: true,
-            },
-        });
-
-        if (usersWithEditRights === 0) {
-            throw new ConflictException(
-                'Cannot remove the last user with edit rights',
-            );
+        if (userUuids.length === 0) {
+            return this.accessGroupRepository.findOneOrFail({
+                where: { uuid: accessGroupUUID },
+                relations: ['memberships', 'memberships.user'],
+            });
         }
+        return await this.entityManager.transaction(
+            async (transactionalEntityManager) => {
+                const usersWithEditRights =
+                    await transactionalEntityManager.count(
+                        GroupMembershipEntity,
+                        {
+                            where: {
+                                accessGroup: { uuid: accessGroupUUID },
+                                user: { uuid: Not(In(userUuids)) },
+                                canEditGroup: true,
+                            },
+                        },
+                    );
 
-        await this.groupMembershipRepository.delete({
-            accessGroup: { uuid: accessGroupUUID },
-            user: { uuid: userUUID },
-        });
+                if (usersWithEditRights === 0) {
+                    throw new ConflictException(
+                        'Cannot remove the last user with edit rights',
+                    );
+                }
 
-        return this.accessGroupRepository.findOneOrFail({
-            where: { uuid: accessGroupUUID },
-            relations: ['memberships', 'memberships.user'],
-        });
+                await transactionalEntityManager.delete(GroupMembershipEntity, {
+                    accessGroup: { uuid: accessGroupUUID },
+                    user: { uuid: In(userUuids) },
+                });
+
+                return transactionalEntityManager.findOneOrFail(
+                    AccessGroupEntity,
+                    {
+                        where: { uuid: accessGroupUUID },
+                        relations: ['memberships', 'memberships.user'],
+                    },
+                );
+            },
+        );
     }
 
     async searchAccessGroup(
@@ -384,6 +419,16 @@ export class AccessService {
                     type: accessGroup.type,
                     hidden: accessGroup.hidden,
                     projectAccesses: [],
+                    emailPattern:
+                        accessGroup.type === AccessGroupType.AFFILIATION
+                            ? this.configService
+                                  .getOrThrow<AccessGroupConfig>('accessConfig')
+                                  .emails.find((emailConfig) =>
+                                      emailConfig.access_groups.includes(
+                                          accessGroup.uuid,
+                                      ),
+                                  )?.email
+                            : undefined,
                 };
             },
         );
@@ -396,7 +441,7 @@ export class AccessService {
         accessGroupUUID: string,
         rights: AccessGroupRights,
         auth: AuthHeader,
-    ): Promise<ProjectWithMissionsDto> {
+    ): Promise<ProjectDto> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
@@ -432,13 +477,14 @@ export class AccessService {
             .getOne();
         if (existingAccess) {
             if (existingAccess.rights >= rights) {
-                return project as unknown as ProjectWithMissionsDto;
+                return projectEntityToDto(project);
             }
             existingAccess.rights = rights;
             await this.projectAccessRepository.save(existingAccess);
-            return this.projectRepository.findOneOrFail({
+            const updatedProject = await this.projectRepository.findOneOrFail({
                 where: { uuid: projectUUID },
-            }) as unknown as ProjectWithMissionsDto;
+            });
+            return projectEntityToDto(updatedProject);
         }
 
         const projectAccess = this.projectAccessRepository.create({
@@ -447,10 +493,11 @@ export class AccessService {
             project: project,
         });
         await this.projectAccessRepository.save(projectAccess);
-        return this.projectRepository.findOneOrFail({
+        const fullProject = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
-        }) as unknown as ProjectWithMissionsDto;
+        });
+        return projectEntityToDto(fullProject);
     }
 
     async removeAccessGroupFromProject(

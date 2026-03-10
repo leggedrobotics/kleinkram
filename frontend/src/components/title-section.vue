@@ -2,14 +2,16 @@
     <div class="bg-white flex column" style="margin: 0 -24px; padding: 0 24px">
         <div style="padding: 24px 0; gap: 24px; padding-bottom: 10px">
             <div class="row justify-between items-center q-gutter-y-md">
-                <div class="col-12 col-md">
-                    <h1 class="text-h5 text-md-h3 q-ma-none ellipsis">
-                        {{ title ?? '' }}
-                        <q-tooltip v-if="title">
-                            {{ title }}
-                        </q-tooltip>
-                    </h1>
-                    <div v-if="slots.subtitle" class="q-pt-md">
+                <div class="col-12 col-md flex items-center">
+                    <slot name="title">
+                        <h1 class="text-h5 text-md-h3 q-ma-none ellipsis">
+                            {{ title ?? '' }}
+                            <q-tooltip v-if="title">
+                                {{ title }}
+                            </q-tooltip>
+                        </h1>
+                    </slot>
+                    <div v-if="slots.subtitle" class="col-12 q-pt-md">
                         <slot name="subtitle" />
                     </div>
                 </div>
@@ -40,6 +42,7 @@ const { title } = defineProps<{
 const slots = useSlots();
 
 defineSlots<{
+    title: string;
     subtitle: string;
     buttons: string;
     tabs: string;

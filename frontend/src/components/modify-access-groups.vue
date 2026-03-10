@@ -117,10 +117,10 @@ function addAccessGroupToProject(accessGroupUUID: string, name: string) {
     });
 }
 
-function addUserToProject(userUUID: string, name: string) {
+function addUserToProject(userUuid: string, name: string) {
     emit('addUsersToProject', {
-        userUUID,
-        rights: rights.value[userUUID]?.value,
+        userUuid,
+        rights: rights.value[userUuid]?.value,
         name,
     });
 }

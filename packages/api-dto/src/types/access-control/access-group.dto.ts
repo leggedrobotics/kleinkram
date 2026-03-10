@@ -56,4 +56,9 @@ export class AccessGroupDto {
     @ValidateNested({ each: true })
     @Type(() => ProjectWithAccessRightsDto)
     projectAccesses!: ProjectWithAccessRightsDto[];
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    emailPattern?: string;
 }
