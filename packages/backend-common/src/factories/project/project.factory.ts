@@ -22,7 +22,7 @@ setSeederFactory(
             faker.helpers.arrayElement(context.allUsers ?? []);
 
         // eslint-disable-next-line no-console
-        console.assert(creator, 'No creator provided for project');
+        console.assert(!!creator, 'No creator provided for project');
 
         const project = new ProjectEntity();
         project.uuid = extendedFaker.string.uuid();
