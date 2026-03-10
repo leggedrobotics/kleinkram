@@ -274,6 +274,7 @@ const { mutate } = useMutation({
         );
     },
     onSuccess: async () => {
+        selectedProjects.value = [];
         Notify.create({
             message: 'Access group added to project(s)',
             color: 'positive',
