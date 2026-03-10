@@ -988,7 +988,6 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
                 method: 'POST',
                 headers: headers.getHeaders(),
                 body: JSON.stringify({
-                    uuid: groupUuid,
                     userUuid: targetUser.uuid,
                 }),
             },
