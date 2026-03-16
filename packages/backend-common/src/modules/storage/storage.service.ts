@@ -132,6 +132,7 @@ export class StorageService implements OnModuleInit {
             existingRules.push({
                 ID: ruleId,
                 Status: 'Enabled',
+                Filter: {}, // Empty filter applies to all objects
                 AbortIncompleteMultipartUpload: {
                     DaysAfterInitiation: 1,
                 },
