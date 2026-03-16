@@ -9,27 +9,36 @@ import {
 import { AccessGroupConfig, Providers } from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import * as fs from 'node:fs';
-import path from 'node:path';
 import { database } from '../../utils/database-utilities';
 import { setupDatabaseHooks } from '../../utils/test-helpers';
 
 describe('Affiliation Group Sync on Auth Early Returns', () => {
     setupDatabaseHooks();
 
-    const email = 'test-sync@kleinkram.dev'; // Assuming kleinkram.dev is in access_config.json
+    const TEST_GROUP_UUID = '00000000-1111-2222-3333-444444444444';
+    const email = 'test-sync@kleinkram.dev';
+
+    const testAccessConfig = {
+        emails: [
+            {
+                email: 'kleinkram.dev',
+                access_groups: [TEST_GROUP_UUID],
+            },
+        ],
+        access_groups: [
+            {
+                name: 'Kleinkram Developers Test Group',
+                uuid: TEST_GROUP_UUID,
+                rights: 10,
+            },
+        ],
+    } as AccessGroupConfig;
 
     let config: AccessGroupConfig;
     let affiliationGroupService: AffiliationGroupService;
 
     beforeAll(() => {
-        const configPath = path.join(
-            __dirname,
-            '../../../src/access_config.json',
-        );
-        config = JSON.parse(
-            fs.readFileSync(configPath, 'utf8'),
-        ) as AccessGroupConfig;
+        config = testAccessConfig;
 
         const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const groupMembershipRepository = database.getRepository(
@@ -78,7 +87,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         });
 
         const hasKleinkramDevs = userWithGroups.memberships?.some(
-            (m) => m.accessGroup?.name === 'Kleinkram Developers',
+            (m) => m.accessGroup?.uuid === TEST_GROUP_UUID,
         );
         expect(hasKleinkramDevs).toBe(true);
     });
@@ -142,7 +151,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         });
 
         const hasKleinkramDevs = userWithGroups.memberships?.some(
-            (m) => m.accessGroup?.name === 'Kleinkram Developers',
+            (m) => m.accessGroup?.uuid === TEST_GROUP_UUID,
         );
         expect(hasKleinkramDevs).toBe(true);
     });
