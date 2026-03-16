@@ -1,5 +1,4 @@
 import { AccessService } from '@/services/access.service';
-import { UserService } from '@/services/user.service';
 import {
     AccessGroupAuditService,
     AccessGroupEntity,
@@ -26,7 +25,7 @@ import { AccessController } from './access.controller';
         ]),
         UserModule,
     ],
-    providers: [AccessService, AccessGroupAuditService, UserService],
+    providers: [AccessService, AccessGroupAuditService],
     controllers: [AccessController],
     exports: [AccessService],
 })
