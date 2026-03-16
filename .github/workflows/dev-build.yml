@@ -24,6 +24,21 @@ jobs:
                   GIT_BRANCH: ${{ github.ref_name }}
                   GIT_COMMIT: ${{ github.sha }}
                   S3_ENDPOINT: ${{ vars.S3_ENDPOINT_DEV }}
+            - name: Extract project version
+              id: get_version
+              run: echo "version=v$(jq -r .version package.json)-dev" >> $GITHUB_OUTPUT
             - working-directory: .
               name: push the docker image
               run: docker compose -f docker-compose.dev.yml push api-server frontend queue-consumer documentation artifact-uploader
+            - name: Tag and push versioned images
+              run: |
+                  docker tag rslethz/kleinkram:api-server-dev rslethz/kleinkram:api-server-${{ steps.get_version.outputs.version }}
+                  docker push rslethz/kleinkram:api-server-${{ steps.get_version.outputs.version }}
+                  docker tag rslethz/kleinkram:frontend-dev rslethz/kleinkram:frontend-${{ steps.get_version.outputs.version }}
+                  docker push rslethz/kleinkram:frontend-${{ steps.get_version.outputs.version }}
+                  docker tag rslethz/kleinkram:queue-consumer-dev rslethz/kleinkram:queue-consumer-${{ steps.get_version.outputs.version }}
+                  docker push rslethz/kleinkram:queue-consumer-${{ steps.get_version.outputs.version }}
+                  docker tag rslethz/kleinkram:docs-dev rslethz/kleinkram:docs-${{ steps.get_version.outputs.version }}
+                  docker push rslethz/kleinkram:docs-${{ steps.get_version.outputs.version }}
+                  docker tag rslethz/kleinkram:artifact-uploader-dev rslethz/kleinkram:artifact-uploader-${{ steps.get_version.outputs.version }}
+                  docker push rslethz/kleinkram:artifact-uploader-${{ steps.get_version.outputs.version }}
