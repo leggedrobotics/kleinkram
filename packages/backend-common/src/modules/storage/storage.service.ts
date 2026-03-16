@@ -6,6 +6,7 @@ import {
     HeadObjectCommand,
     ListObjectsV2Command,
     PutBucketCorsCommand,
+    PutBucketLifecycleConfigurationCommand,
     PutObjectTaggingCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -75,6 +76,35 @@ export class StorageService implements OnModuleInit {
             } catch (error) {
                 Logger.warn(
                     `Failed to configure CORS for S3 bucket ${bucketName}: ${String(error)}`,
+                    'StorageService',
+                );
+            }
+
+            try {
+                const lifecycleCommand =
+                    new PutBucketLifecycleConfigurationCommand({
+                        Bucket: bucketName,
+                        LifecycleConfiguration: {
+                            Rules: [
+                                {
+                                    ID: 'AbortIncompleteMultipartUpload',
+                                    Status: 'Enabled',
+                                    Filter: {}, // Empty filter applies to all objects
+                                    AbortIncompleteMultipartUpload: {
+                                        DaysAfterInitiation: 1,
+                                    },
+                                },
+                            ],
+                        },
+                    });
+                await this.clients.internal.send(lifecycleCommand);
+                Logger.debug(
+                    `Configured Lifecycle for S3 bucket ${bucketName}`,
+                    'StorageService',
+                );
+            } catch (error) {
+                Logger.warn(
+                    `Failed to configure Lifecycle for S3 bucket ${bucketName}: ${String(error)}`,
                     'StorageService',
                 );
             }
