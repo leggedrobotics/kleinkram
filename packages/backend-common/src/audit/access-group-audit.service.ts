@@ -6,6 +6,8 @@ import { AccessGroupEventEntity } from '../entities/auth/access-group-event.enti
 import { AccessGroupEntity } from '../entities/auth/access-group.entity';
 import { UserEntity } from '../entities/user/user.entity';
 
+const MAX_ACCESS_GROUP_LOGS = 1000;
+
 @Injectable()
 export class AccessGroupAuditService {
     private readonly logger = new Logger(AccessGroupAuditService.name);
@@ -59,6 +61,8 @@ export class AccessGroupAuditService {
             where: { accessGroup: { uuid: accessGroupUuid } },
             relations: ['actor'],
             order: { createdAt: 'DESC' },
+            skip: 0,
+            take: MAX_ACCESS_GROUP_LOGS,
         });
     }
 }
