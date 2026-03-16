@@ -675,7 +675,7 @@ const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
 const auditLogsQueryEnabled = computed(
     () => !personal.value && currentUserCanEdit.value,
 );
-const { data: auditLogs } = useAccessGroupAuditLogs(uuid.value, {
+const { data: auditLogs } = useAccessGroupAuditLogs(uuid, {
     enabled: auditLogsQueryEnabled,
 });
 
