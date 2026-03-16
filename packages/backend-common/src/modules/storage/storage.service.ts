@@ -5,6 +5,7 @@ import {
     GetObjectTaggingCommand,
     HeadObjectCommand,
     ListObjectsV2Command,
+    NotFound,
     PutBucketCorsCommand,
     PutBucketLifecycleConfigurationCommand,
     PutObjectTaggingCommand,
@@ -223,12 +224,7 @@ export class StorageService implements OnModuleInit {
                 metaData: response.Metadata ?? {},
             };
         } catch (error: unknown) {
-            if (
-                error instanceof Error &&
-                (error.name === 'NotFound' ||
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                    (error as any).$metadata?.httpStatusCode === 404)
-            ) {
+            if (error instanceof NotFound) {
                 return undefined;
             }
             throw error;
