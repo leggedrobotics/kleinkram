@@ -12,6 +12,7 @@ import {
     CurrentAPIUserDto,
     NoQueryParametersDto,
     PermissionsDto,
+    ResolveUsersDto,
     UserDto,
     UsersDto,
 } from '@kleinkram/api-dto';
@@ -133,5 +134,14 @@ export class UserController {
             sortBy,
             sortOrder === 'ASC' ? SortOrder.ASC : SortOrder.DESC,
         );
+    }
+
+    @Post('resolve')
+    @LoggedIn()
+    @ApiOperation({ summary: 'Resolve a list of User UUIDs to their names' })
+    async resolve(
+        @Body() body: ResolveUsersDto,
+    ): Promise<Record<string, string>> {
+        return this.userService.resolveUsers(body.uuids);
     }
 }
