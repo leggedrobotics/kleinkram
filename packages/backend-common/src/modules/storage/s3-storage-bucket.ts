@@ -139,7 +139,37 @@ export class S3StorageBucket implements IStorageBucket {
                 metaData: response.Metadata ?? {},
             };
         } catch (error: unknown) {
-            if (error instanceof NotFound) {
+            let statusCode: number | undefined;
+            let errorCode: string | undefined;
+
+            if (typeof error === 'object' && error !== null) {
+                const errorObject = error as Record<string, unknown>;
+                if (typeof errorObject.name === 'string') {
+                    errorCode = errorObject.name;
+                } else if (typeof errorObject.Code === 'string') {
+                    errorCode = errorObject.Code;
+                }
+
+                if (
+                    typeof errorObject.$metadata === 'object' &&
+                    errorObject.$metadata !== null
+                ) {
+                    const metadata = errorObject.$metadata as Record<
+                        string,
+                        unknown
+                    >;
+                    if (typeof metadata.httpStatusCode === 'number') {
+                        statusCode = metadata.httpStatusCode;
+                    }
+                }
+            }
+
+            if (
+                error instanceof NotFound ||
+                statusCode === 404 ||
+                errorCode === 'NotFound' ||
+                errorCode === 'NoSuchKey'
+            ) {
                 return undefined;
             }
             throw error;
