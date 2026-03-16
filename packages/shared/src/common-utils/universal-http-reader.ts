@@ -187,12 +187,17 @@ export class UniversalHttpReader implements IReadable {
                         activeOffset + BigInt(data.length) ===
                             BigInt(this._size)
                     ) {
-                        return data.subarray(relativeOffset);
+                        const chunk = data.subarray(relativeOffset);
+                        this.lastFetchEnd = offset + BigInt(chunk.length);
+                        return chunk;
                     }
                     throw new Error(
                         `Fetched shared data smaller than requested and not at EOF: ${String(data.length)} < ${String(relativeOffset + Number(length))} at offset ${String(activeOffset)}`,
                     );
                 }
+
+                // After slicing, track the end of what was logically delivered
+                this.lastFetchEnd = offset + length;
                 return data.subarray(
                     relativeOffset,
                     relativeOffset + Number(length),
@@ -206,10 +211,10 @@ export class UniversalHttpReader implements IReadable {
             isSequential = false;
         } else {
             const gap = offset - this.lastFetchEnd;
-            // Strict sequential check: gap must be >= -20MB (overlap) and <= 256KB (forward gap).
+            // Strict sequential check: gap must be >= -20MB (overlap) and <= 20MB (forward gap).
             // A negative gap up to -20MB means the parser is asking for data slightly behind
-            // the end of our last fetch. A >256KB forward skip means random access.
-            if (gap < -20n * 1024n * 1024n || gap > 256n * 1024n) {
+            // the end of our last fetch. A >20MB forward skip means random access.
+            if (gap < -20n * 1024n * 1024n || gap > 20n * 1024n * 1024n) {
                 isSequential = false;
             }
         }
