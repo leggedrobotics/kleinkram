@@ -22,8 +22,11 @@ async function syncAffiliationAndReturn(
     user: UserEntity,
     email: unknown,
 ): Promise<UserEntity> {
-    user.email = String(email);
-    await affiliationGroupService.addToAffiliationGroups(config, user);
+    await affiliationGroupService.addToAffiliationGroups(
+        config,
+        user,
+        String(email),
+    );
     return user;
 }
 
