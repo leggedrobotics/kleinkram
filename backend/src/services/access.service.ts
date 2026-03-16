@@ -418,7 +418,20 @@ export class AccessService {
                     name: accessGroup.name,
                     type: accessGroup.type,
                     hidden: accessGroup.hidden,
-                    projectAccesses: [],
+                    projectAccesses:
+                        accessGroup.project_accesses?.map(
+                            (value) =>
+                                ({
+                                    createdAt: value.project?.createdAt,
+                                    description: value.project?.description,
+                                    updatedAt: value.project?.updatedAt,
+                                    name: value.project?.name,
+                                    uuid: value.project?.uuid,
+                                    rights: value.rights,
+                                    autoConvert:
+                                        value.project?.autoConvert ?? false,
+                                }) as ProjectWithAccessRightsDto,
+                        ) ?? [],
                     emailPattern:
                         accessGroup.type === AccessGroupType.AFFILIATION
                             ? this.configService
