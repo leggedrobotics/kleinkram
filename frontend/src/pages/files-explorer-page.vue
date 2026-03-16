@@ -1,32 +1,45 @@
 <template>
     <div>
         <title-section :title="mission?.name">
-            <template #subtitle>
-                <div>
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="flex">
-                                <span
-                                    v-for="tag in mission?.tags ??
-                                    ([] as TagDto[])"
-                                    :key="tag.uuid"
+            <template #title>
+                <div class="row no-wrap items-center q-gutter-x-md">
+                    <h1
+                        class="text-h5 text-md-h3 q-ma-none ellipsis"
+                        style="line-height: 1.2"
+                    >
+                        {{ mission?.name ?? '' }}
+                        <q-tooltip v-if="mission?.name">
+                            {{ mission?.name }}
+                        </q-tooltip>
+                    </h1>
+                    <div v-if="mission?.tags" class="q-shrink">
+                        <div
+                            class="q-btn q-btn-item non-selectable no-outline q-btn--unelevated q-btn--rectangle bg-grey-2 text-grey-9 q-px-sm"
+                            style="
+                                font-size: 12px;
+                                font-weight: 500;
+                                text-transform: none;
+                                border-radius: 4px;
+                                min-height: 24px;
+                                padding-top: 2px;
+                                padding-bottom: 2px;
+                                cursor: pointer;
+                            "
+                            @click="openMetadataDrawer"
+                        >
+                            <span
+                                class="q-btn__content text-center col items-center q-anchor--skip justify-center row"
+                            >
+                                <q-icon
+                                    name="sym_o_sell"
+                                    size="14px"
                                     class="q-mr-xs"
+                                />
+                                <span
+                                    >{{ mission.tags.length }} metadata
+                                    attributes</span
                                 >
-                                    <q-chip
-                                        square
-                                        :style="[
-                                            tag.type.datatype == 'LINK'
-                                                ? { cursor: 'pointer' }
-                                                : {},
-                                        ]"
-                                        color="gray"
-                                        @mouseup="() => openLink(tag)"
-                                    >
-                                        {{ tag.type.name }}:
-                                        {{ tag.value }}
-                                    </q-chip>
-                                </span>
-                            </div>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -34,18 +47,16 @@
 
             <template #buttons>
                 <div class="row q-gutter-x-sm" style="height: 100%">
-                    <MissionMetadataOpener v-if="mission" :mission="mission">
-                        <q-btn
-                            class="button-border"
-                            flat
-                            style="height: 100%"
-                            color="primary"
-                            icon="sym_o_sell"
-                            label="Edit Metadata"
-                        >
-                            <q-tooltip> Manage Metadata</q-tooltip>
-                        </q-btn>
-                    </MissionMetadataOpener>
+                    <q-btn
+                        v-if="mission"
+                        class="button-border"
+                        flat
+                        style="height: 100%"
+                        icon="sym_o_sell"
+                        label="Metadata"
+                        @click="openMetadataDrawer"
+                    >
+                    </q-btn>
 
                     <q-btn
                         icon="sym_o_more_vert"
@@ -174,19 +185,23 @@
                 <MissionActions />
             </q-tab-panel>
         </q-tab-panels>
+
+        <MissionMetadataDrawer
+            v-if="mission"
+            v-model:open="isMetadataDrawerOpen"
+            :mission="mission"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
-import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
-import { DataType } from '@kleinkram/shared';
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
-import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
 import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
 import KleinDownloadMission from 'components/cli-links/klein-download-mission.vue';
 import MissionActions from 'components/explorer-page/mission-actions.vue';
 import MissionFiles from 'components/explorer-page/mission-files.vue';
+import MissionMetadataDrawer from 'components/explorer-page/mission-metadata-drawer.vue';
 import TitleSection from 'components/title-section.vue';
 import { copyToClipboard, Notify } from 'quasar';
 import {
@@ -194,21 +209,18 @@ import {
     useMission,
 } from 'src/hooks/query-hooks';
 import { useMissionUUID } from 'src/hooks/router-hooks';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const $router = useRouter();
 const $route = useRoute();
 
 const missionUuid = useMissionUUID();
-// We still need a handler in this scope?
-// files-explorer-page previously had a handler.
-// But now the children manage handlers.
-// However, useMission error handler used handler to setMissionUUID to undefined?
-// Let's see if we need that side effect.
-// "handler.value.setMissionUUID(undefined)" likely cleared the UI state on error.
-// We can skip that or instantiate a local handler if needed, but it's probably fine to just notify.
-// Actually, relying on children is better.
+const isMetadataDrawerOpen = ref(false);
+
+const openMetadataDrawer = () => {
+    isMetadataDrawerOpen.value = true;
+};
 
 const activeTab = computed({
     get: () => ($route.params.tab as string) || 'files',
@@ -247,11 +259,6 @@ registerNoPermissionErrorHandler(
     'mission',
     missionError,
 );
-
-const openLink = (tag: TagDto): void => {
-    if (tag.type.datatype !== DataType.LINK) return;
-    window.open(tag.valueAsString, '_blank');
-};
 
 const copyMissionUuidToClipboard = async (): Promise<void> => {
     await copyToClipboard(missionUuid.value ?? '');
