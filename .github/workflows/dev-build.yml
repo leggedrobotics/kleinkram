@@ -28,9 +28,14 @@ jobs:
               id: get_version
               run: |
                   set -euo pipefail
-                  RAW_VERSION="$(jq -er .version package.json)"
+                  RAW_VERSION="$(jq -r .version package.json)"
+                  if [ -z "$RAW_VERSION" ] || [ "$RAW_VERSION" = "null" ]; then
+                    echo "ERROR: Could not extract version from package.json" >&2
+                    exit 1
+                  fi
                   SAFE_VERSION="$(printf '%s' "$RAW_VERSION" | tr -c 'A-Za-z0-9_.-' '-')"
-                  echo "version=v${SAFE_VERSION}-dev" >> "$GITHUB_OUTPUT"
+                  SHORT_SHA="$(echo ${{ github.sha }} | cut -c1-7)"
+                  echo "version=v${SAFE_VERSION}-dev-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
             - working-directory: .
               name: push the docker image
               run: docker compose -f docker-compose.dev.yml push api-server frontend queue-consumer documentation artifact-uploader
@@ -38,6 +43,10 @@ jobs:
               env:
                   VERSION: ${{ steps.get_version.outputs.version }}
               run: |
+                  if docker manifest inspect rslethz/kleinkram:api-server-${VERSION} > /dev/null 2>&1; then
+                      echo "ERROR: Version tag ${VERSION} already exists in registry." >&2
+                      exit 1
+                  fi
                   docker tag rslethz/kleinkram:api-server-dev rslethz/kleinkram:api-server-${VERSION}
                   docker push rslethz/kleinkram:api-server-${VERSION}
                   docker tag rslethz/kleinkram:frontend-dev rslethz/kleinkram:frontend-${VERSION}

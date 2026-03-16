@@ -27,9 +27,9 @@ jobs:
             - name: Extract project version
               id: get_version
               run: |
-                  VERSION="$(jq -er .version package.json)"
-                  if [ -z "$VERSION" ]; then
-                      echo "Error: package.json .version is missing or empty" >&2
+                  VERSION="$(jq -r .version package.json)"
+                  if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+                      echo "ERROR: Could not extract version from package.json" >&2
                       exit 1
                   fi
                   VERSION_WITHOUT_BUILD="${VERSION%%+*}"
@@ -41,6 +41,10 @@ jobs:
               env:
                   VERSION: ${{ steps.get_version.outputs.version }}
               run: |
+                  if docker manifest inspect rslethz/kleinkram:api-server-${VERSION} > /dev/null 2>&1; then
+                      echo "ERROR: Version tag ${VERSION} already exists in registry." >&2
+                      exit 1
+                  fi
                   docker tag rslethz/kleinkram:api-server-latest rslethz/kleinkram:api-server-${VERSION}
                   docker push rslethz/kleinkram:api-server-${VERSION}
                   docker tag rslethz/kleinkram:frontend-latest rslethz/kleinkram:frontend-${VERSION}
