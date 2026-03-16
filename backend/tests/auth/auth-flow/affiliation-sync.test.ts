@@ -155,4 +155,68 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         );
         expect(hasKleinkramDevs).toBe(true);
     });
+
+    test('should sync affiliation groups when logging in with existing account (validateAndCreateUserByGitHub)', async () => {
+        const userRepository = database.getRepository(UserEntity);
+        const accountRepository = database.getRepository(AccountEntity);
+
+        const email3 = 'test-sync-3@kleinkram.dev';
+
+        // 1. Create user and fully linked account via createNewUser
+        await createNewUser(
+            config,
+            userRepository,
+            accountRepository,
+            affiliationGroupService,
+            {
+                oauthID: 'test-oauth-id-3',
+                provider: Providers.GITHUB,
+                email: email3,
+                username: 'Test Sync 3',
+                picture: '',
+            },
+        );
+
+        // Remove the existing memberships to simulate an old user that missed out
+        const groupMembershipRepository = database.getRepository(
+            GroupMembershipEntity,
+        );
+        const existingMemberships = await groupMembershipRepository.find({
+            where: { user: { email: email3 } },
+        });
+        for (const m of existingMemberships) {
+            await groupMembershipRepository.remove(m);
+        }
+
+        const configService = {
+            get: (key: string) => (key === 'accessConfig' ? config : undefined),
+        } as unknown as ConfigService;
+
+        const authService = new AuthService(
+            {} as unknown as JwtService, // JwtService not needed for validateAndCreate
+            accountRepository,
+            userRepository,
+            affiliationGroupService,
+            configService,
+        );
+
+        // 2. Call validateAndCreateUserByGitHub
+        await authService.validateAndCreateUserByGitHub({
+            id: 'test-oauth-id-3',
+            emails: [{ value: email3 }],
+            displayName: 'Test Sync 3',
+            photos: [{ value: '' }],
+        });
+
+        // 3. Verify affiliation group membership was added back
+        const userWithGroups = await userRepository.findOneOrFail({
+            where: { email: email3 },
+            relations: ['memberships', 'memberships.accessGroup'],
+        });
+
+        const hasKleinkramDevs = userWithGroups.memberships?.some(
+            (m) => m.accessGroup?.uuid === TEST_GROUP_UUID,
+        );
+        expect(hasKleinkramDevs).toBe(true);
+    });
 });
