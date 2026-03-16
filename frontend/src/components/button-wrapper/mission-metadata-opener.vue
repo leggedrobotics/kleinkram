@@ -2,8 +2,7 @@
     <div
         :class="{
             disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': canModify,
+            'cursor-not-allowed': !canModify,
         }"
         style="height: 100%"
         @click="openTagsDialog"
@@ -31,7 +30,6 @@ const { data: permissions } = usePermissionsQuery();
 const canModify = computed(() =>
     canModifyMission(
         properties.mission.uuid,
-
         properties.mission.project.uuid,
         permissions.value,
     ),
@@ -53,5 +51,3 @@ const openTagsDialog = (): void => {
     opacity: 0.5;
 }
 </style>
-
-<style scoped></style>
