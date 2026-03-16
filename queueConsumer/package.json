@@ -75,7 +75,7 @@
     },
     "devDependencies": {
         "@nestjs/cli": "^11.0.14",
-        "@types/dockerode": "^3.3.47",
+        "@types/dockerode": "^4.0.1",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "25.4.0",
         "@types/redlock": "^4.0.8",
