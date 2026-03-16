@@ -1,9 +1,11 @@
 import {
     DeleteObjectCommand,
     DeleteObjectTaggingCommand,
+    GetBucketLifecycleConfigurationCommand,
     GetObjectCommand,
     GetObjectTaggingCommand,
     HeadObjectCommand,
+    LifecycleRule,
     ListObjectsV2Command,
     NotFound,
     PutBucketCorsCommand,
@@ -82,33 +84,73 @@ export class StorageService implements OnModuleInit {
             }
 
             try {
-                const lifecycleCommand =
-                    new PutBucketLifecycleConfigurationCommand({
-                        Bucket: bucketName,
-                        LifecycleConfiguration: {
-                            Rules: [
-                                {
-                                    ID: 'AbortIncompleteMultipartUpload',
-                                    Status: 'Enabled',
-                                    Filter: {}, // Empty filter applies to all objects
-                                    AbortIncompleteMultipartUpload: {
-                                        DaysAfterInitiation: 1,
-                                    },
-                                },
-                            ],
-                        },
-                    });
-                await this.clients.internal.send(lifecycleCommand);
-                Logger.debug(
-                    `Configured Lifecycle for S3 bucket ${bucketName}`,
-                    'StorageService',
-                );
+                await this.applyMultipartUploadLifecycleRule(bucketName);
             } catch (error) {
                 Logger.warn(
                     `Failed to configure Lifecycle for S3 bucket ${bucketName}: ${String(error)}`,
                     'StorageService',
                 );
             }
+        }
+    }
+
+    /**
+     * Applies a lifecycle rule to abort incomplete multipart uploads after 1 day.
+     * This method fetches the existing lifecycle rules for the bucket and appends
+     * the new rule to them, preserving any existing rules (e.g., transition or
+     * expiration rules) that may have been configured externally via IaC.
+     *
+     * @param bucketName The name of the S3 bucket to apply the rule to.
+     */
+    private async applyMultipartUploadLifecycleRule(
+        bucketName: string,
+    ): Promise<void> {
+        let existingRules: LifecycleRule[] = [];
+        try {
+            const getCommand = new GetBucketLifecycleConfigurationCommand({
+                Bucket: bucketName,
+            });
+            const response = await this.clients.internal.send(getCommand);
+            existingRules = response.Rules ?? [];
+        } catch (error: unknown) {
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'name' in error &&
+                (error as Error).name === 'NoSuchLifecycleConfiguration'
+            ) {
+                // No lifecycle configuration exists; we can proceed to create one
+            } else {
+                throw error;
+            }
+        }
+
+        const ruleId = 'AbortIncompleteMultipartUpload';
+        const ruleExists = existingRules.some((r) => r.ID === ruleId);
+
+        if (!ruleExists) {
+            existingRules.push({
+                ID: ruleId,
+                Status: 'Enabled',
+                Filter: {}, // Empty filter applies to all objects
+                AbortIncompleteMultipartUpload: {
+                    DaysAfterInitiation: 1,
+                },
+            });
+
+            const lifecycleCommand = new PutBucketLifecycleConfigurationCommand(
+                {
+                    Bucket: bucketName,
+                    LifecycleConfiguration: {
+                        Rules: existingRules,
+                    },
+                },
+            );
+            await this.clients.internal.send(lifecycleCommand);
+            Logger.debug(
+                `Configured Lifecycle for S3 bucket ${bucketName}`,
+                'StorageService',
+            );
         }
     }
 
