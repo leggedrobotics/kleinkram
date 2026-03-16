@@ -70,6 +70,12 @@
                     style="color: #222"
                 />
                 <q-tab name="projects" label="Projects" style="color: #222" />
+                <q-tab
+                    v-if="!personal && currentUserCanEdit"
+                    name="auditLogs"
+                    label="Audit Logs"
+                    style="color: #222"
+                />
             </q-tabs>
         </template>
     </title-section>
@@ -395,6 +401,212 @@
                 </template>
             </q-table>
         </q-tab-panel>
+        <q-tab-panel v-if="!personal && currentUserCanEdit" name="auditLogs">
+            <q-table
+                flat
+                bordered
+                :rows="auditLogs?.data || []"
+                :columns="auditLogCols as any"
+                row-key="uuid"
+                :pagination="{
+                    rowsPerPage: 50,
+                    sortBy: 'createdAt',
+                    descending: true,
+                }"
+            >
+                <template #no-data>
+                    <div class="full-width row flex-center q-pa-xl text-grey-8">
+                        <div class="text-center">
+                            <q-icon
+                                name="sym_o_history"
+                                size="64px"
+                                color="grey-4"
+                            />
+                            <div class="text-h6 q-mt-md">
+                                No audit logs have been recorded for this group
+                                yet.
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template #body-cell-createdAt="props">
+                    <q-td :props="props">
+                        {{ formatDate(new Date(props.row.createdAt), true) }}
+                    </q-td>
+                </template>
+                <template #body-cell-actor="props">
+                    <q-td :props="props">
+                        <div v-if="props.row.actor">
+                            {{ props.row.actor.name }}
+                        </div>
+                        <div v-else class="text-grey-7 text-italic">System</div>
+                    </q-td>
+                </template>
+                <template #body-cell-details="props">
+                    <q-td :props="props">
+                        <div v-if="props.row.type === 'CREATE_GROUP'">
+                            <span class="text-grey-7">Created group</span>
+                            <span class="text-weight-bold">{{
+                                props.row.details.name
+                            }}</span>
+                        </div>
+                        <div
+                            v-else-if="props.row.type === 'ADD_USER'"
+                            class="row items-center q-gutter-x-sm"
+                        >
+                            <span class="text-grey-7">Added user</span>
+                            <span class="text-weight-bold">{{
+                                props.row.details.userName ||
+                                props.row.details.userUuid
+                            }}</span>
+                            <template
+                                v-if="
+                                    props.row.details.expireDate &&
+                                    props.row.details.expireDate !== 'never'
+                                "
+                            >
+                                <span class="text-grey-7">until</span>
+                                <span class="text-weight-bold">{{
+                                    formatDate(
+                                        new Date(props.row.details.expireDate),
+                                        false,
+                                    )
+                                }}</span>
+                            </template>
+                            <q-chip
+                                v-if="props.row.details.canEditGroup"
+                                size="sm"
+                                color="grey-3"
+                                text-color="grey-9"
+                                icon="sym_o_admin_panel_settings"
+                                class="q-ma-none q-px-sm"
+                                ><span class="q-ml-sm">Admin</span></q-chip
+                            >
+                        </div>
+                        <div
+                            v-else-if="props.row.type === 'REMOVE_USER'"
+                            class="row items-center q-gutter-x-sm"
+                        >
+                            <span class="text-grey-7">Removed users:</span>
+                            <template v-if="props.row.details.affectedUsers">
+                                <span
+                                    v-for="(affectedUser, index) in props.row
+                                        .details.affectedUsers"
+                                    :key="affectedUser.uuid"
+                                    class="text-weight-bold"
+                                >
+                                    {{ affectedUser.name
+                                    }}<template
+                                        v-if="
+                                            Number(index) <
+                                            props.row.details.affectedUsers
+                                                .length -
+                                                1
+                                        "
+                                        >,
+                                    </template>
+                                </span>
+                            </template>
+                            <template v-else>
+                                <span
+                                    v-for="(affectedUuid, index) in props.row
+                                        .details.userUuids"
+                                    :key="affectedUuid"
+                                    class="text-weight-bold"
+                                >
+                                    {{ affectedUuid
+                                    }}<template
+                                        v-if="
+                                            Number(index) <
+                                            props.row.details.userUuids.length -
+                                                1
+                                        "
+                                        >,
+                                    </template>
+                                </span>
+                            </template>
+                        </div>
+                        <div
+                            v-else-if="props.row.type === 'UPDATE_EXPIRE_DATE'"
+                            class="row items-center q-gutter-x-sm"
+                        >
+                            <span class="text-grey-7"
+                                >Updated expiration for</span
+                            >
+                            <span class="text-weight-bold">{{
+                                props.row.details.userName ||
+                                props.row.details.userUuid
+                            }}</span>
+                            <span class="text-grey-7">to</span>
+                            <span
+                                v-if="props.row.details.expireDate === 'never'"
+                                class="text-weight-bold"
+                                >Never</span
+                            >
+                            <span v-else class="text-weight-bold">{{
+                                formatDate(
+                                    new Date(props.row.details.expireDate),
+                                    false,
+                                )
+                            }}</span>
+                        </div>
+                        <div
+                            v-else-if="props.row.type === 'ADD_PROJECT'"
+                            class="row items-center q-gutter-x-sm"
+                        >
+                            <span class="text-grey-7">Added project</span>
+                            <span class="text-weight-bold">{{
+                                props.row.details.projectName ||
+                                props.row.details.projectUuid
+                            }}</span>
+                            <span class="text-grey-7">with rights</span>
+                            <span class="text-weight-bold">{{
+                                AccessGroupRights[props.row.details.rights]
+                            }}</span>
+                        </div>
+                        <div
+                            v-else-if="props.row.type === 'REMOVE_PROJECT'"
+                            class="row items-center q-gutter-x-sm"
+                        >
+                            <span class="text-grey-7">Removed project</span>
+                            <span class="text-weight-bold">{{
+                                props.row.details.projectName ||
+                                props.row.details.projectUuid
+                            }}</span>
+                        </div>
+                        <div
+                            v-else-if="
+                                props.row.type === 'UPDATE_PROJECT_ACCESS'
+                            "
+                            class="row items-center q-gutter-x-sm"
+                        >
+                            <span class="text-grey-7"
+                                >Updated rights for project</span
+                            >
+                            <span class="text-weight-bold">{{
+                                props.row.details.projectName ||
+                                props.row.details.projectUuid
+                            }}</span>
+                            <span class="text-grey-7">to</span>
+                            <span class="text-weight-bold">{{
+                                AccessGroupRights[props.row.details.rights]
+                            }}</span>
+                        </div>
+                        <div
+                            v-else
+                            style="
+                                white-space: pre-wrap;
+                                font-family: monospace;
+                                font-size: 0.85em;
+                                color: #555;
+                            "
+                        >
+                            {{ JSON.stringify(props.row.details, null, 2) }}
+                        </div>
+                    </q-td>
+                </template>
+            </q-table>
+        </q-tab-panel>
     </q-tab-panels>
 </template>
 <script setup lang="ts">
@@ -415,9 +627,13 @@ import { Notify, QTable, useQuasar } from 'quasar';
 import { projectAccessColumns } from 'src/components/explorer-page/explorer-page-table-columns';
 import AddProjectToAccessGroupDialog from 'src/dialogs/add-project-access-group-dialog.vue';
 import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expiration-date-dialog.vue';
-import { useAccessGroup, useUser } from 'src/hooks/query-hooks';
+import {
+    useAccessGroup,
+    useAccessGroupAuditLogs,
+    useUser,
+} from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
-import { isExpired } from 'src/services/date-formating';
+import { formatDate, isExpired } from 'src/services/date-formating';
 import {
     removeUsersFromAccessGroup,
     setAccessGroupExpiry,
@@ -456,6 +672,7 @@ const user = useUser();
 const refetchOnClick: (event_: Event) => void = () => refetch;
 
 const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
+const { data: auditLogs } = useAccessGroupAuditLogs(uuid.value);
 
 const { mutate: removeUsers } = useMutation({
     mutationFn: (userUuids: string[]) =>
@@ -464,6 +681,9 @@ const { mutate: removeUsers } = useMutation({
         selectedUsers.value = [];
         await queryClient.invalidateQueries({
             queryKey: ['AccessGroup', uuid.value],
+        });
+        await queryClient.invalidateQueries({
+            queryKey: ['AccessGroupAuditLogs', uuid.value],
         });
         Notify.create({
             message: 'User(s) removed successfully',
@@ -556,8 +776,10 @@ const { mutate: setAccessGroup } = useMutation({
         await queryClient.invalidateQueries({
             predicate: (query) => {
                 return (
-                    query.queryKey[0] === 'AccessGroup' &&
-                    query.queryKey[1] === uuid.value
+                    (query.queryKey[0] === 'AccessGroup' &&
+                        query.queryKey[1] === uuid.value) ||
+                    (query.queryKey[0] === 'AccessGroupAuditLogs' &&
+                        query.queryKey[1] === uuid.value)
                 );
             },
         });
@@ -678,5 +900,40 @@ const rowClick = async (_uuid: string): Promise<void> => {
         },
     });
 };
+
+const auditLogCols = [
+    {
+        name: 'createdAt',
+        required: true,
+        label: 'Timestamp',
+        align: 'left',
+        field: 'createdAt',
+        sortable: true,
+    },
+    {
+        name: 'actor',
+        required: true,
+        label: 'Actor',
+        align: 'left',
+        field: (row: { actor?: { name: string } }) =>
+            row.actor?.name ?? 'System',
+        sortable: true,
+    },
+    {
+        name: 'type',
+        required: true,
+        label: 'Action Type',
+        align: 'left',
+        field: 'type',
+        sortable: true,
+    },
+    {
+        name: 'details',
+        required: true,
+        label: 'Details',
+        align: 'left',
+        field: 'details',
+    },
+];
 </script>
 <style scoped></style>

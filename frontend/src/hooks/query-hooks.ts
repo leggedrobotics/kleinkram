@@ -1,4 +1,5 @@
 import type { MissionsDto } from '@kleinkram/api-dto';
+import type { AccessGroupAuditLogsDto } from '@kleinkram/api-dto/types/access-control/access-group-audit-logs.dto';
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
@@ -40,6 +41,7 @@ import ROUTES from 'src/router/routes';
 import { getUser } from 'src/services/auth';
 import {
     getAccessGroup,
+    getAccessGroupAuditLogs,
     getProjectAccess,
     searchAccessGroups,
 } from 'src/services/queries/access';
@@ -64,6 +66,7 @@ import { getFilteredTagTypes, getTagTypes } from 'src/services/queries/tag';
 import {
     getMyApiKeys,
     getPermissions,
+    resolveUsers,
     searchUsers,
 } from 'src/services/queries/user';
 import { allWorkers } from 'src/services/queries/worker';
@@ -93,6 +96,17 @@ export const useUser = (): UseQueryReturnType<
     return useQuery<CurrentAPIUserDto | null>({
         queryKey: ['user'],
         queryFn: () => getUser(),
+    });
+};
+
+export const useResolveUsers = (
+    uuids: Ref<string[]> | ComputedRef<string[]> | string[],
+): UseQueryReturnType<Record<string, string>, Error> => {
+    return useQuery<Record<string, string>>({
+        queryKey: ['resolve-users', unref(uuids)],
+        queryFn: () => resolveUsers(unref(uuids)),
+        enabled: computed(() => unref(uuids).length > 0),
+        staleTime: 1000 * 60 * 5, // cache for 5 minutes
     });
 };
 
@@ -577,5 +591,20 @@ export const useSearchAccessGroup = (
                 0,
                 10,
             ),
+    });
+};
+
+export const useAccessGroupAuditLogs = (
+    uuid: Ref<string | undefined> | ComputedRef<string | undefined> | string,
+): UseQueryReturnType<AccessGroupAuditLogsDto | undefined, Error> => {
+    return useQuery({
+        queryKey: computed(() => ['AccessGroupAuditLogs', unref(uuid)]),
+        queryFn: async () => {
+            const resolvedUuid = unref(uuid);
+            if (!resolvedUuid)
+                return undefined as unknown as AccessGroupAuditLogsDto;
+            return await getAccessGroupAuditLogs(resolvedUuid);
+        },
+        enabled: computed(() => !!unref(uuid)),
     });
 };

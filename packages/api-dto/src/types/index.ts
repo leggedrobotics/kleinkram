@@ -1,3 +1,5 @@
+export * from '@api-dto/access-control/access-group-audit-log.dto';
+export * from '@api-dto/access-control/access-group-audit-logs.dto';
 export * from '@api-dto/access-control/access-group.dto';
 export * from '@api-dto/access-control/access-groups.dto';
 export * from '@api-dto/access-control/default-right.dto';
@@ -95,5 +97,7 @@ export * from '@api-dto/upload.dto';
 export * from '@api-dto/user/api-key-metadata.dto';
 export * from '@api-dto/user/api-keys.dto';
 export * from '@api-dto/user/current-api-user.dto';
+export * from '@api-dto/user/resolve-users.dto';
 export * from '@api-dto/user/user.dto';
+
 export * from '@api-dto/user/users.dto';
