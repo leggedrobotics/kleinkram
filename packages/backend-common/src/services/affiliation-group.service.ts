@@ -82,15 +82,26 @@ export class AffiliationGroupService {
      *
      * @param config
      * @param user
+     * @param overrideEmail Override email if user entity email is unset
      */
     async addToAffiliationGroups(
         config: AccessGroupConfig,
         user: UserEntity,
+        overrideEmail?: string,
     ): Promise<void> {
+        const resolvingEmail = overrideEmail ?? user.email;
+
+        if (!resolvingEmail) {
+            this.logger.warn(
+                `Cannot assign affiliation groups for user ${user.uuid}: no email available`,
+            );
+            return;
+        }
+
         await Promise.all(
             // eslint-disable-next-line @typescript-eslint/await-thenable
             config.emails.map((_config) => {
-                if (user.email?.endsWith(_config.email)) {
+                if (resolvingEmail.endsWith(_config.email)) {
                     return Promise.all(
                         _config.access_groups.map(async (uuid) => {
                             const group =
