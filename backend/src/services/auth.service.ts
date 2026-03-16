@@ -22,10 +22,11 @@ async function syncAffiliationAndReturn(
     user: UserEntity,
     email: unknown,
 ): Promise<UserEntity> {
+    const resolvedEmail = typeof email === 'string' ? email : undefined;
     await affiliationGroupService.addToAffiliationGroups(
         config,
         user,
-        String(email),
+        resolvedEmail,
     );
     return user;
 }

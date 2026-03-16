@@ -82,14 +82,14 @@ export class AffiliationGroupService {
      *
      * @param config
      * @param user
-     * @param _email Override email if user entity email is unset
+     * @param overrideEmail Override email if user entity email is unset
      */
     async addToAffiliationGroups(
         config: AccessGroupConfig,
         user: UserEntity,
-        _email?: string,
+        overrideEmail?: string,
     ): Promise<void> {
-        const resolvingEmail = _email ?? user.email;
+        const resolvingEmail = overrideEmail ?? user.email;
 
         await Promise.all(
             // eslint-disable-next-line @typescript-eslint/await-thenable
