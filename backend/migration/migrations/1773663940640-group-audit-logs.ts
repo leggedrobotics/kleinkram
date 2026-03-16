@@ -14,7 +14,7 @@ export class GroupAuditLogs1773663940640 implements MigrationInterface {
             `CREATE INDEX "IDX_20370d0ed93a530bd8c30fa06d" ON "access_group_event" ("accessGroupUuid") `,
         );
         await queryRunner.query(
-            `ALTER TABLE "access_group_event" ADD CONSTRAINT "FK_809d4e34b0efeb860f33d6f4390" FOREIGN KEY ("actorUuid") REFERENCES "user"("uuid") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "access_group_event" ADD CONSTRAINT "FK_809d4e34b0efeb860f33d6f4390" FOREIGN KEY ("actorUuid") REFERENCES "user"("uuid") ON DELETE SET NULL ON UPDATE NO ACTION`,
         );
         await queryRunner.query(
             `ALTER TABLE "access_group_event" ADD CONSTRAINT "FK_20370d0ed93a530bd8c30fa06df" FOREIGN KEY ("accessGroupUuid") REFERENCES "access_group"("uuid") ON DELETE CASCADE ON UPDATE NO ACTION`,
