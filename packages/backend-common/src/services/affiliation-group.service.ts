@@ -91,10 +91,17 @@ export class AffiliationGroupService {
     ): Promise<void> {
         const resolvingEmail = overrideEmail ?? user.email;
 
+        if (!resolvingEmail) {
+            this.logger.warn(
+                `Cannot assign affiliation groups for user ${user.uuid}: no email available`,
+            );
+            return;
+        }
+
         await Promise.all(
             // eslint-disable-next-line @typescript-eslint/await-thenable
             config.emails.map((_config) => {
-                if (resolvingEmail?.endsWith(_config.email)) {
+                if (resolvingEmail.endsWith(_config.email)) {
                     return Promise.all(
                         _config.access_groups.map(async (uuid) => {
                             const group =
