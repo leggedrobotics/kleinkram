@@ -83,13 +83,25 @@
                             <q-btn
                                 flat
                                 dense
-                                icon="sym_o_content_copy"
+                                :icon="
+                                    copiedStates[tag.uuid]
+                                        ? 'sym_o_check'
+                                        : 'sym_o_content_copy'
+                                "
                                 size="sm"
-                                color="grey-7"
+                                :color="
+                                    copiedStates[tag.uuid]
+                                        ? 'positive'
+                                        : 'grey-7'
+                                "
                                 class="bg-grey-1 rounded-borders q-mr-xs"
                                 @click="() => copyTagValue(tag)"
                             >
-                                <q-tooltip>Copy Output</q-tooltip>
+                                <q-tooltip>{{
+                                    copiedStates[tag.uuid]
+                                        ? 'Copied!'
+                                        : 'Copy Output'
+                                }}</q-tooltip>
                             </q-btn>
                         </div>
                     </div>
@@ -110,10 +122,10 @@
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { DataType } from '@kleinkram/shared';
-import { copyToClipboard, Notify, useQuasar } from 'quasar';
+import { copyToClipboard, useQuasar } from 'quasar';
 import ModifyMissionTagsDialog from 'src/dialogs/modify-mission-tags-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     open: boolean;
@@ -160,6 +172,8 @@ const openLink = (tag: TagDto): void => {
     }
 };
 
+const copiedStates = ref<Record<string, boolean>>({});
+
 const copyTagValue = async (tag: TagDto): Promise<void> => {
     const value =
         tag.type.datatype === DataType.BOOLEAN
@@ -167,17 +181,12 @@ const copyTagValue = async (tag: TagDto): Promise<void> => {
             : tag.valueAsString || tag.value;
     try {
         await copyToClipboard(String(value));
-        Notify.create({
-            message: 'Copied to clipboard',
-            color: 'positive',
-            timeout: 2000,
-        });
+        copiedStates.value[tag.uuid] = true;
+        setTimeout(() => {
+            copiedStates.value[tag.uuid] = false;
+        }, 2000);
     } catch {
-        Notify.create({
-            message: 'Failed to copy',
-            color: 'negative',
-            timeout: 2000,
-        });
+        // Silently fail if copy is denied
     }
 };
 
