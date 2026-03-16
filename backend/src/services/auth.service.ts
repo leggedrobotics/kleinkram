@@ -16,6 +16,17 @@ import { JwtPayload } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import logger from '../logger';
 
+async function syncAffiliationAndReturn(
+    affiliationGroupService: AffiliationGroupService,
+    config: AccessGroupConfig,
+    user: UserEntity,
+    email: unknown,
+): Promise<UserEntity> {
+    user.email = String(email);
+    await affiliationGroupService.addToAffiliationGroups(config, user);
+    return user;
+}
+
 @Injectable()
 export class AuthService implements OnModuleInit {
     private readonly config: AccessGroupConfig;
@@ -62,12 +73,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            account.user.email = String(email);
-            await this.affiliationGroupService.addToAffiliationGroups(
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
                 this.config,
                 account.user,
+                email,
             );
-            return account.user;
         }
 
         return this.create(
@@ -103,12 +114,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            account.user.email = String(email);
-            await this.affiliationGroupService.addToAffiliationGroups(
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
                 this.config,
                 account.user,
+                email,
             );
-            return account.user;
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -137,12 +148,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            account.user.email = String(email);
-            await this.affiliationGroupService.addToAffiliationGroups(
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
                 this.config,
                 account.user,
+                email,
             );
-            return account.user;
         }
 
         return this.create(
@@ -253,11 +264,11 @@ export const createNewUser = async (
             `Linking account ${account.uuid} to existing user ${existingUser.uuid}`,
         );
         account.user = existingUser;
-
-        existingUser.email = options.email;
-        await affiliationGroupService.addToAffiliationGroups(
+        await syncAffiliationAndReturn(
+            affiliationGroupService,
             config,
             existingUser,
+            options.email,
         );
 
         return accountRepository.save(account).then(() => existingUser);
