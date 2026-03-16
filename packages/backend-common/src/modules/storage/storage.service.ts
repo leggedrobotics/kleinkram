@@ -1,11 +1,15 @@
 import {
     DeleteObjectCommand,
     DeleteObjectTaggingCommand,
+    GetBucketLifecycleConfigurationCommand,
     GetObjectCommand,
     GetObjectTaggingCommand,
     HeadObjectCommand,
+    LifecycleRule,
     ListObjectsV2Command,
+    NotFound,
     PutBucketCorsCommand,
+    PutBucketLifecycleConfigurationCommand,
     PutObjectTaggingCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -78,7 +82,97 @@ export class StorageService implements OnModuleInit {
                     'StorageService',
                 );
             }
+
+            try {
+                await this.applyMultipartUploadLifecycleRule(bucketName);
+            } catch (error) {
+                Logger.warn(
+                    `Failed to configure Lifecycle for S3 bucket ${bucketName}: ${String(error)}`,
+                    'StorageService',
+                );
+            }
         }
+    }
+
+    /**
+     * Applies a lifecycle rule to abort incomplete multipart uploads after 1 day.
+     * This method fetches the existing lifecycle rules for the bucket and appends
+     * the new rule to them, preserving any existing rules (e.g., transition or
+     * expiration rules) that may have been configured externally via IaC.
+     *
+     * @param bucketName The name of the S3 bucket to apply the rule to.
+     */
+    private async applyMultipartUploadLifecycleRule(
+        bucketName: string,
+    ): Promise<void> {
+        let existingRules: LifecycleRule[] = [];
+        try {
+            const getCommand = new GetBucketLifecycleConfigurationCommand({
+                Bucket: bucketName,
+            });
+            const response = await this.clients.internal.send(getCommand);
+            existingRules = response.Rules ?? [];
+        } catch (error: unknown) {
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'name' in error &&
+                (error as Error).name === 'NoSuchLifecycleConfiguration'
+            ) {
+                // No lifecycle configuration exists; we can proceed to create one
+            } else {
+                throw error;
+            }
+        }
+
+        const ruleId = 'AbortIncompleteMultipartUpload';
+        const ruleExists = existingRules.some((r) => r.ID === ruleId);
+
+        if (!ruleExists) {
+            existingRules.push({
+                ID: ruleId,
+                Status: 'Enabled',
+                Filter: {}, // Empty filter applies to all objects
+                AbortIncompleteMultipartUpload: {
+                    DaysAfterInitiation: 1,
+                },
+            });
+
+            const lifecycleCommand = new PutBucketLifecycleConfigurationCommand(
+                {
+                    Bucket: bucketName,
+                    LifecycleConfiguration: {
+                        Rules: existingRules,
+                    },
+                },
+            );
+            await this.clients.internal.send(lifecycleCommand);
+            Logger.debug(
+                `Configured Lifecycle for S3 bucket ${bucketName}`,
+                'StorageService',
+            );
+        }
+    }
+
+    private async generatePresignedUrl(
+        bucketName: string,
+        objectName: string,
+        expirySeconds: number,
+        isInternal: boolean,
+        responseDisposition?: Record<string, string>,
+    ): Promise<string> {
+        const command = new GetObjectCommand({
+            Bucket: bucketName,
+            Key: objectName,
+            ResponseContentDisposition:
+                responseDisposition?.['response-content-disposition'],
+        });
+        const client = isInternal
+            ? this.clients.internal
+            : this.clients.external;
+        return getSignedUrl(client, command, {
+            expiresIn: expirySeconds,
+        });
     }
 
     async getPresignedDownloadUrl(
@@ -87,15 +181,13 @@ export class StorageService implements OnModuleInit {
         expirySeconds: number,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
-        const command = new GetObjectCommand({
-            Bucket: bucketName,
-            Key: objectName,
-            ResponseContentDisposition:
-                responseDisposition?.['response-content-disposition'],
-        });
-        return getSignedUrl(this.clients.external, command, {
-            expiresIn: expirySeconds,
-        });
+        return this.generatePresignedUrl(
+            bucketName,
+            objectName,
+            expirySeconds,
+            false,
+            responseDisposition,
+        );
     }
 
     async getInternalPresignedDownloadUrl(
@@ -104,15 +196,13 @@ export class StorageService implements OnModuleInit {
         expirySeconds: number,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
-        const command = new GetObjectCommand({
-            Bucket: bucketName,
-            Key: objectName,
-            ResponseContentDisposition:
-                responseDisposition?.['response-content-disposition'],
-        });
-        return getSignedUrl(this.clients.internal, command, {
-            expiresIn: expirySeconds,
-        });
+        return this.generatePresignedUrl(
+            bucketName,
+            objectName,
+            expirySeconds,
+            true,
+            responseDisposition,
+        );
     }
 
     async downloadFile(
@@ -176,11 +266,36 @@ export class StorageService implements OnModuleInit {
                 metaData: response.Metadata ?? {},
             };
         } catch (error: unknown) {
+            let statusCode: number | undefined;
+            let errorCode: string | undefined;
+
+            if (typeof error === 'object' && error !== null) {
+                const errorObject = error as Record<string, unknown>;
+                if (typeof errorObject.name === 'string') {
+                    errorCode = errorObject.name;
+                } else if (typeof errorObject.Code === 'string') {
+                    errorCode = errorObject.Code;
+                }
+
+                if (
+                    typeof errorObject.$metadata === 'object' &&
+                    errorObject.$metadata !== null
+                ) {
+                    const metadata = errorObject.$metadata as Record<
+                        string,
+                        unknown
+                    >;
+                    if (typeof metadata.httpStatusCode === 'number') {
+                        statusCode = metadata.httpStatusCode;
+                    }
+                }
+            }
+
             if (
-                error instanceof Error &&
-                (error.name === 'NotFound' ||
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                    (error as any).$metadata?.httpStatusCode === 404)
+                error instanceof NotFound ||
+                statusCode === 404 ||
+                errorCode === 'NotFound' ||
+                errorCode === 'NoSuchKey'
             ) {
                 return undefined;
             }

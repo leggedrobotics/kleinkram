@@ -5,6 +5,7 @@ import {
     GetObjectTaggingCommand,
     HeadObjectCommand,
     ListObjectsV2Command,
+    NotFound,
     PutObjectCommand,
     PutObjectTaggingCommand,
     _Object,
@@ -33,9 +34,10 @@ export class S3StorageBucket implements IStorageBucket {
         private readonly metricsService?: StorageMetricsService,
     ) {}
 
-    async getPresignedDownloadUrl(
+    private async generatePresignedUrl(
         objectName: string,
         expirySeconds: number,
+        isInternal: boolean,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
         const command = new GetObjectCommand({
@@ -44,9 +46,25 @@ export class S3StorageBucket implements IStorageBucket {
             ResponseContentDisposition:
                 responseDisposition?.['response-content-disposition'],
         });
-        return getSignedUrl(this.clients.external, command, {
+        const client = isInternal
+            ? this.clients.internal
+            : this.clients.external;
+        return getSignedUrl(client, command, {
             expiresIn: expirySeconds,
         });
+    }
+
+    async getPresignedDownloadUrl(
+        objectName: string,
+        expirySeconds: number,
+        responseDisposition?: Record<string, string>,
+    ): Promise<string> {
+        return this.generatePresignedUrl(
+            objectName,
+            expirySeconds,
+            false,
+            responseDisposition,
+        );
     }
 
     async getInternalPresignedDownloadUrl(
@@ -54,15 +72,12 @@ export class S3StorageBucket implements IStorageBucket {
         expirySeconds: number,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
-        const command = new GetObjectCommand({
-            Bucket: this.bucketName,
-            Key: objectName,
-            ResponseContentDisposition:
-                responseDisposition?.['response-content-disposition'],
-        });
-        return getSignedUrl(this.clients.internal, command, {
-            expiresIn: expirySeconds,
-        });
+        return this.generatePresignedUrl(
+            objectName,
+            expirySeconds,
+            true,
+            responseDisposition,
+        );
     }
 
     async downloadFile(
@@ -124,11 +139,36 @@ export class S3StorageBucket implements IStorageBucket {
                 metaData: response.Metadata ?? {},
             };
         } catch (error: unknown) {
+            let statusCode: number | undefined;
+            let errorCode: string | undefined;
+
+            if (typeof error === 'object' && error !== null) {
+                const errorObject = error as Record<string, unknown>;
+                if (typeof errorObject.name === 'string') {
+                    errorCode = errorObject.name;
+                } else if (typeof errorObject.Code === 'string') {
+                    errorCode = errorObject.Code;
+                }
+
+                if (
+                    typeof errorObject.$metadata === 'object' &&
+                    errorObject.$metadata !== null
+                ) {
+                    const metadata = errorObject.$metadata as Record<
+                        string,
+                        unknown
+                    >;
+                    if (typeof metadata.httpStatusCode === 'number') {
+                        statusCode = metadata.httpStatusCode;
+                    }
+                }
+            }
+
             if (
-                error instanceof Error &&
-                (error.name === 'NotFound' ||
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                    (error as any).$metadata?.httpStatusCode === 404)
+                error instanceof NotFound ||
+                statusCode === 404 ||
+                errorCode === 'NotFound' ||
+                errorCode === 'NoSuchKey'
             ) {
                 return undefined;
             }
