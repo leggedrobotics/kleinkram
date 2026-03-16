@@ -77,6 +77,16 @@ export enum AccessGroupType {
     CUSTOM = 'CUSTOM',
 }
 
+export enum AccessGroupEventType {
+    CREATE_GROUP = 'CREATE_GROUP',
+    ADD_USER = 'ADD_USER',
+    REMOVE_USER = 'REMOVE_USER',
+    UPDATE_EXPIRE_DATE = 'UPDATE_EXPIRE_DATE',
+    ADD_PROJECT = 'ADD_PROJECT',
+    REMOVE_PROJECT = 'REMOVE_PROJECT',
+    UPDATE_PROJECT_ACCESS = 'UPDATE_PROJECT_ACCESS',
+}
+
 export enum ActionState {
     PENDING = 'PENDING',
     STARTING = 'STARTING',

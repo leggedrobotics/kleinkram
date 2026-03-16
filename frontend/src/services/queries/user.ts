@@ -51,3 +51,13 @@ export const getMyApiKeys = async (
     });
     return response.data;
 };
+
+export const resolveUsers = async (
+    uuids: string[],
+): Promise<Record<string, string>> => {
+    if (uuids.length === 0) return {};
+    const response = await axios.post<Record<string, string>>('/user/resolve', {
+        uuids,
+    });
+    return response.data;
+};

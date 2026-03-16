@@ -1,6 +1,7 @@
 import { ApiOkResponse, ApiResponse, OutputDto } from '@/decorators';
 import { AccessService } from '@/services/access.service';
 import {
+    AccessGroupAuditLogsDto,
     AccessGroupDto,
     AccessGroupsDto,
     AddAccessGroupToProjectDto,
@@ -94,6 +95,23 @@ export class AccessController {
             });
     }
 
+    @Get(':uuid/audit-logs')
+    @CanEditGroup()
+    @ApiOkResponse({
+        type: AccessGroupAuditLogsDto,
+        description: 'Returns the audit logs for the Access Group',
+    })
+    @ApiOperation({
+        summary: 'Get audit logs for an AccessGroup',
+        description:
+            'Returns chronologically sorted list of audit events for the specified group.',
+    })
+    async getAuditLogs(
+        @ParameterUID('uuid', 'AccessGroup UUID') uuid: string,
+    ): Promise<AccessGroupAuditLogsDto> {
+        return this.accessService.getAuditLogs(uuid);
+    }
+
     @Post()
     @CanCreate()
     @ApiOkResponse({
@@ -146,6 +164,7 @@ export class AccessController {
                 body.userUuid,
                 body.canEditGroup,
                 body.expireDate,
+                requestUser,
             )
             .catch((error: unknown) => {
                 if (error instanceof EntityNotFoundError) {
@@ -172,7 +191,11 @@ export class AccessController {
         @ParameterUID('userUuid', 'UUID of User to remove') userUuid: string,
         @AddUser() requestUser: AuthHeader,
     ): Promise<AccessGroupDto> {
-        await this.accessService.removeUsersFromAccessGroup(uuid, [userUuid]);
+        await this.accessService.removeUsersFromAccessGroup(
+            uuid,
+            [userUuid],
+            requestUser,
+        );
         return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
     }
 
@@ -195,6 +218,7 @@ export class AccessController {
         await this.accessService.removeUsersFromAccessGroup(
             uuid,
             body.userUuids,
+            requestUser,
         );
         return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
     }
@@ -275,11 +299,13 @@ export class AccessController {
         @ParameterUID('userUuid', 'UUID of User to set expiration')
         userUuid: string,
         @Body() body: SetAccessGroupUserExpirationDto,
+        @AddUser() requestUser: AuthHeader,
     ): Promise<GroupMembershipDto> {
         return this.accessService.setExpireDate(
             uuid,
             userUuid,
             body.expireDate,
+            requestUser,
         );
     }
 }
