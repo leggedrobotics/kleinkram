@@ -1,6 +1,6 @@
 {
     "name": "@kleinkram/validation",
-    "version": "0.59.0",
+    "version": "0.60.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "license": "MIT",
