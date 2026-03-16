@@ -12,6 +12,7 @@ export class UniversalHttpReader implements IReadable {
     private _size: number | undefined;
     private additionalHeaders: Record<string, string>;
 
+    private lastFetchEnd?: bigint;
     private optimizer = new AdaptiveChunkOptimizer();
     private cachedBlocks: CachedBlock[] = [];
     private currentCacheSize = 0;
@@ -166,9 +167,62 @@ export class UniversalHttpReader implements IReadable {
             );
         }
 
-        // 2. Determine fetch size
+        // 2. Check active requests (overlap deduplication)
+        for (const [
+            activeKey,
+            activePromise,
+        ] of this.activeRequests.entries()) {
+            const [activeOffsetString, activeLengthString] =
+                activeKey.split('-');
+            const activeOffset = BigInt(activeOffsetString);
+            const activeLength = BigInt(activeLengthString);
+
+            if (offset >= activeOffset && end <= activeOffset + activeLength) {
+                const data = await activePromise;
+                const relativeOffset = Number(offset - activeOffset);
+
+                if (data.length < relativeOffset + Number(length)) {
+                    if (
+                        this._size !== undefined &&
+                        activeOffset + BigInt(data.length) ===
+                            BigInt(this._size)
+                    ) {
+                        const chunk = data.subarray(relativeOffset);
+                        this.lastFetchEnd = offset + BigInt(chunk.length);
+                        return chunk;
+                    }
+                    throw new Error(
+                        `Fetched shared data smaller than requested and not at EOF: ${String(data.length)} < ${String(relativeOffset + Number(length))} at offset ${String(activeOffset)}`,
+                    );
+                }
+
+                // After slicing, track the end of what was logically delivered
+                this.lastFetchEnd = offset + length;
+                return data.subarray(
+                    relativeOffset,
+                    relativeOffset + Number(length),
+                );
+            }
+        }
+
+        let isSequential = true;
+        if (this.lastFetchEnd === undefined) {
+            // first request is typically a random access (like reading header/footer for index)
+            isSequential = false;
+        } else {
+            const gap = offset - this.lastFetchEnd;
+            // Strict sequential check: gap must be >= -20MB (overlap) and <= 20MB (forward gap).
+            // A negative gap up to -20MB means the parser is asking for data slightly behind
+            // the end of our last fetch. A >20MB forward skip means random access.
+            if (gap < -20n * 1024n * 1024n || gap > 20n * 1024n * 1024n) {
+                isSequential = false;
+            }
+        }
+
+        // 3. Determine fetch size
         const optimalSize = this.optimizer.getOptimalRequestSize(
             Number(length),
+            isSequential,
         );
         let fetchLength = BigInt(optimalSize);
 
@@ -181,40 +235,39 @@ export class UniversalHttpReader implements IReadable {
             if (fetchLength < length) fetchLength = length; // Ensure we at least get what's requested
         }
 
-        // 3. Check active requests (simple deduplication)
+        // 4. Initiating new request
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         const key = `${offset}-${fetchLength}`;
-        let promise = this.activeRequests.get(key);
-
-        if (!promise) {
-            if (this.activeRequests.size === 0) {
-                this.optimizer.startActivity();
-                this.startLogging();
-            }
-
-            promise = this.fetchRange(offset, fetchLength);
-            this.activeRequests.set(key, promise);
-
-            promise
-                .then((data) => {
-                    this.activeRequests.delete(key);
-                    if (this.activeRequests.size === 0) {
-                        this.optimizer.stopActivity();
-                        this.stopLogging();
-                    }
-                    // Add to cache if not already cached as part of a 200 response
-                    this.addToCache(offset, data);
-                })
-                .catch(() => {
-                    this.activeRequests.delete(key);
-                    if (this.activeRequests.size === 0) {
-                        this.optimizer.stopActivity();
-                        this.stopLogging();
-                    }
-                });
+        if (this.activeRequests.size === 0) {
+            this.optimizer.startActivity();
+            this.startLogging();
         }
 
+        const promise = this.fetchRange(offset, fetchLength);
+        this.activeRequests.set(key, promise);
+
+        promise
+            .then((data) => {
+                this.activeRequests.delete(key);
+                if (this.activeRequests.size === 0) {
+                    this.optimizer.stopActivity();
+                    this.stopLogging();
+                }
+                // Add to cache if not already cached as part of a 200 response
+                this.addToCache(offset, data);
+            })
+            .catch(() => {
+                this.activeRequests.delete(key);
+                if (this.activeRequests.size === 0) {
+                    this.optimizer.stopActivity();
+                    this.stopLogging();
+                }
+            });
+
         const data = await promise;
+
+        // Update tracking only after successful fetch
+        this.lastFetchEnd = offset + BigInt(data.length);
 
         // Return the requested slice
         // The data we got starts at `offset`
@@ -228,8 +281,7 @@ export class UniversalHttpReader implements IReadable {
             }
 
             throw new Error(
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                `Fetched data smaller than requested and not at EOF: ${data.length} < ${length} at offset ${offset}`,
+                `Fetched data smaller than requested and not at EOF: ${String(data.length)} < ${String(length)} at offset ${String(offset)}`,
             );
         }
 
@@ -248,6 +300,5 @@ export class UniversalHttpReader implements IReadable {
             clearInterval(this.logInterval);
             this.logInterval = null;
         }
-        this.optimizer.logStats('End of period');
     }
 }

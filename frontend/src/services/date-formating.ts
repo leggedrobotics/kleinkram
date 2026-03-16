@@ -42,3 +42,10 @@ export function formatDuration(seconds: number): string {
     }
     return `${secs.toString()}s`;
 }
+
+export function isExpired(date: Date | string | null | undefined): boolean {
+    if (!date) {
+        return false;
+    }
+    return new Date(date) < new Date();
+}

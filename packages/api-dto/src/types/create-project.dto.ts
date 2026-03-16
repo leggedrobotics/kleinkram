@@ -31,7 +31,7 @@ export class CreateProject {
     @IsArray()
     accessGroups?: (
         | { accessGroupUUID: string; rights: AccessGroupRights }
-        | { userUUID: string; rights: AccessGroupRights }
+        | { userUuid: string; rights: AccessGroupRights }
     )[];
 
     @IsOptional()

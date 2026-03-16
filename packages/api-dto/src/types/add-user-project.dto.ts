@@ -4,11 +4,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum } from 'class-validator';
 
 export class AddUserToProjectDto {
-    @ApiUUIDProperty('Access Group UUID')
-    uuid!: string;
-
     @ApiUUIDProperty('User UUID')
-    userUUID!: string;
+    userUuid!: string;
 
     @IsEnum(AccessGroupRights)
     @ApiProperty({ description: 'User Rights' })

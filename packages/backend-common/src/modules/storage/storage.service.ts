@@ -5,10 +5,12 @@ import {
     GetObjectTaggingCommand,
     HeadObjectCommand,
     ListObjectsV2Command,
+    PutBucketCorsCommand,
     PutObjectTaggingCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Inject, Injectable } from '@nestjs/common';
+import environment from '@backend-common/environment';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Readable } from 'node:stream';
 import { S3StorageBucket } from './s3-storage-bucket';
 import { StorageAuthService } from './storage-auth.service';
@@ -22,13 +24,62 @@ import {
 } from './types';
 
 @Injectable()
-export class StorageService {
+export class StorageService implements OnModuleInit {
     constructor(
         @Inject('S3_CLIENTS')
         private readonly clients: S3ClientContainer,
         private readonly metricsService: StorageMetricsService,
         private readonly authService: StorageAuthService,
     ) {}
+
+    async onModuleInit(): Promise<void> {
+        const buckets = [
+            environment.S3_DATA_BUCKET_NAME,
+            environment.S3_ARTIFACTS_BUCKET_NAME,
+            environment.S3_DB_BUCKET_NAME,
+        ];
+
+        for (const bucketName of buckets) {
+            try {
+                const command = new PutBucketCorsCommand({
+                    Bucket: bucketName,
+                    CORSConfiguration: {
+                        CORSRules: [
+                            {
+                                AllowedHeaders: ['*'],
+                                AllowedMethods: [
+                                    'GET',
+                                    'PUT',
+                                    'POST',
+                                    'DELETE',
+                                    'HEAD',
+                                ],
+                                AllowedOrigins: ['*'],
+                                ExposeHeaders: [
+                                    'Content-Range',
+                                    'Content-Length',
+                                    'ETag',
+                                    'Accept-Ranges',
+                                    'Content-Disposition',
+                                ],
+                                MaxAgeSeconds: 3000,
+                            },
+                        ],
+                    },
+                });
+                await this.clients.internal.send(command);
+                Logger.debug(
+                    `Configured CORS for S3 bucket ${bucketName}`,
+                    'StorageService',
+                );
+            } catch (error) {
+                Logger.warn(
+                    `Failed to configure CORS for S3 bucket ${bucketName}: ${String(error)}`,
+                    'StorageService',
+                );
+            }
+        }
+    }
 
     async getPresignedDownloadUrl(
         bucketName: string,

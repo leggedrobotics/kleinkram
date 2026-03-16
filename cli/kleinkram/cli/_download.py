@@ -36,11 +36,45 @@ def download(
         False,
         help="overwrite files if they already exist and don't match the file size or file hash",
     ),
+    include_corrupt_files: bool = typer.Option(
+        False,
+        help="download files marked as CORRUPTED (potentially dangerous, use with caution)",
+    ),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        "-y",
+        help="skip all confirmation prompts",
+    ),
+    allow_corrupt: bool = typer.Option(
+        False,
+        "--allow-corrupt",
+        help="skip confirmation prompt for downloading files marked as CORRUPTED",
+    ),
+    create_dirs: bool = typer.Option(
+        False,
+        "--create-dirs",
+        help="create missing destination directories without prompting",
+    ),
 ) -> None:
+    if include_corrupt_files:
+        typer.secho(
+            "Warning: --include-corrupt-files enables downloading files marked as CORRUPTED. "
+            "These files may be harmful. Do not execute or open them blindly.",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
+        if not (yes or allow_corrupt):
+            typer.confirm("Do you want to continue? You can use --yes or --allow-corrupt to skip this prompt.", abort=True)
+
     # create destination directory
     dest_dir = Path(dest)
     if not dest_dir.exists():
-        typer.confirm(f"Destination {dest_dir} does not exist. Create it?", abort=True)
+        if not (yes or create_dirs):
+            typer.confirm(
+                f"Destination {dest_dir} does not exist. Create it? You can use --yes or --create-dirs to skip this prompt.",
+                abort=True,
+            )
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     # get file query
@@ -59,6 +93,7 @@ def download(
     kleinkram.core.download(
         client=AuthenticatedClient(),
         query=file_query,
+        allow_corrupt_files=include_corrupt_files,
         base_dir=dest_dir,
         nested=nested,
         overwrite=overwrite,

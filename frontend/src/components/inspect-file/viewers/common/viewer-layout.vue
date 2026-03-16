@@ -80,9 +80,10 @@
 import { Notify, copyToClipboard as quasarCopy } from 'quasar';
 import { computed } from 'vue';
 
+import type { BaseMessage } from './use-viewer';
+
 const props = defineProps<{
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: any[];
+    messages: BaseMessage[];
     totalCount: number;
     isLoading?: boolean;
     title?: string;
@@ -90,11 +91,11 @@ const props = defineProps<{
 
 const duration = computed(() => {
     if (props.messages.length < 2) return 0;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const start = props.messages[0].logTime;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const end = props.messages.at(-1).logTime;
-    return (end - start) / 1_000_000_000;
+    const startObject = props.messages[0];
+    const endObject = props.messages.at(-1);
+    const start = startObject ? startObject.logTime : 0n;
+    const end = endObject ? endObject.logTime : 0n;
+    return Number(end - start) / 1_000_000_000;
 });
 
 // Helper to handle BigInt serialization
@@ -110,9 +111,9 @@ const replacer = (_key: string, value: any) => {
 async function copyRaw(): Promise<void> {
     if (props.messages.length === 0) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const last = props.messages.at(-1);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    if (!last) return;
+
     const dataToCopy = last.data === undefined ? last : last.data;
 
     await quasarCopy(JSON.stringify(dataToCopy, replacer, 2));

@@ -94,13 +94,15 @@ const props = withDefaults(
         mission: FlatMissionDto | undefined;
         uploads: Ref<FileUploadDto[]>;
         disableScope?: boolean;
+        initialFiles?: File[];
     }>(),
     {
         disableScope: false,
+        initialFiles: () => [],
     },
 );
 
-const files = ref<File[]>([]);
+const files = ref<File[]>([...props.initialFiles]);
 const driveUrl = ref('');
 
 const driveUrlRules = computed(() => [
@@ -159,6 +161,7 @@ watch(
     (value) => {
         emit('update:ready', value);
     },
+    { immediate: true },
 );
 
 const createFile = async (): Promise<void> => {

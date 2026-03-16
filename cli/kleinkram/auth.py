@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import urllib.parse
 import webbrowser
 from getpass import getpass
@@ -12,8 +13,10 @@ from kleinkram.config import Credentials
 from kleinkram.config import get_config
 from kleinkram.config import save_config
 
+DEFAULT_CALLBACK_PORT = 8000
 CLI_CALLBACK_ENDPOINT = "/cli/callback"
 OAUTH_SLUG = "/auth/"
+AUTH_TOKEN_FETCH_ERROR = "Failed to fetch authentication tokens."
 
 
 def _has_browser() -> bool:
@@ -42,40 +45,78 @@ def _headless_auth(*, url: str) -> None:
 
 class OAuthCallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path.startswith(CLI_CALLBACK_ENDPOINT):
-            query = urllib.parse.urlparse(self.path).query
-            params = urllib.parse.parse_qs(query)
-
-            try:
-                creds = Credentials(
-                    auth_token=params.get("authtoken")[0],  # type: ignore
-                    refresh_token=params.get("refreshtoken")[0],  # type: ignore
-                )
-                config = get_config()
-                config.credentials = creds
-                save_config(config)
-            except Exception:
-                raise RuntimeError("Failed to fetch authentication tokens.")
-
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
+        if not self.path.startswith(CLI_CALLBACK_ENDPOINT):
+            self.send_response(404)
+            self.send_header("Content-type", "text/plain")
             self.end_headers()
-            self.wfile.write(b"Authentication successful. You can close this window.")
-        else:
-            raise RuntimeError("Invalid path")
+            self.wfile.write(b"Invalid path")
+            return
+
+        query = urllib.parse.urlparse(self.path).query
+        params = urllib.parse.parse_qs(query)
+
+        try:
+            auth_token = params.get("authtoken")
+            refresh_token = params.get("refreshtoken")
+            if not auth_token or not refresh_token:
+                raise ValueError("Missing callback tokens")
+
+            creds = Credentials(auth_token=auth_token[0], refresh_token=refresh_token[0])
+            config = get_config()
+            config.credentials = creds
+            save_config(config)
+            self.server.auth_completed = True  # type: ignore[attr-defined]
+        except Exception:
+            self.send_response(500)
+            self.send_header("Content-type", "text/plain")
+            self.end_headers()
+            self.wfile.write(AUTH_TOKEN_FETCH_ERROR.encode("utf-8"))
+            self.server.auth_error = AUTH_TOKEN_FETCH_ERROR  # type: ignore[attr-defined]
+            return
+
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(b"Authentication successful. You can close this window.")
 
     def log_message(self, *args, **kwargs):
         _ = args, kwargs
         pass  # suppress logging
 
 
-def _browser_auth(*, url: str) -> None:
+def _browser_auth(*, url: str, server: HTTPServer) -> None:
+    server.auth_completed = False  # type: ignore[attr-defined]
+    server.auth_error = None  # type: ignore[attr-defined]
     webbrowser.open(url)
 
-    server = HTTPServer(("", 8000), OAuthCallbackHandler)
-    server.handle_request()
+    try:
+        deadline = time.monotonic() + 120
+        while time.monotonic() < deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            server.timeout = max(0.1, remaining)
+            server.handle_request()
+            auth_error = getattr(server, "auth_error", None)
+            if auth_error:
+                raise RuntimeError(auth_error)
+            if getattr(server, "auth_completed", False):
+                break
+    finally:
+        server.server_close()
 
+    if not server.auth_completed:
+        raise RuntimeError("Authentication timed out or failed. Please try again.")
     print(f"Authentication complete. Tokens saved to {CONFIG_PATH}.")
+
+
+def _create_callback_server(preferred_port: int = DEFAULT_CALLBACK_PORT) -> tuple[HTTPServer, int]:
+    try:
+        server = HTTPServer(("", preferred_port), OAuthCallbackHandler)
+        return server, preferred_port
+    except OSError:
+        server = HTTPServer(("", 0), OAuthCallbackHandler)  # bind to any available port
+        return server, int(server.server_address[1])
 
 
 def _direct_oauth_auth(*, endpoint: str, provider: str, user: str) -> None:
@@ -173,24 +214,17 @@ def login_flow(
         _direct_oauth_auth(endpoint=config.endpoint.api, provider=oAuthProvider, user=user)
         return
 
-    # Build OAuth URL with state parameter
-    oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state=cli"
-
-    # Add user parameter if provided (for fake-oauth auto-login)
-    if user is not None:
-        oauth_url += f"&user={user}"
-
-    is_port_available = True
-    try:
-        server = HTTPServer(("", 8000), OAuthCallbackHandler)
-        server.server_close()
-    except OSError:
-        is_port_available = False
-
-    if not is_port_available:
-        print("Warning: Port 8000 is not available. Falling back to headless authentication.\n\n")
-
-    if not headless and _has_browser() and is_port_available:
-        _browser_auth(url=oauth_url)
+    # normal flow: either browser-based or headless OAuth
+    # if headless is False and browser is available, use browser-based flow with callback server
+    if not headless and _has_browser():
+        server, callback_port = _create_callback_server()
+        state = f"cli-port-{callback_port}"
+        oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state={state}"
+        if user is not None:
+            oauth_url += f"&user={user}"
+        _browser_auth(url=oauth_url, server=server)
     else:
-        _headless_auth(url=f"{oauth_url}-no-redirect")
+        oauth_url = f"{config.endpoint.api}{OAUTH_SLUG}{oAuthProvider}?state=cli-no-redirect"
+        if user is not None:
+            oauth_url += f"&user={user}"
+        _headless_auth(url=oauth_url)
