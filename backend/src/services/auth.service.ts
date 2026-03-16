@@ -62,6 +62,11 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
+            account.user.email = String(email);
+            await this.affiliationGroupService.addToAffiliationGroups(
+                this.config,
+                account.user,
+            );
             return account.user;
         }
 
@@ -98,6 +103,11 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
+            account.user.email = String(email);
+            await this.affiliationGroupService.addToAffiliationGroups(
+                this.config,
+                account.user,
+            );
             return account.user;
         }
 
@@ -127,6 +137,11 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
+            account.user.email = String(email);
+            await this.affiliationGroupService.addToAffiliationGroups(
+                this.config,
+                account.user,
+            );
             return account.user;
         }
 
@@ -238,6 +253,13 @@ export const createNewUser = async (
             `Linking account ${account.uuid} to existing user ${existingUser.uuid}`,
         );
         account.user = existingUser;
+
+        existingUser.email = options.email;
+        await affiliationGroupService.addToAffiliationGroups(
+            config,
+            existingUser,
+        );
+
         return accountRepository.save(account).then(() => existingUser);
     }
 
