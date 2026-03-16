@@ -268,14 +268,14 @@ export const createNewUser = async (
             `Linking account ${account.uuid} to existing user ${existingUser.uuid}`,
         );
         account.user = existingUser;
+        await accountRepository.save(account);
         await syncAffiliationAndReturn(
             affiliationGroupService,
             config,
             existingUser,
             options.email,
         );
-
-        return accountRepository.save(account).then(() => existingUser);
+        return existingUser;
     }
 
     /////////////////////////////////////////////////////////
