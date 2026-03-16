@@ -14,7 +14,7 @@
     },
     "author": "Cyrill Püntener",
     "dependencies": {
-        "dayjs": "^1.11.19",
+        "dayjs": "^1.11.20",
         "vitepress": "^1.6.4",
         "vue-json-pretty": "^2.6.0"
     },
