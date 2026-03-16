@@ -672,7 +672,12 @@ const user = useUser();
 const refetchOnClick: (event_: Event) => void = () => refetch;
 
 const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
-const { data: auditLogs } = useAccessGroupAuditLogs(uuid.value);
+const auditLogsQueryEnabled = computed(
+    () => !personal.value && currentUserCanEdit.value,
+);
+const { data: auditLogs } = useAccessGroupAuditLogs(uuid.value, {
+    enabled: auditLogsQueryEnabled,
+});
 
 const { mutate: removeUsers } = useMutation({
     mutationFn: (userUuids: string[]) =>
