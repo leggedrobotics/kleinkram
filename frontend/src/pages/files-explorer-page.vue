@@ -13,22 +13,23 @@
                         </q-tooltip>
                     </h1>
                     <div v-if="mission?.tags" class="q-shrink">
-                        <div
-                            class="q-btn q-btn-item non-selectable no-outline q-btn--unelevated q-btn--rectangle bg-grey-2 text-grey-9 q-px-sm"
+                        <q-btn
+                            unelevated
+                            no-caps
+                            dense
+                            class="bg-grey-2 text-grey-9 q-px-sm"
                             style="
                                 font-size: 12px;
                                 font-weight: 500;
-                                text-transform: none;
                                 border-radius: 4px;
                                 min-height: 24px;
                                 padding-top: 2px;
                                 padding-bottom: 2px;
-                                cursor: pointer;
                             "
                             @click="openMetadataDrawer"
                         >
                             <span
-                                class="q-btn__content text-center col items-center q-anchor--skip justify-center row"
+                                class="text-center col items-center justify-center row"
                             >
                                 <q-icon
                                     name="sym_o_sell"
@@ -40,7 +41,7 @@
                                     attributes</span
                                 >
                             </span>
-                        </div>
+                        </q-btn>
                     </div>
                 </div>
             </template>
