@@ -18,7 +18,10 @@ import {
 } from '@kleinkram/api-dto';
 import { SortOrder } from '@kleinkram/api-dto/types/pagination';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { ApiOperation } from '@nestjs/swagger';
+import {
+    ApiOperation,
+    ApiOkResponse as SwaggerApiOkResponse,
+} from '@nestjs/swagger';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
 
@@ -139,6 +142,14 @@ export class UserController {
     @Post('resolve')
     @LoggedIn()
     @ApiOperation({ summary: 'Resolve a list of User UUIDs to their names' })
+    @OutputDto(null)
+    @SwaggerApiOkResponse({
+        description: 'Mapping from user UUIDs to their display names',
+        schema: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+        },
+    })
     async resolve(
         @Body() body: ResolveUsersDto,
     ): Promise<Record<string, string>> {

@@ -28,7 +28,7 @@ export class AccessGroupEventEntity {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     details!: Record<string, any>;
 
-    @ManyToOne(() => UserEntity, { nullable: true })
+    @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
     actor?: UserEntity;
 
     @ManyToOne(() => AccessGroupEntity, {

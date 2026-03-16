@@ -103,7 +103,7 @@ export const useResolveUsers = (
     uuids: Ref<string[]> | ComputedRef<string[]> | string[],
 ): UseQueryReturnType<Record<string, string>, Error> => {
     return useQuery<Record<string, string>>({
-        queryKey: ['resolve-users', unref(uuids)],
+        queryKey: computed(() => ['resolve-users', unref(uuids)]),
         queryFn: () => resolveUsers(unref(uuids)),
         enabled: computed(() => unref(uuids).length > 0),
         staleTime: 1000 * 60 * 5, // cache for 5 minutes
@@ -596,6 +596,7 @@ export const useSearchAccessGroup = (
 
 export const useAccessGroupAuditLogs = (
     uuid: Ref<string | undefined> | ComputedRef<string | undefined> | string,
+    options?: { enabled?: Ref<boolean> | ComputedRef<boolean> | boolean },
 ): UseQueryReturnType<AccessGroupAuditLogsDto | undefined, Error> => {
     return useQuery({
         queryKey: computed(() => ['AccessGroupAuditLogs', unref(uuid)]),
@@ -605,6 +606,8 @@ export const useAccessGroupAuditLogs = (
                 return undefined as unknown as AccessGroupAuditLogsDto;
             return await getAccessGroupAuditLogs(resolvedUuid);
         },
-        enabled: computed(() => !!unref(uuid)),
+        enabled: computed(
+            () => !!unref(uuid) && (unref(options?.enabled) ?? true),
+        ),
     });
 };

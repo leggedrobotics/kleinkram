@@ -4,7 +4,9 @@ import {
     AccessGroupAuditService,
     AccessGroupEntity,
     AccessGroupEventEntity,
+    GroupMembershipEntity,
     ProjectEntity,
+    UserEntity,
 } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
@@ -22,6 +24,8 @@ import { OldProjectController, ProjectController } from './project.controller';
             AccessGroupEventEntity,
             TagTypeEntity,
             ProjectAccessEntity,
+            UserEntity,
+            GroupMembershipEntity,
         ]),
     ],
     providers: [ProjectService, AccessService, AccessGroupAuditService],
