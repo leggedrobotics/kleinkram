@@ -111,10 +111,11 @@ export class StorageService implements OnModuleInit {
         }
     }
 
-    async getPresignedDownloadUrl(
+    private async generatePresignedUrl(
         bucketName: string,
         objectName: string,
         expirySeconds: number,
+        isInternal: boolean,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
         const command = new GetObjectCommand({
@@ -123,9 +124,27 @@ export class StorageService implements OnModuleInit {
             ResponseContentDisposition:
                 responseDisposition?.['response-content-disposition'],
         });
-        return getSignedUrl(this.clients.external, command, {
+        const client = isInternal
+            ? this.clients.internal
+            : this.clients.external;
+        return getSignedUrl(client, command, {
             expiresIn: expirySeconds,
         });
+    }
+
+    async getPresignedDownloadUrl(
+        bucketName: string,
+        objectName: string,
+        expirySeconds: number,
+        responseDisposition?: Record<string, string>,
+    ): Promise<string> {
+        return this.generatePresignedUrl(
+            bucketName,
+            objectName,
+            expirySeconds,
+            false,
+            responseDisposition,
+        );
     }
 
     async getInternalPresignedDownloadUrl(
@@ -134,15 +153,13 @@ export class StorageService implements OnModuleInit {
         expirySeconds: number,
         responseDisposition?: Record<string, string>,
     ): Promise<string> {
-        const command = new GetObjectCommand({
-            Bucket: bucketName,
-            Key: objectName,
-            ResponseContentDisposition:
-                responseDisposition?.['response-content-disposition'],
-        });
-        return getSignedUrl(this.clients.internal, command, {
-            expiresIn: expirySeconds,
-        });
+        return this.generatePresignedUrl(
+            bucketName,
+            objectName,
+            expirySeconds,
+            true,
+            responseDisposition,
+        );
     }
 
     async downloadFile(
