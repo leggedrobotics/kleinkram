@@ -543,10 +543,8 @@ def _move_missions(
     if resp.status_code == 403:
         raise AccessDenied("cannot move mission(s): " + ", ".join(str(mission_id) for mission_id in mission_ids))
     if resp.status_code == 409:
-        raise MissionExists(
-            "target project already has a mission with one of the requested names: "
-            + ", ".join(str(mission_id) for mission_id in mission_ids)
-        )
+        message = _extract_error_message(resp)
+        raise MissionExists(message)
 
     resp.raise_for_status()
 
@@ -581,7 +579,8 @@ def _migrate_project(
     if resp.status_code == 403:
         raise AccessDenied(f"cannot migrate project: {source_project_id}")
     if resp.status_code == 409:
-        raise ProjectValidationError(f"project migration conflict for source={source_project_id} target={target_project_id}")
+        message = _extract_error_message(resp)
+        raise ProjectValidationError(message)
 
     resp.raise_for_status()
 

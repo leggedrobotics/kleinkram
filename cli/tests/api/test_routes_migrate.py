@@ -92,6 +92,23 @@ def test_move_missions_requires_non_empty_ids():
         )
 
 
+def test_move_missions_forwards_backend_conflict_detail():
+    client = DummyClient(
+        status_code=409,
+        json_body={"message": "Target project already contains mission names: Alpha"},
+    )
+
+    with pytest.raises(
+        kleinkram.errors.MissionExists,
+        match="Target project already contains mission names: Alpha",
+    ):
+        _move_missions(
+            client,  # type: ignore[arg-type]
+            mission_ids=[uuid4()],
+            target_project_id=uuid4(),
+        )
+
+
 def test_migrate_project_maps_target_not_found_detail():
     source_id = uuid4()
     target_id = uuid4()
@@ -148,6 +165,25 @@ def test_migrate_project_maps_http_errors(status_code, error_type):  # noqa: ANN
     target_project_id = uuid4()
 
     with pytest.raises(error_type):
+        _migrate_project(
+            client,  # type: ignore[arg-type]
+            source_project_id=source_project_id,
+            target_project_id=target_project_id,
+        )
+
+
+def test_migrate_project_forwards_backend_conflict_detail():
+    source_project_id = uuid4()
+    target_project_id = uuid4()
+    client = DummyClient(
+        status_code=409,
+        json_body={"message": "Project with name 'archive_name' already exists"},
+    )
+
+    with pytest.raises(
+        kleinkram.errors.ProjectValidationError,
+        match="Project with name 'archive_name' already exists",
+    ):
         _migrate_project(
             client,  # type: ignore[arg-type]
             source_project_id=source_project_id,

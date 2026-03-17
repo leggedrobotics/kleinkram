@@ -7,7 +7,7 @@ this file contains the main functionality of kleinkram cli
 - update_file
 - update_mission
 - update_project
-- migrate_mission
+- move_missions
 - migrate_project
 - delete_files
 - delete_mission
