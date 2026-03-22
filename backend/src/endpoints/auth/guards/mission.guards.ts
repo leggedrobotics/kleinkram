@@ -7,13 +7,17 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
+import { isUUID } from 'class-validator';
 import { BaseGuard } from './base.guards';
 
 interface MissionBody {
     missionUUID?: string;
+    missionUUIDs?: string[];
     missionUuid?: string;
     uuid?: string;
     mission?: string;
+    targetProjectUUID?: string;
+    newName?: string;
 }
 
 interface TagParameters {
@@ -120,10 +124,6 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
         const body = request.body as MissionBody;
         const missionUUID = body.missionUUID ?? body.missionUuid;
 
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
         }
@@ -134,6 +134,9 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
                 missionUUID,
                 AccessGroupRights.CREATE,
             );
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
         return this.missionGuardService.canAccessMission(
             user,
@@ -155,10 +158,6 @@ export class WriteMissionByBodyGuard extends BaseGuard {
         const body = request.body as MissionBody;
         const missionUUID = body.missionUUID ?? body.missionUuid;
 
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
         }
@@ -169,6 +168,9 @@ export class WriteMissionByBodyGuard extends BaseGuard {
                 missionUUID,
                 AccessGroupRights.WRITE,
             );
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
         return this.missionGuardService.canAccessMission(
             user,
@@ -195,10 +197,6 @@ export class CanDeleteMissionGuard extends BaseGuard {
             missionUUID = body.uuid ?? body.missionUUID ?? body.missionUuid;
         }
 
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
         if (!missionUUID && params) {
             missionUUID = params.uuid;
         }
@@ -215,6 +213,9 @@ export class CanDeleteMissionGuard extends BaseGuard {
                 missionUUID,
                 AccessGroupRights.DELETE,
             );
+        }
+        if (user.role === UserRole.ADMIN) {
+            return true;
         }
         return this.missionGuardService.canAccessMission(
             user,
@@ -288,7 +289,7 @@ export class DeleteTagGuard extends BaseGuard {
 }
 
 @Injectable()
-export class MoveMissionToProjectGuard extends BaseGuard {
+export class MoveMissionsByBodyGuard extends BaseGuard {
     constructor(
         private projectGuardService: ProjectGuardService,
         private missionGuardService: MissionGuardService,
@@ -299,27 +300,59 @@ export class MoveMissionToProjectGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const missionUUID = request.query.missionUUID as string | undefined;
-        const projectUUID = request.query.projectUUID as string | undefined;
+        const body = request.body as MissionBody | undefined;
+        const missionUUIDs = body?.missionUUIDs;
+        const targetProjectUUID = body?.targetProjectUUID;
+        const newName = body?.newName;
 
-        if (!missionUUID || !projectUUID) {
-            return false; // Deny access if required parameters not provided
+        if (!Array.isArray(missionUUIDs) || missionUUIDs.length === 0) {
+            throw new BadRequestException(
+                'missionUUIDs must be a non-empty array',
+            );
+        }
+        if (!targetProjectUUID) {
+            throw new BadRequestException('targetProjectUUID is required');
+        }
+        if (
+            missionUUIDs.some((missionUUID) => !isUUID(missionUUID)) ||
+            !isUUID(targetProjectUUID)
+        ) {
+            throw new BadRequestException(
+                'missionUUIDs and targetProjectUUID must be valid UUIDs',
+            );
+        }
+        if (newName !== undefined && missionUUIDs.length !== 1) {
+            throw new BadRequestException(
+                'newName is only allowed when moving a single mission',
+            );
         }
 
         if (apiKey) {
             throw new UnauthorizedException('CLI Keys cannot move missions');
         }
-        return (
-            (await this.projectGuardService.canAccessProject(
+        const canWriteTargetProject =
+            await this.projectGuardService.canAccessProject(
                 user,
-                projectUUID,
+                targetProjectUUID,
                 AccessGroupRights.CREATE,
-            )) &&
-            (await this.missionGuardService.canAccessMission(
-                user,
-                missionUUID,
-                AccessGroupRights.DELETE,
-            ))
+            );
+        if (!canWriteTargetProject) {
+            return false;
+        }
+
+        const canDeleteSourceMissions = await Promise.all(
+            missionUUIDs.map((missionUUID) =>
+                this.missionGuardService.canAccessMission(
+                    user,
+                    missionUUID,
+                    AccessGroupRights.DELETE,
+                ),
+            ),
         );
+        if (canDeleteSourceMissions.some((canDeleteSourceMission) => !canDeleteSourceMission)) {
+            return false;
+        }
+
+        return true;
     }
 }
