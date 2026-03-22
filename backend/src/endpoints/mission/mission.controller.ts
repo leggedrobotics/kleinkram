@@ -182,6 +182,7 @@ export class MissionController {
         return {
             success: true,
             movedMissionCount: result.movedMissionCount,
+            movedMissionUUIDs: result.movedMissionUUIDs,
             targetProjectUUID: dto.targetProjectUUID,
         };
     }

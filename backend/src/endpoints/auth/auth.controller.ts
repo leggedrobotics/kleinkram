@@ -109,6 +109,17 @@ export class AuthController {
             return;
         }
 
+        if (typeof state === 'string' && state.startsWith('cli-port-')) {
+            const portString = state.replace('cli-port-', '');
+            const port = Number.parseInt(portString, 10);
+            if (!Number.isNaN(port) && port >= 1 && port <= 65_535) {
+                response.redirect(
+                    `http://localhost:${String(port)}/cli/callback?${CookieNames.AUTH_TOKEN}=${token[CookieNames.AUTH_TOKEN]}&${CookieNames.REFRESH_TOKEN}=${token[CookieNames.REFRESH_TOKEN]}`,
+                );
+                return;
+            }
+        }
+
         if (state === 'cli-no-redirect') {
             const authToken = token[CookieNames.AUTH_TOKEN];
             const refreshToken = token[CookieNames.REFRESH_TOKEN];

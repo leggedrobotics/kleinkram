@@ -1,5 +1,5 @@
 <template>
-    <div class="message-viewer bg-grey-1 q-pa-sm rounded-borders">
+    <div class="message-viewer q-pa-sm rounded-borders">
         <div class="row justify-between items-center q-mb-sm">
             <div class="text-subtitle2 text-grey-8 flex items-center">
                 {{ topicName }}
@@ -55,6 +55,7 @@
                 :messages="messages"
                 :topic-name="topicName"
                 :total-count="totalCount"
+                :is-loading="isLoading"
                 @load-required="loadRequired"
                 @load-more="loadMore"
                 @pause-preview="emitPausePreview"

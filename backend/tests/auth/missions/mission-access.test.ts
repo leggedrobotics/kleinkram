@@ -45,7 +45,7 @@ async function setupProjectWithAccess(
             requiredTags: [],
             accessGroups: [
                 {
-                    userUUID: accessUser.uuid,
+                    userUuid: accessUser.uuid,
                     rights: rights,
                 },
             ],
@@ -206,6 +206,12 @@ describe('Verify Mission Level Admin Access', () => {
             }),
         });
         expect(response.status).toBeLessThan(300);
+        await expect(response.json()).resolves.toEqual({
+            success: true,
+            movedMissionCount: 1,
+            movedMissionUUIDs: [missionUuid],
+            targetProjectUUID: projectUuid2,
+        });
     });
 
     test('if admin can delete any mission', async () => {
@@ -510,7 +516,7 @@ describe('Verify Mission Level User Access', () => {
                 requiredTags: [],
                 accessGroups: [
                     {
-                        userUUID: createUser.uuid,
+                        userUuid: createUser.uuid,
                         rights: AccessGroupRights.CREATE,
                     },
                 ],
@@ -820,7 +826,7 @@ describe('Verify Mission Level User Access', () => {
                 requiredTags: [],
                 accessGroups: [
                     {
-                        userUUID: deleteUser.uuid,
+                        userUuid: deleteUser.uuid,
                         rights: AccessGroupRights.DELETE,
                     },
                 ],
@@ -845,7 +851,7 @@ describe('Verify Mission Level User Access', () => {
                 requiredTags: [],
                 accessGroups: [
                     {
-                        userUUID: deleteUser.uuid,
+                        userUuid: deleteUser.uuid,
                         rights: AccessGroupRights.DELETE,
                     },
                 ],
@@ -1074,7 +1080,7 @@ describe('Verify Mission File Level User Access', () => {
                 requiredTags: [],
                 accessGroups: [
                     {
-                        userUUID: readUser.uuid,
+                        userUuid: readUser.uuid,
                         rights: AccessGroupRights.READ,
                     },
                 ],
@@ -1208,7 +1214,7 @@ describe('Verify Mission File Level User Access', () => {
                 requiredTags: [],
                 accessGroups: [
                     {
-                        userUUID: editUser.uuid,
+                        userUuid: editUser.uuid,
                         rights: AccessGroupRights.WRITE,
                     },
                 ],
@@ -1303,7 +1309,7 @@ describe('Verify Mission File Level User Access', () => {
                 requiredTags: [],
                 accessGroups: [
                     {
-                        userUUID: deleteUser.uuid,
+                        userUuid: deleteUser.uuid,
                         rights: AccessGroupRights.DELETE,
                     },
                 ],

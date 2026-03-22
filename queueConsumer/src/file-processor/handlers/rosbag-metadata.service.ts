@@ -10,6 +10,7 @@ import * as fsPromises from 'node:fs/promises';
 import { Repository } from 'typeorm';
 import { AbstractMetadataService } from './abstract-metadata.service';
 import { ExtractedTopicInfo } from './file-handler.interface';
+import { getDurationSeconds, toNanoseconds } from './time';
 
 /**
  * Interface compatible with @foxglove/rosbag BagReader
@@ -126,6 +127,9 @@ export class RosBagMetadataService extends AbstractMetadataService {
         await bag.open();
 
         const rawTopics: ExtractedTopicInfo[] = [];
+        const startNs = toNanoseconds(bag.startTime);
+        const endNs = toNanoseconds(bag.endTime);
+        const durationSec = getDurationSeconds(startNs, endNs);
         const connectionCounts = new Map<number, number>();
 
         // Sum counts from ChunkInfos (Efficient count extraction)
@@ -155,6 +159,7 @@ export class RosBagMetadataService extends AbstractMetadataService {
                 name: connection.topic,
                 type: connection.type ?? 'unknown',
                 nrMessages: BigInt(count),
+                frequency: durationSec > 0 ? count / durationSec : 0,
             });
         }
 

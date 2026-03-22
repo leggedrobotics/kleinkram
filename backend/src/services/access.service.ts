@@ -2,38 +2,48 @@ import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     groupMembershipEntityToDto,
     projectAccessEntityToDto,
+    projectEntityToDto,
     userEntityToDto,
 } from '@/serialization';
 import {
+    AccessGroupAuditLogsDto,
     AccessGroupDto,
     AccessGroupsDto,
     GroupMembershipDto,
     ProjectAccessDto,
     ProjectAccessListDto,
+    ProjectDto,
     ProjectWithAccessRightsDto,
-    ProjectWithMissionsDto,
 } from '@kleinkram/api-dto';
-import { AccessGroupEntity } from '@kleinkram/backend-common';
+import {
+    AccessGroupAuditService,
+    AccessGroupEntity,
+} from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
+    AccessGroupConfig,
+    AccessGroupEventType,
     AccessGroupRights,
     AccessGroupType,
     UserRole,
 } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     EntityManager,
     FindOptionsWhere,
     ILike,
+    In,
     MoreThanOrEqual,
     Not,
     Repository,
 } from 'typeorm';
 import logger from '../logger';
+import { UserService } from './user.service';
 
 @Injectable()
 export class AccessService {
@@ -49,6 +59,9 @@ export class AccessService {
         @InjectRepository(ProjectAccessEntity)
         private projectAccessRepository: Repository<ProjectAccessEntity>,
         private readonly entityManager: EntityManager,
+        private readonly configService: ConfigService,
+        private readonly accessGroupAuditService: AccessGroupAuditService,
+        private readonly userService: UserService,
     ) {}
 
     async getAccessGroup(
@@ -114,6 +127,16 @@ export class AccessService {
                             autoConvert: value.project?.autoConvert ?? false,
                         }) as ProjectWithAccessRightsDto,
                 ) ?? [],
+            emailPattern:
+                rawAccessGroup.type === AccessGroupType.AFFILIATION
+                    ? this.configService
+                          .getOrThrow<AccessGroupConfig>('accessConfig')
+                          .emails.find((emailConfig) =>
+                              emailConfig.access_groups.includes(
+                                  rawAccessGroup.uuid,
+                              ),
+                          )?.email
+                    : undefined,
         };
     }
 
@@ -137,9 +160,22 @@ export class AccessService {
             creator: user,
         });
 
-        return (await this.accessGroupRepository.save(
+        const savedGroup = (await this.accessGroupRepository.save(
             newGroup,
         )) as unknown as AccessGroupEntity;
+
+        this.accessGroupAuditService
+            .log(
+                savedGroup.uuid,
+                AccessGroupEventType.CREATE_GROUP,
+                { name },
+                auth.user as unknown as UserEntity,
+            )
+            .catch((error: unknown) =>
+                logger.error(`Audit log failed: ${String(error)}`),
+            );
+
+        return savedGroup;
     }
 
     async hasProjectRights(
@@ -254,8 +290,11 @@ export class AccessService {
     async addUserToAccessGroup(
         accessGroupUUID: string,
         userUUID: string,
+        canEditGroup = false,
+        expireDate?: Date | 'never',
+        auth?: AuthHeader,
     ): Promise<AccessGroupEntity> {
-        return await this.entityManager.transaction(
+        const result = await this.entityManager.transaction(
             async (transactionalEntityManager) => {
                 const accessGroup =
                     await transactionalEntityManager.findOneOrFail(
@@ -276,7 +315,9 @@ export class AccessService {
                 const agu = transactionalEntityManager.create(
                     GroupMembershipEntity,
                     {
-                        expirationDate: undefined,
+                        expirationDate:
+                            expireDate === 'never' ? undefined : expireDate,
+                        canEditGroup,
                     },
                 );
                 await transactionalEntityManager.save(agu);
@@ -299,36 +340,98 @@ export class AccessService {
                 );
             },
         );
+
+        this.accessGroupAuditService
+            .log(
+                accessGroupUUID,
+                AccessGroupEventType.ADD_USER,
+                {
+                    userUuid: userUUID,
+                    userName:
+                        result.memberships?.find(
+                            (m) => m.user?.uuid === userUUID,
+                        )?.user?.name ?? 'Unknown',
+                    canEditGroup,
+                    expireDate,
+                },
+                auth?.user as unknown as UserEntity,
+            )
+            .catch((error: unknown) =>
+                logger.error(`Audit log failed: ${String(error)}`),
+            );
+
+        return result;
     }
 
-    async removeUserFromAccessGroup(
+    async removeUsersFromAccessGroup(
         accessGroupUUID: string,
-        userUUID: string,
+        userUuids: string[],
+        auth?: AuthHeader,
     ): Promise<AccessGroupEntity> {
-        const usersWithEditRights = await this.groupMembershipRepository.count({
-            where: {
-                accessGroup: { uuid: accessGroupUUID },
-                // where user is NOT matching userUUID
-                user: { uuid: Not(userUUID) },
-                canEditGroup: true,
-            },
-        });
-
-        if (usersWithEditRights === 0) {
-            throw new ConflictException(
-                'Cannot remove the last user with edit rights',
-            );
+        if (userUuids.length === 0) {
+            return this.accessGroupRepository.findOneOrFail({
+                where: { uuid: accessGroupUUID },
+                relations: ['memberships', 'memberships.user'],
+            });
         }
+        const result = await this.entityManager.transaction(
+            async (transactionalEntityManager) => {
+                const usersWithEditRights =
+                    await transactionalEntityManager.count(
+                        GroupMembershipEntity,
+                        {
+                            where: {
+                                accessGroup: { uuid: accessGroupUUID },
+                                user: { uuid: Not(In(userUuids)) },
+                                canEditGroup: true,
+                            },
+                        },
+                    );
 
-        await this.groupMembershipRepository.delete({
-            accessGroup: { uuid: accessGroupUUID },
-            user: { uuid: userUUID },
+                if (usersWithEditRights === 0) {
+                    throw new ConflictException(
+                        'Cannot remove the last user with edit rights',
+                    );
+                }
+
+                await transactionalEntityManager.delete(GroupMembershipEntity, {
+                    accessGroup: { uuid: accessGroupUUID },
+                    user: { uuid: In(userUuids) },
+                });
+
+                return transactionalEntityManager.findOneOrFail(
+                    AccessGroupEntity,
+                    {
+                        where: { uuid: accessGroupUUID },
+                        relations: ['memberships', 'memberships.user'],
+                    },
+                );
+            },
+        );
+
+        const removedUsers = await this.userRepository.find({
+            where: { uuid: In(userUuids) },
+            select: ['uuid', 'name'],
         });
 
-        return this.accessGroupRepository.findOneOrFail({
-            where: { uuid: accessGroupUUID },
-            relations: ['memberships', 'memberships.user'],
-        });
+        this.accessGroupAuditService
+            .log(
+                accessGroupUUID,
+                AccessGroupEventType.REMOVE_USER,
+                {
+                    userUuids,
+                    affectedUsers: removedUsers.map((u) => ({
+                        uuid: u.uuid,
+                        name: u.name,
+                    })),
+                },
+                auth?.user as unknown as UserEntity,
+            )
+            .catch((error: unknown) =>
+                logger.error(`Audit log failed: ${String(error)}`),
+            );
+
+        return result;
     }
 
     async searchAccessGroup(
@@ -384,6 +487,16 @@ export class AccessService {
                     type: accessGroup.type,
                     hidden: accessGroup.hidden,
                     projectAccesses: [],
+                    emailPattern:
+                        accessGroup.type === AccessGroupType.AFFILIATION
+                            ? this.configService
+                                  .getOrThrow<AccessGroupConfig>('accessConfig')
+                                  .emails.find((emailConfig) =>
+                                      emailConfig.access_groups.includes(
+                                          accessGroup.uuid,
+                                      ),
+                                  )?.email
+                            : undefined,
                 };
             },
         );
@@ -396,7 +509,7 @@ export class AccessService {
         accessGroupUUID: string,
         rights: AccessGroupRights,
         auth: AuthHeader,
-    ): Promise<ProjectWithMissionsDto> {
+    ): Promise<ProjectDto> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
@@ -432,13 +545,28 @@ export class AccessService {
             .getOne();
         if (existingAccess) {
             if (existingAccess.rights >= rights) {
-                return project as unknown as ProjectWithMissionsDto;
+                return projectEntityToDto(project);
             }
             existingAccess.rights = rights;
             await this.projectAccessRepository.save(existingAccess);
-            return this.projectRepository.findOneOrFail({
+            const updatedProject = await this.projectRepository.findOneOrFail({
                 where: { uuid: projectUUID },
-            }) as unknown as ProjectWithMissionsDto;
+            });
+            this.accessGroupAuditService
+                .log(
+                    accessGroupUUID,
+                    AccessGroupEventType.UPDATE_PROJECT_ACCESS,
+                    {
+                        projectUuid: projectUUID,
+                        projectName: project.name,
+                        rights,
+                    },
+                    auth.user as unknown as UserEntity,
+                )
+                .catch((error: unknown) =>
+                    logger.error(`Audit log failed: ${String(error)}`),
+                );
+            return projectEntityToDto(updatedProject);
         }
 
         const projectAccess = this.projectAccessRepository.create({
@@ -447,10 +575,22 @@ export class AccessService {
             project: project,
         });
         await this.projectAccessRepository.save(projectAccess);
-        return this.projectRepository.findOneOrFail({
+        const fullProject = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: ['project_accesses', 'project_accesses.accessGroup'],
-        }) as unknown as ProjectWithMissionsDto;
+        });
+        this.accessGroupAuditService
+            .log(
+                accessGroupUUID,
+                AccessGroupEventType.ADD_PROJECT,
+                { projectUuid: projectUUID, projectName: project.name, rights },
+
+                auth.user as unknown as UserEntity,
+            )
+            .catch((error: unknown) =>
+                logger.error(`Audit log failed: ${String(error)}`),
+            );
+        return projectEntityToDto(fullProject);
     }
 
     async removeAccessGroupFromProject(
@@ -476,6 +616,20 @@ export class AccessService {
             },
         });
         await this.projectAccessRepository.remove(projectAccess);
+        this.accessGroupAuditService
+            .log(
+                accessGroupUUID,
+                AccessGroupEventType.REMOVE_PROJECT,
+                {
+                    projectUuid: projectUUID,
+                    projectName: projectAccess[0]?.project?.name ?? 'Unknown',
+                },
+
+                auth.user as unknown as UserEntity,
+            )
+            .catch((error: unknown) =>
+                logger.error(`Audit log failed: ${String(error)}`),
+            );
     }
 
     async deleteAccessGroup(uuid: string): Promise<void> {
@@ -676,6 +830,20 @@ export class AccessService {
             },
         );
 
+        for (const access of newProjectAccess) {
+            this.accessGroupAuditService
+                .log(
+                    access.uuid,
+                    AccessGroupEventType.UPDATE_PROJECT_ACCESS,
+                    { projectUuid: projectUuid, rights: access.rights },
+
+                    authHeader.user as unknown as UserEntity,
+                )
+                .catch((error: unknown) =>
+                    logger.error(`Audit log failed: ${String(error)}`),
+                );
+        }
+
         return await this.getProjectAccesses(projectUuid);
     }
 
@@ -683,6 +851,7 @@ export class AccessService {
         uuid: string,
         userUuid: string,
         expireDate: Date | 'never',
+        auth?: AuthHeader,
     ): Promise<GroupMembershipDto> {
         const agu = await this.groupMembershipRepository.findOneOrFail({
             where: {
@@ -702,6 +871,74 @@ export class AccessService {
                 where: { uuid: membershipUuid },
                 relations: ['user'],
             });
+
+        this.accessGroupAuditService
+            .log(
+                uuid,
+                AccessGroupEventType.UPDATE_EXPIRE_DATE,
+                {
+                    userUuid,
+                    userName: savedMembership.user?.name ?? 'Unknown',
+                    expireDate,
+                },
+                auth?.user as unknown as UserEntity,
+            )
+            .catch((error: unknown) =>
+                logger.error(`Audit log failed: ${String(error)}`),
+            );
+
         return groupMembershipEntityToDto(savedMembership);
+    }
+
+    async getAuditLogs(uuid: string): Promise<AccessGroupAuditLogsDto> {
+        const [logs, count] =
+            await this.accessGroupAuditService.getLogsForGroup(uuid);
+
+        // Extract all unique UUIDs that need resolving
+        const uuidsToResolve = new Set<string>();
+        for (const log of logs) {
+            const details = log.details;
+            if (details.userUuid && !details.userName) {
+                uuidsToResolve.add(details.userUuid as string);
+            }
+            if (Array.isArray(details.userUuids)) {
+                for (const id of details.userUuids as string[]) {
+                    uuidsToResolve.add(id);
+                }
+            }
+        }
+
+        const resolvedUsers = await this.userService.resolveUsers([
+            ...uuidsToResolve,
+        ]);
+
+        return {
+            data: logs.map((log) => {
+                const details = { ...log.details };
+                if (details.userUuid && !details.userName) {
+                    details.userName =
+                        resolvedUsers[details.userUuid as string] ??
+                        details.userUuid;
+                }
+                if (Array.isArray(details.userUuids)) {
+                    details.affectedUsers = (details.userUuids as string[]).map(
+                        (id) => ({
+                            uuid: id,
+                            name: resolvedUsers[id] ?? id,
+                        }),
+                    );
+                    delete details.userUuids;
+                }
+
+                return {
+                    uuid: log.uuid,
+                    createdAt: log.createdAt,
+                    type: log.type,
+                    details,
+                    actor: log.actor ? userEntityToDto(log.actor) : undefined,
+                };
+            }),
+            count,
+        };
     }
 }

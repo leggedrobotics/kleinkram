@@ -1,6 +1,13 @@
 import { AccessService } from '@/services/access.service';
 import { ProjectService } from '@/services/project.service';
-import { AccessGroupEntity, ProjectEntity } from '@kleinkram/backend-common';
+import {
+    AccessGroupAuditService,
+    AccessGroupEntity,
+    AccessGroupEventEntity,
+    GroupMembershipEntity,
+    ProjectEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
@@ -16,13 +23,16 @@ import { OldProjectController, ProjectController } from './project.controller';
             ProjectEntity,
             AccountEntity,
             AccessGroupEntity,
+            AccessGroupEventEntity,
             TagTypeEntity,
             ProjectAccessEntity,
             MissionEntity,
+            UserEntity,
+            GroupMembershipEntity,
         ]),
         StorageModule,
     ],
-    providers: [ProjectService, AccessService],
+    providers: [ProjectService, AccessService, AccessGroupAuditService],
     exports: [ProjectService],
     controllers: [ProjectController, OldProjectController],
 })

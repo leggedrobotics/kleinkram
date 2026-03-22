@@ -5,32 +5,58 @@ export class IgnoreSoftDeletedWhileCheckingNameConstraints1769509296006 implemen
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
-            `ALTER TABLE "mission" DROP CONSTRAINT "FK_6d71c0142267fbeaba6cae0e5db"`,
+            `ALTER TABLE "mission" DROP CONSTRAINT IF EXISTS "FK_6d71c0142267fbeaba6cae0e5db"`,
         );
         await queryRunner.query(
-            `ALTER TABLE "file_entity" DROP CONSTRAINT "unique_file_name_per_mission"`,
+            `ALTER TABLE "file_entity" DROP CONSTRAINT IF EXISTS "unique_file_name_per_mission"`,
         );
         await queryRunner.query(
-            `ALTER TABLE "category" DROP CONSTRAINT "unique_category_name_per_project"`,
+            `DROP INDEX IF EXISTS "unique_file_name_per_mission"`,
         );
         await queryRunner.query(
-            `ALTER TABLE "mission" DROP CONSTRAINT "unique_mission_name_per_project"`,
+            `ALTER TABLE "category" DROP CONSTRAINT IF EXISTS "unique_category_name_per_project"`,
         );
         await queryRunner.query(
-            `ALTER TABLE "action_template" DROP CONSTRAINT "unique_versioned_action_name"`,
+            `DROP INDEX IF EXISTS "unique_category_name_per_project"`,
         );
         await queryRunner.query(
-            `ALTER TABLE "project" DROP CONSTRAINT "UQ_dedfea394088ed136ddadeee89c"`,
+            `ALTER TABLE "mission" DROP CONSTRAINT IF EXISTS "unique_mission_name_per_project"`,
         );
         await queryRunner.query(
-            `ALTER TABLE "access_group" DROP CONSTRAINT "unique_access_group_name"`,
+            `DROP INDEX IF EXISTS "unique_mission_name_per_project"`,
         );
         await queryRunner.query(
-            `ALTER TABLE "apikey" DROP CONSTRAINT "UQ_e1a6e9c0229f80fc2604aa3dc61"`,
+            `ALTER TABLE "action_template" DROP CONSTRAINT IF EXISTS "unique_versioned_action_name"`,
         );
         await queryRunner.query(
-            `ALTER TABLE "worker" DROP CONSTRAINT "UQ_187e709b9ca210ebafd74e59746"`,
+            `DROP INDEX IF EXISTS "unique_versioned_action_name"`,
         );
+        await queryRunner.query(
+            `ALTER TABLE "project" DROP CONSTRAINT IF EXISTS "UQ_dedfea394088ed136ddadeee89c"`,
+        );
+        // Assuming earlier it was named unique_project_name_active or something else, but dropping the constraint name
+        await queryRunner.query(
+            `DROP INDEX IF EXISTS "UQ_dedfea394088ed136ddadeee89c"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "access_group" DROP CONSTRAINT IF EXISTS "unique_access_group_name"`,
+        );
+        await queryRunner.query(
+            `DROP INDEX IF EXISTS "unique_access_group_name"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "apikey" DROP CONSTRAINT IF EXISTS "UQ_e1a6e9c0229f80fc2604aa3dc61"`,
+        );
+        await queryRunner.query(
+            `DROP INDEX IF EXISTS "UQ_e1a6e9c0229f80fc2604aa3dc61"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "worker" DROP CONSTRAINT IF EXISTS "UQ_187e709b9ca210ebafd74e59746"`,
+        );
+        await queryRunner.query(
+            `DROP INDEX IF EXISTS "UQ_187e709b9ca210ebafd74e59746"`,
+        );
+
         await queryRunner.query(
             `CREATE UNIQUE INDEX "unique_file_name_per_mission" ON "file_entity" ("filename", "missionUuid") WHERE "deletedAt" IS NULL`,
         );
@@ -62,29 +88,31 @@ export class IgnoreSoftDeletedWhileCheckingNameConstraints1769509296006 implemen
 
     public async down(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
-            `ALTER TABLE "mission" DROP CONSTRAINT "FK_6d71c0142267fbeaba6cae0e5db"`,
+            `ALTER TABLE "mission" DROP CONSTRAINT IF EXISTS "FK_6d71c0142267fbeaba6cae0e5db"`,
         );
         await queryRunner.query(
-            `DROP INDEX "public"."unique_worker_identifier_active"`,
+            `DROP INDEX IF EXISTS "public"."unique_worker_identifier_active"`,
         );
         await queryRunner.query(
-            `DROP INDEX "public"."unique_versioned_action_name"`,
-        );
-        await queryRunner.query(`DROP INDEX "public"."unique_apikey_active"`);
-        await queryRunner.query(
-            `DROP INDEX "public"."unique_mission_name_per_project"`,
+            `DROP INDEX IF EXISTS "public"."unique_versioned_action_name"`,
         );
         await queryRunner.query(
-            `DROP INDEX "public"."unique_access_group_name"`,
+            `DROP INDEX IF EXISTS "public"."unique_apikey_active"`,
         );
         await queryRunner.query(
-            `DROP INDEX "public"."unique_project_name_active"`,
+            `DROP INDEX IF EXISTS "public"."unique_mission_name_per_project"`,
         );
         await queryRunner.query(
-            `DROP INDEX "public"."unique_category_name_per_project"`,
+            `DROP INDEX IF EXISTS "public"."unique_access_group_name"`,
         );
         await queryRunner.query(
-            `DROP INDEX "public"."unique_file_name_per_mission"`,
+            `DROP INDEX IF EXISTS "public"."unique_project_name_active"`,
+        );
+        await queryRunner.query(
+            `DROP INDEX IF EXISTS "public"."unique_category_name_per_project"`,
+        );
+        await queryRunner.query(
+            `DROP INDEX IF EXISTS "public"."unique_file_name_per_mission"`,
         );
         await queryRunner.query(
             `ALTER TABLE "worker" ADD CONSTRAINT "UQ_187e709b9ca210ebafd74e59746" UNIQUE ("identifier")`,

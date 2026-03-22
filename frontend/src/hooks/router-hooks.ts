@@ -38,3 +38,17 @@ export const useFileUUID = (): ComputedRef<undefined | string> => {
         return (route.params.file_uuid ?? undefined) as string | undefined;
     });
 };
+
+/**
+ * Extracts the generic UUID from the route (the URL).
+ * Used for paths like /access-group/:uuid
+ *
+ * @returns The UUID, or `undefined` if it is not present.
+ *
+ */
+export const useUUID = (): ComputedRef<undefined | string> => {
+    const route = useRoute();
+    return computed(() => {
+        return (route.params.uuid ?? undefined) as string | undefined;
+    });
+};

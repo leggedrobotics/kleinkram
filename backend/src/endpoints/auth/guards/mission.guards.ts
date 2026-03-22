@@ -340,16 +340,17 @@ export class MoveMissionsByBodyGuard extends BaseGuard {
             return false;
         }
 
-        for (const missionUUID of missionUUIDs) {
-            const canDeleteSourceMission =
-                await this.missionGuardService.canAccessMission(
+        const canDeleteSourceMissions = await Promise.all(
+            missionUUIDs.map((missionUUID) =>
+                this.missionGuardService.canAccessMission(
                     user,
                     missionUUID,
                     AccessGroupRights.DELETE,
-                );
-            if (!canDeleteSourceMission) {
-                return false;
-            }
+                ),
+            ),
+        );
+        if (canDeleteSourceMissions.some((canDeleteSourceMission) => !canDeleteSourceMission)) {
+            return false;
         }
 
         return true;

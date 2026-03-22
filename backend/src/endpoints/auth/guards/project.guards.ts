@@ -19,6 +19,7 @@ interface ProjectBody {
 
 interface ProjectParameters {
     uuid?: string;
+    projectUuid?: string;
 }
 
 @Injectable()
@@ -32,7 +33,9 @@ export class ReadProjectGuard extends BaseGuard {
 
         const params = request.params as ProjectParameters;
         const projectUUID =
-            (request.query.uuid as string | undefined) ?? params.uuid;
+            (request.query.uuid as string | undefined) ??
+            params.projectUuid ??
+            params.uuid;
 
         if (!projectUUID) {
             return false; // Deny access if UUID not provided
@@ -134,6 +137,7 @@ export class WriteProjectGuard extends BaseGuard {
         const params = request.params as ProjectParameters | undefined;
         const projectUUID =
             (request.query.uuid as string | undefined) ??
+            params?.projectUuid ??
             body?.uuid ??
             params?.uuid;
 
@@ -166,6 +170,7 @@ export class DeleteProjectGuard extends BaseGuard {
         const params = request.params as ProjectParameters | undefined;
         const projectUUID =
             (request.query.uuid as string | undefined) ??
+            params?.projectUuid ??
             params?.uuid ??
             body?.uuid;
 

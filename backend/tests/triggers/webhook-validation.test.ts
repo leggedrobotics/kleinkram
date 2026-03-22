@@ -20,12 +20,10 @@ describe('Webhook Validation Tests', () => {
     let templateUuid: string;
     let projectUuid: string;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         // Seed a stable worker for the dispatcher
         const workerRepo = database.getRepository(WorkerEntity);
         const identifier = 'test-worker-webhook-validation';
-        const existing = await workerRepo.findOneBy({ identifier });
-
         const workerData = {
             identifier,
             hostname: 'test-host',
@@ -37,16 +35,8 @@ describe('Webhook Validation Tests', () => {
             cpuModel: 'Test CPU',
             storage: 1000,
         };
+        await workerRepo.save(workerRepo.create(workerData));
 
-        if (existing) {
-            Object.assign(existing, workerData);
-            await workerRepo.save(existing);
-        } else {
-            await workerRepo.save(workerRepo.create(workerData));
-        }
-    });
-
-    beforeEach(async () => {
         const setup = await generateAndFetchDatabaseUser('internal', 'admin');
         user = setup.user;
 

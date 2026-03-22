@@ -82,7 +82,7 @@ const isNoopMove = computed<boolean>(() => {
         return false;
     }
 
-    return selectedMissions.value.every(
+    return selectedMissions.value.some(
         (mission) => mission.project.uuid === selectedProjectUuid.value,
     );
 });

@@ -125,7 +125,7 @@ def base_handler(exc: Exception) -> int:
     display_error(exc=exc, verbose=shared_state.verbose)
     logger.error(format_traceback(exc))
 
-    if not shared_state.debug:
+    if logging.getLogger().getEffectiveLevel() != logging.DEBUG:
         return 1
     raise exc
 
@@ -219,7 +219,7 @@ def check_version_compatibility() -> None:
 
 @app.callback()
 def cli(
-    verbose: bool = typer.Option(False, help="Enable verbose mode."),
+    verbose: bool = typer.Option(True, help="Enable verbose mode."),
     debug: bool = typer.Option(False, help="Enable debug mode."),
     version: Optional[bool] = typer.Option(None, "--version", "-v", callback=_version_callback),
     log_level: Optional[LogLevel] = typer.Option(None, help="Set log level."),

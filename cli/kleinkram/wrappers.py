@@ -130,6 +130,7 @@ def download(
     dest: PathLike,
     nested: bool = False,
     overwrite: bool = False,
+    allow_corrupt_files: bool = False,
     verbose: bool = False,
 ) -> None:
     query = _args_to_file_query(
@@ -148,6 +149,7 @@ def download(
         nested=nested,
         overwrite=overwrite,
         verbose=verbose,
+        allow_corrupt_files=allow_corrupt_files,
     )
 
 

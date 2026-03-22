@@ -4,12 +4,11 @@ server:
     http_listen_port: 3100
 
 common:
-    ring:
-        instance_addr: 127.0.0.1
-        kvstore:
-            store: inmemory
-    replication_factor: 1
     path_prefix: /tmp/loki
+    replication_factor: 1
+    ring:
+        kvstore:
+            store: memberlist
 
 schema_config:
     configs:
@@ -30,11 +29,6 @@ ingester:
         enabled: true
         dir: /tmp/wal
     lifecycler:
-        address: 127.0.0.1
-        ring:
-            kvstore:
-                store: inmemory
-            replication_factor: 1
         final_sleep: 0s
     chunk_idle_period: 1h # Any chunk not receiving new logs in this time will be flushed
     max_chunk_age: 1h # All chunks will be flushed when they hit this age, default is 1h

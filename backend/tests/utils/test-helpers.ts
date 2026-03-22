@@ -10,6 +10,19 @@ import {
 
 export const setupDatabaseHooks = () => {
     beforeAll(async () => {
+        // Wait for Loki to be ready if running against full Docker environment
+        for (let index = 0; index < 20; index++) {
+            try {
+                const response = await fetch('http://127.0.0.1:3100/ready');
+                if (response.status === 200 || response.status === 201) {
+                    break;
+                }
+            } catch {
+                // Ignore network errors while Loki is booting
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
         await database.initialize();
         await clearAllData();
     }, 30_000);

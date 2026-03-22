@@ -92,7 +92,7 @@ services:
                 - BACKEND_URL=${BACKEND_URL}
                 - GIT_BRANCH=${GIT_BRANCH}
                 - GIT_COMMIT=${GIT_COMMIT}
-
+                - VITE_S3_ENDPOINT=${S3_ENDPOINT}
         volumes:
             - ./frontend:/app/frontend
             - ./packages:/app/packages

@@ -46,6 +46,11 @@ export class MoveMissionsResponseDto {
     @IsInt()
     movedMissionCount!: number;
 
+    @ApiProperty({ type: [String] })
+    @IsArray()
+    @IsUUID('4', { each: true })
+    movedMissionUUIDs!: string[];
+
     @ApiProperty()
     @IsUUID('4')
     targetProjectUUID!: string;

@@ -230,7 +230,7 @@ describe('Verification project endpoint', () => {
                 accessGroups: [
                     {
                         rights: AccessGroupRights.READ,
-                        userUUID: user.uuid,
+                        userUuid: user.uuid,
                     },
                 ],
             },

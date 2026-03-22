@@ -34,7 +34,7 @@ async function setupMissionWithTagValue(
             accessGroups: [
                 {
                     rights,
-                    userUUID: accessUser.uuid,
+                    userUuid: accessUser.uuid,
                 },
             ],
         },
@@ -113,7 +113,7 @@ describe('Verify Project Level Access', () => {
                 accessGroups: [
                     {
                         rights: AccessGroupRights.READ,
-                        userUUID: viewer.uuid,
+                        userUuid: viewer.uuid,
                     },
                 ],
             },
@@ -158,7 +158,7 @@ describe('Verify Project Level Access', () => {
                 accessGroups: [
                     {
                         rights: AccessGroupRights.READ,
-                        userUUID: viewer.uuid,
+                        userUuid: viewer.uuid,
                     },
                 ],
             },
@@ -202,7 +202,7 @@ describe('Verify Project Level Access', () => {
                 accessGroups: [
                     {
                         rights: AccessGroupRights.WRITE,
-                        userUUID: editor.uuid,
+                        userUuid: editor.uuid,
                     },
                 ],
             },

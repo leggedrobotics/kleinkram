@@ -555,6 +555,8 @@ export class MissionService {
           }
         }
 
+        // Keep storage tag updates inside the transaction callback so a
+        // tagging failure aborts the DB move before commit.
         for (const file of rollbackTags) {
           await this.dataStorage.addTags(file.fileUUID, {
             filename: file.filename,

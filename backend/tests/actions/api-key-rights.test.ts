@@ -14,6 +14,7 @@ import {
 
 import { AccessGroupRights, ActionState, KeyTypes } from '@kleinkram/shared';
 
+import { appVersion } from '@/app-version';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -191,7 +192,7 @@ describe('Verify Action Access Rights', () => {
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     'x-api-key': apiKey,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'kleinkram-client-version': '0.56.0',
+                    'kleinkram-client-version': appVersion,
                 },
             },
         );
@@ -245,7 +246,7 @@ describe('Verify Action Access Rights', () => {
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     'x-api-key': apiKey,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'kleinkram-client-version': '0.56.0',
+                    'kleinkram-client-version': appVersion,
                 },
             },
         );

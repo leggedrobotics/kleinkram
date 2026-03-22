@@ -1,3 +1,4 @@
+import type { AccessGroupAuditLogsDto } from '@kleinkram/api-dto/types/access-control/access-group-audit-logs.dto';
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
 import type { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
@@ -24,7 +25,7 @@ export const searchAccessGroups = async (
     };
 
     const response: AxiosResponse<AccessGroupsDto> = await axios.get(
-        '/access/filtered',
+        '/access',
         {
             params: parameters,
         },
@@ -34,7 +35,7 @@ export const searchAccessGroups = async (
 };
 
 export const getAccessGroup = async (uuid: string): Promise<AccessGroupDto> => {
-    const response = await axios.get(`/access/one`, { params: { uuid } });
+    const response = await axios.get(`/access/${uuid}`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
@@ -43,6 +44,14 @@ export const getProjectAccess = async (
     projectUUID: string,
 ): Promise<ProjectAccessListDto> => {
     const response = await axios.get(`/projects/${projectUUID}/access`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return response.data;
+};
+
+export const getAccessGroupAuditLogs = async (
+    uuid: string,
+): Promise<AccessGroupAuditLogsDto> => {
+    const response = await axios.get(`/access/${uuid}/audit-logs`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

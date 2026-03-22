@@ -176,7 +176,7 @@ def move(
         ).id
         source_project_query = ProjectQuery(ids=[source_project_uuid])
 
-    mission_ids, mission_patterns = split_args(mission)
+    _, mission_patterns = split_args(mission)
     if mission_patterns and not source_project:
         raise InvalidMissionQuery(
             "Mission query does not uniquely determine mission. "

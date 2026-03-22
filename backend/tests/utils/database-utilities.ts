@@ -42,7 +42,6 @@ export const clearAllData = async () => {
                 .filter((entity) => entity.tableName !== undefined)
                 .filter((entity) => !entity.tableName.includes('view'))
                 .filter((entity) => !entity.tableName.includes('materialized'))
-                .filter((entity) => !entity.tableName.includes('worker'))
                 .map((entity) => `"${entity.tableName}"`)
                 .join(', ');
 

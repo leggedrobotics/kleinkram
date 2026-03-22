@@ -392,13 +392,13 @@ export class ProjectService {
 
     let deduplicatedAccessGroups: (
       | { accessGroupUUID: string; rights: AccessGroupRights }
-      | { userUUID: string; rights: AccessGroupRights }
+      | { userUuid: string; rights: AccessGroupRights }
     )[] = [];
     if (project.accessGroups) {
       deduplicatedAccessGroups = project.accessGroups.filter((ag) => {
         return "accessGroupUUID" in ag
           ? !accessGroupsDefaultIds.has(ag.accessGroupUUID)
-          : ag.userUUID !== auth.user.uuid;
+          : ag.userUuid !== auth.user.uuid;
       });
     }
 
@@ -653,6 +653,8 @@ export class ProjectService {
           );
         }
 
+        // Keep storage tag updates inside the transaction callback so a
+        // tagging failure aborts the DB move before commit.
         for (const file of movedFiles) {
           await this.dataStorage.addTags(file.fileUUID, {
             filename: file.filename,
@@ -741,7 +743,7 @@ export class ProjectService {
     manager: EntityManager,
     accessGroups: (
       | { accessGroupUUID: string; rights: AccessGroupRights }
-      | { userUUID: string; rights: AccessGroupRights }
+      | { userUuid: string; rights: AccessGroupRights }
     )[],
     project: ProjectEntity,
   ): Promise<Awaited<ProjectAccessEntity>[]> {
@@ -754,13 +756,13 @@ export class ProjectService {
               uuid: accessGroup.accessGroupUUID,
             },
           });
-        } else if ("userUUID" in accessGroup) {
+        } else if ("userUuid" in accessGroup) {
           accessGroupDB = await this.accessGroupRepository.findOneOrFail({
             where: {
               memberships: {
                 user: [
                   {
-                    uuid: accessGroup.userUUID,
+                    uuid: accessGroup.userUuid,
                   },
                 ],
               },
@@ -769,7 +771,7 @@ export class ProjectService {
           });
         } else {
           throw new ConflictException(
-            "Neither accessGroupUUID nor userUUID is present in accessGroup",
+            "Neither accessGroupUUID nor userUuid is present in accessGroup",
           );
         }
         const projectAccess = this.projectAccessRepository.create({

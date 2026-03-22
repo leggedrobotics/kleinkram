@@ -16,6 +16,21 @@ import { JwtPayload } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import logger from '../logger';
 
+async function syncAffiliationAndReturn(
+    affiliationGroupService: AffiliationGroupService,
+    config: AccessGroupConfig,
+    user: UserEntity,
+    email: unknown,
+): Promise<UserEntity> {
+    const resolvedEmail = typeof email === 'string' ? email : undefined;
+    await affiliationGroupService.addToAffiliationGroups(
+        config,
+        user,
+        resolvedEmail,
+    );
+    return user;
+}
+
 @Injectable()
 export class AuthService implements OnModuleInit {
     private readonly config: AccessGroupConfig;
@@ -62,7 +77,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
+                this.config,
+                account.user,
+                email,
+            );
         }
 
         return this.create(
@@ -98,7 +118,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
+                this.config,
+                account.user,
+                email,
+            );
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -127,7 +152,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
+                this.config,
+                account.user,
+                email,
+            );
         }
 
         return this.create(
@@ -238,7 +268,14 @@ export const createNewUser = async (
             `Linking account ${account.uuid} to existing user ${existingUser.uuid}`,
         );
         account.user = existingUser;
-        return accountRepository.save(account).then(() => existingUser);
+        await accountRepository.save(account);
+        await syncAffiliationAndReturn(
+            affiliationGroupService,
+            config,
+            existingUser,
+            options.email,
+        );
+        return existingUser;
     }
 
     /////////////////////////////////////////////////////////

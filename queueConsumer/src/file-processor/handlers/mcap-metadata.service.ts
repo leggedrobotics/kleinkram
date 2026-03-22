@@ -11,6 +11,7 @@ import * as fsPromises from 'node:fs/promises';
 import { Repository } from 'typeorm';
 import { AbstractMetadataService } from './abstract-metadata.service';
 import { ExtractedTopicInfo } from './file-handler.interface';
+import { getDurationSeconds } from './time';
 
 class LocalFileReader implements IReadable {
     constructor(
@@ -82,6 +83,10 @@ export class McapMetadataService extends AbstractMetadataService {
     ): Promise<void> {
         const reader = await McapIndexedReader.Initialize({ readable });
         const rawTopics: ExtractedTopicInfo[] = [];
+        const durationSec = getDurationSeconds(
+            reader.statistics?.messageStartTime,
+            reader.statistics?.messageEndTime,
+        );
 
         if (reader.statistics) {
             for (const [channelId, count] of reader.statistics
@@ -96,6 +101,8 @@ export class McapMetadataService extends AbstractMetadataService {
                                       ?.name ?? 'unknown')
                                 : 'unknown',
                         nrMessages: count,
+                        frequency:
+                            durationSec > 0 ? Number(count) / durationSec : 0,
                     });
                 }
             }
@@ -107,6 +114,7 @@ export class McapMetadataService extends AbstractMetadataService {
                         reader.schemasById.get(channel.schemaId)?.name ??
                         'unknown',
                     nrMessages: 0n,
+                    frequency: 0,
                 });
             }
         }

@@ -149,10 +149,21 @@ export function CanMigrateProjectByBody() {
         SetMetadata('CanMigrateProjectByBody', true),
         UseGuards(MigrateProjectByBodyGuard),
         ApiResponse({
+            status: 400,
+            description:
+                'Request body is invalid: sourceProjectUUID and targetProjectUUID must be valid UUIDs.',
+        }),
+        ApiResponse({
             status: 401,
             type: UnauthorizedExceptionDto,
             description:
                 'User does not have permissions to migrate between the specified projects.',
+        }),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have sufficient access rights on the source or target project.',
         }),
     );
 }
@@ -200,6 +211,11 @@ export function CanMoveMission() {
     return applyDecorators(
         SetMetadata('CanMoveMission', true),
         UseGuards(MoveMissionsByBodyGuard),
+        ApiResponse({
+            status: 400,
+            description:
+                'Request body is invalid: missionUUIDs must be a non-empty UUID array, targetProjectUUID must be a valid UUID, and newName is only allowed for single-mission moves.',
+        }),
         ApiResponse({
             status: 401,
             type: UnauthorizedExceptionDto,

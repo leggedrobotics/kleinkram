@@ -1,5 +1,15 @@
 <template>
-    <div>
+    <div
+        class="mission-files-container"
+        @dragover.prevent="onDragOver"
+        @dragleave.prevent="onDragLeave"
+        @drop.prevent="onDrop"
+    >
+        <div v-if="isDragging" class="drop-overlay">
+            <q-icon name="sym_o_upload" size="4rem" color="white" />
+            <div class="text-h4 text-white q-mt-md">Drop files to upload</div>
+        </div>
+
         <div
             v-if="selectedFiles.length === 0"
             class="q-my-lg flex justify-between items-center"
@@ -161,6 +171,7 @@
 <script setup lang="ts">
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
+import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { FileType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
@@ -185,6 +196,7 @@ import {
 } from 'src/composables/use-mission-file-search';
 import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
 import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue';
+import CreateFileDialog from 'src/dialogs/create-file-dialog.vue';
 import {
     registerNoPermissionErrorHandler,
     useHandler,
@@ -193,7 +205,9 @@ import {
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import { _downloadFiles } from 'src/services/generic';
 import { deleteFiles } from 'src/services/mutations/file';
-import { computed, onMounted, Ref, ref, watch } from 'vue';
+import { computed, inject, onMounted, Ref, ref, watch } from 'vue';
+
+const uploads = inject<Ref<FileUploadDto[]>>('uploads');
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -250,7 +264,7 @@ function toggleAdvanced() {
 const placeholderText = computed(() => {
     const cat =
         availableCategories.value.length > 0
-            ? availableCategories.value[0].name
+            ? (availableCategories.value[0]?.name ?? 'MyCat')
             : 'MyCat';
     const catString = cat.includes(' ') ? `"${cat}"` : cat;
     return `Search (e.g. health:healthy category:${catString} filetype:bag ...)`;
@@ -473,6 +487,52 @@ const downloadCallback = async (): Promise<void> => {
         });
     }
 };
+
+const isDragging = ref(false);
+
+const onDragOver = () => {
+    isDragging.value = true;
+};
+
+const onDragLeave = (event: DragEvent) => {
+    const currentTarget = event.currentTarget as HTMLElement | null;
+    const relatedTarget = event.relatedTarget as Node | null;
+
+    if (
+        currentTarget &&
+        relatedTarget &&
+        currentTarget.contains(relatedTarget)
+    ) {
+        return;
+    }
+
+    isDragging.value = false;
+};
+
+const onDrop = (event: DragEvent) => {
+    isDragging.value = false;
+    const dt = event.dataTransfer;
+    if (dt?.files && dt.files.length > 0) {
+        const droppedFiles = [...dt.files];
+        openUploadDialogWithFiles(droppedFiles);
+    }
+};
+
+const openUploadDialogWithFiles = (files: File[]) => {
+    if (!uploads) {
+        console.error('Uploads provider is missing.');
+        return;
+    }
+
+    $q.dialog({
+        component: CreateFileDialog,
+        componentProps: {
+            mission: missionData.value,
+            uploads,
+            initialFiles: files,
+        },
+    });
+};
 </script>
 
 <style scoped>
@@ -484,7 +544,31 @@ const downloadCallback = async (): Promise<void> => {
 :deep(.q-field__marginal) {
     height: 36px !important;
     min-height: 36px !important;
+    min-height: 36px !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
+}
+
+.mission-files-container {
+    position: relative;
+    height: 100%;
+    min-height: 400px;
+}
+
+.drop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 98, 254, 0.9);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 4px dashed white;
+    border-radius: 8px;
+    margin: 16px;
 }
 </style>

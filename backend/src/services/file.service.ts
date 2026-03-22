@@ -1101,14 +1101,16 @@ export class FileService implements OnModuleInit {
             );
         }
 
+        const disposition = preview_only
+            ? undefined
+            : {
+                  'response-content-disposition': `attachment; filename="${file.filename}"`,
+              };
+
         return await this.dataStorage.getPresignedDownloadUrl(
             file.uuid,
             expires ? 4 * 60 * 60 : 604_800,
-            {
-                // set filename in response headers
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'response-content-disposition': `attachment; filename ="${file.filename}"`,
-            },
+            disposition,
         );
     }
 

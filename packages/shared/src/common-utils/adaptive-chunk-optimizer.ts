@@ -60,9 +60,15 @@ export class AdaptiveChunkOptimizer {
     /**
      * Calculates the optimal chunk size for the next request.
      * @param requestedSize The minimum size actually requested by the application
+     * @param isSequential Whether this request is sequential to the last one
      * @returns The optimal size to fetch (>= requestedSize)
      */
-    getOptimalRequestSize(requestedSize: number): number {
+    getOptimalRequestSize(requestedSize: number, isSequential = true): number {
+        if (!isSequential) {
+            let optimalSize = Math.max(this.minChunkSize, requestedSize);
+            optimalSize = Math.ceil(optimalSize / 4096) * 4096;
+            return optimalSize;
+        }
         // Calculate size that would take `targetDuration` to download
         const targetSize = this.bandwidthEstimate * this.targetDuration;
 
