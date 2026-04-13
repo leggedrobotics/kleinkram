@@ -305,12 +305,14 @@ const averageUploadSpeed = computed(() => {
 });
 const timeEstimated = computed(() => {
     const remainingSize = totalToUpload.value - totalUploaded.value;
-    if (remainingSize === 0) return '0 min';
+    if (remainingSize === 0) return '0 sec';
     if (averageUploadSpeed.value === 0) return 'Calculating...';
-    const remainingTime = remainingSize / averageUploadSpeed.value;
-    if (Number.isNaN(remainingTime)) return 'Calculating...';
-    const ave = Math.round(remainingTime / 60);
-    return `${ave.toString()} min`;
+    const totalSeconds = remainingSize / averageUploadSpeed.value;
+    if (Number.isNaN(totalSeconds)) return 'Calculating...';
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = Math.round(totalSeconds % 60);
+    if (mins === 0) return `${secs} sec`;
+    return `${mins} min ${secs} sec`;
 });
 
 const downloadsInProgress = computed(() =>
@@ -348,12 +350,14 @@ const averageDownloadSpeed = computed(() => {
 
 const downloadTimeEstimated = computed(() => {
     const remaining = totalToDownload.value - totalDownloaded.value;
-    if (remaining === 0) return '0 min';
+    if (remaining === 0) return '0 sec';
     if (averageDownloadSpeed.value === 0) return 'Calculating...';
-    const seconds = remaining / averageDownloadSpeed.value;
-    if (Number.isNaN(seconds)) return 'Calculating...';
-    const mins = Math.round(seconds / 60);
-    return `${mins} min`;
+    const totalSeconds = remaining / averageDownloadSpeed.value;
+    if (Number.isNaN(totalSeconds)) return 'Calculating...';
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = Math.round(totalSeconds % 60);
+    if (mins === 0) return `${secs} sec`;
+    return `${mins} min ${secs} sec`;
 });
 
 const isOverlayVisible = ref(false);
