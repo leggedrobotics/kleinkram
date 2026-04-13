@@ -200,8 +200,10 @@ import {
     getSimpleFileStateName,
 } from 'src/services/generic';
 import { findOneByNameAndMission } from 'src/services/queries/file';
-import { computed, ref, Ref, watch } from 'vue';
+import { computed, inject, ref, Ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+
+const downloads = inject('downloads');
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
@@ -361,7 +363,7 @@ function canDelete(row: FileQueueEntryDto): boolean {
 async function downloadFile(row: FileQueueEntryDto): Promise<void> {
     await findOneByNameAndMission(row.displayName, row.mission.uuid).then(
         async (file: FileWithTopicDto) => {
-            await _downloadFile(file.uuid, file.filename);
+            await _downloadFile(file.uuid, file.filename, downloads);
         },
     );
 }

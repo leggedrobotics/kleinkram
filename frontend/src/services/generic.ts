@@ -6,7 +6,9 @@ import {
     QueueState,
 } from '@kleinkram/shared';
 import { downloadFile } from 'src/services/queries/file';
+import { ref, Ref } from 'vue';
 
+import type { FileDownloadDto } from '@kleinkram/api-dto/types/download.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 
 export const icon = (type: DataType) => {
@@ -165,17 +167,75 @@ export function getDetailedFileState(state: QueueState) {
     }
 }
 
-export async function _downloadFile(fileUUID: string, filename: string) {
-    const response = await downloadFile(fileUUID, true);
+export async function _downloadFile(
+    fileUUID: string,
+    filename: string,
+    downloads?: Ref<Ref<FileDownloadDto>[]>,
+) {
+    const url = await downloadFile(fileUUID, true);
+
+    if (!downloads) {
+        // Fallback: no tracking, use browser download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        return;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        console.error(`Failed to fetch ${url}`);
+        return;
+    }
+
+    const contentLength = Number(response.headers.get('content-length') ?? 0);
+    const newDownloadRef = ref({
+        name: filename,
+        size: contentLength,
+        downloaded: 0,
+        speed: 0,
+        canceled: false,
+        fileUUID,
+    });
+    // @ts-ignore
+    downloads.value.push(newDownloadRef);
+    const startTime = Date.now();
+
+    const reader = response.body?.getReader();
+    const chunks: Uint8Array[] = [];
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    while (true) {
+        if (reader === undefined) break;
+        const { done, value } = await reader.read();
+        if (done || value === undefined) break;
+
+        chunks.push(value);
+        newDownloadRef.value.downloaded += value.byteLength;
+        const elapsed = (Date.now() - startTime) / 1000;
+        if (elapsed > 0) {
+            newDownloadRef.value.speed = newDownloadRef.value.downloaded / elapsed;
+        }
+    }
+
+    const blob = new Blob(chunks);
+    const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = response;
+    a.href = blobUrl;
     a.download = filename;
     document.body.append(a);
     a.click();
     a.remove();
+    URL.revokeObjectURL(blobUrl);
 }
 
-export async function _downloadFiles(files: FileWithTopicDto[]) {
+export async function _downloadFiles(
+    files: FileWithTopicDto[], 
+    downloads: Ref<Ref<FileDownloadDto>[]>
+) {
     const downloadPromises = files.map(async (file) => {
         try {
             const url = await downloadFile(file.uuid, true);
@@ -185,10 +245,12 @@ export async function _downloadFiles(files: FileWithTopicDto[]) {
         }
     });
     const downloadURLs = await Promise.all(downloadPromises);
-    await downloadFiles(downloadURLs);
+    await downloadFiles(downloadURLs, downloads);
 }
 
-async function downloadFiles(files: { url: string; filename: string }[]) {
+async function downloadFiles(
+    files: { url: string; filename: string }[],
+    downloads: Ref<Ref<FileDownloadDto>[]>) {
     // Ensure that the File System Access API is supported
     // @ts-expect-error
     if (!globalThis.showDirectoryPicker) {
@@ -206,11 +268,23 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
         for (const { url, filename } of files) {
             // Fetch the file using streaming
             const response = await fetch(url);
-
             if (!response.ok) {
                 console.error(`Failed to fetch ${url}`);
                 continue;
             }
+
+            const contentLength = Number(response.headers.get('content-length') ?? 0);
+            const newDownload = {
+                name: filename,
+                size: contentLength,
+                downloaded: 0,
+                speed: 0,
+                canceled: false,
+            };
+            const newDownloadRef = ref(newDownload);
+            // @ts-ignore
+            downloads.value.push(newDownloadRef);
+            const startTime = Date.now();
 
             // Create a file handle and writable stream for the file
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
@@ -244,6 +318,11 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
                     // Write the current chunk to the file
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                     await writableStream.write(value);
+                    newDownloadRef.value.downloaded += value.byteLength;
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    if (elapsed > 0) {
+                        newDownloadRef.value.speed = newDownloadRef.value.downloaded / elapsed;
+                    } 
                 }
             }
 

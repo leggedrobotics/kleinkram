@@ -4,11 +4,17 @@
 
 <script setup lang="ts">
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
+import type { FileDownloadDto } from '@kleinkram/api-dto/types/download.dto';
 import { provide, Ref, ref } from 'vue';
 
 const uploads: Ref<Ref<FileUploadDto>[]> = ref([]);
 // Provide the globalState object
 provide('uploads', uploads);
+
+const downloads: Ref<Ref<FileDownloadDto>[]> = ref([]);
+// Provide the globalState object
+provide('downloads', downloads);
+
 </script>
 
 <style scoped>

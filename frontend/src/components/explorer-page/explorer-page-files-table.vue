@@ -139,6 +139,7 @@
                                         _downloadFile(
                                             props.row.uuid,
                                             props.row.filename,
+                                            downloads,
                                         )
                                 "
                             >
@@ -243,9 +244,10 @@ import {
 } from 'src/services/generic';
 import { filesOfMission } from 'src/services/queries/file';
 import { TableRequest } from 'src/services/query-handler';
-import { computed, unref, watch } from 'vue';
+import { computed, inject, unref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
+const downloads = inject('downloads');
 const selected = defineModel('selected', { required: true, type: Array });
 
 const $emit = defineEmits(['update:selected', 'reset-filter']);

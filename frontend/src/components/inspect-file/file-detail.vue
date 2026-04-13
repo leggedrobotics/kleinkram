@@ -142,7 +142,9 @@ import {
 import { useFileUUID } from 'src/hooks/router-hooks';
 import { _downloadFile } from 'src/services/generic';
 import { downloadFile, getFoxgloveLink } from 'src/services/queries/file';
-import { computed, onUnmounted, ref, watch } from 'vue';
+import { computed, inject, onUnmounted, ref, watch } from 'vue';
+
+const downloads = inject('downloads');
 import FileErrorState from './file-error-state.vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
@@ -236,7 +238,7 @@ onUnmounted(() => {
 
 // --- Actions ---
 const handleDownload = (): Promise<void> =>
-    _downloadFile(file.value?.uuid ?? '', file.value?.filename ?? '');
+    _downloadFile(file.value?.uuid ?? '', file.value?.filename ?? '', downloads);
 const copyHash = (): Promise<void> => copyToClipboard(file.value?.hash ?? '');
 const copyUuid = (): Promise<void> => copyToClipboard(file.value?.uuid ?? '');
 async function copyFoxgloveLink(): Promise<void> {
