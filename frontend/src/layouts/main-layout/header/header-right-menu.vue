@@ -129,6 +129,84 @@
                                 />
                             </div>
                         </div>
+                                                <q-separator />
+                        <div style="width: 400px">
+                            <q-card-section
+                                style="
+                                    padding-bottom: 5px;
+                                    padding-top: 4px;
+                                    max-height: 40px;
+                                "
+                            >
+                                <q-item style="padding-bottom: 0">
+                                    <q-item-section>
+                                        <b>File Download</b>
+                                    </q-item-section>
+                                </q-item>
+                            </q-card-section>
+
+                            <q-card-section
+                                class="q-py-xs"
+                                style="max-height: 40px"
+                            >
+                                <q-item style="padding-top: 0">
+                                    <q-item-section>
+                                        <div class="row items-center">
+                                            <q-spinner
+                                                v-if="downloadProgress !== 100"
+                                                size="20px"
+                                            />
+                                            <span class="q-ml-sm"
+                                                >{{ Math.round(downloadProgress) }}% ({{
+                                                    downloadTimeEstimated
+                                                }})</span
+                                            >
+                                        </div>
+                                    </q-item-section>
+                                </q-item>
+                            </q-card-section>
+                            <q-card-section class="q-py-xs">
+                                <q-item
+                                    v-for="dl in downloadsInProgress.slice(0, 5)"
+                                    :key="dl.value.name"
+                                >
+                                    <div class="row items-center">
+                                        <q-icon
+                                            name="sym_o_download"
+                                            size="3em"
+                                        />
+                                        <q-item-section>
+                                            {{ dl.value.name }}
+                                            <br />
+                                            <p v-if="!dl.value.canceled">
+                                                {{
+                                                    Math.round(
+                                                        (dl.value.downloaded /
+                                                            dl.value.size) *
+                                                            100,
+                                                    )
+                                                }}%
+                                            </p>
+                                            <i v-else> Download Canceled </i>
+                                        </q-item-section>
+                                    </div>
+                                </q-item>
+
+                                <span v-if="downloadsInProgress.length > 5">
+                                    <q-item>
+                                        <q-item-section>
+                                            <span
+                                                >And
+                                                {{
+                                                    downloadsInProgress.length - 5
+                                                }}
+                                                more</span
+                                            >
+                                        </q-item-section>
+                                    </q-item>
+                                </span>
+                            </q-card-section>
+                        </div>
                     </q-menu>
                 </q-btn>
 
@@ -162,6 +240,7 @@ watch(isUploading, () =>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
 const uploads: any = inject('uploads');
+const downloads: any = inject('downloads');
 
 const uploadsWithoutCompleted = computed(() =>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
@@ -232,6 +311,49 @@ const timeEstimated = computed(() => {
     if (Number.isNaN(remainingTime)) return 'Calculating...';
     const ave = Math.round(remainingTime / 60);
     return `${ave.toString()} min`;
+});
+
+const downloadsInProgress = computed(() =>
+    downloads.value.filter((dl: any) => dl.value.downloaded / dl.value.size < 1),
+);
+
+const totalToDownload = computed(() =>
+    downloads.value.reduce(
+        (acc: number, dl: any) => acc + (dl.value.canceled ? 0 : dl.value.size),
+        0,
+    ),
+);
+
+const totalDownloaded = computed(() =>
+    downloads.value.reduce(
+        (acc: number, dl: any) => acc + (dl.value.canceled ? 0 : dl.value.downloaded),
+        0,
+    ),
+);
+
+const downloadProgress = computed(() =>
+    totalToDownload.value === 0
+        ? 100
+        : (totalDownloaded.value / totalToDownload.value) * 100,
+);
+
+const averageDownloadSpeed = computed(() => {
+    const active = downloadsInProgress.value;
+    if (active.length === 0) return 0;
+    return active.reduce(
+        (acc: number, dl: any) => acc + dl.value.speed,
+        0,
+    ) / active.length;
+});
+
+const downloadTimeEstimated = computed(() => {
+    const remaining = totalToDownload.value - totalDownloaded.value;
+    if (remaining === 0) return '0 min';
+    if (averageDownloadSpeed.value === 0) return 'Calculating...';
+    const seconds = remaining / averageDownloadSpeed.value;
+    if (Number.isNaN(seconds)) return 'Calculating...';
+    const mins = Math.round(seconds / 60);
+    return `${mins} min`;
 });
 
 const isOverlayVisible = ref(false);

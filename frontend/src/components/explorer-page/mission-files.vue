@@ -208,6 +208,7 @@ import { deleteFiles } from 'src/services/mutations/file';
 import { computed, inject, onMounted, Ref, ref, watch } from 'vue';
 
 const uploads = inject<Ref<FileUploadDto[]>>('uploads');
+const downloads = inject('downloads');
 
 const queryClient = useQueryClient();
 const handler = useHandler();
@@ -466,7 +467,7 @@ const deselect = (): void => {
 
 const downloadCallback = async (): Promise<void> => {
     try {
-        await _downloadFiles(selectedFiles.value);
+        await _downloadFiles(selectedFiles.value, downloads);
         Notify.create({
             message: 'Files downloaded successfully',
             color: 'positive',
