@@ -55,9 +55,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const userRepository = database.getRepository(UserEntity);
 
         const initialConfig: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
@@ -117,9 +115,7 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         // Remove Group B from config
         const updatedConfig: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
@@ -141,8 +137,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         expect(groupUuids).not.toContain(GROUP_B_UUID);
 
         // Group B should be soft-deleted
-        const accessGroupRepository =
-            database.getRepository(AccessGroupEntity);
+        const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const groupB = await accessGroupRepository.findOne({
             where: { uuid: GROUP_B_UUID },
         });
@@ -153,9 +148,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const userRepository = database.getRepository(UserEntity);
 
         const initialConfig: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
@@ -167,9 +160,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         );
 
         const updatedConfig: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A Renamed', uuid: GROUP_A_UUID, rights: 10 },
             ],
@@ -180,8 +171,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             userRepository,
         );
 
-        const accessGroupRepository =
-            database.getRepository(AccessGroupEntity);
+        const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const group = await accessGroupRepository.findOneOrFail({
             where: { uuid: GROUP_A_UUID },
         });
@@ -192,9 +182,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const userRepository = database.getRepository(UserEntity);
 
         const initialConfig: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
@@ -233,9 +221,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const userRepository = database.getRepository(UserEntity);
 
         const config: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
@@ -256,18 +242,14 @@ describe('Affiliation Group Sync on Reboot', () => {
             (m) => m.accessGroup?.type === AccessGroupType.AFFILIATION,
         );
         expect(affiliationMemberships).toHaveLength(1);
-        expect(affiliationMemberships[0].accessGroup?.uuid).toBe(
-            GROUP_A_UUID,
-        );
+        expect(affiliationMemberships[0].accessGroup?.uuid).toBe(GROUP_A_UUID);
     });
 
     test('should not touch primary or custom groups', async () => {
         const userRepository = database.getRepository(UserEntity);
 
         const config: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
@@ -312,9 +294,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const userRepository = database.getRepository(UserEntity);
 
         const config: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
@@ -344,9 +324,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         );
 
         const config: AccessGroupConfig = {
-            emails: [
-                { email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] },
-            ],
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],

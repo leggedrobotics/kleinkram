@@ -55,7 +55,7 @@ export class AffiliationGroupService {
         config: AccessGroupConfig,
         userRepository: Repository<UserEntity>,
     ): Promise<void> {
-        const configUuids = config.access_groups.map((g) => g.uuid);
+        const configUuids = new Set(config.access_groups.map((g) => g.uuid));
 
         // 1. Upsert groups from config
         await Promise.all(
@@ -85,7 +85,7 @@ export class AffiliationGroupService {
             where: { type: AccessGroupType.AFFILIATION },
         });
         const staleGroups = allAffiliationGroups.filter(
-            (g) => !configUuids.includes(g.uuid),
+            (g) => !configUuids.has(g.uuid),
         );
         for (const staleGroup of staleGroups) {
             await this.groupMembershipRepository.delete({
@@ -120,7 +120,7 @@ export class AffiliationGroupService {
             ).filter(
                 (m) =>
                     m.accessGroup?.type === AccessGroupType.AFFILIATION &&
-                    configUuids.includes(m.accessGroup.uuid),
+                    configUuids.has(m.accessGroup.uuid),
             );
 
             // Add missing memberships
@@ -242,5 +242,4 @@ export class AffiliationGroupService {
             }),
         );
     }
-
 }
