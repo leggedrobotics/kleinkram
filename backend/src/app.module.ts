@@ -64,6 +64,18 @@ import { DBDumper } from './services/dbdumper.service';
                             `Invalid access_config.json: "emails" and "access_groups" must be arrays`,
                         );
                     }
+                    const configGroupUuids = new Set(
+                        accessConfig.access_groups.map((g) => g.uuid),
+                    );
+                    for (const emailEntry of accessConfig.emails) {
+                        for (const uuid of emailEntry.access_groups) {
+                            if (!configGroupUuids.has(uuid)) {
+                                throw new TypeError(
+                                    `Invalid access_config.json: UUID "${uuid}" in emails config is not defined in access_groups`,
+                                );
+                            }
+                        }
+                    }
                     return { accessConfig };
                 },
             ],

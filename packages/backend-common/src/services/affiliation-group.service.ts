@@ -62,6 +62,7 @@ export class AffiliationGroupService {
             config.access_groups.map(async (group) => {
                 const existing = await this.accessGroupRepository.findOne({
                     where: { uuid: group.uuid },
+                    withDeleted: true,
                 });
                 if (!existing) {
                     const newGroup = this.accessGroupRepository.create({
@@ -71,6 +72,9 @@ export class AffiliationGroupService {
                         creator: {},
                     });
                     return this.accessGroupRepository.save(newGroup);
+                }
+                if (existing.deletedAt) {
+                    await this.accessGroupRepository.restore(existing.uuid);
                 }
                 if (existing.name !== group.name) {
                     existing.name = group.name;
