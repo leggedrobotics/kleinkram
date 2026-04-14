@@ -8,8 +8,9 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import accessConfig from './access_config.json';
 import { appVersion } from './app-version';
 import { AccessModule } from './endpoints/access/access.module';
 import { ActionModule } from './endpoints/action/action.module';
@@ -48,7 +49,15 @@ import { DBDumper } from './services/dbdumper.service';
                 configuration,
                 (): {
                     accessConfig: AccessGroupConfig;
-                } => ({ accessConfig: accessConfig as AccessGroupConfig }),
+                } => {
+                    const configPath =
+                        process.env.ACCESS_CONFIG_PATH ??
+                        path.resolve(process.cwd(), 'access_config.json');
+                    const content = fs.readFileSync(configPath, 'utf8');
+                    return {
+                        accessConfig: JSON.parse(content) as AccessGroupConfig,
+                    };
+                },
             ],
         }),
         TypeOrmModule.forRootAsync({

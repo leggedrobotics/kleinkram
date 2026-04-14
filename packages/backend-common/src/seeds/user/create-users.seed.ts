@@ -49,10 +49,9 @@ export default class CreateUsers implements Seeder {
         );
 
         // Load config
-        const configPath = path.resolve(
-            __dirname,
-            '../../../../../backend/src/access_config.json',
-        );
+        const configPath =
+            process.env.ACCESS_CONFIG_PATH ??
+            path.resolve(__dirname, '../../../../../backend/access_config.json');
         let config: AccessGroupConfig | undefined;
 
         if (fs.existsSync(configPath)) {

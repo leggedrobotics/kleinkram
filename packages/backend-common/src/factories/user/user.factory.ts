@@ -45,10 +45,12 @@ setSeederFactory(
         let groupIds: string[] = context.defaultGroupIds ?? [];
 
         try {
-            const configPath = path.resolve(
-                __dirname,
-                '@backend-common/../../../backend/src/access_config.json',
-            );
+            const configPath =
+                process.env.ACCESS_CONFIG_PATH ??
+                path.resolve(
+                    __dirname,
+                    '../../../../../backend/access_config.json',
+                );
 
             if (fs.existsSync(configPath)) {
                 const configContent = fs.readFileSync(configPath, 'utf8');

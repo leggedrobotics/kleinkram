@@ -38,6 +38,7 @@ WORKDIR /app
 COPY --from=build /app/backend/dist/main.js ./backend/dist/main.js
 COPY --from=build /app/backend/package.json ./backend/package.json
 COPY --from=build /app/backend/assets/favicon.png ./backend/assets/favicon.png
+COPY --from=build /app/backend/access_config.json ./backend/access_config.json
 
 WORKDIR /app/backend
 
