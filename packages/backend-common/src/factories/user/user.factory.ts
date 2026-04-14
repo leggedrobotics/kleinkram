@@ -54,7 +54,7 @@ setSeederFactory(
                 const config = JSON.parse(configContent) as AccessGroupConfig;
 
                 for (const emailConfig of config.emails) {
-                    if (user.email.endsWith(emailConfig.email)) {
+                    if (user.email.endsWith('@' + emailConfig.email)) {
                         groupIds = [...groupIds, ...emailConfig.access_groups];
                     }
                 }

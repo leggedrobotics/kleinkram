@@ -52,7 +52,6 @@ export class AuthService implements OnModuleInit {
     }
 
     async onModuleInit(): Promise<void> {
-        await this.affiliationGroupService.createAccessGroups(this.config);
         await this.affiliationGroupService.syncAccessGroups(
             this.config,
             this.userRepository,

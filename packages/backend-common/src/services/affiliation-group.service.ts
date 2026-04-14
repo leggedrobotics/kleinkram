@@ -91,7 +91,7 @@ export class AffiliationGroupService {
             await this.groupMembershipRepository.delete({
                 accessGroup: { uuid: staleGroup.uuid },
             });
-            await this.accessGroupRepository.softRemove(staleGroup);
+            await this.accessGroupRepository.remove(staleGroup);
         }
 
         // 3. Re-sync user memberships for affiliation groups
@@ -108,7 +108,7 @@ export class AffiliationGroupService {
             // Compute expected affiliation group UUIDs from config
             const expectedUuids = new Set<string>();
             for (const emailConfig of config.emails) {
-                if (user.email.endsWith(emailConfig.email)) {
+                if (user.email.endsWith('@' + emailConfig.email)) {
                     for (const uuid of emailConfig.access_groups) {
                         expectedUuids.add(uuid);
                     }
@@ -207,7 +207,7 @@ export class AffiliationGroupService {
         await Promise.all(
             // eslint-disable-next-line @typescript-eslint/await-thenable
             config.emails.map((_config) => {
-                if (resolvingEmail.endsWith(_config.email)) {
+                if (resolvingEmail.endsWith('@' + _config.email)) {
                     return Promise.all(
                         _config.access_groups.map(async (uuid) => {
                             const group =
