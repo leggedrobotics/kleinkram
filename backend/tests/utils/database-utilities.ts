@@ -69,7 +69,7 @@ export const mockDatabaseUser = async (
 
     const configPath =
         process.env.ACCESS_CONFIG_PATH ??
-        path.join(__dirname, '../../access_config.json');
+        path.join(__dirname, '../../../access_config.json');
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     const accessGroupRepository = database.getRepository(AccessGroupEntity);

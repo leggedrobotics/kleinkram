@@ -220,3 +220,125 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         expect(hasKleinkramDevs).toBe(true);
     });
 });
+
+describe('syncAccessGroups', () => {
+    setupDatabaseHooks();
+
+    const TEST_GROUP_UUID = '11111111-2222-3333-4444-555555555555';
+
+    const testConfig = {
+        emails: [
+            {
+                email: 'example.com',
+                access_groups: [TEST_GROUP_UUID],
+            },
+        ],
+        access_groups: [
+            {
+                name: 'Example Group',
+                uuid: TEST_GROUP_UUID,
+                rights: 10,
+            },
+        ],
+    } as AccessGroupConfig;
+
+    let affiliationGroupService: AffiliationGroupService;
+
+    beforeAll(() => {
+        const accessGroupRepository = database.getRepository(AccessGroupEntity);
+        const groupMembershipRepository = database.getRepository(
+            GroupMembershipEntity,
+        );
+        affiliationGroupService = new AffiliationGroupService(
+            accessGroupRepository,
+            groupMembershipRepository,
+        );
+    });
+
+    beforeEach(async () => {
+        await affiliationGroupService.createAccessGroups(testConfig);
+    });
+
+    test('adds missing memberships for matching users', async () => {
+        const userRepository = database.getRepository(UserEntity);
+
+        const user = userRepository.create({
+            email: 'alice@example.com',
+            name: 'Alice',
+        });
+        await userRepository.save(user);
+
+        await affiliationGroupService.syncAccessGroups(
+            testConfig,
+            database.getRepository(UserEntity),
+        );
+
+        const memberships = await database
+            .getRepository(GroupMembershipEntity)
+            .find({
+                where: {
+                    user: { uuid: user.uuid },
+                    accessGroup: { uuid: TEST_GROUP_UUID },
+                },
+                relations: ['accessGroup'],
+            });
+        expect(memberships).toHaveLength(1);
+    });
+
+    test('removes stale memberships for non-matching users', async () => {
+        const userRepository = database.getRepository(UserEntity);
+        const groupMembershipRepository = database.getRepository(
+            GroupMembershipEntity,
+        );
+
+        const user = userRepository.create({
+            email: 'bob@other.com',
+            name: 'Bob',
+        });
+        await userRepository.save(user);
+
+        // Manually add to affiliation group (simulates old config match)
+        const membership = groupMembershipRepository.create({
+            user: { uuid: user.uuid },
+            accessGroup: { uuid: TEST_GROUP_UUID },
+        });
+        await groupMembershipRepository.save(membership);
+
+        await affiliationGroupService.syncAccessGroups(
+            testConfig,
+            database.getRepository(UserEntity),
+        );
+
+        const remaining = await groupMembershipRepository.find({
+            where: {
+                user: { uuid: user.uuid },
+                accessGroup: { uuid: TEST_GROUP_UUID },
+            },
+        });
+        expect(remaining).toHaveLength(0);
+    });
+
+    test('is idempotent', async () => {
+        const userRepository = database.getRepository(UserEntity);
+
+        const user = userRepository.create({
+            email: 'carol@example.com',
+            name: 'Carol',
+        });
+        await userRepository.save(user);
+
+        const userRepo = database.getRepository(UserEntity);
+        await affiliationGroupService.syncAccessGroups(testConfig, userRepo);
+        await affiliationGroupService.syncAccessGroups(testConfig, userRepo);
+
+        const memberships = await database
+            .getRepository(GroupMembershipEntity)
+            .find({
+                where: {
+                    user: { uuid: user.uuid },
+                    accessGroup: { uuid: TEST_GROUP_UUID },
+                },
+            });
+        expect(memberships).toHaveLength(1);
+    });
+});

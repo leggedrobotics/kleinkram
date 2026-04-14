@@ -52,11 +52,11 @@ import { DBDumper } from './services/dbdumper.service';
                 } => {
                     const configPath =
                         process.env.ACCESS_CONFIG_PATH ??
-                        path.resolve(process.cwd(), 'access_config.json');
-                    const content = fs.readFileSync(configPath, 'utf8');
-                    return {
-                        accessConfig: JSON.parse(content) as AccessGroupConfig,
-                    };
+                        path.resolve(process.cwd(), '..', 'access_config.json');
+                    const accessConfig = JSON.parse(
+                        fs.readFileSync(configPath, 'utf8'),
+                    ) as AccessGroupConfig;
+                    return { accessConfig };
                 },
             ],
         }),
