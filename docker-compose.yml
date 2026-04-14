@@ -435,7 +435,7 @@ services:
             - ./tsconfig.base.json:/app/tsconfig.base.json
             - ./packages:/app/packages
 
-        command: sh -c "ln -sf /app/docs/scripts /app/scripts && npm run docs:dev /app/docs"
+        command: npm run docs:dev /app/docs
 
     artifact-uploader:
         container_name: kleinkram-artifact-uploader
