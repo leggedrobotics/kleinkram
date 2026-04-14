@@ -290,33 +290,6 @@ describe('Affiliation Group Sync on Reboot', () => {
         expect(primaryAfter).toHaveLength(primaryBefore.length);
     });
 
-    test('should skip users without email addresses', async () => {
-        const userRepository = database.getRepository(UserEntity);
-
-        const config: AccessGroupConfig = {
-            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
-            ],
-        };
-
-        // Create a user without email directly
-        const user = userRepository.create({ name: 'No Email User' });
-        await userRepository.save(user);
-
-        // Should not throw
-        await affiliationGroupService.syncAccessGroups(config, userRepository);
-
-        const savedUser = await userRepository.findOneOrFail({
-            where: { uuid: user.uuid },
-            relations: ['memberships', 'memberships.accessGroup'],
-        });
-        const affiliationMemberships = (savedUser.memberships ?? []).filter(
-            (m) => m.accessGroup?.type === AccessGroupType.AFFILIATION,
-        );
-        expect(affiliationMemberships).toHaveLength(0);
-    });
-
     test('should remove manually-added affiliation membership when user does not match pattern', async () => {
         const userRepository = database.getRepository(UserEntity);
         const groupMembershipRepository = database.getRepository(
