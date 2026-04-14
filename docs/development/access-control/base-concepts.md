@@ -38,7 +38,6 @@ These default groups can be configured in the configuration file: `access_config
         {
             "name": "Kleinkram Developers",
             "uuid": "00000000-0000-0000-0000-000000000000",
-            // read only
             "rights": 0
         }
     ]

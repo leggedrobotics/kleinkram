@@ -56,6 +56,14 @@ import { DBDumper } from './services/dbdumper.service';
                     const accessConfig = JSON.parse(
                         fs.readFileSync(configPath, 'utf8'),
                     ) as AccessGroupConfig;
+                    if (
+                        !Array.isArray(accessConfig.emails) ||
+                        !Array.isArray(accessConfig.access_groups)
+                    ) {
+                        throw new TypeError(
+                            `Invalid access_config.json: "emails" and "access_groups" must be arrays`,
+                        );
+                    }
                     return { accessConfig };
                 },
             ],

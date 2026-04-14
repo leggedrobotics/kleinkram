@@ -91,7 +91,7 @@ export class AffiliationGroupService {
             await this.groupMembershipRepository.delete({
                 accessGroup: { uuid: staleGroup.uuid },
             });
-            await this.accessGroupRepository.remove(staleGroup);
+            await this.accessGroupRepository.softRemove(staleGroup);
         }
 
         // 3. Re-sync user memberships for affiliation groups
