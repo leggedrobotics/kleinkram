@@ -396,6 +396,9 @@
                                                     : 'Promote to Owner'
                                             }}
                                         </q-item-section>
+                                        <q-tooltip v-if="!currentUserCanEdit">
+                                            You can't edit a user!
+                                        </q-tooltip>
                                     </q-item>
                                     <q-item
                                         v-ripple
@@ -721,21 +724,32 @@ const removeSingleUser = (userUuid: string): void => {
 };
 
 const toggleUserRole = async (membership: GroupMembershipDto) => {
-    await setAccessGroupUserPermissions(
-        uuid.value,
-        membership.user.uuid,
-        !membership.canEditGroup,
-    );
-    await queryClient.invalidateQueries({
-        predicate: (query) => {
-            return (
-                (query.queryKey[0] === 'AccessGroup' &&
-                    query.queryKey[1] === uuid.value) ||
-                (query.queryKey[0] === 'AccessGroupAuditLogs' &&
-                    query.queryKey[1] === uuid.value)
-            );
-        },
-    });
+    try {
+        await setAccessGroupUserPermissions(
+            uuid.value,
+            membership.user.uuid,
+            !membership.canEditGroup,
+        );
+        await queryClient.invalidateQueries({
+            predicate: (query) => {
+                return (
+                    (query.queryKey[0] === 'AccessGroup' &&
+                        query.queryKey[1] === uuid.value) ||
+                    (query.queryKey[0] === 'AccessGroupAuditLogs' &&
+                        query.queryKey[1] === uuid.value)
+                );
+            },
+        });
+    } catch (error: unknown) {
+        const message =
+            (error as { response?: { data?: { message?: string } } })?.response
+                ?.data?.message || 'Failed to update user permissions';
+        Notify.create({
+            message,
+            color: 'negative',
+            position: 'bottom',
+        });
+    }
 };
 
 const deleteSelectedUsers = (): void => {
