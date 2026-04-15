@@ -385,9 +385,7 @@
                                         v-ripple
                                         clickable
                                         :disable="!currentUserCanEdit"
-                                        @click="
-                                            () => toggleUserRole(props.row)
-                                        "
+                                        @click="() => toggleUserRole(props.row)"
                                     >
                                         <q-item-section>
                                             {{
@@ -742,8 +740,8 @@ const toggleUserRole = async (membership: GroupMembershipDto) => {
         });
     } catch (error: unknown) {
         const message =
-            (error as { response?: { data?: { message?: string } } })?.response
-                ?.data?.message || 'Failed to update user permissions';
+            (error as { response?: { data?: { message?: string } } }).response
+                ?.data?.message ?? 'Failed to update user permissions';
         Notify.create({
             message,
             color: 'negative',
