@@ -687,7 +687,7 @@ const pagination2 = ref({
 const queryClient = useQueryClient();
 const user = useUser();
 
-const refetchOnClick: (event_: Event) => void = () => refetch;
+const refetchOnClick: (event_: Event) => void = () => void refetch();
 
 const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
 
