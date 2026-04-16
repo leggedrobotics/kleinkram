@@ -75,10 +75,9 @@ export class AffiliationGroupService {
                     return this.accessGroupRepository.save(newGroup);
                 }
                 const needsUpdate =
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    existing.deletedAt !== null || existing.name !== group.name;
+                    existing.deletedAt !== undefined || existing.name !== group.name;
                 if (!needsUpdate) return;
-                existing.deletedAt = null;
+                existing.deletedAt = undefined;
                 existing.name = group.name;
                 return this.accessGroupRepository.save(existing);
             }),
