@@ -56,7 +56,9 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const initialConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [{ name: 'Group A', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.createAccessGroups(initialConfig);
@@ -114,7 +116,9 @@ describe('Affiliation Group Sync on Reboot', () => {
         // Remove Group B from config
         const updatedConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [{ name: 'Group A', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.syncAccessGroups(
@@ -145,7 +149,9 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const initialConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [{ name: 'Group A', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.syncAccessGroups(
@@ -155,7 +161,9 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const updatedConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [{ name: 'Group A Renamed', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A Renamed', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.syncAccessGroups(
@@ -175,7 +183,9 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const initialConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [{ name: 'Group A', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.createAccessGroups(initialConfig);
@@ -186,7 +196,9 @@ describe('Affiliation Group Sync on Reboot', () => {
             emails: [
                 { email: 'other-domain.com', access_groups: [GROUP_A_UUID] },
             ],
-            access_groups: [{ name: 'Group A', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.syncAccessGroups(
@@ -210,7 +222,9 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const config: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [{ name: 'Group A', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.createAccessGroups(config);
@@ -236,7 +250,9 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const config: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [{ name: 'Group A', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.createAccessGroups(config);
@@ -282,7 +298,9 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const config: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
-            access_groups: [{ name: 'Group A', uuid: GROUP_A_UUID, rights: 10 }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
         };
 
         await affiliationGroupService.createAccessGroups(config);
