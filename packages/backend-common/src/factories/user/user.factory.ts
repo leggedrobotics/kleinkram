@@ -45,17 +45,16 @@ setSeederFactory(
         let groupIds: string[] = context.defaultGroupIds ?? [];
 
         try {
-            const configPath = path.resolve(
-                __dirname,
-                '@backend-common/../../../backend/src/access_config.json',
-            );
+            const configPath =
+                process.env.ACCESS_CONFIG_PATH ??
+                path.resolve(process.cwd(), '..', 'access_config.json');
 
             if (fs.existsSync(configPath)) {
                 const configContent = fs.readFileSync(configPath, 'utf8');
                 const config = JSON.parse(configContent) as AccessGroupConfig;
 
                 for (const emailConfig of config.emails) {
-                    if (user.email.endsWith(emailConfig.email)) {
+                    if (user.email.endsWith('@' + emailConfig.email)) {
                         groupIds = [...groupIds, ...emailConfig.access_groups];
                     }
                 }
