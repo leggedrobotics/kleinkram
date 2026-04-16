@@ -1,16 +1,20 @@
 import { ProjectGuardService } from '@/services/project-guard.service';
 import { AccessGroupRights, KeyTypes } from '@kleinkram/shared';
 import {
+    BadRequestException,
     ExecutionContext,
     ForbiddenException,
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
+import { isUUID } from 'class-validator';
 import { BaseGuard } from './base.guards';
 
 interface ProjectBody {
     projectUUID?: string;
     uuid?: string;
+    sourceProjectUUID?: string;
+    targetProjectUUID?: string;
 }
 
 interface ProjectParameters {
@@ -194,5 +198,48 @@ export class CreateGuard extends BaseGuard {
             throw new UnauthorizedException('CLI Keys cannot create projects');
         }
         return this.projectGuardService.canCreate(user);
+    }
+}
+
+@Injectable()
+export class MigrateProjectByBodyGuard extends BaseGuard {
+    constructor(private projectGuardService: ProjectGuardService) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+
+        const body = request.body as ProjectBody | undefined;
+        const sourceProjectUUID = body?.sourceProjectUUID;
+        const targetProjectUUID = body?.targetProjectUUID;
+
+        if (!sourceProjectUUID || !targetProjectUUID) {
+            throw new BadRequestException(
+                'sourceProjectUUID and targetProjectUUID are required',
+            );
+        }
+        if (!isUUID(sourceProjectUUID) || !isUUID(targetProjectUUID)) {
+            throw new BadRequestException(
+                'sourceProjectUUID and targetProjectUUID must be valid UUIDs',
+            );
+        }
+
+        if (apiKey) {
+            throw new UnauthorizedException('CLI Keys cannot migrate projects');
+        }
+
+        return (
+            (await this.projectGuardService.canAccessProject(
+                user,
+                sourceProjectUUID,
+                AccessGroupRights.DELETE,
+            )) &&
+            (await this.projectGuardService.canAccessProject(
+                user,
+                targetProjectUUID,
+                AccessGroupRights.CREATE,
+            ))
+        );
     }
 }

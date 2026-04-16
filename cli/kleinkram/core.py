@@ -7,6 +7,8 @@ this file contains the main functionality of kleinkram cli
 - update_file
 - update_mission
 - update_project
+- move_missions
+- migrate_project
 - delete_files
 - delete_mission
 - delete_project
@@ -148,7 +150,6 @@ def verify(
     check_file_size: bool = False,
     verbose: bool = False,
 ) -> Dict[Path, FileVerificationStatus]:
-
     # add deprecated warning for skip_hash
     if skip_hash is not None:
         print(
@@ -183,7 +184,6 @@ def verify(
         if remote_file.state == FileState.UPLOADING:
             file_status[file] = FileVerificationStatus.UPLOADING
         elif remote_file.state == FileState.OK:
-
             # default case, will be overwritten if we find a mismatch
             file_status[file] = FileVerificationStatus.UPLOADED
 
@@ -232,6 +232,36 @@ def update_project(
 ) -> None:
     # TODO: this function should do more in the future
     kleinkram.api.routes._update_project(client, project_id, description=description, new_name=new_name)
+
+
+def move_missions(
+    *,
+    client: AuthenticatedClient,
+    mission_ids: Collection[UUID],
+    target_project_id: UUID,
+    new_name: Optional[str] = None,
+) -> None:
+    kleinkram.api.routes._move_missions(
+        client,
+        mission_ids=list(mission_ids),
+        target_project_id=target_project_id,
+        new_name=new_name,
+    )
+
+
+def migrate_project(
+    *,
+    client: AuthenticatedClient,
+    source_project_id: UUID,
+    target_project_id: UUID,
+    archive_source_as: Optional[str] = None,
+) -> None:
+    kleinkram.api.routes._migrate_project(
+        client,
+        source_project_id=source_project_id,
+        target_project_id=target_project_id,
+        archive_source_as=archive_source_as,
+    )
 
 
 def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> None:

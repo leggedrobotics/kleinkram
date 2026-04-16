@@ -62,6 +62,20 @@ def test_client_response_on_426_status_code(empty_config):
             client.get("/example")
 
 
+def test_client_does_not_refresh_api_key_on_401(empty_config):
+    called = {"n": 0}
+
+    def return_401_response(request: httpx.Request) -> httpx.Response:
+        called["n"] += 1
+        _ = request
+        return httpx.Response(401)
+
+    with AuthenticatedClient(config_path=empty_config, transport=httpx.MockTransport(return_401_response)) as client:
+        response = client.get("/example")
+        assert response.status_code == 401
+        assert called["n"] == 1
+
+
 def test_convert_query_params_httpx_format():
     params = {
         "foo": ["foo1", "foo2"],

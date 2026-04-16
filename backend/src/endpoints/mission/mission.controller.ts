@@ -14,6 +14,8 @@ import {
     MinimumMissionsDto,
     MissionsDto,
     MissionWithFilesDto,
+    MoveMissionsDto,
+    MoveMissionsResponseDto,
 } from '@kleinkram/api-dto';
 import { BodyUUID, MISSION_NAME_REGEX } from '@kleinkram/validation';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
@@ -164,12 +166,25 @@ export class MissionController {
 
     @Post('move')
     @CanMoveMission()
-    @OutputDto(null) // TODO: type API response
-    async moveMission(
-        @QueryUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @QueryUUID('projectUUID', 'Project UUID') projectUUID: string,
-    ): Promise<void> {
-        return this.missionService.moveMission(missionUUID, projectUUID);
+    @ApiOkResponse({
+        description:
+            'Explicitly selected mission(s) moved to the target project',
+        type: MoveMissionsResponseDto,
+    })
+    async moveSelectedMissions(
+        @Body() dto: MoveMissionsDto,
+    ): Promise<MoveMissionsResponseDto> {
+        const result = await this.missionService.moveMissions(
+            dto.missionUUIDs,
+            dto.targetProjectUUID,
+            dto.newName,
+        );
+        return {
+            success: true,
+            movedMissionCount: result.movedMissionCount,
+            movedMissionUUIDs: result.movedMissionUUIDs,
+            targetProjectUUID: dto.targetProjectUUID,
+        };
     }
 
     @Delete(':uuid')

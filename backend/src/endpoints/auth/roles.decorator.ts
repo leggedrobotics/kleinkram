@@ -23,8 +23,9 @@ import {
     DeleteProjectGuard,
     DeleteTagGuard,
     LoggedInUserGuard,
+    MigrateProjectByBodyGuard,
     MoveFilesGuard,
-    MoveMissionToProjectGuard,
+    MoveMissionsByBodyGuard,
     ReadActionGuard,
     ReadFileByNameGuard,
     ReadFileGuard,
@@ -143,6 +144,30 @@ export function CanDeleteProject() {
     );
 }
 
+export function CanMigrateProjectByBody() {
+    return applyDecorators(
+        SetMetadata('CanMigrateProjectByBody', true),
+        UseGuards(MigrateProjectByBodyGuard),
+        ApiResponse({
+            status: 400,
+            description:
+                'Request body is invalid: sourceProjectUUID and targetProjectUUID must be valid UUIDs.',
+        }),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedExceptionDto,
+            description:
+                'User does not have permissions to migrate between the specified projects.',
+        }),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have sufficient access rights on the source or target project.',
+        }),
+    );
+}
+
 export function CanCreate() {
     return applyDecorators(
         SetMetadata('CanCreate', true),
@@ -185,12 +210,23 @@ export function CanReadMissionByName() {
 export function CanMoveMission() {
     return applyDecorators(
         SetMetadata('CanMoveMission', true),
-        UseGuards(MoveMissionToProjectGuard),
+        UseGuards(MoveMissionsByBodyGuard),
+        ApiResponse({
+            status: 400,
+            description:
+                'Request body is invalid: missionUUIDs must be a non-empty UUID array, targetProjectUUID must be a valid UUID, and newName is only allowed for single-mission moves.',
+        }),
+        ApiResponse({
+            status: 401,
+            type: UnauthorizedExceptionDto,
+            description:
+                'User does not have permissions to move the specified missions. API keys are not valid on this endpoint.',
+        }),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
             description:
-                'User does not have Read permissions on the specified project.',
+                'User does not have permissions to move the specified missions.',
         }),
     );
 }
