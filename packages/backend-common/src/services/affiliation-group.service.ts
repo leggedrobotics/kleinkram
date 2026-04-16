@@ -28,6 +28,7 @@ export class AffiliationGroupService {
             config.access_groups.map(async (group) => {
                 const databaseGroup = await this.accessGroupRepository.findOne({
                     where: { uuid: group.uuid },
+                    withDeleted: true,
                 });
                 if (!databaseGroup) {
                     const newGroup = this.accessGroupRepository.create({
@@ -73,14 +74,13 @@ export class AffiliationGroupService {
                     });
                     return this.accessGroupRepository.save(newGroup);
                 }
-                if (existing.deletedAt) {
-                    await this.accessGroupRepository.restore(existing.uuid);
-                }
-                if (existing.name !== group.name) {
-                    existing.name = group.name;
-                    return this.accessGroupRepository.save(existing);
-                }
-                return;
+                const needsUpdate =
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    existing.deletedAt !== null || existing.name !== group.name;
+                if (!needsUpdate) return;
+                existing.deletedAt = null;
+                existing.name = group.name;
+                return this.accessGroupRepository.save(existing);
             }),
         );
 
