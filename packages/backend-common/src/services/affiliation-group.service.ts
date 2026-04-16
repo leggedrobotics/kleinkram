@@ -64,8 +64,10 @@ export class AffiliationGroupService {
                 const existing = await this.accessGroupRepository.findOne({
                     where: { uuid: group.uuid },
                     withDeleted: true,
+                    select: { uuid: true, name: true, deletedAt: true },
                 });
                 if (!existing) {
+                    // TODO: persist group.rights once AccessGroupEntity has a rights column
                     const newGroup = this.accessGroupRepository.create({
                         name: group.name,
                         uuid: group.uuid,
@@ -74,10 +76,12 @@ export class AffiliationGroupService {
                     });
                     return this.accessGroupRepository.save(newGroup);
                 }
+                // TODO: sync group.rights on update once AccessGroupEntity has a rights column
                 const needsUpdate =
-                    existing.deletedAt !== undefined || existing.name !== group.name;
+                    (existing.deletedAt as Date | null) !== null ||
+                    existing.name !== group.name;
                 if (!needsUpdate) return;
-                existing.deletedAt = undefined;
+                existing.deletedAt = null as unknown as Date;
                 existing.name = group.name;
                 return this.accessGroupRepository.save(existing);
             }),

@@ -53,8 +53,16 @@ import { DBDumper } from './services/dbdumper.service';
                     const configPath =
                         process.env.ACCESS_CONFIG_PATH ??
                         path.resolve(process.cwd(), '..', 'access_config.json');
+                    let rawConfig: string;
+                    try {
+                        rawConfig = fs.readFileSync(configPath, 'utf8');
+                    } catch {
+                        throw new Error(
+                            `Cannot read access config at "${configPath}". Set ACCESS_CONFIG_PATH or place access_config.json at the repo root.`,
+                        );
+                    }
                     const accessConfig = JSON.parse(
-                        fs.readFileSync(configPath, 'utf8'),
+                        rawConfig,
                     ) as AccessGroupConfig;
                     if (
                         !Array.isArray(accessConfig.emails) ||
