@@ -37,8 +37,7 @@ These default groups can be configured in the configuration file: `access_config
     "access_groups": [
         {
             "name": "Kleinkram Developers",
-            "uuid": "00000000-0000-0000-0000-000000000000",
-            "rights": 0
+            "uuid": "00000000-0000-0000-0000-000000000000"
         }
     ]
 }

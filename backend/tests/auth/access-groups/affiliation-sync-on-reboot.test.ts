@@ -57,7 +57,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const initialConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
             ],
         };
 
@@ -73,8 +73,8 @@ describe('Affiliation Group Sync on Reboot', () => {
                 },
             ],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
-                { name: 'Group B', uuid: GROUP_B_UUID, rights: 5 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
+                { name: 'Group B', uuid: GROUP_B_UUID },
             ],
         };
 
@@ -105,8 +105,8 @@ describe('Affiliation Group Sync on Reboot', () => {
                 },
             ],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
-                { name: 'Group B', uuid: GROUP_B_UUID, rights: 5 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
+                { name: 'Group B', uuid: GROUP_B_UUID },
             ],
         };
 
@@ -117,7 +117,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const updatedConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
             ],
         };
 
@@ -150,7 +150,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const initialConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
             ],
         };
 
@@ -162,7 +162,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const updatedConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
-                { name: 'Group A Renamed', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A Renamed', uuid: GROUP_A_UUID },
             ],
         };
 
@@ -184,7 +184,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const initialConfig: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
             ],
         };
 
@@ -197,7 +197,7 @@ describe('Affiliation Group Sync on Reboot', () => {
                 { email: 'other-domain.com', access_groups: [GROUP_A_UUID] },
             ],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
             ],
         };
 
@@ -223,7 +223,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const config: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
             ],
         };
 
@@ -251,7 +251,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const config: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
             ],
         };
 
@@ -299,7 +299,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         const config: AccessGroupConfig = {
             emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
             access_groups: [
-                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group A', uuid: GROUP_A_UUID },
             ],
         };
 
