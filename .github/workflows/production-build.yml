@@ -24,6 +24,34 @@ jobs:
                   GIT_BRANCH: ${{ github.ref_name }}
                   GIT_COMMIT: ${{ github.sha }}
                   S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+            - name: Extract project version
+              id: get_version
+              run: |
+                  VERSION="$(jq -r .version package.json)"
+                  if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+                      echo "ERROR: Could not extract version from package.json" >&2
+                      exit 1
+                  fi
+                  VERSION_WITHOUT_BUILD="${VERSION%%+*}"
+                  echo "version=v${VERSION_WITHOUT_BUILD}" >> "$GITHUB_OUTPUT"
             - working-directory: .
               name: push the docker image
               run: docker compose -f docker-compose.prod.yml push api-server frontend queue-consumer documentation artifact-uploader
+            - name: Tag and push versioned images
+              env:
+                  VERSION: ${{ steps.get_version.outputs.version }}
+              run: |
+                  if docker manifest inspect rslethz/kleinkram:api-server-${VERSION} > /dev/null 2>&1; then
+                      echo "ERROR: Version tag ${VERSION} already exists in registry." >&2
+                      exit 1
+                  fi
+                  docker tag rslethz/kleinkram:api-server-latest rslethz/kleinkram:api-server-${VERSION}
+                  docker push rslethz/kleinkram:api-server-${VERSION}
+                  docker tag rslethz/kleinkram:frontend-latest rslethz/kleinkram:frontend-${VERSION}
+                  docker push rslethz/kleinkram:frontend-${VERSION}
+                  docker tag rslethz/kleinkram:queue-consumer-latest rslethz/kleinkram:queue-consumer-${VERSION}
+                  docker push rslethz/kleinkram:queue-consumer-${VERSION}
+                  docker tag rslethz/kleinkram:docs-latest rslethz/kleinkram:docs-${VERSION}
+                  docker push rslethz/kleinkram:docs-${VERSION}
+                  docker tag rslethz/kleinkram:artifact-uploader-latest rslethz/kleinkram:artifact-uploader-${VERSION}
+                  docker push rslethz/kleinkram:artifact-uploader-${VERSION}
