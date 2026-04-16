@@ -29,6 +29,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
             {
                 name: 'Kleinkram Developers Test Group',
                 uuid: TEST_GROUP_UUID,
+                rights: 10,
             },
         ],
     } as AccessGroupConfig;
@@ -236,6 +237,7 @@ describe('syncAccessGroups', () => {
             {
                 name: 'Example Group',
                 uuid: TEST_GROUP_UUID,
+                rights: 10,
             },
         ],
     } as AccessGroupConfig;

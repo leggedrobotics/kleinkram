@@ -68,6 +68,11 @@ import { DBDumper } from './services/dbdumper.service';
                         accessConfig.access_groups.map((g) => g.uuid),
                     );
                     for (const emailEntry of accessConfig.emails) {
+                        if (!Array.isArray(emailEntry.access_groups)) {
+                            throw new TypeError(
+                                `Invalid access_config.json: each entry in "emails" must have an "access_groups" array`,
+                            );
+                        }
                         for (const uuid of emailEntry.access_groups) {
                             if (!configGroupUuids.has(uuid)) {
                                 throw new TypeError(
