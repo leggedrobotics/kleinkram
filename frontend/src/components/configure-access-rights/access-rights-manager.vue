@@ -90,7 +90,6 @@ import { useSearchAccessGroup } from 'src/hooks/query-hooks';
 import { getAccessRightDescription } from 'src/services/generic';
 import { computed, ref } from 'vue';
 
-
 const accessRights = defineModel<DefaultRightDto[]>({ default: [] });
 
 // State

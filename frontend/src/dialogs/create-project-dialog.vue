@@ -84,9 +84,7 @@
                 </q-tab-panel>
 
                 <q-tab-panel name="manage_access">
-                    <access-rights-manager
-                        v-model="accessGroups"
-                    />
+                    <access-rights-manager v-model="accessGroups" />
                 </q-tab-panel>
             </q-tab-panels>
         </template>
@@ -116,14 +114,13 @@ import BaseDialog from 'src/dialogs/base-dialog.vue';
 
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
 import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
-import { AccessGroupType } from '@kleinkram/shared';
 import { useQueryClient } from '@tanstack/vue-query';
 import AccessRightsManager from 'components/configure-access-rights/access-rights-manager.vue';
 import ConfigureMetadata from 'components/configure-metadata.vue';
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import { useProjectDefaultAccess } from 'src/hooks/query-hooks';
 import { createProject } from 'src/services/mutations/project';
-import { computed, Ref, ref, watch } from 'vue';
+import { Ref, ref, watch } from 'vue';
 
 const formIsValid = ref(false);
 const isInErrorStateProjectName = ref(false);

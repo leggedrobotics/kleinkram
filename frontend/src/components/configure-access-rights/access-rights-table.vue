@@ -1,4 +1,4 @@
-xfd<template>
+<template>
     <q-table
         class="table-white q-mt-xs"
         :columns="columns"
@@ -46,10 +46,15 @@ xfd<template>
                             :key="option"
                             clickable
                             :disable="isDisabledRightOption(props.row, option)"
-                            @click="() => emit('update-rights', props.row, option)"
+                            @click="
+                                () => emit('update-rights', props.row, option)
+                            "
                         >
-                            <q-tooltip v-if="isDisabledRightOption(props.row, option)">
-                                Project must have at least one group with Delete rights.
+                            <q-tooltip
+                                v-if="isDisabledRightOption(props.row, option)"
+                            >
+                                Project must have at least one group with Delete
+                                rights.
                             </q-tooltip>
                             <q-item-section>
                                 {{ getAccessRightDescription(option) }}
@@ -135,23 +140,18 @@ const formatMemberCount = (count: number): string =>
     `${count} member${count === 1 ? '' : 's'}`;
 
 /**
- * There is only one global rule for the access rights of a project: 
+ * There is only one global rule for the access rights of a project:
  * **There must always be at least one group with DELETE rights.**
- * 
+ *
  * The same global rule is enforced in the backend (see access.service.ts). We implement it here as well to provide immediate feedback to the user and prevent unnecessary API calls that would be rejected by the backend.
  */
 
 // Count how many groups currently have DELETE rights
 const deleteGroupCount = computed(() => {
-    console.log('Recomputing deleteGroupCount');
-    console.log('Current num delete rights:', properties.accessRights.filter(
-        (g) => g.rights === AccessGroupRights.DELETE
-    ).length);
     return properties.accessRights.filter(
-        (g) => g.rights === AccessGroupRights.DELETE
+        (g) => g.rights === AccessGroupRights.DELETE,
     ).length;
 });
-
 
 //Prevent downgrading the last group with DELETE rights
 const isDisabledRightOption = (
@@ -159,7 +159,10 @@ const isDisabledRightOption = (
     rightOption: AccessGroupRights,
 ): boolean => {
     // If they are trying to select a right lower than DELETE...
-    if (group.rights === AccessGroupRights.DELETE && rightOption < AccessGroupRights.DELETE) {
+    if (
+        group.rights === AccessGroupRights.DELETE &&
+        rightOption < AccessGroupRights.DELETE
+    ) {
         // ...disable it if this is the ONLY group with DELETE rights
         return deleteGroupCount.value <= 1;
     }
@@ -173,5 +176,4 @@ const isDeleteDisabled = (group: DefaultRightDto): boolean => {
     }
     return false;
 };
-
 </script>
