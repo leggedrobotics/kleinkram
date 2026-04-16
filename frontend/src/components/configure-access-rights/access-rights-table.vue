@@ -1,4 +1,4 @@
-<template>
+xfd<template>
     <q-table
         class="table-white q-mt-xs"
         :columns="columns"
@@ -45,15 +45,11 @@
                             v-for="option in accessGroupRightsList"
                             :key="option"
                             clickable
-                            :disable="isBelowMinRights(props.row, option)"
-                            @click="
-                                () => emit('update-rights', props.row, option)
-                            "
+                            :disable="isDisabledRightOption(props.row, option)"
+                            @click="() => emit('update-rights', props.row, option)"
                         >
-                            <q-tooltip
-                                v-if="isBelowMinRights(props.row, option)"
-                            >
-                                {{ getMinRightsTooltip(props.row) }}
+                            <q-tooltip v-if="isDisabledRightOption(props.row, option)">
+                                Project must have at least one group with Delete rights.
                             </q-tooltip>
                             <q-item-section>
                                 {{ getAccessRightDescription(option) }}
@@ -72,8 +68,13 @@
                     dense
                     icon="sym_o_delete"
                     color="red"
+                    :disable="isDeleteDisabled(props.row)"
                     @click="() => emit('remove', props.row)"
-                />
+                >
+                    <q-tooltip v-if="isDeleteDisabled(props.row)">
+                        Cannot remove the last group with Delete rights.
+                    </q-tooltip>
+                </q-btn>
             </q-td>
         </template>
     </q-table>
@@ -86,10 +87,10 @@ import AccessGroupAvatar from 'components/configure-access-rights/access-group-a
 import { QTableColumn } from 'quasar';
 import { accessGroupRightsList } from 'src/enums/access-group-rights-list';
 import { getAccessRightDescription } from 'src/services/generic';
+import { computed } from 'vue';
 
 const properties = defineProps<{
     accessRights: DefaultRightDto[];
-    minAccessRights: DefaultRightDto[];
 }>();
 
 const emit = defineEmits<{
@@ -134,27 +135,43 @@ const formatMemberCount = (count: number): string =>
     `${count} member${count === 1 ? '' : 's'}`;
 
 /**
- * Checks if a specific option is strictly lower than the user's minimum rights.
- * This enforces the constraint logic inside the dropdown.
+ * There is only one global rule for the access rights of a project: 
+ * **There must always be at least one group with DELETE rights.**
+ * 
+ * The same global rule is enforced in the backend (see access.service.ts). We implement it here as well to provide immediate feedback to the user and prevent unnecessary API calls that would be rejected by the backend.
  */
-const isBelowMinRights = (
+
+// Count how many groups currently have DELETE rights
+const deleteGroupCount = computed(() => {
+    console.log('Recomputing deleteGroupCount');
+    console.log('Current num delete rights:', properties.accessRights.filter(
+        (g) => g.rights === AccessGroupRights.DELETE
+    ).length);
+    return properties.accessRights.filter(
+        (g) => g.rights === AccessGroupRights.DELETE
+    ).length;
+});
+
+
+//Prevent downgrading the last group with DELETE rights
+const isDisabledRightOption = (
     group: DefaultRightDto,
     rightOption: AccessGroupRights,
 ): boolean => {
-    const minAccess = properties.minAccessRights.find(
-        (r) => r.uuid === group.uuid,
-    );
-    // If minAccess exists, the option is disabled if it is STRICTLY LESS than minAccess
-    return minAccess ? minAccess.rights > rightOption : false;
+    // If they are trying to select a right lower than DELETE...
+    if (group.rights === AccessGroupRights.DELETE && rightOption < AccessGroupRights.DELETE) {
+        // ...disable it if this is the ONLY group with DELETE rights
+        return deleteGroupCount.value <= 1;
+    }
+    return false;
 };
 
-const getMinRightsTooltip = (group: DefaultRightDto): string => {
-    const minAccess = properties.minAccessRights.find(
-        (r) => r.uuid === group.uuid,
-    );
-    if (!minAccess) return 'Option unavailable';
-    return `Minimum access required: ${getAccessRightDescription(
-        minAccess.rights,
-    )}`;
+//Prevent removing the last group with DELETE rights
+const isDeleteDisabled = (group: DefaultRightDto): boolean => {
+    if (group.rights === AccessGroupRights.DELETE) {
+        return deleteGroupCount.value <= 1;
+    }
+    return false;
 };
+
 </script>

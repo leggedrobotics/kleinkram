@@ -5,7 +5,6 @@
         <template #content>
             <access-rights-manager
                 v-model="modifiableAccessRights"
-                :min-access-rights="minAccessRights"
             />
         </template>
 
@@ -26,7 +25,6 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { useUpdateAccessRightsMutation } from 'src/hooks/mutation-hooks';
 import {
-    useMinimalAccessRightsForNewProject,
     useProjectAccessRights,
 } from 'src/hooks/query-hooks';
 import { useEditablePaginatedResponse } from 'src/hooks/utility-hooks';
@@ -35,7 +33,7 @@ const { projectUuid: projectUuid } = defineProps<{ projectUuid: string }>();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const minAccessRights = useMinimalAccessRightsForNewProject();
+
 const { data: projectAccess } = useProjectAccessRights(projectUuid);
 const modifiableAccessRights = useEditablePaginatedResponse(projectAccess);
 

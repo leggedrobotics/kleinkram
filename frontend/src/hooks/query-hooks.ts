@@ -398,24 +398,6 @@ export const useProjectDefaultAccess = (): UseQueryReturnType<
     });
 };
 
-/**
- * Fetches the minimal access rights for a new project. The minimal access rights
- * for a new project consists of the following rights:
- *
- * - DELETE access for the creator
- *
- */
-export const useMinimalAccessRightsForNewProject = (): ComputedRef<
-    DefaultRightDto[]
-> => {
-    const { data: defaultRights } = useProjectDefaultAccess();
-    return computed<DefaultRightDto[]>(
-        () =>
-            unref(defaultRights)?.data.filter(
-                (r: DefaultRightDto) => r.type === AccessGroupType.PRIMARY,
-            ) ?? [],
-    );
-};
 
 export const useProjectAccessRights: (
     projectAccessUuid: string,

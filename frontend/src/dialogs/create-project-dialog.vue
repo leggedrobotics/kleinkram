@@ -86,7 +86,6 @@
                 <q-tab-panel name="manage_access">
                     <access-rights-manager
                         v-model="accessGroups"
-                        :min-access-rights="minAccessRights"
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -146,14 +145,6 @@ const selected: Ref<TagTypeDto[]> = ref([]);
 const $q = useQuasar();
 
 const { data: defaultRights } = useProjectDefaultAccess();
-
-const minAccessRights = computed(() =>
-    defaultRights.value
-        ? defaultRights.value.data.filter(
-              (r) => r.type === AccessGroupType.PRIMARY,
-          )
-        : [],
-);
 
 const accessGroups = ref<DefaultRightDto[]>(defaultRights.value?.data ?? []);
 watch(defaultRights, () => {
