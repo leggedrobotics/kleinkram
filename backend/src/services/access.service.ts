@@ -890,6 +890,63 @@ export class AccessService {
         return groupMembershipEntityToDto(savedMembership);
     }
 
+    async setCanEditGroup(
+        uuid: string,
+        userUuid: string,
+        canEditGroup: boolean,
+        auth?: AuthHeader,
+    ): Promise<GroupMembershipDto> {
+        const agu = await this.groupMembershipRepository.findOneOrFail({
+            where: {
+                accessGroup: { uuid },
+                user: { uuid: userUuid },
+            },
+        });
+
+        if (!canEditGroup) {
+            const editorsCount = await this.groupMembershipRepository.count({
+                where: {
+                    accessGroup: { uuid },
+                    canEditGroup: true,
+                },
+            });
+            if (editorsCount <= 1) {
+                throw new ConflictException(
+                    'Cannot demote the last user with edit rights',
+                );
+            }
+        }
+
+        agu.canEditGroup = canEditGroup;
+        const { uuid: membershipUuid } =
+            await this.groupMembershipRepository.save(agu);
+
+        const savedMembership =
+            await this.groupMembershipRepository.findOneOrFail({
+                where: { uuid: membershipUuid },
+                relations: ['user'],
+            });
+
+        this.accessGroupAuditService
+            .log(
+                uuid,
+                canEditGroup
+                    ? AccessGroupEventType.PROMOTE_USER
+                    : AccessGroupEventType.DEMOTE_USER,
+                {
+                    userUuid,
+                    userName: savedMembership.user?.name ?? 'Unknown',
+                    canEditGroup,
+                },
+                auth?.user as unknown as UserEntity,
+            )
+            .catch((error: unknown) =>
+                logger.error(`Audit log failed: ${String(error)}`),
+            );
+
+        return groupMembershipEntityToDto(savedMembership);
+    }
+
     async getAuditLogs(uuid: string): Promise<AccessGroupAuditLogsDto> {
         const [logs, count] =
             await this.accessGroupAuditService.getLogsForGroup(uuid);
