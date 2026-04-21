@@ -42,7 +42,7 @@ class FileQuery:
 
 
 @dataclass
-class RunQuery:
+class ExecutionQuery:
     mission_ids: List[UUID] = field(default_factory=list)
     mission_patterns: List[str] = field(default_factory=list)
     project_ids: List[UUID] = field(default_factory=list)
