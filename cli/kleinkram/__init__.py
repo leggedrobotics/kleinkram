@@ -9,14 +9,15 @@ from kleinkram.wrappers import delete_mission
 from kleinkram.wrappers import delete_project
 from kleinkram.wrappers import download
 from kleinkram.wrappers import download_artifact
+from kleinkram.wrappers import get_execution
 from kleinkram.wrappers import get_file
 from kleinkram.wrappers import get_mission
 from kleinkram.wrappers import get_project
+from kleinkram.wrappers import list_executions
 from kleinkram.wrappers import list_files
 from kleinkram.wrappers import list_missions
 from kleinkram.wrappers import list_projects
 from kleinkram.wrappers import list_templates
-from kleinkram.wrappers import list_executions 
 from kleinkram.wrappers import update_file
 from kleinkram.wrappers import update_mission
 from kleinkram.wrappers import update_project
@@ -29,6 +30,7 @@ __all__ = [
     "verify",
     "download",
     "download_artifact",
+    "get_execution",
     "get_file",
     "get_mission",
     "get_project",

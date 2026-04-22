@@ -202,8 +202,10 @@ def download_artifacts(
     """
     Download the artifacts (.tar.gz) for a finished execution.
     """
+    client = AuthenticatedClient()
     try:
         kleinkram.core.download_artifact(
+            client=client,
             execution_id=execution_id,
             output=output,
             extract=extract,

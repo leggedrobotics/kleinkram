@@ -51,6 +51,8 @@ from kleinkram.utils import is_valid_uuid4
 
 
 def download_artifact(
+    *,
+    client: AuthenticatedClient,
     execution_id: str,
     output: Optional[str] = None,
     extract: bool = False,
@@ -68,7 +70,6 @@ def download_artifact(
     Returns:
         The path where the artifact was saved (or extracted).
     """
-    client = AuthenticatedClient()
 
     # Fetch Execution Details
     execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
