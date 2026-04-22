@@ -16,22 +16,23 @@ from typing import List
 from typing import Literal
 from typing import Optional
 from typing import Sequence
+from typing import Union
 from typing import overload
 
 import kleinkram.api.routes
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
-from kleinkram.api.query import ExecutionQuery
 from kleinkram.errors import FileNameNotSupported
+from kleinkram.models import ActionTemplate
+from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.models import Execution
-from kleinkram.models import ActionTemplate
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 from kleinkram.utils import parse_path_like
@@ -245,7 +246,6 @@ def list_executions(
     project_ids: Optional[Sequence[IdLike]] = None,
     project_patterns: Optional[Sequence[str]] = None,
 ) -> List[Execution]:
-    
 
     # build ExecutionQuery from arguments
     query = ExecutionQuery(
@@ -482,3 +482,53 @@ def get_project(project_id: IdLike) -> Project:
     return kleinkram.api.routes.get_project(AuthenticatedClient(), ProjectQuery(ids=[parse_uuid_like(project_id)]))
 
 
+@overload
+def launch_execution(
+    template: Union[str, IdLike],
+    *,
+    mission_name: str,
+    project_name: str,
+) -> str: ...
+
+
+@overload
+def launch_execution(
+    template: Union[str, IdLike],
+    *,
+    mission_id: IdLike,
+) -> str: ...
+
+
+@overload
+def launch_execution(
+    template: Union[str, IdLike],
+    *,
+    mission_name: str,
+    project_id: IdLike,
+) -> str: ...
+
+
+def launch_execution(
+    template: Union[str, IdLike],
+    *,
+    mission_name: Optional[str] = None,
+    mission_id: Optional[IdLike] = None,
+    project_name: Optional[str] = None,
+    project_id: Optional[IdLike] = None,
+) -> str:
+    """
+    Launch a new execution from an action template.
+    """
+    query = _args_to_mission_query(
+        mission_names=singleton_list(mission_name),
+        mission_ids=singleton_list(mission_id),
+        project_names=singleton_list(project_name),
+        project_ids=singleton_list(project_id),
+    )
+
+    client = AuthenticatedClient()
+    return kleinkram.core.launch_execution(
+        client=client,
+        mission_query=query,
+        template=template,
+    )

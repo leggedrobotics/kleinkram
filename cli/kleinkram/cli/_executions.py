@@ -75,8 +75,14 @@ def launch(
             patterns=mission_patterns,
             project_query=project_query,
         )
-        mission_obj = kleinkram.api.routes.get_mission(client, mission_query)
-        mission_uuid = mission_obj.id
+
+        execution_uuid_str = kleinkram.core.launch_execution(
+            client=client,
+            mission_query=mission_query,
+            template=template_name,
+        )
+        typer.secho(f"Action submitted. Execution ID: {execution_uuid_str}", fg=typer.colors.GREEN)
+
     except kleinkram.errors.MissionNotFound:
         typer.secho(f"Error: Mission '{mission}' not found.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
@@ -86,37 +92,13 @@ def launch(
             fg=typer.colors.RED,
         )
         raise typer.Exit(code=1)
-    except Exception as e:
-        typer.secho(f"Error resolving mission: {e}", fg=typer.colors.RED)
+    except ValueError as e:
+        typer.secho(f"Error: {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-
-    # 2. Resolve Template to UUID
-    try:
-        if is_valid_uuid4(template_name):
-            template_uuid = UUID(template_name)
-        else:
-            templates = kleinkram.api.routes.get_templates(client)
-            found_template = next((t for t in templates if t.name == template_name), None)
-
-            if not found_template:
-                typer.secho(
-                    f"Error: Action template '{template_name}' not found.",
-                    fg=typer.colors.RED,
-                )
-                raise typer.Exit(code=1)
-            template_uuid = found_template.uuid
-    except Exception as e:
-        typer.secho(f"Error resolving template: {e}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
-
-    try:
-        execution_uuid_str = kleinkram.api.routes.launch_execution(client, mission_uuid, template_uuid)
-        typer.secho(f"Action submitted. Execution ID: {execution_uuid_str}", fg=typer.colors.GREEN)
-
     except httpx.HTTPStatusError as e:
         typer.secho(f"Error submitting action: {e.response.text}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-    except (KeyError, Exception) as e:
+    except Exception as e:
         typer.secho(f"An unexpected error occurred: {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
 

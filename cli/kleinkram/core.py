@@ -22,6 +22,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Union
 from uuid import UUID
 
 import httpx
@@ -46,6 +47,7 @@ from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import file_paths_from_files
 from kleinkram.utils import get_filename_map
+from kleinkram.utils import is_valid_uuid4
 
 
 def download_artifact(
@@ -386,3 +388,32 @@ def delete_project(*, client: AuthenticatedClient, project_id: UUID) -> None:
 
     # delete the project
     kleinkram.api.routes._delete_project(client, project_id)
+
+
+def launch_execution(
+    client: AuthenticatedClient,
+    mission_query: MissionQuery,
+    template: Union[str, UUID],
+) -> str:
+    """
+    Core business logic to resolve a mission and template, and launch an execution.
+    """
+    # 1. Resolve Mission
+    mission_obj = kleinkram.api.routes.get_mission(client, mission_query)
+    mission_uuid = mission_obj.id
+
+    # 2. Resolve Template to UUID
+    template_str = str(template)
+    if is_valid_uuid4(template_str):
+        template_uuid = UUID(template_str)
+    else:
+        templates = kleinkram.api.routes.get_templates(client)
+        found_template = next((t for t in templates if t.name == template_str), None)
+
+        if not found_template:
+            raise ValueError(f"Action template '{template_str}' not found.")
+        template_uuid = found_template.uuid
+
+    # 3. Launch Execution via API Route
+    execution_id = kleinkram.api.routes.launch_execution(client, mission_uuid, template_uuid)
+    return execution_id
