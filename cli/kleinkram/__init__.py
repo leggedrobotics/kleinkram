@@ -8,6 +8,7 @@ from kleinkram.wrappers import delete_files
 from kleinkram.wrappers import delete_mission
 from kleinkram.wrappers import delete_project
 from kleinkram.wrappers import download
+from kleinkram.wrappers import download_artifact
 from kleinkram.wrappers import get_file
 from kleinkram.wrappers import get_mission
 from kleinkram.wrappers import get_project
@@ -25,6 +26,7 @@ __all__ = [
     "upload",
     "verify",
     "download",
+    "download_artifact",
     "get_file",
     "get_mission",
     "get_project",

@@ -14,6 +14,8 @@ this file contains the main functionality of kleinkram cli
 
 from __future__ import annotations
 
+import os
+import tarfile
 from pathlib import Path
 from typing import Collection
 from typing import Dict
@@ -23,6 +25,7 @@ from typing import Sequence
 from uuid import UUID
 
 import httpx
+import requests
 from rich.console import Console
 from tqdm import tqdm
 
@@ -43,6 +46,104 @@ from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import file_paths_from_files
 from kleinkram.utils import get_filename_map
+
+
+def download_artifact(
+    execution_id: str,
+    output: Optional[str] = None,
+    extract: bool = False,
+    verbose: bool = False,
+) -> str:
+    """
+    Download the artifacts (.tar.gz) for a finished execution.
+
+    Args:
+        execution_id: The ID of the execution to download artifacts for.
+        output: Path or filename to save the artifacts to.
+        extract: Automatically extract the archive after downloading.
+        verbose: Print progress and extraction info.
+
+    Returns:
+        The path where the artifact was saved (or extracted).
+    """
+    client = AuthenticatedClient()
+
+    # Fetch Execution Details
+    execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
+
+    if not getattr(execution, "artifact_url", None):
+        raise ValueError(
+            f"No artifacts found for execution {execution_id}. The execution might not be finished or artifacts expired."
+        )
+
+    if verbose:
+        print(f"Downloading artifacts for execution {execution_id}...")
+
+    # Grab the headers to determine filename and size
+    try:
+        with requests.get(execution.artifact_url, stream=True) as r:
+            r.raise_for_status()
+            headers = r.headers.copy()
+    except requests.exceptions.RequestException as e:
+        raise ValueError(f"Error fetching artifact headers: {e}")
+
+    # Determine Filename
+    filename = output
+    if not filename:
+        filename = kleinkram.api.file_transfer._get_filename_from_cd(headers.get("content-disposition"))
+
+    if not filename:
+        filename = f"{execution_id}.tar.gz"
+
+    # If output is a directory, join with filename
+    if output and os.path.isdir(output):
+        filename = os.path.join(
+            output,
+            kleinkram.api.file_transfer._get_filename_from_cd(headers.get("content-disposition")) or f"{execution_id}.tar.gz",
+        )
+
+    total_length = int(headers.get("content-length", 0))
+
+    filepath = Path(filename)
+
+    # Download the file using _url_download
+    kleinkram.api.file_transfer._url_download(
+        url=execution.artifact_url,
+        path=filepath,
+        size=total_length,
+        overwrite=True,  # overwrite if we run the CLI command directly
+        verbose=verbose,
+    )
+
+    if verbose:
+        print(f"\nSuccessfully downloaded to {filepath}")
+
+    # Extraction Logic
+    if extract:
+        try:
+            base_name = os.path.basename(str(filepath))
+            folder_name = base_name.split(".")[0]
+            parent_dir = os.path.dirname(os.path.abspath(str(filepath)))
+            extract_path = os.path.join(parent_dir, folder_name)
+
+            if verbose:
+                print(f"Extracting to: {extract_path}...")
+
+            with tarfile.open(filepath, "r:gz") as tar:
+                if hasattr(tarfile, "data_filter"):
+                    tar.extractall(path=extract_path, filter="data")
+                else:
+                    tar.extractall(path=extract_path)
+
+            if verbose:
+                print("Successfully extracted.")
+
+            return extract_path
+
+        except tarfile.TarError as e:
+            raise ValueError(f"Failed to extract archive: {e}")
+
+    return str(filepath)
 
 
 def download(

@@ -203,16 +203,6 @@ def logs(
         print_execution_logs(log_entries, pprint=get_shared_state().verbose)
 
 
-def _get_filename_from_cd(cd: str) -> Optional[str]:
-    """Extract filename from Content-Disposition header."""
-    if not cd:
-        return None
-    fname = re.findall("filename=(.+)", cd)
-    if len(fname) == 0:
-        return None
-    return fname[0].strip().strip('"')
-
-
 @executions_typer.command(name="download", help=DOWNLOAD_HELP)
 def download_artifacts(
     execution_id: str = typer.Argument(..., help="The ID of the execution to download artifacts for."),
@@ -227,84 +217,15 @@ def download_artifacts(
     """
     Download the artifacts (.tar.gz) for a finished execution.
     """
-    client = AuthenticatedClient()
-
-    # Fetch Execution Details
     try:
-        execution: Execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
-    except Exception as e:
-        typer.secho(f"Failed to fetch execution details: {e}", fg=typer.colors.RED)
-        raise typer.Exit(1)
-
-    if not execution.artifact_url:
-        typer.secho(
-            f"No artifacts found for execution {execution_id}. The execution might not be finished or artifacts expired.",
-            fg=typer.colors.YELLOW,
+        kleinkram.core.download_artifact(
+            execution_id=execution_id,
+            output=output,
+            extract=extract,
+            verbose=get_shared_state().verbose,
         )
-        raise typer.Exit(1)
+    except Exception as e:
+        import typer
 
-    typer.echo(f"Downloading artifacts for execution {execution_id}...")
-
-    # Stream Download
-    try:
-        with requests.get(execution.artifact_url, stream=True) as r:
-            r.raise_for_status()
-
-            # Determine Filename
-            filename = output
-            if not filename:
-                filename = _get_filename_from_cd(r.headers.get("content-disposition"))
-
-            if not filename:
-                filename = f"{execution_id}.tar.gz"
-
-            # If output is a directory, join with filename
-            if output and os.path.isdir(output):
-                filename = os.path.join(
-                    output,
-                    _get_filename_from_cd(r.headers.get("content-disposition")) or f"{execution_id}.tar.gz",
-                )
-
-            total_length = int(r.headers.get("content-length", 0))
-
-            # Write to file with Progress Bar
-            with open(filename, "wb") as f:
-                with typer.progressbar(length=total_length, label=f"Saving to {filename}") as progress:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                            progress.update(len(chunk))
-
-            typer.secho(f"\nSuccessfully downloaded to {filename}", fg=typer.colors.GREEN)
-
-            # Extraction Logic
-            if extract:
-                try:
-                    # Determine extraction directory (based on filename without extension)
-                    # e.g., "downloads/my-execution.tar" -> "downloads/my-execution"
-                    base_name = os.path.basename(filename)
-                    folder_name = base_name.split(".")[0]
-
-                    # Get the parent directory of the downloaded file
-                    parent_dir = os.path.dirname(os.path.abspath(filename))
-                    extract_path = os.path.join(parent_dir, folder_name)
-
-                    typer.echo(f"Extracting to: {extract_path}...")
-
-                    with tarfile.open(filename, "r:gz") as tar:
-
-                        # Safety check: filter_data prevents extraction outside target dir (CVE-2007-4559)
-                        # Available in Python 3.12+, for older python use generic extractall
-                        if hasattr(tarfile, "data_filter"):
-                            tar.extractall(path=extract_path, filter="data")
-                        else:
-                            tar.extractall(path=extract_path)
-
-                    typer.secho("Successfully extracted.", fg=typer.colors.GREEN)
-
-                except tarfile.TarError as e:
-                    typer.secho(f"Failed to extract archive: {e}", fg=typer.colors.RED)
-
-    except requests.exceptions.RequestException as e:
-        typer.secho(f"Error downloading file: {e}", fg=typer.colors.RED)
+        typer.secho(f"Failed to download artifacts: {e}", fg=typer.colors.RED)
         raise typer.Exit(1)

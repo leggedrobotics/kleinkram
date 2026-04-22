@@ -153,6 +153,32 @@ def download(
     )
 
 
+def download_artifact(
+    execution_id: IdLike,
+    output: Optional[PathLike] = None,
+    extract: bool = False,
+    verbose: bool = False,
+) -> str:
+    """
+    Download the artifacts (.tar.gz) for a finished execution.
+
+    Args:
+        execution_id: The ID of the execution to download artifacts for.
+        output: Path or filename to save the artifacts to.
+        extract: Automatically extract the archive after downloading.
+        verbose: Print progress and extraction info.
+
+    Returns:
+        The path where the artifact was saved (or extracted).
+    """
+    return kleinkram.core.download_artifact(
+        execution_id=str(parse_uuid_like(execution_id)),
+        output=str(parse_path_like(output)) if output else None,
+        extract=extract,
+        verbose=verbose,
+    )
+
+
 def list_files(
     *,
     file_ids: Optional[Sequence[IdLike]] = None,
