@@ -25,10 +25,13 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.api.query import ExecutionQuery
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import Execution
+from kleinkram.models import ActionTemplate
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 from kleinkram.utils import parse_path_like
@@ -228,6 +231,32 @@ def list_projects(
     )
     client = AuthenticatedClient()
     return list(kleinkram.api.routes.get_projects(client, query))
+
+
+def list_templates() -> List[ActionTemplate]:
+    client = AuthenticatedClient()
+    return list(kleinkram.api.routes.get_templates(client))
+
+
+def list_executions(
+    *,
+    mission_ids: Optional[Sequence[IdLike]] = None,
+    mission_patterns: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[IdLike]] = None,
+    project_patterns: Optional[Sequence[str]] = None,
+) -> List[Execution]:
+    
+
+    # build ExecutionQuery from arguments
+    query = ExecutionQuery(
+        mission_ids=[parse_uuid_like(_id) for _id in mission_ids or []],
+        mission_patterns=list(mission_patterns or []),
+        project_ids=[parse_uuid_like(_id) for _id in project_ids or []],
+        project_patterns=list(project_patterns or []),
+    )
+
+    client = AuthenticatedClient()
+    return list(kleinkram.api.routes.get_executions(client, query=query))
 
 
 @overload
@@ -451,3 +480,5 @@ def get_project(project_id: IdLike) -> Project:
     get a project by its id
     """
     return kleinkram.api.routes.get_project(AuthenticatedClient(), ProjectQuery(ids=[parse_uuid_like(project_id)]))
+
+

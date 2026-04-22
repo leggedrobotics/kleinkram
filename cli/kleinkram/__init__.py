@@ -15,6 +15,8 @@ from kleinkram.wrappers import get_project
 from kleinkram.wrappers import list_files
 from kleinkram.wrappers import list_missions
 from kleinkram.wrappers import list_projects
+from kleinkram.wrappers import list_templates
+from kleinkram.wrappers import list_executions 
 from kleinkram.wrappers import update_file
 from kleinkram.wrappers import update_mission
 from kleinkram.wrappers import update_project
@@ -33,6 +35,8 @@ __all__ = [
     "list_files",
     "list_missions",
     "list_projects",
+    "list_templates",
+    "list_executions",
     "update_file",
     "update_mission",
     "update_project",
