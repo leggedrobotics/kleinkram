@@ -49,6 +49,9 @@ from kleinkram.errors import MissionValidationError
 from kleinkram.errors import ProjectExists
 from kleinkram.errors import ProjectNotFound
 from kleinkram.errors import ProjectValidationError
+from kleinkram.errors import TemplateExists
+from kleinkram.errors import TemplateNotFound
+from kleinkram.errors import TemplateValidationError
 from kleinkram.models import ActionTemplate
 from kleinkram.models import Execution
 from kleinkram.models import File
@@ -214,6 +217,19 @@ def get_execution(
     return _parse_execution(ExecutionObject(execution_object))
 
 
+def get_template(
+    client: AuthenticatedClient,
+    template_id: str,
+) -> ActionTemplate:
+    # the backend does not expose a single GET /templates/:uuid endpoint
+    # we need to iterate over the templates and find the one with the correct uuid
+    for template in get_templates(client):
+        if str(template.uuid) == template_id:
+            return template
+
+    raise kleinkram.errors.TemplateNotFound(f"Template not found: {template_id}")
+
+
 def get_templates(
     client: AuthenticatedClient,
 ) -> Generator[ActionTemplate, None, None]:
@@ -352,6 +368,67 @@ def _validate_mission_created(client: AuthenticatedClient, project_id: str, miss
     finally:
         if tmp_path.exists():
             tmp_path.unlink()
+
+
+def _delete_template(client: AuthenticatedClient, template_id: UUID) -> None:
+    resp = client.delete(f"/templates/{template_id}")
+    if resp.status_code == 404:
+        raise TemplateNotFound(f"Template not found: {template_id}")
+    resp.raise_for_status()
+
+
+def _create_template(
+    client: AuthenticatedClient,
+    name: str,
+    description: str,
+    docker_image: str,
+    cpu_cores: int,
+    cpu_memory_gb: int,
+    gpu_memory_gb: int,
+    max_runtime_minutes: int,
+    access_rights: int = 0,
+    command: Optional[str] = None,
+    entrypoint: Optional[str] = None,
+) -> UUID:
+    _validate_template_name(client, name, description)
+
+    payload = {
+        "name": name,
+        "description": description,
+        "dockerImage": docker_image,
+        "cpuCores": cpu_cores,
+        "cpuMemory": cpu_memory_gb,
+        "gpuMemory": gpu_memory_gb,
+        "maxRuntime": max_runtime_minutes,
+        "accessRights": access_rights,
+    }
+
+    if command is not None:
+        payload["command"] = command
+    if entrypoint is not None:
+        payload["entrypoint"] = entrypoint
+
+    resp = client.post("/templates", json=payload)
+    resp.raise_for_status()
+
+    return UUID(resp.json()["uuid"], version=4)
+
+
+def _template_name_is_available(client: AuthenticatedClient, template_name: str) -> bool:
+    resp = client.get("/templates/availability", params={"name": template_name})
+    resp.raise_for_status()
+    return resp.json().get("available", False)
+
+
+def _validate_template_name(client: AuthenticatedClient, template_name: str, description: str) -> None:
+    if not _template_name_is_available(client, template_name):
+        raise TemplateExists(f"Template with name: `{template_name}` already exists")
+
+    if template_name.endswith(" "):
+        raise TemplateValidationError(f"Template name must not end with a tailing whitespace: `{template_name}`")
+
+    if not description:
+        raise TemplateValidationError("Template description is required")
 
 
 def _create_mission(

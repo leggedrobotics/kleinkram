@@ -432,6 +432,36 @@ def create_mission(
     )
 
 
+def create_template(
+    name: str,
+    description: str,
+    docker_image: str,
+    cpu_cores: int,
+    cpu_memory_gb: int,
+    gpu_memory_gb: int,
+    max_runtime_minutes: int,
+    access_rights: int = 0,
+    command: Optional[str] = None,
+    entrypoint: Optional[str] = None,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> IdLike:
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes._create_template(
+        client,
+        name=name,
+        description=description,
+        docker_image=docker_image,
+        cpu_cores=cpu_cores,
+        cpu_memory_gb=cpu_memory_gb,
+        gpu_memory_gb=gpu_memory_gb,
+        max_runtime_minutes=max_runtime_minutes,
+        access_rights=access_rights,
+        command=command,
+        entrypoint=entrypoint,
+    )
+
+
 def create_project(
     project_name: str,
     description: str,
@@ -507,6 +537,15 @@ def delete_file(
     kleinkram.api.routes._delete_files(client, file_ids=[file.id], mission_id=file.mission_id)
 
 
+def delete_template(
+    template_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.delete_template(client=client, template_id=parse_uuid_like(template_id))
+
+
 def delete_mission(
     mission_id: IdLike,
     *,
@@ -531,6 +570,14 @@ def get_file(file_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -
     """
     client = client or AuthenticatedClient()
     return kleinkram.api.routes.get_file(client, FileQuery(ids=[parse_uuid_like(file_id)]))
+
+
+def get_template(template_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> ActionTemplate:
+    """\
+    get detailed information for a specific template by its id
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes.get_template(client, str(parse_uuid_like(template_id)))
 
 
 def get_execution(execution_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> Execution:

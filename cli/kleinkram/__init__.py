@@ -3,16 +3,19 @@ from __future__ import annotations
 from kleinkram._version import __version__
 from kleinkram.wrappers import create_mission
 from kleinkram.wrappers import create_project
+from kleinkram.wrappers import create_template
 from kleinkram.wrappers import delete_file
 from kleinkram.wrappers import delete_files
 from kleinkram.wrappers import delete_mission
 from kleinkram.wrappers import delete_project
+from kleinkram.wrappers import delete_template
 from kleinkram.wrappers import download
 from kleinkram.wrappers import download_artifact
 from kleinkram.wrappers import get_execution
 from kleinkram.wrappers import get_file
 from kleinkram.wrappers import get_mission
 from kleinkram.wrappers import get_project
+from kleinkram.wrappers import get_template
 from kleinkram.wrappers import list_executions
 from kleinkram.wrappers import list_files
 from kleinkram.wrappers import list_missions
@@ -34,6 +37,7 @@ __all__ = [
     "get_file",
     "get_mission",
     "get_project",
+    "get_template",
     "list_files",
     "list_missions",
     "list_projects",
@@ -46,6 +50,8 @@ __all__ = [
     "delete_file",
     "delete_mission",
     "delete_project",
+    "delete_template",
     "create_mission",
     "create_project",
+    "create_template",
 ]

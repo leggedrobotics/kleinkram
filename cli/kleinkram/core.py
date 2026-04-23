@@ -368,6 +368,16 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
         kleinkram.api.routes._delete_files(client, file_ids=ids_, mission_id=mission_id)
 
 
+def delete_template(*, client: AuthenticatedClient, template_id: UUID) -> None:
+    # First verify template exists
+    for template in kleinkram.api.routes.get_templates(client):
+        if template.uuid == template_id:
+            kleinkram.api.routes._delete_template(client, template_id)
+            return
+
+    raise kleinkram.errors.TemplateNotFound(f"Template not found: {template_id}")
+
+
 def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
     mquery = MissionQuery(ids=[mission_id])
     mission = kleinkram.api.routes.get_mission(client, mquery)
