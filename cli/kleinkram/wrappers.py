@@ -244,19 +244,7 @@ def list_projects(
 
 def list_templates(*, latest_only: bool = True, client: Optional[AuthenticatedClient] = None) -> List[ActionTemplate]:
     client = client or AuthenticatedClient()
-    templates = kleinkram.api.routes.get_templates(client)
-
-    if not latest_only:
-        return list(templates)
-
-    seen_names = set()
-    latest_templates = []
-    for template in templates:
-        if template.name not in seen_names:
-            seen_names.add(template.name)
-            latest_templates.append(template)
-
-    return latest_templates
+    return kleinkram.core.list_templates(client, latest_only=latest_only)
 
 
 def list_executions(
@@ -435,7 +423,7 @@ def create_mission(
     client: Optional[AuthenticatedClient] = None,
 ) -> None:
     client = client or AuthenticatedClient()
-    kleinkram.api.routes._create_mission(
+    kleinkram.core.create_mission(
         client,
         parse_uuid_like(project_id),
         mission_name,
@@ -467,7 +455,7 @@ def create_template_version(
     client: Optional[AuthenticatedClient] = None,
 ) -> IdLike:
     client = client or AuthenticatedClient()
-    return kleinkram.api.routes._create_template_version(
+    return kleinkram.core.create_template_version(
         client,
         template_id=parse_uuid_like(template_id),
         description=description,
@@ -497,7 +485,7 @@ def create_template(
     client: Optional[AuthenticatedClient] = None,
 ) -> IdLike:
     client = client or AuthenticatedClient()
-    return kleinkram.api.routes._create_template(
+    return kleinkram.core.create_template(
         client,
         name=name,
         description=description,
@@ -519,7 +507,7 @@ def create_project(
     client: Optional[AuthenticatedClient] = None,
 ) -> None:
     client = client or AuthenticatedClient()
-    kleinkram.api.routes._create_project(client, project_name, description)
+    kleinkram.core.create_project(client, project_name, description)
 
 
 def update_file(

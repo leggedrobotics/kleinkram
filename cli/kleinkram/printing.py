@@ -410,7 +410,7 @@ def executions_to_table(executions: Sequence[Execution]) -> Table:
             execution.template_name,
             Text(str(execution.uuid), style="green"),
             execution.state,
-            str(execution.created_at),
+            execution.created_at.strftime("%Y-%m-%d %H:%M"),
         )
 
     if len(list(executions)) > max_table_size:

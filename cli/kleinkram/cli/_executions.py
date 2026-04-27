@@ -76,6 +76,7 @@ def launch(
             project_query=project_query,
         )
 
+        typer.echo("Submitting action...")
         execution_uuid_str = kleinkram.core.launch_execution(
             client=client,
             mission_query=mission_query,
@@ -212,7 +213,5 @@ def download_artifacts(
             verbose=get_shared_state().verbose,
         )
     except Exception as e:
-        import typer
-
         typer.secho(f"Failed to download artifacts: {e}", fg=typer.colors.RED)
         raise typer.Exit(1)

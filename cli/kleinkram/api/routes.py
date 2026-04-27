@@ -14,7 +14,6 @@ from typing import Tuple
 from uuid import UUID
 
 import httpx
-import typer
 
 import kleinkram.errors
 from kleinkram._version import __version__
@@ -192,7 +191,7 @@ def get_executions(
     client: AuthenticatedClient,
     query: ExecutionQuery,
 ) -> Generator[Execution, None, None]:
-
+    #Currently the backend does not support filtering executions by mission/project. So as of now the query is ignored and all executions are returned. In the future when the backend supports filtering, the query parameters should be passed to the paginated_request as params.
     response_stream = paginated_request(client, LIST_ACTIONS_ENDPOINT)
     yield from map(lambda p: _parse_execution(ExecutionObject(p)), response_stream)
 
@@ -262,32 +261,6 @@ def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: b
         raise ProjectNotFound(f"Project not found: {query}")
 
 
-def launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID) -> str:
-    """
-    Submits a new action to the API and returns the action UUID.
-
-    Raises:
-        httpx.HTTPStatusError: If the API returns an error.
-        KeyError: If the response is missing 'actionUUID'.
-    """
-    submit_payload = {
-        "missionUUID": str(mission_uuid),
-        "templateUUID": str(template_uuid),
-    }
-
-    typer.echo("Submitting action...")
-    resp = client.post(f"{ACTION_ENDPOINT}s", json=submit_payload)
-    resp.raise_for_status()  # Raises on 4xx/5xx responses
-
-    response_data = resp.json()
-    execution_uuid_str = response_data.get("actionUUID")
-
-    if not execution_uuid_str:
-        raise KeyError("API response missing 'actionUUID'")
-
-    return execution_uuid_str
-
-
 def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
     """\
     get a unique mission by specifying a mission query
@@ -312,75 +285,29 @@ def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
         raise kleinkram.errors.FileNotFound(f"File not found: {query}")
 
 
-def _mission_name_is_available(client: AuthenticatedClient, mission_name: str, project_id: UUID) -> bool:
-    mission_query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project_id]))
-    try:
-        _ = get_mission(client, mission_query)
-    except MissionNotFound:
-        return True
-    return False
-
-
-def _validate_mission_name(client: AuthenticatedClient, project_id: UUID, mission_name: str) -> None:
-    if not _mission_name_is_available(client, mission_name, project_id):
-        raise MissionExists(f"Mission with name: `{mission_name}` already exists" f" in project: {project_id}")
-
-    if is_valid_uuid4(mission_name):
-        raise ValueError(f"Mission name: `{mission_name}` is a valid UUIDv4, " "mission names must not be valid UUIDv4's")
-
-    if mission_name.endswith(" "):
-        raise ValueError("A mission name cannot end with a whitespace. " f"The given mission name was '{mission_name}'")
-
-
-def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
-    project_query = ProjectQuery(patterns=[project_name])
-    try:
-        _ = get_project(client, project_query, exact_match=True)
-    except ProjectNotFound:
-        return True
-    return False
-
-
-def _validate_mission_created(client: AuthenticatedClient, project_id: str, mission_name: str) -> None:
+def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID) -> str:
     """
-    validate that a mission is successfully created
+    Submits a new action to the API and returns the action UUID.
+
+    Raises:
+        httpx.HTTPStatusError: If the API returns an error.
+        KeyError: If the response is missing 'actionUUID'.
     """
-    mission_ids, mission_patterns = split_args([mission_name])
-    project_ids, project_patterns = split_args([project_id])
+    submit_payload = {
+        "missionUUID": str(mission_uuid),
+        "templateUUID": str(template_uuid),
+    }
 
-    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
-    mission_query = MissionQuery(
-        ids=mission_ids,
-        patterns=mission_patterns,
-        project_query=project_query,
-    )
-    try:
-        with tempfile.NamedTemporaryFile(suffix=".mcap", delete=False) as tmp:
-            tmp.write(b"dummy content")
-            tmp_path = Path(tmp.name)
+    resp = client.post(f"{ACTION_ENDPOINT}s", json=submit_payload)
+    resp.raise_for_status()  # Raises on 4xx/5xx responses
 
-        kleinkram.core.upload(
-            client=client,
-            query=mission_query,
-            file_paths=[tmp_path],
-            verbose=False,
-        )
+    response_data = resp.json()
+    execution_uuid_str = response_data.get("actionUUID")
 
-        file_query = FileQuery(
-            ids=[],
-            patterns=[tmp_path.name],
-            mission_query=mission_query,
-        )
-        file_parsed = get_file(client, file_query)
+    if not execution_uuid_str:
+        raise KeyError("API response missing 'actionUUID'")
 
-        kleinkram.core.delete_files(client=client, file_ids=[file_parsed.id])
-
-    except Exception as e:
-        raise MissionValidationError(f"Mission validation failed: {e}")
-
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
+    return execution_uuid_str
 
 
 def _delete_template(client: AuthenticatedClient, template_id: UUID) -> None:
@@ -393,41 +320,33 @@ def _delete_template(client: AuthenticatedClient, template_id: UUID) -> None:
 def _create_template_version(
     client: AuthenticatedClient,
     template_id: UUID,
-    *,
-    description: Optional[str] = None,
-    docker_image: Optional[str] = None,
-    cpu_cores: Optional[int] = None,
-    cpu_memory_gb: Optional[int] = None,
-    gpu_memory_gb: Optional[int] = None,
-    max_runtime_minutes: Optional[int] = None,
-    access_rights: Optional[int] = None,
+    name: str,
+    description: str,
+    docker_image: str,
+    cpu_cores: int,
+    cpu_memory_gb: int,
+    gpu_memory_gb: int,
+    max_runtime_minutes: int,
+    access_rights: int,
     command: Optional[str] = None,
     entrypoint: Optional[str] = None,
 ) -> UUID:
-    # 1. Fetch current template
-    current = get_template(client, str(template_id))
-
-    # 2. Merge overrides (name and uuid are fixed)
     payload = {
         "uuid": str(template_id),
-        "name": current.name,
-        "description": description if description is not None else current.description,
-        "dockerImage": docker_image if docker_image is not None else current.image_name,
-        "cpuCores": cpu_cores if cpu_cores is not None else current.cpu_cores,
-        "cpuMemory": cpu_memory_gb if cpu_memory_gb is not None else current.cpu_memory_gb,
-        "gpuMemory": gpu_memory_gb if gpu_memory_gb is not None else current.gpu_memory_gb,
-        "maxRuntime": max_runtime_minutes if max_runtime_minutes is not None else current.max_runtime_minutes,
-        "accessRights": access_rights if access_rights is not None else current.access_rights,
+        "name": name,
+        "description": description,
+        "dockerImage": docker_image,
+        "cpuCores": cpu_cores,
+        "cpuMemory": cpu_memory_gb,
+        "gpuMemory": gpu_memory_gb,
+        "maxRuntime": max_runtime_minutes,
+        "accessRights": access_rights,
     }
 
-    # Command and entrypoint can be empty strings in the backend, fallback to current
-    final_command = command if command is not None else current.command
-    if final_command:
-        payload["command"] = final_command
-
-    final_entrypoint = entrypoint if entrypoint is not None else current.entrypoint
-    if final_entrypoint:
-        payload["entrypoint"] = final_entrypoint
+    if command is not None:
+        payload["command"] = command
+    if entrypoint is not None:
+        payload["entrypoint"] = entrypoint
 
     resp = client.post(f"/templates/{template_id}/versions", json=payload)
     resp.raise_for_status()
@@ -448,8 +367,6 @@ def _create_template(
     command: Optional[str] = None,
     entrypoint: Optional[str] = None,
 ) -> UUID:
-    _validate_template_name(client, name, description)
-
     payload = {
         "name": name,
         "description": description,
@@ -472,49 +389,14 @@ def _create_template(
     return UUID(resp.json()["uuid"], version=4)
 
 
-def _template_name_is_available(client: AuthenticatedClient, template_name: str) -> bool:
-    resp = client.get("/templates/availability", params={"name": template_name})
-    resp.raise_for_status()
-    return resp.json().get("available", False)
-
-
-def _validate_template_name(client: AuthenticatedClient, template_name: str, description: str) -> None:
-    if not _template_name_is_available(client, template_name):
-        raise TemplateExists(f"Template with name: `{template_name}` already exists")
-
-    if template_name.endswith(" "):
-        raise TemplateValidationError(f"Template name must not end with a tailing whitespace: `{template_name}`")
-
-    if not description:
-        raise TemplateValidationError("Template description is required")
-
-
 def _create_mission(
     client: AuthenticatedClient,
     project_id: UUID,
     mission_name: str,
     *,
-    metadata: Optional[Dict[str, str]] = None,
+    tags: Dict[UUID, str],
     ignore_missing_tags: bool = False,
-    required_tags: Optional[List[str]] = None,
 ) -> UUID:
-    """\
-    creates a new mission with the given name and project_id
-
-    if check_exists is True, the function will return the existing mission_id,
-    otherwise if the mission already exists an error will be raised
-    """
-    if metadata is None:
-        metadata = {}
-
-    _validate_mission_name(client, project_id, mission_name)
-
-    if required_tags and not set(required_tags).issubset(metadata.keys()):
-        raise InvalidMissionMetadata(f"Mission tags `{required_tags}` are required but missing from metadata: {metadata}")
-
-    # we need to translate tag keys to tag type ids
-    tags = _get_tags_map(client, metadata)
-
     payload = {
         "name": mission_name,
         "projectUUID": str(project_id),
@@ -523,79 +405,24 @@ def _create_mission(
     }
     resp = client.post(CREATE_MISSION, json=payload)
     resp.raise_for_status()
-    _validate_mission_created(client, str(project_id), mission_name)
 
     return UUID(resp.json()["uuid"], version=4)
 
 
 def _create_project(client: AuthenticatedClient, project_name: str, description: str) -> UUID:
-
-    _validate_project_name(client, project_name, description)
     payload = {"name": project_name, "description": description}
     resp = client.post(CREATE_PROJECT, json=payload)
     resp.raise_for_status()
 
     return UUID(resp.json()["uuid"], version=4)
 
-
-def _validate_project_name(client: AuthenticatedClient, project_name: str, description: str) -> None:
-    if not _project_name_is_available(client, project_name):
-        raise ProjectExists(f"Project with name: `{project_name}` already exists")
-
-    if project_name.endswith(" "):
-        raise ProjectValidationError(f"Project name must not end with a tailing whitespace: `{project_name}`")
-
-    if not description:
-        raise ProjectValidationError("Project description is required")
-
-
-def _validate_tag_value(tag_value, tag_datatype) -> None:
-    if tag_datatype == "NUMBER":
-        try:
-            float(tag_value)
-        except ValueError:
-            raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
-    elif tag_datatype == "BOOLEAN":
-        if tag_value.lower() not in {"true", "false"}:
-            raise InvalidMissionMetadata(f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')")
-    else:
-        pass  # any string is fine
     # TODO: add check for LOCATION tag datatype
 
 
-def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) -> Tuple[Optional[UUID], str]:
-    resp = client.get(TAG_TYPE_BY_NAME, params={"name": tag_name, "take": 1})
-
-    if resp.status_code in (403, 404):
-        return None
-
-    resp.raise_for_status()
-    try:
-        data = resp.json()["data"][0]
-    except IndexError:
-        return None, None
-
-    return UUID(data["uuid"], version=4), data["datatype"]
-
-
-def _get_tags_map(client: AuthenticatedClient, metadata: Dict[str, str]) -> Dict[UUID, str]:
-    # TODO: this needs a better endpoint
-    # why are we using metadata type ids as keys???
-    ret = {}
-    for key, val in metadata.items():
-        metadata_type_id, tag_datatype = _get_metadata_type_id_by_name(client, key)
-        if metadata_type_id is None:
-            raise InvalidMissionMetadata(f"metadata field: {key} does not exist")
-        _validate_tag_value(val, tag_datatype)
-        ret[metadata_type_id] = val
-    return ret
-
-
-def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, metadata: Dict[str, str]) -> None:
-    tags_dct = _get_tags_map(client, metadata)
+def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict[UUID, str]) -> None:
     payload = {
         "missionUUID": str(mission_id),
-        "tags": {str(k): v for k, v in tags_dct.items()},
+        "tags": {str(k): v for k, v in tags.items()},
     }
     resp = client.post(UPDATE_MISSION, json=payload)
 

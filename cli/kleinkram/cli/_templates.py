@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from typing import Optional
+from uuid import UUID
 
 import typer
 
 import kleinkram.api.routes
-import kleinkram.wrappers
+import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_templates_table
@@ -31,7 +32,7 @@ def list_templates_cli(
     all_versions: bool = typer.Option(False, "--all", help="List all versions instead of just the latest"),
 ) -> None:
     client = AuthenticatedClient()
-    templates = kleinkram.wrappers.list_templates(latest_only=not all_versions, client=client)
+    templates = kleinkram.core.list_templates(client, latest_only=not all_versions)
 
     if not templates:
         typer.echo("No action templates found.")
@@ -43,7 +44,7 @@ def list_templates_cli(
 @templates_typer.command(help="List revisions/history for a template.", name="revisions")
 def revisions(template: str = typer.Argument(..., help="Template ID (UUID)")) -> None:
     client = AuthenticatedClient()
-    revisions = kleinkram.wrappers.get_template_revisions(template_id=template, client=client)
+    revisions = list(kleinkram.api.routes.get_template_revisions(client=client, template_id=str(UUID(template))))
 
     if not revisions:
         typer.echo(f"No revisions found for template {template}.")
@@ -68,8 +69,9 @@ def create_version(
     entrypoint: Optional[str] = typer.Option(None, "--entrypoint", help="Docker entrypoint override"),
 ) -> None:
     client = AuthenticatedClient()
-    template_id = kleinkram.wrappers.create_template_version(
-        template_id=template,
+    template_id = kleinkram.core.create_template_version(
+        client=client,
+        template_id=UUID(template),
         description=description,
         docker_image=docker_image,
         cpu_cores=cpu_cores,
@@ -79,19 +81,18 @@ def create_version(
         access_rights=access_rights,
         command=command,
         entrypoint=entrypoint,
-        client=client,
     )
 
     typer.secho("Template version successfully created", fg=typer.colors.GREEN)
 
-    template_parsed = kleinkram.wrappers.get_template(template_id, client=client)
+    template_parsed = kleinkram.api.routes.get_template(client=client, template_id=str(template_id))
     print_templates_table([template_parsed], pprint=get_shared_state().verbose)
 
 
 @templates_typer.command(help="Deletes an action template.", name="delete")
 def delete(template: str = typer.Argument(..., help="Template ID (UUID)")) -> None:
     client = AuthenticatedClient()
-    kleinkram.wrappers.delete_template(template_id=template, client=client)
+    kleinkram.core.delete_template(client=client, template_id=UUID(template))
     typer.secho(f"Template {template} successfully deleted", fg=typer.colors.GREEN)
 
 
@@ -109,7 +110,8 @@ def create(
     entrypoint: Optional[str] = typer.Option(None, "--entrypoint", help="Optional docker entrypoint"),
 ) -> None:
     client = AuthenticatedClient()
-    template_id = kleinkram.wrappers.create_template(
+    template_id = kleinkram.core.create_template(
+        client=client,
         name=name,
         description=description,
         docker_image=docker_image,
@@ -120,10 +122,9 @@ def create(
         access_rights=access_rights,
         command=command,
         entrypoint=entrypoint,
-        client=client,
     )
 
     typer.secho("Template successfully created", fg=typer.colors.GREEN)
 
-    template_parsed = kleinkram.wrappers.get_template(template_id, client=client)
+    template_parsed = kleinkram.api.routes.get_template(client=client, template_id=str(template_id))
     print_templates_table([template_parsed], pprint=get_shared_state().verbose)
