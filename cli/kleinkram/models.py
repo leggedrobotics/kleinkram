@@ -115,6 +115,7 @@ class ActionTemplate:
     command: str
     cpu_cores: int
     cpu_memory_gb: int
+    description: str
     entrypoint: str
     gpu_memory_gb: int
     image_name: str

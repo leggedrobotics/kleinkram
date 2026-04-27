@@ -516,13 +516,14 @@ def action_templates_to_table(templates: Sequence[ActionTemplate]) -> Table:
     table = Table(title="Available Action Templates")
 
     table.add_column("Name", style="cyan", no_wrap=True)
+    table.add_column("Version", style="blue")
     table.add_column("ID (UUID)", style="magenta")
     table.add_column("Image Name", style="green")
     table.add_column("Command", style="cyan")
 
     for template in templates:
         uuid_text = Text(str(template.uuid), style="magenta")
-        table.add_row(template.name, uuid_text, template.image_name, template.command)
+        table.add_row(template.name, str(template.version), uuid_text, template.image_name, template.command)
 
     return table
 

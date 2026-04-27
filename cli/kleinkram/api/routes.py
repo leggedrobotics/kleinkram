@@ -217,13 +217,26 @@ def get_execution(
     return _parse_execution(ExecutionObject(execution_object))
 
 
+def get_template_revisions(
+    client: AuthenticatedClient,
+    template_id: str,
+) -> Generator[ActionTemplate, None, None]:
+    try:
+        response_stream = paginated_request(client, f"/templates/{template_id}/revisions")
+        yield from map(lambda p: _parse_action_template(p), response_stream)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise kleinkram.errors.TemplateNotFound(f"Template not found: {template_id}")
+        raise
+
+
 def get_template(
     client: AuthenticatedClient,
     template_id: str,
 ) -> ActionTemplate:
     # the backend does not expose a single GET /templates/:uuid endpoint
-    # we need to iterate over the templates and find the one with the correct uuid
-    for template in get_templates(client):
+    # fetching its revisions and filtering is the most efficient available method
+    for template in get_template_revisions(client, template_id):
         if str(template.uuid) == template_id:
             return template
 
@@ -375,6 +388,51 @@ def _delete_template(client: AuthenticatedClient, template_id: UUID) -> None:
     if resp.status_code == 404:
         raise TemplateNotFound(f"Template not found: {template_id}")
     resp.raise_for_status()
+
+
+def _create_template_version(
+    client: AuthenticatedClient,
+    template_id: UUID,
+    *,
+    description: Optional[str] = None,
+    docker_image: Optional[str] = None,
+    cpu_cores: Optional[int] = None,
+    cpu_memory_gb: Optional[int] = None,
+    gpu_memory_gb: Optional[int] = None,
+    max_runtime_minutes: Optional[int] = None,
+    access_rights: Optional[int] = None,
+    command: Optional[str] = None,
+    entrypoint: Optional[str] = None,
+) -> UUID:
+    # 1. Fetch current template
+    current = get_template(client, str(template_id))
+
+    # 2. Merge overrides (name and uuid are fixed)
+    payload = {
+        "uuid": str(template_id),
+        "name": current.name,
+        "description": description if description is not None else current.description,
+        "dockerImage": docker_image if docker_image is not None else current.image_name,
+        "cpuCores": cpu_cores if cpu_cores is not None else current.cpu_cores,
+        "cpuMemory": cpu_memory_gb if cpu_memory_gb is not None else current.cpu_memory_gb,
+        "gpuMemory": gpu_memory_gb if gpu_memory_gb is not None else current.gpu_memory_gb,
+        "maxRuntime": max_runtime_minutes if max_runtime_minutes is not None else current.max_runtime_minutes,
+        "accessRights": access_rights if access_rights is not None else current.access_rights,
+    }
+
+    # Command and entrypoint can be empty strings in the backend, fallback to current
+    final_command = command if command is not None else current.command
+    if final_command:
+        payload["command"] = final_command
+
+    final_entrypoint = entrypoint if entrypoint is not None else current.entrypoint
+    if final_entrypoint:
+        payload["entrypoint"] = final_entrypoint
+
+    resp = client.post(f"/templates/{template_id}/versions", json=payload)
+    resp.raise_for_status()
+
+    return UUID(resp.json()["uuid"], version=4)
 
 
 def _create_template(

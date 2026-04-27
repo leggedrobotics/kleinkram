@@ -242,9 +242,21 @@ def list_projects(
     return list(kleinkram.api.routes.get_projects(client, query))
 
 
-def list_templates(*, client: Optional[AuthenticatedClient] = None) -> List[ActionTemplate]:
+def list_templates(*, latest_only: bool = True, client: Optional[AuthenticatedClient] = None) -> List[ActionTemplate]:
     client = client or AuthenticatedClient()
-    return list(kleinkram.api.routes.get_templates(client))
+    templates = kleinkram.api.routes.get_templates(client)
+
+    if not latest_only:
+        return list(templates)
+
+    seen_names = set()
+    latest_templates = []
+    for template in templates:
+        if template.name not in seen_names:
+            seen_names.add(template.name)
+            latest_templates.append(template)
+
+    return latest_templates
 
 
 def list_executions(
@@ -429,6 +441,44 @@ def create_mission(
         mission_name,
         metadata=metadata,
         ignore_missing_tags=ignore_missing_metadata,
+    )
+
+
+def get_template_revisions(template_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> List[ActionTemplate]:
+    """\
+    get history/revisions for a specific template by its id
+    """
+    client = client or AuthenticatedClient()
+    return list(kleinkram.api.routes.get_template_revisions(client, str(parse_uuid_like(template_id))))
+
+
+def create_template_version(
+    template_id: IdLike,
+    *,
+    description: Optional[str] = None,
+    docker_image: Optional[str] = None,
+    cpu_cores: Optional[int] = None,
+    cpu_memory_gb: Optional[int] = None,
+    gpu_memory_gb: Optional[int] = None,
+    max_runtime_minutes: Optional[int] = None,
+    access_rights: Optional[int] = None,
+    command: Optional[str] = None,
+    entrypoint: Optional[str] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> IdLike:
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes._create_template_version(
+        client,
+        template_id=parse_uuid_like(template_id),
+        description=description,
+        docker_image=docker_image,
+        cpu_cores=cpu_cores,
+        cpu_memory_gb=cpu_memory_gb,
+        gpu_memory_gb=gpu_memory_gb,
+        max_runtime_minutes=max_runtime_minutes,
+        access_rights=access_rights,
+        command=command,
+        entrypoint=entrypoint,
     )
 
 
