@@ -40,13 +40,17 @@ class FileQuery:
     ids: List[UUID] = field(default_factory=list)
     mission_query: MissionQuery = field(default_factory=MissionQuery)
 
+@dataclass
+class TemplateQuery:
+    patterns: List[str] = field(default_factory=list)
+    ids: List[UUID] = field(default_factory=list)
 
 @dataclass
 class ExecutionQuery:
-    mission_ids: List[UUID] = field(default_factory=list)
-    mission_patterns: List[str] = field(default_factory=list)
-    project_ids: List[UUID] = field(default_factory=list)
-    project_patterns: List[str] = field(default_factory=list)
+    ids: List[UUID] = field(default_factory=list)
+    mission_query: MissionQuery = field(default_factory=MissionQuery)
+    template_query: TemplateQuery = field(default_factory=TemplateQuery)
+
 
 
 def check_mission_query_is_creatable(query: MissionQuery) -> str:

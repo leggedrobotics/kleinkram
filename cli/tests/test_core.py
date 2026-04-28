@@ -89,7 +89,7 @@ def test_create_update_delete_mission(project):
     mission_name = token_hex(8)
 
     client = AuthenticatedClient()
-    kleinkram.api.routes._create_mission(client, project.id, mission_name)
+    kleinkram.core.create_mission(client, project.id, mission_name)
 
     mission = list_missions(mission_names=[mission_name])[0]
 
