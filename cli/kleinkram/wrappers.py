@@ -23,7 +23,7 @@ import kleinkram.api.routes
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.query import ExecutionQuery
+from kleinkram.api.query import ExecutionQuery, TemplateQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
@@ -72,6 +72,53 @@ def _args_to_mission_query(
         ids=[parse_uuid_like(_id) for _id in mission_ids or []],
         patterns=list(mission_names or []),
         project_query=_args_to_project_query(project_names=project_names, project_ids=project_ids),
+    )
+
+def _args_to_template_query(
+    template_names: Optional[Sequence[str]] = None,
+    template_ids: Optional[Sequence[IdLike]] = None,
+) -> TemplateQuery:
+
+    # verify types of passed arguments
+    _verify_string_sequence("template_names", template_names)
+    _verify_sequence("template_ids", template_ids)
+
+    return TemplateQuery(
+        ids=[parse_uuid_like(_id) for _id in template_ids or []],
+        patterns=list(template_names or []),
+    )
+
+def _args_to_execution_query(
+    mission_ids: Optional[Sequence[IdLike]] = None,
+    mission_patterns: Optional[Sequence[str]] = None,
+    project_ids: Optional[Sequence[IdLike]] = None,
+    project_patterns: Optional[Sequence[str]] = None,
+    template_ids: Optional[Sequence[IdLike]] = None,
+    template_patterns: Optional[Sequence[str]] = None,
+    ids: Optional[Sequence[IdLike]] = None,
+) -> ExecutionQuery:
+
+    # verify types of passed arguments
+    _verify_sequence("mission_ids", mission_ids)
+    _verify_string_sequence("mission_patterns", mission_patterns)
+    _verify_sequence("project_ids", project_ids)
+    _verify_string_sequence("project_patterns", project_patterns)
+    _verify_sequence("template_ids", template_ids)
+    _verify_string_sequence("template_patterns", template_patterns)
+    _verify_sequence("ids", ids)
+
+    return ExecutionQuery(
+        mission_query=_args_to_mission_query(
+            mission_names=mission_patterns,
+            mission_ids=mission_ids,
+            project_names=project_patterns,
+            project_ids=project_ids,
+        ),
+        template_query=_args_to_template_query(
+            template_names=template_patterns,
+            template_ids=template_ids,
+        ),
+        ids=[parse_uuid_like(_id) for _id in ids or []],
     )
 
 
@@ -253,15 +300,20 @@ def list_executions(
     mission_patterns: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
     project_patterns: Optional[Sequence[str]] = None,
+    template_ids: Optional[Sequence[IdLike]] = None,
+    template_patterns: Optional[Sequence[str]] = None,
+    ids: Optional[Sequence[IdLike]] = None,
     client: Optional[AuthenticatedClient] = None,
 ) -> List[Execution]:
 
-    # build ExecutionQuery from arguments
-    query = ExecutionQuery(
-        mission_ids=[parse_uuid_like(_id) for _id in mission_ids or []],
-        mission_patterns=list(mission_patterns or []),
-        project_ids=[parse_uuid_like(_id) for _id in project_ids or []],
-        project_patterns=list(project_patterns or []),
+    query = _args_to_execution_query(
+        mission_ids=mission_ids,
+        mission_patterns=mission_patterns,
+        project_ids=project_ids,
+        project_patterns=project_patterns,
+        template_ids=template_ids,
+        template_patterns=template_patterns,
+        ids=ids,
     )
 
     client = client or AuthenticatedClient()
@@ -579,10 +631,20 @@ def delete_template(
     template_id: IdLike,
     *,
     client: Optional[AuthenticatedClient] = None,
+) -> bool:
+    """
+    returns True if the template was archived due to existing executions, False otherwise.
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.core.delete_template(client=client, template_id=parse_uuid_like(template_id))
+
+def delete_execution(
+    execution_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
 ) -> None:
     client = client or AuthenticatedClient()
-    kleinkram.core.delete_template(client=client, template_id=parse_uuid_like(template_id))
-
+    kleinkram.core.delete_execution(client=client, execution_id=parse_uuid_like(execution_id))
 
 def delete_mission(
     mission_id: IdLike,

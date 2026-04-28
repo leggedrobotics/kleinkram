@@ -3,13 +3,16 @@ from __future__ import annotations
 from typing import Optional
 from uuid import UUID
 
+import httpx
 import typer
 
 import kleinkram.api.routes
 import kleinkram.core
+import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_templates_table
+from kleinkram.utils import is_valid_uuid4
 
 HELP = """\
 Manage action templates.
@@ -44,11 +47,11 @@ def list_templates_cli(
 @templates_typer.command(help="List revisions/history for a template.", name="revisions")
 def revisions(template: str = typer.Argument(..., help="Template ID (UUID)")) -> None:
     client = AuthenticatedClient()
-    revisions = list(kleinkram.api.routes.get_template_revisions(client=client, template_id=str(UUID(template))))
+    revisions = list(kleinkram.api.routes.get_template_revisions(client=client, template_id=template))
 
-    if not revisions:
-        typer.echo(f"No revisions found for template {template}.")
-        return
+    # check if provided ID is newest version of template
+    
+
 
     print_templates_table(revisions, pprint=get_shared_state().verbose)
 
@@ -91,9 +94,37 @@ def create_version(
 
 @templates_typer.command(help="Deletes an action template.", name="delete")
 def delete(template: str = typer.Argument(..., help="Template ID (UUID)")) -> None:
+    if not is_valid_uuid4(template):
+        typer.secho(f"Error: '{template}' is not a valid UUID.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    template_id = UUID(template)
     client = AuthenticatedClient()
-    kleinkram.core.delete_template(client=client, template_id=UUID(template))
-    typer.secho(f"Template {template} successfully deleted", fg=typer.colors.GREEN)
+
+    try:
+        archived = kleinkram.core.delete_template(client=client, template_id=template_id)
+        if archived:
+            typer.secho(
+                f"Template {template_id} archived (executions exist).",
+                fg=typer.colors.GREEN,
+            )
+        else:
+            typer.secho(
+                f"Template {template_id} deleted successfully.",
+                fg=typer.colors.GREEN,
+            )
+    except kleinkram.errors.TemplateNotFound:
+        typer.secho(f"Error: Template '{template_id}' not found.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    except kleinkram.errors.TemplateDeletionError as e:
+        typer.secho(f"Error: Only the latest version of a template may be deleted", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    except httpx.HTTPStatusError as e:
+        typer.secho(f"Error deleting template: {e.response.text}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    except Exception as e:
+        typer.secho(f"An unexpected error occurred: {e}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
 
 
 @templates_typer.command(help=CREATE_HELP, name="create")

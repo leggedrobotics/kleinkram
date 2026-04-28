@@ -33,8 +33,7 @@ from kleinkram.utils import split_args
 HELP = """\
 Manage and inspect action executions.
 
-You can launch new executions, list executions, get detailed information about specific executions, stream their logs,
-cancel executions in progress, and retry failed executions.
+You can launch new executions, delete executions, list executions, get detailed information about specific executions, stream their logs and download their artifacts.
 """
 
 executions_typer = typer.Typer(
@@ -47,8 +46,7 @@ LAUNCH_HELP = "Launch a new execution from a template."
 LIST_HELP = "List action executions. Optionally filter by mission or project."
 INFO_HELP = "Get detailed information about a specific action execution."
 LOGS_HELP = "Stream the logs for a specific action execution."
-CANCEL_HELP = "Cancel an action execution that is in progress."
-RETRY_HELP = "Retry a failed action execution."
+DELETE_HELP = "Delete a specific action execution."
 DOWNLOAD_HELP = "Download artifacts for a specific action execution."
 
 
@@ -120,28 +118,36 @@ def launch(
 
 
 @executions_typer.command(help=LIST_HELP, name="list")
-def list_executions(
-    mission: Optional[str] = typer.Option(None, "--mission", "-m", help="Mission ID or name to filter by."),
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="Project ID or name to filter by."),
-) -> None:
+def list_executions() -> None:
     """
     List action executions.
     """
     client = AuthenticatedClient()
 
-    mission_ids, mission_patterns = split_args([mission] if mission else [])
-    project_ids, project_patterns = split_args([project] if project else [])
-
-    query = ExecutionQuery(
-        mission_ids=mission_ids,
-        mission_patterns=mission_patterns,
-        project_ids=project_ids,
-        project_patterns=project_patterns,
-    )
-
-    executions = list(kleinkram.api.routes.get_executions(client, query=query))
+    executions = list(kleinkram.api.routes.get_executions(client))
     print_executions_table(executions, pprint=get_shared_state().verbose)
 
+@executions_typer.command(help=DELETE_HELP, name="delete")
+def delete(execution_id: str = typer.Argument(..., help="The ID (UUID) of the execution to delete.")) -> None:
+    """
+    Delete a specific action execution by its ID.
+    """
+    if not is_valid_uuid4(execution_id):
+        typer.secho(f"Error: '{execution_id}' is not a valid UUID.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    id = UUID(execution_id)
+
+    client = AuthenticatedClient()
+    try:
+        kleinkram.core.delete_execution(client=client, execution_id=id)
+        typer.secho(f"Execution {id} deleted successfully.", fg=typer.colors.GREEN)
+    except kleinkram.errors.ExecutionNotFound:
+        typer.secho(f"Error: Execution '{id}' not found.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    except Exception as e:
+        typer.secho(f"An unexpected error occurred: {e}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
 
 @executions_typer.command(name="info", help=INFO_HELP)
 def get_info(execution_id: str = typer.Argument(..., help="The ID of the execution to get information for.")) -> None:

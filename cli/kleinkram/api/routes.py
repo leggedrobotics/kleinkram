@@ -189,7 +189,7 @@ LIST_ACTIONS_ENDPOINT = "/actions"
 
 def get_executions(
     client: AuthenticatedClient,
-    query: ExecutionQuery,
+    query: Optional[ExecutionQuery] = None,
 ) -> Generator[Execution, None, None]:
     #Currently the backend does not support filtering executions by mission/project. So as of now the query is ignored and all executions are returned. In the future when the backend supports filtering, the query parameters should be passed to the paginated_request as params.
     response_stream = paginated_request(client, LIST_ACTIONS_ENDPOINT)
@@ -310,11 +310,6 @@ def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_
     return execution_uuid_str
 
 
-def _delete_template(client: AuthenticatedClient, template_id: UUID) -> None:
-    resp = client.delete(f"/templates/{template_id}")
-    if resp.status_code == 404:
-        raise TemplateNotFound(f"Template not found: {template_id}")
-    resp.raise_for_status()
 
 
 def _create_template_version(
@@ -509,4 +504,21 @@ PROJECT_DELETE_ONE = "/projects/{}"
 
 def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:
     resp = client.delete(PROJECT_DELETE_ONE.format(project_id))
+    resp.raise_for_status()
+
+
+TEMPLATE_DELETE_ONE = "/templates/{}"
+
+def _delete_template(client: AuthenticatedClient, template_id: UUID) -> None:
+    resp = client.delete(TEMPLATE_DELETE_ONE.format(template_id))
+    if resp.status_code == 404:
+        raise TemplateNotFound(f"Template not found: {template_id}")
+    resp.raise_for_status()
+
+EXECUTION_DELETE_ONE = "/actions/{}"
+
+def _delete_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
+    resp = client.delete(EXECUTION_DELETE_ONE.format(execution_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
     resp.raise_for_status()

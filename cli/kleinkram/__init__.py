@@ -5,11 +5,13 @@ from kleinkram.wrappers import create_mission
 from kleinkram.wrappers import create_project
 from kleinkram.wrappers import create_template
 from kleinkram.wrappers import create_template_version
+from kleinkram.wrappers import launch_execution
 from kleinkram.wrappers import delete_file
 from kleinkram.wrappers import delete_files
 from kleinkram.wrappers import delete_mission
 from kleinkram.wrappers import delete_project
 from kleinkram.wrappers import delete_template
+from kleinkram.wrappers import delete_execution
 from kleinkram.wrappers import download
 from kleinkram.wrappers import download_artifact
 from kleinkram.wrappers import get_execution
@@ -54,8 +56,10 @@ __all__ = [
     "delete_mission",
     "delete_project",
     "delete_template",
+    "delete_execution",
     "create_mission",
     "create_project",
     "create_template",
     "create_template_version",
+    "launch_execution",
 ]
