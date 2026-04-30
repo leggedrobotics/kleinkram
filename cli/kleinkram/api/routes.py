@@ -147,6 +147,19 @@ def _file_query_to_params(file_query: FileQuery) -> Dict[str, List[str]]:
     return params
 
 
+def _execution_query_to_params(query: ExecutionQuery) -> Dict[str, Any]:
+    params: Dict[str, Any] = {}
+
+    if query.project_uuid is not None:
+        params["projectUuid"] = str(query.project_uuid)
+    if query.mission_uuid is not None:
+        params["missionUuid"] = str(query.mission_uuid)
+    if query.template_name:
+        params["templateName"] = query.template_name
+
+    return params
+
+
 def get_files(
     client: AuthenticatedClient,
     file_query: FileQuery,
@@ -191,8 +204,8 @@ def get_executions(
     client: AuthenticatedClient,
     query: Optional[ExecutionQuery] = None,
 ) -> Generator[Execution, None, None]:
-    #Currently the backend does not support filtering executions by mission/project. So as of now the query is ignored and all executions are returned. In the future when the backend supports filtering, the query parameters should be passed to the paginated_request as params.
-    response_stream = paginated_request(client, LIST_ACTIONS_ENDPOINT)
+    params = _execution_query_to_params(query) if query else None
+    response_stream = paginated_request(client, LIST_ACTIONS_ENDPOINT, params=params)
     yield from map(lambda p: _parse_execution(ExecutionObject(p)), response_stream)
 
 
@@ -308,8 +321,6 @@ def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_
         raise KeyError("API response missing 'actionUUID'")
 
     return execution_uuid_str
-
-
 
 
 def _create_template_version(
@@ -509,13 +520,16 @@ def _delete_project(client: AuthenticatedClient, project_id: UUID) -> None:
 
 TEMPLATE_DELETE_ONE = "/templates/{}"
 
+
 def _delete_template(client: AuthenticatedClient, template_id: UUID) -> None:
     resp = client.delete(TEMPLATE_DELETE_ONE.format(template_id))
     if resp.status_code == 404:
         raise TemplateNotFound(f"Template not found: {template_id}")
     resp.raise_for_status()
 
+
 EXECUTION_DELETE_ONE = "/actions/{}"
+
 
 def _delete_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp = client.delete(EXECUTION_DELETE_ONE.format(execution_id))

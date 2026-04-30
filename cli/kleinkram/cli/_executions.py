@@ -33,7 +33,8 @@ from kleinkram.utils import split_args
 HELP = """\
 Manage and inspect action executions.
 
-You can launch new executions, delete executions, list executions, get detailed information about specific executions, stream their logs and download their artifacts.
+You can launch new executions, delete executions, list executions, get detailed information about specific executions,
+stream their logs and download their artifacts.
 """
 
 executions_typer = typer.Typer(
@@ -118,14 +119,56 @@ def launch(
 
 
 @executions_typer.command(help=LIST_HELP, name="list")
-def list_executions() -> None:
+def list_executions(
+    project_uuid: Optional[str] = typer.Option(
+        None,
+        "--project-uuid",
+        "-p",
+        help="Project UUID to filter executions by.",
+    ),
+    mission_uuid: Optional[str] = typer.Option(
+        None,
+        "--mission-uuid",
+        "-m",
+        help="Mission UUID to filter executions by.",
+    ),
+    template_name: Optional[str] = typer.Option(
+        None,
+        "--template-name",
+        "-t",
+        help="Template name to filter executions by.",
+    ),
+) -> None:
     """
     List action executions.
     """
     client = AuthenticatedClient()
 
-    executions = list(kleinkram.api.routes.get_executions(client))
+    project_id = None
+    if project_uuid is not None:
+        if not is_valid_uuid4(project_uuid):
+            typer.secho(f"Error: '{project_uuid}' is not a valid UUID.", fg=typer.colors.RED)
+            raise typer.Exit(code=1)
+        project_id = UUID(project_uuid)
+
+    mission_id = None
+    if mission_uuid is not None:
+        if not is_valid_uuid4(mission_uuid):
+            typer.secho(f"Error: '{mission_uuid}' is not a valid UUID.", fg=typer.colors.RED)
+            raise typer.Exit(code=1)
+        mission_id = UUID(mission_uuid)
+
+    query = None
+    if project_id is not None or mission_id is not None or template_name:
+        query = ExecutionQuery(
+            project_uuid=project_id,
+            mission_uuid=mission_id,
+            template_name=template_name,
+        )
+
+    executions = list(kleinkram.api.routes.get_executions(client, query=query))
     print_executions_table(executions, pprint=get_shared_state().verbose)
+
 
 @executions_typer.command(help=DELETE_HELP, name="delete")
 def delete(execution_id: str = typer.Argument(..., help="The ID (UUID) of the execution to delete.")) -> None:
@@ -148,6 +191,7 @@ def delete(execution_id: str = typer.Argument(..., help="The ID (UUID) of the ex
     except Exception as e:
         typer.secho(f"An unexpected error occurred: {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
+
 
 @executions_typer.command(name="info", help=INFO_HELP)
 def get_info(execution_id: str = typer.Argument(..., help="The ID of the execution to get information for.")) -> None:
