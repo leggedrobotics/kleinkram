@@ -28,6 +28,7 @@ from kleinkram.printing import print_execution_info
 from kleinkram.printing import print_execution_logs
 from kleinkram.printing import print_executions_table
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import split_args
 
 HELP = """\
@@ -76,12 +77,12 @@ def launch(
         )
 
         typer.echo("Submitting action...")
-        execution_uuid_str = kleinkram.core.launch_execution(
+        execution_uuid = kleinkram.core.launch_execution(
             client=client,
             mission_query=mission_query,
             template=template_name,
         )
-        typer.secho(f"Action submitted. Execution ID: {execution_uuid_str}", fg=typer.colors.GREEN)
+        typer.secho(f"Action submitted. Execution ID: {execution_uuid}", fg=typer.colors.GREEN)
 
     except kleinkram.errors.MissionNotFound:
         typer.secho(f"Error: Mission '{mission}' not found.", fg=typer.colors.RED)
@@ -103,7 +104,7 @@ def launch(
         raise typer.Exit(code=1)
 
     if follow:
-        exit_code = kleinkram.printing.follow_execution_logs(client, execution_uuid_str)
+        exit_code = kleinkram.printing.follow_execution_logs(client, execution_uuid)
         if exit_code != 0:
             raise typer.Exit(code=exit_code)
 
@@ -111,7 +112,7 @@ def launch(
         # Not following, but in verbose mode. Show execution info.
         try:
             time.sleep(0.5)  # Give API a moment
-            execution_details = kleinkram.api.routes.get_execution(client, execution_uuid_str)
+            execution_details = kleinkram.api.routes.get_execution(client, execution_uuid)
             kleinkram.printing.print_execution_info(execution_details, pprint=True)
         except Exception:
             # Non-critical, we already printed the ID.
@@ -171,22 +172,24 @@ def list_executions(
 
 
 @executions_typer.command(help=DELETE_HELP, name="delete")
-def delete(execution_id: str = typer.Argument(..., help="The ID (UUID) of the execution to delete.")) -> None:
+def delete(
+    execution: str = typer.Argument(..., metavar="EXECUTION_ID", help="The ID (UUID) of the execution to delete.")
+) -> None:
     """
     Delete a specific action execution by its ID.
     """
-    if not is_valid_uuid4(execution_id):
-        typer.secho(f"Error: '{execution_id}' is not a valid UUID.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
 
-    id = UUID(execution_id)
+    if not is_valid_uuid4(execution):
+        typer.secho(f"Error: '{execution}' is not a valid UUID.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    execution_id = parse_uuid_like(execution)
 
     client = AuthenticatedClient()
     try:
-        kleinkram.core.delete_execution(client=client, execution_id=id)
-        typer.secho(f"Execution {id} deleted successfully.", fg=typer.colors.GREEN)
+        kleinkram.core.delete_execution(client=client, execution_id=execution_id)
+        typer.secho(f"Execution {execution_id} deleted successfully.", fg=typer.colors.GREEN)
     except kleinkram.errors.ExecutionNotFound:
-        typer.secho(f"Error: Execution '{id}' not found.", fg=typer.colors.RED)
+        typer.secho(f"Error: Execution '{execution_id}' not found.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
     except Exception as e:
         typer.secho(f"An unexpected error occurred: {e}", fg=typer.colors.RED)
@@ -194,23 +197,35 @@ def delete(execution_id: str = typer.Argument(..., help="The ID (UUID) of the ex
 
 
 @executions_typer.command(name="info", help=INFO_HELP)
-def get_info(execution_id: str = typer.Argument(..., help="The ID of the execution to get information for.")) -> None:
+def get_info(
+    execution: str = typer.Argument(..., metavar="EXECUTION_ID", help="The ID of the execution to get information for.")
+) -> None:
     """
     Get detailed information for a single execution.
     """
+    if not is_valid_uuid4(execution):
+        typer.secho(f"Error: '{execution}' is not a valid UUID.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    execution_id = parse_uuid_like(execution)
+
     client = AuthenticatedClient()
-    execution: Execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
-    print_execution_info(execution, pprint=get_shared_state().verbose)
+    execution_obj: Execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
+    print_execution_info(execution_obj, pprint=get_shared_state().verbose)
 
 
 @executions_typer.command(help=LOGS_HELP)
 def logs(
-    execution_id: str = typer.Argument(..., help="The ID of the execution to fetch logs for."),
+    execution: str = typer.Argument(..., metavar="EXECUTION_ID", help="The ID of the execution to fetch logs for."),
     follow: bool = typer.Option(False, "--follow", "-f", help="Follow the log output in real-time."),
 ) -> None:
     """
     Fetch and display logs for a specific execution.
     """
+    if not is_valid_uuid4(execution):
+        typer.secho(f"Error: '{execution}' is not a valid UUID.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    execution_id = parse_uuid_like(execution)
+
     client = AuthenticatedClient()
 
     if follow:
@@ -222,8 +237,8 @@ def logs(
             # from the get_execution endpoint
             last_log_index = 0
             while True:
-                execution: Execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
-                log_entries: List[LogEntry] = execution.logs
+                execution_obj: Execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
+                log_entries: List[LogEntry] = execution_obj.logs
                 new_log_entries = log_entries[last_log_index:]
                 if new_log_entries:
                     print_execution_logs(new_log_entries, pprint=get_shared_state().verbose)
@@ -241,7 +256,7 @@ def logs(
 
 @executions_typer.command(name="download", help=DOWNLOAD_HELP)
 def download_artifacts(
-    execution_id: str = typer.Argument(..., help="The ID of the execution to download artifacts for."),
+    execution: str = typer.Argument(..., metavar="EXECUTION_ID", help="The ID of the execution to download artifacts for."),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Path or filename to save the artifacts to."),
     extract: bool = typer.Option(
         False,
@@ -253,6 +268,12 @@ def download_artifacts(
     """
     Download the artifacts (.tar.gz) for a finished execution.
     """
+    if not is_valid_uuid4(execution):
+        typer.secho(f"Error: '{execution}' is not a valid UUID.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    execution_id = parse_uuid_like(execution)
+
     client = AuthenticatedClient()
     try:
         kleinkram.core.download_artifact(

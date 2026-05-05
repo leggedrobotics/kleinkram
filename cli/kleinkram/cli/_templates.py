@@ -13,6 +13,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_templates_table
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import parse_uuid_like
 
 HELP = """\
 Manage action templates.
@@ -45,20 +46,21 @@ def list_templates_cli(
 
 
 @templates_typer.command(help="List revisions/history for a template.", name="revisions")
-def revisions(template: str = typer.Argument(..., help="Template ID (UUID)")) -> None:
+def revisions(template: str = typer.Argument(..., metavar="TEMPLATE_ID", help="Template ID (UUID)")) -> None:
     client = AuthenticatedClient()
-    revisions = list(kleinkram.api.routes.get_template_revisions(client=client, template_id=template))
+    if not is_valid_uuid4(template):
+        typer.secho(f"Error: '{template}' is not a valid UUID.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
 
-    # check if provided ID is newest version of template
-    
-
+    template_id = parse_uuid_like(template)
+    revisions = list(kleinkram.api.routes.get_template_revisions(client=client, template_id=template_id))
 
     print_templates_table(revisions, pprint=get_shared_state().verbose)
 
 
 @templates_typer.command(help="Create a new version of an existing template.", name="create-version")
 def create_version(
-    template: str = typer.Argument(..., help="Template ID (UUID)"),
+    template: str = typer.Argument(..., metavar="TEMPLATE_ID", help="Template ID (UUID)"),
     description: Optional[str] = typer.Option(None, "--description", "-d", help="Template description override"),
     docker_image: Optional[str] = typer.Option(None, "--docker-image", "-i", help="Docker image override"),
     cpu_cores: Optional[int] = typer.Option(None, "--cpu-cores", "-c", help="Number of CPU cores override"),
@@ -88,12 +90,12 @@ def create_version(
 
     typer.secho("Template version successfully created", fg=typer.colors.GREEN)
 
-    template_parsed = kleinkram.api.routes.get_template(client=client, template_id=str(template_id))
+    template_parsed = kleinkram.api.routes.get_template(client=client, template_id=template_id)
     print_templates_table([template_parsed], pprint=get_shared_state().verbose)
 
 
 @templates_typer.command(help="Deletes an action template.", name="delete")
-def delete(template: str = typer.Argument(..., help="Template ID (UUID)")) -> None:
+def delete(template: str = typer.Argument(..., metavar="TEMPLATE_ID", help="Template ID (UUID)")) -> None:
     if not is_valid_uuid4(template):
         typer.secho(f"Error: '{template}' is not a valid UUID.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
@@ -116,8 +118,8 @@ def delete(template: str = typer.Argument(..., help="Template ID (UUID)")) -> No
     except kleinkram.errors.TemplateNotFound:
         typer.secho(f"Error: Template '{template_id}' not found.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-    except kleinkram.errors.TemplateDeletionError as e:
-        typer.secho(f"Error: Only the latest version of a template may be deleted", fg=typer.colors.RED)
+    except kleinkram.errors.TemplateDeletionError:
+        typer.secho("Error: Only the latest version of a template may be deleted", fg=typer.colors.RED)
         raise typer.Exit(code=1)
     except httpx.HTTPStatusError as e:
         typer.secho(f"Error deleting template: {e.response.text}", fg=typer.colors.RED)
@@ -157,5 +159,5 @@ def create(
 
     typer.secho("Template successfully created", fg=typer.colors.GREEN)
 
-    template_parsed = kleinkram.api.routes.get_template(client=client, template_id=str(template_id))
+    template_parsed = kleinkram.api.routes.get_template(client=client, template_id=template_id)
     print_templates_table([template_parsed], pprint=get_shared_state().verbose)

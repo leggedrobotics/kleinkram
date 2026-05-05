@@ -57,6 +57,7 @@ from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import split_args
 
 __all__ = [
@@ -211,7 +212,7 @@ def get_executions(
 
 def get_execution(
     client: AuthenticatedClient,
-    execution_id: str,
+    execution_id: UUID,
 ) -> Execution:
     resp = client.get(f"{ACTION_ENDPOINT}s/{execution_id}")
     if resp.status_code == 404:
@@ -231,25 +232,25 @@ def get_execution(
 
 def get_template_revisions(
     client: AuthenticatedClient,
-    template_id: str,
+    template_id: UUID,
 ) -> Generator[ActionTemplate, None, None]:
     try:
         response_stream = paginated_request(client, f"/templates/{template_id}/revisions")
         yield from map(lambda p: _parse_action_template(p), response_stream)
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
-            raise kleinkram.errors.TemplateNotFound(f"Template not found: {template_id}")
+    except ValueError as e:
+        raise kleinkram.errors.TemplateNotFound(f"Template not found: {template_id}") from e
+    except httpx.HTTPStatusError:
         raise
 
 
 def get_template(
     client: AuthenticatedClient,
-    template_id: str,
+    template_id: UUID,
 ) -> ActionTemplate:
     # the backend does not expose a single GET /templates/:uuid endpoint
     # fetching its revisions and filtering is the most efficient available method
     for template in get_template_revisions(client, template_id):
-        if str(template.uuid) == template_id:
+        if template.uuid == template_id:
             return template
 
     raise kleinkram.errors.TemplateNotFound(f"Template not found: {template_id}")
@@ -298,7 +299,7 @@ def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
         raise kleinkram.errors.FileNotFound(f"File not found: {query}")
 
 
-def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID) -> str:
+def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID) -> UUID:
     """
     Submits a new action to the API and returns the action UUID.
 
@@ -320,7 +321,7 @@ def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_
     if not execution_uuid_str:
         raise KeyError("API response missing 'actionUUID'")
 
-    return execution_uuid_str
+    return parse_uuid_like(execution_uuid_str)
 
 
 def _create_template_version(

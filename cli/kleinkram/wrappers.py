@@ -18,6 +18,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 from typing import overload
+from uuid import UUID
 
 import kleinkram.api.routes
 import kleinkram.core
@@ -181,7 +182,7 @@ def download_artifact(
     client = client or AuthenticatedClient()
     return kleinkram.core.download_artifact(
         client=client,
-        execution_id=str(parse_uuid_like(execution_id)),
+        execution_id=parse_uuid_like(execution_id),
         output=str(parse_path_like(output)) if output else None,
         extract=extract,
         verbose=verbose,
@@ -434,7 +435,7 @@ def get_template_revisions(template_id: IdLike, *, client: Optional[Authenticate
     get history/revisions for a specific template by its id
     """
     client = client or AuthenticatedClient()
-    return list(kleinkram.api.routes.get_template_revisions(client, str(parse_uuid_like(template_id))))
+    return list(kleinkram.api.routes.get_template_revisions(client, parse_uuid_like(template_id)))
 
 
 def create_template_version(
@@ -624,7 +625,7 @@ def get_template(template_id: IdLike, *, client: Optional[AuthenticatedClient] =
     get detailed information for a specific template by its id
     """
     client = client or AuthenticatedClient()
-    return kleinkram.api.routes.get_template(client, str(parse_uuid_like(template_id)))
+    return kleinkram.api.routes.get_template(client, parse_uuid_like(template_id))
 
 
 def get_execution(execution_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> Execution:
@@ -632,7 +633,7 @@ def get_execution(execution_id: IdLike, *, client: Optional[AuthenticatedClient]
     get detailed information and logs for a specific execution by its id
     """
     client = client or AuthenticatedClient()
-    return kleinkram.api.routes.get_execution(client, str(parse_uuid_like(execution_id)))
+    return kleinkram.api.routes.get_execution(client, parse_uuid_like(execution_id))
 
 
 def get_mission(mission_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> Mission:
@@ -658,7 +659,7 @@ def launch_execution(
     mission_name: str,
     project_name: str,
     client: Optional[AuthenticatedClient] = None,
-) -> str: ...
+) -> UUID: ...
 
 
 @overload
@@ -667,7 +668,7 @@ def launch_execution(
     *,
     mission_id: IdLike,
     client: Optional[AuthenticatedClient] = None,
-) -> str: ...
+) -> UUID: ...
 
 
 @overload
@@ -677,7 +678,7 @@ def launch_execution(
     mission_name: str,
     project_id: IdLike,
     client: Optional[AuthenticatedClient] = None,
-) -> str: ...
+) -> UUID: ...
 
 
 def launch_execution(
@@ -688,7 +689,7 @@ def launch_execution(
     project_name: Optional[str] = None,
     project_id: Optional[IdLike] = None,
     client: Optional[AuthenticatedClient] = None,
-) -> str:
+) -> UUID:
     """
     Launch a new execution from an action template.
     """

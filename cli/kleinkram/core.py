@@ -61,7 +61,7 @@ DOCKER_IMAGE_MAX_LENGTH = 256
 def download_artifact(
     *,
     client: AuthenticatedClient,
-    execution_id: str,
+    execution_id: UUID,
     output: Optional[str] = None,
     extract: bool = False,
     verbose: bool = False,
@@ -328,7 +328,7 @@ def list_templates(client: AuthenticatedClient, *, latest_only: bool = True) -> 
     if not latest_only:
         return list(templates)
 
-    #templates are ordered from newest to oldest
+    # templates are ordered from newest to oldest
     seen_names = set()
     latest_templates = []
     for template in templates:
@@ -393,7 +393,6 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
         kleinkram.api.routes._delete_files(client, file_ids=ids_, mission_id=mission_id)
 
 
-
 def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
     mquery = MissionQuery(ids=[mission_id])
     mission = kleinkram.api.routes.get_mission(client, mquery)
@@ -416,14 +415,18 @@ def delete_project(*, client: AuthenticatedClient, project_id: UUID) -> None:
     # delete the project
     kleinkram.api.routes._delete_project(client, project_id)
 
+
 def delete_template(*, client: AuthenticatedClient, template_id: UUID) -> bool:
     """
-    deletes a template, returns True if the template was archived due to existing executions, False otherwise. Furthermore, it is only possible to delete the latest revision of a template, otherwise a TemplateDeletionError is raised. Deletion of a template also deletes/archives all revisions.
+    deletes a template, returns True if the template was archived due to existing
+    executions, False otherwise. Furthermore, it is only possible to delete the
+    latest revision of a template, otherwise a TemplateDeletionError is raised.
+    Deletion of a template also deletes/archives all revisions.
 
     TODO: Think about adding a force flag to first delete all executions of a template and then delete the template.
     """
 
-    revisions = list(kleinkram.api.routes.get_template_revisions(client, str(template_id)))
+    revisions = list(kleinkram.api.routes.get_template_revisions(client, template_id))
 
     if template_id != revisions[0].uuid:
         raise kleinkram.errors.TemplateDeletionError("Only the latest revision of a template can be deleted")
@@ -439,16 +442,16 @@ def delete_template(*, client: AuthenticatedClient, template_id: UUID) -> bool:
         kleinkram.api.routes._delete_template(client, revision.uuid)
     return archived
 
+
 def delete_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None:
     kleinkram.api.routes._delete_execution(client, execution_id)
-
 
 
 def launch_execution(
     client: AuthenticatedClient,
     mission_query: MissionQuery,
     template: Union[str, UUID],
-) -> str:
+) -> UUID:
     """
     Core business logic to resolve a mission and template, and launch an execution.
     """
@@ -716,7 +719,7 @@ def create_template_version(
     if docker_image is not None:
         _validate_docker_image(docker_image)
 
-    current = kleinkram.api.routes.get_template(client, str(template_id))
+    current = kleinkram.api.routes.get_template(client, template_id)
 
     final_cpu_cores = cpu_cores if cpu_cores is not None else current.cpu_cores
     final_cpu_memory_gb = cpu_memory_gb if cpu_memory_gb is not None else current.cpu_memory_gb
