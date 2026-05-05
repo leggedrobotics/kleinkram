@@ -55,7 +55,7 @@ DOWNLOAD_HELP = "Download artifacts for a specific action execution."
 @executions_typer.command(help=LAUNCH_HELP, name="launch")
 def launch(
     template_name: str = typer.Argument(..., help="Name or ID of the template to launch."),
-    mission: str = typer.Option(..., "--mission", "-m", help="Mission ID or name to launch the execution on."),
+    mission: str = typer.Argument(..., help="Mission ID or name to launch the execution on."),
     project: Optional[str] = typer.Option(None, "--project", "-p", help="Project ID or name (to scope mission)."),
     follow: bool = typer.Option(False, "--follow", "-f", help="Follow the logs of the action execution."),
 ) -> None:
@@ -93,7 +93,7 @@ def launch(
             fg=typer.colors.RED,
         )
         raise typer.Exit(code=1)
-    except ValueError as e:
+    except kleinkram.errors.TemplateNotFound as e:
         typer.secho(f"Error: {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
     except httpx.HTTPStatusError as e:

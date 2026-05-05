@@ -37,12 +37,14 @@ import kleinkram.api.file_transfer
 import kleinkram.api.routes
 import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.api.query import check_mission_query_is_creatable
 from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
+from kleinkram.errors import TemplateNotFound
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
 from kleinkram.printing import files_to_table
@@ -432,11 +434,10 @@ def delete_template(*, client: AuthenticatedClient, template_id: UUID) -> bool:
         raise kleinkram.errors.TemplateDeletionError("Only the latest revision of a template can be deleted")
 
     archived = False
-    executions = list(kleinkram.api.routes.get_executions(client))
-    for execution in executions:
-        for revision in revisions:
-            if execution.template_id == revision.uuid:
-                archived = True
+    execution_query = ExecutionQuery(template_name=revisions[0].name)
+    executions = list(kleinkram.api.routes.get_executions(client, query=execution_query))
+    if len(executions) > 0:
+        archived = True
 
     for revision in revisions:
         kleinkram.api.routes._delete_template(client, revision.uuid)
@@ -453,7 +454,7 @@ def launch_execution(
     template: Union[str, UUID],
 ) -> UUID:
     """
-    Core business logic to resolve a mission and template, and launch an execution.
+    business logic to resolve a mission and template, and launch an execution.
     """
     # 1. Resolve Mission
     mission_obj = kleinkram.api.routes.get_mission(client, mission_query)
@@ -463,12 +464,13 @@ def launch_execution(
     template_str = str(template)
     if is_valid_uuid4(template_str):
         template_uuid = UUID(template_str)
+        _ = kleinkram.api.routes.get_template(client, template_uuid)  # check if template exists
     else:
         templates = kleinkram.api.routes.get_templates(client)
         found_template = next((t for t in templates if t.name == template_str), None)
 
         if not found_template:
-            raise ValueError(f"Action template '{template_str}' not found.")
+            raise TemplateNotFound(f"Template '{template_str}' not found.")
         template_uuid = found_template.uuid
 
     # 3. Launch Execution via API Route
@@ -685,7 +687,7 @@ def create_template(
     _validate_template_name(client, name, description)
     if docker_image is not None:
         _validate_docker_image(docker_image)
-    if cpu_cores <= 0 or cpu_memory_gb <= 0 or gpu_memory_gb < 0 or max_runtime_minutes <= 0:
+    if cpu_cores <= 0 or cpu_memory_gb <= 0 or (gpu_memory_gb <= 0 and gpu_memory_gb != -1) or max_runtime_minutes <= 0:
         raise ValueError("Invalid resource limits.")
     return kleinkram.api.routes._create_template(
         client,
@@ -726,7 +728,12 @@ def create_template_version(
     final_gpu_memory_gb = gpu_memory_gb if gpu_memory_gb is not None else current.gpu_memory_gb
     final_max_runtime_minutes = max_runtime_minutes if max_runtime_minutes is not None else current.max_runtime_minutes
 
-    if final_cpu_cores <= 0 or final_cpu_memory_gb <= 0 or final_gpu_memory_gb < 0 or final_max_runtime_minutes <= 0:
+    if (
+        final_cpu_cores <= 0
+        or final_cpu_memory_gb <= 0
+        or (final_gpu_memory_gb <= 0 and final_gpu_memory_gb != -1)
+        or final_max_runtime_minutes <= 0
+    ):
         raise ValueError("Invalid resource limits.")
 
     return kleinkram.api.routes._create_template_version(

@@ -136,7 +136,7 @@ def create(
     docker_image: str = typer.Option(..., "--docker-image", "-i", help="Docker image (e.g., ubuntu:latest)"),
     cpu_cores: int = typer.Option(1, "--cpu-cores", "-c", help="Number of CPU cores"),
     cpu_memory_gb: int = typer.Option(1, "--cpu-memory", "-m", help="CPU memory in GB"),
-    gpu_memory_gb: int = typer.Option(0, "--gpu-memory", "-g", help="GPU memory in GB"),
+    gpu_memory_gb: int = typer.Option(-1, "--gpu-memory", "-g", help="GPU memory in GB (-1 for no GPU)"),
     max_runtime_minutes: int = typer.Option(60, "--max-runtime", "-r", help="Max runtime in minutes"),
     access_rights: int = typer.Option(0, "--access-rights", "-a", help="Access rights (0=READ, 10=CREATE, etc.)"),
     command: Optional[str] = typer.Option(None, "--command", help="Optional command to run"),
