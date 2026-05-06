@@ -433,11 +433,18 @@ def delete_template(*, client: AuthenticatedClient, template_id: UUID) -> bool:
     if template_id != revisions[0].uuid:
         raise kleinkram.errors.TemplateDeletionError("Only the latest revision of a template can be deleted")
 
+    # the backend knows whether it was archived or deleted. However, as of now, it does
+    # not return it via the API. Therefore, we need to check manually if there are any
+    # executions for this template to determine if it was archived or deleted.
+    # Ideally, we should modify the backend to return this information in the
+    # response of the delete request, so we don't have to do an extra API call here.
     archived = False
     execution_query = ExecutionQuery(template_name=revisions[0].name)
     executions = list(kleinkram.api.routes.get_executions(client, query=execution_query))
-    if len(executions) > 0:
-        archived = True
+    for execution in executions:
+        for revision in revisions:
+            if execution.template_id == revision.uuid:
+                archived = True
 
     kleinkram.api.routes._delete_template(client, template_id=template_id)
     return archived
