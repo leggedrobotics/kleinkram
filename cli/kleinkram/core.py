@@ -58,6 +58,7 @@ from kleinkram.utils import split_args
 NAME_REGEX = re.compile(r"^[\w\-_]{3,50}$")
 DOCKER_IMAGE_REGEX = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._\-/]*(?::[a-zA-Z0-9._\-]+)?(?:@sha256:[a-fA-F0-9]{64})?$")
 DOCKER_IMAGE_MAX_LENGTH = 256
+ALLOWED_ACCESS_RIGHTS = {0, 10, 20, 30}  # READ  # CREATE  # WRITE  # DELETE
 
 
 def download_artifact(
@@ -539,6 +540,36 @@ def _validate_docker_image(image_name: str) -> None:
         )
 
 
+def _validate_docker_namespace(image_name: str) -> None:
+    namespace = os.environ.get("VITE_DOCKER_HUB_NAMESPACE")
+    if namespace and not image_name.startswith(namespace):
+        raise kleinkram.errors.TemplateValidationError(f"Image name must start with '{namespace}'")
+
+
+def _validate_access_rights(access_rights: int) -> None:
+    if access_rights not in ALLOWED_ACCESS_RIGHTS:
+        raise kleinkram.errors.TemplateValidationError(
+            f"Invalid access rights: {access_rights}. Allowed values are {sorted(ALLOWED_ACCESS_RIGHTS)}."
+        )
+
+
+def _validate_resource_limits(
+    *,
+    cpu_cores: int,
+    cpu_memory_gb: int,
+    gpu_memory_gb: int,
+    max_runtime_minutes: int,
+) -> None:
+    if cpu_cores <= 0:
+        raise ValueError("CPU cores must be greater than 0")
+    if cpu_memory_gb <= 0:
+        raise ValueError("CPU memory must be greater than 0")
+    if gpu_memory_gb <= 0 and gpu_memory_gb != -1:
+        raise ValueError("GPU memory must be greater than 0 or -1")
+    if max_runtime_minutes <= 0:
+        raise ValueError("Max runtime must be greater than 0")
+
+
 def _template_name_is_available(client: AuthenticatedClient, template_name: str) -> bool:
     resp = client.get("/templates/availability", params={"name": template_name})
     resp.raise_for_status()
@@ -546,6 +577,9 @@ def _template_name_is_available(client: AuthenticatedClient, template_name: str)
 
 
 def _validate_template_name(client: AuthenticatedClient, template_name: str, description: str) -> None:
+    if not template_name:
+        raise kleinkram.errors.TemplateValidationError("Template name is required")
+
     if not _template_name_is_available(client, template_name):
         raise kleinkram.errors.TemplateExists(f"Template with name: `{template_name}` already exists")
 
@@ -691,10 +725,15 @@ def create_template(
     entrypoint: Optional[str] = None,
 ) -> UUID:
     _validate_template_name(client, name, description)
-    if docker_image is not None:
-        _validate_docker_image(docker_image)
-    if cpu_cores <= 0 or cpu_memory_gb <= 0 or (gpu_memory_gb <= 0 and gpu_memory_gb != -1) or max_runtime_minutes <= 0:
-        raise ValueError("Invalid resource limits.")
+    _validate_docker_namespace(docker_image)
+    _validate_docker_image(docker_image)
+    _validate_access_rights(access_rights)
+    _validate_resource_limits(
+        cpu_cores=cpu_cores,
+        cpu_memory_gb=cpu_memory_gb,
+        gpu_memory_gb=gpu_memory_gb,
+        max_runtime_minutes=max_runtime_minutes,
+    )
     return kleinkram.api.routes._create_template(
         client,
         name,
@@ -724,35 +763,44 @@ def create_template_version(
     command: Optional[str] = None,
     entrypoint: Optional[str] = None,
 ) -> UUID:
-    if docker_image is not None:
-        _validate_docker_image(docker_image)
-
     current = kleinkram.api.routes.get_template(client, template_id)
+
+    final_description = description if description is not None else current.description
+    final_docker_image = docker_image if docker_image is not None else current.image_name
+    final_access_rights = access_rights if access_rights is not None else current.access_rights
+
+    if not final_description:
+        raise kleinkram.errors.TemplateValidationError("Template description is required")
+    if not final_docker_image:
+        raise kleinkram.errors.TemplateValidationError("Docker image is required")
+
+    _validate_docker_namespace(final_docker_image)
+    _validate_docker_image(final_docker_image)
+    _validate_access_rights(final_access_rights)
 
     final_cpu_cores = cpu_cores if cpu_cores is not None else current.cpu_cores
     final_cpu_memory_gb = cpu_memory_gb if cpu_memory_gb is not None else current.cpu_memory_gb
     final_gpu_memory_gb = gpu_memory_gb if gpu_memory_gb is not None else current.gpu_memory_gb
     final_max_runtime_minutes = max_runtime_minutes if max_runtime_minutes is not None else current.max_runtime_minutes
 
-    if (
-        final_cpu_cores <= 0
-        or final_cpu_memory_gb <= 0
-        or (final_gpu_memory_gb <= 0 and final_gpu_memory_gb != -1)
-        or final_max_runtime_minutes <= 0
-    ):
-        raise ValueError("Invalid resource limits.")
+    _validate_resource_limits(
+        cpu_cores=final_cpu_cores,
+        cpu_memory_gb=final_cpu_memory_gb,
+        gpu_memory_gb=final_gpu_memory_gb,
+        max_runtime_minutes=final_max_runtime_minutes,
+    )
 
     return kleinkram.api.routes._create_template_version(
         client,
         template_id,
         name=current.name,
-        description=description if description is not None else current.description,
-        docker_image=docker_image if docker_image is not None else current.image_name,
-        cpu_cores=cpu_cores if cpu_cores is not None else current.cpu_cores,
-        cpu_memory_gb=cpu_memory_gb if cpu_memory_gb is not None else current.cpu_memory_gb,
-        gpu_memory_gb=gpu_memory_gb if gpu_memory_gb is not None else current.gpu_memory_gb,
-        max_runtime_minutes=max_runtime_minutes if max_runtime_minutes is not None else current.max_runtime_minutes,
-        access_rights=access_rights if access_rights is not None else current.access_rights,
+        description=final_description,
+        docker_image=final_docker_image,
+        cpu_cores=final_cpu_cores,
+        cpu_memory_gb=final_cpu_memory_gb,
+        gpu_memory_gb=final_gpu_memory_gb,
+        max_runtime_minutes=final_max_runtime_minutes,
+        access_rights=final_access_rights,
         command=command if command is not None else current.command,
         entrypoint=entrypoint if entrypoint is not None else current.entrypoint,
     )
