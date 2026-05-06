@@ -439,8 +439,7 @@ def delete_template(*, client: AuthenticatedClient, template_id: UUID) -> bool:
     if len(executions) > 0:
         archived = True
 
-    for revision in revisions:
-        kleinkram.api.routes._delete_template(client, revision.uuid)
+    kleinkram.api.routes._delete_template(client, template_id=template_id)
     return archived
 
 
