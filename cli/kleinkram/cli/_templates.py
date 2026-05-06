@@ -74,9 +74,14 @@ def create_version(
     entrypoint: Optional[str] = typer.Option(None, "--entrypoint", help="Docker entrypoint override"),
 ) -> None:
     client = AuthenticatedClient()
+    if not is_valid_uuid4(template):
+        typer.secho(f"Error: '{template}' is not a valid UUID.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    template_id = parse_uuid_like(template)
+
     template_id = kleinkram.core.create_template_version(
         client=client,
-        template_id=UUID(template),
+        template_id=template_id,
         description=description,
         docker_image=docker_image,
         cpu_cores=cpu_cores,
