@@ -431,6 +431,9 @@ def delete_template(*, client: AuthenticatedClient, template_id: UUID) -> bool:
 
     revisions = list(kleinkram.api.routes.get_template_revisions(client, template_id))
 
+    if len(revisions) == 0:
+        raise TemplateNotFound(f"Template not found: {template_id}")
+
     if template_id != revisions[0].uuid:
         raise kleinkram.errors.TemplateDeletionError("Only the latest revision of a template can be deleted")
 
@@ -580,13 +583,18 @@ def _validate_template_name(client: AuthenticatedClient, template_name: str, des
     if not template_name:
         raise kleinkram.errors.TemplateValidationError("Template name is required")
 
-    if not _template_name_is_available(client, template_name):
-        raise kleinkram.errors.TemplateExists(f"Template with name: `{template_name}` already exists")
-
     if template_name.endswith(" "):
         raise kleinkram.errors.TemplateValidationError(
             f"Template name must not end with a tailing whitespace: `{template_name}`"
         )
+
+    if not NAME_REGEX.match(template_name):
+        raise kleinkram.errors.TemplateValidationError(
+            "Template name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
+        )
+
+    if not _template_name_is_available(client, template_name):
+        raise kleinkram.errors.TemplateExists(f"Template with name: `{template_name}` already exists")
 
     if not description:
         raise kleinkram.errors.TemplateValidationError("Template description is required")
