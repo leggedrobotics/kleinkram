@@ -116,7 +116,13 @@ def download_artifact(
             kleinkram.api.file_transfer._get_filename_from_cd(headers.get("content-disposition")) or f"{execution_id}.tar.gz",
         )
 
-    total_length = int(headers.get("content-length", 0))
+    total_length_raw = headers.get("content-length")
+    if total_length_raw is None:
+        raise ValueError(
+            f"Cannot determine artifact size for execution {execution_id}: "
+            "the server did not return a content-length header."
+        )
+    total_length = int(total_length_raw)
 
     filepath = Path(filename)
 
