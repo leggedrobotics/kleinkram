@@ -77,7 +77,7 @@ class File:
     state: FileState = FileState.OK
 
 
-class RunStatus(str, Enum):
+class ExecutionStatus(str, Enum):
     QUEUED = "Queued"
     IN_PROGRESS = "In Progress"
     SUCCESS = "Success"
@@ -93,7 +93,7 @@ class LogEntry:
 
 
 @dataclass(frozen=True)
-class Run:
+class Execution:
     uuid: UUID
     state: str
     state_cause: str | None
@@ -115,6 +115,7 @@ class ActionTemplate:
     command: str
     cpu_cores: int
     cpu_memory_gb: int
+    description: str
     entrypoint: str
     gpu_memory_gb: int
     image_name: str

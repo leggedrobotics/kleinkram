@@ -72,7 +72,7 @@ services:
             - ./docker/testing-pg_hba.conf:/etc/postgresql/pg_hba.conf
 
     seaweedfs:
-        image: chrislusf/seaweedfs:latest
+        image: chrislusf/seaweedfs:4.17
         container_name: kleinkram-seaweedfs-test
 
         command: server -dir=/data -s3 -s3.port=9000

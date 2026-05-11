@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 from typing import List
+from typing import Optional
 from uuid import UUID
 
 from kleinkram.errors import InvalidMissionQuery
@@ -42,11 +43,16 @@ class FileQuery:
 
 
 @dataclass
-class RunQuery:
-    mission_ids: List[UUID] = field(default_factory=list)
-    mission_patterns: List[str] = field(default_factory=list)
-    project_ids: List[UUID] = field(default_factory=list)
-    project_patterns: List[str] = field(default_factory=list)
+class ExecutionQuery:
+    """
+    This matches the parameters supported by the backend. The backend
+    does not yet support filtering by list of ids as for
+    other resources (e.g. projects and missions).
+    """
+
+    project_uuid: Optional[UUID] = None
+    mission_uuid: Optional[UUID] = None
+    template_name: Optional[str] = None
 
 
 def check_mission_query_is_creatable(query: MissionQuery) -> str:

@@ -23,6 +23,7 @@
                 :rows="actions?.data"
                 :columns="columns as any"
                 hide-pagination
+                flat
                 class="q-pa-md cursor-pointer"
                 @row-click="handleRowClick"
             >

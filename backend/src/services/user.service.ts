@@ -26,7 +26,12 @@ import {
 } from '@kleinkram/shared';
 import { ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
+import {
+    FindOptionsRelations,
+    FindOptionsSelect,
+    In,
+    Repository,
+} from 'typeorm';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -343,5 +348,26 @@ export class UserService implements OnModuleInit {
         return this.userRepository.count({
             where: { memberships: { accessGroup: { uuid } } },
         });
+    }
+
+    /**
+     * Resolves a list of User UUIDs to their display names.
+     */
+    async resolveUsers(uuids: string[]): Promise<Record<string, string>> {
+        if (uuids.length === 0) {
+            return {};
+        }
+
+        const users = await this.userRepository.find({
+            where: { uuid: In(uuids) },
+            select: ['uuid', 'name'],
+        });
+
+        const result: Record<string, string> = {};
+        for (const user of users) {
+            result[user.uuid] = user.name;
+        }
+
+        return result;
     }
 }
