@@ -14,13 +14,13 @@ import dateutil.parser
 
 from kleinkram.errors import ParsingError
 from kleinkram.models import ActionTemplate
+from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.models import LogEntry
 from kleinkram.models import MetadataValue
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.models import Run
 
 __all__ = [
     "_parse_project",
@@ -32,7 +32,7 @@ __all__ = [
 ProjectObject = NewType("ProjectObject", Dict[str, Any])
 MissionObject = NewType("MissionObject", Dict[str, Any])
 FileObject = NewType("FileObject", Dict[str, Any])
-RunObject = NewType("RunObject", Dict[str, Any])
+ExecutionObject = NewType("ExecutionObject", Dict[str, Any])
 
 MISSION = "mission"
 PROJECT = "project"
@@ -71,7 +71,7 @@ class ProjectObjectKeys(str, Enum):
     REQUIRED_TAGS = "requiredTags"
 
 
-class RunObjectKeys(str, Enum):
+class ExecutionObjectKeys(str, Enum):
     UUID = "uuid"
     STATE = "state"
     STATE_CAUSE = "stateCause"
@@ -226,23 +226,23 @@ def _parse_file(file: FileObject) -> File:
     return parsed
 
 
-def _parse_action_template(run_object: RunObject) -> ActionTemplate:
+def _parse_action_template(template_object: Dict[str, Any]) -> ActionTemplate:
     try:
-        uuid_ = UUID(run_object[TemplateObjectKeys.UUID], version=4)
-        access_rights = run_object[TemplateObjectKeys.ACCESS_RIGHTS]
-        command = run_object[TemplateObjectKeys.COMMAND]
-        cpu_cores = run_object[TemplateObjectKeys.CPU_CORES]
-        cpu_memory_gb = run_object[TemplateObjectKeys.CPU_MEMORY_GB]
-        entrypoint = run_object[TemplateObjectKeys.ENTRYPOINT]
-        gpu_memory_gb = run_object[TemplateObjectKeys.GPU_MEMORY_GB]
-        image_name = run_object[TemplateObjectKeys.IMAGE_NAME]
-        max_runtime_minutes = run_object[TemplateObjectKeys.MAX_RUNTIME_MINUTES]
-        created_at = _parse_datetime(run_object[TemplateObjectKeys.CREATED_AT])
-        name = run_object[TemplateObjectKeys.NAME]
-        version = run_object[TemplateObjectKeys.VERSION]
+        uuid_ = UUID(template_object[TemplateObjectKeys.UUID], version=4)
+        access_rights = template_object[TemplateObjectKeys.ACCESS_RIGHTS]
+        command = template_object[TemplateObjectKeys.COMMAND]
+        cpu_cores = template_object[TemplateObjectKeys.CPU_CORES]
+        cpu_memory_gb = template_object[TemplateObjectKeys.CPU_MEMORY_GB]
+        entrypoint = template_object[TemplateObjectKeys.ENTRYPOINT]
+        gpu_memory_gb = template_object[TemplateObjectKeys.GPU_MEMORY_GB]
+        image_name = template_object[TemplateObjectKeys.IMAGE_NAME]
+        max_runtime_minutes = template_object[TemplateObjectKeys.MAX_RUNTIME_MINUTES]
+        created_at = _parse_datetime(template_object[TemplateObjectKeys.CREATED_AT])
+        name = template_object[TemplateObjectKeys.NAME]
+        version = template_object[TemplateObjectKeys.VERSION]
 
     except Exception as e:
-        raise ParsingError(f"error parsing action template: {run_object}") from e
+        raise ParsingError(f"error parsing action template: {template_object}") from e
 
     return ActionTemplate(
         uuid=uuid_,
@@ -260,29 +260,31 @@ def _parse_action_template(run_object: RunObject) -> ActionTemplate:
     )
 
 
-def _parse_run(run_object: RunObject) -> Run:
+def _parse_execution(execution_object: ExecutionObject) -> Execution:
     try:
-        uuid_ = UUID(run_object[RunObjectKeys.UUID], version=4)
-        state = run_object[RunObjectKeys.STATE]
-        state_cause = run_object[RunObjectKeys.STATE_CAUSE]
-        artifact_url = run_object.get(RunObjectKeys.ARTIFACT_URL)
-        created_at = _parse_datetime(run_object[RunObjectKeys.CREATED_AT])
+        uuid_ = UUID(execution_object[ExecutionObjectKeys.UUID], version=4)
+        state = execution_object[ExecutionObjectKeys.STATE]
+        state_cause = execution_object[ExecutionObjectKeys.STATE_CAUSE]
+        artifact_url = execution_object.get(ExecutionObjectKeys.ARTIFACT_URL)
+        created_at = _parse_datetime(execution_object[ExecutionObjectKeys.CREATED_AT])
         updated_at = (
-            _parse_datetime(run_object[RunObjectKeys.UPDATED_AT]) if run_object.get(RunObjectKeys.UPDATED_AT) else None
+            _parse_datetime(execution_object[ExecutionObjectKeys.UPDATED_AT])
+            if execution_object.get(ExecutionObjectKeys.UPDATED_AT)
+            else None
         )
 
-        mission_dict = run_object[RunObjectKeys.MISSION]
+        mission_dict = execution_object[ExecutionObjectKeys.MISSION]
         mission_id = UUID(mission_dict[MissionObjectKeys.UUID], version=4)
         mission_name = mission_dict[MissionObjectKeys.NAME]
 
         project_dict = mission_dict[PROJECT]
         project_name = project_dict[ProjectObjectKeys.NAME]
 
-        template_dict = run_object[RunObjectKeys.TEMPLATE]
+        template_dict = execution_object[ExecutionObjectKeys.TEMPLATE]
         template_id = UUID(template_dict[TemplateObjectKeys.UUID], version=4)
         template_name = template_dict[TemplateObjectKeys.NAME]
         logs = []
-        for log_entry in run_object.get(RunObjectKeys.LOGS, []):
+        for log_entry in execution_object.get(ExecutionObjectKeys.LOGS, []):
             log_timestamp = _parse_datetime(log_entry[LogEntryObjectKeys.TIMESTAMP])
             log_level = log_entry[LogEntryObjectKeys.LEVEL]
             log_message = log_entry[LogEntryObjectKeys.MESSAGE]
@@ -295,9 +297,9 @@ def _parse_run(run_object: RunObject) -> Run:
             )
 
     except Exception as e:
-        raise ParsingError(f"error parsing run: {run_object}") from e
+        raise ParsingError(f"error parsing run: {execution_object}") from e
 
-    return Run(
+    return Execution(
         uuid=uuid_,
         state=state,
         state_cause=state_cause,

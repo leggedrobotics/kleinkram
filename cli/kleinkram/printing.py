@@ -30,6 +30,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
 from kleinkram.models import ActionTemplate
+from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.models import LogEntry
@@ -37,7 +38,6 @@ from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.models import Run
 
 FILE_STATE_COLOR = {
     FileState.OK: "green",
@@ -390,75 +390,75 @@ def print_project_info(project: Project, *, pprint: bool) -> None:
         print(json.dumps(project_dct))
 
 
-def runs_to_table(runs: Sequence[Run]) -> Table:
-    table = Table(title="action runs")
+def executions_to_table(executions: Sequence[Execution]) -> Table:
+    table = Table(title="executions")
     table.add_column("project")
     table.add_column("mission")
     table.add_column("template")
-    table.add_column("run id")
+    table.add_column("execution id")
     table.add_column("status")
     table.add_column("created")
 
     # order by created_at descending
-    runs_sorted = sorted(runs, key=lambda r: r.created_at, reverse=True)
+    executions_sorted = sorted(executions, key=lambda r: r.created_at, reverse=True)
 
     max_table_size = get_shared_state().max_table_size
-    for run in runs_sorted[:max_table_size]:
+    for execution in executions_sorted[:max_table_size]:
         table.add_row(
-            run.project_name,
-            run.mission_name,
-            run.template_name,
-            Text(str(run.uuid), style="green"),
-            run.state,
-            str(run.created_at),
+            execution.project_name,
+            execution.mission_name,
+            execution.template_name,
+            Text(str(execution.uuid), style="green"),
+            execution.state,
+            str(execution.created_at),
         )
 
-    if len(list(runs)) > max_table_size:
-        _add_placeholder_row(table, skipped=len(runs) - max_table_size)
+    if len(list(executions)) > max_table_size:
+        _add_placeholder_row(table, skipped=len(executions) - max_table_size)
     return table
 
 
-def run_info_table(run: Run) -> Table:
-    table = Table("k", "v", title=f"run info: {run.uuid}", show_header=False)
+def execution_info_table(execution: Execution) -> Table:
+    table = Table("k", "v", title=f"execution info: {execution.uuid}", show_header=False)
 
-    table.add_row("id", Text(str(run.uuid), style="green"))
-    table.add_row("template", run.template_name)
-    table.add_row("status", run.state)
-    table.add_row("project", run.project_name)
-    table.add_row("mission", run.mission_name)
-    table.add_row("created", str(run.created_at))
+    table.add_row("id", Text(str(execution.uuid), style="green"))
+    table.add_row("template", execution.template_name)
+    table.add_row("status", execution.state)
+    table.add_row("project", execution.project_name)
+    table.add_row("mission", execution.mission_name)
+    table.add_row("created", str(execution.created_at))
 
-    finished = str(run.updated_at) if run.updated_at else "N/A"
+    finished = str(execution.updated_at) if execution.updated_at else "N/A"
     table.add_row("updated", finished)
 
     return table
 
 
-def print_runs_table(runs: Sequence[Run], *, pprint: bool) -> None:
+def print_executions_table(executions: Sequence[Execution], *, pprint: bool) -> None:
     """
-    Prints the runs to stdout
+    Prints the executions to stdout
     either using pprint or as a list for piping
     """
     if pprint:
-        table = runs_to_table(runs)
+        table = executions_to_table(executions)
         Console().print(table)
     else:
-        for run in runs:
-            print(run.uuid)
+        for execution in executions:
+            print(execution.uuid)
 
 
-def print_run_info(run: Run, *, pprint: bool) -> None:
+def print_execution_info(execution: Execution, *, pprint: bool) -> None:
     """
-    Prints the run info to stdout
+    Prints the execution info to stdout
     either using pprint or as JSON for piping
     """
     if pprint:
-        Console().print(run_info_table(run))
+        Console().print(execution_info_table(execution))
     else:
-        run_dict = asdict(run)
-        for key in run_dict:
-            run_dict[key] = str(run_dict[key])  # simple serialization
-        print(json.dumps(run_dict))
+        execution_dict = asdict(execution)
+        for key in execution_dict:
+            execution_dict[key] = str(execution_dict[key])  # simple serialization
+        print(json.dumps(execution_dict))
 
 
 LOG_LEVEL_COLORS = {
@@ -494,14 +494,14 @@ def pretty_print_log(entry: LogEntry) -> None:
     typer.echo(message)
 
 
-def print_run_logs(logs: Sequence[LogEntry], *, pprint: bool) -> None:
+def print_execution_logs(logs: Sequence[LogEntry], *, pprint: bool) -> None:
     """
     Prints a sequence of LogEntry objects to the console.
     (This function is unchanged, as the logic is fully
     contained in pretty_print_log.)
     """
     if not logs:
-        typer.secho("No logs found for this run.", fg=typer.colors.YELLOW)
+        typer.secho("No logs found for this execution.", fg=typer.colors.YELLOW)
         return
 
     for log_entry in logs:
@@ -527,7 +527,7 @@ def action_templates_to_table(templates: Sequence[ActionTemplate]) -> Table:
     return table
 
 
-def print_action_templates_table(templates: Sequence[ActionTemplate], *, pprint: bool) -> None:
+def print_templates_table(templates: Sequence[ActionTemplate], *, pprint: bool) -> None:
     """
     Prints the action templates to stdout
     either using rich or as a simple list of IDs for piping.
@@ -544,21 +544,21 @@ def print_action_templates_table(templates: Sequence[ActionTemplate], *, pprint:
             print(template.uuid)
 
 
-def generate_live_layout(run_details: Run) -> Group:
+def generate_live_layout(execution_details: Execution) -> Group:
     verbose = get_shared_state().verbose
 
     # Calculate elapsed time
-    if run_details.updated_at:
-        elapsed = run_details.updated_at - run_details.created_at
+    if execution_details.updated_at:
+        elapsed = execution_details.updated_at - execution_details.created_at
     else:
-        elapsed = datetime.now(timezone.utc) - run_details.created_at
+        elapsed = datetime.now(timezone.utc) - execution_details.created_at
 
     elapsed_seconds = int(elapsed.total_seconds())
     hours, remainder = divmod(elapsed_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     elapsed_str = f"{hours}:{minutes:02}:{seconds:02}"
 
-    state_upper = run_details.state.upper()
+    state_upper = execution_details.state.upper()
 
     if state_upper == "DONE":
         status_color = "green"
@@ -567,14 +567,14 @@ def generate_live_layout(run_details: Run) -> Group:
     elif state_upper in {"FAILED", "UNPROCESSABLE"}:
         status_color = "red"
         icon = Text("[✘]", style="red")
-        state_text = f"{run_details.state}"
+        state_text = f"{execution_details.state}"
     else:
         status_color = "yellow"
         icon = Spinner("dots", style="blue")
-        state_text = f"{run_details.state}"
+        state_text = f"{execution_details.state}"
 
     header_text = Text()
-    header_text.append(f"Running Action {run_details.uuid} ", style="bold")
+    header_text.append(f"Running Execution {execution_details.uuid} ", style="bold")
     header_text.append(f"{elapsed_str} ", style="dim")
     header_text.append(f"({state_text})", style=status_color)
 
@@ -584,7 +584,7 @@ def generate_live_layout(run_details: Run) -> Group:
     header_table.add_row(icon, header_text)
 
     logs_text = Text()
-    last_logs = run_details.logs[-20:]
+    last_logs = execution_details.logs[-20:]
     if not last_logs:
         logs_text.append(" => ", style="blue")
         if state_upper in {"DONE", "FAILED", "UNPROCESSABLE"}:
@@ -609,36 +609,36 @@ def generate_live_layout(run_details: Run) -> Group:
     return Group(header_table, logs_text)
 
 
-def follow_run_logs(client: AuthenticatedClient, run_uuid: str) -> int:
+def follow_execution_logs(client: AuthenticatedClient, execution_uuid: str) -> int:
     """
-    Polls the API for run details and prints new logs as they arrive.
+    Polls the API for execution details and prints new logs as they arrive.
 
     Returns:
         An exit code (0 for success, 1 for failure).
     """
-    typer.echo(f"Following logs for run {run_uuid}...")
+    typer.echo(f"Following logs for execution {execution_uuid}...")
 
     TERMINAL_STATES = {"DONE", "FAILED", "UNPROCESSABLE"}
-    current_run_state = None
+    current_execution_state = None
     exit_code = 0  # Assume success
 
     try:
         with Live(refresh_per_second=10) as live:
-            while current_run_state not in TERMINAL_STATES:
+            while current_execution_state not in TERMINAL_STATES:
                 try:
-                    run_details: Run = kleinkram.api.routes.get_run(client, run_uuid)
-                    current_run_state = run_details.state.upper()
+                    execution_details: Execution = kleinkram.api.routes.get_execution(client, execution_uuid)
+                    current_execution_state = execution_details.state.upper()
 
-                    live.update(generate_live_layout(run_details), refresh=True)
+                    live.update(generate_live_layout(execution_details), refresh=True)
 
-                    if current_run_state in TERMINAL_STATES:
-                        if current_run_state != "DONE":
+                    if current_execution_state in TERMINAL_STATES:
+                        if current_execution_state != "DONE":
                             exit_code = 1  # Set failure exit code
                         break
 
                     time.sleep(1)  # Poll every 1 seconds for a more responsive timer
 
-                except kleinkram.errors.RunNotFound:
+                except kleinkram.errors.ExecutionNotFound:
                     time.sleep(1)
                 except httpx.HTTPStatusError:
                     time.sleep(3)  # Wait longer on API errors
@@ -650,11 +650,11 @@ def follow_run_logs(client: AuthenticatedClient, run_uuid: str) -> int:
 
         # After the Live block finishes, print the final state clearly
         try:
-            run_details: Run = kleinkram.api.routes.get_run(client, run_uuid)
-            state_upper = run_details.state.upper()
+            execution_details: Execution = kleinkram.api.routes.get_execution(client, execution_uuid)
+            state_upper = execution_details.state.upper()
 
             has_warnings = False
-            for log in run_details.logs:
+            for log in execution_details.logs:
                 if "CORRUPTED" in log.message.upper() or log.level.upper() in {"WARN", "WARNING", "ERROR"}:
                     has_warnings = True
                     break
@@ -667,23 +667,23 @@ def follow_run_logs(client: AuthenticatedClient, run_uuid: str) -> int:
                 state_display = "DONE"
             else:
                 color = typer.colors.RED
-                state_display = run_details.state
+                state_display = execution_details.state
 
-            state_cause_str = f" ({run_details.state_cause})" if run_details.state_cause else ""
+            state_cause_str = f" ({execution_details.state_cause})" if execution_details.state_cause else ""
             typer.secho(
-                f"\nRun finished with state: {state_display}{state_cause_str}",
+                f"\nExecution finished with state: {state_display}{state_cause_str}",
                 fg=color,
             )
         except httpx.HTTPStatusError as e:
-            typer.secho(f"\nFailed to fetch final run details (API error): {e}", fg=typer.colors.RED)
+            typer.secho(f"\nFailed to fetch final execution details (API error): {e}", fg=typer.colors.RED)
         except httpx.RequestError as e:
-            typer.secho(f"\nFailed to fetch final run details (network error): {e}", fg=typer.colors.RED)
+            typer.secho(f"\nFailed to fetch final execution details (network error): {e}", fg=typer.colors.RED)
         except Exception as e:
-            typer.secho(f"\nFailed to fetch final run details: {e}", fg=typer.colors.RED)
+            typer.secho(f"\nFailed to fetch final execution details: {e}", fg=typer.colors.RED)
 
     except KeyboardInterrupt:
         typer.secho(
-            f"\nStopped following logs. Run {run_uuid} is still processing.",
+            f"\nStopped following logs. Execution {execution_uuid} is still processing.",
             fg=typer.colors.YELLOW,
         )
         # Return 0, as the command itself wasn't a failure

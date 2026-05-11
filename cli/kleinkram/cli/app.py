@@ -19,14 +19,14 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _claim_admin
 from kleinkram.api.routes import _get_api_version
 from kleinkram.auth import login_flow
-from kleinkram.cli._action import action_typer
 from kleinkram.cli._download import download_typer
 from kleinkram.cli._endpoint import endpoint_typer
+from kleinkram.cli._executions import executions_typer
 from kleinkram.cli._file import file_typer
 from kleinkram.cli._list import list_typer
 from kleinkram.cli._mission import mission_typer
 from kleinkram.cli._project import project_typer
-from kleinkram.cli._run import run_typer
+from kleinkram.cli._templates import templates_typer
 from kleinkram.cli._upload import upload_typer
 from kleinkram.cli._verify import verify_typer
 from kleinkram.cli.error_handling import ErrorHandledTyper
@@ -113,8 +113,8 @@ app.add_typer(list_typer, name="list", rich_help_panel=CommandTypes.CORE)
 app.add_typer(file_typer, name="file", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(mission_typer, name="mission", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(project_typer, name="project", rich_help_panel=CommandTypes.CRUD)
-app.add_typer(action_typer, name="action", rich_help_panel=CommandTypes.ACTION)
-app.add_typer(run_typer, name="run", rich_help_panel=CommandTypes.ACTION)
+app.add_typer(templates_typer, name="templates", rich_help_panel=CommandTypes.ACTION)
+app.add_typer(executions_typer, name="executions", rich_help_panel=CommandTypes.ACTION)
 
 
 # attach error handler to app

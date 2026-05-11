@@ -20,20 +20,20 @@ import kleinkram.errors
 from kleinkram._version import __version__
 from kleinkram.api.client import CLI_VERSION_HEADER
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.deser import ExecutionObject
 from kleinkram.api.deser import FileObject
 from kleinkram.api.deser import MissionObject
 from kleinkram.api.deser import ProjectObject
-from kleinkram.api.deser import RunObject
 from kleinkram.api.deser import _parse_action_template
+from kleinkram.api.deser import _parse_execution
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
 from kleinkram.api.deser import _parse_project
-from kleinkram.api.deser import _parse_run
 from kleinkram.api.pagination import paginated_request
+from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
-from kleinkram.api.query import RunQuery
 from kleinkram.api.query import file_query_is_unique
 from kleinkram.api.query import mission_query_is_unique
 from kleinkram.api.query import project_query_is_unique
@@ -50,10 +50,10 @@ from kleinkram.errors import ProjectExists
 from kleinkram.errors import ProjectNotFound
 from kleinkram.errors import ProjectValidationError
 from kleinkram.models import ActionTemplate
+from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
-from kleinkram.models import Run
 from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import split_args
 
@@ -185,40 +185,40 @@ def get_projects(
 LIST_ACTIONS_ENDPOINT = "/actions"
 
 
-def get_runs(
+def get_executions(
     client: AuthenticatedClient,
-    query: RunQuery,
-) -> Generator[Run, None, None]:
+    query: ExecutionQuery,
+) -> Generator[Execution, None, None]:
 
     response_stream = paginated_request(client, LIST_ACTIONS_ENDPOINT)
-    yield from map(lambda p: _parse_run(RunObject(p)), response_stream)
+    yield from map(lambda p: _parse_execution(ExecutionObject(p)), response_stream)
 
 
-def get_run(
+def get_execution(
     client: AuthenticatedClient,
-    run_id: str,
-) -> Run:
-    resp = client.get(f"{ACTION_ENDPOINT}s/{run_id}")
+    execution_id: str,
+) -> Execution:
+    resp = client.get(f"{ACTION_ENDPOINT}s/{execution_id}")
     if resp.status_code == 404:
-        raise kleinkram.errors.RunNotFound(f"Run not found: {run_id}")
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
     resp.raise_for_status()
-    run_object = resp.json()
+    execution_object = resp.json()
 
     try:
-        logs_resp = client.get(f"{ACTION_ENDPOINT}s/{run_id}/logs")
+        logs_resp = client.get(f"{ACTION_ENDPOINT}s/{execution_id}/logs")
         if logs_resp.status_code == 200:
-            run_object["logs"] = logs_resp.json().get("data", [])
+            execution_object["logs"] = logs_resp.json().get("data", [])
     except Exception:
         pass
 
-    return _parse_run(RunObject(run_object))
+    return _parse_execution(ExecutionObject(execution_object))
 
 
-def get_action_templates(
+def get_templates(
     client: AuthenticatedClient,
 ) -> Generator[ActionTemplate, None, None]:
     response_stream = paginated_request(client, "/templates")
-    yield from map(lambda p: _parse_action_template(RunObject(p)), response_stream)
+    yield from map(lambda p: _parse_action_template(p), response_stream)
 
 
 def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False) -> Project:
@@ -233,7 +233,7 @@ def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: b
         raise ProjectNotFound(f"Project not found: {query}")
 
 
-def submit_action(client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID) -> str:
+def launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID) -> str:
     """
     Submits a new action to the API and returns the action UUID.
 
@@ -251,12 +251,12 @@ def submit_action(client: AuthenticatedClient, mission_uuid: UUID, template_uuid
     resp.raise_for_status()  # Raises on 4xx/5xx responses
 
     response_data = resp.json()
-    action_uuid_str = response_data.get("actionUUID")
+    execution_uuid_str = response_data.get("actionUUID")
 
-    if not action_uuid_str:
+    if not execution_uuid_str:
         raise KeyError("API response missing 'actionUUID'")
 
-    return action_uuid_str
+    return execution_uuid_str
 
 
 def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
