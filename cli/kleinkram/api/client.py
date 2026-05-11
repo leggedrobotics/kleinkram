@@ -68,6 +68,7 @@ class AuthenticatedClient(httpx.Client):
     _config_lock: Lock
 
     def __init__(self, config_path: Path = CONFIG_PATH, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("timeout", 60.0)
         super().__init__(*args, **kwargs)
 
         self._config = get_config(path=config_path)
