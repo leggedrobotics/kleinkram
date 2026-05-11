@@ -82,6 +82,7 @@ export * from '@api-dto/queue/bull-queue.dto';
 export * from '@api-dto/queue/stop-job-response.dto';
 export * from '@api-dto/remove-tag-type.dto';
 export * from '@api-dto/set-access-group-user-expiration.dto';
+export * from '@api-dto/set-access-group-user-permissions.dto';
 export * from '@api-dto/storage-overview.dto';
 export * from '@api-dto/submit-action-response.dto';
 export * from '@api-dto/submit-action.dto';

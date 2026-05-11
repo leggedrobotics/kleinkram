@@ -118,3 +118,15 @@ export const setAccessGroupExpiry = async (
     );
     return data;
 };
+
+export const setAccessGroupUserPermissions = async (
+    uuid: string,
+    userUuid: string,
+    canEditGroup: boolean,
+) => {
+    const { data } = await axios.put<GroupMembershipDto>(
+        `/access/${uuid}/users/${userUuid}/permissions`,
+        { canEditGroup },
+    );
+    return data;
+};

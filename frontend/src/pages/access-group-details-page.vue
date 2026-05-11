@@ -385,6 +385,23 @@
                                         v-ripple
                                         clickable
                                         :disable="!currentUserCanEdit"
+                                        @click="() => toggleUserRole(props.row)"
+                                    >
+                                        <q-item-section>
+                                            {{
+                                                props.row.canEditGroup
+                                                    ? 'Demote to Member'
+                                                    : 'Promote to Owner'
+                                            }}
+                                        </q-item-section>
+                                        <q-tooltip v-if="!currentUserCanEdit">
+                                            You can't edit a user!
+                                        </q-tooltip>
+                                    </q-item>
+                                    <q-item
+                                        v-ripple
+                                        clickable
+                                        :disable="!currentUserCanEdit"
                                         @click="
                                             () =>
                                                 removeSingleUser(
@@ -637,6 +654,7 @@ import { formatDate, isExpired } from 'src/services/date-formating';
 import {
     removeUsersFromAccessGroup,
     setAccessGroupExpiry,
+    setAccessGroupUserPermissions,
 } from 'src/services/mutations/access';
 import { computed, ComputedRef, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -669,7 +687,7 @@ const pagination2 = ref({
 const queryClient = useQueryClient();
 const user = useUser();
 
-const refetchOnClick: (event_: Event) => void = () => refetch;
+const refetchOnClick: (event_: Event) => void = () => void refetch();
 
 const { data: accessGroup, refetch } = useAccessGroup(uuid.value);
 
@@ -701,6 +719,35 @@ const { mutate: removeUsers } = useMutation({
 
 const removeSingleUser = (userUuid: string): void => {
     removeUsers([userUuid]);
+};
+
+const toggleUserRole = async (membership: GroupMembershipDto) => {
+    try {
+        await setAccessGroupUserPermissions(
+            uuid.value,
+            membership.user.uuid,
+            !membership.canEditGroup,
+        );
+        await queryClient.invalidateQueries({
+            predicate: (query) => {
+                return (
+                    (query.queryKey[0] === 'AccessGroup' &&
+                        query.queryKey[1] === uuid.value) ||
+                    (query.queryKey[0] === 'AccessGroupAuditLogs' &&
+                        query.queryKey[1] === uuid.value)
+                );
+            },
+        });
+    } catch (error: unknown) {
+        const message =
+            (error as { response?: { data?: { message?: string } } }).response
+                ?.data?.message ?? 'Failed to update user permissions';
+        Notify.create({
+            message,
+            color: 'negative',
+            position: 'bottom',
+        });
+    }
 };
 
 const deleteSelectedUsers = (): void => {

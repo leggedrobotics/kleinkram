@@ -14,6 +14,7 @@ import {
     RemoveAccessGroupFromProjectResponseDto,
     RemoveUsersFromAccessGroupDto,
     SetAccessGroupUserExpirationDto,
+    SetAccessGroupUserPermissionsDto,
 } from '@kleinkram/api-dto';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import {
@@ -305,6 +306,30 @@ export class AccessController {
             uuid,
             userUuid,
             body.expireDate,
+            requestUser,
+        );
+    }
+
+    @Put(':uuid/users/:userUuid/permissions')
+    @CanEditGroup()
+    @ApiOkResponse({
+        description: 'Returns the updated GroupMembership',
+        type: GroupMembershipDto,
+    })
+    @ApiOperation({
+        summary: 'Set permissions for user in AccessGroup',
+        description: 'Promotes or demotes a user as group editor',
+    })
+    async setPermissions(
+        @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
+        @ParameterUID('userUuid', 'UUID of User') userUuid: string,
+        @Body() body: SetAccessGroupUserPermissionsDto,
+        @AddUser() requestUser: AuthHeader,
+    ): Promise<GroupMembershipDto> {
+        return this.accessService.setCanEditGroup(
+            uuid,
+            userUuid,
+            body.canEditGroup,
             requestUser,
         );
     }

@@ -85,6 +85,8 @@ export enum AccessGroupEventType {
     ADD_PROJECT = 'ADD_PROJECT',
     REMOVE_PROJECT = 'REMOVE_PROJECT',
     UPDATE_PROJECT_ACCESS = 'UPDATE_PROJECT_ACCESS',
+    PROMOTE_USER = 'PROMOTE_USER',
+    DEMOTE_USER = 'DEMOTE_USER',
 }
 
 export enum ActionState {
