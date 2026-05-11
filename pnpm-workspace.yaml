@@ -7,9 +7,11 @@ packages:
 
 allowBuilds:
   '@nestjs/core': true
+  '@parcel/watcher': true
   '@scarf/scarf': true
   '@swc/core': true
   better-sqlite3: true
+  core-js: true
   cpu-features: true
   esbuild: true
   msgpackr-extract: true
@@ -17,6 +19,7 @@ allowBuilds:
   ssh2: true
   unrs-resolver: true
   vue-demi: true
+
 
 onlyBuiltDependencies:
   - '@nestjs/core'
