@@ -13,6 +13,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+from uuid import UUID
 
 import dateutil.parser
 import httpx
@@ -130,10 +131,10 @@ def parse_metadata_value(value: MetadataValue) -> Union[str, float, bool, dateti
 
 
 def projects_to_table(projects: Sequence[Project]) -> Table:
-    table = Table(title="projects")
-    table.add_column("id")
+    table = Table(title="projects", expand=True)
+    table.add_column("id", style="green", min_width=36)
     table.add_column("name")
-    table.add_column("description")
+    table.add_column("description", overflow="fold")
 
     max_table_size = get_shared_state().max_table_size
     for project in projects[:max_table_size]:
@@ -144,10 +145,10 @@ def projects_to_table(projects: Sequence[Project]) -> Table:
 
 
 def missions_to_table(missions: Sequence[Mission]) -> Table:
-    table = Table(title="missions")
+    table = Table(title="missions", expand=True)
     table.add_column("project")
     table.add_column("name")
-    table.add_column("id")
+    table.add_column("id", style="green", min_width=36)
     table.add_column("files")
     table.add_column("size")
 
@@ -181,11 +182,11 @@ def missions_to_table(missions: Sequence[Mission]) -> Table:
 
 
 def files_to_table(files: Sequence[File], *, title: str = "files", delimiters: bool = True) -> Table:
-    table = Table(title=title)
-    table.add_column("project")
-    table.add_column("mission")
-    table.add_column("name")
-    table.add_column("id")
+    table = Table(title=title, expand=True)
+    table.add_column("project", overflow="fold")
+    table.add_column("mission", overflow="fold")
+    table.add_column("name", overflow="fold")
+    table.add_column("id", style="green", min_width=36)
     table.add_column("state")
     table.add_column("size")
     table.add_column("categories")
@@ -391,13 +392,14 @@ def print_project_info(project: Project, *, pprint: bool) -> None:
 
 
 def executions_to_table(executions: Sequence[Execution]) -> Table:
-    table = Table(title="executions")
-    table.add_column("project")
-    table.add_column("mission")
-    table.add_column("template")
-    table.add_column("execution id")
+    table = Table(title="executions", expand=True)
+    table.add_column("project", overflow="fold")
+    table.add_column("mission", overflow="fold")
+    table.add_column("template", overflow="fold")
+    # displaying full UUID on one line is proritized to enable easy copy-pasting
+    table.add_column("execution id", min_width=36)
     table.add_column("status")
-    table.add_column("created")
+    table.add_column("created", overflow="fold")
 
     # order by created_at descending
     executions_sorted = sorted(executions, key=lambda r: r.created_at, reverse=True)
@@ -410,7 +412,7 @@ def executions_to_table(executions: Sequence[Execution]) -> Table:
             execution.template_name,
             Text(str(execution.uuid), style="green"),
             execution.state,
-            str(execution.created_at),
+            execution.created_at.strftime("%Y-%m-%d %H:%M"),
         )
 
     if len(list(executions)) > max_table_size:
@@ -516,13 +518,14 @@ def action_templates_to_table(templates: Sequence[ActionTemplate]) -> Table:
     table = Table(title="Available Action Templates")
 
     table.add_column("Name", style="cyan", no_wrap=True)
+    table.add_column("Version", style="blue")
     table.add_column("ID (UUID)", style="magenta")
     table.add_column("Image Name", style="green")
     table.add_column("Command", style="cyan")
 
     for template in templates:
         uuid_text = Text(str(template.uuid), style="magenta")
-        table.add_row(template.name, uuid_text, template.image_name, template.command)
+        table.add_row(template.name, str(template.version), uuid_text, template.image_name, template.command)
 
     return table
 
@@ -609,7 +612,7 @@ def generate_live_layout(execution_details: Execution) -> Group:
     return Group(header_table, logs_text)
 
 
-def follow_execution_logs(client: AuthenticatedClient, execution_uuid: str) -> int:
+def follow_execution_logs(client: AuthenticatedClient, execution_uuid: UUID) -> int:
     """
     Polls the API for execution details and prints new logs as they arrive.
 

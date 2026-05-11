@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import time
 from secrets import token_hex
 from uuid import uuid4
 
@@ -12,12 +14,29 @@ from kleinkram import list_files
 from kleinkram import list_missions
 from kleinkram import list_projects
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.models import FileVerificationStatus
 from tests.backend_fixtures import DATA_FILES
+
+
+def _create_test_template(client: AuthenticatedClient, *, name: str, description: str) -> kleinkram.models.ActionTemplate:
+    template_id = kleinkram.core.create_template(
+        client,
+        name=name,
+        description=description,
+        docker_image="ubuntu:latest",
+        cpu_cores=1,
+        cpu_memory_gb=1,
+        gpu_memory_gb=-1,
+        max_runtime_minutes=60,
+        access_rights=0,
+        command="echo hello",
+    )
+    return kleinkram.api.routes.get_template(client, template_id)
 
 
 @pytest.mark.slow
@@ -89,7 +108,7 @@ def test_create_update_delete_mission(project):
     mission_name = token_hex(8)
 
     client = AuthenticatedClient()
-    kleinkram.api.routes._create_mission(client, project.id, mission_name)
+    kleinkram.core.create_mission(client, project.id, mission_name)
 
     mission = list_missions(mission_names=[mission_name])[0]
 
@@ -176,3 +195,63 @@ def test_update_file():
     client = AuthenticatedClient()
     with pytest.raises(NotImplementedError):
         kleinkram.core.update_file(client=client, file_id=uuid4())
+
+
+@pytest.mark.slow
+def test_templates_create_version_list_revisions_delete():
+    client = AuthenticatedClient()
+    template_name = f"tmpl-{token_hex(6)}"
+    description = "test template"
+
+    template = _create_test_template(client, name=template_name, description=description)
+    assert template.name == template_name
+    assert template.description == description
+
+    new_template_id = kleinkram.core.create_template_version(
+        client,
+        template_id=template.uuid,
+        description="updated description",
+    )
+
+    revisions = list(kleinkram.api.routes.get_template_revisions(client, template_id=template.uuid))
+    revision_ids = {rev.uuid for rev in revisions}
+    assert template.uuid in revision_ids
+    assert new_template_id in revision_ids
+
+    latest_templates = kleinkram.core.list_templates(client, latest_only=True)
+    latest_for_name = [t for t in latest_templates if t.name == template_name]
+    assert len(latest_for_name) == 1
+    assert latest_for_name[0].uuid == new_template_id
+
+    archived = kleinkram.core.delete_template(client=client, template_id=new_template_id)
+    assert archived is False
+
+
+@pytest.mark.slow
+def test_launch_execution_and_list(empty_mission):
+    client = AuthenticatedClient()
+    template_name = f"tmpl-{token_hex(6)}"
+    template = _create_test_template(client, name=template_name, description="exec template")
+
+    execution_id = kleinkram.core.launch_execution(
+        client=client,
+        mission_query=MissionQuery(ids=[empty_mission.id]),
+        template=template.uuid,
+    )
+
+    execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
+    assert execution.mission_id == empty_mission.id
+    assert execution.template_id == template.uuid
+
+    found = False
+    for _ in range(5):
+        executions = list(kleinkram.api.routes.get_executions(client, query=ExecutionQuery(template_name=template_name)))
+        if any(e.uuid == execution_id for e in executions):
+            found = True
+            break
+        time.sleep(1)
+
+    assert found is True
+
+    archived = kleinkram.core.delete_template(client=client, template_id=template.uuid)
+    assert archived is True

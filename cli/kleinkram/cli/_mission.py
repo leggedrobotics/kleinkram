@@ -45,7 +45,7 @@ def create(
     project = get_project(client, project_query, exact_match=True)
     project_id = project.id
     project_required_tags = project.required_tags
-    mission_id = kleinkram.api.routes._create_mission(
+    mission_id = kleinkram.core.create_mission(
         client,
         project_id,
         mission_name,
