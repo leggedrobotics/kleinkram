@@ -2,7 +2,6 @@ import type { MissionsDto } from '@kleinkram/api-dto';
 import type { AccessGroupAuditLogsDto } from '@kleinkram/api-dto/types/access-control/access-group-audit-logs.dto';
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import type { AccessGroupsDto } from '@kleinkram/api-dto/types/access-control/access-groups.dto';
-import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
 import type { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
 import type { ProjectAccessListDto } from '@kleinkram/api-dto/types/access-control/project-access.dto';
 import type { ActionWorkersDto } from '@kleinkram/api-dto/types/action-workers.dto';
@@ -396,25 +395,6 @@ export const useProjectDefaultAccess = (): UseQueryReturnType<
         queryKey: ['defaultRights'],
         queryFn: getProjectDefaultAccess,
     });
-};
-
-/**
- * Fetches the minimal access rights for a new project. The minimal access rights
- * for a new project consists of the following rights:
- *
- * - DELETE access for the creator
- *
- */
-export const useMinimalAccessRightsForNewProject = (): ComputedRef<
-    DefaultRightDto[]
-> => {
-    const { data: defaultRights } = useProjectDefaultAccess();
-    return computed<DefaultRightDto[]>(
-        () =>
-            unref(defaultRights)?.data.filter(
-                (r: DefaultRightDto) => r.type === AccessGroupType.PRIMARY,
-            ) ?? [],
-    );
 };
 
 export const useProjectAccessRights: (
