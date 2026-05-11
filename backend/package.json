@@ -27,7 +27,7 @@
         "@kleinkram/shared": "workspace:*",
         "@kleinkram/validation": "workspace:*",
         "@nest-lab/throttler-storage-redis": "^1.1.0",
-        "@nestjs/common": "^11.1.9",
+        "@nestjs/common": "^11.1.17",
         "@nestjs/config": "^4.0.2",
         "@nestjs/core": "^11.1.11",
         "@nestjs/jwt": "^11.0.2",
