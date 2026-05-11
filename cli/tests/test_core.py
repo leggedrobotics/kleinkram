@@ -23,19 +23,12 @@ from kleinkram.models import FileVerificationStatus
 from tests.backend_fixtures import DATA_FILES
 
 
-def _get_test_docker_image() -> str:
-    namespace = os.environ.get("VITE_DOCKER_HUB_NAMESPACE")
-    if namespace:
-        return f"{namespace.rstrip('/')}/kleinkram-test:latest"
-    return "ubuntu:latest"
-
-
 def _create_test_template(client: AuthenticatedClient, *, name: str, description: str) -> kleinkram.models.ActionTemplate:
     template_id = kleinkram.core.create_template(
         client,
         name=name,
         description=description,
-        docker_image=_get_test_docker_image(),
+        docker_image="ubuntu:latest",
         cpu_cores=1,
         cpu_memory_gb=1,
         gpu_memory_gb=-1,
@@ -260,7 +253,5 @@ def test_launch_execution_and_list(empty_mission):
 
     assert found is True
 
-    kleinkram.core.delete_execution(client=client, execution_id=execution_id)
-
     archived = kleinkram.core.delete_template(client=client, template_id=template.uuid)
-    assert archived is False
+    assert archived is True
