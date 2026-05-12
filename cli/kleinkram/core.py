@@ -45,6 +45,7 @@ from kleinkram.api.query import check_mission_query_is_creatable
 from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import TemplateNotFound
+from kleinkram.models import ArtifactState
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
 from kleinkram.printing import files_to_table
@@ -85,10 +86,11 @@ def download_artifact(
     # Fetch Execution Details
     execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
 
+    if execution.artifact_state == ArtifactState.EXPIRED:
+        raise ValueError(f"Artifacts for execution {execution_id} have expired and therefore been deleted.")
+
     if not execution.artifact_url:
-        raise ValueError(
-            f"No artifacts found for execution {execution_id}. The execution might not be finished or artifacts expired."
-        )
+        raise ValueError(f"No artifacts found for execution {execution_id}. The execution might not be finished yet.")
 
     if verbose:
         print(f"Downloading artifacts for execution {execution_id}...")

@@ -116,6 +116,9 @@ export class ActionEntity extends BaseEntity {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     artifact_files?: string[];
 
+    @Column({ nullable: true })
+    artifactExpirationDate?: Date;
+
     @OneToOne(() => ApiKeyEntity, (apikey) => apikey.action)
     @JoinColumn()
     key?: ApiKeyEntity;

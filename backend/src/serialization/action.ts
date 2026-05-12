@@ -6,6 +6,7 @@ import {
 } from '@kleinkram/api-dto';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { ArtifactState } from '@kleinkram/shared';
 import { actionTemplateEntityToDto } from './action-template';
 import { missionEntityToDto, userEntityToDto } from './index';
 
@@ -52,9 +53,21 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         runtime = (end - action.actionContainerStartedAt.getTime()) / 1000;
     }
 
+    let computedArtifactState = action.artifacts;
+    if (
+        action.artifactExpirationDate &&
+        action.artifactExpirationDate < new Date() &&
+        action.artifacts === ArtifactState.UPLOADED
+    ) {
+        computedArtifactState = ArtifactState.EXPIRED;
+    }
+
     return {
-        artifactUrl: action.artifact_path ?? '',
-        artifacts: action.artifacts,
+        artifactUrl:
+            computedArtifactState === ArtifactState.EXPIRED
+                ? ''
+                : (action.artifact_path ?? ''),
+        artifacts: computedArtifactState,
         artifactSize: action.artifact_size,
         artifactFiles: action.artifact_files,
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
