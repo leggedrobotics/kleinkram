@@ -75,7 +75,8 @@ def download_artifact(
 
     Args:
         execution_id: The ID of the execution to download artifacts for.
-        output: Path or filename to save the artifacts to.
+        output_dir: Directory to save the artifacts to (optional).
+        filename: Custom filename for the downloaded artifact (optional, must end with .tar.gz).
         extract: Automatically extract the archive after downloading.
         verbose: Print progress and extraction info.
 
