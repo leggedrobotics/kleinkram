@@ -108,6 +108,7 @@ class Execution:
     state_cause: str | None
     artifact_url: str | None
     artifact_state: ArtifactState | None
+    artifact_size: int | None
     created_at: datetime
     updated_at: datetime | None
     project_name: str

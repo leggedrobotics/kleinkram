@@ -29,7 +29,6 @@ from typing import Union
 from uuid import UUID
 
 import httpx
-import requests
 from rich.console import Console
 from tqdm import tqdm
 
@@ -66,7 +65,8 @@ def download_artifact(
     *,
     client: AuthenticatedClient,
     execution_id: UUID,
-    output: Optional[str] = None,
+    output_dir: Optional[str] = None,
+    filename: Optional[str] = None,
     extract: bool = False,
     verbose: bool = False,
 ) -> str:
@@ -92,47 +92,35 @@ def download_artifact(
     if not execution.artifact_url:
         raise ValueError(f"No artifacts found for execution {execution_id}. The execution might not be finished yet.")
 
+    if not execution.artifact_size:
+        raise ValueError(
+            f"Artifact size is missing, empty, or corrupted for execution {execution_id}, cannot proceed with download."
+        )
+
     if verbose:
         print(f"Downloading artifacts for execution {execution_id}...")
 
-    # Grab the headers to determine filename and size
-    try:
-        with requests.get(execution.artifact_url, stream=True) as r:
-            r.raise_for_status()
-            headers = r.headers.copy()
-    except requests.exceptions.RequestException as e:
-        raise ValueError(f"Error fetching artifact headers: {e}")
-
-    # Determine Filename
-    filename = output
-    if not filename:
-        filename = kleinkram.api.file_transfer._get_filename_from_cd(headers.get("content-disposition"))
+    if filename:
+        if not filename.endswith(".tar.gz"):
+            raise ValueError(f"Filename must end with .tar.gz, got: {filename}")
 
     if not filename:
-        filename = f"{execution_id}.tar.gz"
+        filename = f"{execution.template_name}-{execution_id}.tar.gz"
 
-    # If output is a directory, join with filename
-    if output and os.path.isdir(output):
-        filename = os.path.join(
-            output,
-            kleinkram.api.file_transfer._get_filename_from_cd(headers.get("content-disposition")) or f"{execution_id}.tar.gz",
-        )
+    if output_dir and not os.path.isdir(output_dir):
+        raise ValueError(f"Output directory {output_dir} does not exist or is not a directory.")
 
-    total_length_raw = headers.get("content-length")
-    if total_length_raw is None:
-        raise ValueError(
-            f"Cannot determine artifact size for execution {execution_id}: "
-            "the server did not return a content-length header."
-        )
-    total_length = int(total_length_raw)
+    filepath = Path(os.path.join(output_dir, filename) if output_dir else filename)
 
-    filepath = Path(filename)
+    if verbose:
+        print(f"Artifact size: {execution.artifact_size} bytes")
+        print(f"Saving artifact to: {filepath}...")
 
     # Download the file using _url_download
     kleinkram.api.file_transfer._url_download(
         url=execution.artifact_url,
         path=filepath,
-        size=total_length,
+        size=execution.artifact_size,
         overwrite=True,  # overwrite if we run the CLI command directly
         verbose=verbose,
     )

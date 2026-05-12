@@ -83,6 +83,7 @@ class ExecutionObjectKeys(str, Enum):
     LOGS = "logs"
     ARTIFACT_URL = "artifactUrl"
     ARTIFACT_STATE = "artifacts"
+    ARTIFACT_SIZE = "artifactSize"
 
 
 class TemplateObjectKeys(str, Enum):
@@ -273,6 +274,7 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
         artifact_url = execution_object.get(ExecutionObjectKeys.ARTIFACT_URL)
         raw_state = execution_object.get(ExecutionObjectKeys.ARTIFACT_STATE)
         artifact_state = ArtifactState(raw_state) if raw_state is not None else None
+        artifact_size = execution_object.get(ExecutionObjectKeys.ARTIFACT_SIZE)
         created_at = _parse_datetime(execution_object[ExecutionObjectKeys.CREATED_AT])
         updated_at = (
             _parse_datetime(execution_object[ExecutionObjectKeys.UPDATED_AT])
@@ -312,6 +314,7 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
         state_cause=state_cause,
         artifact_url=artifact_url,
         artifact_state=artifact_state,
+        artifact_size=artifact_size,
         created_at=created_at,
         updated_at=updated_at,
         mission_id=mission_id,
