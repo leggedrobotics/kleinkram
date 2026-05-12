@@ -182,7 +182,7 @@ export class ActionService {
 
         const dto = actionEntityToDto(action);
 
-        if (action.artifacts === ArtifactState.UPLOADED) {
+        if (dto.artifacts === ArtifactState.UPLOADED) {
             dto.artifactUrl = await this.generateArtifactUrl(
                 dto.artifactUrl,
                 action,

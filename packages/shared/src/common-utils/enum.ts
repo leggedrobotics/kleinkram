@@ -138,6 +138,7 @@ export enum ArtifactState {
     UPLOADING = 20,
     UPLOADED = 30,
     ERROR = 40,
+    EXPIRED = 50,
 }
 
 export enum FileState {

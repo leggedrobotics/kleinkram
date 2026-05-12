@@ -257,7 +257,12 @@ def logs(
 @executions_typer.command(name="download", help=DOWNLOAD_HELP)
 def download_artifacts(
     execution: str = typer.Argument(..., metavar="EXECUTION_ID", help="The ID of the execution to download artifacts for."),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Path or filename to save the artifacts to."),
+    output_dir: Optional[str] = typer.Option(
+        None, "--output-dir", "-o", help="Directory to save the artifacts to (defaults to current directory)."
+    ),
+    filename: Optional[str] = typer.Option(
+        None, "--filename", "-f", help="Filename to save the artifact as (must end in .tar.gz)."
+    ),
     extract: bool = typer.Option(
         False,
         "--extract",
@@ -279,7 +284,8 @@ def download_artifacts(
         kleinkram.core.download_artifact(
             client=client,
             execution_id=execution_id,
-            output=output,
+            output_dir=output_dir,
+            filename=filename,
             extract=extract,
             verbose=get_shared_state().verbose,
         )

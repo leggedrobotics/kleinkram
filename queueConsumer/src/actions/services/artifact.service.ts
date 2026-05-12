@@ -62,6 +62,9 @@ export class ArtifactService {
         const filename = `${actionUuid}.tar.gz`;
         const artifactPath = `/${bucketName}/${filename}`;
 
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 90);
+
         const updateData: {
             artifacts: ArtifactState;
             // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -70,10 +73,12 @@ export class ArtifactService {
             artifact_size?: number;
             // eslint-disable-next-line @typescript-eslint/naming-convention
             artifact_files?: string[];
+            artifactExpirationDate: Date;
         } = {
             artifacts: ArtifactState.UPLOADED,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             artifact_path: artifactPath,
+            artifactExpirationDate: expirationDate,
         };
 
         if (artifactMetadata?.size !== undefined) {
