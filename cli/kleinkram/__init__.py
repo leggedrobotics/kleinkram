@@ -5,13 +5,12 @@ from kleinkram.wrappers import create_mission
 from kleinkram.wrappers import create_project
 from kleinkram.wrappers import create_template
 from kleinkram.wrappers import create_template_version
-from kleinkram.wrappers import launch_execution
+from kleinkram.wrappers import delete_execution
 from kleinkram.wrappers import delete_file
 from kleinkram.wrappers import delete_files
 from kleinkram.wrappers import delete_mission
 from kleinkram.wrappers import delete_project
 from kleinkram.wrappers import delete_template
-from kleinkram.wrappers import delete_execution
 from kleinkram.wrappers import download
 from kleinkram.wrappers import download_artifact
 from kleinkram.wrappers import get_execution
@@ -20,6 +19,7 @@ from kleinkram.wrappers import get_mission
 from kleinkram.wrappers import get_project
 from kleinkram.wrappers import get_template
 from kleinkram.wrappers import get_template_revisions
+from kleinkram.wrappers import launch_execution
 from kleinkram.wrappers import list_executions
 from kleinkram.wrappers import list_files
 from kleinkram.wrappers import list_missions
