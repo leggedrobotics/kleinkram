@@ -20,7 +20,7 @@ jobs:
 
             - uses: actions/setup-node@v6
               with:
-                  node-version: '22'
+                  node-version: '22.22.0'
                   cache: 'pnpm'
 
             - name: Validate Version Number by calling grunt validateVersions
