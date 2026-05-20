@@ -86,6 +86,7 @@ class ExecutionObjectKeys(str, Enum):
 class TemplateObjectKeys(str, Enum):
     UUID = "uuid"
     NAME = "name"
+    DESCRIPTION = "description"
     ACCESS_RIGHTS = "accessRights"
     COMMAND = "command"
     CPU_CORES = "cpuCores"
@@ -233,6 +234,7 @@ def _parse_action_template(template_object: Dict[str, Any]) -> ActionTemplate:
         command = template_object[TemplateObjectKeys.COMMAND]
         cpu_cores = template_object[TemplateObjectKeys.CPU_CORES]
         cpu_memory_gb = template_object[TemplateObjectKeys.CPU_MEMORY_GB]
+        description = template_object[TemplateObjectKeys.DESCRIPTION]
         entrypoint = template_object[TemplateObjectKeys.ENTRYPOINT]
         gpu_memory_gb = template_object[TemplateObjectKeys.GPU_MEMORY_GB]
         image_name = template_object[TemplateObjectKeys.IMAGE_NAME]
@@ -250,6 +252,7 @@ def _parse_action_template(template_object: Dict[str, Any]) -> ActionTemplate:
         command=command,
         cpu_cores=cpu_cores,
         cpu_memory_gb=cpu_memory_gb,
+        description=description,
         entrypoint=entrypoint,
         gpu_memory_gb=gpu_memory_gb,
         image_name=image_name,

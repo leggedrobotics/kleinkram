@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import sys
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -260,6 +261,16 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     resp.raise_for_status()
 
     return resp.json()["url"]
+
+
+def _get_filename_from_cd(cd: str | None) -> Optional[str]:
+    """Extract filename from Content-Disposition header."""
+    if not cd:
+        return None
+    fname = re.findall("filename=(.+)", cd)
+    if len(fname) == 0:
+        return None
+    return fname[0].strip().strip('"')
 
 
 def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False, verbose: bool = False) -> None:
