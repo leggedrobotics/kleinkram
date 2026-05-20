@@ -9,7 +9,6 @@ import {
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import * as schedulingLogic from '@kleinkram/backend-common/scheduling-logic';
 import { ActionState, ActionTriggerSource, UserRole } from '@kleinkram/shared';
-import { ConflictException } from '@nestjs/common';
 import { Gauge } from 'prom-client';
 import { Repository } from 'typeorm';
 
@@ -115,7 +114,7 @@ describe('ActionDispatcherService Unit Tests', () => {
                 {},
                 ActionTriggerSource.MANUAL,
             ),
-        ).rejects.toThrow(ConflictException);
+        ).rejects.toThrow('No worker available');
 
         expect(updateSpy).toHaveBeenCalledWith('action-uuid', {
             state: ActionState.UNPROCESSABLE,

@@ -65,8 +65,7 @@ jobs:
                   docker compose -f ../docker-compose.testing.yml up -d
                   SECONDS=0
                   TIMEOUT=180
-                  # wait for the api to be reachable
-                  while ! curl -s http://localhost:3000/ > /dev/null; do
+                  while ! curl -s -f http://localhost:3000/auth/available-providers > /dev/null; do
                     if [ $SECONDS -ge $TIMEOUT ]; then
                         echo "Timeout reached: API not reachable"
                         docker logs kleinkram-api-server-test
@@ -77,7 +76,20 @@ jobs:
                     echo "waiting for API to be reachable..."
                   done
 
-                  echo "API is up. Running tests..."
+                  echo "API is up. Waiting for Loki to be ready..."
+
+                  while ! curl -s -f http://localhost:3100/ready > /dev/null; do
+                    if [ $SECONDS -ge $TIMEOUT ]; then
+                        echo "Timeout reached: Loki not ready"
+                        docker compose -f ../docker-compose.testing.yml logs loki
+                        docker compose -f ../docker-compose.testing.yml down
+                        exit 1
+                    fi
+                    sleep 2
+                    echo "Waiting for Loki... ($SECONDS seconds elapsed)"
+                  done
+
+                  echo "All services are up. Running tests..."
 
                   # This will now cause the step to fail immediately if tests fail.
                   pnpm test --ci
