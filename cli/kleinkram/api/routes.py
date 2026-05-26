@@ -19,7 +19,7 @@ import kleinkram.errors
 from kleinkram._version import __version__
 from kleinkram.api.client import CLI_VERSION_HEADER
 from kleinkram.api.client import AuthenticatedClient
-from kleinkram.api.deser import ExecutionObject
+from kleinkram.api.deser import ExecutionObject, TemplateObject, TriggerObject, _parse_action_trigger
 from kleinkram.api.deser import FileObject
 from kleinkram.api.deser import MissionObject
 from kleinkram.api.deser import ProjectObject
@@ -29,7 +29,7 @@ from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
 from kleinkram.api.deser import _parse_project
 from kleinkram.api.pagination import paginated_request
-from kleinkram.api.query import ExecutionQuery
+from kleinkram.api.query import ExecutionQuery, TriggerQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
@@ -51,7 +51,7 @@ from kleinkram.errors import ProjectValidationError
 from kleinkram.errors import TemplateExists
 from kleinkram.errors import TemplateNotFound
 from kleinkram.errors import TemplateValidationError
-from kleinkram.models import ActionTemplate
+from kleinkram.models import ActionTemplate, ActionTrigger, TriggerConfig, TriggerType
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import Mission
@@ -260,7 +260,31 @@ def get_templates(
     client: AuthenticatedClient,
 ) -> Generator[ActionTemplate, None, None]:
     response_stream = paginated_request(client, "/templates")
-    yield from map(lambda p: _parse_action_template(p), response_stream)
+    yield from map(lambda p: _parse_action_template(TemplateObject(p)), response_stream)
+
+
+LIST_ACTIONTRIGGERS_ENDPOINT = "/triggers"
+
+def get_triggers(
+    client: AuthenticatedClient,
+    query: Optional[TriggerQuery] = None
+    ) -> List[ActionTrigger]:
+    params = {"missionUuid": str(query.mission_uuid)} if query and query.mission_uuid else None
+    # the backend does not support pagination for triggers currently, so we do a single request
+    resp = client.get(LIST_ACTIONTRIGGERS_ENDPOINT, params=params)
+    resp.raise_for_status()
+    payload = resp.json()
+    return list(map(lambda p: _parse_action_trigger(TriggerObject(p)), payload))
+
+def get_trigger(
+    client: AuthenticatedClient,
+    trigger_uuid: UUID,
+) -> ActionTrigger:
+    resp = client.patch(UPDATE_TRIGGER.format(trigger_uuid), json={})
+    if resp.status_code == 404:
+        raise kleinkram.errors.TriggerNotFound(f"Trigger not found: {trigger_uuid}")
+    resp.raise_for_status()
+    return _parse_action_trigger(TriggerObject(resp.json()))
 
 
 def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False) -> Project:
@@ -297,6 +321,30 @@ def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
         return next(get_files(client, query))
     except StopIteration:
         raise kleinkram.errors.FileNotFound(f"File not found: {query}")
+
+
+def _create_trigger(
+        client: AuthenticatedClient,
+        name: str,
+        description: str,
+        template_uuid: UUID,
+        mission_uuid: UUID,
+        type_: TriggerType,
+        config: TriggerConfig
+) -> UUID:
+    payload = {
+        "name": name,
+        "description": description,
+        "templateUuid": str(template_uuid),
+        "missionUuid": str(mission_uuid),
+        "type": type_.value,
+        "config": config.__dict__,
+    }
+    resp = client.post("/triggers", json=payload)
+    resp.raise_for_status()
+
+    return UUID(resp.json()["uuid"], version=4)
+        
 
 
 def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_uuid: UUID) -> UUID:
@@ -459,6 +507,38 @@ def _update_project(
     resp = client.put(f"{UPDATE_PROJECT}/{project_id}", json=body)
     resp.raise_for_status()
 
+UPDATE_TRIGGER = "/triggers/{}"
+
+def _update_trigger(
+        client: AuthenticatedClient,
+        trigger_uuid: UUID,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        template_uuid: Optional[UUID] = None,
+        mission_uuid: Optional[UUID] = None,
+        type_: Optional[TriggerType] = None,
+        config: Optional[TriggerConfig] = None,
+    ) -> None:
+    if not any([name, description, template_uuid, mission_uuid, type_, config]):
+        raise ValueError("at least one field must be updated")
+    
+    body = {}
+    if name is not None:
+        body["name"] = name
+    if description is not None:
+        body["description"] = description
+    if template_uuid is not None:
+        body["templateUUID"] = str(template_uuid)
+    if mission_uuid is not None:
+        body["missionUUID"] = str(mission_uuid)
+    if type_ is not None:
+        body["type"] = type_.value
+    if config is not None:
+        body["config"] = config.__dict__
+    
+    resp = client.patch(f"{UPDATE_TRIGGER.format(trigger_uuid)}", json=body)
+    resp.raise_for_status()
 
 def _get_api_version() -> Tuple[int, int, int]:
     config = get_config()
@@ -536,4 +616,13 @@ def _delete_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp = client.delete(EXECUTION_DELETE_ONE.format(execution_id))
     if resp.status_code == 404:
         raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
+    resp.raise_for_status()
+
+
+DELETE_TRIGGER_ONE = "/triggers/{}"
+
+def _delete_trigger(client: AuthenticatedClient, trigger_uuid: UUID) -> None:
+    resp = client.delete(DELETE_TRIGGER_ONE.format(trigger_uuid))
+    if resp.status_code == 404:
+        raise kleinkram.errors.TriggerNotFound(f"Trigger not found: {trigger_uuid}")
     resp.raise_for_status()
