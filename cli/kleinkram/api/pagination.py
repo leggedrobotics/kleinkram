@@ -45,7 +45,7 @@ def paginated_request(
 
         # raise for other errors
         resp.raise_for_status()
-        
+
         paged_data = resp.json()
         print(paged_data)
         data_page = cast(List[DataPage], paged_data["data"])

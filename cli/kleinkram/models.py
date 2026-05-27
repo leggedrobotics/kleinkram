@@ -4,8 +4,12 @@ from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any
+from typing import Dict
 from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
 from uuid import UUID
 
 
@@ -135,34 +139,44 @@ class FileVerificationStatus(str, Enum):
     MISMATCHED_SIZE = "size mismatch"
     UNKNOWN = "unknown"
 
+
 class TriggerType(str, Enum):
     FILE = "FILE"
     WEBHOOK = "WEBHOOK"
     TIME = "TIME"
+
 
 class FileTriggerEvent(str, Enum):
     UPLOAD = "UPLOAD"
     RENAME = "RENAME"
     MOVE = "MOVE"
     DELETE = "DELETE"
-    
 
-"""
-The attribute names of the following Config dataclasses match the keys of the corresponding API objects, which allows for easy parsing. Thus, if the key names of the API objects change, the attribute names of the dataclasses should be updated accordingly.
-"""
+
+# ---
+# The attribute names of the following Config dataclasses match the keys of
+# the corresponding API objects, which allows for easy parsing. Thus, if the
+# key names of the API objects change, the attribute names of the dataclasses
+# should be updated accordingly.
+# ---
+
+
 @dataclass(frozen=True)
 class FileConfig:
-    patterns: Tuple[str,...] = field(default_factory=tuple)
-    event: Tuple[FileTriggerEvent,...] = field(default_factory=tuple)
+    patterns: Tuple[str, ...] = field(default_factory=tuple)
+    event: Tuple[FileTriggerEvent, ...] = field(default_factory=tuple)
+
 
 @dataclass(frozen=True)
 class TimeConfig:
     cron: str
 
-#placeholder for future config options
+
+# placeholder for future config options
 @dataclass(frozen=True)
-class WebhookConfig():
+class WebhookConfig:
     extra_options: Mapping[str, Any] = field(default_factory=dict)
+
 
 TriggerConfig = FileConfig | TimeConfig | WebhookConfig
 

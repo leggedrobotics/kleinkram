@@ -45,8 +45,13 @@ from kleinkram.api.query import check_mission_query_is_creatable
 from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import TemplateNotFound
-from kleinkram.models import FileConfig, FileState, TimeConfig, TriggerConfig, TriggerType, WebhookConfig
+from kleinkram.models import FileConfig
+from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
+from kleinkram.models import TimeConfig
+from kleinkram.models import TriggerConfig
+from kleinkram.models import TriggerType
+from kleinkram.models import WebhookConfig
 from kleinkram.printing import files_to_table
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
@@ -371,21 +376,22 @@ def update_project(
     # TODO: this function should do more in the future
     kleinkram.api.routes._update_project(client, project_id, description=description, new_name=new_name)
 
+
 def update_trigger(
-        client: AuthenticatedClient,
-        trigger_uuid: UUID,
-        *,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        template_uuid: Optional[UUID] = None,
-        mission_query: Optional[MissionQuery] = None,
-        type_: Optional[TriggerType] = None,
-        config: Optional[TriggerConfig] = None,
-    ) -> None:
+    client: AuthenticatedClient,
+    trigger_uuid: UUID,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    template_uuid: Optional[UUID] = None,
+    mission_query: Optional[MissionQuery] = None,
+    type_: Optional[TriggerType] = None,
+    config: Optional[TriggerConfig] = None,
+) -> None:
 
     if not is_valid_uuid4(str(trigger_uuid)):
         raise kleinkram.errors.TriggerValidationError("Invalid trigger UUID")
-    
+
     trigger = kleinkram.api.routes.get_trigger(client, trigger_uuid)
 
     mission_uuid = None
@@ -393,13 +399,17 @@ def update_trigger(
         try:
             mission = kleinkram.api.routes.get_mission(client, mission_query)
             mission_uuid = mission.id
-        except:
-            raise kleinkram.errors.TriggerValidationError("Mission not found")
+        except kleinkram.errors.MissionNotFound as e:
+            raise kleinkram.errors.TriggerValidationError("Mission not found") from e
+        except kleinkram.errors.InvalidMissionQuery as e:
+            raise kleinkram.errors.TriggerValidationError(f"Invalid mission query: {e}") from e
+        except Exception as e:
+            raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
 
     if mission_uuid is None:
         mission_uuid = trigger.mission_uuid
-    
-    if name is not None:        
+
+    if name is not None:
         _validate_trigger_name(client, name, mission_uuid)
 
     if template_uuid is not None:
@@ -420,7 +430,7 @@ def update_trigger(
         template_uuid=template_uuid,
         mission_uuid=mission_uuid,
         type_=type_,
-        config=config
+        config=config,
     )
 
 
@@ -517,10 +527,12 @@ def delete_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None
         raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
     kleinkram.api.routes._delete_execution(client, execution_id)
 
+
 def delete_trigger(*, client: AuthenticatedClient, trigger_uuid: UUID) -> None:
     if not is_valid_uuid4(str(trigger_uuid)):
         raise kleinkram.errors.TriggerValidationError("Invalid UUID")
     kleinkram.api.routes._delete_trigger(client, trigger_uuid)
+
 
 def launch_execution(
     client: AuthenticatedClient,
@@ -684,19 +696,23 @@ def create_template_version(
 
 
 def create_trigger(
-        client: AuthenticatedClient,
-        name: str,
-        description: str,
-        template_uuid: UUID,
-        mission_query: MissionQuery,
-        type_: TriggerType,
-        config: TriggerConfig
-    ) -> UUID:
+    client: AuthenticatedClient,
+    name: str,
+    description: str,
+    template_uuid: UUID,
+    mission_query: MissionQuery,
+    type_: TriggerType,
+    config: TriggerConfig,
+) -> UUID:
 
     try:
         mission = kleinkram.api.routes.get_mission(client, mission_query)
-    except:
-        raise kleinkram.errors.TriggerValidationError("Mission not found")
+    except kleinkram.errors.MissionNotFound as e:
+        raise kleinkram.errors.TriggerValidationError("Mission not found") from e
+    except kleinkram.errors.InvalidMissionQuery as e:
+        raise kleinkram.errors.TriggerValidationError(f"Invalid mission query: {e}") from e
+    except Exception as e:
+        raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
 
     _validate_trigger_name(client, name, mission.id)
     if not is_valid_uuid4(str(template_uuid)):
@@ -826,6 +842,7 @@ def _validate_template_name(client: AuthenticatedClient, template_name: str, des
     if not description:
         raise kleinkram.errors.TemplateValidationError("Template description is required")
 
+
 def _validate_template_existence(client: AuthenticatedClient, template_id: UUID) -> None:
     try:
         _ = kleinkram.api.routes.get_template(client, template_id)
@@ -841,23 +858,25 @@ def _validate_trigger_type_and_config(type_: TriggerType, config: TriggerConfig)
     if type_ == TriggerType.WEBHOOK and not isinstance(config, WebhookConfig):
         raise kleinkram.errors.TriggerValidationError("Config not valid for trigger type WEBHOOK, expected WebhookConfig")
 
+
 def _validate_trigger_name(client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID) -> None:
     if not trigger_name:
         raise kleinkram.errors.TriggerValidationError("Trigger name is required")
 
     if trigger_name.endswith(" "):
-        raise kleinkram.errors.TriggerValidationError(
-            f"Trigger name must not end with a tailing whitespace: `{trigger_name}`"
-        )
+        raise kleinkram.errors.TriggerValidationError(f"Trigger name must not end with a tailing whitespace: `{trigger_name}`")
 
     if not NAME_REGEX.match(trigger_name):
         raise kleinkram.errors.TriggerValidationError(
-            "Trigger name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
+            "Trigger name must be between 3 and 50 characters and contain only" " letters, numbers, dashes, and underscores."
         )
-    
+
     if not _trigger_name_is_available(client, trigger_name, mission_uuid):
-        raise kleinkram.errors.TriggerValidationError(f"Trigger with name: `{trigger_name}` already exists in mission: {mission_uuid}. Trigger names must be unique within a mission.")
-    
+        raise kleinkram.errors.TriggerValidationError(
+            f"Trigger with name: `{trigger_name}` already exists in mission: "
+            f"{mission_uuid}. Trigger names must be unique within a mission."
+        )
+
 
 def _trigger_name_is_available(client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID) -> bool:
     triggers = kleinkram.api.routes.get_triggers(client, mission_uuid)
@@ -865,6 +884,7 @@ def _trigger_name_is_available(client: AuthenticatedClient, trigger_name: str, m
         if trigger.name == trigger_name:
             return False
     return True
+
 
 def _validate_mission_created(client: AuthenticatedClient, project_id: str, mission_name: str) -> None:
     """
@@ -947,4 +967,3 @@ def _get_tags_map(client: AuthenticatedClient, metadata: Dict[str, str]) -> Dict
         _validate_tag_value(val, tag_datatype)
         ret[metadata_type_id] = val
     return ret
-

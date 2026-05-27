@@ -13,15 +13,20 @@ from uuid import UUID
 import dateutil.parser
 
 from kleinkram.errors import ParsingError
-from kleinkram.models import ActionTemplate, TimeConfig, TriggerConfig, TriggerType, WebhookConfig, FileConfig
+from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
 from kleinkram.models import Execution
 from kleinkram.models import File
+from kleinkram.models import FileConfig
 from kleinkram.models import FileState
 from kleinkram.models import LogEntry
 from kleinkram.models import MetadataValue
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import TimeConfig
+from kleinkram.models import TriggerConfig
+from kleinkram.models import TriggerType
+from kleinkram.models import WebhookConfig
 
 __all__ = [
     "_parse_project",
@@ -100,6 +105,7 @@ class TemplateObjectKeys(str, Enum):
     MAX_RUNTIME_MINUTES = "maxRuntime"
     CREATED_AT = "createdAt"
     VERSION = "version"
+
 
 class ActionTriggerObjectKeys(str, Enum):
     UUID = "uuid"
@@ -345,11 +351,10 @@ def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
         creator_name = trigger_object[ActionTriggerObjectKeys.CREATOR_NAME]
         creator_uuid = UUID(trigger_object[ActionTriggerObjectKeys.CREATOR_UUID], version=4)
 
-    
         if type_ is TriggerType.FILE:
             print(trigger_object[ActionTriggerObjectKeys.CONFIG])
             print(FileConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG]))
-            config= FileConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
+            config = FileConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
         elif type_ is TriggerType.TIME:
             config = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
         elif type_ is TriggerType.WEBHOOK:
@@ -370,5 +375,5 @@ def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
         type=type_,
         creator_name=creator_name,
         creator_uuid=creator_uuid,
-        config=config
+        config=config,
     )

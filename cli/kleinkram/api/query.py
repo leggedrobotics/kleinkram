@@ -62,6 +62,7 @@ class TriggerQuery:
     does not yet support filtering by list of ids as for
     other resources (e.g. projects and missions).
     """
+
     mission_uuid: Optional[UUID] = None
 
 
