@@ -28,12 +28,16 @@ from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.api.query import TriggerQuery
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.models import ActionTemplate
+from kleinkram.models import ActionTrigger
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import TriggerConfig
+from kleinkram.models import TriggerType
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 from kleinkram.utils import parse_path_like
@@ -264,6 +268,18 @@ def list_executions(
 
     client = client or AuthenticatedClient()
     return list(kleinkram.api.routes.get_executions(client, query=query))
+
+
+def list_triggers(
+    *,
+    client: Optional[AuthenticatedClient] = None,
+    mission_ids: Optional[IdLike] = None,
+) -> List[ActionTrigger]:
+    query = TriggerQuery(
+        mission_uuid=parse_uuid_like(mission_ids) if mission_ids else None,
+    )
+    client = client or AuthenticatedClient()
+    return list(kleinkram.api.routes.get_triggers(client, query=query))
 
 
 @overload
@@ -508,6 +524,27 @@ def create_project(
     kleinkram.core.create_project(client, project_name, description)
 
 
+def create_trigger(
+    trigger_name: str,
+    template_uuid: IdLike,
+    mission_uuid: IdLike,
+    type_: TriggerType,
+    config: TriggerConfig,
+    description: str = "",
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID:
+    client = client or AuthenticatedClient()
+    return kleinkram.core.create_trigger(
+        client=client,
+        trigger_name=trigger_name,
+        description=description,
+        template_uuid=parse_uuid_like(template_uuid),
+        mission_uuid=parse_uuid_like(mission_uuid),
+        type_=type_,
+        config=config,
+    )
+
+
 def update_file(
     file_id: IdLike,
     *,
@@ -542,6 +579,30 @@ def update_project(
         client=client,
         project_id=parse_uuid_like(project_id),
         description=description,
+    )
+
+
+def update_trigger(
+    trigger_uuid: IdLike,
+    *,
+    trigger_name: Optional[str] = None,
+    description: Optional[str] = None,
+    template_uuid: Optional[IdLike] = None,
+    mission_uuid: Optional[IdLike] = None,
+    type_: Optional[TriggerType] = None,
+    config: Optional[TriggerConfig] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.update_trigger(
+        client=client,
+        trigger_uuid=parse_uuid_like(trigger_uuid),
+        trigger_name=trigger_name,
+        description=description,
+        template_uuid=parse_uuid_like(template_uuid) if template_uuid else None,
+        mission_uuid=parse_uuid_like(mission_uuid) if mission_uuid else None,
+        type_=type_,
+        config=config,
     )
 
 
@@ -610,6 +671,15 @@ def delete_project(
 ) -> None:
     client = client or AuthenticatedClient()
     kleinkram.core.delete_project(client=client, project_id=parse_uuid_like(project_id))
+
+
+def delete_trigger(
+    trigger_uuid: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.delete_trigger(client=client, trigger_uuid=parse_uuid_like(trigger_uuid))
 
 
 def get_file(file_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> File:

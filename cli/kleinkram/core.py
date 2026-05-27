@@ -381,10 +381,10 @@ def update_trigger(
     client: AuthenticatedClient,
     trigger_uuid: UUID,
     *,
-    name: Optional[str] = None,
+    trigger_name: Optional[str] = None,
     description: Optional[str] = None,
     template_uuid: Optional[UUID] = None,
-    mission_query: Optional[MissionQuery] = None,
+    mission_uuid: Optional[UUID] = None,
     type_: Optional[TriggerType] = None,
     config: Optional[TriggerConfig] = None,
 ) -> None:
@@ -395,9 +395,9 @@ def update_trigger(
     trigger = kleinkram.api.routes.get_trigger(client, trigger_uuid)
 
     mission_uuid = None
-    if mission_query is not None:
+    if mission_uuid is not None:
         try:
-            mission = kleinkram.api.routes.get_mission(client, mission_query)
+            mission = kleinkram.api.routes.get_mission(client, MissionQuery(ids=[mission_uuid]))
             mission_uuid = mission.id
         except kleinkram.errors.MissionNotFound as e:
             raise kleinkram.errors.TriggerValidationError("Mission not found") from e
@@ -409,8 +409,8 @@ def update_trigger(
     if mission_uuid is None:
         mission_uuid = trigger.mission_uuid
 
-    if name is not None:
-        _validate_trigger_name(client, name, mission_uuid)
+    if trigger_name is not None:
+        _validate_trigger_name(client, trigger_name, mission_uuid)
 
     if template_uuid is not None:
         _validate_template_existence(client, template_uuid)
@@ -425,7 +425,7 @@ def update_trigger(
     kleinkram.api.routes._update_trigger(
         client,
         trigger_uuid,
-        name=name,
+        name=trigger_name,
         description=description,
         template_uuid=template_uuid,
         mission_uuid=mission_uuid,
@@ -697,16 +697,16 @@ def create_template_version(
 
 def create_trigger(
     client: AuthenticatedClient,
-    name: str,
+    trigger_name: str,
     description: str,
     template_uuid: UUID,
-    mission_query: MissionQuery,
+    mission_uuid: UUID,
     type_: TriggerType,
     config: TriggerConfig,
 ) -> UUID:
 
     try:
-        mission = kleinkram.api.routes.get_mission(client, mission_query)
+        mission = kleinkram.api.routes.get_mission(client, MissionQuery(ids=[mission_uuid]))
     except kleinkram.errors.MissionNotFound as e:
         raise kleinkram.errors.TriggerValidationError("Mission not found") from e
     except kleinkram.errors.InvalidMissionQuery as e:
@@ -714,7 +714,7 @@ def create_trigger(
     except Exception as e:
         raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
 
-    _validate_trigger_name(client, name, mission.id)
+    _validate_trigger_name(client, trigger_name, mission.id)
     if not is_valid_uuid4(str(template_uuid)):
         raise kleinkram.errors.TriggerValidationError("Invalid template UUID")
     _validate_template_existence(client, template_uuid)
@@ -722,7 +722,7 @@ def create_trigger(
 
     return kleinkram.api.routes._create_trigger(
         client,
-        name,
+        trigger_name,
         description,
         template_uuid,
         mission.id,
