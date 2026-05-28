@@ -395,7 +395,6 @@ def update_trigger(
 
     trigger = kleinkram.api.routes.get_trigger(client, trigger_uuid)
 
-    mission_uuid = None
     if mission_uuid is not None:
         try:
             mission = kleinkram.api.routes.get_mission(client, MissionQuery(ids=[mission_uuid]))
