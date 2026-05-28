@@ -536,9 +536,9 @@ def _update_trigger(
     if description is not None:
         body["description"] = description
     if template_uuid is not None:
-        body["templateUUID"] = str(template_uuid)
+        body["templateUuid"] = str(template_uuid)
     if mission_uuid is not None:
-        body["missionUUID"] = str(mission_uuid)
+        body["missionUuid"] = str(mission_uuid)
     if type_ is not None:
         body["type"] = type_.value
     if config is not None:

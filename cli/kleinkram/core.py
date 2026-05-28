@@ -41,6 +41,7 @@ from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.api.query import TriggerQuery
 from kleinkram.api.query import check_mission_query_is_creatable
 from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
@@ -410,7 +411,7 @@ def update_trigger(
         mission_uuid = trigger.mission_uuid
 
     if trigger_name is not None:
-        _validate_trigger_name(client, trigger_name, mission_uuid)
+        _validate_trigger_name(client, trigger_name, mission_uuid, trigger_uuid)
 
     if template_uuid is not None:
         _validate_template_existence(client, template_uuid)
@@ -859,7 +860,9 @@ def _validate_trigger_type_and_config(type_: TriggerType, config: TriggerConfig)
         raise kleinkram.errors.TriggerValidationError("Config not valid for trigger type WEBHOOK, expected WebhookConfig")
 
 
-def _validate_trigger_name(client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID) -> None:
+def _validate_trigger_name(
+    client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID, update_trigger_uuid: Optional[UUID] = None
+) -> None:
     if not trigger_name:
         raise kleinkram.errors.TriggerValidationError("Trigger name is required")
 
@@ -871,17 +874,19 @@ def _validate_trigger_name(client: AuthenticatedClient, trigger_name: str, missi
             "Trigger name must be between 3 and 50 characters and contain only" " letters, numbers, dashes, and underscores."
         )
 
-    if not _trigger_name_is_available(client, trigger_name, mission_uuid):
+    if not _trigger_name_is_available(client, trigger_name, mission_uuid, update_trigger_uuid):
         raise kleinkram.errors.TriggerValidationError(
             f"Trigger with name: `{trigger_name}` already exists in mission: "
             f"{mission_uuid}. Trigger names must be unique within a mission."
         )
 
 
-def _trigger_name_is_available(client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID) -> bool:
-    triggers = kleinkram.api.routes.get_triggers(client, mission_uuid)
+def _trigger_name_is_available(
+    client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID, update_trigger_uuid: Optional[UUID] = None
+) -> bool:
+    triggers = kleinkram.api.routes.get_triggers(client, TriggerQuery(mission_uuid=mission_uuid))
     for trigger in triggers:
-        if trigger.name == trigger_name:
+        if trigger.name == trigger_name and (update_trigger_uuid is None or trigger.uuid != update_trigger_uuid):
             return False
     return True
 

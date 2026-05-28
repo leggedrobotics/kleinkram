@@ -47,7 +47,7 @@ def paginated_request(
         resp.raise_for_status()
 
         paged_data = resp.json()
-        print(paged_data)
+
         data_page = cast(List[DataPage], paged_data["data"])
 
         for entry in data_page:

@@ -164,7 +164,7 @@ class FileTriggerEvent(str, Enum):
 @dataclass(frozen=True)
 class FileConfig:
     patterns: Tuple[str, ...] = field(default_factory=tuple)
-    event: Tuple[FileTriggerEvent, ...] = field(default_factory=tuple)
+    event: Optional[Tuple[FileTriggerEvent, ...]] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)

@@ -352,8 +352,6 @@ def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
         creator_uuid = UUID(trigger_object[ActionTriggerObjectKeys.CREATOR_UUID], version=4)
 
         if type_ is TriggerType.FILE:
-            print(trigger_object[ActionTriggerObjectKeys.CONFIG])
-            print(FileConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG]))
             config = FileConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
         elif type_ is TriggerType.TIME:
             config = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])

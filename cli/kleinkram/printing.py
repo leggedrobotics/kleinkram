@@ -31,14 +31,19 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
 from kleinkram.models import ActionTemplate
+from kleinkram.models import ActionTrigger
 from kleinkram.models import Execution
 from kleinkram.models import File
+from kleinkram.models import FileConfig
 from kleinkram.models import FileState
 from kleinkram.models import LogEntry
 from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import TimeConfig
+from kleinkram.models import TriggerType
+from kleinkram.models import WebhookConfig
 
 FILE_STATE_COLOR = {
     FileState.OK: "green",
@@ -423,7 +428,7 @@ def executions_to_table(executions: Sequence[Execution]) -> Table:
 def execution_info_table(execution: Execution) -> Table:
     table = Table("k", "v", title=f"execution info: {execution.uuid}", show_header=False)
 
-    table.add_row("id", Text(str(execution.uuid), style="green"))
+    table.add_row("uuid", Text(str(execution.uuid), style="green"))
     table.add_row("template", execution.template_name)
     table.add_row("status", execution.state)
     table.add_row("project", execution.project_name)
@@ -461,6 +466,75 @@ def print_execution_info(execution: Execution, *, pprint: bool) -> None:
         for key in execution_dict:
             execution_dict[key] = str(execution_dict[key])  # simple serialization
         print(json.dumps(execution_dict))
+
+
+def triggers_to_table(triggers: Sequence[ActionTrigger]) -> Table:
+    table = Table(title="action triggers", expand=True)
+    table.add_column("uuid", style="green", min_width=36)
+    table.add_column("name")
+    table.add_column("template name")
+    table.add_column("type")
+
+    triggers_sorted = sorted(triggers, key=lambda r: r.name)
+
+    max_table_size = get_shared_state().max_table_size
+    for trigger in triggers_sorted[:max_table_size]:
+        table.add_row(Text(str(trigger.uuid), style="green"), trigger.name, trigger.template_name, trigger.type)
+
+    if len(list(triggers)) > max_table_size:
+        _add_placeholder_row(table, skipped=len(triggers) - max_table_size)
+    return table
+
+
+def trigger_info_table(trigger: ActionTrigger) -> Table:
+    table = Table("k", "v", title=f"action trigger info: {trigger.name}", show_header=False)
+
+    table.add_row("name", trigger.name)
+    table.add_row("description", trigger.description)
+    table.add_row("uuid", Text(str(trigger.uuid), style="green"))
+    table.add_row("mission uuid", Text(str(trigger.mission_uuid), style="green"))
+    table.add_row("template name", trigger.template_name)
+    table.add_row("template uuid", Text(str(trigger.template_uuid), style="green"))
+    table.add_row("type", trigger.type)
+    match trigger.config:
+        case FileConfig(patterns=patterns, event=event):
+            table.add_row("file trigger patterns", ", ".join(patterns))
+            if event is not None:
+                table.add_row("file trigger events", ", ".join(event))
+        case TimeConfig(cron=cron):
+            table.add_row("time trigger cron expression", cron)
+        case WebhookConfig():
+            curr_config = kleinkram.config.get_config()
+            url = curr_config.endpoints[curr_config.selected_endpoint].api + f"/hooks/actions/{trigger.uuid}"
+            table.add_row("webhook trigger url", url)
+    return table
+
+
+def print_triggers_table(triggers: Sequence[ActionTrigger], *, pprint: bool) -> None:
+    """
+    Prints the action triggers to stdout
+    either using pprint or as a list of UUIDs for piping
+    """
+    if pprint:
+        table = triggers_to_table(triggers)
+        Console().print(table)
+    else:
+        for trigger in triggers:
+            print(trigger.uuid)
+
+
+def print_trigger_info(trigger: ActionTrigger, *, pprint: bool) -> None:
+    """
+    Prints the action trigger info to stdout
+    either using pprint or as JSON for piping
+    """
+    if pprint:
+        Console().print(trigger_info_table(trigger))
+    else:
+        trigger_dict = asdict(trigger)
+        for key in trigger_dict:
+            trigger_dict[key] = str(trigger_dict[key])  # simple serialization
+        print(json.dumps(trigger_dict))
 
 
 LOG_LEVEL_COLORS = {
