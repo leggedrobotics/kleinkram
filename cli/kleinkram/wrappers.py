@@ -273,10 +273,10 @@ def list_executions(
 def list_triggers(
     *,
     client: Optional[AuthenticatedClient] = None,
-    mission_ids: Optional[IdLike] = None,
+    mission_uuid: Optional[IdLike] = None,
 ) -> List[ActionTrigger]:
     query = TriggerQuery(
-        mission_uuid=parse_uuid_like(mission_ids) if mission_ids else None,
+        mission_uuid=parse_uuid_like(mission_uuid) if mission_uuid else None,
     )
     client = client or AuthenticatedClient()
     return list(kleinkram.api.routes.get_triggers(client, query=query))
