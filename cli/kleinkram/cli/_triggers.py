@@ -186,9 +186,7 @@ def update_trigger_cli(
             case TriggerType.FILE:
                 if file_patterns is None:
                     raise typer.BadParameter("At least one --file-pattern is required for FILE triggers.")
-                event = None
-                if file_events is not None:
-                    event = tuple(file_events)
+                event = tuple(file_events) if file_events is not None else ()
                 updated_fields["config"] = FileConfig(patterns=tuple(file_patterns), event=event)
             case TriggerType.TIME:
                 if cron_expression is None:

@@ -501,8 +501,7 @@ def trigger_info_table(trigger: ActionTrigger) -> Table:
     match trigger.config:
         case FileConfig(patterns=patterns, event=event):
             table.add_row("file trigger patterns", ", ".join(patterns))
-            if event is not None:
-                table.add_row("file trigger events", ", ".join(event))
+            table.add_row("file trigger events", ", ".join(event))
         case TimeConfig(cron=cron):
             table.add_row("time trigger cron expression", cron)
         case WebhookConfig():
