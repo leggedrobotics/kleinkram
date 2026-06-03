@@ -115,9 +115,7 @@ def create_trigger_cli(
             if not file_patterns:
                 typer.secho("Error: At least one --file-pattern is required for FILE triggers.", fg=typer.colors.RED)
                 raise typer.Exit(code=1)
-            event = None
-            if file_events is not None:
-                event = tuple(file_events)
+            event = tuple(file_events) if file_events is not None else ()
             config = FileConfig(patterns=tuple(file_patterns), event=event)
         case TriggerType.TIME:
             if cron_expression is None:
