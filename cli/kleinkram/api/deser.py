@@ -354,14 +354,14 @@ def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
 
         if type_ is TriggerType.FILE:
             raw_config = trigger_object[ActionTriggerObjectKeys.CONFIG]
-            config = FileConfig(
+            config: TriggerConfig = FileConfig(
                 patterns=tuple(raw_config.get("patterns") or ()),
                 event=tuple(FileTriggerEvent(e) for e in raw_config.get("event")) if raw_config.get("event") else None,
             )
         elif type_ is TriggerType.TIME:
-            config = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
+            config: TriggerConfig = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
         elif type_ is TriggerType.WEBHOOK:
-            config = WebhookConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
+            config: TriggerConfig = WebhookConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
         else:
             raise ParsingError(f"unknown trigger type: {type_}")
 

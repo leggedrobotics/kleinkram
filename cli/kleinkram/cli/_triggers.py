@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+from typing import Any
 from typing import Optional
 
 import typer
@@ -12,8 +13,12 @@ import kleinkram.models
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import TriggerQuery
 from kleinkram.config import get_shared_state
+from kleinkram.models import FileConfig
 from kleinkram.models import FileTriggerEvent
+from kleinkram.models import TimeConfig
+from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
+from kleinkram.models import WebhookConfig
 from kleinkram.printing import print_trigger_info
 from kleinkram.printing import print_triggers_table
 from kleinkram.utils import is_valid_uuid4
@@ -116,14 +121,14 @@ def create_trigger_cli(
             event = None
             if file_events is not None:
                 event = tuple(file_events)
-            config = kleinkram.models.FileConfig(patterns=tuple(file_patterns), event=event)
+            config: TriggerConfig = FileConfig(patterns=tuple(file_patterns), event=event)
         case TriggerType.TIME:
             if cron_expression is None:
                 typer.secho("Error: --cron option is required for TIME triggers.", fg=typer.colors.RED)
                 raise typer.Exit(code=1)
-            config = kleinkram.models.TimeConfig(cron=cron_expression)
+            config: TriggerConfig = TimeConfig(cron=cron_expression)
         case TriggerType.WEBHOOK:
-            config = kleinkram.models.WebhookConfig()
+            config: TriggerConfig = WebhookConfig()
         case _:
             typer.secho(f"Error: Unsupported trigger type '{type_}'.", fg=typer.colors.RED)
             raise typer.Exit(code=1)
@@ -171,7 +176,7 @@ def update_trigger_cli(
 ) -> None:
     client = AuthenticatedClient()
 
-    updated_fields = {}
+    updated_fields: dict[str, Any] = {}
     if trigger_name is not None:
         updated_fields["trigger_name"] = trigger_name
     if description is not None:
@@ -189,13 +194,13 @@ def update_trigger_cli(
                 event = None
                 if file_events is not None:
                     event = tuple(file_events)
-                updated_fields["config"] = kleinkram.models.FileConfig(patterns=tuple(file_patterns), event=event)
+                updated_fields["config"] = FileConfig(patterns=tuple(file_patterns), event=event)
             case TriggerType.TIME:
                 if cron_expression is None:
                     raise typer.BadParameter("--cron option is required for TIME triggers.")
-                updated_fields["config"] = kleinkram.models.TimeConfig(cron=cron_expression)
+                updated_fields["config"] = TimeConfig(cron=cron_expression)
             case TriggerType.WEBHOOK:
-                updated_fields["config"] = kleinkram.models.WebhookConfig()
+                updated_fields["config"] = WebhookConfig()
 
     if not updated_fields:
         typer.secho("No fields to update. Please provide at least one field to update.", fg=typer.colors.GREEN)
