@@ -352,16 +352,17 @@ def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
         creator_name = trigger_object[ActionTriggerObjectKeys.CREATOR_NAME]
         creator_uuid = UUID(trigger_object[ActionTriggerObjectKeys.CREATOR_UUID], version=4)
 
+        config: TriggerConfig
         if type_ is TriggerType.FILE:
             raw_config = trigger_object[ActionTriggerObjectKeys.CONFIG]
-            config: TriggerConfig = FileConfig(
+            config = FileConfig(
                 patterns=tuple(raw_config.get("patterns") or ()),
                 event=tuple(FileTriggerEvent(e) for e in raw_config.get("event")) if raw_config.get("event") else None,
             )
         elif type_ is TriggerType.TIME:
-            config: TriggerConfig = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
+            config = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
         elif type_ is TriggerType.WEBHOOK:
-            config: TriggerConfig = WebhookConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
+            config = WebhookConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
         else:
             raise ParsingError(f"unknown trigger type: {type_}")
 

@@ -113,6 +113,7 @@ def create_trigger_cli(
 ) -> None:
     client = AuthenticatedClient()
 
+    config: TriggerConfig
     match type_:
         case TriggerType.FILE:
             if not file_patterns:
@@ -121,14 +122,14 @@ def create_trigger_cli(
             event = None
             if file_events is not None:
                 event = tuple(file_events)
-            config: TriggerConfig = FileConfig(patterns=tuple(file_patterns), event=event)
+            config = FileConfig(patterns=tuple(file_patterns), event=event)
         case TriggerType.TIME:
             if cron_expression is None:
                 typer.secho("Error: --cron option is required for TIME triggers.", fg=typer.colors.RED)
                 raise typer.Exit(code=1)
-            config: TriggerConfig = TimeConfig(cron=cron_expression)
+            config = TimeConfig(cron=cron_expression)
         case TriggerType.WEBHOOK:
-            config: TriggerConfig = WebhookConfig()
+            config = WebhookConfig()
         case _:
             typer.secho(f"Error: Unsupported trigger type '{type_}'.", fg=typer.colors.RED)
             raise typer.Exit(code=1)
