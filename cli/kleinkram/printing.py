@@ -6,6 +6,7 @@ import time
 from dataclasses import asdict
 from datetime import datetime
 from datetime import timezone
+from enum import Enum
 from pathlib import Path
 from typing import List
 from typing import Mapping
@@ -25,7 +26,6 @@ from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
-from enum import Enum
 
 import kleinkram
 from kleinkram.api.client import AuthenticatedClient
@@ -86,6 +86,7 @@ def file_verification_status_to_text(
         file_verification_status.value,
         style=FILE_VERIFICATION_STATUS_STYLES[file_verification_status],
     )
+
 
 def kleinkram_json_default(obj):
     if isinstance(obj, UUID):
