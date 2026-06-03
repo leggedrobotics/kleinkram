@@ -159,7 +159,7 @@ def update_trigger_cli(
         typer.Option(
             "--file-patterns",
             help="File patterns, provide multiples via '--file-patterns *.bag "
-            "--file-patters date.bag' (only for FILE triggers)",
+            "--file-patterns date.bag' (only for FILE triggers)",
         ),
     ] = None,
     file_events: Annotated[
@@ -198,6 +198,8 @@ def update_trigger_cli(
                 updated_fields["config"] = TimeConfig(cron=cron_expression)
             case TriggerType.WEBHOOK:
                 updated_fields["config"] = WebhookConfig()
+    elif any(v is not None for v in [file_patterns, file_events, cron_expression]):
+        raise typer.BadParameter("Trigger type must be specified when updating config fields. Please provide --type option.")
 
     if not updated_fields:
         typer.secho("No fields to update. Please provide at least one field to update.", fg=typer.colors.GREEN)

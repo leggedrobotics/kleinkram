@@ -527,7 +527,8 @@ def _update_trigger(
     type_: Optional[TriggerType] = None,
     config: Optional[TriggerConfig] = None,
 ) -> None:
-    if not any([name, description, template_uuid, mission_uuid, type_, config]):
+
+    if all(v is None for v in [name, description, template_uuid, mission_uuid, type_, config]):
         raise ValueError("at least one field must be updated")
 
     body = {}

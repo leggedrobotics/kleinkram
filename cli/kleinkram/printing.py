@@ -28,6 +28,7 @@ from rich.text import Text
 
 import kleinkram
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
 from kleinkram.models import ActionTemplate
@@ -504,7 +505,7 @@ def trigger_info_table(trigger: ActionTrigger) -> Table:
         case TimeConfig(cron=cron):
             table.add_row("time trigger cron expression", cron)
         case WebhookConfig():
-            curr_config = kleinkram.config.get_config()
+            curr_config = get_config()
             url = curr_config.endpoints[curr_config.selected_endpoint].api + f"/hooks/actions/{trigger.uuid}"
             table.add_row("webhook trigger url", url)
     return table
