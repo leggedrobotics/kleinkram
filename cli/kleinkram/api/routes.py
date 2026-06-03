@@ -243,7 +243,7 @@ def get_template_revisions(
 ) -> Generator[ActionTemplate, None, None]:
     try:
         response_stream = paginated_request(client, f"/templates/{template_id}/revisions")
-        yield from map(lambda p: _parse_action_template(p), response_stream)
+        yield from map(lambda p: _parse_action_template(TemplateObject(p)), response_stream)
     except ValueError as e:
         raise kleinkram.errors.TemplateNotFound(f"Template not found: {template_id}") from e
     except httpx.HTTPStatusError:

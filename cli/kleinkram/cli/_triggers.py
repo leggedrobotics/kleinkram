@@ -80,10 +80,6 @@ def trigger_info_cli(trigger_uuid: str = typer.Argument(..., metavar="TRIGGER_UU
 
     trigger = kleinkram.api.routes.get_trigger(client=client, trigger_uuid=parse_uuid_like(trigger_uuid))
 
-    if trigger is None:
-        typer.secho(f"Error: No trigger found with UUID '{trigger_uuid}'.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
-
     print_trigger_info(trigger, pprint=get_shared_state().verbose)
 
 

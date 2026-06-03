@@ -531,7 +531,10 @@ def print_trigger_info(trigger: ActionTrigger, *, pprint: bool) -> None:
     if pprint:
         Console().print(trigger_info_table(trigger))
     else:
-        print(json.dumps(trigger.__dict__))
+        trigger_dict = asdict(trigger)
+        for key in trigger_dict:
+            trigger_dict[key] = str(trigger_dict[key])
+        print(json.dumps(trigger_dict))
 
 
 LOG_LEVEL_COLORS = {
