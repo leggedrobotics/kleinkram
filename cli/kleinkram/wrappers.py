@@ -467,7 +467,7 @@ def create_template_version(
     command: Optional[str] = None,
     entrypoint: Optional[str] = None,
     client: Optional[AuthenticatedClient] = None,
-) -> IdLike:
+) -> UUID:
     client = client or AuthenticatedClient()
     return kleinkram.core.create_template_version(
         client,
@@ -497,7 +497,7 @@ def create_template(
     entrypoint: Optional[str] = None,
     *,
     client: Optional[AuthenticatedClient] = None,
-) -> IdLike:
+) -> UUID:
     client = client or AuthenticatedClient()
     return kleinkram.core.create_template(
         client,

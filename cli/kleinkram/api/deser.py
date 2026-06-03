@@ -13,7 +13,7 @@ from uuid import UUID
 import dateutil.parser
 
 from kleinkram.errors import ParsingError
-from kleinkram.models import ActionTemplate
+from kleinkram.models import ActionTemplate, FileTriggerEvent
 from kleinkram.models import ActionTrigger
 from kleinkram.models import Execution
 from kleinkram.models import File
@@ -351,8 +351,13 @@ def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
         creator_name = trigger_object[ActionTriggerObjectKeys.CREATOR_NAME]
         creator_uuid = UUID(trigger_object[ActionTriggerObjectKeys.CREATOR_UUID], version=4)
 
+        
         if type_ is TriggerType.FILE:
-            config = FileConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
+            raw_config = trigger_object[ActionTriggerObjectKeys.CONFIG]
+            config = FileConfig(
+                patterns=tuple(raw_config.get("patterns") or ()),
+                event=tuple(FileTriggerEvent(e) for e in raw_config.get("event")) if raw_config.get("event") else None,
+            )
         elif type_ is TriggerType.TIME:
             config = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
         elif type_ is TriggerType.WEBHOOK:

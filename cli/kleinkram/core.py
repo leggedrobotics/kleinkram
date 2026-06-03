@@ -413,7 +413,12 @@ def update_trigger(
         _validate_trigger_name(client, trigger_name, mission_uuid, trigger_uuid)
 
     if template_uuid is not None:
-        _validate_template_existence(client, template_uuid)
+        try:
+            _validate_template_existence(client, template_uuid)
+        except kleinkram.errors.TemplateNotFound as e:
+            raise kleinkram.errors.TriggerValidationError("Template not found") from e
+        except Exception as e:
+            raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
 
     if (type_ is not None and config is None) or (config is not None and type_ is None):
         raise kleinkram.errors.TriggerValidationError("If type or config is provided, both must be provided")
@@ -715,9 +720,17 @@ def create_trigger(
         raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
 
     _validate_trigger_name(client, trigger_name, mission.id)
+
+
     if not is_valid_uuid4(str(template_uuid)):
         raise kleinkram.errors.TriggerValidationError("Invalid template UUID")
-    _validate_template_existence(client, template_uuid)
+    try:
+        _validate_template_existence(client, template_uuid)
+    except kleinkram.errors.TemplateNotFound as e:
+        raise kleinkram.errors.TriggerValidationError("Template not found") from e
+    except Exception as e:
+        raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
+
     _validate_trigger_type_and_config(type_, config)
 
     return kleinkram.api.routes._create_trigger(
@@ -847,7 +860,7 @@ def _validate_template_existence(client: AuthenticatedClient, template_id: UUID)
     try:
         _ = kleinkram.api.routes.get_template(client, template_id)
     except kleinkram.errors.TemplateNotFound:
-        raise kleinkram.errors.TemplateValidationError(f"Template with id: `{template_id}` does not exist")
+        raise kleinkram.errors.TemplateNotFound(f"Template with id: `{template_id}` does not exist")
 
 
 def _validate_trigger_type_and_config(type_: TriggerType, config: TriggerConfig) -> None:

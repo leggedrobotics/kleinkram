@@ -14,6 +14,8 @@ from kleinkram import delete_project
 from kleinkram import list_missions
 from kleinkram import list_projects
 from kleinkram import upload
+from kleinkram import create_template
+from kleinkram import get_template
 
 # we expect the mission files to be in this folder that is not commited to the repo
 DATA_PATH = Path(__file__).parent / "data"
@@ -65,6 +67,23 @@ def empty_mission(project):
     mission = list_missions(project_ids=[project.id], mission_names=[mission_name])[0]
 
     yield mission
+
+
+@pytest.fixture
+def action_template(empty_mission):
+    template_name = token_hex(8)
+    template_id = create_template(
+        name=template_name,
+        description="This is a test template",
+        docker_image="ubuntu:latest",
+        cpu_cores=1,
+        cpu_memory_gb=1,
+        gpu_memory_gb=-1,
+        max_runtime_minutes=60,
+    )
+    template = get_template(template_id)
+
+    yield template
 
 
 @pytest.fixture(scope="session", autouse=True)
