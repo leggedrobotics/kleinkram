@@ -357,7 +357,7 @@ def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
             raw_config = trigger_object[ActionTriggerObjectKeys.CONFIG]
             config = FileConfig(
                 patterns=tuple(raw_config.get("patterns") or ()),
-                event=tuple(FileTriggerEvent(e) for e in raw_config.get("event")) if raw_config.get("event") else None,
+                event=tuple(FileTriggerEvent(e) for e in raw_config.get("event")) if raw_config.get("event") else (),
             )
         elif type_ is TriggerType.TIME:
             config = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
