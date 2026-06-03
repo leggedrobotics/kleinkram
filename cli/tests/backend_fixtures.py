@@ -10,12 +10,12 @@ import pytest
 
 from kleinkram import create_mission
 from kleinkram import create_project
+from kleinkram import create_template
 from kleinkram import delete_project
+from kleinkram import get_template
 from kleinkram import list_missions
 from kleinkram import list_projects
 from kleinkram import upload
-from kleinkram import create_template
-from kleinkram import get_template
 
 # we expect the mission files to be in this folder that is not commited to the repo
 DATA_PATH = Path(__file__).parent / "data"

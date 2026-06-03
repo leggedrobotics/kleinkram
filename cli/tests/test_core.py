@@ -255,4 +255,3 @@ def test_launch_execution_and_list(empty_mission):
 
     archived = kleinkram.core.delete_template(client=client, template_id=template.uuid)
     assert archived is True
-

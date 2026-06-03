@@ -721,7 +721,6 @@ def create_trigger(
 
     _validate_trigger_name(client, trigger_name, mission.id)
 
-
     if not is_valid_uuid4(str(template_uuid)):
         raise kleinkram.errors.TriggerValidationError("Invalid template UUID")
     try:

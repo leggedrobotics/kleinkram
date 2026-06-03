@@ -7,19 +7,15 @@ import pytest
 
 import kleinkram.core
 import kleinkram.errors
-from kleinkram.models import (
-    FileConfig,
-    FileTriggerEvent,
-    TimeConfig,
-    TriggerType,
-    WebhookConfig,
-)
-from kleinkram.wrappers import (
-    create_trigger,
-    delete_trigger,
-    list_triggers,
-    update_trigger,
-)
+from kleinkram.models import FileConfig
+from kleinkram.models import FileTriggerEvent
+from kleinkram.models import TimeConfig
+from kleinkram.models import TriggerType
+from kleinkram.models import WebhookConfig
+from kleinkram.wrappers import create_trigger
+from kleinkram.wrappers import delete_trigger
+from kleinkram.wrappers import list_triggers
+from kleinkram.wrappers import update_trigger
 
 
 @pytest.mark.slow
@@ -174,7 +170,7 @@ def test_trigger_crud_webhook(empty_mission, action_template):
 )
 def test_trigger_validation_invalid_name(empty_mission, action_template, invalid_name):
     config = WebhookConfig()
-    
+
     with pytest.raises(kleinkram.errors.TriggerValidationError):
         create_trigger(
             trigger_name=invalid_name,

@@ -13,12 +13,13 @@ from uuid import UUID
 import dateutil.parser
 
 from kleinkram.errors import ParsingError
-from kleinkram.models import ActionTemplate, FileTriggerEvent
+from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import FileConfig
 from kleinkram.models import FileState
+from kleinkram.models import FileTriggerEvent
 from kleinkram.models import LogEntry
 from kleinkram.models import MetadataValue
 from kleinkram.models import Mission
@@ -351,7 +352,6 @@ def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
         creator_name = trigger_object[ActionTriggerObjectKeys.CREATOR_NAME]
         creator_uuid = UUID(trigger_object[ActionTriggerObjectKeys.CREATOR_UUID], version=4)
 
-        
         if type_ is TriggerType.FILE:
             raw_config = trigger_object[ActionTriggerObjectKeys.CONFIG]
             config = FileConfig(
