@@ -25,6 +25,7 @@ from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
+from enum import Enum
 
 import kleinkram
 from kleinkram.api.client import AuthenticatedClient
@@ -85,6 +86,17 @@ def file_verification_status_to_text(
         file_verification_status.value,
         style=FILE_VERIFICATION_STATUS_STYLES[file_verification_status],
     )
+
+def kleinkram_json_default(obj):
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, Enum):
+        return obj.value
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 
 def format_bytes(size: int) -> str:
@@ -363,10 +375,7 @@ def print_file_info(file: File, *, pprint: bool) -> None:
         table = file_info_table(file)
         Console().print(table)
     else:
-        file_dct = asdict(file)
-        for key in file_dct:
-            file_dct[key] = str(file_dct[key])  # TODO: improve this
-        print(json.dumps(file_dct))
+        print(json.dumps(asdict(file), default=kleinkram_json_default))
 
 
 def print_mission_info(mission: Mission, *, pprint: bool) -> None:
@@ -377,10 +386,7 @@ def print_mission_info(mission: Mission, *, pprint: bool) -> None:
     if pprint:
         Console().print(*mission_info_table(mission, print_metadata=True))
     else:
-        mission_dct = asdict(mission)
-        for key in mission_dct:
-            mission_dct[key] = str(mission_dct[key])  # TODO: improve this
-        print(json.dumps(mission_dct))
+        print(json.dumps(asdict(mission), default=kleinkram_json_default))
 
 
 def print_project_info(project: Project, *, pprint: bool) -> None:
@@ -391,10 +397,7 @@ def print_project_info(project: Project, *, pprint: bool) -> None:
     if pprint:
         Console().print(project_info_table(project))
     else:
-        project_dct = asdict(project)
-        for key in project_dct:
-            project_dct[key] = str(project_dct[key])  # TODO: improve this
-        print(json.dumps(project_dct))
+        print(json.dumps(asdict(project), default=kleinkram_json_default))
 
 
 def executions_to_table(executions: Sequence[Execution]) -> Table:
@@ -463,10 +466,7 @@ def print_execution_info(execution: Execution, *, pprint: bool) -> None:
     if pprint:
         Console().print(execution_info_table(execution))
     else:
-        execution_dict = asdict(execution)
-        for key in execution_dict:
-            execution_dict[key] = str(execution_dict[key])  # simple serialization
-        print(json.dumps(execution_dict))
+        print(json.dumps(asdict(execution), default=kleinkram_json_default))
 
 
 def triggers_to_table(triggers: Sequence[ActionTrigger]) -> Table:
@@ -532,10 +532,7 @@ def print_trigger_info(trigger: ActionTrigger, *, pprint: bool) -> None:
     if pprint:
         Console().print(trigger_info_table(trigger))
     else:
-        trigger_dict = asdict(trigger)
-        for key in trigger_dict:
-            trigger_dict[key] = str(trigger_dict[key])
-        print(json.dumps(trigger_dict))
+        print(json.dumps(asdict(trigger), default=kleinkram_json_default))
 
 
 LOG_LEVEL_COLORS = {
