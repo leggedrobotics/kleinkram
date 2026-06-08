@@ -5,8 +5,12 @@ from dataclasses import field
 from datetime import datetime
 from enum import Enum
 from enum import IntEnum
+from typing import Any
 from typing import Dict
 from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
 from uuid import UUID
 
 
@@ -145,3 +149,58 @@ class FileVerificationStatus(str, Enum):
     MISMATCHED_HASH = "hash mismatch"
     MISMATCHED_SIZE = "size mismatch"
     UNKNOWN = "unknown"
+
+
+class TriggerType(str, Enum):
+    FILE = "FILE"
+    WEBHOOK = "WEBHOOK"
+    TIME = "TIME"
+
+
+class FileTriggerEvent(str, Enum):
+    UPLOAD = "UPLOAD"
+    RENAME = "RENAME"
+    MOVE = "MOVE"
+    DELETE = "DELETE"
+
+
+# ---
+# The attribute names of the following Config dataclasses match the keys of
+# the corresponding API objects, which allows for easy parsing. Thus, if the
+# key names of the API objects change, the attribute names of the dataclasses
+# should be updated accordingly.
+# ---
+
+
+@dataclass(frozen=True)
+class FileConfig:
+    patterns: Tuple[str, ...] = field(default_factory=tuple)
+    event: Tuple[FileTriggerEvent, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class TimeConfig:
+    cron: str
+
+
+# placeholder for future config options
+@dataclass(frozen=True)
+class WebhookConfig:
+    extra_options: Mapping[str, Any] = field(default_factory=dict)
+
+
+TriggerConfig = FileConfig | TimeConfig | WebhookConfig
+
+
+@dataclass(frozen=True)
+class ActionTrigger:
+    uuid: UUID
+    name: str
+    description: str
+    template_uuid: UUID
+    template_name: Optional[str]
+    mission_uuid: UUID
+    type: TriggerType
+    config: TriggerConfig
+    creator_name: str
+    creator_uuid: UUID

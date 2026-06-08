@@ -29,6 +29,13 @@ templates_typer = typer.Typer(
 
 LIST_HELP = "Lists action templates (definitions). To list individual executions, use `klein executions list`."
 CREATE_HELP = "Creates a new action template."
+REVISIONS_HELP = "Lists revisions/history for a template."
+DELETE_HELP = (
+    "Deletes an action template. Only the latest version of a"
+    " template can be deleted. If the template has existing executions, "
+    "it will be archived instead of being deleted."
+)
+CREATE_VERSION_HELP = "Creates a new version of an existing template."
 
 
 @templates_typer.command(help=LIST_HELP, name="list")
@@ -45,7 +52,7 @@ def list_templates_cli(
     print_templates_table(templates, pprint=get_shared_state().verbose)
 
 
-@templates_typer.command(help="List revisions/history for a template.", name="revisions")
+@templates_typer.command(help=REVISIONS_HELP, name="revisions")
 def revisions(template: str = typer.Argument(..., metavar="TEMPLATE_ID", help="Template ID (UUID)")) -> None:
     client = AuthenticatedClient()
     if not is_valid_uuid4(template):
@@ -58,7 +65,7 @@ def revisions(template: str = typer.Argument(..., metavar="TEMPLATE_ID", help="T
     print_templates_table(revisions, pprint=get_shared_state().verbose)
 
 
-@templates_typer.command(help="Create a new version of an existing template.", name="create-version")
+@templates_typer.command(help=CREATE_VERSION_HELP, name="create-version")
 def create_version(
     template: str = typer.Argument(..., metavar="TEMPLATE_ID", help="Template ID (UUID)"),
     description: Optional[str] = typer.Option(None, "--description", "-d", help="Template description override"),
@@ -99,7 +106,7 @@ def create_version(
     print_templates_table([template_parsed], pprint=get_shared_state().verbose)
 
 
-@templates_typer.command(help="Deletes an action template.", name="delete")
+@templates_typer.command(help=DELETE_HELP, name="delete")
 def delete(template: str = typer.Argument(..., metavar="TEMPLATE_ID", help="Template ID (UUID)")) -> None:
     if not is_valid_uuid4(template):
         typer.secho(f"Error: '{template}' is not a valid UUID.", fg=typer.colors.RED)

@@ -40,13 +40,19 @@ from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.api.query import TriggerQuery
 from kleinkram.api.query import check_mission_query_is_creatable
 from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import TemplateNotFound
 from kleinkram.models import ArtifactState
+from kleinkram.models import FileConfig
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
+from kleinkram.models import TimeConfig
+from kleinkram.models import TriggerConfig
+from kleinkram.models import TriggerType
+from kleinkram.models import WebhookConfig
 from kleinkram.printing import files_to_table
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
@@ -363,6 +369,67 @@ def update_project(
     kleinkram.api.routes._update_project(client, project_id, description=description, new_name=new_name)
 
 
+def update_trigger(
+    client: AuthenticatedClient,
+    trigger_uuid: UUID,
+    *,
+    trigger_name: Optional[str] = None,
+    description: Optional[str] = None,
+    template_uuid: Optional[UUID] = None,
+    mission_uuid: Optional[UUID] = None,
+    type_: Optional[TriggerType] = None,
+    config: Optional[TriggerConfig] = None,
+) -> None:
+
+    if not is_valid_uuid4(str(trigger_uuid)):
+        raise kleinkram.errors.TriggerValidationError("Invalid trigger UUID")
+
+    trigger = kleinkram.api.routes.get_trigger(client, trigger_uuid)
+
+    if mission_uuid is not None:
+        try:
+            mission = kleinkram.api.routes.get_mission(client, MissionQuery(ids=[mission_uuid]))
+            mission_uuid = mission.id
+        except kleinkram.errors.MissionNotFound as e:
+            raise kleinkram.errors.TriggerValidationError("Mission not found") from e
+        except kleinkram.errors.InvalidMissionQuery as e:
+            raise kleinkram.errors.TriggerValidationError(f"Invalid mission query: {e}") from e
+        except Exception as e:
+            raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
+
+    if mission_uuid is None:
+        mission_uuid = trigger.mission_uuid
+
+    if trigger_name is not None:
+        _validate_trigger_name(client, trigger_name, mission_uuid, trigger_uuid)
+
+    if template_uuid is not None:
+        try:
+            _validate_template_existence(client, template_uuid)
+        except kleinkram.errors.TemplateNotFound as e:
+            raise kleinkram.errors.TriggerValidationError("Template not found") from e
+        except Exception as e:
+            raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
+
+    if (type_ is not None and config is None) or (config is not None and type_ is None):
+        raise kleinkram.errors.TriggerValidationError("If type or config is provided, both must be provided")
+
+    if type_ is not None:
+        assert config is not None
+        _validate_trigger_type_and_config(type_, config)
+
+    kleinkram.api.routes._update_trigger(
+        client,
+        trigger_uuid,
+        name=trigger_name,
+        description=description,
+        template_uuid=template_uuid,
+        mission_uuid=mission_uuid,
+        type_=type_,
+        config=config,
+    )
+
+
 def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> None:
     """\
     deletes multiple files accross multiple missions
@@ -452,7 +519,15 @@ def delete_template(*, client: AuthenticatedClient, template_id: UUID) -> bool:
 
 
 def delete_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None:
+    if not is_valid_uuid4(str(execution_id)):
+        raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
     kleinkram.api.routes._delete_execution(client, execution_id)
+
+
+def delete_trigger(*, client: AuthenticatedClient, trigger_uuid: UUID) -> None:
+    if not is_valid_uuid4(str(trigger_uuid)):
+        raise kleinkram.errors.TriggerValidationError("Invalid UUID")
+    kleinkram.api.routes._delete_trigger(client, trigger_uuid)
 
 
 def launch_execution(
@@ -483,201 +558,6 @@ def launch_execution(
     # 3. Launch Execution via API Route
     execution_id = kleinkram.api.routes._launch_execution(client, mission_uuid, template_uuid)
     return execution_id
-
-
-def _mission_name_is_available(client: AuthenticatedClient, mission_name: str, project_id: UUID) -> bool:
-    mission_query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project_id]))
-    try:
-        _ = kleinkram.api.routes.get_mission(client, mission_query)
-    except MissionNotFound:
-        return True
-    return False
-
-
-def _validate_mission_name(client: AuthenticatedClient, project_id: UUID, mission_name: str) -> None:
-    if not NAME_REGEX.match(mission_name):
-        raise ValueError(
-            "Mission name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
-        )
-
-    if not _mission_name_is_available(client, mission_name, project_id):
-        raise kleinkram.errors.MissionExists(f"Mission with name: `{mission_name}` already exists in project: {project_id}")
-
-    if is_valid_uuid4(mission_name):
-        raise ValueError(f"Mission name: `{mission_name}` is a valid UUIDv4, mission names must not be valid UUIDv4's")
-
-
-def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
-    project_query = ProjectQuery(patterns=[project_name])
-    try:
-        _ = kleinkram.api.routes.get_project(client, project_query, exact_match=True)
-    except kleinkram.errors.ProjectNotFound:
-        return True
-    return False
-
-
-def _validate_project_name(client: AuthenticatedClient, project_name: str, description: str) -> None:
-    if not NAME_REGEX.match(project_name):
-        raise kleinkram.errors.ProjectValidationError(
-            "Project name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
-        )
-
-    if not _project_name_is_available(client, project_name):
-        raise kleinkram.errors.ProjectExists(f"Project with name: `{project_name}` already exists")
-
-    if not description:
-        raise kleinkram.errors.ProjectValidationError("Project description is required")
-
-
-def _validate_docker_image(image_name: str) -> None:
-    if len(image_name) > DOCKER_IMAGE_MAX_LENGTH:
-        raise kleinkram.errors.TemplateValidationError(
-            f"Invalid Docker image name: length exceeds {DOCKER_IMAGE_MAX_LENGTH} characters."
-        )
-    if not DOCKER_IMAGE_REGEX.match(image_name):
-        raise kleinkram.errors.TemplateValidationError(
-            f"Invalid Docker image name: '{image_name}' does not match the required format."
-        )
-
-
-def _validate_docker_namespace(image_name: str) -> None:
-    namespace = os.environ.get("VITE_DOCKER_HUB_NAMESPACE")
-    if namespace and not image_name.startswith(namespace):
-        raise kleinkram.errors.TemplateValidationError(f"Image name must start with '{namespace}'")
-
-
-def _validate_access_rights(access_rights: int) -> None:
-    if access_rights not in ALLOWED_ACCESS_RIGHTS:
-        raise kleinkram.errors.TemplateValidationError(
-            f"Invalid access rights: {access_rights}. Allowed values are {sorted(ALLOWED_ACCESS_RIGHTS)}."
-        )
-
-
-def _validate_resource_limits(
-    *,
-    cpu_cores: int,
-    cpu_memory_gb: int,
-    gpu_memory_gb: int,
-    max_runtime_minutes: int,
-) -> None:
-    if cpu_cores <= 0:
-        raise ValueError("CPU cores must be greater than 0")
-    if cpu_memory_gb <= 0:
-        raise ValueError("CPU memory must be greater than 0")
-    if gpu_memory_gb <= 0 and gpu_memory_gb != -1:
-        raise ValueError("GPU memory must be greater than 0 or -1")
-    if max_runtime_minutes <= 0:
-        raise ValueError("Max runtime must be greater than 0")
-
-
-def _template_name_is_available(client: AuthenticatedClient, template_name: str) -> bool:
-    resp = client.get("/templates/availability", params={"name": template_name})
-    resp.raise_for_status()
-    return resp.json().get("available", False)
-
-
-def _validate_template_name(client: AuthenticatedClient, template_name: str, description: str) -> None:
-    if not template_name:
-        raise kleinkram.errors.TemplateValidationError("Template name is required")
-
-    if template_name.endswith(" "):
-        raise kleinkram.errors.TemplateValidationError(
-            f"Template name must not end with a tailing whitespace: `{template_name}`"
-        )
-
-    if not NAME_REGEX.match(template_name):
-        raise kleinkram.errors.TemplateValidationError(
-            "Template name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
-        )
-
-    if not _template_name_is_available(client, template_name):
-        raise kleinkram.errors.TemplateExists(f"Template with name: `{template_name}` already exists")
-
-    if not description:
-        raise kleinkram.errors.TemplateValidationError("Template description is required")
-
-
-def _validate_mission_created(client: AuthenticatedClient, project_id: str, mission_name: str) -> None:
-    """
-    validate that a mission is successfully created
-    """
-    mission_ids, mission_patterns = split_args([mission_name])
-    project_ids, project_patterns = split_args([project_id])
-
-    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
-    mission_query = MissionQuery(
-        ids=mission_ids,
-        patterns=mission_patterns,
-        project_query=project_query,
-    )
-    try:
-        with tempfile.NamedTemporaryFile(suffix=".mcap", delete=False) as tmp:
-            tmp.write(b"dummy content")
-            tmp_path = Path(tmp.name)
-
-        upload(
-            client=client,
-            query=mission_query,
-            file_paths=[tmp_path],
-            verbose=False,
-        )
-
-        file_query = FileQuery(
-            ids=[],
-            patterns=[tmp_path.name],
-            mission_query=mission_query,
-        )
-        file_parsed = kleinkram.api.routes.get_file(client, file_query)
-
-        delete_files(client=client, file_ids=[file_parsed.id])
-
-    except Exception as e:
-        raise kleinkram.errors.MissionValidationError(f"Mission validation failed: {e}")
-
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
-
-
-def _validate_tag_value(tag_value, tag_datatype) -> None:
-    if tag_datatype == "NUMBER":
-        try:
-            float(tag_value)
-        except ValueError:
-            raise kleinkram.errors.InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
-    elif tag_datatype == "BOOLEAN":
-        if tag_value.lower() not in {"true", "false"}:
-            raise kleinkram.errors.InvalidMissionMetadata(
-                f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')"
-            )
-    else:
-        pass
-
-
-def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) -> Tuple[Optional[UUID], str]:
-    resp = client.get("/tag/filtered", params={"name": tag_name, "take": 1})
-
-    if resp.status_code in (403, 404):
-        return None, ""
-
-    resp.raise_for_status()
-    try:
-        data = resp.json()["data"][0]
-    except IndexError:
-        return None, ""
-
-    return UUID(data["uuid"], version=4), data["datatype"]
-
-
-def _get_tags_map(client: AuthenticatedClient, metadata: Dict[str, str]) -> Dict[UUID, str]:
-    ret = {}
-    for key, val in metadata.items():
-        metadata_type_id, tag_datatype = _get_metadata_type_id_by_name(client, key)
-        if metadata_type_id is None:
-            raise kleinkram.errors.InvalidMissionMetadata(f"metadata field: {key} does not exist")
-        _validate_tag_value(val, tag_datatype)
-        ret[metadata_type_id] = val
-    return ret
 
 
 def create_mission(
@@ -809,3 +689,288 @@ def create_template_version(
         command=command if command is not None else current.command,
         entrypoint=entrypoint if entrypoint is not None else current.entrypoint,
     )
+
+
+def create_trigger(
+    client: AuthenticatedClient,
+    trigger_name: str,
+    description: str,
+    template_uuid: UUID,
+    mission_uuid: UUID,
+    type_: TriggerType,
+    config: TriggerConfig,
+) -> UUID:
+
+    try:
+        mission = kleinkram.api.routes.get_mission(client, MissionQuery(ids=[mission_uuid]))
+    except kleinkram.errors.MissionNotFound as e:
+        raise kleinkram.errors.TriggerValidationError("Mission not found") from e
+    except kleinkram.errors.InvalidMissionQuery as e:
+        raise kleinkram.errors.TriggerValidationError(f"Invalid mission query: {e}") from e
+    except Exception as e:
+        raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
+
+    _validate_trigger_name(client, trigger_name, mission.id)
+
+    if not is_valid_uuid4(str(template_uuid)):
+        raise kleinkram.errors.TriggerValidationError("Invalid template UUID")
+    try:
+        _validate_template_existence(client, template_uuid)
+    except kleinkram.errors.TemplateNotFound as e:
+        raise kleinkram.errors.TriggerValidationError("Template not found") from e
+    except Exception as e:
+        raise kleinkram.errors.TriggerValidationError(f"Unexpected error occurred: {e}") from e
+
+    _validate_trigger_type_and_config(type_, config)
+
+    return kleinkram.api.routes._create_trigger(
+        client,
+        trigger_name,
+        description,
+        template_uuid,
+        mission.id,
+        type_,
+        config,
+    )
+
+
+def _mission_name_is_available(client: AuthenticatedClient, mission_name: str, project_id: UUID) -> bool:
+    mission_query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project_id]))
+    try:
+        _ = kleinkram.api.routes.get_mission(client, mission_query)
+    except MissionNotFound:
+        return True
+    return False
+
+
+def _validate_mission_name(client: AuthenticatedClient, project_id: UUID, mission_name: str) -> None:
+    if not NAME_REGEX.match(mission_name):
+        raise ValueError(
+            "Mission name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
+        )
+
+    if not _mission_name_is_available(client, mission_name, project_id):
+        raise kleinkram.errors.MissionExists(f"Mission with name: `{mission_name}` already exists in project: {project_id}")
+
+    if is_valid_uuid4(mission_name):
+        raise ValueError(f"Mission name: `{mission_name}` is a valid UUIDv4, mission names must not be valid UUIDv4's")
+
+
+def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
+    project_query = ProjectQuery(patterns=[project_name])
+    try:
+        _ = kleinkram.api.routes.get_project(client, project_query, exact_match=True)
+    except kleinkram.errors.ProjectNotFound:
+        return True
+    return False
+
+
+def _validate_project_name(client: AuthenticatedClient, project_name: str, description: str) -> None:
+    if not NAME_REGEX.match(project_name):
+        raise kleinkram.errors.ProjectValidationError(
+            "Project name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
+        )
+
+    if not _project_name_is_available(client, project_name):
+        raise kleinkram.errors.ProjectExists(f"Project with name: `{project_name}` already exists")
+
+    if not description:
+        raise kleinkram.errors.ProjectValidationError("Project description is required")
+
+
+def _validate_docker_image(image_name: str) -> None:
+    if len(image_name) > DOCKER_IMAGE_MAX_LENGTH:
+        raise kleinkram.errors.TemplateValidationError(
+            f"Invalid Docker image name: length exceeds {DOCKER_IMAGE_MAX_LENGTH} characters."
+        )
+    if not DOCKER_IMAGE_REGEX.match(image_name):
+        raise kleinkram.errors.TemplateValidationError(
+            f"Invalid Docker image name: '{image_name}' does not match the required format."
+        )
+
+
+def _validate_docker_namespace(image_name: str) -> None:
+    namespace = os.environ.get("VITE_DOCKER_HUB_NAMESPACE")
+    if namespace and not image_name.startswith(namespace):
+        raise kleinkram.errors.TemplateValidationError(f"Image name must start with '{namespace}'")
+
+
+def _validate_access_rights(access_rights: int) -> None:
+    if access_rights not in ALLOWED_ACCESS_RIGHTS:
+        raise kleinkram.errors.TemplateValidationError(
+            f"Invalid access rights: {access_rights}. Allowed values are {sorted(ALLOWED_ACCESS_RIGHTS)}."
+        )
+
+
+def _validate_resource_limits(
+    *,
+    cpu_cores: int,
+    cpu_memory_gb: int,
+    gpu_memory_gb: int,
+    max_runtime_minutes: int,
+) -> None:
+    if cpu_cores <= 0:
+        raise ValueError("CPU cores must be greater than 0")
+    if cpu_memory_gb <= 0:
+        raise ValueError("CPU memory must be greater than 0")
+    if gpu_memory_gb <= 0 and gpu_memory_gb != -1:
+        raise ValueError("GPU memory must be greater than 0 or -1")
+    if max_runtime_minutes <= 0:
+        raise ValueError("Max runtime must be greater than 0")
+
+
+def _template_name_is_available(client: AuthenticatedClient, template_name: str) -> bool:
+    resp = client.get("/templates/availability", params={"name": template_name})
+    resp.raise_for_status()
+    return resp.json().get("available", False)
+
+
+def _validate_template_name(client: AuthenticatedClient, template_name: str, description: str) -> None:
+    if not template_name:
+        raise kleinkram.errors.TemplateValidationError("Template name is required")
+
+    if template_name.endswith(" "):
+        raise kleinkram.errors.TemplateValidationError(
+            f"Template name must not end with a tailing whitespace: `{template_name}`"
+        )
+
+    if not NAME_REGEX.match(template_name):
+        raise kleinkram.errors.TemplateValidationError(
+            "Template name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
+        )
+
+    if not _template_name_is_available(client, template_name):
+        raise kleinkram.errors.TemplateExists(f"Template with name: `{template_name}` already exists")
+
+    if not description:
+        raise kleinkram.errors.TemplateValidationError("Template description is required")
+
+
+def _validate_template_existence(client: AuthenticatedClient, template_id: UUID) -> None:
+    try:
+        _ = kleinkram.api.routes.get_template(client, template_id)
+    except kleinkram.errors.TemplateNotFound:
+        raise kleinkram.errors.TemplateNotFound(f"Template with id: `{template_id}` does not exist")
+
+
+def _validate_trigger_type_and_config(type_: TriggerType, config: TriggerConfig) -> None:
+    if type_ == TriggerType.FILE and not isinstance(config, FileConfig):
+        raise kleinkram.errors.TriggerValidationError("Config not valid for trigger type FILE, expected FileConfig")
+    if type_ == TriggerType.TIME and not isinstance(config, TimeConfig):
+        raise kleinkram.errors.TriggerValidationError("Config not valid for trigger type TIME, expected TimeConfig")
+    if type_ == TriggerType.WEBHOOK and not isinstance(config, WebhookConfig):
+        raise kleinkram.errors.TriggerValidationError("Config not valid for trigger type WEBHOOK, expected WebhookConfig")
+
+
+def _validate_trigger_name(
+    client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID, update_trigger_uuid: Optional[UUID] = None
+) -> None:
+    if not trigger_name:
+        raise kleinkram.errors.TriggerValidationError("Trigger name is required")
+
+    if trigger_name.endswith(" "):
+        raise kleinkram.errors.TriggerValidationError(f"Trigger name must not end with a tailing whitespace: `{trigger_name}`")
+
+    if not NAME_REGEX.match(trigger_name):
+        raise kleinkram.errors.TriggerValidationError(
+            "Trigger name must be between 3 and 50 characters and contain only" " letters, numbers, dashes, and underscores."
+        )
+
+    if not _trigger_name_is_available(client, trigger_name, mission_uuid, update_trigger_uuid):
+        raise kleinkram.errors.TriggerValidationError(
+            f"Trigger with name: `{trigger_name}` already exists in mission: "
+            f"{mission_uuid}. Trigger names must be unique within a mission."
+        )
+
+
+def _trigger_name_is_available(
+    client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID, update_trigger_uuid: Optional[UUID] = None
+) -> bool:
+    triggers = kleinkram.api.routes.get_triggers(client, TriggerQuery(mission_uuid=mission_uuid))
+    for trigger in triggers:
+        if trigger.name == trigger_name and (update_trigger_uuid is None or trigger.uuid != update_trigger_uuid):
+            return False
+    return True
+
+
+def _validate_mission_created(client: AuthenticatedClient, project_id: str, mission_name: str) -> None:
+    """
+    validate that a mission is successfully created
+    """
+    mission_ids, mission_patterns = split_args([mission_name])
+    project_ids, project_patterns = split_args([project_id])
+
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_query=project_query,
+    )
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mcap", delete=False) as tmp:
+            tmp.write(b"dummy content")
+            tmp_path = Path(tmp.name)
+
+        upload(
+            client=client,
+            query=mission_query,
+            file_paths=[tmp_path],
+            verbose=False,
+        )
+
+        file_query = FileQuery(
+            ids=[],
+            patterns=[tmp_path.name],
+            mission_query=mission_query,
+        )
+        file_parsed = kleinkram.api.routes.get_file(client, file_query)
+
+        delete_files(client=client, file_ids=[file_parsed.id])
+
+    except Exception as e:
+        raise kleinkram.errors.MissionValidationError(f"Mission validation failed: {e}")
+
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
+
+
+def _validate_tag_value(tag_value, tag_datatype) -> None:
+    if tag_datatype == "NUMBER":
+        try:
+            float(tag_value)
+        except ValueError:
+            raise kleinkram.errors.InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
+    elif tag_datatype == "BOOLEAN":
+        if tag_value.lower() not in {"true", "false"}:
+            raise kleinkram.errors.InvalidMissionMetadata(
+                f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')"
+            )
+    else:
+        pass
+
+
+def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) -> Tuple[Optional[UUID], str]:
+    resp = client.get("/tag/filtered", params={"name": tag_name, "take": 1})
+
+    if resp.status_code in (403, 404):
+        return None, ""
+
+    resp.raise_for_status()
+    try:
+        data = resp.json()["data"][0]
+    except IndexError:
+        return None, ""
+
+    return UUID(data["uuid"], version=4), data["datatype"]
+
+
+def _get_tags_map(client: AuthenticatedClient, metadata: Dict[str, str]) -> Dict[UUID, str]:
+    ret = {}
+    for key, val in metadata.items():
+        metadata_type_id, tag_datatype = _get_metadata_type_id_by_name(client, key)
+        if metadata_type_id is None:
+            raise kleinkram.errors.InvalidMissionMetadata(f"metadata field: {key} does not exist")
+        _validate_tag_value(val, tag_datatype)
+        ret[metadata_type_id] = val
+    return ret

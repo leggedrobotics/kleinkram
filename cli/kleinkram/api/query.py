@@ -55,6 +55,17 @@ class ExecutionQuery:
     template_name: Optional[str] = None
 
 
+@dataclass
+class TriggerQuery:
+    """
+    This matches the parameters supported by the backend. The backend
+    does not yet support filtering by list of ids as for
+    other resources (e.g. projects and missions).
+    """
+
+    mission_uuid: Optional[UUID] = None
+
+
 def check_mission_query_is_creatable(query: MissionQuery) -> str:
     """\
     check if a query is unique and can be used to create a mission

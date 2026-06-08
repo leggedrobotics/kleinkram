@@ -14,14 +14,21 @@ import dateutil.parser
 
 from kleinkram.errors import ParsingError
 from kleinkram.models import ActionTemplate
+from kleinkram.models import ActionTrigger
 from kleinkram.models import ArtifactState
 from kleinkram.models import Execution
 from kleinkram.models import File
+from kleinkram.models import FileConfig
 from kleinkram.models import FileState
+from kleinkram.models import FileTriggerEvent
 from kleinkram.models import LogEntry
 from kleinkram.models import MetadataValue
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import TimeConfig
+from kleinkram.models import TriggerConfig
+from kleinkram.models import TriggerType
+from kleinkram.models import WebhookConfig
 
 __all__ = [
     "_parse_project",
@@ -34,6 +41,8 @@ ProjectObject = NewType("ProjectObject", Dict[str, Any])
 MissionObject = NewType("MissionObject", Dict[str, Any])
 FileObject = NewType("FileObject", Dict[str, Any])
 ExecutionObject = NewType("ExecutionObject", Dict[str, Any])
+TemplateObject = NewType("TemplateObject", Dict[str, Any])
+TriggerObject = NewType("TriggerObject", Dict[str, Any])
 
 MISSION = "mission"
 PROJECT = "project"
@@ -100,6 +109,19 @@ class TemplateObjectKeys(str, Enum):
     MAX_RUNTIME_MINUTES = "maxRuntime"
     CREATED_AT = "createdAt"
     VERSION = "version"
+
+
+class ActionTriggerObjectKeys(str, Enum):
+    UUID = "uuid"
+    NAME = "name"
+    DESCRIPTION = "description"
+    MISSION_UUID = "missionUuid"
+    TEMPLATE_NAME = "templateName"
+    TEMPLATE_UUID = "templateUuid"
+    TYPE = "type"
+    CONFIG = "config"
+    CREATOR_NAME = "creatorName"
+    CREATOR_UUID = "creatorUuid"
 
 
 class LogEntryObjectKeys(str, Enum):
@@ -230,9 +252,9 @@ def _parse_file(file: FileObject) -> File:
     return parsed
 
 
-def _parse_action_template(template_object: Dict[str, Any]) -> ActionTemplate:
+def _parse_action_template(template_object: TemplateObject) -> ActionTemplate:
     try:
-        uuid_ = UUID(template_object[TemplateObjectKeys.UUID], version=4)
+        uuid = UUID(template_object[TemplateObjectKeys.UUID], version=4)
         access_rights = template_object[TemplateObjectKeys.ACCESS_RIGHTS]
         command = template_object[TemplateObjectKeys.COMMAND]
         cpu_cores = template_object[TemplateObjectKeys.CPU_CORES]
@@ -250,7 +272,7 @@ def _parse_action_template(template_object: Dict[str, Any]) -> ActionTemplate:
         raise ParsingError(f"error parsing action template: {template_object}") from e
 
     return ActionTemplate(
-        uuid=uuid_,
+        uuid=uuid,
         access_rights=access_rights,
         command=command,
         cpu_cores=cpu_cores,
@@ -268,7 +290,7 @@ def _parse_action_template(template_object: Dict[str, Any]) -> ActionTemplate:
 
 def _parse_execution(execution_object: ExecutionObject) -> Execution:
     try:
-        uuid_ = UUID(execution_object[ExecutionObjectKeys.UUID], version=4)
+        uuid = UUID(execution_object[ExecutionObjectKeys.UUID], version=4)
         state = execution_object[ExecutionObjectKeys.STATE]
         state_cause = execution_object[ExecutionObjectKeys.STATE_CAUSE]
         artifact_url = execution_object.get(ExecutionObjectKeys.ARTIFACT_URL)
@@ -309,7 +331,7 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
         raise ParsingError(f"error parsing run: {execution_object}") from e
 
     return Execution(
-        uuid=uuid_,
+        uuid=uuid,
         state=state,
         state_cause=state_cause,
         artifact_url=artifact_url,
@@ -323,4 +345,47 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
         template_id=template_id,
         template_name=template_name,
         logs=logs,
+    )
+
+
+def _parse_action_trigger(trigger_object: TriggerObject) -> ActionTrigger:
+    try:
+        uuid = UUID(trigger_object[ActionTriggerObjectKeys.UUID], version=4)
+        name = trigger_object[ActionTriggerObjectKeys.NAME]
+        description = trigger_object[ActionTriggerObjectKeys.DESCRIPTION]
+        mission_uuid = UUID(trigger_object[ActionTriggerObjectKeys.MISSION_UUID], version=4)
+        template_uuid = UUID(trigger_object[ActionTriggerObjectKeys.TEMPLATE_UUID], version=4)
+        template_name = trigger_object[ActionTriggerObjectKeys.TEMPLATE_NAME]
+        type_ = TriggerType(trigger_object[ActionTriggerObjectKeys.TYPE])
+        creator_name = trigger_object[ActionTriggerObjectKeys.CREATOR_NAME]
+        creator_uuid = UUID(trigger_object[ActionTriggerObjectKeys.CREATOR_UUID], version=4)
+
+        config: TriggerConfig
+        if type_ is TriggerType.FILE:
+            raw_config = trigger_object[ActionTriggerObjectKeys.CONFIG]
+            config = FileConfig(
+                patterns=tuple(raw_config.get("patterns") or ()),
+                event=tuple(FileTriggerEvent(e) for e in raw_config.get("event")) if raw_config.get("event") else (),
+            )
+        elif type_ is TriggerType.TIME:
+            config = TimeConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
+        elif type_ is TriggerType.WEBHOOK:
+            config = WebhookConfig(**trigger_object[ActionTriggerObjectKeys.CONFIG])
+        else:
+            raise ParsingError(f"unknown trigger type: {type_}")
+
+    except Exception as e:
+        raise ParsingError(f"error parsing action trigger: {trigger_object}") from e
+
+    return ActionTrigger(
+        uuid=uuid,
+        name=name,
+        description=description,
+        mission_uuid=mission_uuid,
+        template_uuid=template_uuid,
+        template_name=template_name,
+        type=type_,
+        creator_name=creator_name,
+        creator_uuid=creator_uuid,
+        config=config,
     )

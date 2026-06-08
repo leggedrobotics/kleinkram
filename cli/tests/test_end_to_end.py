@@ -10,6 +10,7 @@ import pytest
 from rich.console import Console
 from rich.text import Text
 
+import kleinkram.wrappers
 from kleinkram.api.routes import _get_api_version
 
 VERBOSE = True
@@ -97,3 +98,46 @@ def test_list_projects(api, project):
     assert run_cmd(f"{CLI} list projects {secrets.token_hex(8)}") == 0
     assert run_cmd(f"{CLI} list projects {project.id}") == 0
     assert run_cmd(f'{CLI} list projects "*"') == 0
+
+
+@pytest.mark.slow
+def test_trigger_cli_operations(empty_mission, action_template, api):
+    """E2E Test to verify CLI trigger commands process flags and return correct exit codes."""
+    assert api
+
+    trigger_name = f"trig-cli-{secrets.token_hex(6)}"
+    create_cmd = (
+        f"{CLI} triggers create "
+        f"--name {trigger_name} "
+        f"--template {action_template.uuid} "
+        f"--mission {empty_mission.id} "
+        f"--type FILE "
+        f"--file-patterns '*.bag' "
+        f"--file-events UPLOAD"
+    )
+    assert run_cmd(create_cmd) == 0
+
+    list_cmd = f"{CLI} triggers list --mission {empty_mission.id}"
+    assert run_cmd(list_cmd) == 0
+
+    fail_cmd = (
+        f"{CLI} triggers create "
+        f"--name {trigger_name}-fail "
+        f"--template {action_template.uuid} "
+        f"--mission {empty_mission.id} "
+        f"--type FILE"
+    )
+    assert run_cmd(fail_cmd) != 0
+
+    triggers = kleinkram.wrappers.list_triggers(mission_uuid=empty_mission.id)
+    assert len(triggers) == 1
+    trigger_uuid = triggers[0].uuid
+
+    info_cmd = f"{CLI} triggers info {trigger_uuid}"
+    assert run_cmd(info_cmd) == 0
+
+    update_cmd = f"{CLI} triggers update {trigger_uuid} --description 'updated via E2E CLI'"
+    assert run_cmd(update_cmd) == 0
+
+    delete_cmd = f"{CLI} triggers delete {trigger_uuid}"
+    assert run_cmd(delete_cmd) == 0

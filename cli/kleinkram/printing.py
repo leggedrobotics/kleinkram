@@ -6,6 +6,7 @@ import time
 from dataclasses import asdict
 from datetime import datetime
 from datetime import timezone
+from enum import Enum
 from pathlib import Path
 from typing import List
 from typing import Mapping
@@ -28,17 +29,23 @@ from rich.text import Text
 
 import kleinkram
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
 from kleinkram.models import ActionTemplate
+from kleinkram.models import ActionTrigger
 from kleinkram.models import Execution
 from kleinkram.models import File
+from kleinkram.models import FileConfig
 from kleinkram.models import FileState
 from kleinkram.models import LogEntry
 from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import TimeConfig
+from kleinkram.models import TriggerType
+from kleinkram.models import WebhookConfig
 
 FILE_STATE_COLOR = {
     FileState.OK: "green",
@@ -79,6 +86,18 @@ def file_verification_status_to_text(
         file_verification_status.value,
         style=FILE_VERIFICATION_STATUS_STYLES[file_verification_status],
     )
+
+
+def kleinkram_json_default(obj):
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, Enum):
+        return obj.value
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 
 def format_bytes(size: int) -> str:
@@ -357,10 +376,7 @@ def print_file_info(file: File, *, pprint: bool) -> None:
         table = file_info_table(file)
         Console().print(table)
     else:
-        file_dct = asdict(file)
-        for key in file_dct:
-            file_dct[key] = str(file_dct[key])  # TODO: improve this
-        print(json.dumps(file_dct))
+        print(json.dumps(asdict(file), default=kleinkram_json_default))
 
 
 def print_mission_info(mission: Mission, *, pprint: bool) -> None:
@@ -371,10 +387,7 @@ def print_mission_info(mission: Mission, *, pprint: bool) -> None:
     if pprint:
         Console().print(*mission_info_table(mission, print_metadata=True))
     else:
-        mission_dct = asdict(mission)
-        for key in mission_dct:
-            mission_dct[key] = str(mission_dct[key])  # TODO: improve this
-        print(json.dumps(mission_dct))
+        print(json.dumps(asdict(mission), default=kleinkram_json_default))
 
 
 def print_project_info(project: Project, *, pprint: bool) -> None:
@@ -385,10 +398,7 @@ def print_project_info(project: Project, *, pprint: bool) -> None:
     if pprint:
         Console().print(project_info_table(project))
     else:
-        project_dct = asdict(project)
-        for key in project_dct:
-            project_dct[key] = str(project_dct[key])  # TODO: improve this
-        print(json.dumps(project_dct))
+        print(json.dumps(asdict(project), default=kleinkram_json_default))
 
 
 def executions_to_table(executions: Sequence[Execution]) -> Table:
@@ -423,7 +433,7 @@ def executions_to_table(executions: Sequence[Execution]) -> Table:
 def execution_info_table(execution: Execution) -> Table:
     table = Table("k", "v", title=f"execution info: {execution.uuid}", show_header=False)
 
-    table.add_row("id", Text(str(execution.uuid), style="green"))
+    table.add_row("uuid", Text(str(execution.uuid), style="green"))
     table.add_row("template", execution.template_name)
     table.add_row("status", execution.state)
     table.add_row("project", execution.project_name)
@@ -457,10 +467,72 @@ def print_execution_info(execution: Execution, *, pprint: bool) -> None:
     if pprint:
         Console().print(execution_info_table(execution))
     else:
-        execution_dict = asdict(execution)
-        for key in execution_dict:
-            execution_dict[key] = str(execution_dict[key])  # simple serialization
-        print(json.dumps(execution_dict))
+        print(json.dumps(asdict(execution), default=kleinkram_json_default))
+
+
+def triggers_to_table(triggers: Sequence[ActionTrigger]) -> Table:
+    table = Table(title="action triggers", expand=True)
+    table.add_column("uuid", style="green", min_width=36)
+    table.add_column("name")
+    table.add_column("template name")
+    table.add_column("type")
+
+    triggers_sorted = sorted(triggers, key=lambda r: r.name)
+
+    max_table_size = get_shared_state().max_table_size
+    for trigger in triggers_sorted[:max_table_size]:
+        table.add_row(Text(str(trigger.uuid), style="green"), trigger.name, trigger.template_name, trigger.type)
+
+    if len(list(triggers)) > max_table_size:
+        _add_placeholder_row(table, skipped=len(triggers) - max_table_size)
+    return table
+
+
+def trigger_info_table(trigger: ActionTrigger) -> Table:
+    table = Table("k", "v", title=f"action trigger info: {trigger.name}", show_header=False)
+
+    table.add_row("name", trigger.name)
+    table.add_row("description", trigger.description)
+    table.add_row("uuid", Text(str(trigger.uuid), style="green"))
+    table.add_row("mission uuid", Text(str(trigger.mission_uuid), style="green"))
+    table.add_row("template name", trigger.template_name)
+    table.add_row("template uuid", Text(str(trigger.template_uuid), style="green"))
+    table.add_row("type", trigger.type)
+    match trigger.config:
+        case FileConfig(patterns=patterns, event=event):
+            table.add_row("file trigger patterns", ", ".join(patterns))
+            table.add_row("file trigger events", ", ".join(event))
+        case TimeConfig(cron=cron):
+            table.add_row("time trigger cron expression", cron)
+        case WebhookConfig():
+            curr_config = get_config()
+            url = curr_config.endpoints[curr_config.selected_endpoint].api + f"/hooks/actions/{trigger.uuid}"
+            table.add_row("webhook trigger url", url)
+    return table
+
+
+def print_triggers_table(triggers: Sequence[ActionTrigger], *, pprint: bool) -> None:
+    """
+    Prints the action triggers to stdout
+    either using pprint or as a list of UUIDs for piping
+    """
+    if pprint:
+        table = triggers_to_table(triggers)
+        Console().print(table)
+    else:
+        for trigger in triggers:
+            print(trigger.uuid)
+
+
+def print_trigger_info(trigger: ActionTrigger, *, pprint: bool) -> None:
+    """
+    Prints the action trigger info to stdout
+    either using pprint or as JSON for piping
+    """
+    if pprint:
+        Console().print(trigger_info_table(trigger))
+    else:
+        print(json.dumps(asdict(trigger), default=kleinkram_json_default))
 
 
 LOG_LEVEL_COLORS = {
