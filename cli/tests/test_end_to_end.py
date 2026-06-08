@@ -65,17 +65,26 @@ def test_upload_verify_update_download_mission(project, tmp_path, api):
 @pytest.mark.slow
 def test_list_files(project, mission, api):
     assert api
+    # Legacy commands
     assert run_cmd(f"{CLI} list files -p {project.name}") == 0
     assert run_cmd(f"{CLI} list files -p {project.name} -m {mission.name}") == 0
     assert run_cmd(f"{CLI} list files") == 0
     assert run_cmd(f"{CLI} list files -p {project.name}") == 0
     assert run_cmd(f'{CLI} list files -p "*" -m "*" "*"') == 0
 
+    # New commands
+    assert run_cmd(f"{CLI} file list -p {project.name}") == 0
+    assert run_cmd(f"{CLI} file list -p {project.name} -m {mission.name}") == 0
+    assert run_cmd(f"{CLI} file list") == 0
+    assert run_cmd(f"{CLI} file list -p {project.name}") == 0
+    assert run_cmd(f'{CLI} file list -p "*" -m "*" "*"') == 0
+
 
 @pytest.mark.slow
 def test_list_missions(api, project, mission):
     assert api
 
+    # Legacy commands
     assert run_cmd(f"{CLI} list missions -p {project.name} {mission.name}") == 0
     assert run_cmd(f"{CLI} list missions -p {project.name} {secrets.token_hex(8)}") == 0
     assert run_cmd(f"{CLI} list missions -p {project.name} {mission.id}") == 0
@@ -89,15 +98,37 @@ def test_list_missions(api, project, mission):
     assert run_cmd(f"{CLI} list missions") == 0
     assert run_cmd(f'{CLI} list missions -p "*" "*"') == 0
 
+    # New commands
+    assert run_cmd(f"{CLI} mission list -p {project.name} {mission.name}") == 0
+    assert run_cmd(f"{CLI} mission list -p {project.name} {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} mission list -p {project.name} {mission.id}") == 0
+    assert run_cmd(f"{CLI} mission list {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} mission list {mission.id}") == 0
+    assert run_cmd(f"{CLI} mission list {mission.name}") == 0
+
+    assert run_cmd(f"{CLI} mission list -p {project.name}") == 0
+    assert run_cmd(f"{CLI} mission list -p {project.id}") == 0
+    assert run_cmd(f"{CLI} mission list -p {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} mission list") == 0
+    assert run_cmd(f'{CLI} mission list -p "*" "*"') == 0
+
 
 @pytest.mark.slow
 def test_list_projects(api, project):
     assert api
+    # Legacy commands
     assert run_cmd(f"{CLI} list projects") == 0
     assert run_cmd(f"{CLI} list projects {project.name}") == 0
     assert run_cmd(f"{CLI} list projects {secrets.token_hex(8)}") == 0
     assert run_cmd(f"{CLI} list projects {project.id}") == 0
     assert run_cmd(f'{CLI} list projects "*"') == 0
+
+    # New commands
+    assert run_cmd(f"{CLI} project list") == 0
+    assert run_cmd(f"{CLI} project list {project.name}") == 0
+    assert run_cmd(f"{CLI} project list {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} project list {project.id}") == 0
+    assert run_cmd(f'{CLI} project list "*"') == 0
 
 
 @pytest.mark.slow

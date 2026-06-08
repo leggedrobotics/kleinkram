@@ -109,7 +109,7 @@ app.add_typer(endpoint_typer, name="endpoint", rich_help_panel=CommandTypes.AUTH
 app.add_typer(download_typer, name="download", rich_help_panel=CommandTypes.CORE)
 app.add_typer(upload_typer, name="upload", rich_help_panel=CommandTypes.CORE)
 app.add_typer(verify_typer, name="verify", rich_help_panel=CommandTypes.CORE)
-app.add_typer(list_typer, name="list", rich_help_panel=CommandTypes.CORE)
+app.add_typer(list_typer, name="list", hidden=True)
 
 app.add_typer(file_typer, name="file", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(mission_typer, name="mission", rich_help_panel=CommandTypes.CRUD)
