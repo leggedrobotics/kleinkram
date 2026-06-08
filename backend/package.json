@@ -85,7 +85,7 @@
         "@nestjs/cli": "^11.0.16",
         "@nestjs/schematics": "^11.0.9",
         "@nestjs/testing": "^11.1.9",
-        "@swc/core": "^1.15.7",
+        "@swc/core": "^1.15.33",
         "@swc/jest": "^0.2.39",
         "@types/cookie-parser": "^1.4.9",
         "@types/dotenv": "^8.2.3",
