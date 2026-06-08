@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 from enum import Enum
+from enum import IntEnum
 from typing import Dict
 from typing import List
 from uuid import UUID
@@ -85,6 +86,14 @@ class ExecutionStatus(str, Enum):
     CANCELLED = "Cancelled"
 
 
+class ArtifactState(IntEnum):
+    AWAITING_ACTION = 10
+    UPLOADING = 20
+    UPLOADED = 30
+    ERROR = 40
+    EXPIRED = 50
+
+
 @dataclass(frozen=True)
 class LogEntry:
     timestamp: datetime
@@ -98,6 +107,8 @@ class Execution:
     state: str
     state_cause: str | None
     artifact_url: str | None
+    artifact_state: ArtifactState | None
+    artifact_size: int | None
     created_at: datetime
     updated_at: datetime | None
     project_name: str

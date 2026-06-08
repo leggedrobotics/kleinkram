@@ -14,6 +14,7 @@ import dateutil.parser
 
 from kleinkram.errors import ParsingError
 from kleinkram.models import ActionTemplate
+from kleinkram.models import ArtifactState
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import FileState
@@ -81,6 +82,8 @@ class ExecutionObjectKeys(str, Enum):
     UPDATED_AT = "updatedAt"
     LOGS = "logs"
     ARTIFACT_URL = "artifactUrl"
+    ARTIFACT_STATE = "artifacts"
+    ARTIFACT_SIZE = "artifactSize"
 
 
 class TemplateObjectKeys(str, Enum):
@@ -269,6 +272,9 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
         state = execution_object[ExecutionObjectKeys.STATE]
         state_cause = execution_object[ExecutionObjectKeys.STATE_CAUSE]
         artifact_url = execution_object.get(ExecutionObjectKeys.ARTIFACT_URL)
+        raw_state = execution_object.get(ExecutionObjectKeys.ARTIFACT_STATE)
+        artifact_state = ArtifactState(raw_state) if raw_state is not None else None
+        artifact_size = execution_object.get(ExecutionObjectKeys.ARTIFACT_SIZE)
         created_at = _parse_datetime(execution_object[ExecutionObjectKeys.CREATED_AT])
         updated_at = (
             _parse_datetime(execution_object[ExecutionObjectKeys.UPDATED_AT])
@@ -307,6 +313,8 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
         state=state,
         state_cause=state_cause,
         artifact_url=artifact_url,
+        artifact_state=artifact_state,
+        artifact_size=artifact_size,
         created_at=created_at,
         updated_at=updated_at,
         mission_id=mission_id,
