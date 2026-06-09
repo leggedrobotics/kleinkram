@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from unittest.mock import patch
+
 import httpx
 import pytest
 
@@ -57,8 +59,9 @@ def _run_handle_request_error(capsys, exc, verbose, debug, expected_title, expec
     mock_state.verbose = verbose
     mock_state.debug = debug
 
-    with patch("kleinkram.cli.error_handling.get_config", return_value=mock_config), \
-         patch("kleinkram.cli.error_handling.get_shared_state", return_value=mock_state):
+    with patch("kleinkram.cli.error_handling.get_config", return_value=mock_config), patch(
+        "kleinkram.cli.error_handling.get_shared_state", return_value=mock_state
+    ):
 
         if should_raise:
             with pytest.raises(type(exc)):
@@ -108,17 +111,35 @@ def test_handle_generic_exception_debug():
 @pytest.mark.parametrize(
     "exc, verbose, debug, expected_title, expected_texts, should_raise",
     [
-        (httpx.ConnectError("refused"), True, False, "Connection Failed", ["Unable to connect", "http://my-api-url.com", "my-dev"], False),
+        (
+            httpx.ConnectError("refused"),
+            True,
+            False,
+            "Connection Failed",
+            ["Unable to connect", "http://my-api-url.com", "my-dev"],
+            False,
+        ),
         (httpx.ConnectError("refused"), False, False, None, "Error: Connection failed to http://my-api-url.com", False),
         (httpx.ConnectError("refused"), True, True, None, None, True),
         (httpx.ReadTimeout("timeout"), True, False, "Request Timeout", ["timed out", "http://my-api-url.com"], False),
         (httpx.ReadTimeout("timeout"), False, False, None, "Error: Request to http://my-api-url.com timed out", False),
-        (httpx.RequestError("Invalid", request=MagicMock()), True, False, "Network Error", ["Details: Invalid", "http://my-api-url.com"], False),
-        (httpx.RequestError("Invalid", request=MagicMock()), False, False, None, "Error: Network error on http://my-api-url.com (Invalid)", False),
-    ]
+        (
+            httpx.RequestError("Invalid", request=MagicMock()),
+            True,
+            False,
+            "Network Error",
+            ["Details: Invalid", "http://my-api-url.com"],
+            False,
+        ),
+        (
+            httpx.RequestError("Invalid", request=MagicMock()),
+            False,
+            False,
+            None,
+            "Error: Network error on http://my-api-url.com (Invalid)",
+            False,
+        ),
+    ],
 )
 def test_handle_request_error_parameterized(capsys, exc, verbose, debug, expected_title, expected_texts, should_raise):
     _run_handle_request_error(capsys, exc, verbose, debug, expected_title, expected_texts, should_raise)
-
-
-

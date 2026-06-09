@@ -121,7 +121,6 @@ app.add_typer(executions_typer, name="executions", rich_help_panel=CommandTypes.
 app.add_typer(triggers_typer, name="triggers", rich_help_panel=CommandTypes.ACTION)
 
 
-
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def login(
     oAuthProvider: str = typer.Option(

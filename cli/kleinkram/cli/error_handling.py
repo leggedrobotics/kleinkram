@@ -157,5 +157,3 @@ def register_error_handlers(app: ErrorHandledTyper) -> None:
     """
     app.error_handler(Exception)(handle_generic_exception)
     app.error_handler(httpx.RequestError)(handle_request_error)
-
-
