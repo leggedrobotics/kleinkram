@@ -31,7 +31,7 @@ from kleinkram.cli._triggers import triggers_typer
 from kleinkram.cli._upload import upload_typer
 from kleinkram.cli._verify import verify_typer
 from kleinkram.cli.error_handling import ErrorHandledTyper
-from kleinkram.cli.error_handling import display_error
+from kleinkram.cli.error_handling import register_error_handlers
 from kleinkram.config import MAX_TABLE_SIZE
 from kleinkram.config import Config
 from kleinkram.config import check_config_compatibility
@@ -104,6 +104,8 @@ app = ErrorHandledTyper(
     no_args_is_help=True,
 )
 
+register_error_handlers(app)
+
 app.add_typer(endpoint_typer, name="endpoint", rich_help_panel=CommandTypes.AUTH)
 
 app.add_typer(download_typer, name="download", rich_help_panel=CommandTypes.CORE)
@@ -118,18 +120,6 @@ app.add_typer(templates_typer, name="templates", rich_help_panel=CommandTypes.AC
 app.add_typer(executions_typer, name="executions", rich_help_panel=CommandTypes.ACTION)
 app.add_typer(triggers_typer, name="triggers", rich_help_panel=CommandTypes.ACTION)
 
-
-# attach error handler to app
-@app.error_handler(Exception)
-def base_handler(exc: Exception) -> int:
-    shared_state = get_shared_state()
-
-    display_error(exc=exc, verbose=shared_state.verbose)
-    logger.error(format_traceback(exc))
-
-    if logging.getLogger().getEffectiveLevel() != logging.DEBUG:
-        return 1
-    raise exc
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
