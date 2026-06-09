@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-import os
-import re
 import sys
-import tarfile
 import time
 from typing import List
 from typing import Optional
 from uuid import UUID
 
-import httpx
-import requests
 import typer
 
 import kleinkram.api.routes
@@ -65,43 +60,26 @@ def launch(
     client = AuthenticatedClient()
     pprint = get_shared_state().verbose
 
+    project_ids, project_patterns = split_args([project] if project else [])
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+
+    mission_ids, mission_patterns = split_args([mission])
+    mission_query = MissionQuery(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_query=project_query,
+    )
+
+    typer.echo("Submitting action...")
     try:
-        project_ids, project_patterns = split_args([project] if project else [])
-        project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
-
-        mission_ids, mission_patterns = split_args([mission])
-        mission_query = MissionQuery(
-            ids=mission_ids,
-            patterns=mission_patterns,
-            project_query=project_query,
-        )
-
-        typer.echo("Submitting action...")
         execution_uuid = kleinkram.core.launch_execution(
             client=client,
             mission_query=mission_query,
             template=template_name,
         )
-        typer.secho(f"Action submitted. Execution ID: {execution_uuid}", fg=typer.colors.GREEN)
-
-    except kleinkram.errors.MissionNotFound:
-        typer.secho(f"Error: Mission '{mission}' not found.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
     except kleinkram.errors.InvalidMissionQuery:
-        typer.secho(
-            "Error: Mission query is ambiguous. Try specifying a project with -p.",
-            fg=typer.colors.RED,
-        )
-        raise typer.Exit(code=1)
-    except kleinkram.errors.TemplateNotFound as e:
-        typer.secho(f"Error: {e}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
-    except httpx.HTTPStatusError as e:
-        typer.secho(f"Error submitting action: {e.response.text}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
-    except Exception as e:
-        typer.secho(f"An unexpected error occurred: {e}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        raise kleinkram.errors.InvalidMissionQuery("Mission query is ambiguous. Try specifying a project with -p.")
+    typer.secho(f"Action submitted. Execution ID: {execution_uuid}", fg=typer.colors.GREEN)
 
     if follow:
         exit_code = kleinkram.printing.follow_execution_logs(client, execution_uuid)
@@ -148,15 +126,13 @@ def list_executions(
     project_id = None
     if project_uuid is not None:
         if not is_valid_uuid4(project_uuid):
-            typer.secho(f"Error: '{project_uuid}' is not a valid UUID.", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            raise typer.BadParameter(f"'{project_uuid}' is not a valid UUID.")
         project_id = UUID(project_uuid)
 
     mission_id = None
     if mission_uuid is not None:
         if not is_valid_uuid4(mission_uuid):
-            typer.secho(f"Error: '{mission_uuid}' is not a valid UUID.", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            raise typer.BadParameter(f"'{mission_uuid}' is not a valid UUID.")
         mission_id = UUID(mission_uuid)
 
     query = None
@@ -180,20 +156,12 @@ def delete(
     """
 
     if not is_valid_uuid4(execution):
-        typer.secho(f"Error: '{execution}' is not a valid UUID.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        raise typer.BadParameter(f"'{execution}' is not a valid UUID.")
     execution_id = parse_uuid_like(execution)
 
     client = AuthenticatedClient()
-    try:
-        kleinkram.core.delete_execution(client=client, execution_id=execution_id)
-        typer.secho(f"Execution {execution_id} deleted successfully.", fg=typer.colors.GREEN)
-    except kleinkram.errors.ExecutionNotFound:
-        typer.secho(f"Error: Execution '{execution_id}' not found.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
-    except Exception as e:
-        typer.secho(f"An unexpected error occurred: {e}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+    kleinkram.core.delete_execution(client=client, execution_id=execution_id)
+    typer.secho(f"Execution {execution_id} deleted successfully.", fg=typer.colors.GREEN)
 
 
 @executions_typer.command(name="info", help=INFO_HELP)
@@ -204,8 +172,7 @@ def get_info(
     Get detailed information for a single execution.
     """
     if not is_valid_uuid4(execution):
-        typer.secho(f"Error: '{execution}' is not a valid UUID.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        raise typer.BadParameter(f"'{execution}' is not a valid UUID.")
     execution_id = parse_uuid_like(execution)
 
     client = AuthenticatedClient()
@@ -222,8 +189,7 @@ def logs(
     Fetch and display logs for a specific execution.
     """
     if not is_valid_uuid4(execution):
-        typer.secho(f"Error: '{execution}' is not a valid UUID.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        raise typer.BadParameter(f"'{execution}' is not a valid UUID.")
     execution_id = parse_uuid_like(execution)
 
     client = AuthenticatedClient()
@@ -274,21 +240,16 @@ def download_artifacts(
     Download the artifacts (.tar.gz) for a finished execution.
     """
     if not is_valid_uuid4(execution):
-        typer.secho(f"Error: '{execution}' is not a valid UUID.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        raise typer.BadParameter(f"'{execution}' is not a valid UUID.")
 
     execution_id = parse_uuid_like(execution)
 
     client = AuthenticatedClient()
-    try:
-        kleinkram.core.download_artifact(
-            client=client,
-            execution_id=execution_id,
-            output_dir=output_dir,
-            filename=filename,
-            extract=extract,
-            verbose=get_shared_state().verbose,
-        )
-    except Exception as e:
-        typer.secho(f"Failed to download artifacts: {e}", fg=typer.colors.RED)
-        raise typer.Exit(1)
+    kleinkram.core.download_artifact(
+        client=client,
+        execution_id=execution_id,
+        output_dir=output_dir,
+        filename=filename,
+        extract=extract,
+        verbose=get_shared_state().verbose,
+    )

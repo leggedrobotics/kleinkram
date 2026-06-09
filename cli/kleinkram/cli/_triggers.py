@@ -56,8 +56,7 @@ def list_triggers_cli(
 
     if mission_uuid is not None:
         if not is_valid_uuid4(mission_uuid):
-            typer.secho(f"Error: '{mission_uuid}' is not a valid UUID.", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            raise typer.BadParameter(f"'{mission_uuid}' is not a valid UUID.")
         else:
             query.mission_uuid = parse_uuid_like(mission_uuid)
 
@@ -75,8 +74,7 @@ def trigger_info_cli(trigger_uuid: str = typer.Argument(..., metavar="TRIGGER_UU
     client = AuthenticatedClient()
 
     if not is_valid_uuid4(trigger_uuid):
-        typer.secho(f"Error: '{trigger_uuid}' is not a valid UUID.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        raise typer.BadParameter(f"'{trigger_uuid}' is not a valid UUID.")
 
     trigger = kleinkram.api.routes.get_trigger(client=client, trigger_uuid=parse_uuid_like(trigger_uuid))
 
@@ -113,20 +111,17 @@ def create_trigger_cli(
     match type_:
         case TriggerType.FILE:
             if not file_patterns:
-                typer.secho("Error: At least one --file-pattern is required for FILE triggers.", fg=typer.colors.RED)
-                raise typer.Exit(code=1)
+                raise typer.BadParameter("At least one --file-pattern is required for FILE triggers.")
             event = tuple(file_events) if file_events is not None else ()
             config = FileConfig(patterns=tuple(file_patterns), event=event)
         case TriggerType.TIME:
             if cron_expression is None:
-                typer.secho("Error: --cron option is required for TIME triggers.", fg=typer.colors.RED)
-                raise typer.Exit(code=1)
+                raise typer.BadParameter("--cron option is required for TIME triggers.")
             config = TimeConfig(cron=cron_expression)
         case TriggerType.WEBHOOK:
             config = WebhookConfig()
         case _:
-            typer.secho(f"Error: Unsupported trigger type '{type_}'.", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+            raise typer.BadParameter(f"Unsupported trigger type '{type_}'.")
 
     trigger_uuid = kleinkram.core.create_trigger(
         client=client,

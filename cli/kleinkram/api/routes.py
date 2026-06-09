@@ -487,7 +487,7 @@ def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict
     resp = client.post(UPDATE_MISSION, json=payload)
 
     if resp.status_code == 404:
-        raise MissionNotFound
+        raise MissionNotFound(f"Mission not found: {mission_id}")
     if resp.status_code == 403:
         raise AccessDenied(f"cannot update mission: {mission_id}")
 
