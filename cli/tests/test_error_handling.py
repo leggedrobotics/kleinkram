@@ -8,6 +8,7 @@ import pytest
 
 from kleinkram.cli.error_handling import display_error
 from kleinkram.cli.error_handling import handle_generic_exception
+from kleinkram.cli.error_handling import handle_http_status_error
 from kleinkram.cli.error_handling import handle_request_error
 
 
@@ -143,3 +144,54 @@ def test_handle_generic_exception_debug():
 )
 def test_handle_request_error_parameterized(capsys, exc, verbose, debug, expected_title, expected_texts, should_raise):
     _run_handle_request_error(capsys, exc, verbose, debug, expected_title, expected_texts, should_raise)
+
+
+def _run_handle_http_status_error(capsys, exc, verbose, debug, expected_title, expected_texts, should_raise):
+    mock_config = MagicMock()
+    mock_config.selected_endpoint = "my-dev"
+    mock_config.endpoint.api = "http://my-api-url.com"
+
+    mock_state = MagicMock()
+    mock_state.verbose = verbose
+    mock_state.debug = debug
+
+    with patch("kleinkram.cli.error_handling.get_config", return_value=mock_config), patch(
+        "kleinkram.cli.error_handling.get_shared_state", return_value=mock_state
+    ):
+        if should_raise:
+            with pytest.raises(type(exc)):
+                handle_http_status_error(exc)
+        else:
+            exit_code = handle_http_status_error(exc)
+            assert exit_code == 1
+            out, err = capsys.readouterr()
+            assert out == ""
+            if expected_title:
+                assert expected_title in err
+            if expected_texts:
+                if isinstance(expected_texts, str):
+                    assert expected_texts in err
+                else:
+                    for text in expected_texts:
+                        assert text in err
+
+
+@pytest.mark.parametrize(
+    "status_code, verbose, debug, expected_title, expected_texts, should_raise",
+    [
+        (504, True, False, "Server Timeout", ["timed out or returned a gateway error", "http://my-api-url.com"], False),
+        (504, False, False, None, "Error: Server at http://my-api-url.com timed out (HTTP 504)", False),
+        (500, True, False, "Internal Server Error", ["encountered an internal error", "http://my-api-url.com"], False),
+        (500, False, False, None, "Error: Internal server error on http://my-api-url.com (HTTP 500)", False),
+        (400, True, False, "HTTP Error 400", ["returned an error", "http://my-api-url.com"], False),
+        (400, False, False, None, "Error: HTTP 400 on http://my-api-url.com", False),
+        (504, True, True, None, None, True),
+    ],
+)
+def test_handle_http_status_error_parameterized(
+    capsys, status_code, verbose, debug, expected_title, expected_texts, should_raise
+):
+    request = httpx.Request("GET", "http://my-api-url.com")
+    response = httpx.Response(status_code, request=request)
+    exc = httpx.HTTPStatusError("error", request=request, response=response)
+    _run_handle_http_status_error(capsys, exc, verbose, debug, expected_title, expected_texts, should_raise)

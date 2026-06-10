@@ -150,6 +150,54 @@ def handle_generic_exception(exc: Exception) -> int:
     raise exc
 
 
+def handle_http_status_error(exc: httpx.HTTPStatusError) -> int:
+    shared_state = get_shared_state()
+    config = get_config()
+    endpoint_url = config.endpoint.api
+
+    if exc.response.status_code in (502, 504):
+        title = "Server Timeout"
+        msg = (
+            f"The request to the Kleinkram backend server at:\n"
+            f"  [bold cyan]{endpoint_url}[/bold cyan] timed out or returned a gateway error.\n\n"
+            f"This can happen if:\n"
+            f"  1. The server is heavily loaded or performing a slow operation.\n"
+            f"  2. The database query or files being processed are very large.\n"
+            f"  3. You are experiencing a slow or unstable internet connection."
+        )
+        quiet_msg = f"Error: Server at {endpoint_url} timed out (HTTP {exc.response.status_code})"
+    elif exc.response.status_code == 500:
+        title = "Internal Server Error"
+        msg = (
+            f"The Kleinkram backend server at:\n"
+            f"  [bold cyan]{endpoint_url}[/bold cyan] encountered an internal error.\n\n"
+            f"Please try again later or contact the administrator."
+        )
+        quiet_msg = f"Error: Internal server error on {endpoint_url} (HTTP 500)"
+    else:
+        title = f"HTTP Error {exc.response.status_code}"
+        msg = (
+            f"The Kleinkram backend server at:\n"
+            f"  [bold cyan]{endpoint_url}[/bold cyan] returned an error.\n\n"
+            f"Details: {exc}"
+        )
+        quiet_msg = f"Error: HTTP {exc.response.status_code} on {endpoint_url}"
+
+    display_error(
+        exc=exc,
+        verbose=shared_state.verbose,
+        title=title,
+        message=msg if shared_state.verbose else quiet_msg,
+    )
+
+    logger.error(f"HTTP error {exc.response.status_code} on {endpoint_url}: {exc}")
+    logger.error(format_traceback(exc))
+
+    if shared_state.debug:
+        raise exc
+    return 1
+
+
 def register_error_handlers(app: ErrorHandledTyper) -> None:
     """Register all CLI error handlers. Note: since ErrorHandledTyper dispatches
     handlers in reverse order of registration, the most generic Exception handler
@@ -157,3 +205,4 @@ def register_error_handlers(app: ErrorHandledTyper) -> None:
     """
     app.error_handler(Exception)(handle_generic_exception)
     app.error_handler(httpx.RequestError)(handle_request_error)
+    app.error_handler(httpx.HTTPStatusError)(handle_http_status_error)
