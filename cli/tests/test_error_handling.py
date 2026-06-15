@@ -140,6 +140,22 @@ def test_handle_generic_exception_debug():
             "Error: Network error on http://my-api-url.com (Invalid)",
             False,
         ),
+        (
+            httpx.ReadError("connection reset", request=MagicMock()),
+            True,
+            False,
+            "Network Error",
+            ["Details: connection reset", "http://my-api-url.com"],
+            False,
+        ),
+        (
+            httpx.WriteError("write failed", request=MagicMock()),
+            True,
+            False,
+            "Network Error",
+            ["Details: write failed", "http://my-api-url.com"],
+            False,
+        ),
     ],
 )
 def test_handle_request_error_parameterized(capsys, exc, verbose, debug, expected_title, expected_texts, should_raise):

@@ -77,8 +77,8 @@ def launch(
             mission_query=mission_query,
             template=template_name,
         )
-    except kleinkram.errors.InvalidMissionQuery:
-        raise kleinkram.errors.InvalidMissionQuery("Mission query is ambiguous. Try specifying a project with -p.")
+    except kleinkram.errors.InvalidMissionQuery as e:
+        raise kleinkram.errors.InvalidMissionQuery("Mission query is ambiguous. Try specifying a project with -p.") from e
     typer.secho(f"Action submitted. Execution ID: {execution_uuid}", fg=typer.colors.GREEN)
 
     if follow:

@@ -75,7 +75,7 @@ def display_error(
         )
         Console(file=sys.stderr).print(panel)
     else:
-        if title and message:
+        if title is not None or message is not None:
             print(body, file=sys.stderr)
         else:
             text = f"{type(exc).__name__}"
@@ -91,8 +91,7 @@ def handle_request_error(exc: httpx.RequestError) -> int:
     selected_endpoint = config.selected_endpoint
     endpoint_url = config.endpoint.api
 
-    # Categorize the request error
-    if isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout, httpx.NetworkError)):
+    if isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout)):
         title = "Connection Failed"
         msg = (
             f"Unable to connect to the Kleinkram backend server at:\n"
