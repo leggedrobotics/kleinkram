@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import logging
 import re
-import sys
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
+from dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
 from pathlib import Path
 from time import monotonic
 from time import sleep
+from typing import Callable
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
@@ -19,8 +21,6 @@ from uuid import UUID
 import boto3.s3.transfer
 import botocore.config
 import httpx
-from rich.console import Console
-from tqdm import tqdm
 
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_config
@@ -28,10 +28,7 @@ from kleinkram.errors import AccessDenied
 from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.utils import b64_md5
-from kleinkram.utils import format_bytes
-from kleinkram.utils import format_error
 from kleinkram.utils import format_traceback
-from kleinkram.utils import styled_string
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +45,12 @@ S3_READ_TIMEOUT = 60 * 5  # 5 minutes
 
 RETRY_BACKOFF_BASE = 2  # exponential backoff base
 MAX_RETRIES = 5
+
+# Callback type aliases
+OnFileStartCb = Callable[[Path, int], None]  # (path, total_bytes)
+OnFileProgressCb = Callable[[Path, int], None]  # (path, advance_bytes)
+OnOverallProgressCb = Callable[[], None]
+OnMessageCb = Callable[[str, bool], None]  # (message, is_error)
 
 
 class UploadCredentials(NamedTuple):
@@ -133,7 +136,7 @@ def _s3_upload(
     *,
     endpoint: str,
     credentials: UploadCredentials,
-    pbar: tqdm,
+    callback: Optional[Callable[[int], None]] = None,
 ) -> None:
     # configure boto3
     config = botocore.config.Config(
@@ -152,7 +155,7 @@ def _s3_upload(
         str(local_path),
         credentials.bucket,
         str(credentials.file_id),
-        Callback=pbar.update,
+        Callback=callback,
     )
 
 
@@ -162,7 +165,7 @@ class UploadState(Enum):
     CANCELED = 3
 
 
-def _get_upload_credentials_with_retry(client, pbar, filename, mission_id, max_attempts=5):
+def _get_upload_credentials_with_retry(client, filename, mission_id, max_attempts=5):
     """
     Retrieves upload credentials with retry logic.
 
@@ -196,8 +199,9 @@ def upload_file(
     mission_id: UUID,
     filename: str,
     path: Path,
-    verbose: bool = False,
     s3_endpoint: Optional[str] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
 ) -> Tuple[UploadState, int]:
     """
     returns UploadState and bytes uploaded (0 if not uploaded)
@@ -207,44 +211,45 @@ def upload_file(
         s3_endpoint = get_config().endpoint.s3
 
     total_size = path.stat().st_size
+    if on_file_start_cb is not None:
+        on_file_start_cb(path, total_size)
+
     for attempt in range(MAX_UPLOAD_RETRIES):
-        with tqdm(
-            total=total_size,
-            unit="B",
-            unit_scale=True,
-            desc=f"uploading {path}...",
-            leave=False,
-            disable=not verbose,
-        ) as pbar:
 
-            # get per file upload credentials
-            creds = _get_upload_credentials_with_retry(
-                client, pbar, filename, mission_id, max_attempts=5 if attempt > 0 else 1
-            )
+        # get per file upload credentials
+        creds = _get_upload_credentials_with_retry(client, filename, mission_id, max_attempts=5 if attempt > 0 else 1)
 
-            if creds is None:
-                return UploadState.EXISTS, 0
+        if creds is None:
+            return UploadState.EXISTS, 0
 
+        # build the boto3 callback from our file progress callback
+        if on_file_progress_cb is not None:
+
+            def boto3_cb(bytes_amount):
+                on_file_progress_cb(path, bytes_amount)
+
+        else:
+            boto3_cb = None
+
+        try:
+            _s3_upload(path, endpoint=s3_endpoint, credentials=creds, callback=boto3_cb)
+        except Exception as e:
+            logger.error(format_traceback(e))
             try:
-                _s3_upload(path, endpoint=s3_endpoint, credentials=creds, pbar=pbar)
-            except Exception as e:
-                logger.error(format_traceback(e))
-                try:
-                    _cancel_file_upload(client, creds.file_id, mission_id)
-                except Exception as cancel_e:
-                    logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
+                _cancel_file_upload(client, creds.file_id, mission_id)
+            except Exception as cancel_e:
+                logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
 
-                if attempt < 2:  # Retry if not the last attempt
-                    pbar.update(0)
-                    logger.error(f"Retrying upload for {attempt + 1}")
-                    continue
-                else:
-                    logger.error(f"Cancelling upload for {attempt}")
-                    raise e from e
-
+            if attempt < 2:  # Retry if not the last attempt
+                logger.warning(f"Retrying upload for {path} (attempt {attempt + 1})")
+                continue
             else:
-                _confirm_file_upload(client, creds.file_id, b64_md5(path))
-                return UploadState.UPLOADED, total_size
+                logger.error(f"Cancelling upload for {path} after {attempt + 1} attempts")
+                raise e from e
+
+        else:
+            _confirm_file_upload(client, creds.file_id, b64_md5(path))
+            return UploadState.UPLOADED, total_size
 
 
 def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
@@ -273,7 +278,15 @@ def _get_filename_from_cd(cd: str | None) -> Optional[str]:
     return fname[0].strip().strip('"')
 
 
-def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False, verbose: bool = False) -> None:
+def _url_download(
+    url: str,
+    *,
+    path: Path,
+    size: int,
+    overwrite: bool = False,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+) -> None:
     if path.exists():
         if overwrite:
             path.unlink()
@@ -284,6 +297,9 @@ def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False, v
                 raise FileExistsError(f"file already exists and is complete: {path}")
     else:
         downloaded = 0
+
+    if on_file_start_cb is not None:
+        on_file_start_cb(path, size)
 
     attempt = 0
     while downloaded < size:
@@ -297,30 +313,21 @@ def _url_download(url: str, *, path: Path, size: int, overwrite: bool = False, v
 
                 mode = "ab" if downloaded > 0 else "wb"
                 with open(path, mode) as f:
-                    with tqdm(
-                        total=size,
-                        initial=downloaded,
-                        desc=f"downloading {path.name}",
-                        unit="B",
-                        unit_scale=True,
-                        leave=False,
-                        disable=not verbose,
-                    ) as pbar:
-                        for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
-                            attempt = 0  # reset attempt counter on successful download of non-empty chunk
-                            if not chunk:
-                                break
-                            f.write(chunk)
-                            downloaded += len(chunk)
-                            pbar.update(len(chunk))
+                    for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
+                        attempt = 0  # reset attempt counter on successful download of non-empty chunk
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if on_file_progress_cb is not None:
+                            on_file_progress_cb(path, len(chunk))
             break  # download complete
         except Exception as e:
             logger.info(f"Error: {e}, retrying...")
             attempt += 1
             if attempt > MAX_RETRIES:
                 raise RuntimeError(f"Download failed after {MAX_RETRIES} retries due to {e}") from e
-            if verbose:
-                print(f"{e} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff...")
+            logger.warning(f"{e} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff...")
             sleep(RETRY_BACKOFF_BASE**attempt)
 
 
@@ -334,6 +341,8 @@ class DownloadState(Enum):
     SKIPPED_CORRUPTED = 7
     DOWNLOADED_CORRUPTED = 8
     SKIPPED_CORRUPTED_LOCAL_OK = 9
+    OVERWRITTEN_OK = 10
+    OVERWRITTEN_CORRUPTED = 11
 
 
 def download_file(
@@ -344,7 +353,9 @@ def download_file(
     overwrite: bool = False,
     allow_corrupt_files: bool = False,
     create_parents: bool = False,
-    verbose: bool = False,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
 ) -> Tuple[DownloadState, int]:
     """\
     Returns DownloadState and bytes downloaded (file.size if successful or skipped ok, 0 otherwise)
@@ -357,6 +368,7 @@ def download_file(
     if is_corrupted and not allow_corrupt_files:
         return DownloadState.SKIPPED_CORRUPTED, 0
 
+    was_overwritten = False
     if path.exists():
 
         # compare file size
@@ -370,14 +382,14 @@ def download_file(
                     return DownloadState.SKIPPED_CORRUPTED_LOCAL_OK, 0
                 return DownloadState.SKIPPED_OK, 0
 
-            elif verbose:
-                tqdm.write(styled_string(f"overwriting {path}, hash mismatch", style="yellow"))
+            elif overwrite:
+                was_overwritten = True
 
         elif not overwrite and file.size is not None:
             return DownloadState.SKIPPED_FILE_SIZE_MISMATCH, 0
 
-        elif verbose:
-            tqdm.write(styled_string(f"overwriting {path}, file size mismatch", style="yellow"))
+        elif overwrite:
+            was_overwritten = True
 
     # request a download url
     download_url = _get_file_download(client, file.id)
@@ -393,7 +405,8 @@ def download_file(
             path=path,
             size=file.size,
             overwrite=overwrite,
-            verbose=verbose,
+            on_file_start_cb=on_file_start_cb,
+            on_file_progress_cb=on_file_progress_cb,
         )
     except Exception as e:
         logger.error(f"Error during download of {path}: {e}")
@@ -408,10 +421,9 @@ def download_file(
 
     observed_hash = b64_md5(path)
     if file.hash is not None and observed_hash != file.hash:
-        print(
-            f"HASH MISMATCH: {path} expected={file.hash} observed={observed_hash}",
-            file=sys.stderr,
-        )
+        logger.warning(f"HASH MISMATCH: {path} expected={file.hash} observed={observed_hash}")
+        if on_message_cb is not None:
+            on_message_cb(f"HASH MISMATCH: {path} expected={file.hash} observed={observed_hash}", True)
         # Download completed but hash failed
         return (
             DownloadState.DOWNLOADED_INVALID_HASH,
@@ -419,130 +431,61 @@ def download_file(
         )  # 0 bytes considered successful transfer
     # Hash matches or no remote hash to check against
     if is_corrupted:
-        return DownloadState.DOWNLOADED_CORRUPTED, file.size
-    return DownloadState.DOWNLOADED_OK, file.size
+        return DownloadState.OVERWRITTEN_CORRUPTED if was_overwritten else DownloadState.DOWNLOADED_CORRUPTED, file.size
+    return DownloadState.OVERWRITTEN_OK if was_overwritten else DownloadState.DOWNLOADED_OK, file.size
 
 
-UPLOAD_STATE_COLOR = {
-    UploadState.UPLOADED: "green",
-    UploadState.EXISTS: "yellow",
-    UploadState.CANCELED: "red",
-}
+@dataclass
+class UploadResult:
+    uploaded: int = 0
+    skipped: int = 0
+    failed: int = 0
+    total_bytes: int = 0
+    elapsed_seconds: float = 0.0
 
 
-def _upload_handler(future: Future[Tuple[UploadState, int]], path: Path, *, verbose: bool = False) -> int:
-    """Returns bytes uploaded successfully."""
-    state = UploadState.CANCELED  # Default to canceled if exception occurs
-    size_bytes = 0
-    try:
-        state, size_bytes = future.result()
-    except Exception as e:
-        logger.error(format_traceback(e))
-        if verbose:
-            tqdm.write(format_error("error uploading", e, verbose=verbose))
-        else:
-            print(f"ERROR: {path.absolute()}: {e}", file=sys.stderr)
-        return 0  # Return 0 bytes on error
-
-    if state == UploadState.UPLOADED:
-        msg = f"uploaded {path}"
-    elif state == UploadState.EXISTS:
-        msg = f"skipped {path} already uploaded"
-    else:
-        msg = f"canceled {path} upload"
-
-    if verbose:
-        tqdm.write(styled_string(msg, style=UPLOAD_STATE_COLOR[state]))
-    elif state != UploadState.UPLOADED:
-        print(f"SKIP/CANCEL: {path.absolute()}", file=sys.stderr)
-
-    return size_bytes
+@dataclass
+class DownloadResult:
+    state_counts: Dict[DownloadState, int] = field(default_factory=dict)
+    failed: int = 0
+    total_bytes: int = 0
+    elapsed_seconds: float = 0.0
 
 
-DOWNLOAD_STATE_COLOR = {
-    DownloadState.DOWNLOADED_OK: "green",
-    DownloadState.DOWNLOADED_CORRUPTED: "yellow",
-    DownloadState.SKIPPED_OK: "green",
-    DownloadState.DOWNLOADED_INVALID_HASH: "red",
-    DownloadState.SKIPPED_INVALID_HASH: "yellow",
-    DownloadState.SKIPPED_FILE_SIZE_MISMATCH: "yellow",
-    DownloadState.SKIPPED_INVALID_REMOTE_STATE: "purple",
-    DownloadState.SKIPPED_CORRUPTED: "yellow",
-    DownloadState.SKIPPED_CORRUPTED_LOCAL_OK: "yellow",
-}
-
-
-def _download_handler(
-    future: Future[Tuple[DownloadState, int]],
-    file: File,
-    path: Path,
-    *,
-    verbose: bool = False,
-) -> int:
-    """Returns bytes downloaded/verified."""
-    state = DownloadState.DOWNLOADED_INVALID_HASH
-    size_bytes = 0
-    try:
-        state, size_bytes = future.result()
-    except Exception as e:
-        logger.error(format_traceback(e))
-        if verbose:
-            tqdm.write(format_error(f"error downloading {path}", e))
-        else:
-            print(f"ERROR: {path.absolute()}: {e}", file=sys.stderr)
-        return 0
-
-    if state == DownloadState.DOWNLOADED_OK:
-        msg = f"downloaded {path}"
-    elif state == DownloadState.DOWNLOADED_CORRUPTED:
-        msg = f"downloaded {path} (remote state is CORRUPTED; treat as potentially harmful)"
-    elif state == DownloadState.DOWNLOADED_INVALID_HASH:
-        msg = f"downloaded {path} but failed hash check"
-    elif state == DownloadState.SKIPPED_OK:
-        msg = f"skipped {path} already downloaded (hash ok)"
-    elif state == DownloadState.SKIPPED_INVALID_HASH:
-        msg = f"skipped {path}, exists with hash mismatch (use --overwrite?)"
-    elif state == DownloadState.SKIPPED_FILE_SIZE_MISMATCH:
-        msg = f"skipped {path}, exists with file size mismatch (use --overwrite?)"
-    elif state == DownloadState.SKIPPED_INVALID_REMOTE_STATE:
-        msg = f"skipped {path}, remote file has invalid state ({file.state.value})"
-    elif state == DownloadState.SKIPPED_CORRUPTED:
-        msg = f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt to override)"
-    elif state == DownloadState.SKIPPED_CORRUPTED_LOCAL_OK:
-        msg = (
-            f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; " "treat as potentially harmful"
-        )
-    else:
-        msg = f"skipped {path} with unknown state {state}"
-
-    if verbose:
-        tqdm.write(styled_string(msg, style=DOWNLOAD_STATE_COLOR.get(state, "red")))
-    elif state in (
-        DownloadState.DOWNLOADED_CORRUPTED,
-        DownloadState.SKIPPED_CORRUPTED_LOCAL_OK,
-    ):
-        warning_msg = (
-            f"WARNING: {path.absolute()} downloaded but remote state is CORRUPTED; treat as potentially harmful"
-            if state == DownloadState.DOWNLOADED_CORRUPTED
-            else f"WARNING: {path.absolute()} local hash OK, remote state CORRUPTED: treat as harmful"
-        )
-        print(warning_msg, file=sys.stderr)
-    elif state not in (
-        DownloadState.DOWNLOADED_OK,
-        DownloadState.SKIPPED_OK,
-    ):
-        print(f"SKIP/FAIL: {path.absolute()} ({state.name})", file=sys.stderr)
-
-    return (
-        size_bytes
-        if state
-        in (
-            DownloadState.DOWNLOADED_OK,
-            DownloadState.DOWNLOADED_CORRUPTED,
-            DownloadState.SKIPPED_OK,
-        )
-        else 0
-    )
+def _download_state_message(state: DownloadState, path: Path, file: File) -> Optional[Tuple[str, bool]]:
+    """Returns (message, is_error) for a download state, or None if no message."""
+    messages: Dict[DownloadState, Tuple[str, bool]] = {
+        DownloadState.DOWNLOADED_OK: (f"downloaded {path}", False),
+        DownloadState.DOWNLOADED_CORRUPTED: (
+            f"downloaded {path} (remote state is CORRUPTED; treat as potentially harmful)",
+            True,
+        ),
+        DownloadState.OVERWRITTEN_OK: (f"overwritten {path}", False),
+        DownloadState.OVERWRITTEN_CORRUPTED: (
+            f"overwritten {path} (remote state is CORRUPTED; treat as potentially harmful)",
+            True,
+        ),
+        DownloadState.DOWNLOADED_INVALID_HASH: (f"downloaded {path} but failed hash check", True),
+        DownloadState.SKIPPED_OK: (f"skipped {path} already downloaded (hash ok)", False),
+        DownloadState.SKIPPED_INVALID_HASH: (f"skipped {path}, exists with hash mismatch (use --overwrite?)", False),
+        DownloadState.SKIPPED_FILE_SIZE_MISMATCH: (
+            f"skipped {path}, exists with file size mismatch (use --overwrite?)",
+            False,
+        ),
+        DownloadState.SKIPPED_INVALID_REMOTE_STATE: (
+            f"skipped {path}, remote file has invalid state ({file.state.value})",
+            False,
+        ),
+        DownloadState.SKIPPED_CORRUPTED: (
+            f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt to override)",
+            False,
+        ),
+        DownloadState.SKIPPED_CORRUPTED_LOCAL_OK: (
+            f"skipped {path}, already present locally (hash ok) but remote file is CORRUPTED; " "treat as potentially harmful",
+            True,
+        ),
+    }
+    return messages.get(state)
 
 
 def upload_files(
@@ -550,141 +493,140 @@ def upload_files(
     files: Dict[str, Path],
     mission_id: UUID,
     *,
-    verbose: bool = False,
     n_workers: int = 2,
-) -> None:
-    console = Console(file=sys.stderr)
-    with tqdm(
-        total=len(files),
-        unit="files",
-        desc="Uploading files",
-        disable=not verbose,
-        leave=True,
-    ) as pbar:
-        start = monotonic()
-        futures: Dict[Future[Tuple[UploadState, int]], Path] = {}
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+) -> UploadResult:
+    start = monotonic()
+    futures: Dict[Future[Tuple[UploadState, int]], Path] = {}
 
-        skipped_files = 0
-        failed_files = 0
-        with ThreadPoolExecutor(max_workers=n_workers) as executor:
-            for name, path in files.items():
-                if not path.is_file():
-                    console.print(f"[yellow]Skipping non-existent file: {path}[/yellow]")
-                    pbar.update()
-                    continue
+    result = UploadResult()
 
-                future = executor.submit(
-                    upload_file,
-                    client=client,
-                    mission_id=mission_id,
-                    filename=name,
-                    path=path,
-                    verbose=verbose,
-                )
-                futures[future] = path
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        for name, path in files.items():
+            if not path.is_file():
+                logger.warning(f"Skipping non-existent file: {path}")
+                if on_message_cb is not None:
+                    on_message_cb(f"Skipping non-existent file: {path}", False)
+                if on_overall_progress_cb is not None:
+                    on_overall_progress_cb()
+                continue
 
-            total_uploaded_bytes = 0
-            for future in as_completed(futures):
-
-                if future.exception():
-                    failed_files += 1
-
-                if future.exception() is None and future.result()[0] == UploadState.EXISTS:
-                    skipped_files += 1
-
-                path = futures[future]
-                uploaded_bytes = _upload_handler(future, path, verbose=verbose)
-                total_uploaded_bytes += uploaded_bytes
-                pbar.update()
-
-    end = monotonic()
-    elapsed_time = end - start
-
-    avg_speed_bps = total_uploaded_bytes / elapsed_time if elapsed_time > 0 else 0
-
-    if verbose:
-        console.print()
-        console.print(f"Upload took {elapsed_time:.2f} seconds")
-        console.print(f"Total uploaded: {format_bytes(total_uploaded_bytes)}")
-        console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
-
-        if failed_files > 0:
-            console.print(
-                f"\nUploaded {len(files) - failed_files - skipped_files} files, "
-                f"{skipped_files} skipped, {failed_files} uploads failed",
-                style="red",
+            future = executor.submit(
+                upload_file,
+                client=client,
+                mission_id=mission_id,
+                filename=name,
+                path=path,
+                on_file_start_cb=on_file_start_cb,
+                on_file_progress_cb=on_file_progress_cb,
             )
-        else:
-            console.print(f"\nUploaded {len(files) - skipped_files} files, {skipped_files} skipped")
+            futures[future] = path
+
+        for future in as_completed(futures):
+            path = futures[future]
+
+            try:
+                state, size_bytes = future.result()
+            except Exception as e:
+                logger.error(format_traceback(e))
+                if on_message_cb is not None:
+                    on_message_cb(f"Error uploading {path}: {e}", True)
+                result.failed += 1
+                if on_overall_progress_cb is not None:
+                    on_overall_progress_cb()
+                continue
+
+            result.total_bytes += size_bytes
+
+            if state == UploadState.UPLOADED:
+                result.uploaded += 1
+                if on_message_cb is not None:
+                    on_message_cb(f"uploaded {path}", False)
+            elif state == UploadState.EXISTS:
+                result.skipped += 1
+                if on_message_cb is not None:
+                    on_message_cb(f"skipped {path} (already uploaded)", False)
+            else:
+                result.failed += 1
+                if on_message_cb is not None:
+                    on_message_cb(f"canceled {path} upload", True)
+
+            if on_overall_progress_cb is not None:
+                on_overall_progress_cb()
+
+    result.elapsed_seconds = monotonic() - start
+    return result
 
 
 def download_files(
     client: AuthenticatedClient,
     files: Dict[Path, File],
     *,
-    verbose: bool = False,
     overwrite: bool = False,
     allow_corrupt_files: bool = False,
     create_parents: bool = False,
     n_workers: int = 2,
-) -> None:
-    console = Console(file=sys.stderr)
-    with tqdm(
-        total=len(files),
-        unit="files",
-        desc="Downloading files",
-        disable=not verbose,
-        leave=True,
-    ) as pbar:
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+) -> DownloadResult:
+    start = monotonic()
+    futures: Dict[Future[Tuple[DownloadState, int]], Tuple[File, Path]] = {}
+    result = DownloadResult()
 
-        start = monotonic()
-        futures: Dict[Future[Tuple[DownloadState, int]], Tuple[File, Path]] = {}
-        failed_files = 0
-        state_counts: Dict[DownloadState, int] = {}
-        with ThreadPoolExecutor(max_workers=n_workers) as executor:
-            for path, file in files.items():
-                future = executor.submit(
-                    download_file,
-                    client=client,
-                    file=file,
-                    path=path,
-                    overwrite=overwrite,
-                    allow_corrupt_files=allow_corrupt_files,
-                    create_parents=create_parents,
-                    verbose=verbose,
-                )
-                futures[future] = (file, path)
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        for path, file in files.items():
+            future = executor.submit(
+                download_file,
+                client=client,
+                file=file,
+                path=path,
+                overwrite=overwrite,
+                allow_corrupt_files=allow_corrupt_files,
+                create_parents=create_parents,
+                on_file_start_cb=on_file_start_cb,
+                on_file_progress_cb=on_file_progress_cb,
+                on_message_cb=on_message_cb,
+            )
+            futures[future] = (file, path)
 
-            total_downloaded_bytes = 0
-            for future in as_completed(futures):
-                file, path = futures[future]
-                if future.exception() is not None:
-                    failed_files += 1
-                else:
-                    state, _ = future.result()
-                    state_counts[state] = state_counts.get(state, 0) + 1
-                downloaded_bytes = _download_handler(future, file, path, verbose=verbose)
-                total_downloaded_bytes += downloaded_bytes
-                pbar.update()
+        for future in as_completed(futures):
+            file, path = futures[future]
 
-    end = monotonic()
-    elapsed_time = end - start
-    avg_speed_bps = total_downloaded_bytes / elapsed_time if elapsed_time > 0 else 0
+            try:
+                state, size_bytes = future.result()
+            except Exception as e:
+                logger.error(format_traceback(e))
+                if on_message_cb is not None:
+                    on_message_cb(f"Error downloading {path}: {e}", True)
+                result.failed += 1
+                if on_overall_progress_cb is not None:
+                    on_overall_progress_cb()
+                continue
 
-    console.print()
-    console.print(f"Download took {elapsed_time:.2f} seconds")
-    console.print(f"Total downloaded/verified: {format_bytes(total_downloaded_bytes)}")
-    console.print(f"Average speed: {format_bytes(avg_speed_bps, speed=True)}")
-    console.print(
-        "Summary: "
-        f"{state_counts.get(DownloadState.DOWNLOADED_OK, 0)} downloaded OK, "
-        f"{state_counts.get(DownloadState.DOWNLOADED_CORRUPTED, 0)} downloaded corrupted, "
-        f"{state_counts.get(DownloadState.SKIPPED_OK, 0)} skipped already-present, "
-        f"{state_counts.get(DownloadState.SKIPPED_CORRUPTED, 0)} skipped corrupted (blocked), "
-        f"{state_counts.get(DownloadState.SKIPPED_CORRUPTED_LOCAL_OK, 0)} skipped corrupted (already present), "
-        f"{state_counts.get(DownloadState.SKIPPED_INVALID_HASH, 0)} skipped hash mismatch, "
-        f"{state_counts.get(DownloadState.SKIPPED_FILE_SIZE_MISMATCH, 0)} skipped size mismatch, "
-        f"{state_counts.get(DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0)} skipped invalid remote state, "
-        f"{state_counts.get(DownloadState.DOWNLOADED_INVALID_HASH, 0)} downloaded with invalid hash, "
-        f"{failed_files} failed"
-    )
+            result.state_counts[state] = result.state_counts.get(state, 0) + 1
+
+            if state in (
+                DownloadState.DOWNLOADED_OK,
+                DownloadState.DOWNLOADED_CORRUPTED,
+                DownloadState.SKIPPED_OK,
+                DownloadState.OVERWRITTEN_OK,
+                DownloadState.OVERWRITTEN_CORRUPTED,
+            ):
+                result.total_bytes += size_bytes
+
+            # Generate per-file status messages
+            if on_message_cb is not None:
+                msg = _download_state_message(state, path, file)
+                if msg is not None:
+                    on_message_cb(*msg)
+
+            if on_overall_progress_cb is not None:
+                on_overall_progress_cb()
+
+    result.elapsed_seconds = monotonic() - start
+    return result

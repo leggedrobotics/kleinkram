@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from kleinkram._version import __version__
+from kleinkram.api.file_transfer import DownloadResult
+from kleinkram.api.file_transfer import UploadResult
 from kleinkram.wrappers import create_mission
 from kleinkram.wrappers import create_project
 from kleinkram.wrappers import create_template
@@ -70,4 +72,6 @@ __all__ = [
     "update_trigger",
     "list_triggers",
     "delete_trigger",
+    "UploadResult",
+    "DownloadResult",
 ]

@@ -20,10 +20,17 @@ from typing import Union
 from typing import overload
 from uuid import UUID
 
+import kleinkram.api.file_transfer
 import kleinkram.api.routes
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import DownloadResult
+from kleinkram.api.file_transfer import OnFileProgressCb
+from kleinkram.api.file_transfer import OnFileStartCb
+from kleinkram.api.file_transfer import OnMessageCb
+from kleinkram.api.file_transfer import OnOverallProgressCb
+from kleinkram.api.file_transfer import UploadResult
 from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
@@ -140,9 +147,12 @@ def download(
     nested: bool = False,
     overwrite: bool = False,
     allow_corrupt_files: bool = False,
-    verbose: bool = False,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
-) -> None:
+) -> DownloadResult:
     query = _args_to_file_query(
         file_names=file_names,
         file_ids=file_ids,
@@ -152,14 +162,17 @@ def download(
         project_ids=project_ids,
     )
     client = client or AuthenticatedClient()
-    kleinkram.core.download(
+    return kleinkram.core.download(
         client=client,
         query=query,
         base_dir=parse_path_like(dest),
         nested=nested,
         overwrite=overwrite,
-        verbose=verbose,
         allow_corrupt_files=allow_corrupt_files,
+        on_overall_progress_cb=on_overall_progress_cb,
+        on_file_start_cb=on_file_start_cb,
+        on_file_progress_cb=on_file_progress_cb,
+        on_message_cb=on_message_cb,
     )
 
 
@@ -295,9 +308,12 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
-    verbose: bool = False,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
-) -> None: ...
+) -> UploadResult: ...
 
 
 @overload
@@ -307,9 +323,12 @@ def upload(
     files: Sequence[PathLike],
     create: Literal[False] = False,
     fix_filenames: bool = False,
-    verbose: bool = False,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
-) -> None: ...
+) -> UploadResult: ...
 
 
 @overload
@@ -322,9 +341,12 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
-    verbose: bool = False,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
-) -> None: ...
+) -> UploadResult: ...
 
 
 def upload(
@@ -338,9 +360,12 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
-    verbose: bool = False,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
-) -> None:
+) -> UploadResult:
     parsed_file_paths = [parse_path_like(f) for f in files]
     if not fix_filenames:
         for file in parsed_file_paths:
@@ -358,14 +383,17 @@ def upload(
         project_ids=singleton_list(project_id),
     )
     client = client or AuthenticatedClient()
-    kleinkram.core.upload(
+    return kleinkram.core.upload(
         client=client,
         query=query,
         file_paths=parsed_file_paths,
         create=create,
         metadata=metadata,
         ignore_missing_metadata=ignore_missing_metadata,
-        verbose=verbose,
+        on_overall_progress_cb=on_overall_progress_cb,
+        on_file_start_cb=on_file_start_cb,
+        on_file_progress_cb=on_file_progress_cb,
+        on_message_cb=on_message_cb,
     )
 
 

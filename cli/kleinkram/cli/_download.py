@@ -9,10 +9,13 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import DownloadState
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
+from kleinkram.utils import format_bytes
 from kleinkram.utils import split_args
 
 logger = logging.getLogger(__name__)
@@ -90,12 +93,74 @@ def download(
     )
     file_query = FileQuery(patterns=file_patterns, ids=file_ids, mission_query=mission_query)
 
-    kleinkram.core.download(
-        client=AuthenticatedClient(),
-        query=file_query,
-        allow_corrupt_files=include_corrupt_files,
-        base_dir=dest_dir,
-        nested=nested,
-        overwrite=overwrite,
-        verbose=get_shared_state().verbose,
-    )
+    verbose = get_shared_state().verbose
+
+    if verbose:
+        # We don't know total file count upfront (core.download resolves the query),
+        # so we use an indeterminate overall task (total=None)
+        with transfer_progress("Downloading files", total=None) as cbs:
+            result = kleinkram.core.download(
+                client=AuthenticatedClient(),
+                query=file_query,
+                allow_corrupt_files=include_corrupt_files,
+                base_dir=dest_dir,
+                nested=nested,
+                overwrite=overwrite,
+                on_overall_progress_cb=cbs.on_overall_progress,
+                on_file_start_cb=cbs.on_file_start,
+                on_file_progress_cb=cbs.on_file_progress,
+                on_message_cb=cbs.on_message,
+            )
+
+        # Print summary
+        avg_speed = result.total_bytes / result.elapsed_seconds if result.elapsed_seconds > 0 else 0
+        typer.echo(f"\nDownload took {result.elapsed_seconds:.2f} seconds")
+        typer.echo(f"Total downloaded/verified: {format_bytes(result.total_bytes)}")
+        typer.echo(f"Average speed: {format_bytes(avg_speed, speed=True)}")
+        typer.echo(
+            "Summary: "
+            f"{result.state_counts.get(DownloadState.DOWNLOADED_OK, 0)} downloaded OK, "
+            f"{result.state_counts.get(DownloadState.DOWNLOADED_CORRUPTED, 0)} downloaded corrupted, "
+            f"{result.state_counts.get(DownloadState.OVERWRITTEN_OK, 0)} overwritten OK, "
+            f"{result.state_counts.get(DownloadState.OVERWRITTEN_CORRUPTED, 0)} overwritten corrupted, "
+            f"{result.state_counts.get(DownloadState.SKIPPED_OK, 0)} skipped already-present, "
+            f"{result.state_counts.get(DownloadState.SKIPPED_CORRUPTED, 0)} skipped corrupted (blocked), "
+            f"{result.state_counts.get(DownloadState.SKIPPED_CORRUPTED_LOCAL_OK, 0)} skipped corrupted (already present), "
+            f"{result.state_counts.get(DownloadState.SKIPPED_INVALID_HASH, 0)} skipped hash mismatch, "
+            f"{result.state_counts.get(DownloadState.SKIPPED_FILE_SIZE_MISMATCH, 0)} skipped size mismatch, "
+            f"{result.state_counts.get(DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0)} skipped invalid remote state, "
+            f"{result.state_counts.get(DownloadState.DOWNLOADED_INVALID_HASH, 0)} downloaded with invalid hash, "
+            f"{result.failed} failed"
+        )
+    else:
+        # No verbose: no progress bars, no callbacks
+        result = kleinkram.core.download(
+            client=AuthenticatedClient(),
+            query=file_query,
+            allow_corrupt_files=include_corrupt_files,
+            base_dir=dest_dir,
+            nested=nested,
+            overwrite=overwrite,
+        )
+
+        downloaded = (
+            result.state_counts.get(DownloadState.DOWNLOADED_OK, 0)
+            + result.state_counts.get(DownloadState.DOWNLOADED_CORRUPTED, 0)
+            + result.state_counts.get(DownloadState.OVERWRITTEN_OK, 0)
+            + result.state_counts.get(DownloadState.OVERWRITTEN_CORRUPTED, 0)
+        )
+        if result.failed > 0:
+            typer.echo(
+                typer.style(
+                    f"\nDownloaded {downloaded} file(s), {result.failed} failed.",
+                    fg=typer.colors.RED,
+                ),
+                err=True,
+            )
+        else:
+            typer.echo(
+                typer.style(
+                    f"\nSuccessfully downloaded/verified {downloaded} file(s).",
+                    fg=typer.colors.GREEN,
+                )
+            )
