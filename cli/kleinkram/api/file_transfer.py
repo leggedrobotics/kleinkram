@@ -211,10 +211,10 @@ def upload_file(
         s3_endpoint = get_config().endpoint.s3
 
     total_size = path.stat().st_size
-    if on_file_start_cb is not None:
-        on_file_start_cb(path, total_size)
 
     for attempt in range(MAX_UPLOAD_RETRIES):
+        if on_file_start_cb is not None:
+            on_file_start_cb(path, total_size)
 
         # get per file upload credentials
         creds = _get_upload_credentials_with_retry(client, filename, mission_id, max_attempts=5 if attempt > 0 else 1)
@@ -355,7 +355,6 @@ def download_file(
     create_parents: bool = False,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
-    on_message_cb: Optional[OnMessageCb] = None,
 ) -> Tuple[DownloadState, int]:
     """\
     Returns DownloadState and bytes downloaded (file.size if successful or skipped ok, 0 otherwise)
@@ -422,8 +421,6 @@ def download_file(
     observed_hash = b64_md5(path)
     if file.hash is not None and observed_hash != file.hash:
         logger.warning(f"HASH MISMATCH: {path} expected={file.hash} observed={observed_hash}")
-        if on_message_cb is not None:
-            on_message_cb(f"HASH MISMATCH: {path} expected={file.hash} observed={observed_hash}", True)
         # Download completed but hash failed
         return (
             DownloadState.DOWNLOADED_INVALID_HASH,
@@ -510,6 +507,7 @@ def upload_files(
                 logger.warning(f"Skipping non-existent file: {path}")
                 if on_message_cb is not None:
                     on_message_cb(f"Skipping non-existent file: {path}", False)
+                result.skipped += 1
                 if on_overall_progress_cb is not None:
                     on_overall_progress_cb()
                 continue
@@ -590,7 +588,6 @@ def download_files(
                 create_parents=create_parents,
                 on_file_start_cb=on_file_start_cb,
                 on_file_progress_cb=on_file_progress_cb,
-                on_message_cb=on_message_cb,
             )
             futures[future] = (file, path)
 

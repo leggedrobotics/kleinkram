@@ -67,7 +67,10 @@ def transfer_progress(description: str, total: Optional[int] = None) -> Iterator
     overall_task = overall_progress.add_task(description, total=total)
 
     def on_file_start(path: Path, total_bytes: int) -> None:
-        file_tasks[path] = file_progress.add_task(path.name, total=total_bytes)
+        if path in file_tasks:
+            file_progress.update(file_tasks[path], completed=0, total=total_bytes)
+        else:
+            file_tasks[path] = file_progress.add_task(path.name, total=total_bytes)
 
     def on_file_progress(path: Path, advance: int) -> None:
         if path in file_tasks:
