@@ -172,20 +172,17 @@ def missions_to_table(missions: Sequence[Mission]) -> Table:
     table.add_column("size")
 
     # order by project, name
-    missions_tp: List[Tuple[str, str, Mission]] = []
-    for mission in missions:
-        missions_tp.append((mission.project_name, mission.name, mission))
-    missions_tp.sort()
+    missions_sorted = sorted(missions, key=lambda m: (m.project_name, m.name))
 
-    if not missions_tp:
+    if not missions_sorted:
         return table
     last_project: Optional[str] = None
     max_table_size = get_shared_state().max_table_size
-    for project, _, mission in missions_tp[:max_table_size]:
+    for mission in missions_sorted[:max_table_size]:
         # add delimiter row if project changes
-        if last_project is not None and last_project != project:
+        if last_project is not None and last_project != mission.project_name:
             table.add_section()
-        last_project = project
+        last_project = mission.project_name
 
         table.add_row(
             mission.project_name,
@@ -195,8 +192,8 @@ def missions_to_table(missions: Sequence[Mission]) -> Table:
             format_bytes(mission.size),
         )
 
-    if len(missions_tp) > max_table_size:
-        _add_placeholder_row(table, skipped=len(missions_tp) - max_table_size)
+    if len(missions_sorted) > max_table_size:
+        _add_placeholder_row(table, skipped=len(missions_sorted) - max_table_size)
     return table
 
 
@@ -211,20 +208,17 @@ def files_to_table(files: Sequence[File], *, title: str = "files", delimiters: b
     table.add_column("categories")
 
     # order by project, mission, name
-    files_tp: List[Tuple[str, str, str, File]] = []
-    for file in files:
-        files_tp.append((file.project_name, file.mission_name, file.name, file))
-    files_tp.sort()
+    files_sorted = sorted(files, key=lambda f: (f.project_name, f.mission_name, f.name))
 
-    if not files_tp:
+    if not files_sorted:
         return table
 
     last_mission: Optional[str] = None
     max_table_size = get_shared_state().max_table_size
-    for _, mission, _, file in files_tp[:max_table_size]:
-        if last_mission is not None and last_mission != mission and delimiters:
+    for file in files_sorted[:max_table_size]:
+        if last_mission is not None and last_mission != file.mission_name and delimiters:
             table.add_section()
-        last_mission = mission
+        last_mission = file.mission_name
 
         table.add_row(
             file.project_name,
@@ -236,8 +230,8 @@ def files_to_table(files: Sequence[File], *, title: str = "files", delimiters: b
             ", ".join(file.categories),
         )
 
-    if len(files_tp) > max_table_size:
-        _add_placeholder_row(table, skipped=len(files_tp) - max_table_size)
+    if len(files_sorted) > max_table_size:
+        _add_placeholder_row(table, skipped=len(files_sorted) - max_table_size)
 
     return table
 

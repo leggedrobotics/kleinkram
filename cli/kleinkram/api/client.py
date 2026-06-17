@@ -22,6 +22,7 @@ from kleinkram.config import Credentials
 from kleinkram.config import get_config
 from kleinkram.config import save_config
 from kleinkram.errors import NotAuthenticated
+from kleinkram.errors import UpdateCLIVersion
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +123,7 @@ class AuthenticatedClient(httpx.Client):
 
         # check version compatibility
         if response.status_code == 426:
-            raise kleinkram.errors.UpdateCLIVersion
+            raise UpdateCLIVersion()
         return response
 
     def request(

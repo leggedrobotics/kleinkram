@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import List
 from typing import Optional
 
 import typer
@@ -11,10 +12,12 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.api.routes import get_mission
+from kleinkram.api.routes import get_missions
 from kleinkram.api.routes import get_project
 from kleinkram.config import get_shared_state
 from kleinkram.errors import InvalidMissionQuery
 from kleinkram.printing import print_mission_info
+from kleinkram.printing import print_missions
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
 
@@ -147,3 +150,23 @@ def prune(
     """
 
     raise NotImplementedError("Not implemented yet")
+
+
+@mission_typer.command(name="list", help="list missions")
+def list_missions(
+    projects: Optional[List[str]] = typer.Option(None, "--project", "-p", help="project name or id"),
+    missions: Optional[List[str]] = typer.Argument(None, help="mission names"),
+) -> None:
+    mission_ids, mission_patterns = split_args(missions or [])
+    project_ids, project_patterns = split_args(projects or [])
+
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_query=project_query,
+    )
+
+    client = AuthenticatedClient()
+    parsed_missions = list(get_missions(client, mission_query=mission_query))
+    print_missions(parsed_missions, pprint=get_shared_state().verbose)
