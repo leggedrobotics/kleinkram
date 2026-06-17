@@ -29,13 +29,16 @@ from typing import Union
 from uuid import UUID
 
 import httpx
-from rich.console import Console
 from tqdm import tqdm
 
 import kleinkram.api.file_transfer
 import kleinkram.api.routes
 import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import OnFileProgressCb
+from kleinkram.api.file_transfer import OnFileStartCb
+from kleinkram.api.file_transfer import OnMessageCb
+from kleinkram.api.file_transfer import OnOverallProgressCb
 from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
@@ -53,7 +56,6 @@ from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
 from kleinkram.models import WebhookConfig
-from kleinkram.printing import files_to_table
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import file_paths_from_files
@@ -129,7 +131,6 @@ def download_artifact(
         path=filepath,
         size=execution.artifact_size,
         overwrite=True,  # overwrite if we run the CLI command directly
-        verbose=verbose,
     )
 
     if verbose:
@@ -171,15 +172,14 @@ def download(
     allow_corrupt_files: bool = False,
     nested: bool = False,
     overwrite: bool = False,
-    verbose: bool = False,
-) -> None:
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+) -> kleinkram.api.file_transfer.DownloadResult:
     """\
     downloads files, asserts that the destination dir exists
-    returns the files that were downloaded
-
-    TODO: the above is a lie, at the moment we just return all files that were found
-    this might include some files that were skipped or not downloaded for some reason
-    we would need to modify the `download_files` function to return this in the future
+    returns a DownloadResult with counts and metrics
     """
 
     if not base_dir.exists():
@@ -194,17 +194,16 @@ def download(
         raise InvalidFileQuery(f"Files not found. Maybe you forgot to specify mission or project flags: {query}")
     paths = file_paths_from_files(files, dest=base_dir, allow_nested=nested)
 
-    if verbose:
-        table = files_to_table(files, title="downloading files...")
-        Console().print(table)
-
-    kleinkram.api.file_transfer.download_files(
+    return kleinkram.api.file_transfer.download_files(
         client,
         paths,
-        verbose=verbose,
         allow_corrupt_files=allow_corrupt_files,
         overwrite=overwrite,
         create_parents=nested,
+        on_overall_progress_cb=on_overall_progress_cb,
+        on_file_start_cb=on_file_start_cb,
+        on_file_progress_cb=on_file_progress_cb,
+        on_message_cb=on_message_cb,
     )
 
 
@@ -216,8 +215,11 @@ def upload(
     create: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
-    verbose: bool = False,
-) -> None:
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+) -> kleinkram.api.file_transfer.UploadResult:
     """\
     uploads files to a mission
 
@@ -253,7 +255,15 @@ def upload(
     assert mission is not None, "unreachable"
 
     filename_map = get_filename_map(file_paths)
-    kleinkram.api.file_transfer.upload_files(client, filename_map, mission.id, verbose=verbose)
+    return kleinkram.api.file_transfer.upload_files(
+        client,
+        filename_map,
+        mission.id,
+        on_overall_progress_cb=on_overall_progress_cb,
+        on_file_start_cb=on_file_start_cb,
+        on_file_progress_cb=on_file_progress_cb,
+        on_message_cb=on_message_cb,
+    )
 
 
 def verify(
@@ -915,7 +925,6 @@ def _validate_mission_created(client: AuthenticatedClient, project_id: str, miss
             client=client,
             query=mission_query,
             file_paths=[tmp_path],
-            verbose=False,
         )
 
         file_query = FileQuery(
