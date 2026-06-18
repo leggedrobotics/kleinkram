@@ -38,6 +38,7 @@ class FileState(str, Enum):
     CONVERSION_ERROR = "CONVERSION_ERROR"
     LOST = "LOST"
     FOUND = "FOUND"
+    CANCELED = "CANCELED"
 
 
 @dataclass(frozen=True)
