@@ -19,7 +19,10 @@ import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/inge
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import env from '@kleinkram/backend-common/environment';
+import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
+import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
+    AccessGroupRights,
     DataType,
     FileEventType,
     FileOrigin,
@@ -44,6 +47,7 @@ import {
     DataSource,
     In,
     MoreThan,
+    MoreThanOrEqual,
     QueryFailedError,
     Repository,
     SelectQueryBuilder,
@@ -1104,6 +1108,7 @@ export class FileService implements OnModuleInit {
         const disposition = preview_only
             ? undefined
             : {
+                  // eslint-disable-next-line @typescript-eslint/naming-convention
                   'response-content-disposition': `attachment; filename="${file.filename}"`,
               };
 
@@ -1368,7 +1373,13 @@ export class FileService implements OnModuleInit {
                 if (fileType === undefined)
                     throw new UnsupportedMediaTypeException();
 
-                if (existingFilenames.has(filename)) {
+                const existingFile = existingFiles.find(
+                    (f) => f.filename === filename,
+                );
+                const isConflict =
+                    existingFile && existingFile.state !== FileState.CANCELED;
+
+                if (isConflict) {
                     invalidFiles.push({
                         filename,
                         error: 'File already exists',
@@ -1379,19 +1390,32 @@ export class FileService implements OnModuleInit {
                 try {
                     // Use a nested transaction (savepoint) for each file
                     await manager.transaction(async (nestedManager) => {
-                        const file = await nestedManager.save(
-                            FileEntity,
-                            nestedManager.create(FileEntity, {
-                                date: new Date(),
-                                size: 0,
-                                filename,
-                                mission,
-                                creator: user,
-                                type: fileType,
-                                state: FileState.UPLOADING,
-                                origin: FileOrigin.UPLOAD,
-                            }),
-                        );
+                        let file: FileEntity;
+                        if (existingFile?.state === FileState.CANCELED) {
+                            existingFile.state = FileState.UPLOADING;
+                            existingFile.creator = user;
+                            existingFile.date = new Date();
+                            existingFile.size = 0;
+                            existingFile.hash = '';
+                            file = await nestedManager.save(
+                                FileEntity,
+                                existingFile,
+                            );
+                        } else {
+                            file = await nestedManager.save(
+                                FileEntity,
+                                nestedManager.create(FileEntity, {
+                                    date: new Date(),
+                                    size: 0,
+                                    filename,
+                                    mission,
+                                    creator: user,
+                                    type: fileType,
+                                    state: FileState.UPLOADING,
+                                    origin: FileOrigin.UPLOAD,
+                                }),
+                            );
+                        }
 
                         await this.auditService.log(
                             FileEventType.UPLOAD_STARTED,
@@ -1467,12 +1491,84 @@ export class FileService implements OnModuleInit {
         uuids: string[],
         missionUUID: string,
         userUUID: string,
-    ): Promise<Queue.Job> {
-        // Cleanup cannot be done synchronously as this takes too long; the request is sent on unload; delaying the onUnload is difficult and discouraged
-        return this.fileCleanupQueue.add('cancelUpload', {
-            uuids,
-            missionUUID,
+    ): Promise<void> {
+        const canCancelUpload = await this.canCancelUpload(
             userUUID,
+            missionUUID,
+        );
+        if (!canCancelUpload) {
+            logger.debug(`User ${userUUID} can't cancel upload`);
+            return;
+        }
+
+        await Promise.all(
+            uuids.map(async (uuid) => {
+                const file = await this.fileRepository.findOne({
+                    where: { uuid, mission: { uuid: missionUUID } },
+                    relations: ['mission'],
+                });
+                if (!file) {
+                    return;
+                }
+                if (file.state === FileState.OK) {
+                    return;
+                }
+
+                if (file.mission === undefined) {
+                    logger.error(
+                        `Mission of file ${file.uuid} is undefined, skipping`,
+                    );
+                    return;
+                }
+
+                file.state = FileState.CANCELED;
+                await this.fileRepository.save(file);
+                return;
+            }),
+        );
+    }
+
+    private async canCancelUpload(
+        userUUID: string,
+        missionUUID: string,
+    ): Promise<boolean> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUUID },
+        });
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+            relations: ['project'],
+        });
+
+        if (mission.project === undefined) {
+            logger.error(
+                `Project of mission ${mission.uuid} is undefined, skipping`,
+            );
+            return false;
+        }
+
+        const canAccessProject = await this.dataSource.manager.exists(
+            ProjectAccessViewEntity,
+            {
+                where: {
+                    projectUuid: mission.project.uuid,
+                    userUuid: userUUID,
+                    rights: MoreThanOrEqual(AccessGroupRights.WRITE),
+                },
+            },
+        );
+        if (canAccessProject) {
+            return true;
+        }
+        return await this.dataSource.manager.exists(MissionAccessViewEntity, {
+            where: {
+                missionUuid: missionUUID,
+                userUuid: userUUID,
+                rights: MoreThanOrEqual(AccessGroupRights.WRITE),
+            },
         });
     }
 

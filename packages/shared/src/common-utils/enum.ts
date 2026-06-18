@@ -152,6 +152,7 @@ export enum FileState {
     CONVERSION_ERROR = 'CONVERSION_ERROR',
     LOST = 'LOST',
     FOUND = 'FOUND',
+    CANCELED = 'CANCELED',
 }
 
 export enum HealthStatus {
