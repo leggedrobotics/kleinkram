@@ -1,7 +1,7 @@
 import axios from 'src/api/axios';
 
 export const createCategory = async (name: string, projectUUID: string) => {
-    const response = await axios.post('/category/create', {
+    const response = await axios.post('/categories', {
         name,
         projectUUID,
     });
@@ -14,7 +14,7 @@ export const addManyCategories = async (
     files: string[],
     categories: string[],
 ) => {
-    const response = await axios.post('/category/addMany', {
+    const response = await axios.post('/categories/add-many', {
         missionUUID,
         files,
         categories,

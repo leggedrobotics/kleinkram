@@ -5,12 +5,10 @@ import qs from 'qs';
 import axios from 'src/api/axios';
 
 export const getMission = async (
-    uuid: string | undefined,
+    uuid: string,
 ): Promise<MissionWithFilesDto> => {
     const response: AxiosResponse<MissionWithFilesDto> =
-        await axios.get<MissionWithFilesDto>('/mission/one', {
-            params: { uuid },
-        });
+        await axios.get<MissionWithFilesDto>(`/missions/${uuid}`);
     return response.data;
 };
 
@@ -44,7 +42,7 @@ export const missionsOfProjectMinimal = async (
         parameters.search = searchParameters.name;
     }
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
-        `/mission/filteredMinimal`,
+        `/missions/filteredMinimal`,
         {
             params: parameters,
         },
@@ -82,7 +80,7 @@ export const missionsOfProject = async (
         parameters.search = searchParameters.name;
     }
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
-        `/mission/filtered`,
+        `/missions/filtered`,
         {
             params: parameters,
         },
@@ -92,7 +90,7 @@ export const missionsOfProject = async (
 
 export const getMissions = async (uuids: string[]): Promise<MissionsDto> => {
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
-        '/mission',
+        '/missions',
         {
             params: { missionUuids: uuids },
             paramsSerializer: (parameters) => {

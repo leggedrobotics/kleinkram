@@ -89,9 +89,7 @@ export const fetchFilteredFiles = async (
 export const fetchFile = async (uuid: string): Promise<FileWithTopicDto> => {
     try {
         const response: AxiosResponse<FileWithTopicDto> =
-            await axios.get<FileWithTopicDto>('/files/one', {
-                params: { uuid },
-            });
+            await axios.get<FileWithTopicDto>(`/files/${uuid}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching file:', error);
@@ -105,15 +103,16 @@ export const downloadFile = async (
     // eslint-disable-next-line @typescript-eslint/naming-convention
     preview_only = false,
 ): Promise<string> => {
-    const response = await axios.get<DownloadResponseDto>('files/download', {
-        params: {
-            uuid,
-
-            expires,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            preview_only,
+    const response = await axios.get<DownloadResponseDto>(
+        `/files/${uuid}/download`,
+        {
+            params: {
+                expires,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                preview_only,
+            },
         },
-    });
+    );
     return response.data.url;
 };
 

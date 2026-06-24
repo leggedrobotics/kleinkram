@@ -48,13 +48,10 @@ export const moveFiles = async (
     fileUUIDs: string[],
     missionUUID: string,
 ): Promise<MoveFilesResponseDto> => {
-    const response = await axios.post<MoveFilesResponseDto>(
-        '/files/moveFiles',
-        {
-            fileUUIDs,
-            missionUUID,
-        },
-    );
+    const response = await axios.post<MoveFilesResponseDto>('/files/move', {
+        fileUUIDs,
+        missionUUID,
+    });
     return response.data;
 };
 
