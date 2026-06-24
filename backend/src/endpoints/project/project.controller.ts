@@ -1,11 +1,17 @@
-import { ApiOkResponse, ApiResponse, OutputDto } from '@/decorators';
+import {
+    ApiCreatedResponse,
+    ApiOkResponse,
+    ApiResponse,
+    OutputDto,
+} from '@/decorators';
 import { projectEntityToDto } from '@/serialization';
 import { AccessService } from '@/services/access.service';
 import { ProjectService } from '@/services/project.service';
 import { ParameterUuid as ParameterUID } from '@/validation/parameter-decorators';
 import { QueryTake } from '@/validation/query-decorators';
 import {
-    AddTagTypeDto,
+    AddMetadataTypeDto,
+    AddMetadataTypeQueryDto,
     AddUserToProjectDto,
     CreateProject,
     DefaultRights,
@@ -18,10 +24,10 @@ import {
     ProjectWithRequiredTagsDto,
     RemoveTagTypeDto,
     ResentProjectsDto,
-    UpdateTagTypesDto,
+    UpdateMetadataTypesBodyDto,
+    UpdateMetadataTypesDto,
 } from '@kleinkram/api-dto';
 import {
-    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -51,7 +57,7 @@ export class ProjectController {
 
     @Post()
     @CanCreate()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Returns the created project',
         type: ProjectDto,
     })
@@ -130,8 +136,7 @@ export class ProjectController {
         summary: 'Add User to Project',
         description: 'Adds a user to a project with the given rights.',
     })
-    @ApiResponse({
-        status: 200,
+    @ApiCreatedResponse({
         type: ProjectDto,
         description: 'The Project the user was added to.',
     })
@@ -154,20 +159,15 @@ export class ProjectController {
 
     @Post(':uuid/metadata-types')
     @CanWriteProject()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Empty response',
-        type: AddTagTypeDto,
+        type: AddMetadataTypeDto,
     })
     async addTagType(
         @ParameterUID('uuid') uuid: string,
-        @Query() query: { tagTypeUUID?: string; metadataTypeUUID?: string },
-    ): Promise<AddTagTypeDto> {
-        const typeUuid = query.metadataTypeUUID ?? query.tagTypeUUID;
-        if (!typeUuid) {
-            throw new BadRequestException(
-                'metadataTypeUUID or tagTypeUUID query param is required',
-            );
-        }
+        @Query() query: AddMetadataTypeQueryDto,
+    ): Promise<AddMetadataTypeDto> {
+        const typeUuid = query.metadataTypeUUID ?? query.tagTypeUUID ?? '';
         await this.projectService.addTagType(uuid, typeUuid);
         return {};
     }
@@ -190,18 +190,13 @@ export class ProjectController {
     @CanWriteProject()
     @ApiOkResponse({
         description: 'Empty response',
-        type: UpdateTagTypesDto,
+        type: UpdateMetadataTypesDto,
     })
     async updateTagTypes(
         @ParameterUID('uuid') uuid: string,
-        @Body() body: { metadataTypeUUIDs?: string[]; tagTypeUUIDs?: string[] },
-    ): Promise<UpdateTagTypesDto> {
-        const uuids = body.metadataTypeUUIDs ?? body.tagTypeUUIDs;
-        if (!uuids) {
-            throw new BadRequestException(
-                'metadataTypeUUIDs or tagTypeUUIDs is required',
-            );
-        }
+        @Body() body: UpdateMetadataTypesBodyDto,
+    ): Promise<UpdateMetadataTypesDto> {
+        const uuids = body.metadataTypeUUIDs ?? body.tagTypeUUIDs ?? [];
         await this.projectService.updateTagTypes(uuid, uuids);
         return {
             success: true,
@@ -222,7 +217,7 @@ export class ProjectController {
 
     @Post(':uuid/access')
     @CanWriteProject()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Returns the project access',
         type: ProjectAccessListDto,
     })

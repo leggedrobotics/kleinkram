@@ -1,18 +1,13 @@
-import { ApiOkResponse } from '@/decorators';
+import { ApiCreatedResponse, ApiOkResponse } from '@/decorators';
 import { missionEntityToFlatDto } from '@/serialization';
+import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
-import { TagService } from '@/services/tag.service';
-import {
-    QueryOptionalString,
-    QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
-    QueryTake,
-    QueryUUID,
-} from '@/validation/query-decorators';
+import { QueryUUID } from '@/validation/query-decorators';
 import {
     AddTagsDto,
+    AddTagsRequestDto,
     CreateMission,
+    FilteredMissionsQueryDto,
     FlatMissionDto,
     MinimumMissionsDto,
     MissionDownloadEntryDto,
@@ -20,10 +15,9 @@ import {
     MissionsDto,
     MissionWithFilesDto,
     SuccessResponseDto,
+    UpdateMissionNameDto,
 } from '@kleinkram/api-dto';
-import { MISSION_NAME_REGEX } from '@kleinkram/validation';
 import {
-    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -49,12 +43,12 @@ import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 export class MissionController {
     constructor(
         private readonly missionService: MissionService,
-        private readonly tagService: TagService,
+        private readonly metadataService: MetadataService,
     ) {}
 
     @Post()
     @CanCreateInProjectByBody()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Returns the created mission',
         type: FlatMissionDto,
     })
@@ -73,16 +67,11 @@ export class MissionController {
     })
     async updateMissionName(
         @ParameterUID('uuid') missionUUID: string,
-        @Body('name') name: string,
+        @Body() body: UpdateMissionNameDto,
     ): Promise<FlatMissionDto> {
-        // validate name
-        if (!MISSION_NAME_REGEX.test(name)) {
-            throw new BadRequestException('Invalid name');
-        }
-
         const updatedMission = await this.missionService.updateName(
             missionUUID,
-            name,
+            body.name,
         );
         return missionEntityToFlatDto(updatedMission);
     }
@@ -118,23 +107,17 @@ export class MissionController {
         type: MinimumMissionsDto,
     })
     async filteredMissionsMinimal(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @QueryOptionalString('search', 'Search in mission name') search: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QuerySortBy('sortBy') sortBy: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: FilteredMissionsQueryDto,
         @AddUser() user: AuthHeader,
     ): Promise<MinimumMissionsDto> {
         return this.missionService.findMissionByProjectMinimal(
             user.user.uuid,
-            uuid,
-            // TODO: fix the following
-            Number.parseInt(String(skip)),
-            Number.parseInt(String(take)),
-            search,
-            sortDirection,
-            sortBy,
+            query.uuid,
+            query.skip,
+            query.take,
+            query.search,
+            query.sortDirection,
+            query.sortBy,
         );
     }
 
@@ -145,25 +128,17 @@ export class MissionController {
         type: MissionsDto,
     })
     async filteredMissions(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @QueryOptionalString('search', 'Search in mission name') search: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QuerySortBy('sortBy') sortBy: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: FilteredMissionsQueryDto,
         @AddUser() user: AuthHeader,
     ): Promise<MissionsDto> {
         return this.missionService.findMissionByProject(
             user.user,
-            uuid,
-            // TODO: cleanup by using a dto for the query params
-            //  this automatically validates the query params
-            //  and converts them to the correct types
-            Number.parseInt(String(skip)),
-            Number.parseInt(String(take)),
-            search,
-            sortDirection,
-            sortBy,
+            query.uuid,
+            query.skip,
+            query.take,
+            query.search,
+            query.sortDirection,
+            query.sortBy,
         );
     }
 
@@ -193,7 +168,7 @@ export class MissionController {
 
     @Post(':uuid/move')
     @CanMoveMission()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Mission moved successfully',
         type: SuccessResponseDto,
     })
@@ -220,24 +195,15 @@ export class MissionController {
 
     @Post(':uuid/metadata')
     @CanAddTag()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Metadata added to mission',
         type: AddTagsDto,
     })
     async addTags(
         @ParameterUID('uuid') uuid: string,
-        @Body()
-        body: {
-            metadata?: Record<string, string>;
-            tags?: Record<string, string>;
-        },
+        @Body() body: AddTagsRequestDto,
     ): Promise<AddTagsDto> {
-        const metadata = body.metadata ?? body.tags;
-        if (!metadata) {
-            throw new BadRequestException(
-                'metadata or tags object is required',
-            );
-        }
-        return this.tagService.addTags(uuid, metadata);
+        const metadata = body.metadata ?? body.tags ?? {};
+        return this.metadataService.addTags(uuid, metadata);
     }
 }
