@@ -201,6 +201,10 @@ export default {
         return asBoolean('VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT');
     },
 
+    get ACCESS_CONFIG_PATH(): string | undefined {
+        return asOptionalString('ACCESS_CONFIG_PATH');
+    },
+
     /**
      * @returns Docker Hub namespace for image validation (optional)
      * @example rslethz/

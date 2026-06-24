@@ -8,8 +8,9 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import accessConfig from './access_config.json';
 import { appVersion } from './app-version';
 import { AccessModule } from './endpoints/access/access.module';
 import { ActionModule } from './endpoints/action/action.module';
@@ -48,7 +49,48 @@ import { DBDumper } from './services/dbdumper.service';
                 configuration,
                 (): {
                     accessConfig: AccessGroupConfig;
-                } => ({ accessConfig: accessConfig as AccessGroupConfig }),
+                } => {
+                    const configPath =
+                        process.env.ACCESS_CONFIG_PATH ??
+                        path.resolve(process.cwd(), '..', 'access_config.json');
+                    let rawConfig: string;
+                    try {
+                        rawConfig = fs.readFileSync(configPath, 'utf8');
+                    } catch {
+                        throw new Error(
+                            `Cannot read access config at "${configPath}". Set ACCESS_CONFIG_PATH or place access_config.json at the repo root.`,
+                        );
+                    }
+                    const accessConfig = JSON.parse(
+                        rawConfig,
+                    ) as AccessGroupConfig;
+                    if (
+                        !Array.isArray(accessConfig.emails) ||
+                        !Array.isArray(accessConfig.access_groups)
+                    ) {
+                        throw new TypeError(
+                            `Invalid access_config.json: "emails" and "access_groups" must be arrays`,
+                        );
+                    }
+                    const configGroupUuids = new Set(
+                        accessConfig.access_groups.map((g) => g.uuid),
+                    );
+                    for (const emailEntry of accessConfig.emails) {
+                        if (!Array.isArray(emailEntry.access_groups)) {
+                            throw new TypeError(
+                                `Invalid access_config.json: each entry in "emails" must have an "access_groups" array`,
+                            );
+                        }
+                        for (const uuid of emailEntry.access_groups) {
+                            if (!configGroupUuids.has(uuid)) {
+                                throw new TypeError(
+                                    `Invalid access_config.json: UUID "${uuid}" in emails config is not defined in access_groups`,
+                                );
+                            }
+                        }
+                    }
+                    return { accessConfig };
+                },
             ],
         }),
         TypeOrmModule.forRootAsync({
