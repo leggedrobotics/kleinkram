@@ -40,7 +40,7 @@ describe('File Management Tests', () => {
         // Download
         const downloadResponse = await fetch(
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `${DEFAULT_URL}/files/download?uuid=${file?.uuid}&expires=false&preview_only=false`,
+            `${DEFAULT_URL}/files/${file?.uuid}/download?expires=false&preview_only=false`,
             {
                 method: 'GET',
                 headers: getAuthHeaders(user),
@@ -149,7 +149,7 @@ describe('File Management Tests', () => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(file?.mission?.uuid).toBe(mission1Uuid);
 
-        const moveResponse = await fetch(`${DEFAULT_URL}/files/moveFiles`, {
+        const moveResponse = await fetch(`${DEFAULT_URL}/files/move`, {
             method: 'POST',
 
             headers: {

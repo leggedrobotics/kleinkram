@@ -251,15 +251,15 @@ describe('Verify Action (Templates & Runs)', () => {
     });
 
     test('if a user can view details of a submitted action', async () => {
-        // Debug: Check /user/me
-        const meResponse = await fetch(`${DEFAULT_URL}/user/me`, {
+        // Debug: Check /users/me
+        const meResponse = await fetch(`${DEFAULT_URL}/users/me`, {
             method: 'GET',
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             headers: new HeaderCreator(globalThis.creator).getHeaders(),
         });
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const me = await meResponse.json();
-        console.log('[DEBUG] /user/me:', me);
+        console.log('[DEBUG] /users/me:', me);
 
         // 1. Submit Action first
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument

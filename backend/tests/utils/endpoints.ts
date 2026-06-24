@@ -5,7 +5,7 @@ export const getEndpoints = (): {
     url: string;
     method: string;
 }[] => {
-    const filePath = '.endpoints/__generated__endpoints.json';
+    const filePath = '__generated__endpoints.json';
 
     assert.ok(
         fs.existsSync(filePath),

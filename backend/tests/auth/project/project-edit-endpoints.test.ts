@@ -206,9 +206,9 @@ describe('Verify project manipulation endpoints', () => {
         headersBuilder.addHeader('Content-Type', 'application/json');
 
         const response = await fetch(
-            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/updateTagTypes`,
+            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/metadata-types`,
             {
-                method: 'POST',
+                method: 'PUT',
                 headers: headersBuilder.getHeaders(),
                 body: JSON.stringify({
                     tagTypeUUIDs: [metadataUuid, globalThis.metadataUuid],

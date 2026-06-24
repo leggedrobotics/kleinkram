@@ -419,7 +419,7 @@ describe('Verification project endpoint', () => {
 
         // delete mission
         const deleteMissionResponse = await fetch(
-            `${DEFAULT_URL}/mission/${missionUuid}`,
+            `${DEFAULT_URL}/missions/${missionUuid}`,
             {
                 method: 'DELETE',
                 headers: creatorHeader.getHeaders(),

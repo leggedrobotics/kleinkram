@@ -58,7 +58,7 @@ describe('Verify Access Groups External', () => {
         // External user tries to view access groups
         const headers = new HeaderCreator(externalUser);
         const response = await fetch(
-            `${DEFAULT_URL}/access?search=&skip=0&take=20`,
+            `${DEFAULT_URL}/access-groups?search=&skip=0&take=20`,
             { method: 'GET', headers: headers.getHeaders() },
         );
 
@@ -119,7 +119,7 @@ describe('Verify Access Groups Internal', () => {
         // Try to delete the primary group
         const headers = new HeaderCreator(user);
         const response = await fetch(
-            `${DEFAULT_URL}/access/${primaryGroupUuid}`,
+            `${DEFAULT_URL}/access-groups/${primaryGroupUuid}`,
             { method: 'DELETE', headers: headers.getHeaders() },
         );
 
@@ -154,7 +154,7 @@ describe('Verify Access Groups Internal', () => {
         // Admin tries to delete other user's primary group
         const headers = new HeaderCreator(admin);
         const response = await fetch(
-            `${DEFAULT_URL}/access/${primaryGroupUuid}`,
+            `${DEFAULT_URL}/access-groups/${primaryGroupUuid}`,
             { method: 'DELETE', headers: headers.getHeaders() },
         );
 
@@ -186,7 +186,7 @@ describe('Verify Access Groups Internal', () => {
 
         const headers = new HeaderCreator(user);
         const response = await fetch(
-            `${DEFAULT_URL}/access/${primaryGroupUuid}`,
+            `${DEFAULT_URL}/access-groups/${primaryGroupUuid}`,
             { method: 'DELETE', headers: headers.getHeaders() },
         );
 
@@ -199,7 +199,7 @@ describe('Verify Access Groups Internal', () => {
         // Internal user should be able to search/filter access groups
         const headers = new HeaderCreator(user);
         const response = await fetch(
-            `${DEFAULT_URL}/access?search=&skip=0&take=20`,
+            `${DEFAULT_URL}/access-groups?search=&skip=0&take=20`,
             { method: 'GET', headers: headers.getHeaders() },
         );
 
@@ -312,7 +312,7 @@ describe('Verify Access Groups Internal User Access', () => {
         // Internal user can search for groups
         const headers = new HeaderCreator(user);
         const response = await fetch(
-            `${DEFAULT_URL}/access?search=&skip=0&take=20`,
+            `${DEFAULT_URL}/access-groups?search=&skip=0&take=20`,
             { method: 'GET', headers: headers.getHeaders() },
         );
         expect(response.status).toBeLessThan(300);
@@ -323,7 +323,7 @@ describe('Verify Access Groups Internal User Access', () => {
 
         const headers = new HeaderCreator(user);
         const response = await fetch(
-            `${DEFAULT_URL}/access?search=&skip=0&take=20`,
+            `${DEFAULT_URL}/access-groups?search=&skip=0&take=20`,
             { method: 'GET', headers: headers.getHeaders() },
         );
         // External users lack CanCreate, so they get 403
@@ -335,7 +335,7 @@ describe('Verify Access Groups Internal User Access', () => {
 
         const headers = new HeaderCreator(user);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/access`, {
+        const response = await fetch(`${DEFAULT_URL}/access-groups`, {
             method: 'POST',
             headers: headers.getHeaders(),
             body: JSON.stringify({ name: 'unauthorized_group' }),
@@ -368,7 +368,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(externalUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -405,7 +405,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(externalUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users/${member.uuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${member.uuid}`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -443,7 +443,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(externalUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -488,7 +488,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(externalUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -514,10 +514,13 @@ describe('Verify Access Groups Internal User Access', () => {
         );
 
         const headers = new HeaderCreator(externalUser);
-        const response = await fetch(`${DEFAULT_URL}/access/${groupUuid}`, {
-            method: 'DELETE',
-            headers: headers.getHeaders(),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}`,
+            {
+                method: 'DELETE',
+                headers: headers.getHeaders(),
+            },
+        );
         expect(response.status).toBe(403);
     });
 
@@ -529,7 +532,7 @@ describe('Verify Access Groups Internal User Access', () => {
         // Internal user with CanCreate should be able to create groups
         const headers = new HeaderCreator(user);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/access`, {
+        const response = await fetch(`${DEFAULT_URL}/access-groups`, {
             method: 'POST',
             headers: headers.getHeaders(),
             body: JSON.stringify({ name: 'new_internal_group' }),
@@ -557,7 +560,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(creator);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -589,7 +592,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(creator);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users/${member.uuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${member.uuid}`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -622,7 +625,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(creator);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -656,7 +659,7 @@ describe('Verify Access Groups Internal User Access', () => {
 
         // Attempt to bulk remove the creator (last editor) and another member
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -703,7 +706,7 @@ describe('Verify Access Groups Internal User Access', () => {
         headers.addHeader('Content-Type', 'application/json');
 
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -764,7 +767,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(readUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -810,7 +813,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(writeUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -864,7 +867,7 @@ describe('Verify Access Groups Internal User Access', () => {
         const headers = new HeaderCreator(editUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -892,10 +895,13 @@ describe('Verify Access Groups Internal User Access', () => {
 
         // otherUser (not the creator/editor) tries to delete it
         const headers = new HeaderCreator(otherUser);
-        const response = await fetch(`${DEFAULT_URL}/access/${groupUuid}`, {
-            method: 'DELETE',
-            headers: headers.getHeaders(),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}`,
+            {
+                method: 'DELETE',
+                headers: headers.getHeaders(),
+            },
+        );
         expect(response.status).toBe(403);
     });
 });
@@ -949,10 +955,13 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
 
         // viewer should be able to view the group details
         const headers = new HeaderCreator(viewer);
-        const response = await fetch(`${DEFAULT_URL}/access/${groupUuid}`, {
-            method: 'GET',
-            headers: headers.getHeaders(),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}`,
+            {
+                method: 'GET',
+                headers: headers.getHeaders(),
+            },
+        );
         expect(response.status).toBeLessThan(300);
         const data = (await response.json()) as { name: string };
         expect(data.name).toBe('viewable_group');
@@ -983,7 +992,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(readUser);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -1015,7 +1024,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(creator);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -1056,7 +1065,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(creator);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users/${removable.uuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${removable.uuid}`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -1083,10 +1092,13 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         );
 
         const headers = new HeaderCreator(admin);
-        const response = await fetch(`${DEFAULT_URL}/access/${groupUuid}`, {
-            method: 'GET',
-            headers: headers.getHeaders(),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}`,
+            {
+                method: 'GET',
+                headers: headers.getHeaders(),
+            },
+        );
         expect(response.status).toBeLessThan(300);
     });
 
@@ -1098,7 +1110,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
 
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/access`, {
+        const response = await fetch(`${DEFAULT_URL}/access-groups`, {
             method: 'POST',
             headers: headers.getHeaders(),
             body: JSON.stringify({ name: 'admin_created_group' }),
@@ -1125,7 +1137,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -1156,7 +1168,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/users/${member.uuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${member.uuid}`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -1189,7 +1201,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
             {
                 method: 'POST',
                 headers: headers.getHeaders(),
@@ -1231,7 +1243,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
         const response = await fetch(
-            `${DEFAULT_URL}/access/${groupUuid}/projects/${projectUuid}`,
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
             {
                 method: 'DELETE',
                 headers: headers.getHeaders(),
@@ -1253,10 +1265,13 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         );
 
         const headers = new HeaderCreator(admin);
-        const response = await fetch(`${DEFAULT_URL}/access/${groupUuid}`, {
-            method: 'DELETE',
-            headers: headers.getHeaders(),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}`,
+            {
+                method: 'DELETE',
+                headers: headers.getHeaders(),
+            },
+        );
         expect(response.status).toBeLessThan(300);
 
         // Verify group is deleted
