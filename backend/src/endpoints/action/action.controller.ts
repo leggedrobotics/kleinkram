@@ -12,6 +12,7 @@ import {
     PaginatedQueryDto,
     SubmitActionDto,
     SubmitActionMulti,
+    SuccessResponseDto,
 } from '@kleinkram/api-dto';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -20,6 +21,7 @@ import {
     CanCreateAction,
     CanCreateActions,
     CanDeleteAction,
+    CanReadAction,
     LoggedIn,
 } from '../auth/roles.decorator';
 
@@ -65,7 +67,7 @@ export class ActionsController {
     }
 
     @Get(':uuid')
-    @LoggedIn()
+    @CanReadAction()
     @ApiOperation({ summary: 'Get action details' })
     @ApiOkResponse({ type: ActionDto })
     async findOne(@ParameterUuid('uuid') uuid: string): Promise<ActionDto> {
@@ -73,7 +75,7 @@ export class ActionsController {
     }
 
     @Get(':uuid/logs')
-    @LoggedIn()
+    @CanReadAction()
     @ApiOperation({ summary: 'Get action logs' })
     @ApiOkResponse({ type: ActionLogsDto })
     async getLogs(
@@ -84,7 +86,7 @@ export class ActionsController {
     }
 
     @Get(':uuid/file-events')
-    @LoggedIn()
+    @CanReadAction()
     @ApiOperation({ summary: 'Get file events triggered by this action' })
     @ApiOkResponse({ type: FileEventsDto })
     async getFileEvents(
@@ -96,10 +98,10 @@ export class ActionsController {
     @Delete(':uuid')
     @CanDeleteAction()
     @ApiOperation({ summary: 'Delete a specific action run' })
-    @OutputDto(null)
+    @OutputDto(SuccessResponseDto)
     async remove(
         @ParameterUuid('uuid') uuid: string,
-    ): Promise<{ success: boolean }> {
+    ): Promise<SuccessResponseDto> {
         await this.actionService.delete(uuid);
         return { success: true };
     }
