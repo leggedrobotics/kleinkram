@@ -1,7 +1,7 @@
 import { FileGuardService } from '@/services/file-guard.service';
 import { FileService } from '@/services/file.service';
+import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
-import { TagService } from '@/services/tag.service';
 import { TopicService } from '@/services/topic.service';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
@@ -47,7 +47,7 @@ import { FileController } from './file.controller';
         TopicService,
         MissionService,
         FileGuardService,
-        TagService,
+        MetadataService,
     ],
     controllers: [FileController],
     exports: [FileService],

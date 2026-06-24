@@ -1,4 +1,4 @@
-import { TagService } from '@/services/tag.service';
+import { MetadataService } from '@/services/metadata.service';
 import { AccessGroupEntity, ApiKeyEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
@@ -22,9 +22,9 @@ import { MetadataController } from './metadata.controller';
             ApiKeyEntity,
         ]),
     ],
-    providers: [TagService],
+    providers: [MetadataService],
     controllers: [MetadataTypeController, MetadataController],
-    exports: [TagService],
+    exports: [MetadataService],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class MetadataModule {}
