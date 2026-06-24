@@ -61,6 +61,7 @@ export * from '@api-dto/file/recalculate-hashes-response.dto';
 export * from '@api-dto/file/reextract-topics-response.dto';
 export * from '@api-dto/file/temporary-access-request.dto';
 export * from '@api-dto/is-date-or-never.constraint';
+export * from '@api-dto/mission/mission-download.dto';
 export * from '@api-dto/mission/mission-query.dto';
 export * from '@api-dto/mission/mission-with-files.dto';
 export * from '@api-dto/mission/mission.dto';
@@ -101,4 +102,6 @@ export * from '@api-dto/user/current-api-user.dto';
 export * from '@api-dto/user/resolve-users.dto';
 export * from '@api-dto/user/user.dto';
 
+export * from '@api-dto/message.dto';
+export * from '@api-dto/success-response.dto';
 export * from '@api-dto/user/users.dto';
