@@ -100,6 +100,9 @@ importers:
 
   backend:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: 3.1010.0
+        version: 3.1010.0
       '@aws-sdk/client-sts':
         specifier: 3.1005.0
         version: 3.1005.0
@@ -272,9 +275,6 @@ importers:
         specifier: ^6.1.4
         version: 6.1.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
     devDependencies:
-      '@aws-sdk/client-s3':
-        specifier: 3.1010.0
-        version: 3.1010.0
       '@jest/globals':
         specifier: ^30.2.0
         version: 30.2.0

@@ -1281,4 +1281,31 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         });
         expect(deleted).toBeNull();
     });
+
+    test('if an unrelated user cannot view access group details', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: unrelated } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'private_group' },
+            creator,
+            [creator],
+        );
+
+        const headers = new HeaderCreator(unrelated);
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}`,
+            {
+                method: 'GET',
+                headers: headers.getHeaders(),
+            },
+        );
+        expect(response.status).toBe(403);
+    });
 });

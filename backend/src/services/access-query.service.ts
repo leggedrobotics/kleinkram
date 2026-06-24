@@ -25,7 +25,7 @@ import {
     AccessGroupType,
     UserRole,
 } from '@kleinkram/shared';
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
@@ -54,6 +54,44 @@ export class AccessQueryService {
         uuid: string,
         userUuid: string,
     ): Promise<AccessGroupDto> {
+        const dbuser = await this.userRepository.findOneOrFail({
+            where: { uuid: userUuid },
+        });
+
+        if (dbuser.role !== UserRole.ADMIN) {
+            const isMember =
+                (await this.groupMembershipRepository
+                    .createQueryBuilder('groupMembership')
+                    .leftJoin('groupMembership.user', 'user')
+                    .leftJoin('groupMembership.accessGroup', 'accessGroup')
+                    .where('accessGroup.uuid = :uuid', { uuid })
+                    .andWhere('user.uuid = :userUuid', { userUuid })
+                    .getCount()) > 0;
+
+            if (!isMember) {
+                const sharedProjectsCount = await this.projectAccessRepository
+                    .createQueryBuilder('projectAccess')
+                    .leftJoin('projectAccess.accessGroup', 'accessGroup')
+                    .leftJoin('projectAccess.project', 'project')
+                    .leftJoin('project.project_accesses', 'allProjectAccesses')
+                    .leftJoin(
+                        'allProjectAccesses.accessGroup',
+                        'userAccessGroup',
+                    )
+                    .leftJoin('userAccessGroup.memberships', 'memberships')
+                    .leftJoin('memberships.user', 'user')
+                    .where('accessGroup.uuid = :uuid', { uuid })
+                    .andWhere('user.uuid = :userUuid', { userUuid })
+                    .getCount();
+
+                if (sharedProjectsCount === 0) {
+                    throw new ForbiddenException(
+                        'Access denied to this access group',
+                    );
+                }
+            }
+        }
+
         // check if the user can edit the access group (memberships[].canEditGroup)
         const includeEmail =
             (await this.groupMembershipRepository
