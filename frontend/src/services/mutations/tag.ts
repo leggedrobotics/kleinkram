@@ -2,9 +2,7 @@ import { DataType } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 
 export const removeTag = async (tagUUID: string) => {
-    const response = await axios.delete('/tag/deleteTag', {
-        params: { uuid: tagUUID },
-    });
+    const response = await axios.delete(`/tag/${tagUUID}`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

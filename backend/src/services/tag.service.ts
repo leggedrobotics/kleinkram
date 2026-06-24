@@ -195,8 +195,8 @@ export class TagService {
                         value = Number.parseInt(value as string);
                     }
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                    (exsitingTag as any)[tagType.datatype] = value as number;
+
+                    exsitingTag.value_number = value as number;
                     break;
                 }
                 throw new UnprocessableEntityException(
@@ -212,8 +212,7 @@ export class TagService {
                     );
                 }
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                (exsitingTag as any)[tagType.datatype] = value;
+                exsitingTag.value_string = value;
                 break;
             }
 
@@ -223,8 +222,7 @@ export class TagService {
                         value = value === 'true';
                     }
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                    (exsitingTag as any)[tagType.datatype] = value as boolean;
+                    exsitingTag.value_boolean = value as boolean;
                     break;
                 }
 
@@ -239,8 +237,17 @@ export class TagService {
                     );
                 }
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                (exsitingTag as any)[tagType.datatype] = new Date(value);
+                exsitingTag.value_date = new Date(value);
+                break;
+            }
+            case DataType.LOCATION: {
+                if (typeof value !== 'string') {
+                    throw new UnprocessableEntityException(
+                        'Value must be a string',
+                    );
+                }
+
+                exsitingTag.value_location = value;
                 break;
             }
 
@@ -264,7 +271,7 @@ export class TagService {
 
     async deleteTag(uuid: string): Promise<DeleteTagDto> {
         await this.tagRepository.delete({ uuid });
-        return {};
+        return { success: true };
     }
 
     async getAll(skip: number, take: number): Promise<TagTypesDto> {
