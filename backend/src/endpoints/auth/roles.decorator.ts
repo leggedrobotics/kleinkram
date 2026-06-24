@@ -1,5 +1,6 @@
 import { ApiResponse } from '@/decorators';
 import { UnauthorizedExceptionDto } from '@kleinkram/api-dto';
+import { AccessGroupRights } from '@kleinkram/shared';
 import {
     applyDecorators,
     ForbiddenException,
@@ -7,35 +8,23 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import {
-    AddTagGuard,
     AdminOnlyGuard,
-    CanDeleteMissionGuard,
     CanEditGroupByGroupUuid,
     CanModifyTriggerGuard,
     CanReadManyMissionsGuard,
     CreateActionGuard,
     CreateActionsGuard,
     CreateGuard,
-    CreateInMissionByBodyGuard,
-    CreateInProjectByBodyGuard,
     DeleteActionGuard,
-    DeleteFileGuard,
-    DeleteProjectGuard,
     DeleteTagGuard,
+    FileAccessGuard,
     LoggedInUserGuard,
+    MissionAccessGuard,
     MoveFilesGuard,
     MoveMissionToProjectGuard,
+    ProjectAccessGuard,
     ReadActionGuard,
-    ReadFileByNameGuard,
-    ReadFileGuard,
-    ReadMissionByNameGuard,
-    ReadMissionGuard,
-    ReadProjectByNameGuard,
-    ReadProjectGuard,
     UserGuard,
-    WriteFileGuard,
-    WriteMissionByBodyGuard,
-    WriteProjectGuard,
 } from './guards';
 
 // Logged-in user route decorator
@@ -80,21 +69,8 @@ export function AdminOnly() {
 
 export function CanReadProject() {
     return applyDecorators(
-        SetMetadata('CanReadProject', true),
-        UseGuards(ReadProjectGuard),
-        ApiResponse({
-            status: 401,
-            type: UnauthorizedExceptionDto,
-            description:
-                'User does not have Read permissions on the specified project.',
-        }),
-    );
-}
-
-export function CanReadProjectByName() {
-    return applyDecorators(
-        SetMetadata('CanReadProjectByName', true),
-        UseGuards(ReadProjectByNameGuard),
+        SetMetadata('accessRight', AccessGroupRights.READ),
+        UseGuards(ProjectAccessGuard),
         ApiResponse({
             status: 401,
             type: UnauthorizedExceptionDto,
@@ -106,8 +82,8 @@ export function CanReadProjectByName() {
 
 export function CanCreateInProjectByBody() {
     return applyDecorators(
-        SetMetadata('CanCreateInProjectByBody', true),
-        UseGuards(CreateInProjectByBodyGuard),
+        SetMetadata('accessRight', AccessGroupRights.CREATE),
+        UseGuards(ProjectAccessGuard),
         ApiResponse({
             status: 401,
             type: UnauthorizedExceptionDto,
@@ -119,8 +95,8 @@ export function CanCreateInProjectByBody() {
 
 export function CanWriteProject() {
     return applyDecorators(
-        SetMetadata('CanWriteProject', true),
-        UseGuards(WriteProjectGuard),
+        SetMetadata('accessRight', AccessGroupRights.WRITE),
+        UseGuards(ProjectAccessGuard),
         ApiResponse({
             status: 401,
             type: UnauthorizedExceptionDto,
@@ -132,8 +108,8 @@ export function CanWriteProject() {
 
 export function CanDeleteProject() {
     return applyDecorators(
-        SetMetadata('CanDeleteProject', true),
-        UseGuards(DeleteProjectGuard),
+        SetMetadata('accessRight', AccessGroupRights.DELETE),
+        UseGuards(ProjectAccessGuard),
         ApiResponse({
             status: 401,
             type: UnauthorizedExceptionDto,
@@ -158,21 +134,8 @@ export function CanCreate() {
 
 export function CanReadMission() {
     return applyDecorators(
-        SetMetadata('CanReadMission', true),
-        UseGuards(ReadMissionGuard),
-        ApiResponse({
-            status: 403,
-            type: ForbiddenException,
-            description:
-                'User does not have Read permissions on the specified project.',
-        }),
-    );
-}
-
-export function CanReadMissionByName() {
-    return applyDecorators(
-        SetMetadata('CanReadMission', true),
-        UseGuards(ReadMissionByNameGuard),
+        SetMetadata('accessRight', AccessGroupRights.READ),
+        UseGuards(MissionAccessGuard),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
@@ -197,21 +160,8 @@ export function CanMoveMission() {
 
 export function CanReadFile() {
     return applyDecorators(
-        SetMetadata('CanReadFile', true),
-        UseGuards(ReadFileGuard),
-        ApiResponse({
-            status: 403,
-            type: ForbiddenException,
-            description:
-                'User does not have Read permissions on the specified project.',
-        }),
-    );
-}
-
-export function CanReadFileByName() {
-    return applyDecorators(
-        SetMetadata('CanReadFileByName', true),
-        UseGuards(ReadFileByNameGuard),
+        SetMetadata('accessRight', AccessGroupRights.READ),
+        UseGuards(FileAccessGuard),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
@@ -223,8 +173,8 @@ export function CanReadFileByName() {
 
 export function CanWriteFile() {
     return applyDecorators(
-        SetMetadata('CanWriteFile', true),
-        UseGuards(WriteFileGuard),
+        SetMetadata('accessRight', AccessGroupRights.WRITE),
+        UseGuards(FileAccessGuard),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
@@ -249,8 +199,8 @@ export function CanMoveFiles() {
 
 export function CanCreateInMissionByBody() {
     return applyDecorators(
-        SetMetadata('CanReadMissionByBody', true),
-        UseGuards(CreateInMissionByBodyGuard),
+        SetMetadata('accessRight', AccessGroupRights.CREATE),
+        UseGuards(MissionAccessGuard),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
@@ -262,8 +212,8 @@ export function CanCreateInMissionByBody() {
 
 export function CanWriteMissionByBody() {
     return applyDecorators(
-        SetMetadata('CanReadMissionByBody', true),
-        UseGuards(WriteMissionByBodyGuard),
+        SetMetadata('accessRight', AccessGroupRights.WRITE),
+        UseGuards(MissionAccessGuard),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
@@ -275,8 +225,8 @@ export function CanWriteMissionByBody() {
 
 export function CanDeleteMission() {
     return applyDecorators(
-        SetMetadata('CanReadMissionByBody', true),
-        UseGuards(CanDeleteMissionGuard),
+        SetMetadata('accessRight', AccessGroupRights.DELETE),
+        UseGuards(MissionAccessGuard),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
@@ -288,8 +238,8 @@ export function CanDeleteMission() {
 
 export function CanDeleteFile() {
     return applyDecorators(
-        SetMetadata('CanDeleteFile', true),
-        UseGuards(DeleteFileGuard),
+        SetMetadata('accessRight', AccessGroupRights.DELETE),
+        UseGuards(FileAccessGuard),
         ApiResponse({
             status: 403,
             type: ForbiddenException,
@@ -353,8 +303,8 @@ export function CanDeleteAction() {
 
 export function CanAddTag() {
     return applyDecorators(
-        SetMetadata('CanAddTag', true),
-        UseGuards(AddTagGuard),
+        SetMetadata('accessRight', AccessGroupRights.WRITE),
+        UseGuards(MissionAccessGuard),
         ApiResponse({
             status: 401,
             type: UnauthorizedExceptionDto,
@@ -366,7 +316,7 @@ export function CanAddTag() {
 
 export function CanDeleteTag() {
     return applyDecorators(
-        SetMetadata('CanDeleteTag', true),
+        SetMetadata('accessRight', AccessGroupRights.DELETE),
         UseGuards(DeleteTagGuard),
         ApiResponse({
             status: 401,

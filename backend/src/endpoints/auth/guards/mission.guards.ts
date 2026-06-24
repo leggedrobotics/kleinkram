@@ -1,12 +1,12 @@
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ProjectGuardService } from '@/services/project-guard.service';
-import { AccessGroupRights, UserRole } from '@kleinkram/shared';
+import { AccessGroupRights } from '@kleinkram/shared';
 import {
-    BadRequestException,
     ExecutionContext,
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
 
 interface MissionBody {
@@ -21,17 +21,34 @@ interface TagParameters {
 }
 
 @Injectable()
-export class ReadMissionGuard extends BaseGuard {
-    constructor(private missionGuardService: MissionGuardService) {
+export class MissionAccessGuard extends BaseGuard {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
         super();
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
+        const requiredRight =
+            this.reflector.get<AccessGroupRights | undefined>(
+                'accessRight',
+                context.getHandler(),
+            ) ?? AccessGroupRights.READ;
+
+        const body = request.body as MissionBody | undefined;
         const params = request.params as { uuid?: string } | undefined;
         const missionUUID =
-            params?.uuid ?? (request.query.uuid as string | undefined);
+            params?.uuid ??
+            (request.query.uuid as string | undefined) ??
+            (request.query.missionUuid as string | undefined) ??
+            (request.query.missionUUID as string | undefined) ??
+            body?.missionUUID ??
+            body?.missionUuid ??
+            body?.uuid ??
+            body?.mission;
 
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
@@ -41,11 +58,15 @@ export class ReadMissionGuard extends BaseGuard {
             return this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
-                AccessGroupRights.READ,
+                requiredRight,
             );
         }
 
-        return this.missionGuardService.canAccessMission(user, missionUUID);
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            requiredRight,
+        );
     }
 }
 
@@ -79,197 +100,22 @@ export class CanReadManyMissionsGuard extends BaseGuard {
 }
 
 @Injectable()
-export class ReadMissionByNameGuard extends BaseGuard {
-    constructor(private missionGuardService: MissionGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-
-        const missionName = request.query.name as string | undefined;
-        const projectUuid = request.query.projectUUID as string | undefined;
-
-        if (!missionName || !projectUuid) {
-            return false; // Deny access if required parameters not provided
-        }
-
-        if (apiKey) {
-            return this.missionGuardService.canKeyAccessMissionByName(
-                apiKey,
-                missionName,
-                projectUuid,
-                AccessGroupRights.READ,
-            );
-        }
-        return this.missionGuardService.canAccessMissionByName(
-            user,
-            missionName,
-            projectUuid,
-        );
-    }
-}
-
-@Injectable()
-export class CreateInMissionByBodyGuard extends BaseGuard {
-    constructor(private missionGuardService: MissionGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-
-        const body = request.body as MissionBody | undefined;
-        const params = request.params as { uuid?: string } | undefined;
-        const missionUUID =
-            params?.uuid ?? body?.missionUUID ?? body?.missionUuid;
-
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
-        if (!missionUUID) {
-            return false; // Deny access if UUID not provided
-        }
-
-        if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
-                apiKey,
-                missionUUID,
-                AccessGroupRights.CREATE,
-            );
-        }
-        return this.missionGuardService.canAccessMission(
-            user,
-            missionUUID,
-            AccessGroupRights.CREATE,
-        );
-    }
-}
-
-@Injectable()
-export class WriteMissionByBodyGuard extends BaseGuard {
-    constructor(private missionGuardService: MissionGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-
-        const body = request.body as MissionBody | undefined;
-        const params = request.params as { uuid?: string } | undefined;
-        const missionUUID =
-            params?.uuid ?? body?.missionUUID ?? body?.missionUuid;
-
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
-        if (!missionUUID) {
-            return false; // Deny access if UUID not provided
-        }
-
-        if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
-                apiKey,
-                missionUUID,
-                AccessGroupRights.WRITE,
-            );
-        }
-        return this.missionGuardService.canAccessMission(
-            user,
-            missionUUID,
-            AccessGroupRights.WRITE,
-        );
-    }
-}
-
-@Injectable()
-export class CanDeleteMissionGuard extends BaseGuard {
-    constructor(private missionGuardService: MissionGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-        const body = request.body as MissionBody | undefined;
-        const params = request.params as TagParameters | undefined;
-
-        let missionUUID: string | undefined;
-
-        if (body) {
-            missionUUID = body.uuid ?? body.missionUUID ?? body.missionUuid;
-        }
-
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-
-        if (!missionUUID && params) {
-            missionUUID = params.uuid;
-        }
-
-        if (!missionUUID) {
-            throw new BadRequestException(
-                'Mission UUID not provided in body or params',
-            );
-        }
-
-        if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
-                apiKey,
-                missionUUID,
-                AccessGroupRights.DELETE,
-            );
-        }
-        return this.missionGuardService.canAccessMission(
-            user,
-            missionUUID,
-            AccessGroupRights.DELETE,
-        );
-    }
-}
-
-@Injectable()
-export class AddTagGuard extends BaseGuard {
-    constructor(private missionGuardService: MissionGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-
-        const body = request.body as MissionBody | undefined;
-        const params = request.params as { uuid?: string } | undefined;
-        const missionUUID = params?.uuid ?? body?.mission;
-
-        if (!missionUUID) {
-            return false; // Deny access if mission UUID not provided
-        }
-
-        if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
-                apiKey,
-                missionUUID,
-                AccessGroupRights.WRITE,
-            );
-        }
-        return this.missionGuardService.canAccessMission(
-            user,
-            missionUUID,
-            AccessGroupRights.WRITE,
-        );
-    }
-}
-
-@Injectable()
 export class DeleteTagGuard extends BaseGuard {
-    constructor(private missionGuardService: MissionGuardService) {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        private reflector: Reflector,
+    ) {
         super();
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
+
+        const requiredRight =
+            this.reflector.get<AccessGroupRights | undefined>(
+                'accessRight',
+                context.getHandler(),
+            ) ?? AccessGroupRights.DELETE;
 
         const body = request.body as MissionBody | undefined;
         const params = request.params as TagParameters;
@@ -283,13 +129,15 @@ export class DeleteTagGuard extends BaseGuard {
             return this.missionGuardService.canKeyTagMission(
                 apiKey,
                 tagUuid,
-                AccessGroupRights.DELETE,
+                requiredRight,
             );
         }
         return this.missionGuardService.canTagMission(
             user,
             tagUuid,
-            AccessGroupRights.WRITE,
+            requiredRight === AccessGroupRights.DELETE
+                ? AccessGroupRights.WRITE
+                : requiredRight,
         );
     }
 }
