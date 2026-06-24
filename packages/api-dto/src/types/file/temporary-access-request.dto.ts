@@ -1,5 +1,5 @@
 import { FileSource } from '@kleinkram/shared';
-import { IsNoValidUUID } from '@kleinkram/validation';
+import { IsNoValidUUID, IsValidFileName } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import {
     IsEnum,
@@ -13,6 +13,7 @@ export class TemporaryAccessRequestDto {
     @IsString({ each: true })
     @IsNotEmpty({ each: true })
     @IsNoValidUUID({ each: true })
+    @IsValidFileName({ each: true })
     @ApiProperty({
         description: 'Filenames for which to generate temporary access',
     })
