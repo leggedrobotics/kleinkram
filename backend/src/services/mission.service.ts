@@ -25,7 +25,7 @@ import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
-import { TagService } from './tag.service';
+import { MetadataService } from './metadata.service';
 import { UserService } from './user.service';
 import {
     addFileStats,
@@ -55,7 +55,7 @@ export class MissionService {
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
         private userService: UserService,
-        private tagService: TagService,
+        private metadataService: MetadataService,
         @Inject('DataStorageBucket')
         private readonly dataStorage: IStorageBucket,
     ) {}
@@ -120,7 +120,7 @@ export class MissionService {
         await Promise.all(
             Object.entries(createMission.tags).map(
                 async ([tagTypeUUID, value]) => {
-                    return this.tagService.addTagType(
+                    return this.metadataService.addTagType(
                         newMission.uuid,
                         tagTypeUUID,
                         value,
@@ -486,13 +486,13 @@ export class MissionService {
                     (_tag) => _tag.tagType?.uuid === tagTypeUUID,
                 );
                 if (tag) {
-                    return this.tagService.updateTagType(
+                    return this.metadataService.updateTagType(
                         missionUUID,
                         tagTypeUUID,
                         value,
                     );
                 }
-                return this.tagService.addTagType(
+                return this.metadataService.addTagType(
                     missionUUID,
                     tagTypeUUID,
                     value,

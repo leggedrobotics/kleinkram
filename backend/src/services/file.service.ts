@@ -380,24 +380,24 @@ export class FileService implements OnModuleInit {
      * the UUIDs retrieved in the first query.
      */
     async findFiltered(
-        fileName: string,
-        projectUUID: string,
-        missionUUID: string,
+        fileName: string | undefined,
+        projectUUID: string | undefined,
+        missionUUID: string | undefined,
         startDate: Date | undefined,
         endDate: Date | undefined,
-        topics: string,
-        messageDatatype: string,
-        categories: string,
-        matchAllTopics: boolean,
-        fileTypes: string,
+        topics: string | undefined,
+        messageDatatype: string | undefined,
+        categories: string | undefined,
+        matchAllTopics: boolean | undefined,
+        fileTypes: string | undefined,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tags: Record<string, any>,
+        tags: Record<string, any> | undefined,
         userUUID: string,
         take: number,
         skip: number,
         sort: string,
         sortOrder: 'ASC' | 'DESC',
-        health: HealthStatus,
+        health: HealthStatus | undefined,
     ): Promise<FilesDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -465,7 +465,6 @@ export class FileService implements OnModuleInit {
         this._applyTopicFilter(idQuery, topics, matchAllTopics);
         this._applyMessageDatatypeFilter(idQuery, messageDatatype);
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (health) {
             logger.debug(`Filtering files by health: ${health}`);
             switch (health) {
@@ -497,7 +496,7 @@ export class FileService implements OnModuleInit {
 
         const categoryUUIDs = categories ? categories.split(',') : [];
         if (categoryUUIDs.length > 0) {
-            logger.debug(`Filtering files by categories: ${categories}`);
+            logger.debug(`Filtering files by categories: ${categories ?? ''}`);
             idQuery
                 .innerJoin('file.categories', 'category')
                 .andWhere('category.uuid IN (:...categoryUUIDs)', {
@@ -506,7 +505,7 @@ export class FileService implements OnModuleInit {
         }
 
         // The tag filter is async, so it must be awaited
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
         if (tags && Object.keys(tags).length > 0) {
             await this._applyTagFilter(idQuery, tags);
         }
@@ -561,7 +560,7 @@ export class FileService implements OnModuleInit {
      */
     private _applyFileTypeFilter(
         query: SelectQueryBuilder<FileEntity>,
-        fileTypes: string,
+        fileTypes: string | undefined,
     ): void {
         if (!fileTypes) {
             return;
@@ -616,8 +615,8 @@ export class FileService implements OnModuleInit {
      */
     private _applyTopicFilter(
         query: SelectQueryBuilder<FileEntity>,
-        topics: string,
-        matchAllTopics: boolean,
+        topics: string | undefined,
+        matchAllTopics: boolean | undefined,
     ): void {
         if (!topics) {
             return;
@@ -647,7 +646,7 @@ export class FileService implements OnModuleInit {
      */
     private _applyMessageDatatypeFilter(
         query: SelectQueryBuilder<FileEntity>,
-        messageDatatype: string,
+        messageDatatype: string | undefined,
     ): void {
         if (!messageDatatype) {
             return;
