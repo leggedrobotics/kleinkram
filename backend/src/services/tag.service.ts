@@ -195,7 +195,6 @@ export class TagService {
                         value = Number.parseInt(value as string);
                     }
 
-
                     exsitingTag.value_number = value as number;
                     break;
                 }
