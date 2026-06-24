@@ -343,7 +343,7 @@ export class QueueService implements OnModuleInit {
                 }
             }
         }
-        return {};
+        return { success: true };
     }
 
     async cancelProcessing(
