@@ -5,7 +5,10 @@ export const getEndpoints = (): {
     url: string;
     method: string;
 }[] => {
-    const filePath = '__generated__endpoints.json';
+    let filePath = '.endpoints/__generated__endpoints.json';
+    if (!fs.existsSync(filePath)) {
+        filePath = '__generated__endpoints.json';
+    }
 
     assert.ok(
         fs.existsSync(filePath),
