@@ -4,7 +4,8 @@ import {
     ApiResponse,
     OutputDto,
 } from '@/decorators';
-import { AccessService } from '@/services/access.service';
+import { AccessModificationService } from '@/services/access-modification.service';
+import { AccessQueryService } from '@/services/access-query.service';
 import {
     AccessGroupAuditLogsDto,
     AccessGroupDto,
@@ -45,7 +46,10 @@ import {
 
 @Controller('access-groups')
 export class AccessController {
-    constructor(private readonly accessService: AccessService) {}
+    constructor(
+        private readonly accessQueryService: AccessQueryService,
+        private readonly accessModificationService: AccessModificationService,
+    ) {}
 
     @ApiOperation({
         summary: 'Get filtered AccessGroups',
@@ -62,7 +66,7 @@ export class AccessController {
     async search(
         @Query() query: GetFilteredAccessGroupsDto,
     ): Promise<AccessGroupsDto> {
-        return this.accessService.searchAccessGroup(
+        return this.accessQueryService.searchAccessGroup(
             query.search,
             query.type,
             query.skip,
@@ -90,7 +94,7 @@ export class AccessController {
         @ParameterUID('uuid', 'AccessGroup UUID') uuid: string,
         @AddUser() user: AuthHeader,
     ): Promise<AccessGroupDto> {
-        return await this.accessService
+        return await this.accessQueryService
             .getAccessGroup(uuid, user.user.uuid)
             .catch((error: unknown) => {
                 if (error instanceof EntityNotFoundError) {
@@ -114,7 +118,7 @@ export class AccessController {
     async getAuditLogs(
         @ParameterUID('uuid', 'AccessGroup UUID') uuid: string,
     ): Promise<AccessGroupAuditLogsDto> {
-        return this.accessService.getAuditLogs(uuid);
+        return this.accessQueryService.getAuditLogs(uuid);
     }
 
     @Post()
@@ -132,11 +136,12 @@ export class AccessController {
         @Body() body: CreateAccessGroupDto,
         @AddUser() user: AuthHeader,
     ): Promise<AccessGroupDto> {
-        const accessGroup = await this.accessService.createAccessGroup(
-            body.name,
-            user,
-        );
-        return this.accessService.getAccessGroup(
+        const accessGroup =
+            await this.accessModificationService.createAccessGroup(
+                body.name,
+                user,
+            );
+        return this.accessQueryService.getAccessGroup(
             accessGroup.uuid,
             user.user.uuid,
         );
@@ -161,7 +166,7 @@ export class AccessController {
         @Body() body: AddUserToAccessGroupDto,
         @AddUser() requestUser: AuthHeader,
     ): Promise<AccessGroupDto> {
-        await this.accessService
+        await this.accessModificationService
             .addUserToAccessGroup(
                 uuid,
                 body.userUuid,
@@ -175,7 +180,10 @@ export class AccessController {
                 }
                 throw error;
             });
-        return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
+        return this.accessQueryService.getAccessGroup(
+            uuid,
+            requestUser.user.uuid,
+        );
     }
 
     @ApiOperation({
@@ -194,12 +202,15 @@ export class AccessController {
         @ParameterUID('userUuid', 'UUID of User to remove') userUuid: string,
         @AddUser() requestUser: AuthHeader,
     ): Promise<AccessGroupDto> {
-        await this.accessService.removeUsersFromAccessGroup(
+        await this.accessModificationService.removeUsersFromAccessGroup(
             uuid,
             [userUuid],
             requestUser,
         );
-        return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
+        return this.accessQueryService.getAccessGroup(
+            uuid,
+            requestUser.user.uuid,
+        );
     }
 
     @ApiOperation({
@@ -218,12 +229,15 @@ export class AccessController {
         @Body() body: RemoveUsersFromAccessGroupDto,
         @AddUser() requestUser: AuthHeader,
     ): Promise<AccessGroupDto> {
-        await this.accessService.removeUsersFromAccessGroup(
+        await this.accessModificationService.removeUsersFromAccessGroup(
             uuid,
             body.userUuids,
             requestUser,
         );
-        return this.accessService.getAccessGroup(uuid, requestUser.user.uuid);
+        return this.accessQueryService.getAccessGroup(
+            uuid,
+            requestUser.user.uuid,
+        );
     }
 
     @ApiOperation({
@@ -242,7 +256,7 @@ export class AccessController {
         @Body() body: AddAccessGroupToProjectDto,
         @AddUser() user: AuthHeader,
     ): Promise<ProjectDto> {
-        return this.accessService.addAccessGroupToProject(
+        return this.accessModificationService.addAccessGroupToProject(
             projectUuid,
             uuid,
             body.rights,
@@ -263,7 +277,7 @@ export class AccessController {
         @ParameterUID('projectUuid', 'UUID of Project') projectUuid: string,
         @AddUser() user: AuthHeader,
     ): Promise<RemoveAccessGroupFromProjectResponseDto> {
-        await this.accessService.removeAccessGroupFromProject(
+        await this.accessModificationService.removeAccessGroupFromProject(
             projectUuid,
             uuid,
             user,
@@ -282,7 +296,7 @@ export class AccessController {
     async deleteAccessGroup(
         @ParameterUID('uuid', 'UUID of AccessGroup to be deleted') uuid: string,
     ): Promise<DeleteAccessGroupResponseDto> {
-        await this.accessService.deleteAccessGroup(uuid);
+        await this.accessModificationService.deleteAccessGroup(uuid);
         return { success: true };
     }
 
@@ -303,7 +317,7 @@ export class AccessController {
         @Body() body: SetAccessGroupUserExpirationDto,
         @AddUser() requestUser: AuthHeader,
     ): Promise<GroupMembershipDto> {
-        return this.accessService.setExpireDate(
+        return this.accessModificationService.setExpireDate(
             uuid,
             userUuid,
             body.expireDate,
@@ -327,7 +341,7 @@ export class AccessController {
         @Body() body: SetAccessGroupUserPermissionsDto,
         @AddUser() requestUser: AuthHeader,
     ): Promise<GroupMembershipDto> {
-        return this.accessService.setCanEditGroup(
+        return this.accessModificationService.setCanEditGroup(
             uuid,
             userUuid,
             body.canEditGroup,

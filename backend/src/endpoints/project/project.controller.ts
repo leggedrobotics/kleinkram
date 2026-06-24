@@ -5,7 +5,8 @@ import {
     OutputDto,
 } from '@/decorators';
 import { projectEntityToDto } from '@/serialization';
-import { AccessService } from '@/services/access.service';
+import { AccessModificationService } from '@/services/access-modification.service';
+import { AccessQueryService } from '@/services/access-query.service';
 import { ProjectService } from '@/services/project.service';
 import { ParameterUuid as ParameterUID } from '@/validation/parameter-decorators';
 import { QueryTake } from '@/validation/query-decorators';
@@ -52,7 +53,8 @@ import {
 export class ProjectController {
     constructor(
         private readonly projectService: ProjectService,
-        private readonly accessService: AccessService,
+        private readonly accessQueryService: AccessQueryService,
+        private readonly accessModificationService: AccessModificationService,
     ) {}
 
     @Post()
@@ -192,12 +194,13 @@ export class ProjectController {
         @Body() body: AddUserToProjectDto,
         @AddUser() requestUser: AuthHeader,
     ): Promise<ProjectDto> {
-        const projectEntity = await this.accessService.addUserToProject(
-            uuid,
-            body.userUuid,
-            body.rights,
-            requestUser,
-        );
+        const projectEntity =
+            await this.accessModificationService.addUserToProject(
+                uuid,
+                body.userUuid,
+                body.rights,
+                requestUser,
+            );
         return projectEntityToDto(projectEntity);
     }
 
@@ -256,7 +259,7 @@ export class ProjectController {
     async getProjectAccess(
         @ParameterUID('uuid') uuid: string,
     ): Promise<ProjectAccessListDto> {
-        return this.accessService.getProjectAccesses(uuid);
+        return this.accessQueryService.getProjectAccesses(uuid);
     }
 
     @Post(':uuid/access')
@@ -271,6 +274,10 @@ export class ProjectController {
         body: ProjectAccessDto[],
         @AddUser() auth: AuthHeader,
     ): Promise<ProjectAccessListDto> {
-        return this.accessService.updateProjectAccess(uuid, body, auth);
+        return this.accessModificationService.updateProjectAccess(
+            uuid,
+            body,
+            auth,
+        );
     }
 }

@@ -2,7 +2,6 @@ import { FileGuardService } from '@/services/file-guard.service';
 import { FileLifecycleService } from '@/services/file-lifecycle.service';
 import { FileQueryService } from '@/services/file-query.service';
 import { FileStorageService } from '@/services/file-storage.service';
-import { FileService } from '@/services/file.service';
 import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
 import { TopicService } from '@/services/topic.service';
@@ -46,7 +45,6 @@ import { FileController } from './file.controller';
         TriggerModule,
     ],
     providers: [
-        FileService,
         FileQueryService,
         FileStorageService,
         FileLifecycleService,
@@ -56,7 +54,7 @@ import { FileController } from './file.controller';
         MetadataService,
     ],
     controllers: [FileController],
-    exports: [FileService],
+    exports: [FileQueryService, FileStorageService, FileLifecycleService],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class FileModule {}

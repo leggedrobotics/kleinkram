@@ -1,5 +1,7 @@
 import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
-import { FileService } from '@/services/file.service';
+import { FileLifecycleService } from '@/services/file-lifecycle.service';
+import { FileQueryService } from '@/services/file-query.service';
+import { FileStorageService } from '@/services/file-storage.service';
 import { QueueService } from '@/services/queue.service';
 import {
     QueryBoolean,
@@ -80,7 +82,9 @@ import { FileSource } from '@kleinkram/shared';
 @Controller(['files'])
 export class FileController {
     constructor(
-        private readonly fileService: FileService,
+        private readonly fileQueryService: FileQueryService,
+        private readonly fileStorageService: FileStorageService,
+        private readonly fileLifecycleService: FileLifecycleService,
         private readonly queueService: QueueService,
         private readonly foxgloveService: FoxgloveService,
     ) {}
@@ -108,21 +112,21 @@ export class FileController {
 
         // we pre-check the access to give a proper error message
         // the actual findMany method will check access again per file
-        await this.fileService.checkResourceAccess(
+        await this.fileQueryService.checkResourceAccess(
             projectUuids,
             missionUuids,
             auth.user.uuid,
         );
 
         // also check access by patterns
-        await this.fileService.checkResourceAccessByName(
+        await this.fileQueryService.checkResourceAccessByName(
             query.projectPatterns ?? [],
             query.missionPatterns ?? [],
             auth.user.uuid,
         );
 
         // now fetch files, we only query files we have access to
-        return await this.fileService.findMany(
+        return await this.fileQueryService.findMany(
             query,
             auth.user.uuid,
             _missionUUID,
@@ -151,7 +155,7 @@ export class FileController {
         @AddUser() auth: AuthHeader,
     ): Promise<DownloadResponseDto> {
         logger.debug(`download ${uuid}: expires=${expires.toString()}`);
-        const url = await this.fileService.generateDownload(
+        const url = await this.fileStorageService.generateDownload(
             uuid,
             expires,
             previewOnly,
@@ -171,7 +175,7 @@ export class FileController {
     async getFileById(
         @ParameterUID('uuid') uuid: string,
     ): Promise<FileWithTopicDto> {
-        const file = await this.fileService.findOne(uuid);
+        const file = await this.fileQueryService.findOne(uuid);
         return plainToInstance(FileWithTopicDto, file, {
             excludeExtraneousValues: true,
         });
@@ -188,7 +192,7 @@ export class FileController {
         @Body() dto: UpdateFile,
         @AddUser() auth: AuthHeader,
     ): Promise<FileDto> {
-        const file = await this.fileService.update(
+        const file = await this.fileLifecycleService.update(
             uuid,
             dto,
             auth.user,
@@ -211,7 +215,7 @@ export class FileController {
         @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
         @AddUser() auth: AuthHeader,
     ): Promise<MoveFilesResponseDto> {
-        await this.fileService.moveFiles(
+        await this.fileLifecycleService.moveFiles(
             fileUUIDs,
             missionUUID,
             auth.user,
@@ -230,7 +234,7 @@ export class FileController {
         @QueryUUID('uuid', 'Mission UUID to search in') uuid: string,
         @QueryString('filename', 'Filename searched for') name: string,
     ): Promise<FileDto> {
-        const file = await this.fileService.findOneByName(uuid, name);
+        const file = await this.fileQueryService.findOneByName(uuid, name);
         return plainToInstance(FileDto, file, {
             excludeExtraneousValues: true,
         });
@@ -243,7 +247,11 @@ export class FileController {
         @ParameterUID('uuid') uuid: string,
         @AddUser() auth: AuthHeader,
     ): Promise<DeleteFileResponseDto> {
-        await this.fileService.deleteFile(uuid, auth.user, auth.apiKey?.action);
+        await this.fileLifecycleService.deleteFile(
+            uuid,
+            auth.user,
+            auth.apiKey?.action,
+        );
         return { success: true };
     }
 
@@ -254,7 +262,7 @@ export class FileController {
     })
     @LoggedIn()
     async getStorage(): Promise<StorageOverviewDto> {
-        return this.fileService.getStorage();
+        return this.fileStorageService.getStorage();
     }
 
     @Get('isUploading')
@@ -268,7 +276,9 @@ export class FileController {
         @AddUser() auth: AuthHeader,
     ): Promise<IsUploadingDto> {
         return {
-            isUploading: await this.fileService.isUploading(auth.user.uuid),
+            isUploading: await this.fileLifecycleService.isUploading(
+                auth.user.uuid,
+            ),
         };
     }
 
@@ -292,7 +302,7 @@ export class FileController {
             }
         }
 
-        return await this.fileService.getTemporaryAccess(
+        return await this.fileLifecycleService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
             auth.user.uuid,
@@ -309,7 +319,7 @@ export class FileController {
         @AddUser() auth: AuthHeader,
     ): Promise<CancelUploadResponseDto> {
         logger.debug(`cancelUpload ${JSON.stringify(dto)}`);
-        await this.fileService.cancelUpload(
+        await this.fileLifecycleService.cancelUpload(
             dto.uuids,
             dto.missionUuid,
             auth.user.uuid,
@@ -328,7 +338,7 @@ export class FileController {
         uuids: string[],
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
     ): Promise<DeleteFileResponseDto> {
-        await this.fileService.deleteMultiple(uuids, missionUUID);
+        await this.fileLifecycleService.deleteMultiple(uuids, missionUUID);
         return { success: true };
     }
 
@@ -341,7 +351,7 @@ export class FileController {
     async exists(
         @QueryUUID('uuid', 'FileUUID searched') uuid: string,
     ): Promise<FileExistsResponseDto> {
-        return this.fileService.exists(uuid);
+        return this.fileQueryService.exists(uuid);
     }
 
     @Post('resetS3Tags')
@@ -351,7 +361,7 @@ export class FileController {
     })
     async resetS3Tags(): Promise<void> {
         logger.debug('Resetting S3 tags');
-        await this.fileService.renameTags();
+        await this.fileStorageService.renameTags();
         logger.debug('Resetting S3 tags done');
     }
 
@@ -362,7 +372,7 @@ export class FileController {
     })
     async recomputeFileSizes(): Promise<void> {
         logger.debug('Recomputing file sizes');
-        await this.fileService.recomputeFileSizes();
+        await this.fileStorageService.recomputeFileSizes();
         logger.debug('Recomputing file sizes done');
     }
 
@@ -375,7 +385,7 @@ export class FileController {
     async getEvents(
         @ParameterUID('uuid') uuid: string,
     ): Promise<FileEventsDto> {
-        return this.fileService.getFileEvents(uuid);
+        return this.fileQueryService.getFileEvents(uuid);
     }
 
     @Post('reextractTopics')
@@ -386,7 +396,7 @@ export class FileController {
     })
     async reextractTopics(): Promise<ReextractTopicsResponseDto> {
         logger.debug('Triggering manual topic extraction for missing files');
-        const count = await this.fileService.reextractMissingTopics();
+        const count = await this.fileLifecycleService.reextractMissingTopics();
         return { count };
     }
 

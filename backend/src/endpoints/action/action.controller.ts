@@ -1,6 +1,6 @@
 import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
 import { ActionService } from '@/services/action.service';
-import { FileService } from '@/services/file.service';
+import { FileQueryService } from '@/services/file-query.service';
 import { ParameterUuid } from '@/validation/parameter-decorators';
 import {
     ActionDto,
@@ -30,7 +30,7 @@ import {
 export class ActionsController {
     constructor(
         private readonly actionService: ActionService,
-        private readonly fileService: FileService,
+        private readonly fileQueryService: FileQueryService,
     ) {}
 
     @Post()
@@ -92,7 +92,7 @@ export class ActionsController {
     async getFileEvents(
         @ParameterUuid('uuid') uuid: string,
     ): Promise<FileEventsDto> {
-        return this.fileService.getActionFileEvents(uuid);
+        return this.fileQueryService.getActionFileEvents(uuid);
     }
 
     @Delete(':uuid')

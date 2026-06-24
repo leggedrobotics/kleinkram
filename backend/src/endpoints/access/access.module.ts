@@ -1,6 +1,5 @@
 import { AccessModificationService } from '@/services/access-modification.service';
 import { AccessQueryService } from '@/services/access-query.service';
-import { AccessService } from '@/services/access.service';
 import {
     AccessGroupAuditService,
     AccessGroupEntity,
@@ -28,13 +27,16 @@ import { AccessController } from './access.controller';
         UserModule,
     ],
     providers: [
-        AccessService,
         AccessQueryService,
         AccessModificationService,
         AccessGroupAuditService,
     ],
     controllers: [AccessController],
-    exports: [AccessService],
+    exports: [
+        AccessQueryService,
+        AccessModificationService,
+        AccessGroupAuditService,
+    ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AccessModule {}
