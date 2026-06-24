@@ -1,4 +1,7 @@
 import { FileGuardService } from '@/services/file-guard.service';
+import { FileLifecycleService } from '@/services/file-lifecycle.service';
+import { FileQueryService } from '@/services/file-query.service';
+import { FileStorageService } from '@/services/file-storage.service';
 import { FileService } from '@/services/file.service';
 import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
@@ -44,6 +47,9 @@ import { FileController } from './file.controller';
     ],
     providers: [
         FileService,
+        FileQueryService,
+        FileStorageService,
+        FileLifecycleService,
         TopicService,
         MissionService,
         FileGuardService,

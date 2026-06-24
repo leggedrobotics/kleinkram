@@ -1,3 +1,5 @@
+import { AccessModificationService } from '@/services/access-modification.service';
+import { AccessQueryService } from '@/services/access-query.service';
 import { AccessService } from '@/services/access.service';
 import {
     AccessGroupAuditService,
@@ -25,7 +27,12 @@ import { AccessController } from './access.controller';
         ]),
         UserModule,
     ],
-    providers: [AccessService, AccessGroupAuditService],
+    providers: [
+        AccessService,
+        AccessQueryService,
+        AccessModificationService,
+        AccessGroupAuditService,
+    ],
     controllers: [AccessController],
     exports: [AccessService],
 })
