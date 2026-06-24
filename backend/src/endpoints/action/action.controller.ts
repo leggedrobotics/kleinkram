@@ -1,4 +1,4 @@
-import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
 import { ActionService } from '@/services/action.service';
 import { FileService } from '@/services/file.service';
 import { ParameterUuid } from '@/validation/parameter-decorators';
@@ -36,7 +36,7 @@ export class ActionsController {
     @Post()
     @CanCreateAction()
     @ApiOperation({ summary: 'Submit (dispatch) a new action' })
-    @ApiOkResponse({ type: ActionSubmitResponseDto })
+    @ApiCreatedResponse({ type: ActionSubmitResponseDto })
     async create(
         @Body() dto: SubmitActionDto,
         @AddUser() user: AuthHeader,
@@ -47,7 +47,7 @@ export class ActionsController {
     @Post('batch')
     @CanCreateActions()
     @ApiOperation({ summary: 'Batch submit multiple actions' })
-    @ApiOkResponse({ type: [ActionSubmitResponseDto] })
+    @ApiCreatedResponse({ type: [ActionSubmitResponseDto] })
     async createBatch(
         @Body() dto: SubmitActionMulti,
         @AddUser() user: AuthHeader,

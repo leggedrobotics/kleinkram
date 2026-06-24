@@ -1,6 +1,7 @@
 import { applyDecorators, SetMetadata } from '@nestjs/common';
 import {
     ApiResponseCommonMetadata,
+    ApiCreatedResponse as SwaggerApiCreatedResponse,
     ApiOkResponse as SwaggerApiOkResponse,
     ApiResponse as SwaggerApiResponse,
 } from '@nestjs/swagger';
@@ -20,6 +21,14 @@ export const ApiOkResponse = (
     options: ApiResponseCommonMetadata,
 ): ReturnType<typeof applyDecorators> =>
     applyDecorators(OutputDto(options.type), SwaggerApiOkResponse(options));
+
+export const ApiCreatedResponse = (
+    options: ApiResponseCommonMetadata,
+): ReturnType<typeof applyDecorators> =>
+    applyDecorators(
+        OutputDto(options.type),
+        SwaggerApiCreatedResponse(options),
+    );
 
 export const ApiResponse = (
     options: ApiResponseCommonMetadata,

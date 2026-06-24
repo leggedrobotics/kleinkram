@@ -1,27 +1,27 @@
-import { ApiOkResponse } from '@/decorators';
-import { TagService } from '@/services/tag.service';
+import { ApiCreatedResponse, ApiOkResponse } from '@/decorators';
+import { MetadataService } from '@/services/metadata.service';
 import {
-    QueryOptionalString,
-    QuerySkip,
-    QueryTake,
-} from '@/validation/query-decorators';
-import { CreateTagTypeDto, TagTypeDto, TagTypesDto } from '@kleinkram/api-dto';
-import { DataType } from '@kleinkram/shared';
-import { Body, Controller, Get, Post } from '@nestjs/common';
+    CreateTagTypeDto,
+    FilteredMetadataTypesQueryDto,
+    PaginatedQueryDto,
+    TagTypeDto,
+    TagTypesDto,
+} from '@kleinkram/api-dto';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { CanCreate, LoggedIn } from '../auth/roles.decorator';
 
 @Controller('metadata-types')
 export class MetadataTypeController {
-    constructor(private readonly tagService: TagService) {}
+    constructor(private readonly metadataService: MetadataService) {}
 
     @Post()
     @CanCreate()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Returns the created TagType',
         type: TagTypeDto,
     })
     async createTagType(@Body() body: CreateTagTypeDto): Promise<TagTypeDto> {
-        return await this.tagService.create(body.name, body.type);
+        return await this.metadataService.create(body.name, body.type);
     }
 
     @Get()
@@ -30,11 +30,8 @@ export class MetadataTypeController {
         description: 'Returns all TagTypes',
         type: TagTypesDto,
     })
-    async getAll(
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-    ): Promise<TagTypesDto> {
-        return this.tagService.getAll(skip, take);
+    async getAll(@Query() query: PaginatedQueryDto): Promise<TagTypesDto> {
+        return this.metadataService.getAll(query.skip, query.take);
     }
 
     @Get('filtered')
@@ -44,12 +41,13 @@ export class MetadataTypeController {
         type: TagTypesDto,
     })
     async getFiltered(
-        @QueryOptionalString('name', 'Filter by TagType name') name: string,
-        @QueryOptionalString('type', 'Filter by TagType datatype')
-        type: DataType,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: FilteredMetadataTypesQueryDto,
     ): Promise<TagTypesDto> {
-        return this.tagService.getFiltered(name, type, skip, take);
+        return this.metadataService.getFiltered(
+            query.name,
+            query.type,
+            query.skip,
+            query.take,
+        );
     }
 }

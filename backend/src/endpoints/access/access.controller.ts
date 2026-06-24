@@ -1,4 +1,9 @@
-import { ApiOkResponse, ApiResponse, OutputDto } from '@/decorators';
+import {
+    ApiCreatedResponse,
+    ApiOkResponse,
+    ApiResponse,
+    OutputDto,
+} from '@/decorators';
 import { AccessService } from '@/services/access.service';
 import {
     AccessGroupAuditLogsDto,
@@ -16,7 +21,6 @@ import {
     SetAccessGroupUserExpirationDto,
     SetAccessGroupUserPermissionsDto,
 } from '@kleinkram/api-dto';
-import { AccessGroupEntity } from '@kleinkram/backend-common';
 import {
     Body,
     Controller,
@@ -115,7 +119,7 @@ export class AccessController {
 
     @Post()
     @CanCreate()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         type: AccessGroupDto,
         description: 'Returns the created AccessGroup',
     })
@@ -141,9 +145,8 @@ export class AccessController {
     @ApiOperation({
         summary: 'Add User to Access Group',
     })
-    @ApiResponse({
-        status: 200,
-        type: AccessGroupEntity,
+    @ApiCreatedResponse({
+        type: AccessGroupDto,
         description: 'The Access Group the user was added to.',
     })
     @ApiResponse({
@@ -153,7 +156,6 @@ export class AccessController {
     })
     @Post(':uuid/users')
     @CanEditGroup()
-    @OutputDto(AccessGroupDto)
     async addUserToAccessGroup(
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @Body() body: AddUserToAccessGroupDto,
@@ -228,13 +230,12 @@ export class AccessController {
         summary: 'Add Access Group to Project',
         description: 'Adds an Access Group to a Project with the given rights.',
     })
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Returns the Project',
         type: ProjectDto,
     })
     @Post(':uuid/projects/:projectUuid')
     @CanWriteProject()
-    @OutputDto(ProjectDto)
     async addAccessGroupToProject(
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @ParameterUID('projectUuid', 'UUID of Project') projectUuid: string,

@@ -12,7 +12,6 @@
 | [`metadata`](metadata.md) | `/metadata` | Docs for metadata module |
 | [`metadatatype`](metadatatype.md) | `/metadata-types` | Docs for metadatatype module |
 | [`mission`](mission.md) | `/missions` | Docs for mission module |
-| [`missionmetadata`](missionmetadata.md) | `/missions` | Docs for missionmetadata module |
 | [`project`](project.md) | `/projects` | Docs for project module |
 | [`templates`](templates.md) | `/templates` | Docs for templates module |
 | [`topic`](topic.md) | `/topics` | Docs for topic module |

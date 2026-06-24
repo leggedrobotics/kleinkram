@@ -1,4 +1,4 @@
-import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ApiCreatedResponse, ApiOkResponse } from '@/decorators';
 import { CategoryService } from '@/services/category.service';
 import { QueryOptionalString, QueryUUID } from '@/validation/query-decorators';
 import {
@@ -35,7 +35,10 @@ export class CategoryController {
 
     @Post()
     @CanCreateInProjectByBody()
-    @OutputDto(CategoryDto)
+    @ApiCreatedResponse({
+        description: 'Returns the created category',
+        type: CategoryDto,
+    })
     async createCategory(
         @BodyString('name', 'Category Name') name: string,
         @AddUser() user: AuthHeader,
@@ -47,7 +50,10 @@ export class CategoryController {
     // this should be moved to the file controller
     @Post('add-many')
     @CanWriteMissionByBody()
-    @OutputDto(SuccessResponseDto)
+    @ApiCreatedResponse({
+        description: 'Categories added successfully',
+        type: SuccessResponseDto,
+    })
     async addManyCategories(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @BodyUUIDArray('files', 'List of File UUID where Categries are added')

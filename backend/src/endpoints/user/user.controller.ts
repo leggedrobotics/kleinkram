@@ -1,26 +1,20 @@
-import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
 import { UserService } from '@/services/user.service';
-import {
-    QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
-    QueryString,
-    QueryTake,
-} from '@/validation/query-decorators';
 import {
     ApiKeysDto,
     CurrentAPIUserDto,
     NoQueryParametersDto,
+    PaginatedQueryDto,
     PermissionsDto,
     ResolveUsersDto,
+    SortablePaginatedQueryDto,
     UserDto,
     UsersDto,
 } from '@kleinkram/api-dto';
-import { SortOrder } from '@kleinkram/api-dto/types/pagination';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import {
     ApiOperation,
-    ApiOkResponse as SwaggerApiOkResponse,
+    ApiCreatedResponse as SwaggerApiCreatedResponse,
 } from '@nestjs/swagger';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
@@ -31,7 +25,7 @@ export class UserController {
 
     @Post('admin/claim')
     @UserOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Claimed admin',
         type: CurrentAPIUserDto,
     })
@@ -45,11 +39,8 @@ export class UserController {
         description: 'All users',
         type: UsersDto,
     })
-    async allUsers(
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-    ): Promise<UsersDto> {
-        return this.userService.findAll(skip, take);
+    async allUsers(@Query() query: PaginatedQueryDto): Promise<UsersDto> {
+        return this.userService.findAll(query.skip, query.take);
     }
 
     @Get('me')
@@ -68,7 +59,7 @@ export class UserController {
 
     @Post('promote')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Claimed admin',
         type: UserDto,
     })
@@ -78,7 +69,7 @@ export class UserController {
 
     @Post('demote')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Claimed admin',
         type: UserDto,
     })
@@ -89,12 +80,12 @@ export class UserController {
     @Get('search')
     @LoggedIn()
     @OutputDto(UsersDto)
-    async search(
-        @QueryString('search', 'Searchkey on name or email') search: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-    ): Promise<UsersDto> {
-        return this.userService.search(search, skip, take);
+    async search(@Query() query: PaginatedQueryDto): Promise<UsersDto> {
+        return this.userService.search(
+            query.search ?? '',
+            query.skip,
+            query.take,
+        );
     }
 
     @Get('me/permissions')
@@ -118,24 +109,14 @@ export class UserController {
     })
     async apiKeys(
         @AddUser() authHeader: AuthHeader,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QuerySortBy('sortBy', 'Sort by field', [
-            'uuid',
-            'key_type',
-            'rights',
-            'deletedAt',
-            'createdAt',
-        ])
-        sortBy: string,
-        @QuerySortDirection('sortOrder') sortOrder: string,
+        @Query() query: SortablePaginatedQueryDto,
     ): Promise<ApiKeysDto> {
         return this.userService.getApiKeysForUser(
             authHeader.user.uuid,
-            skip,
-            take,
-            sortBy,
-            sortOrder === 'ASC' ? SortOrder.ASC : SortOrder.DESC,
+            query.skip,
+            query.take,
+            query.sortBy ?? 'createdAt',
+            query.sortOrder,
         );
     }
 
@@ -143,7 +124,7 @@ export class UserController {
     @LoggedIn()
     @ApiOperation({ summary: 'Resolve a list of User UUIDs to their names' })
     @OutputDto(null)
-    @SwaggerApiOkResponse({
+    @SwaggerApiCreatedResponse({
         description: 'Mapping from user UUIDs to their display names',
         schema: {
             type: 'object',
