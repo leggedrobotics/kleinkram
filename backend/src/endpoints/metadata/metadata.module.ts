@@ -7,7 +7,8 @@ import { ProjectEntity } from '@kleinkram/backend-common/entities/project/projec
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TagController } from './tag.controller';
+import { MetadataTypeController } from './metadata-type.controller';
+import { MetadataController } from './metadata.controller';
 
 @Module({
     imports: [
@@ -22,8 +23,8 @@ import { TagController } from './tag.controller';
         ]),
     ],
     providers: [TagService],
-    controllers: [TagController],
+    controllers: [MetadataTypeController, MetadataController],
     exports: [TagService],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export class TagModule {}
+export class MetadataModule {}

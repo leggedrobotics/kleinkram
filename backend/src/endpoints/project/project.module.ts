@@ -13,7 +13,7 @@ import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/pro
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OldProjectController, ProjectController } from './project.controller';
+import { ProjectController } from './project.controller';
 
 @Module({
     imports: [
@@ -30,7 +30,7 @@ import { OldProjectController, ProjectController } from './project.controller';
     ],
     providers: [ProjectService, AccessService, AccessGroupAuditService],
     exports: [ProjectService],
-    controllers: [ProjectController, OldProjectController],
+    controllers: [ProjectController],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ProjectModule {}

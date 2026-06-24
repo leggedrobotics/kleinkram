@@ -39,7 +39,7 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 
-@Controller('access')
+@Controller('access-groups')
 export class AccessController {
     constructor(private readonly accessService: AccessService) {}
 

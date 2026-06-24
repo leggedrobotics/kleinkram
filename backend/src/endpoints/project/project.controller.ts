@@ -3,7 +3,7 @@ import { projectEntityToDto } from '@/serialization';
 import { AccessService } from '@/services/access.service';
 import { ProjectService } from '@/services/project.service';
 import { ParameterUuid as ParameterUID } from '@/validation/parameter-decorators';
-import { QueryTake, QueryUUID } from '@/validation/query-decorators';
+import { QueryTake } from '@/validation/query-decorators';
 import {
     AddTagTypeDto,
     AddUserToProjectDto,
@@ -20,8 +20,8 @@ import {
     ResentProjectsDto,
     UpdateTagTypesDto,
 } from '@kleinkram/api-dto';
-import { BodyUUIDArray } from '@kleinkram/validation';
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -152,7 +152,7 @@ export class ProjectController {
         return projectEntityToDto(projectEntity);
     }
 
-    @Post(':uuid/addTagType')
+    @Post(':uuid/metadata-types')
     @CanWriteProject()
     @ApiOkResponse({
         description: 'Empty response',
@@ -160,13 +160,19 @@ export class ProjectController {
     })
     async addTagType(
         @ParameterUID('uuid') uuid: string,
-        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
+        @Query() query: { tagTypeUUID?: string; metadataTypeUUID?: string },
     ): Promise<AddTagTypeDto> {
-        await this.projectService.addTagType(uuid, tagTypeUUID);
+        const typeUuid = query.metadataTypeUUID ?? query.tagTypeUUID;
+        if (!typeUuid) {
+            throw new BadRequestException(
+                'metadataTypeUUID or tagTypeUUID query param is required',
+            );
+        }
+        await this.projectService.addTagType(uuid, typeUuid);
         return {};
     }
 
-    @Post(':uuid/removeTagType')
+    @Delete(':uuid/metadata-types/:typeUuid')
     @CanWriteProject()
     @ApiOkResponse({
         type: RemoveTagTypeDto,
@@ -174,13 +180,13 @@ export class ProjectController {
     })
     async removeTagType(
         @ParameterUID('uuid') uuid: string,
-        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
+        @ParameterUID('typeUuid') typeUuid: string,
     ): Promise<RemoveTagTypeDto> {
-        await this.projectService.removeTagType(uuid, tagTypeUUID);
+        await this.projectService.removeTagType(uuid, typeUuid);
         return {};
     }
 
-    @Post(':uuid/updateTagTypes')
+    @Put(':uuid/metadata-types')
     @CanWriteProject()
     @ApiOkResponse({
         description: 'Empty response',
@@ -188,10 +194,15 @@ export class ProjectController {
     })
     async updateTagTypes(
         @ParameterUID('uuid') uuid: string,
-        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
-        tagTypeUUIDs: string[],
+        @Body() body: { metadataTypeUUIDs?: string[]; tagTypeUUIDs?: string[] },
     ): Promise<UpdateTagTypesDto> {
-        await this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+        const uuids = body.metadataTypeUUIDs ?? body.tagTypeUUIDs;
+        if (!uuids) {
+            throw new BadRequestException(
+                'metadataTypeUUIDs or tagTypeUUIDs is required',
+            );
+        }
+        await this.projectService.updateTagTypes(uuid, uuids);
         return {
             success: true,
         };
@@ -223,15 +234,6 @@ export class ProjectController {
     ): Promise<ProjectAccessListDto> {
         return this.accessService.updateProjectAccess(uuid, body, auth);
     }
-}
-
-// TODO: this controller should get removed at some point,
-// filtered and recent will effectively be replaced by `GET /projects`
-// for the getDefaultRights endpoint we should make a separate controller that
-// does all the access control stuff
-@Controller('oldProject')
-export class OldProjectController {
-    constructor(private readonly projectService: ProjectService) {}
 
     @Get('recent')
     @UserOnly()
@@ -261,7 +263,7 @@ export class OldProjectController {
         };
     }
 
-    @Get('getDefaultRights')
+    @Get('default-rights')
     @LoggedIn()
     @ApiOperation({
         summary: 'Get default rights',

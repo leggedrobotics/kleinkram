@@ -527,10 +527,7 @@ export class MissionService {
         );
     }
 
-    async updateName(
-        uuid: string,
-        name: string,
-    ): Promise<MissionEntity | null> {
+    async updateName(uuid: string, name: string): Promise<MissionEntity> {
         const exists = await this.missionRepository.exists({
             where: { name: ILike(name), uuid: Not(uuid) },
         });
@@ -542,6 +539,9 @@ export class MissionService {
         await this.missionRepository.update(uuid, {
             name: name,
         });
-        return this.missionRepository.findOne({ where: { uuid } });
+        return this.missionRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['project', 'creator'],
+        });
     }
 }

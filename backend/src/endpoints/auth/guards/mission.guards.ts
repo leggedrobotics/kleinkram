@@ -29,7 +29,9 @@ export class ReadMissionGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const missionUUID = request.query.uuid as string | undefined;
+        const params = request.params as { uuid?: string } | undefined;
+        const missionUUID =
+            params?.uuid ?? (request.query.uuid as string | undefined);
 
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
@@ -117,8 +119,10 @@ export class CreateInMissionByBodyGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const body = request.body as MissionBody;
-        const missionUUID = body.missionUUID ?? body.missionUuid;
+        const body = request.body as MissionBody | undefined;
+        const params = request.params as { uuid?: string } | undefined;
+        const missionUUID =
+            params?.uuid ?? body?.missionUUID ?? body?.missionUuid;
 
         if (user.role === UserRole.ADMIN) {
             return true;
@@ -152,8 +156,10 @@ export class WriteMissionByBodyGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const body = request.body as MissionBody;
-        const missionUUID = body.missionUUID ?? body.missionUuid;
+        const body = request.body as MissionBody | undefined;
+        const params = request.params as { uuid?: string } | undefined;
+        const missionUUID =
+            params?.uuid ?? body?.missionUUID ?? body?.missionUuid;
 
         if (user.role === UserRole.ADMIN) {
             return true;
@@ -233,8 +239,9 @@ export class AddTagGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const body = request.body as MissionBody;
-        const missionUUID = body.mission;
+        const body = request.body as MissionBody | undefined;
+        const params = request.params as { uuid?: string } | undefined;
+        const missionUUID = params?.uuid ?? body?.mission;
 
         if (!missionUUID) {
             return false; // Deny access if mission UUID not provided
@@ -299,7 +306,9 @@ export class MoveMissionToProjectGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const missionUUID = request.query.missionUUID as string | undefined;
+        const params = request.params as { uuid?: string } | undefined;
+        const missionUUID =
+            params?.uuid ?? (request.query.missionUUID as string | undefined);
         const projectUUID = request.query.projectUUID as string | undefined;
 
         if (!missionUUID || !projectUUID) {

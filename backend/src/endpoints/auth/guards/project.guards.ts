@@ -29,6 +29,7 @@ export class ReadProjectGuard extends BaseGuard {
 
         const params = request.params as ProjectParameters;
         const projectUUID =
+            (request.query.projectUuid as string | undefined) ??
             (request.query.uuid as string | undefined) ??
             params.projectUuid ??
             params.uuid;

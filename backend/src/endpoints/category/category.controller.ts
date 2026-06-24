@@ -1,7 +1,11 @@
 import { ApiOkResponse, OutputDto } from '@/decorators';
 import { CategoryService } from '@/services/category.service';
 import { QueryOptionalString, QueryUUID } from '@/validation/query-decorators';
-import { CategoriesDto } from '@kleinkram/api-dto';
+import {
+    CategoriesDto,
+    CategoryDto,
+    SuccessResponseDto,
+} from '@kleinkram/api-dto';
 import { BodyString, BodyUUID, BodyUUIDArray } from '@kleinkram/validation';
 import { Controller, Get, Post } from '@nestjs/common';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
@@ -11,27 +15,27 @@ import {
     CanWriteMissionByBody,
 } from '../auth/roles.decorator';
 
-@Controller('category')
+@Controller('categories')
 export class CategoryController {
     constructor(private readonly categoryService: CategoryService) {}
 
-    @Get('all')
+    @Get()
     @CanReadProject()
     @ApiOkResponse({
         description: 'Get all categories in a project',
         type: CategoriesDto,
     })
     async getAll(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
+        @QueryUUID('projectUuid', 'Project UUID') projectUuid: string,
         @QueryOptionalString('filter', 'Filter by Category name')
         filter?: string,
     ): Promise<CategoriesDto> {
-        return this.categoryService.getAll(uuid, filter);
+        return this.categoryService.getAll(projectUuid, filter);
     }
 
-    @Post('create')
+    @Post()
     @CanCreateInProjectByBody()
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(CategoryDto)
     async createCategory(
         @BodyString('name', 'Category Name') name: string,
         @AddUser() user: AuthHeader,
@@ -41,9 +45,9 @@ export class CategoryController {
     }
 
     // this should be moved to the file controller
-    @Post('addMany')
+    @Post('add-many')
     @CanWriteMissionByBody()
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(SuccessResponseDto)
     async addManyCategories(
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
         @BodyUUIDArray('files', 'List of File UUID where Categries are added')

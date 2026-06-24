@@ -25,11 +25,11 @@ import {
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { AdminOnly, LoggedIn, UserOnly } from '../auth/roles.decorator';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    @Post('claimAdmin')
+    @Post('admin/claim')
     @UserOnly()
     @ApiOkResponse({
         description: 'Claimed admin',
@@ -39,7 +39,7 @@ export class UserController {
         return this.userService.claimAdmin(user);
     }
 
-    @Get('all')
+    @Get()
     @AdminOnly()
     @ApiOkResponse({
         description: 'All users',
@@ -88,7 +88,7 @@ export class UserController {
 
     @Get('search')
     @LoggedIn()
-    @OutputDto(null) // TODO: Add type
+    @OutputDto(UsersDto)
     async search(
         @QueryString('search', 'Searchkey on name or email') search: string,
         @QuerySkip('skip') skip: number,
@@ -97,7 +97,7 @@ export class UserController {
         return this.userService.search(search, skip, take);
     }
 
-    @Get('permissions')
+    @Get('me/permissions')
     @LoggedIn()
     @ApiOkResponse({
         type: PermissionsDto,
@@ -109,7 +109,7 @@ export class UserController {
         return this.userService.getUserPermissions(authHeader.user.uuid);
     }
 
-    @Get('api-keys')
+    @Get('me/api-keys')
     @LoggedIn()
     @ApiOperation({ summary: 'Get API key metadata for the current user' })
     @ApiOkResponse({

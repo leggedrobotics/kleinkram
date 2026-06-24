@@ -1,5 +1,7 @@
-import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ApiOkResponse } from '@/decorators';
+import { missionEntityToFlatDto } from '@/serialization';
 import { MissionService } from '@/services/mission.service';
+import { TagService } from '@/services/tag.service';
 import {
     QueryOptionalString,
     QuerySkip,
@@ -9,16 +11,30 @@ import {
     QueryUUID,
 } from '@/validation/query-decorators';
 import {
+    AddTagsDto,
     CreateMission,
     FlatMissionDto,
     MinimumMissionsDto,
+    MissionDownloadEntryDto,
+    MissionQueryDto,
     MissionsDto,
     MissionWithFilesDto,
+    SuccessResponseDto,
 } from '@kleinkram/api-dto';
-import { BodyUUID, MISSION_NAME_REGEX } from '@kleinkram/validation';
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import { MISSION_NAME_REGEX } from '@kleinkram/validation';
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Patch,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
+    CanAddTag,
     CanCreateInProjectByBody,
     CanDeleteMission,
     CanMoveMission,
@@ -27,15 +43,16 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 
-import { MissionQueryDto } from '@kleinkram/api-dto';
-
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
-@Controller(['mission', 'missions']) // TODO: migrate to 'missions'
+@Controller('missions')
 export class MissionController {
-    constructor(private readonly missionService: MissionService) {}
+    constructor(
+        private readonly missionService: MissionService,
+        private readonly tagService: TagService,
+    ) {}
 
-    @Post('create')
+    @Post()
     @CanCreateInProjectByBody()
     @ApiOkResponse({
         description: 'Returns the created mission',
@@ -48,19 +65,26 @@ export class MissionController {
         return this.missionService.create(createMission, user);
     }
 
-    @Post('updateName')
+    @Patch(':uuid/name')
     @CanWriteMissionByBody()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Returns the updated mission',
+        type: FlatMissionDto,
+    })
     async updateMissionName(
-        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
+        @ParameterUID('uuid') missionUUID: string,
         @Body('name') name: string,
-    ) {
+    ): Promise<FlatMissionDto> {
         // validate name
         if (!MISSION_NAME_REGEX.test(name)) {
-            throw new Error('Invalid name');
+            throw new BadRequestException('Invalid name');
         }
 
-        return this.missionService.updateName(missionUUID, name);
+        const updatedMission = await this.missionService.updateName(
+            missionUUID,
+            name,
+        );
+        return missionEntityToFlatDto(updatedMission);
     }
 
     @Get()
@@ -143,49 +167,77 @@ export class MissionController {
         );
     }
 
-    @Get('one')
+    @Get(':uuid')
     @CanReadMission()
     @ApiOkResponse({
         description: 'Returns the mission',
         type: MissionWithFilesDto,
     })
     async getMissionById(
-        @QueryUUID('uuid', 'Mission UUID') uuid: string,
+        @ParameterUID('uuid') uuid: string,
     ): Promise<MissionWithFilesDto> {
         return this.missionService.findOne(uuid);
     }
 
-    @Get('download')
+    @Get(':uuid/download')
     @CanReadMission()
-    @OutputDto(null) // TODO: type API response
-    async downloadWithToken(@QueryUUID('uuid', 'Mission UUID') uuid: string) {
+    @ApiOkResponse({
+        description: 'Download links for the mission files',
+        type: [MissionDownloadEntryDto],
+    })
+    async downloadWithToken(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<MissionDownloadEntryDto[]> {
         return this.missionService.download(uuid);
     }
 
-    @Post('move')
+    @Post(':uuid/move')
     @CanMoveMission()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Mission moved successfully',
+        type: SuccessResponseDto,
+    })
     async moveMission(
-        @QueryUUID('missionUUID', 'Mission UUID') missionUUID: string,
+        @ParameterUID('uuid') missionUUID: string,
         @QueryUUID('projectUUID', 'Project UUID') projectUUID: string,
-    ): Promise<void> {
-        return this.missionService.moveMission(missionUUID, projectUUID);
+    ): Promise<SuccessResponseDto> {
+        await this.missionService.moveMission(missionUUID, projectUUID);
+        return { success: true };
     }
 
     @Delete(':uuid')
     @CanDeleteMission()
-    @OutputDto(null) // TODO: type API response
-    async deleteMission(@ParameterUID('uuid') uuid: string): Promise<void> {
-        return this.missionService.deleteMission(uuid);
+    @ApiOkResponse({
+        description: 'Mission deleted',
+        type: SuccessResponseDto,
+    })
+    async deleteMission(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<SuccessResponseDto> {
+        await this.missionService.deleteMission(uuid);
+        return { success: true };
     }
 
-    @Post('tags')
-    @CanWriteMissionByBody()
-    @OutputDto(null) // TODO: type API response
-    async updateMissionTags(
-        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @Body('tags') tags: Record<string, string>,
-    ): Promise<void> {
-        await this.missionService.updateTags(missionUUID, tags);
+    @Post(':uuid/metadata')
+    @CanAddTag()
+    @ApiOkResponse({
+        description: 'Metadata added to mission',
+        type: AddTagsDto,
+    })
+    async addTags(
+        @ParameterUID('uuid') uuid: string,
+        @Body()
+        body: {
+            metadata?: Record<string, string>;
+            tags?: Record<string, string>;
+        },
+    ): Promise<AddTagsDto> {
+        const metadata = body.metadata ?? body.tags;
+        if (!metadata) {
+            throw new BadRequestException(
+                'metadata or tags object is required',
+            );
+        }
+        return this.tagService.addTags(uuid, metadata);
     }
 }

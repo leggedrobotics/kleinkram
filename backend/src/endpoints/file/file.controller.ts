@@ -212,14 +212,14 @@ export class FileController {
         );
     }
 
-    @Get('download')
+    @Get(':uuid/download')
     @CanReadFile()
     @ApiOkResponse({
         description: 'Download link',
         type: DownloadResponseDto,
     })
     async download(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
+        @ParameterUID('uuid') uuid: string,
         @QueryBoolean(
             'expires',
             'Whether the download link should stay valid for on week (false) or 4h (true)',
@@ -245,14 +245,14 @@ export class FileController {
     }
 
     // TODO: replace this with /file/:uuid
-    @Get('one')
+    @Get(':uuid')
     @CanReadFile()
     @ApiOkResponse({
         description: 'File',
         type: FileWithTopicDto,
     })
     async getFileById(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
+        @ParameterUID('uuid') uuid: string,
     ): Promise<FileWithTopicDto> {
         const file = await this.fileService.findOne(uuid);
         return plainToInstance(FileWithTopicDto, file, {
@@ -282,7 +282,7 @@ export class FileController {
         });
     }
 
-    @Post('moveFiles')
+    @Post('move')
     @CanMoveFiles()
     @ApiOkResponse({
         description: 'Move Files Response',

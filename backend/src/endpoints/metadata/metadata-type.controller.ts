@@ -5,29 +5,16 @@ import {
     QuerySkip,
     QueryTake,
 } from '@/validation/query-decorators';
-import {
-    AddTagsDto,
-    CreateTagTypeDto,
-    DeleteTagDto,
-    TagTypeDto,
-    TagTypesDto,
-} from '@kleinkram/api-dto';
+import { CreateTagTypeDto, TagTypeDto, TagTypesDto } from '@kleinkram/api-dto';
 import { DataType } from '@kleinkram/shared';
-import { BodyNotNull, BodyUUID } from '@kleinkram/validation';
-import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
-import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
-import {
-    CanAddTag,
-    CanCreate,
-    CanDeleteTag,
-    LoggedIn,
-} from '../auth/roles.decorator';
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { CanCreate, LoggedIn } from '../auth/roles.decorator';
 
-@Controller('tag')
-export class TagController {
+@Controller('metadata-types')
+export class MetadataTypeController {
     constructor(private readonly tagService: TagService) {}
 
-    @Post('create')
+    @Post()
     @CanCreate()
     @ApiOkResponse({
         description: 'Returns the created TagType',
@@ -37,29 +24,7 @@ export class TagController {
         return await this.tagService.create(body.name, body.type);
     }
 
-    @Post('addTags')
-    @CanAddTag()
-    @ApiOkResponse({
-        type: AddTagsDto,
-    })
-    async addTags(
-        @BodyUUID('uuid', 'Mission UUID') uuid: string,
-        @BodyNotNull('tags', 'Record Tagtype UUID to Tag value')
-        tags: Record<string, string>,
-    ): Promise<AddTagsDto> {
-        return this.tagService.addTags(uuid, tags);
-    }
-
-    @Delete(':uuid')
-    @CanDeleteTag()
-    @ApiOkResponse({
-        type: DeleteTagDto,
-    })
-    async deleteTag(@ParameterUID('uuid') uuid: string): Promise<DeleteTagDto> {
-        return this.tagService.deleteTag(uuid);
-    }
-
-    @Get('all')
+    @Get()
     @LoggedIn()
     @ApiOkResponse({
         description: 'Returns all TagTypes',

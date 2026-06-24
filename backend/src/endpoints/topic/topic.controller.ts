@@ -6,11 +6,11 @@ import { Controller, Get } from '@nestjs/common';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { LoggedIn } from '../auth/roles.decorator';
 
-@Controller('topic')
+@Controller('topics')
 export class TopicController {
     constructor(private readonly topicService: TopicService) {}
 
-    @Get('all')
+    @Get()
     @LoggedIn()
     @ApiOkResponse({
         description: 'Get all topics',
