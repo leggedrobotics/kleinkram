@@ -1,16 +1,11 @@
-import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
 import { FileService } from '@/services/file.service';
 import { QueueService } from '@/services/queue.service';
 import {
     QueryBoolean,
     QueryDate,
-    QueryOptionalDate,
-    QueryOptionalRecord,
     QueryOptionalString,
-    QueryOptionalUUID,
     QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
     QueryString,
     QueryTake,
     QueryUUID,
@@ -33,6 +28,7 @@ import {
     FileQueueEntryDto,
     FilesDto,
     FileWithTopicDto,
+    FilteredFilesQueryDto,
     FoxgloveLinkResponseDto,
     IsUploadingDto,
     MoveFilesResponseDto,
@@ -50,7 +46,6 @@ import {
     BodyString,
     BodyUUID,
     BodyUUIDArray,
-    isValidFileName,
 } from '@kleinkram/validation';
 import {
     BadRequestException,
@@ -58,6 +53,7 @@ import {
     Controller,
     Delete,
     Get,
+    Patch,
     Post,
     Put,
     Query,
@@ -80,7 +76,7 @@ import {
 } from '../auth/roles.decorator';
 
 import { FoxgloveService } from '@/services/foxglove.service';
-import { FileSource, HealthStatus } from '@kleinkram/shared';
+import { FileSource } from '@kleinkram/shared';
 
 @Controller(['files'])
 export class FileController {
@@ -139,76 +135,31 @@ export class FileController {
         type: FilesDto,
     })
     async filteredFiles(
-        @QueryOptionalString('fileName', 'Filter for Filename')
-        fileName: string,
-        @QueryOptionalUUID('projectUUID', 'UUID of Project to filter by')
-        projectUUID: string,
-        @QueryOptionalUUID('missionUUID', 'UUID of Mission to filter by')
-        missionUUID: string,
-        @QueryOptionalDate(
-            'startDate',
-            'Date specifying the start of the filtered time range',
-        )
-        startDate: Date | undefined,
-        @QueryOptionalDate(
-            'endDate',
-            'Date specifying the end of the filtered time range',
-        )
-        endDate: Date | undefined,
-        @QueryOptionalString('topics', 'Name of Topics (coma separated)')
-        topics: string,
-        @QueryOptionalString(
-            'messageDatatypes',
-            'Message datatypes to filter by (coma separated). If multiple are given, ' +
-                'files containing any of the datatypes are returned (OR).',
-        )
-        messageDatatypes: string,
-        @QueryOptionalString(
-            'fileTypes',
-            'File types to filter by (coma separated)',
-        )
-        fileTypes: string,
-        @QueryOptionalString(
-            'categories',
-            'Categories to filter by (coma separated)',
-        )
-        categories: string,
-        @QueryBoolean(
-            'matchAllTopics',
-            'Returned File needs all specified topics (true) or any specified topics (false)',
-        )
-        matchAllTopics: boolean,
-        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value') // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tags: Record<string, any>,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QuerySortBy('sort') sort: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryOptionalString('health', 'File health') health: HealthStatus,
+        @Query() query: FilteredFilesQueryDto,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
-        let _missionUUID = missionUUID;
+        let _missionUUID = query.missionUUID;
         if (auth.apiKey) {
             _missionUUID = auth.apiKey.mission.uuid;
         }
         return await this.fileService.findFiltered(
-            fileName,
-            projectUUID,
+            query.fileName,
+            query.projectUUID,
             _missionUUID,
-            startDate,
-            endDate,
-            topics,
-            messageDatatypes,
-            categories,
-            matchAllTopics,
-            fileTypes,
-            tags, // todo check if this is correct
+            query.startDate,
+            query.endDate,
+            query.topics,
+            query.messageDatatypes,
+            query.categories,
+            query.matchAllTopics,
+            query.fileTypes,
+            query.tags,
             auth.user.uuid,
-            Number.parseInt(String(take)), // TODO: fix
-            Number.parseInt(String(skip)), // TODO: fix
-            sort,
-            sortDirection,
-            health,
+            query.take,
+            query.skip,
+            query.sort,
+            query.sortDirection,
+            query.health,
         );
     }
 
@@ -282,7 +233,7 @@ export class FileController {
         });
     }
 
-    @Post('move')
+    @Patch()
     @CanMoveFiles()
     @ApiOkResponse({
         description: 'Move Files Response',
@@ -357,7 +308,7 @@ export class FileController {
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Temporary file access',
         type: TemporaryFileAccessesDto,
     })
@@ -375,23 +326,6 @@ export class FileController {
             }
         }
 
-        const invalidFiles: { filename: string; error: string }[] = [];
-        for (const filename of body.filenames) {
-            if (!isValidFileName(filename)) {
-                invalidFiles.push({
-                    filename,
-                    error: `Filename "${filename}" is not valid!`,
-                });
-            }
-        }
-
-        if (invalidFiles.length > 0) {
-            throw new BadRequestException({
-                message: 'Validation failed',
-                errors: invalidFiles,
-            });
-        }
-
         return await this.fileService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
@@ -401,7 +335,7 @@ export class FileController {
         );
     }
 
-    @Post('cancelUpload')
+    @Delete('uploads')
     @UserOnly() //Push back authentication to the queue to accelerate the request
     @OutputDto(CancelUploadResponseDto)
     async cancelUpload(
@@ -417,7 +351,7 @@ export class FileController {
         return { success: true };
     }
 
-    @Post('deleteMultiple')
+    @Delete()
     @CanDeleteMission()
     @ApiOkResponse({
         description: 'Delete Files Response',
@@ -446,7 +380,7 @@ export class FileController {
 
     @Post('resetS3Tags')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Resetting S3 tags completed',
     })
     async resetS3Tags(): Promise<void> {
@@ -457,7 +391,7 @@ export class FileController {
 
     @Post('recomputeFileSizes')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Recomputing file sizes completed',
     })
     async recomputeFileSizes(): Promise<void> {
@@ -480,7 +414,7 @@ export class FileController {
 
     @Post('reextractTopics')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Reextracting topics completed',
         type: ReextractTopicsResponseDto,
     })
@@ -509,7 +443,9 @@ export class FileController {
 
     @Post('import/drive')
     @CanCreateInMissionByBody()
-    @OutputDto(DriveImportResponseDto)
+    @ApiCreatedResponse({
+        type: DriveImportResponseDto,
+    })
     async importFromDrive(
         @Body() body: DriveCreate,
         @AddUser() authHeader: AuthHeader,
@@ -522,7 +458,7 @@ export class FileController {
 
     @Post('upload/confirm')
     @LoggedIn()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         type: ConfirmUploadDto,
     })
     async confirmUpload(
@@ -554,7 +490,7 @@ export class FileController {
 
     @Post('maintenance/recalculate-hashes')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Recalculating hashes completed',
         type: RecalculateHashesResponseDto,
     })
@@ -618,7 +554,7 @@ export class FileController {
 
     @Post('queue/:uuid/cancel')
     @CanDeleteMission()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         type: CancelProcessingResponseDto,
     })
     async cancelProcessing(
@@ -630,7 +566,7 @@ export class FileController {
 
     @Post('queue/:uuid/stop')
     @CanDeleteMission()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         type: StopJobResponseDto,
     })
     async stopJob(

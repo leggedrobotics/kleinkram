@@ -95,21 +95,18 @@ describe('File Management Tests', () => {
             where: { filename: 'file2.bag' },
         });
 
-        const deleteResponse = await fetch(
-            `${DEFAULT_URL}/files/deleteMultiple`,
-            {
-                method: 'POST',
-                headers: {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'Content-Type': 'application/json',
-                    ...getAuthHeaders(user),
-                },
-                body: JSON.stringify({
-                    uuids: [file1.uuid, file2.uuid],
-                    missionUUID: missionUuid,
-                }),
+        const deleteResponse = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'DELETE',
+            headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(user),
             },
-        );
+            body: JSON.stringify({
+                uuids: [file1.uuid, file2.uuid],
+                missionUUID: missionUuid,
+            }),
+        });
         expect(deleteResponse.status).toBeLessThan(300);
 
         const deletedFile1 = await fileRepo.findOne({
@@ -149,8 +146,8 @@ describe('File Management Tests', () => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(file?.mission?.uuid).toBe(mission1Uuid);
 
-        const moveResponse = await fetch(`${DEFAULT_URL}/files/move`, {
-            method: 'POST',
+        const moveResponse = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
 
             headers: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention

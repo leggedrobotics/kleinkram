@@ -434,8 +434,8 @@ describe('Verify Mission Level Admin Access', () => {
         // Admin moves the file
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/files/move`, {
-            method: 'POST',
+        const response = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
             headers: headers.getHeaders(),
             body: JSON.stringify({
                 fileUUIDs: [file.uuid],
@@ -1103,8 +1103,8 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(readUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/files/move`, {
-            method: 'POST',
+        const response = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
             headers: headers.getHeaders(),
             body: JSON.stringify({
                 fileUUIDs: [file.uuid],
@@ -1237,8 +1237,8 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(editUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/files/move`, {
-            method: 'POST',
+        const response = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
             headers: headers.getHeaders(),
             body: JSON.stringify({
                 fileUUIDs: [file.uuid],
@@ -1332,8 +1332,8 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(deleteUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/files/move`, {
-            method: 'POST',
+        const response = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
             headers: headers.getHeaders(),
             body: JSON.stringify({
                 fileUUIDs: [file.uuid],

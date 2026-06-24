@@ -574,7 +574,7 @@ def _claim_admin(client: AuthenticatedClient) -> None:
     return
 
 
-FILE_DELETE_MANY = "/files/deleteMultiple"
+FILE_DELETE_MANY = "/files"
 
 
 def _delete_files(client: AuthenticatedClient, file_ids: Sequence[UUID], mission_id: UUID) -> None:
@@ -582,7 +582,7 @@ def _delete_files(client: AuthenticatedClient, file_ids: Sequence[UUID], mission
         "uuids": [str(file_id) for file_id in file_ids],
         "missionUUID": str(mission_id),
     }
-    resp = client.post(FILE_DELETE_MANY, json=payload)
+    resp = client.delete(FILE_DELETE_MANY, json=payload)
     resp.raise_for_status()
 
 

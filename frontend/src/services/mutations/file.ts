@@ -48,7 +48,7 @@ export const moveFiles = async (
     fileUUIDs: string[],
     missionUUID: string,
 ): Promise<MoveFilesResponseDto> => {
-    const response = await axios.post<MoveFilesResponseDto>('/files/move', {
+    const response = await axios.patch<MoveFilesResponseDto>('/files', {
         fileUUIDs,
         missionUUID,
     });
@@ -75,11 +75,13 @@ export const cancelUploads = async (
     fileUuids: string[],
     missionUuid: string,
 ): Promise<CancelUploadResponseDto> => {
-    const response = await axios.post<CancelUploadResponseDto>(
-        '/files/cancelUpload',
+    const response = await axios.delete<CancelUploadResponseDto>(
+        '/files/uploads',
         {
-            uuids: fileUuids,
-            missionUuid: missionUuid,
+            data: {
+                uuids: fileUuids,
+                missionUuid: missionUuid,
+            },
         },
     );
     return response.data;
@@ -89,13 +91,12 @@ export const deleteFiles = async (
     fileUUIDs: string[],
     missionUUID: string,
 ): Promise<DeleteFileResponseDto> => {
-    const response = await axios.post<DeleteFileResponseDto>(
-        '/files/deleteMultiple',
-        {
+    const response = await axios.delete<DeleteFileResponseDto>('/files', {
+        data: {
             uuids: fileUUIDs,
             missionUUID,
         },
-    );
+    });
     return response.data;
 };
 
