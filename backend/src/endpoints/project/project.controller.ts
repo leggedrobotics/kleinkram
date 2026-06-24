@@ -68,7 +68,51 @@ export class ProjectController {
         return this.projectService.create(dto, user);
     }
 
-    // dont match filtered, recent, and getDefaultRights, TODO: fix this at some point
+    @Get('recent')
+    @UserOnly()
+    @ApiOperation({
+        summary: 'Get recent projects',
+        description:
+            'Get the most recent projects the current user has access to',
+    })
+    @ApiOkResponse({
+        description: 'Returns the most recent projects',
+        type: ResentProjectsDto,
+    })
+    async getRecentProjects(
+        @QueryTake('take') take: number,
+        @AddUser() user: AuthHeader,
+    ): Promise<ResentProjectsDto> {
+        const projects = await this.projectService.getRecentProjects(
+            take,
+            user.user,
+        );
+
+        return {
+            data: projects,
+            count: projects.length,
+            skip: 0,
+            take: projects.length,
+        };
+    }
+
+    @Get('default-rights')
+    @LoggedIn()
+    @ApiOperation({
+        summary: 'Get default rights',
+        description: `Get the default rights for a project, the default rights
+        are the rights that should be assigned to a new project upon creation`,
+    })
+    @ApiOkResponse({
+        description: 'Returns the default rights for a project',
+        type: DefaultRights,
+    })
+    async getDefaultRights(
+        @AddUser() user: AuthHeader,
+    ): Promise<DefaultRights> {
+        return this.projectService.getDefaultRights(user);
+    }
+
     @Get(':uuid')
     @CanReadProject()
     @ApiOkResponse({
@@ -228,50 +272,5 @@ export class ProjectController {
         @AddUser() auth: AuthHeader,
     ): Promise<ProjectAccessListDto> {
         return this.accessService.updateProjectAccess(uuid, body, auth);
-    }
-
-    @Get('recent')
-    @UserOnly()
-    @ApiOperation({
-        summary: 'Get recent projects',
-        description:
-            'Get the most recent projects the current user has access to',
-    })
-    @ApiOkResponse({
-        description: 'Returns the most recent projects',
-        type: ResentProjectsDto,
-    })
-    async getRecentProjects(
-        @QueryTake('take') take: number,
-        @AddUser() user: AuthHeader,
-    ): Promise<ResentProjectsDto> {
-        const projects = await this.projectService.getRecentProjects(
-            take,
-            user.user,
-        );
-
-        return {
-            data: projects,
-            count: projects.length,
-            skip: 0,
-            take: projects.length,
-        };
-    }
-
-    @Get('default-rights')
-    @LoggedIn()
-    @ApiOperation({
-        summary: 'Get default rights',
-        description: `Get the default rights for a project, the default rights
-        are the rights that should be assigned to a new project upon creation`,
-    })
-    @ApiOkResponse({
-        description: 'Returns the default rights for a project',
-        type: DefaultRights,
-    })
-    async getDefaultRights(
-        @AddUser() user: AuthHeader,
-    ): Promise<DefaultRights> {
-        return this.projectService.getDefaultRights(user);
     }
 }

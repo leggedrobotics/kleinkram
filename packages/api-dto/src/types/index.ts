@@ -106,7 +106,5 @@ export * from '@api-dto/message.dto';
 export * from '@api-dto/success-response.dto';
 export * from '@api-dto/user/users.dto';
 
-export * from '@api-dto/file/filtered-files-query.dto';
 export * from '@api-dto/metadata/filtered-metadata-types-query.dto';
-export * from '@api-dto/mission/filtered-missions-query.dto';
 export * from '@api-dto/templates/action-templates-query.dto';

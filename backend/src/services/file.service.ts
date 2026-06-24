@@ -2,6 +2,7 @@ import { fileEntityToDto, fileEntityToDtoWithTopic } from '@/serialization';
 import {
     FileEventsDto,
     FileExistsResponseDto,
+    FileQueryDto,
     FilesDto,
     FileWithTopicDto,
     SortOrder,
@@ -59,7 +60,6 @@ import {
 import { TriggerService } from '@/services/trigger.service';
 
 import {
-    addAccessConstraints,
     addAccessConstraintsToFileQuery,
     addAccessConstraintsToMissionQuery,
     addAccessConstraintsToProjectQuery,
@@ -143,61 +143,268 @@ export class FileService implements OnModuleInit {
     }
 
     async findMany(
-        projectUuids: string[],
-        projectPatterns: string[],
-        missionUuids: string[],
-        missionPatterns: string[],
-        fileUuids: string[],
-        filePatterns: string[],
-        missionMetadata: Record<string, string>,
-        sortBy: string | undefined,
-        sortOrder: SortOrder,
-        take: number,
-        skip: number,
+        query: FileQueryDto,
         userUuid: string,
+        apiKeyMissionUuid?: string,
     ): Promise<FilesDto> {
-        let query = this.fileRepository
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUuid },
+        });
+
+        // Start building the query to fetch *only* IDs
+        let idQuery = this.fileRepository
+            .createQueryBuilder('file')
+            .select('file.uuid') // Select only the UUID
+            .leftJoin('file.mission', 'mission')
+            .leftJoin('mission.project', 'project')
+            .leftJoin('file.topics', 'topic')
+            .leftJoin('file.creator', 'creator');
+
+        // ADMIN users see all, others are constrained
+        if (user.role !== UserRole.ADMIN) {
+            idQuery = addAccessConstraintsToFileQuery(idQuery, userUuid);
+        }
+
+        // Apply project filters
+        const projectUuids =
+            query.projectUuids ??
+            (query.projectUUID ? [query.projectUUID] : []);
+        if (
+            projectUuids.length > 0 ||
+            (query.projectPatterns && query.projectPatterns.length > 0)
+        ) {
+            idQuery = addProjectFilters(
+                idQuery,
+                this.projectRepository,
+                projectUuids,
+                query.projectPatterns ?? [],
+                query.exactMatch === 'true',
+            );
+        }
+
+        // Apply mission filters
+        const missionUuids =
+            query.missionUuids ??
+            (query.missionUUID
+                ? [query.missionUUID]
+                : apiKeyMissionUuid
+                  ? [apiKeyMissionUuid]
+                  : []);
+        if (
+            missionUuids.length > 0 ||
+            (query.missionPatterns && query.missionPatterns.length > 0) ||
+            (query.metadata && Object.keys(query.metadata).length > 0)
+        ) {
+            idQuery = addMissionFilters(
+                idQuery,
+                this.missionRepository,
+                missionUuids,
+                query.missionPatterns ?? [],
+                query.metadata ?? {},
+            );
+        }
+
+        // Apply simple filters
+        if (query.fileName) {
+            logger.debug(`Filtering files by filename: ${query.fileName}`);
+            const tokens = query.fileName.trim().split(/\s+/);
+
+            if (tokens.length > 0) {
+                idQuery.andWhere(
+                    new Brackets((qb) => {
+                        for (const [index, token] of tokens.entries()) {
+                            qb.andWhere(
+                                `file.filename ILIKE :fileName_${String(index)}`,
+                                {
+                                    [`fileName_${String(index)}`]: `%${token}%`,
+                                },
+                            );
+                        }
+                    }),
+                );
+            }
+        }
+
+        if (
+            (query.fileUuids && query.fileUuids.length > 0) ||
+            (query.filePatterns && query.filePatterns.length > 0)
+        ) {
+            idQuery = addFileFilters(
+                idQuery,
+                this.fileRepository,
+                query.fileUuids ?? [],
+                query.filePatterns ?? [],
+            );
+        }
+
+        const fileExtensions = query.fileExtensions;
+        if (fileExtensions && fileExtensions.length > 0) {
+            idQuery.andWhere(
+                new Brackets((qb) => {
+                    for (const [index, extension] of fileExtensions.entries()) {
+                        qb.orWhere(`file.filename LIKE :ext_${String(index)}`, {
+                            [`ext_${String(index)}`]: `%${extension}`,
+                        });
+                    }
+                }),
+            );
+        }
+
+        if (query.startDate) {
+            logger.debug(
+                `Filtering files by start date: ${query.startDate.toString()}`,
+            );
+            idQuery.andWhere('file.date >= :startDate', {
+                startDate: query.startDate,
+            });
+        }
+
+        if (query.endDate) {
+            logger.debug(
+                `Filtering files by end date: ${query.endDate.toString()}`,
+            );
+            idQuery.andWhere('file.date <= :endDate', {
+                endDate: query.endDate,
+            });
+        }
+
+        // Apply complex filters via helper methods
+        this._applyFileTypeFilter(idQuery, query.fileTypes);
+        this._applyTopicFilter(idQuery, query.topics, query.matchAllTopics);
+        this._applyMessageDatatypeFilter(idQuery, query.messageDatatypes);
+
+        const topicPatterns = query.topicPatterns;
+        if (topicPatterns && topicPatterns.length > 0) {
+            idQuery.andWhere(
+                new Brackets((qb) => {
+                    for (const [index, pat] of topicPatterns.entries()) {
+                        qb.orWhere(
+                            `topic.name ILIKE :topicPat_${String(index)}`,
+                            {
+                                [`topicPat_${String(index)}`]:
+                                    convertGlobToLikePattern(pat),
+                            },
+                        );
+                    }
+                }),
+            );
+        }
+
+        if (query.health) {
+            logger.debug(`Filtering files by health: ${query.health}`);
+            switch (query.health) {
+                case HealthStatus.HEALTHY: {
+                    idQuery.andWhere('file.state IN (:...healthyStates)', {
+                        healthyStates: [FileState.OK, FileState.FOUND],
+                    });
+                    break;
+                }
+                case HealthStatus.UNHEALTHY: {
+                    idQuery.andWhere('file.state IN (:...unhealthyStates)', {
+                        unhealthyStates: [
+                            FileState.ERROR,
+                            FileState.CONVERSION_ERROR,
+                            FileState.LOST,
+                            FileState.CORRUPTED,
+                        ],
+                    });
+                    break;
+                }
+                case HealthStatus.UPLOADING: {
+                    idQuery.andWhere('file.state = :uploadingState', {
+                        uploadingState: FileState.UPLOADING,
+                    });
+                    break;
+                }
+            }
+        }
+
+        const categoryUUIDs = query.categories
+            ? query.categories.split(',')
+            : [];
+        if (categoryUUIDs.length > 0) {
+            logger.debug(
+                `Filtering files by categories: ${query.categories ?? ''}`,
+            );
+            idQuery
+                .innerJoin('file.categories', 'category')
+                .andWhere('category.uuid IN (:...categoryUUIDs)', {
+                    categoryUUIDs,
+                });
+        }
+        const categoryPatterns = query.categoryPatterns;
+        if (categoryPatterns && categoryPatterns.length > 0) {
+            if (categoryUUIDs.length === 0) {
+                idQuery.innerJoin('file.categories', 'category');
+            }
+            idQuery.andWhere(
+                new Brackets((qb) => {
+                    for (const [index, pat] of categoryPatterns.entries()) {
+                        qb.orWhere(
+                            `category.name ILIKE :catPat_${String(index)}`,
+                            {
+                                [`catPat_${String(index)}`]:
+                                    convertGlobToLikePattern(pat),
+                            },
+                        );
+                    }
+                }),
+            );
+        }
+
+        // The tag filter is async, so it must be awaited
+        if (query.tags && Object.keys(query.tags).length > 0) {
+            await this._applyTagFilter(idQuery, query.tags);
+        }
+
+        // Group by file.uuid to deduplicate results from joins
+        // and allow 'HAVING' clauses for topics and tags
+        idQuery.groupBy('file.uuid');
+
+        const sortField = query.sort ?? query.sortBy ?? 'createdAt';
+        let order = query.sortOrder;
+        if (query.sortDirection) {
+            order =
+                query.sortDirection === 'DESC' ? SortOrder.DESC : SortOrder.ASC;
+        }
+
+        idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortField, order);
+
+        const take = query.take;
+        const skip = query.skip;
+        idQuery.offset(skip).limit(take);
+
+        const [fileIdObjects, count] = await idQuery.getManyAndCount();
+
+        if (fileIdObjects.length === 0) {
+            logger.silly('No files found');
+            return {
+                count,
+                data: [],
+                take,
+                skip,
+            };
+        }
+
+        const fileIds = fileIdObjects.map((file) => file.uuid);
+
+        // It must re-apply joins (for selection) and sorting.
+        let filesQuery = this.fileRepository
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('file.creator', 'creator');
+            .leftJoinAndSelect('file.topics', 'topic')
+            .leftJoinAndSelect('file.creator', 'creator')
+            .leftJoinAndSelect('file.categories', 'category')
+            .where('file.uuid IN (:...fileIds)', { fileIds });
 
-        query = addAccessConstraintsToFileQuery(query, userUuid);
+        filesQuery = addSort(filesQuery, FIND_MANY_SORT_KEYS, sortField, order);
 
-        query = addProjectFilters(
-            query,
-            this.projectRepository,
-            projectUuids,
-            projectPatterns,
-        );
-
-        query = addMissionFilters(
-            query,
-            this.missionRepository,
-            missionUuids,
-            missionPatterns,
-            missionMetadata,
-        );
-
-        query = addFileFilters(
-            query,
-            this.fileRepository,
-            fileUuids,
-            filePatterns,
-        );
-
-        if (sortBy !== undefined) {
-            query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
-        }
-
-        const [files, count] = await query
-            .take(take)
-            .skip(skip)
-            .getManyAndCount();
+        const files = await filesQuery.getMany();
 
         return {
-            data: files.map((element) => fileEntityToDto(element)),
             count,
+            data: files.map((element) => fileEntityToDto(element)),
             take,
             skip,
         };
@@ -366,193 +573,6 @@ export class FileService implements OnModuleInit {
                 );
             }
         }
-    }
-
-    /**
-     * Finds and paginates files based on a comprehensive set of filters.
-     *
-     * This method uses a two-query approach to correctly handle pagination with
-     * complex joins and groupings (required for 'matchAll' topics and tags):
-     * 1. The first query applies all filters and retrieves *only* the UUIDs
-     * of the matching files for the requested page, along with the *total count*
-     * of all matching files (pre-pagination).
-     * 2. The second query fetches the full file entities (with relations) for
-     * the UUIDs retrieved in the first query.
-     */
-    async findFiltered(
-        fileName: string | undefined,
-        projectUUID: string | undefined,
-        missionUUID: string | undefined,
-        startDate: Date | undefined,
-        endDate: Date | undefined,
-        topics: string | undefined,
-        messageDatatype: string | undefined,
-        categories: string | undefined,
-        matchAllTopics: boolean | undefined,
-        fileTypes: string | undefined,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tags: Record<string, any> | undefined,
-        userUUID: string,
-        take: number,
-        skip: number,
-        sort: string,
-        sortOrder: 'ASC' | 'DESC',
-        health: HealthStatus | undefined,
-    ): Promise<FilesDto> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
-
-        // Start building the query to fetch *only* IDs
-        let idQuery = this.fileRepository
-            .createQueryBuilder('file')
-            .select('file.uuid') // Select only the UUID
-            .leftJoin('file.mission', 'mission')
-            .leftJoin('mission.project', 'project')
-            .leftJoin('file.topics', 'topic'); // Joined for filtering
-
-        // ADMIN users see all, others are constrained
-        if (user.role !== UserRole.ADMIN) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            idQuery = addAccessConstraints(idQuery, userUUID);
-        }
-
-        // Apply simple filters
-        if (fileName) {
-            logger.debug(`Filtering files by filename: ${fileName}`);
-            const tokens = fileName.trim().split(/\s+/);
-
-            if (tokens.length > 0) {
-                idQuery.andWhere(
-                    new Brackets((qb) => {
-                        for (const [index, token] of tokens.entries()) {
-                            qb.andWhere(
-                                `file.filename ILIKE :fileName_${String(index)}`,
-                                {
-                                    [`fileName_${String(index)}`]: `%${token}%`,
-                                },
-                            );
-                        }
-                    }),
-                );
-            }
-        }
-
-        if (projectUUID) {
-            logger.debug(`Filtering files by projectUUID: ${projectUUID}`);
-            idQuery.andWhere('project.uuid = :projectUUID', { projectUUID });
-        }
-
-        if (missionUUID) {
-            logger.debug(`Filtering files by missionUUID: ${missionUUID}`);
-            idQuery.andWhere('mission.uuid = :missionUUID', { missionUUID });
-        }
-
-        if (startDate) {
-            logger.debug(
-                `Filtering files by start date: ${startDate.toString()}`,
-            );
-            idQuery.andWhere('file.date >= :startDate', { startDate });
-        }
-
-        if (endDate) {
-            logger.debug(`Filtering files by end date: ${endDate.toString()}`);
-            idQuery.andWhere('file.date <= :endDate', { endDate });
-        }
-
-        // Apply complex filters via helper methods
-        this._applyFileTypeFilter(idQuery, fileTypes);
-        this._applyTopicFilter(idQuery, topics, matchAllTopics);
-        this._applyMessageDatatypeFilter(idQuery, messageDatatype);
-
-        if (health) {
-            logger.debug(`Filtering files by health: ${health}`);
-            switch (health) {
-                case HealthStatus.HEALTHY: {
-                    idQuery.andWhere('file.state IN (:...healthyStates)', {
-                        healthyStates: [FileState.OK, FileState.FOUND],
-                    });
-                    break;
-                }
-                case HealthStatus.UNHEALTHY: {
-                    idQuery.andWhere('file.state IN (:...unhealthyStates)', {
-                        unhealthyStates: [
-                            FileState.ERROR,
-                            FileState.CONVERSION_ERROR,
-                            FileState.LOST,
-                            FileState.CORRUPTED,
-                        ],
-                    });
-                    break;
-                }
-                case HealthStatus.UPLOADING: {
-                    idQuery.andWhere('file.state = :uploadingState', {
-                        uploadingState: FileState.UPLOADING,
-                    });
-                    break;
-                }
-            }
-        }
-
-        const categoryUUIDs = categories ? categories.split(',') : [];
-        if (categoryUUIDs.length > 0) {
-            logger.debug(`Filtering files by categories: ${categories ?? ''}`);
-            idQuery
-                .innerJoin('file.categories', 'category')
-                .andWhere('category.uuid IN (:...categoryUUIDs)', {
-                    categoryUUIDs,
-                });
-        }
-
-        // The tag filter is async, so it must be awaited
-
-        if (tags && Object.keys(tags).length > 0) {
-            await this._applyTagFilter(idQuery, tags);
-        }
-
-        // Group by file.uuid to deduplicate results from joins
-        // and allow 'HAVING' clauses for topics and tags
-        idQuery.groupBy('file.uuid');
-
-        const order = sortOrder === 'ASC' ? SortOrder.ASC : SortOrder.DESC;
-
-        idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sort, order);
-        idQuery.offset(skip).limit(take);
-
-        const [fileIdObjects, count] = await idQuery.getManyAndCount();
-
-        if (fileIdObjects.length === 0) {
-            logger.silly('No files found');
-            return {
-                count,
-                data: [],
-                take,
-                skip,
-            };
-        }
-
-        const fileIds = fileIdObjects.map((file) => file.uuid);
-
-        // It must re-apply joins (for selection) and sorting.
-        let filesQuery = this.fileRepository
-            .createQueryBuilder('file')
-            .leftJoinAndSelect('file.mission', 'mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('file.topics', 'topic')
-            .leftJoinAndSelect('file.creator', 'creator')
-            .leftJoinAndSelect('file.categories', 'category')
-            .where('file.uuid IN (:...fileIds)', { fileIds });
-
-        filesQuery = addSort(filesQuery, FIND_MANY_SORT_KEYS, sort, order);
-
-        const files = await filesQuery.getMany();
-
-        return {
-            count,
-            data: files.map((element) => fileEntityToDto(element)),
-            take,
-            skip,
-        };
     }
 
     /**

@@ -109,7 +109,7 @@ export const missionEntityToDtoWithFiles = (
     }
 
     if (!mission.tags) {
-        throw new Error('Mission creator is not set');
+        throw new Error('Mission tags are not set');
     }
 
     if (!mission.creator) {

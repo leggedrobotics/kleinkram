@@ -7,7 +7,6 @@ import {
     AddTagsDto,
     AddTagsRequestDto,
     CreateMission,
-    FilteredMissionsQueryDto,
     FlatMissionDto,
     MinimumMissionsDto,
     MissionDownloadEntryDto,
@@ -85,61 +84,8 @@ export class MissionController {
     async getMany(
         @Query() query: MissionQueryDto,
         @AddUser() user: AuthHeader,
-    ): Promise<MissionsDto> {
-        return await this.missionService.findMany(
-            query.projectUuids ?? [],
-            query.projectPatterns ?? [],
-            query.missionUuids ?? [],
-            query.missionPatterns ?? [],
-            query.metadata ?? {},
-            query.sortBy,
-            query.sortOrder,
-            query.skip,
-            query.take,
-            user.user.uuid,
-        );
-    }
-
-    @Get('filteredMinimal')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Returns all missions filtered by project',
-        type: MinimumMissionsDto,
-    })
-    async filteredMissionsMinimal(
-        @Query() query: FilteredMissionsQueryDto,
-        @AddUser() user: AuthHeader,
-    ): Promise<MinimumMissionsDto> {
-        return this.missionService.findMissionByProjectMinimal(
-            user.user.uuid,
-            query.uuid,
-            query.skip,
-            query.take,
-            query.search,
-            query.sortDirection,
-            query.sortBy,
-        );
-    }
-
-    @Get('filtered')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Returns all missions filtered by project',
-        type: MissionsDto,
-    })
-    async filteredMissions(
-        @Query() query: FilteredMissionsQueryDto,
-        @AddUser() user: AuthHeader,
-    ): Promise<MissionsDto> {
-        return this.missionService.findMissionByProject(
-            user.user,
-            query.uuid,
-            query.skip,
-            query.take,
-            query.search,
-            query.sortDirection,
-            query.sortBy,
-        );
+    ): Promise<MissionsDto | MinimumMissionsDto> {
+        return await this.missionService.findMany(query, user.user.uuid);
     }
 
     @Get(':uuid')

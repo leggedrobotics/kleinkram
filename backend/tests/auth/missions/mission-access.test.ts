@@ -248,9 +248,15 @@ describe('Verify Mission Level Admin Access', () => {
         // Admin lists files in mission
         const headers = new HeaderCreator(admin);
         const response = await fetch(
-            `${DEFAULT_URL}/files/filtered?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
+            `${DEFAULT_URL}/files?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
             { method: 'GET', headers: headers.getHeaders() },
         );
+        if (response.status >= 300) {
+            console.log(
+                'DEBUG: GET /files response error:',
+                await response.text(),
+            );
+        }
         expect(response.status).toBeLessThan(300);
     });
 
@@ -275,7 +281,7 @@ describe('Verify Mission Level Admin Access', () => {
 
         const headers = new HeaderCreator(admin);
         const response = await fetch(
-            `${DEFAULT_URL}/files/filtered?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
+            `${DEFAULT_URL}/files?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
             { method: 'GET', headers: headers.getHeaders() },
         );
         expect(response.status).toBeLessThan(300);
@@ -907,7 +913,7 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(readUser);
         const response = await fetch(
-            `${DEFAULT_URL}/files/filtered?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
+            `${DEFAULT_URL}/files?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
             { method: 'GET', headers: headers.getHeaders() },
         );
         expect(response.status).toBeLessThan(300);

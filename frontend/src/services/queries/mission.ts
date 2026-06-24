@@ -37,12 +37,13 @@ export const missionsOfProjectMinimal = async (
         skip,
         sortBy,
         sortDirection: descending ? 'DESC' : 'ASC',
+        minimal: true,
     };
     if (searchParameters?.name) {
         parameters.search = searchParameters.name;
     }
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
-        `/missions/filteredMinimal`,
+        `/missions`,
         {
             params: parameters,
         },
@@ -80,7 +81,7 @@ export const missionsOfProject = async (
         parameters.search = searchParameters.name;
     }
     const response: AxiosResponse<MissionsDto> = await axios.get<MissionsDto>(
-        `/missions/filtered`,
+        `/missions`,
         {
             params: parameters,
         },

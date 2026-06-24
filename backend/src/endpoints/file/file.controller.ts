@@ -28,7 +28,6 @@ import {
     FileQueueEntryDto,
     FilesDto,
     FileWithTopicDto,
-    FilteredFilesQueryDto,
     FoxgloveLinkResponseDto,
     IsUploadingDto,
     MoveFilesResponseDto,
@@ -96,11 +95,22 @@ export class FileController {
         @Query() query: FileQueryDto,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
+        let _missionUUID = query.missionUUID;
+        if (auth.apiKey) {
+            _missionUUID = auth.apiKey.mission.uuid;
+        }
+
+        const projectUuids =
+            query.projectUuids ??
+            (query.projectUUID ? [query.projectUUID] : []);
+        const missionUuids =
+            query.missionUuids ?? (_missionUUID ? [_missionUUID] : []);
+
         // we pre-check the access to give a proper error message
         // the actual findMany method will check access again per file
         await this.fileService.checkResourceAccess(
-            query.projectUuids ?? [],
-            query.missionUuids ?? [],
+            projectUuids,
+            missionUuids,
             auth.user.uuid,
         );
 
@@ -113,53 +123,9 @@ export class FileController {
 
         // now fetch files, we only query files we have access to
         return await this.fileService.findMany(
-            query.projectUuids ?? [],
-            query.projectPatterns ?? [],
-            query.missionUuids ?? [],
-            query.missionPatterns ?? [],
-            query.fileUuids ?? [],
-            query.filePatterns ?? [],
-            query.metadata ?? {},
-            query.sortBy,
-            query.sortOrder,
-            query.take,
-            query.skip,
+            query,
             auth.user.uuid,
-        );
-    }
-
-    @Get('filtered')
-    @LoggedIn()
-    @ApiOkResponse({
-        description: 'Filtered Files',
-        type: FilesDto,
-    })
-    async filteredFiles(
-        @Query() query: FilteredFilesQueryDto,
-        @AddUser() auth: AuthHeader,
-    ): Promise<FilesDto> {
-        let _missionUUID = query.missionUUID;
-        if (auth.apiKey) {
-            _missionUUID = auth.apiKey.mission.uuid;
-        }
-        return await this.fileService.findFiltered(
-            query.fileName,
-            query.projectUUID,
             _missionUUID,
-            query.startDate,
-            query.endDate,
-            query.topics,
-            query.messageDatatypes,
-            query.categories,
-            query.matchAllTopics,
-            query.fileTypes,
-            query.tags,
-            auth.user.uuid,
-            query.take,
-            query.skip,
-            query.sort,
-            query.sortDirection,
-            query.health,
         );
     }
 

@@ -538,4 +538,28 @@ describe('Verification project endpoint', () => {
         // delete mission to allow cleanup
         await missionRepository.remove(mission);
     });
+
+    test('if logged-in user can fetch default-rights', async () => {
+        const header = new HeaderCreator(creator);
+        const response = await fetch(`${DEFAULT_URL}/projects/default-rights`, {
+            method: 'GET',
+            headers: header.getHeaders(),
+        });
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as Record<string, unknown>;
+        expect(body).toHaveProperty('data');
+        expect(body).toHaveProperty('count');
+    });
+
+    test('if user can fetch recent projects', async () => {
+        const header = new HeaderCreator(creator);
+        const response = await fetch(`${DEFAULT_URL}/projects/recent?take=10`, {
+            method: 'GET',
+            headers: header.getHeaders(),
+        });
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as Record<string, unknown>;
+        expect(body).toHaveProperty('data');
+        expect(body).toHaveProperty('count');
+    });
 });

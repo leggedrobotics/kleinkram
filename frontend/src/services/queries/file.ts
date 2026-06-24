@@ -77,7 +77,7 @@ export const fetchFilteredFiles = async (
 
         const queryParameters = new URLSearchParams(parameters).toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
-            `/files/filtered?${queryParameters}`,
+            `/files?${queryParameters}`,
         );
         return response.data;
     } catch (error) {
