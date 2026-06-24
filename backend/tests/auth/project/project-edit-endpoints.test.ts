@@ -216,6 +216,11 @@ describe('Verify project manipulation endpoints', () => {
             },
         );
 
+        if (response.status >= 300) {
+            console.error('API Error Response:', await response.text());
+        }
+        expect(response.status).toBeLessThan(300);
+
         const TagTypeRepository =
             database.getRepository<TagTypeEntity>(TagTypeEntity);
         const tagType = await TagTypeRepository.findOneOrFail({
@@ -225,7 +230,6 @@ describe('Verify project manipulation endpoints', () => {
         expect(tagType.name).toBe(name);
         expect(tagType.uuid).toBe(metadataUuid);
         expect(tagType.project?.[0]?.uuid).toBe(globalThis.projectUuid);
-        expect(response.status).toBeLessThan(300);
     });
 
     test('if access management of project can be edited by creator', async () => {
