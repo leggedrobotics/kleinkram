@@ -37,7 +37,7 @@ UPLOAD_CONFIRM = "/files/upload/confirm"
 UPLOAD_CANCEL = "/files/cancelUpload"
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
-DOWNLOAD_URL = "/files/download"
+DOWNLOAD_URL = "/files/{}/download"
 
 MAX_UPLOAD_RETRIES = 3
 S3_MAX_RETRIES = 60  # same as frontend
@@ -256,7 +256,7 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     """\
     get the download url for a file by file id
     """
-    resp = client.get(DOWNLOAD_URL, params={"uuid": str(id), "expires": True, "preview_only": False})
+    resp = client.get(DOWNLOAD_URL.format(id), params={"expires": True, "preview_only": False})
 
     if 400 <= resp.status_code < 500:
         raise AccessDenied(
