@@ -371,7 +371,7 @@ watch(
             if (props.triggerToEdit) {
                 localTrigger.value = structuredClone(
                     toRaw(props.triggerToEdit),
-                ) as Partial<CreateActionTriggerDto>;
+                );
 
                 // If project is not set (e.g. global search), try to find it from mission
                 if (!localProjectUuid.value && localTrigger.value.missionUuid) {

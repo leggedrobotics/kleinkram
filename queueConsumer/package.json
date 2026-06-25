@@ -74,7 +74,7 @@
         "winston-loki": "^6.1.4"
     },
     "devDependencies": {
-        "@nestjs/cli": "^11.0.21",
+        "@nestjs/cli": "^11.0.23",
         "@types/dockerode": "^4.0.1",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "25.4.0",
@@ -82,7 +82,7 @@
         "run-script-webpack-plugin": "^0.2.3",
         "ts-loader": "^9.5.4",
         "typescript": "5.9.3",
-        "webpack": "5.107.2",
+        "webpack": "5.106.2",
         "webpack-node-externals": "^3.0.0"
     }
 }

@@ -124,7 +124,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
                 'unauthenticated';
             const details =
                 resp !== null && typeof resp === 'object' && 'errors' in resp
-                    ? (resp as { errors: unknown }).errors
+                    ? resp.errors
                     : exception.message;
             logger.warn(
                 `ConflictException: user="${userLabel}" endpoint="${request.method} ${request.url}" reason=${JSON.stringify(details)}`,

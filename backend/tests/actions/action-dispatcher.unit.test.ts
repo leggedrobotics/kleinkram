@@ -93,7 +93,7 @@ describe('ActionDispatcherService Unit Tests', () => {
             gpuMemory: 0,
             maxRuntime: 60,
             accessRights: 0,
-        } as ActionTemplateEntity);
+        });
 
         (accessControlService.canAccessMission as jest.Mock).mockResolvedValue(
             true,

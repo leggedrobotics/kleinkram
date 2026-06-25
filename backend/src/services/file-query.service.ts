@@ -578,7 +578,7 @@ export class FileQueryService {
                           }
                         : undefined,
                 })) ?? [],
-        } as FileEventsDto;
+        };
     }
 
     async getActionFileEvents(actionUuid: string): Promise<FileEventsDto> {
@@ -634,7 +634,7 @@ export class FileQueryService {
                           }
                         : undefined,
                 })) ?? [],
-        } as FileEventsDto;
+        };
     }
 
     private _applyFileTypeFilter(

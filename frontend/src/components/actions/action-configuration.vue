@@ -266,7 +266,6 @@ import { computed, Ref, ref, watch } from 'vue';
 
 // 1. New Composable Imports
 import {
-    SubmitActionPayload,
     useCreateTemplate,
     useSubmitAction,
     useUpdateTemplateVersion,
@@ -522,7 +521,7 @@ async function submitAnalysis(): Promise<void> {
             missionUUIDs: hasMissionUUIDs.value
                 ? allMissionUUIDs.value
                 : undefined,
-        } as SubmitActionPayload);
+        });
 
         Notify.create({ message: 'Analysis submitted', color: 'positive' });
         closeDrawer();
@@ -608,17 +607,13 @@ const removeMission = (uuid: string): void => {
 };
 
 const accessOptions = Object.keys(accessGroupRightsMap)
-    .filter(
-        (key) =>
-            (Number.parseInt(key) as AccessGroupRights) !==
-            AccessGroupRights._ADMIN,
-    )
-    .map((key) => ({
-        label:
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            accessGroupRightsMap[
-                Number.parseInt(key, 10) as AccessGroupRights
-            ] ?? '',
-        value: Number.parseInt(key, 10),
-    }));
+    .map((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        const right = Number.parseInt(key, 10) as AccessGroupRights;
+        return {
+            label: accessGroupRightsMap[right],
+            value: right,
+        };
+    })
+    .filter(({ value }) => value !== AccessGroupRights._ADMIN);
 </script>

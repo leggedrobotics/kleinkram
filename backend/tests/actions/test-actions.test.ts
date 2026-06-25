@@ -1,6 +1,5 @@
 import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
-import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
 import {
     AccessGroupEntity,
     ActionEntity,
@@ -230,7 +229,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -271,7 +270,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         if (submitResponse.status !== 201) {
             const errorText = await submitResponse.text();
@@ -313,7 +312,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         expect(submitResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -398,7 +397,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         expect(submitResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -457,7 +456,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         if (submitResponse.status !== 201) {
             const errorText = await submitResponse.text();

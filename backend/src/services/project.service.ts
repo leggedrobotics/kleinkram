@@ -324,7 +324,7 @@ export class ProjectService {
                         updatedAt: project.latestUpdate as Date,
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         createdAt: project.project_createdAt as Date,
-                    } as ResentProjectDto;
+                    };
                 })
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/no-array-sort
                 .sort(
@@ -673,7 +673,7 @@ export class ProjectService {
                             memberCount,
                             rights: _rights,
                             type: right.type,
-                        } as DefaultRightDto;
+                        };
                     }),
             );
 

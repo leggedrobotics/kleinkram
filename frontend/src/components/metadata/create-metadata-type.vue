@@ -110,8 +110,8 @@ const createTagTypeAction = async (): Promise<boolean> => {
             typeof error === 'object' &&
             error !== null &&
             'response' in error &&
-            typeof (error as { response: unknown }).response === 'object' &&
-            (error as { response: unknown }).response !== null &&
+            typeof error.response === 'object' &&
+            error.response !== null &&
             'data' in (error as { response: { data: unknown } }).response &&
             typeof (error as { response: { data: unknown } }).response.data ===
                 'object' &&

@@ -167,11 +167,11 @@ export class ActionErrorHintService {
                         };
                         return {
                             message: parsed.message,
-                        } as LogEntry;
+                        };
                     } catch {
                         return {
                             message: lineJson,
-                        } as LogEntry;
+                        };
                     }
                 }),
             );

@@ -116,8 +116,7 @@ export const seedProjects = async (
                 description: projectDefinition.description,
                 creator: adminUser,
                 tagTypes: tagTypes,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any)
+            })
             .save();
         createdProjects.push(project);
 
@@ -148,8 +147,7 @@ export const seedProjects = async (
                     project: project,
                     user: adminUser,
                     name: missionName,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any)
+                })
                 .save();
             createdMissions.push(mission);
         }

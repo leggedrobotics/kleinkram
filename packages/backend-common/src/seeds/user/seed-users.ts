@@ -1,7 +1,6 @@
 import { systemUser } from '@backend-common/consts';
 import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { AccessGroupFactoryContext } from '@backend-common/factories/auth/accessgroup.factory';
 import { UserContext } from '@backend-common/factories/user/user.factory';
 import { AffiliationGroupService } from '@backend-common/services/affiliation-group.service';
 import {
@@ -120,7 +119,7 @@ export const seedUsers = async (
                     .setMeta({
                         user: user,
                         isPersonal: true,
-                    } as Partial<AccessGroupFactoryContext>)
+                    })
                     .save();
             }
         }),

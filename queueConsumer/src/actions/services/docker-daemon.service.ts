@@ -527,8 +527,8 @@ export class DockerDaemon {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             container.modem.demuxStream(
                 dockerodeLogStream,
-                stdoutWritable as unknown as NodeJS.WritableStream,
-                stderrWritable as unknown as NodeJS.WritableStream,
+                stdoutWritable,
+                stderrWritable,
             );
         });
     }
@@ -695,11 +695,7 @@ export class DockerDaemon {
             stream.on('error', reject);
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            container.modem.demuxStream(
-                stream,
-                stdoutWritable as unknown as NodeJS.WritableStream,
-                stderrWritable as unknown as NodeJS.WritableStream,
-            );
+            container.modem.demuxStream(stream, stdoutWritable, stderrWritable);
         });
 
         await logPromise;

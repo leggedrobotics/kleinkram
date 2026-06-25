@@ -82,7 +82,7 @@
     },
     "devDependencies": {
         "@jest/globals": "^30.4.1",
-        "@nestjs/cli": "^11.0.16",
+        "@nestjs/cli": "^11.0.23",
         "@nestjs/schematics": "^11.0.9",
         "@nestjs/testing": "^11.1.9",
         "@swc/core": "^1.15.33",
@@ -121,7 +121,7 @@
         "typescript": "5.9.3",
         "vue": "^3.5.27",
         "vue-json-pretty": "^2.6.0",
-        "webpack": "5.106.0",
+        "webpack": "5.106.2",
         "webpack-node-externals": "^3.0.0"
     }
 }

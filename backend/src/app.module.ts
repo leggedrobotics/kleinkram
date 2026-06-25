@@ -8,7 +8,6 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import accessConfig from './access_config.json';
 import { appVersion } from './app-version';
 import { AccessModule } from './endpoints/access/access.module';
@@ -48,26 +47,22 @@ import { DBDumper } from './services/dbdumper.service';
                 configuration,
                 (): {
                     accessConfig: AccessGroupConfig;
-                } => ({ accessConfig: accessConfig as AccessGroupConfig }),
+                } => ({ accessConfig: accessConfig }),
             ],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
-            useFactory: (configService: ConfigService) =>
-                ({
-                    type: 'postgres',
-                    host: configService.getOrThrow<string>('database.host'),
-                    port: configService.getOrThrow<number>('database.port'),
-                    username:
-                        configService.getOrThrow<string>('database.username'),
-                    password:
-                        configService.getOrThrow<string>('database.password'),
-                    database:
-                        configService.getOrThrow<string>('database.database'),
-                    entities: configService.getOrThrow('entities'),
-                    synchronize: env.DEV,
-                    logging: ['warn', 'error'],
-                }) as PostgresConnectionOptions,
+            useFactory: (configService: ConfigService) => ({
+                type: 'postgres',
+                host: configService.getOrThrow<string>('database.host'),
+                port: configService.getOrThrow<number>('database.port'),
+                username: configService.getOrThrow<string>('database.username'),
+                password: configService.getOrThrow<string>('database.password'),
+                database: configService.getOrThrow<string>('database.database'),
+                entities: configService.getOrThrow('entities'),
+                synchronize: env.DEV,
+                logging: ['warn', 'error'],
+            }),
             inject: [ConfigService],
         }),
         FileModule,

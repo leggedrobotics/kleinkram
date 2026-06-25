@@ -66,16 +66,14 @@ export class AccessModificationService {
             creator: user,
         });
 
-        const savedGroup = (await this.accessGroupRepository.save(
-            newGroup,
-        )) as unknown as AccessGroupEntity;
+        const savedGroup = await this.accessGroupRepository.save(newGroup);
 
         this.accessGroupAuditService
             .log(
                 savedGroup.uuid,
                 AccessGroupEventType.CREATE_GROUP,
                 { name },
-                auth.user as unknown as UserEntity,
+                auth.user,
             )
             .catch((error: unknown) =>
                 logger.error(`Audit log failed: ${String(error)}`),
@@ -367,7 +365,7 @@ export class AccessModificationService {
                         projectName: project.name,
                         rights,
                     },
-                    auth.user as unknown as UserEntity,
+                    auth.user,
                 )
                 .catch((error: unknown) =>
                     logger.error(`Audit log failed: ${String(error)}`),
@@ -391,7 +389,7 @@ export class AccessModificationService {
                 AccessGroupEventType.ADD_PROJECT,
                 { projectUuid: projectUUID, projectName: project.name, rights },
 
-                auth.user as unknown as UserEntity,
+                auth.user,
             )
             .catch((error: unknown) =>
                 logger.error(`Audit log failed: ${String(error)}`),
@@ -431,7 +429,7 @@ export class AccessModificationService {
                     projectName: projectAccess[0]?.project?.name ?? 'Unknown',
                 },
 
-                auth.user as unknown as UserEntity,
+                auth.user,
             )
             .catch((error: unknown) =>
                 logger.error(`Audit log failed: ${String(error)}`),
@@ -581,7 +579,7 @@ export class AccessModificationService {
                     AccessGroupEventType.UPDATE_PROJECT_ACCESS,
                     { projectUuid: projectUuid, rights: access.rights },
 
-                    authHeader.user as unknown as UserEntity,
+                    authHeader.user,
                 )
                 .catch((error: unknown) =>
                     logger.error(`Audit log failed: ${String(error)}`),

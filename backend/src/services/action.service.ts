@@ -279,8 +279,7 @@ export class ActionService {
                             typeof parsed !== 'object' ||
                             parsed === null ||
                             !('message' in parsed) ||
-                            typeof (parsed as { message: unknown }).message !==
-                                'string'
+                            typeof parsed.message !== 'string'
                         ) {
                             throw new Error('Invalid log format');
                         }

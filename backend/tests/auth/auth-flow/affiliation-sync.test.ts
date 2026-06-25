@@ -32,7 +32,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
                 rights: 10,
             },
         ],
-    } as AccessGroupConfig;
+    };
 
     let config: AccessGroupConfig;
     let affiliationGroupService: AffiliationGroupService;

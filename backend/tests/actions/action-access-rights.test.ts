@@ -1,5 +1,3 @@
-import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
-import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
 import { AccessGroupEntity, ActionEntity } from '@kleinkram/backend-common';
 import { AccessGroupRights, ActionState } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
@@ -73,7 +71,7 @@ describe('Action Access Rights', () => {
                 gpuMemory: 0,
                 maxRuntime: 60,
                 accessRights: AccessGroupRights.WRITE,
-            } as CreateTemplateDto),
+            }),
         });
         if (writeTemplateResponse.status !== 201) {
             console.log(
@@ -100,7 +98,7 @@ describe('Action Access Rights', () => {
                 gpuMemory: 0,
                 maxRuntime: 60,
                 accessRights: AccessGroupRights.READ,
-            } as CreateTemplateDto),
+            }),
         });
         expect(readTemplateResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -116,7 +114,7 @@ describe('Action Access Rights', () => {
                 missionUUID: missionUUID,
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 templateUUID: writeTemplateUUID,
-            } as SubmitActionDto),
+            }),
         });
         expect(failResponse.status).toBe(403);
 
@@ -128,7 +126,7 @@ describe('Action Access Rights', () => {
                 missionUUID: missionUUID,
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 templateUUID: readTemplateUUID,
-            } as SubmitActionDto),
+            }),
         });
         expect(failReadResponse.status).toBe(403);
     });
@@ -195,7 +193,7 @@ describe('Action Access Rights', () => {
                 gpuMemory: 0,
                 maxRuntime: 60,
                 accessRights: AccessGroupRights.READ,
-            } as CreateTemplateDto),
+            }),
         });
         expect(templateResponse.status).toBe(201);
         const { uuid: templateUUID } = (await templateResponse.json()) as {
@@ -209,7 +207,7 @@ describe('Action Access Rights', () => {
             body: JSON.stringify({
                 missionUUID: missionUUID,
                 templateUUID: templateUUID,
-            } as SubmitActionDto),
+            }),
         });
         expect(submitResponse.status).toBe(201);
         const { actionUUID } = (await submitResponse.json()) as {

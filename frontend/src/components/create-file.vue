@@ -134,9 +134,7 @@ const selectedProject = computed((): ProjectDto | undefined => {
 
 const selectedMission = computed((): FlatMissionDto | undefined => {
     if (props.mission) return props.mission;
-    return missions.value.find(
-        (m) => m.uuid === selectedMissionUuid.value,
-    ) as unknown as FlatMissionDto;
+    return missions.value.find((m) => m.uuid === selectedMissionUuid.value);
 });
 
 const acceptedFileTypes = computed(() => {
