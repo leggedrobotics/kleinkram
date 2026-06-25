@@ -10,6 +10,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import os from 'node:os';
 import { ActionQueueProcessorProvider } from './action-queue-processor.provider';
+import { ActionCancellationService } from './services/action-cancellation.service';
 import { ActionErrorHintService } from './services/action-error-hint.service';
 import { ActionManagerService } from './services/action-manager.service';
 import { ArtifactService } from './services/artifact.service';
@@ -49,6 +50,7 @@ import { ResourceMonitorService } from './services/resource-monitor.service';
         ContainerCleanupService,
         ActionErrorHintService,
         ContainerStatsService,
+        ActionCancellationService,
     ],
     exports: [ActionManagerService],
 })

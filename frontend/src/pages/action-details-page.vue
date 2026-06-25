@@ -77,6 +77,17 @@
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
                 <q-btn
+                    v-if="canCancel"
+                    class="button-border"
+                    flat
+                    color="negative"
+                    icon="sym_o_cancel"
+                    label="Cancel"
+                    @click="cancelAction"
+                >
+                    <q-tooltip>Cancel running action</q-tooltip>
+                </q-btn>
+                <q-btn
                     class="button-border"
                     flat
                     color="primary"
@@ -332,6 +343,7 @@
 </template>
 
 <script setup lang="ts">
+import { ActionState } from '@kleinkram/shared';
 import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
 import ActionDetailsResourcesTab from 'components/actions/action-details-resources-tab.vue';
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
@@ -468,6 +480,34 @@ const openMission = async (): Promise<void> => {
             missionUuid: action.value.mission.uuid,
         },
     });
+};
+
+const canCancel = computed(() => {
+    const state = action.value?.state;
+    return (
+        state === ActionState.PENDING ||
+        state === ActionState.STARTING ||
+        state === ActionState.PROCESSING
+    );
+});
+
+const cancelAction = async (): Promise<void> => {
+    if (!action.value) return;
+
+    try {
+        await ActionService.cancel(action.value.uuid);
+
+        $q.notify({
+            type: 'positive',
+            message: 'Action cancellation requested',
+        });
+        void refetch();
+    } catch {
+        $q.notify({
+            type: 'negative',
+            message: 'Failed to cancel action',
+        });
+    }
 };
 
 const restartAction = async (): Promise<void> => {

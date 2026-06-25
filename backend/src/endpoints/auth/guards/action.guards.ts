@@ -3,7 +3,7 @@ import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { AccessGroupRights, ActionState } from '@kleinkram/shared';
+import { AccessGroupRights, ActionState, UserRole } from '@kleinkram/shared';
 import {
     BadRequestException,
     ExecutionContext,
@@ -124,17 +124,18 @@ export class CreateActionGuard extends BaseGuard {
     }
 }
 
-@Injectable()
-export class DeleteActionGuard extends BaseGuard {
+export abstract class BaseActionModificationGuard extends BaseGuard {
     constructor(
-        private missionGuardService: MissionGuardService,
-        @InjectRepository(ActionEntity)
-        private actionRepository: Repository<ActionEntity>,
+        protected missionGuardService: MissionGuardService,
+        protected actionRepository: Repository<ActionEntity>,
     ) {
         super();
     }
 
-    async canActivate(context: ExecutionContext): Promise<boolean> {
+    protected async validateAndGetAction(
+        context: ExecutionContext,
+        relations: string[] = ['mission', 'creator'],
+    ) {
         const { user, apiKey, request } = await this.getUser(context);
 
         const body = request.body as ActionBody | undefined;
@@ -142,12 +143,12 @@ export class DeleteActionGuard extends BaseGuard {
         const actionUUID = body?.actionUUID ?? params?.uuid;
 
         if (!actionUUID) {
-            return false; // Deny access if UUID not provided
+            return null;
         }
 
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUUID },
-            relations: ['mission', 'creator'],
+            relations,
         });
 
         if (action.mission === undefined)
@@ -157,9 +158,32 @@ export class DeleteActionGuard extends BaseGuard {
 
         if (apiKey) {
             throw new BadRequestException(
-                'apiKey in DeleteActionGuard is not supported',
+                `apiKey in ${this.constructor.name} is not supported`,
             );
         }
+
+        return { user, action };
+    }
+}
+
+@Injectable()
+export class DeleteActionGuard extends BaseActionModificationGuard {
+    constructor(
+        missionGuardService: MissionGuardService,
+        @InjectRepository(ActionEntity)
+        actionRepository: Repository<ActionEntity>,
+    ) {
+        super(missionGuardService, actionRepository);
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const validationResult = await this.validateAndGetAction(context);
+        if (!validationResult) {
+            return false;
+        }
+
+        const { user, action } = validationResult;
+
         if (
             !(
                 action.state === ActionState.DONE ||
@@ -180,6 +204,48 @@ export class DeleteActionGuard extends BaseGuard {
             user,
             missionUUID,
             AccessGroupRights.DELETE,
+        );
+    }
+}
+
+@Injectable()
+export class CancelActionGuard extends BaseActionModificationGuard {
+    constructor(
+        missionGuardService: MissionGuardService,
+        @InjectRepository(ActionEntity)
+        actionRepository: Repository<ActionEntity>,
+    ) {
+        super(missionGuardService, actionRepository);
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const validationResult = await this.validateAndGetAction(context, [
+            'mission',
+            'creator',
+            'template',
+        ]);
+        if (!validationResult) {
+            return false;
+        }
+
+        const { user, action } = validationResult;
+
+        if (action.template === undefined)
+            throw new BadRequestException('Action does not have a template');
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        if (action.creator.uuid === user.uuid) {
+            return true;
+        }
+
+        const missionUUID = action.mission.uuid;
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            action.template.accessRights,
         );
     }
 }

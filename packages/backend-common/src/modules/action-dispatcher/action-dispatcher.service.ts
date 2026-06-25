@@ -10,20 +10,23 @@ import {
     ConflictException,
     Injectable,
     Logger,
+    OnModuleDestroy,
     OnModuleInit,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
+import { Redis } from 'ioredis';
 import { Gauge } from 'prom-client';
 import { EntityManager, LessThan, Repository } from 'typeorm';
 import { AccessControlService } from '../access-control/access-control.service';
 
 @Injectable()
-export class ActionDispatcherService implements OnModuleInit {
+export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(ActionDispatcherService.name);
     private actionQueues: Record<string, Queue.Queue> = {};
+    private redisPublisher!: Redis;
 
     constructor(
         @InjectRepository(ActionEntity)
@@ -46,6 +49,7 @@ export class ActionDispatcherService implements OnModuleInit {
     ) {}
 
     async onModuleInit(): Promise<void> {
+        this.redisPublisher = new Redis(redis);
         const availableWorkers = await this.workerRepository.find({
             where: { reachable: true },
         });
@@ -71,6 +75,10 @@ export class ActionDispatcherService implements OnModuleInit {
 
         // Update metrics immediately
         this.onlineWorkers.set({}, availableWorkers.length);
+    }
+
+    async onModuleDestroy(): Promise<void> {
+        await this.redisPublisher.quit();
     }
 
     /**
@@ -201,7 +209,8 @@ export class ActionDispatcherService implements OnModuleInit {
                 if (action?.worker === undefined)
                     throw new Error('No worker found for this action');
 
-                action.state = ActionState.FAILED;
+                action.state = ActionState.CANCELLED;
+                action.state_cause = 'Action cancelled by user';
                 await manager.save(action);
                 actionIdentifier = action.worker.identifier;
             },
@@ -216,12 +225,21 @@ export class ActionDispatcherService implements OnModuleInit {
         if (!queue) throw new ConflictException('Worker queue not active');
 
         const job = await queue.getJob(actionRunId);
-        if (!job) {
-            this.logger.warn(`Job ${actionRunId} not found in queue to stop`);
-            return;
+        if (job) {
+            try {
+                await job.remove();
+            } catch (error) {
+                this.logger.warn(
+                    `Could not remove job ${actionRunId} from queue (it may be currently active): ${error instanceof Error ? error.message : String(error)}`,
+                );
+            }
+        } else {
+            this.logger.warn(
+                `Job ${actionRunId} not found in queue to stop, publishing cancel event anyway`,
+            );
         }
 
-        await job.remove();
+        await this.redisPublisher.publish('action-cancellation', actionRunId);
         this.logger.log(`Action ${actionRunId} stopped successfully`);
     }
 
