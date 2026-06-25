@@ -7,7 +7,7 @@ import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
 export const getTagTypes = async (): Promise<TagTypeDto[]> => {
-    const response: AxiosResponse<TagsDto> = await axios.get('/tag/all');
+    const response: AxiosResponse<TagsDto> = await axios.get('/metadata-types');
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return response.data.data ?? [];
 };
@@ -19,7 +19,7 @@ export const getFilteredTagTypes = async (
     let response: AxiosResponse<TagsDto>;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!name && type === null) {
-        response = await axios.get<TagsDto>('/tag/all');
+        response = await axios.get<TagsDto>('/metadata-types');
     } else {
         const parameters: Record<string, string | DataType> = {};
         if (name) {
@@ -29,7 +29,7 @@ export const getFilteredTagTypes = async (
         if (type !== null) {
             parameters.type = type ?? '';
         }
-        response = await axios.get<TagsDto>(`/tag/filtered`, {
+        response = await axios.get<TagsDto>(`/metadata-types/filtered`, {
             params: parameters,
         });
     }

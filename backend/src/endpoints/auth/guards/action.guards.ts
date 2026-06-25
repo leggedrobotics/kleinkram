@@ -60,7 +60,12 @@ export class ReadActionGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const actionUUID = request.query.uuid as string | undefined;
+        const params = request.params as { uuid?: string } | undefined;
+        const body = request.body as ActionBody | undefined;
+        const actionUUID =
+            (request.query.uuid as string | undefined) ??
+            params?.uuid ??
+            body?.actionUUID;
 
         if (!actionUUID) {
             return false; // Deny access if UUID not provided

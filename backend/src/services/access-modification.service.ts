@@ -1,19 +1,13 @@
 import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     groupMembershipEntityToDto,
-    projectAccessEntityToDto,
     projectEntityToDto,
-    userEntityToDto,
 } from '@/serialization';
 import {
-    AccessGroupAuditLogsDto,
-    AccessGroupDto,
-    AccessGroupsDto,
     GroupMembershipDto,
     ProjectAccessDto,
     ProjectAccessListDto,
     ProjectDto,
-    ProjectWithAccessRightsDto,
 } from '@kleinkram/api-dto';
 import {
     AccessGroupAuditService,
@@ -24,29 +18,18 @@ import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/pro
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
-    AccessGroupConfig,
     AccessGroupEventType,
     AccessGroupRights,
     AccessGroupType,
-    UserRole,
 } from '@kleinkram/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-    EntityManager,
-    FindOptionsWhere,
-    ILike,
-    In,
-    MoreThanOrEqual,
-    Not,
-    Repository,
-} from 'typeorm';
+import { EntityManager, In, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import logger from '../logger';
-import { UserService } from './user.service';
+import { AccessQueryService } from './access-query.service';
 
 @Injectable()
-export class AccessService {
+export class AccessModificationService {
     constructor(
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
@@ -59,86 +42,9 @@ export class AccessService {
         @InjectRepository(ProjectAccessEntity)
         private projectAccessRepository: Repository<ProjectAccessEntity>,
         private readonly entityManager: EntityManager,
-        private readonly configService: ConfigService,
         private readonly accessGroupAuditService: AccessGroupAuditService,
-        private readonly userService: UserService,
+        private readonly accessQueryService: AccessQueryService,
     ) {}
-
-    async getAccessGroup(
-        uuid: string,
-        userUuid: string,
-    ): Promise<AccessGroupDto> {
-        // check if the user can edit the access group (memberships[].canEditGroup)
-        const includeEmail =
-            (await this.groupMembershipRepository
-                .createQueryBuilder('groupMembership')
-                .leftJoinAndSelect('groupMembership.user', 'user')
-                .leftJoinAndSelect('groupMembership.accessGroup', 'accessGroup')
-                .where('accessGroup.uuid = :uuid', { uuid })
-                .andWhere('groupMembership.user.uuid = :userUuid', {
-                    userUuid,
-                })
-                .andWhere('groupMembership.canEditGroup = true')
-                .getCount()) > 0;
-
-        let accessGroupQuery = this.accessGroupRepository
-            .createQueryBuilder('accessGroup')
-            .withDeleted()
-            .leftJoinAndSelect('accessGroup.memberships', 'memberships')
-            .leftJoinAndSelect('memberships.user', 'user')
-            .leftJoinAndSelect(
-                'accessGroup.project_accesses',
-                'project_accesses',
-            )
-            .leftJoinAndSelect('project_accesses.project', 'project')
-            .leftJoinAndSelect('accessGroup.creator', 'creator')
-            .where('accessGroup.uuid = :uuid', { uuid });
-
-        // we need to explicitly select the email field
-        if (includeEmail)
-            accessGroupQuery = accessGroupQuery.addSelect('user.email');
-
-        const rawAccessGroup = await accessGroupQuery.getOneOrFail();
-
-        return {
-            createdAt: rawAccessGroup.createdAt,
-            creator: rawAccessGroup.creator
-                ? userEntityToDto(rawAccessGroup.creator)
-                : null,
-            hidden: rawAccessGroup.hidden,
-            memberships:
-                rawAccessGroup.memberships?.map((membership) =>
-                    groupMembershipEntityToDto(membership, includeEmail),
-                ) ?? [],
-            name: rawAccessGroup.name,
-            type: rawAccessGroup.type,
-            updatedAt: rawAccessGroup.updatedAt,
-            uuid: rawAccessGroup.uuid,
-            projectAccesses:
-                rawAccessGroup.project_accesses?.map(
-                    (value) =>
-                        ({
-                            createdAt: value.project?.createdAt,
-                            description: value.project?.description,
-                            updatedAt: value.project?.updatedAt,
-                            name: value.project?.name,
-                            uuid: value.project?.uuid,
-                            rights: value.rights,
-                            autoConvert: value.project?.autoConvert ?? false,
-                        }) as ProjectWithAccessRightsDto,
-                ) ?? [],
-            emailPattern:
-                rawAccessGroup.type === AccessGroupType.AFFILIATION
-                    ? this.configService
-                          .getOrThrow<AccessGroupConfig>('accessConfig')
-                          .emails.find((emailConfig) =>
-                              emailConfig.access_groups.includes(
-                                  rawAccessGroup.uuid,
-                              ),
-                          )?.email
-                    : undefined,
-        };
-    }
 
     async createAccessGroup(
         name: string,
@@ -178,36 +84,6 @@ export class AccessService {
         return savedGroup;
     }
 
-    async hasProjectRights(
-        projectUUID: string,
-        auth: AuthHeader,
-        rights: AccessGroupRights = AccessGroupRights.WRITE,
-    ): Promise<boolean> {
-        const dbuser = await this.userRepository.findOneOrFail({
-            where: { uuid: auth.user.uuid },
-        });
-        if (dbuser.role === UserRole.ADMIN) {
-            return true;
-        }
-
-        return this.projectRepository
-            .createQueryBuilder('project')
-            .leftJoin(
-                'project_access_view_entity',
-                'projectAccesses',
-                'projectAccesses.projectuuid = project.uuid',
-            )
-            .where('project.uuid = :uuid', { uuid: projectUUID })
-            .andWhere('projectAccesses.rights >= :rights', {
-                rights: rights,
-            })
-            .andWhere('projectAccesses.useruuid = :user_uuid', {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                user_uuid: auth.user.uuid,
-            })
-            .getExists();
-    }
-
     async addUserToProject(
         projectUUID: string,
         userUUID: string,
@@ -234,7 +110,7 @@ export class AccessService {
         if (personalAccessGroup === undefined)
             throw new Error('User has no personal access group');
 
-        const canUpdate = await this.hasProjectRights(
+        const canUpdate = await this.accessQueryService.hasProjectRights(
             projectUUID,
             auth,
             rights,
@@ -434,76 +310,6 @@ export class AccessService {
         return result;
     }
 
-    async searchAccessGroup(
-        search: string,
-        type: AccessGroupType | undefined,
-        skip: number,
-        take: number,
-    ): Promise<AccessGroupsDto> {
-        // we only list the access groups that are not hidden
-        const where: FindOptionsWhere<AccessGroupEntity> = {
-            hidden: false,
-        };
-
-        if (type !== undefined) {
-            where.type = type;
-        }
-
-        if (search !== '') {
-            where.name = ILike(`%${search}%`);
-        }
-
-        const [accessGroups, count] =
-            await this.accessGroupRepository.findAndCount({
-                where,
-                skip,
-                take,
-                relations: [
-                    'memberships',
-                    'memberships.user',
-                    'project_accesses',
-                    'project_accesses.project',
-                    'creator',
-                ],
-            });
-
-        logger.debug(`Search access group with name containing '${search}'`);
-        logger.debug(`Found ${count.toString()} access groups`);
-
-        const data: AccessGroupDto[] = accessGroups.map(
-            (accessGroup: AccessGroupEntity): AccessGroupDto => {
-                return {
-                    creator: accessGroup.creator
-                        ? userEntityToDto(accessGroup.creator)
-                        : null,
-                    memberships:
-                        accessGroup.memberships?.map((membership) =>
-                            groupMembershipEntityToDto(membership),
-                        ) ?? [],
-                    createdAt: accessGroup.createdAt,
-                    updatedAt: accessGroup.updatedAt,
-                    uuid: accessGroup.uuid,
-                    name: accessGroup.name,
-                    type: accessGroup.type,
-                    hidden: accessGroup.hidden,
-                    projectAccesses: [],
-                    emailPattern:
-                        accessGroup.type === AccessGroupType.AFFILIATION
-                            ? this.configService
-                                  .getOrThrow<AccessGroupConfig>('accessConfig')
-                                  .emails.find((emailConfig) =>
-                                      emailConfig.access_groups.includes(
-                                          accessGroup.uuid,
-                                      ),
-                                  )?.email
-                            : undefined,
-                };
-            },
-        );
-
-        return { data, count, skip, take };
-    }
-
     async addAccessGroupToProject(
         projectUUID: string,
         accessGroupUUID: string,
@@ -520,7 +326,7 @@ export class AccessService {
         });
 
         if (rights === AccessGroupRights.DELETE) {
-            const canDelete = await this.hasProjectRights(
+            const canDelete = await this.accessQueryService.hasProjectRights(
                 projectUUID,
                 auth,
                 AccessGroupRights.DELETE,
@@ -598,7 +404,7 @@ export class AccessService {
         accessGroupUUID: string,
         auth: AuthHeader,
     ) {
-        const canDelete = await this.hasProjectRights(
+        const canDelete = await this.accessQueryService.hasProjectRights(
             projectUUID,
             auth,
             AccessGroupRights.DELETE,
@@ -641,29 +447,6 @@ export class AccessService {
         return;
     }
 
-    async getProjectAccesses(
-        projectUUID: string,
-    ): Promise<ProjectAccessListDto> {
-        const [access, count] = await this.projectAccessRepository.findAndCount(
-            {
-                where: { project: { uuid: projectUUID } },
-                order: { accessGroup: { name: 'ASC' } },
-                relations: [
-                    'project',
-                    'accessGroup',
-                    'accessGroup.memberships',
-                ],
-            },
-        );
-
-        return {
-            data: access.map((element) => projectAccessEntityToDto(element)),
-            count,
-            take: count,
-            skip: 0,
-        };
-    }
-
     private async uncheckedProjectAccessTransactionalUpdate(
         transaction: EntityManager,
         projectUuid: string,
@@ -691,22 +474,6 @@ export class AccessService {
         await Promise.all(accessUpdates);
     }
 
-    /**
-     * PRE-CONDITIONS for updating project access rights:
-     *
-     *  - the current user must have at least write rights
-     *  - the current user must have at least the same rights
-     *    as the highest rights he has modified
-     *
-     * @param transaction
-     * @param projectUuid
-     * @param newProjectAccess
-     * @param userId
-     * @private
-     *
-     * @throws ConflictException if the pre-conditions are not met
-     *
-     */
     private async checkProjectAccessModificationPreConditions(
         transaction: EntityManager,
         projectUuid: string,
@@ -761,18 +528,6 @@ export class AccessService {
         }
     }
 
-    /**
-     * check POST-CONDITIONS for updating project access rights:
-     *
-     *  - there must be at least one group with delete rights
-     *
-     * @param transaction
-     * @param projectUuid
-     * @private
-     *
-     * @throws ConflictException if the post-conditions are not met
-     *
-     */
     private async checkProjectAccessModificationPostConditions(
         transaction: EntityManager,
         projectUuid: string,
@@ -792,17 +547,6 @@ export class AccessService {
         }
     }
 
-    /**
-     * Update the access rights for a project
-     *
-     * This method is a transactional method that updates the access rights for a project.
-     * This function assumes that you pass a full newProjectAccess object, i.e. all access rights
-     * not passed in the newProjectAccess object will be removed.
-     *
-     * @param projectUuid
-     * @param newProjectAccess
-     * @param authHeader
-     */
     async updateProjectAccess(
         projectUuid: string,
         newProjectAccess: ProjectAccessDto[],
@@ -844,7 +588,7 @@ export class AccessService {
                 );
         }
 
-        return await this.getProjectAccesses(projectUuid);
+        return await this.accessQueryService.getProjectAccesses(projectUuid);
     }
 
     async setExpireDate(
@@ -859,7 +603,6 @@ export class AccessService {
                 user: { uuid: userUuid },
             },
         });
-        // TODO: check how to properly set the expireDate to null in a type-safe way
         // @ts-ignore
         agu.expirationDate = expireDate === 'never' ? null : expireDate;
         const { uuid: membershipUuid } =
@@ -945,57 +688,5 @@ export class AccessService {
             );
 
         return groupMembershipEntityToDto(savedMembership);
-    }
-
-    async getAuditLogs(uuid: string): Promise<AccessGroupAuditLogsDto> {
-        const [logs, count] =
-            await this.accessGroupAuditService.getLogsForGroup(uuid);
-
-        // Extract all unique UUIDs that need resolving
-        const uuidsToResolve = new Set<string>();
-        for (const log of logs) {
-            const details = log.details;
-            if (details.userUuid && !details.userName) {
-                uuidsToResolve.add(details.userUuid as string);
-            }
-            if (Array.isArray(details.userUuids)) {
-                for (const id of details.userUuids as string[]) {
-                    uuidsToResolve.add(id);
-                }
-            }
-        }
-
-        const resolvedUsers = await this.userService.resolveUsers([
-            ...uuidsToResolve,
-        ]);
-
-        return {
-            data: logs.map((log) => {
-                const details = { ...log.details };
-                if (details.userUuid && !details.userName) {
-                    details.userName =
-                        resolvedUsers[details.userUuid as string] ??
-                        details.userUuid;
-                }
-                if (Array.isArray(details.userUuids)) {
-                    details.affectedUsers = (details.userUuids as string[]).map(
-                        (id) => ({
-                            uuid: id,
-                            name: resolvedUsers[id] ?? id,
-                        }),
-                    );
-                    delete details.userUuids;
-                }
-
-                return {
-                    uuid: log.uuid,
-                    createdAt: log.createdAt,
-                    type: log.type,
-                    details,
-                    actor: log.actor ? userEntityToDto(log.actor) : undefined,
-                };
-            }),
-            count,
-        };
     }
 }

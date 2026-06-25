@@ -18,7 +18,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 
 @Injectable()
-export class TagService {
+export class MetadataService {
     constructor(
         @InjectRepository(MetadataEntity)
         private tagRepository: Repository<MetadataEntity>,
@@ -164,7 +164,7 @@ export class TagService {
         }
 
         await this.tagRepository.save(tag);
-        return {};
+        return { success: true };
     }
 
     async updateTagType(
@@ -261,11 +261,12 @@ export class TagService {
         missionUUID: string,
         tags: Record<string, string>,
     ): Promise<AddTagsDto> {
-        return Promise.all(
+        await Promise.all(
             Object.entries(tags).map(([tagTypeUUID, value]) =>
                 this.addTagType(missionUUID, tagTypeUUID, value),
             ),
         );
+        return { success: true };
     }
 
     async deleteTag(uuid: string): Promise<DeleteTagDto> {
@@ -297,13 +298,13 @@ export class TagService {
     }
 
     async getFiltered(
-        name: string,
+        name: string | undefined,
         type: DataType | undefined,
         skip: number,
         take: number,
     ): Promise<TagTypesDto> {
         const where: FindOptionsWhere<TagTypeEntity> = {};
-        if (name !== '') {
+        if (name) {
             where.name = ILike(`%${name}%`);
         }
         if (

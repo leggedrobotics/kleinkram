@@ -960,7 +960,7 @@ def _validate_tag_value(tag_value, tag_datatype) -> None:
 
 
 def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) -> Tuple[Optional[UUID], str]:
-    resp = client.get("/tag/filtered", params={"name": tag_name, "take": 1})
+    resp = client.get("/metadata-types/filtered", params={"name": tag_name, "take": 1})
 
     if resp.status_code in (403, 404):
         return None, ""

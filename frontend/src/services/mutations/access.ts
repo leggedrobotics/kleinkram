@@ -26,7 +26,7 @@ export const addUsersToProject = async (
 };
 
 export const createAccessGroup = async (name: string) => {
-    const { data } = await axios.post<AccessGroupDto>('/access', {
+    const { data } = await axios.post<AccessGroupDto>('/access-groups', {
         name,
     });
     return data;
@@ -39,7 +39,7 @@ export const addUserToAccessGroup = async (
     expireDate?: Date | 'never',
 ) => {
     const { data } = await axios.post<AccessGroupDto>(
-        `/access/${accessGroupUUID}/users`,
+        `/access-groups/${accessGroupUUID}/users`,
         {
             userUuid,
             canEditGroup,
@@ -55,7 +55,7 @@ export const addAccessGroupToProject = async (
     rights: AccessGroupRights,
 ) => {
     const { data } = await axios.post<ProjectDto>(
-        `/access/${accessGroupUUID}/projects/${projectUUID}`,
+        `/access-groups/${accessGroupUUID}/projects/${projectUUID}`,
         {
             rights,
         },
@@ -80,7 +80,7 @@ export const removeAccessGroupFromProject = async (
 ) => {
     const { data } =
         await axios.delete<RemoveAccessGroupFromProjectResponseDto>(
-            `/access/${accessGroupUUID}/projects/${projectUUID}`,
+            `/access-groups/${accessGroupUUID}/projects/${projectUUID}`,
         );
     return data;
 };
@@ -90,7 +90,7 @@ export const removeUsersFromAccessGroup = async (
     accessGroupUUID: string,
 ) => {
     const { data } = await axios.delete<AccessGroupDto>(
-        `/access/${accessGroupUUID}/users`,
+        `/access-groups/${accessGroupUUID}/users`,
         {
             data: { userUuids },
         },
@@ -100,7 +100,7 @@ export const removeUsersFromAccessGroup = async (
 
 export const deleteAccessGroup = async (accessGroupUUID: string) => {
     const { data } = await axios.delete<DeleteAccessGroupResponseDto>(
-        `/access/${accessGroupUUID}`,
+        `/access-groups/${accessGroupUUID}`,
     );
     return data;
 };
@@ -111,7 +111,7 @@ export const setAccessGroupExpiry = async (
     expiryDate: Date | null,
 ) => {
     const { data } = await axios.put<GroupMembershipDto>(
-        `/access/${uuid}/users/${userUuid}/expiration`,
+        `/access-groups/${uuid}/users/${userUuid}/expiration`,
         {
             expireDate: expiryDate ?? 'never',
         },
@@ -125,7 +125,7 @@ export const setAccessGroupUserPermissions = async (
     canEditGroup: boolean,
 ) => {
     const { data } = await axios.put<GroupMembershipDto>(
-        `/access/${uuid}/users/${userUuid}/permissions`,
+        `/access-groups/${uuid}/users/${userUuid}/permissions`,
         { canEditGroup },
     );
     return data;

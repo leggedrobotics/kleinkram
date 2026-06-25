@@ -86,12 +86,11 @@ __all__ = [
 ]
 
 
-CLAIM_ADMIN = "/user/claimAdmin"
-GET_STATUS = "/user/me"
+CLAIM_ADMIN = "/users/admin/claim"
+GET_STATUS = "/users/me"
 
 UPDATE_PROJECT = "/projects"
-UPDATE_MISSION = "/missions/tags"  # TODO: just metadata for now
-CREATE_MISSION = "/missions/create"
+CREATE_MISSION = "/missions"
 CREATE_PROJECT = "/projects"
 
 
@@ -99,7 +98,7 @@ FILE_ENDPOINT = "/files"
 MISSION_ENDPOINT = "/missions"
 PROJECT_ENDPOINT = "/projects"
 
-TAG_TYPE_BY_NAME = "/tag/filtered"
+TAG_TYPE_BY_NAME = "/metadata-types/filtered"
 
 ACTION_ENDPOINT = "/action"
 
@@ -481,10 +480,9 @@ def _create_project(client: AuthenticatedClient, project_name: str, description:
 
 def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict[UUID, str]) -> None:
     payload = {
-        "missionUUID": str(mission_id),
-        "tags": {str(k): v for k, v in tags.items()},
+        "metadata": {str(k): v for k, v in tags.items()},
     }
-    resp = client.post(UPDATE_MISSION, json=payload)
+    resp = client.post(f"/missions/{mission_id}/metadata", json=payload)
 
     if resp.status_code == 404:
         raise MissionNotFound(f"Mission not found: {mission_id}")
@@ -576,7 +574,7 @@ def _claim_admin(client: AuthenticatedClient) -> None:
     return
 
 
-FILE_DELETE_MANY = "/files/deleteMultiple"
+FILE_DELETE_MANY = "/files"
 
 
 def _delete_files(client: AuthenticatedClient, file_ids: Sequence[UUID], mission_id: UUID) -> None:
@@ -584,7 +582,7 @@ def _delete_files(client: AuthenticatedClient, file_ids: Sequence[UUID], mission
         "uuids": [str(file_id) for file_id in file_ids],
         "missionUUID": str(mission_id),
     }
-    resp = client.post(FILE_DELETE_MANY, json=payload)
+    resp = client.delete(FILE_DELETE_MANY, json=payload)
     resp.raise_for_status()
 
 

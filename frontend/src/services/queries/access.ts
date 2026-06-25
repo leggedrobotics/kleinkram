@@ -25,7 +25,7 @@ export const searchAccessGroups = async (
     };
 
     const response: AxiosResponse<AccessGroupsDto> = await axios.get(
-        '/access',
+        '/access-groups',
         {
             params: parameters,
         },
@@ -35,7 +35,7 @@ export const searchAccessGroups = async (
 };
 
 export const getAccessGroup = async (uuid: string): Promise<AccessGroupDto> => {
-    const response = await axios.get(`/access/${uuid}`);
+    const response = await axios.get(`/access-groups/${uuid}`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
@@ -51,7 +51,7 @@ export const getProjectAccess = async (
 export const getAccessGroupAuditLogs = async (
     uuid: string,
 ): Promise<AccessGroupAuditLogsDto> => {
-    const response = await axios.get(`/access/${uuid}/audit-logs`);
+    const response = await axios.get(`/access-groups/${uuid}/audit-logs`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };

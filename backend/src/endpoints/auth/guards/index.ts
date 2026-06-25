@@ -8,36 +8,18 @@ export {
 } from './base.guards';
 
 // Project guards
-export {
-    CreateGuard,
-    CreateInProjectByBodyGuard,
-    DeleteProjectGuard,
-    ReadProjectByNameGuard,
-    ReadProjectGuard,
-    WriteProjectGuard,
-} from './project.guards';
+export { CreateGuard, ProjectAccessGuard } from './project.guards';
 
 // Mission guards
 export {
-    AddTagGuard,
-    CanDeleteMissionGuard,
     CanReadManyMissionsGuard,
-    CreateInMissionByBodyGuard,
     DeleteTagGuard,
+    MissionAccessGuard,
     MoveMissionToProjectGuard,
-    ReadMissionByNameGuard,
-    ReadMissionGuard,
-    WriteMissionByBodyGuard,
 } from './mission.guards';
 
 // File guards
-export {
-    DeleteFileGuard,
-    MoveFilesGuard,
-    ReadFileByNameGuard,
-    ReadFileGuard,
-    WriteFileGuard,
-} from './file.guards';
+export { FileAccessGuard, MoveFilesGuard } from './file.guards';
 
 // Action guards
 export {

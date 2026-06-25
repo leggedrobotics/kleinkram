@@ -6,6 +6,7 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
 
 interface FileBody {
@@ -19,122 +20,29 @@ interface FileParameters {
 }
 
 @Injectable()
-export class DeleteFileGuard extends BaseGuard {
-    constructor(private fileGuardService: FileGuardService) {
+export class FileAccessGuard extends BaseGuard {
+    constructor(
+        private fileGuardService: FileGuardService,
+        private reflector: Reflector,
+    ) {
         super();
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
+
+        const requiredRight =
+            this.reflector.get<AccessGroupRights | undefined>(
+                'accessRight',
+                context.getHandler(),
+            ) ?? AccessGroupRights.READ;
 
         const body = request.body as FileBody | undefined;
         const params = request.params as FileParameters | undefined;
-        let fileUUID = request.query.uuid as string | undefined;
-
-        if (!fileUUID && body) {
-            fileUUID = body.uuid;
-        }
-
-        if (!fileUUID && params) {
-            fileUUID = params.uuid;
-        }
-
-        if (!fileUUID) {
-            return false; // Deny access if UUID not provided
-        }
-
-        if (apiKey) {
-            return this.fileGuardService.canKeyAccessFile(
-                apiKey,
-                fileUUID,
-                AccessGroupRights.DELETE,
-            );
-        }
-        return this.fileGuardService.canAccessFile(
-            user,
-            fileUUID,
-            AccessGroupRights.DELETE,
-        );
-    }
-}
-
-@Injectable()
-export class ReadFileGuard extends BaseGuard {
-    constructor(private fileGuardService: FileGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-
-        const params = request.params as FileParameters;
-        const fileUUID =
-            (request.query.uuid as string | undefined) ?? params.uuid;
-
-        if (!fileUUID) {
-            return false; // Deny access if UUID not provided
-        }
-
-        if (apiKey) {
-            return this.fileGuardService.canKeyAccessFile(
-                apiKey,
-                fileUUID,
-                AccessGroupRights.READ,
-            );
-        }
-        return this.fileGuardService.canAccessFile(
-            user,
-            fileUUID,
-            AccessGroupRights.READ,
-        );
-    }
-}
-
-@Injectable()
-export class ReadFileByNameGuard extends BaseGuard {
-    constructor(private fileGuardService: FileGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-
-        const filename = request.query.name as string | undefined;
-
-        if (!filename) {
-            return false; // Deny access if filename not provided
-        }
-
-        if (apiKey) {
-            return this.fileGuardService.canKeyAccessFileByName(
-                apiKey,
-                filename,
-                AccessGroupRights.READ,
-            );
-        }
-        return this.fileGuardService.canAccessFileByName(
-            user,
-            filename,
-            AccessGroupRights.READ,
-        );
-    }
-}
-
-@Injectable()
-export class WriteFileGuard extends BaseGuard {
-    constructor(private fileGuardService: FileGuardService) {
-        super();
-    }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, apiKey, request } = await this.getUser(context);
-
-        const body = request.body as FileBody;
-        const params = request.params as FileParameters;
         const fileUUID =
             (request.query.uuid as string | undefined) ??
-            body.uuid ??
-            params.uuid;
+            body?.uuid ??
+            params?.uuid;
 
         if (!fileUUID) {
             return false; // Deny access if UUID not provided
@@ -144,13 +52,13 @@ export class WriteFileGuard extends BaseGuard {
             return this.fileGuardService.canKeyAccessFile(
                 apiKey,
                 fileUUID,
-                AccessGroupRights.WRITE,
+                requiredRight,
             );
         }
         return this.fileGuardService.canAccessFile(
             user,
             fileUUID,
-            AccessGroupRights.WRITE,
+            requiredRight,
         );
     }
 }

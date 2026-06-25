@@ -265,7 +265,7 @@ describe('Verify project user/admin access', () => {
 
         for (const [, uuid] of missions.entries()) {
             // Check delete access
-            const response = await fetch(`${DEFAULT_URL}/mission/${uuid}`, {
+            const response = await fetch(`${DEFAULT_URL}/missions/${uuid}`, {
                 method: 'DELETE',
                 headers: headerCreator.getHeaders(),
             });

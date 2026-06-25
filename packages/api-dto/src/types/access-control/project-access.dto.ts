@@ -1,17 +1,23 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import { Paginated } from '@api-dto/pagination';
 import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 
+@Expose()
 export class ProjectAccessDto {
     @ApiProperty()
     @IsString()
+    @Expose()
+    @Transform(({ value, obj }) => obj.accessGroup?.uuid ?? value)
     uuid!: string;
 
     @ApiProperty()
     @IsString()
+    @Expose()
+    @Transform(({ value, obj }) => obj.accessGroup?.name ?? value)
     name!: string;
 
     @ApiProperty({
@@ -20,10 +26,16 @@ export class ProjectAccessDto {
         enum: AccessGroupType,
     })
     @IsEnum(AccessGroupType)
+    @Expose()
+    @Transform(({ value, obj }) => obj.accessGroup?.type ?? value)
     type!: AccessGroupType;
 
     @ApiProperty()
     @IsNumber()
+    @Expose()
+    @Transform(
+        ({ value, obj }) => obj.accessGroup?.memberships?.length ?? value,
+    )
     memberCount!: number;
 
     @ApiProperty({
@@ -32,6 +44,7 @@ export class ProjectAccessDto {
         enum: AccessGroupRights,
     })
     @IsEnum(AccessGroupRights)
+    @Expose()
     rights!: AccessGroupRights;
 }
 

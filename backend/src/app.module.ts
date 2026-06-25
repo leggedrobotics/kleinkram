@@ -18,10 +18,10 @@ import { CategoryModule } from './endpoints/category/category.module';
 import { FileModule } from './endpoints/file/file.module';
 import { HealthModule } from './endpoints/health/health.module';
 import { FoxgloveModule } from './endpoints/integrations/foxglove.module';
+import { MetadataModule } from './endpoints/metadata/metadata.module';
 import { MissionModule } from './endpoints/mission/mission.module';
 import { ProjectModule } from './endpoints/project/project.module';
 import { QueueModule } from './endpoints/queue/queue.module';
-import { TagModule } from './endpoints/tag/tag.module';
 import { TemplatesModule } from './endpoints/templates/templates.module';
 import { TopicModule } from './endpoints/topic/topic.module';
 import { TriggerModule } from './endpoints/trigger/trigger.module';
@@ -84,7 +84,7 @@ import { DBDumper } from './services/dbdumper.service';
         PassportModule,
         ActionModule,
         TemplatesModule,
-        TagModule,
+        MetadataModule,
         WorkerModule,
         CategoryModule,
         ScheduleModule.forRoot(),
