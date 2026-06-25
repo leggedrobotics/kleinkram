@@ -20,6 +20,31 @@ import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
 const DEFAULT_GROUP_UUID = '00000000-0000-0000-0000-000000000000';
 
+async function pollForAuditEvent(
+    groupUuid: string,
+    type: AccessGroupEventType,
+    maxRetries = 10,
+    intervalMs = 50,
+): Promise<AccessGroupEventEntity> {
+    const eventRepo = database.getRepository(AccessGroupEventEntity);
+    for (let index = 0; index < maxRetries; index++) {
+        const events = await eventRepo.find({
+            where: {
+                accessGroup: { uuid: groupUuid },
+            },
+            order: { createdAt: 'DESC' },
+        });
+        const found = events.find((event) => event.type === type);
+        if (found) {
+            return found;
+        }
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+    throw new Error(
+        `Audit log event of type ${type} was not found for group ${groupUuid} after polling.`,
+    );
+}
+
 /**
  * This test suite tests the access control of the application.
  *
@@ -1373,18 +1398,12 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         expect(updatedMembership.canEditGroup).toBe(true);
 
         // Verify PROMOTE_USER event was logged in audit log
-        const eventRepo = database.getRepository(AccessGroupEventEntity);
-        const events = await eventRepo.find({
-            where: {
-                accessGroup: { uuid: groupUuid },
-            },
-            order: { createdAt: 'DESC' },
-        });
-        const promoteEvent = events.find(
-            (event) => event.type === AccessGroupEventType.PROMOTE_USER,
+        const promoteEvent = await pollForAuditEvent(
+            groupUuid,
+            AccessGroupEventType.PROMOTE_USER,
         );
         expect(promoteEvent).toBeDefined();
-        expect(promoteEvent?.details.userUuid).toBe(member.uuid);
+        expect(promoteEvent.details.userUuid).toBe(member.uuid);
     });
 
     test('if an editor can demote a group editor to a normal member', async () => {
@@ -1442,18 +1461,12 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         expect(updatedMembership.canEditGroup).toBe(false);
 
         // Verify DEMOTE_USER event was logged in audit log
-        const eventRepo = database.getRepository(AccessGroupEventEntity);
-        const events = await eventRepo.find({
-            where: {
-                accessGroup: { uuid: groupUuid },
-            },
-            order: { createdAt: 'DESC' },
-        });
-        const demoteEvent = events.find(
-            (event) => event.type === AccessGroupEventType.DEMOTE_USER,
+        const demoteEvent = await pollForAuditEvent(
+            groupUuid,
+            AccessGroupEventType.DEMOTE_USER,
         );
         expect(demoteEvent).toBeDefined();
-        expect(demoteEvent?.details.userUuid).toBe(member.uuid);
+        expect(demoteEvent.details.userUuid).toBe(member.uuid);
     });
 
     test('if demoting the last editor returns a conflict error', async () => {
@@ -1515,6 +1528,17 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         );
         expect(memberResponse.status).toBe(403);
 
+        // Member (non-editor) tries to demote the creator (editor)
+        const memberDemoteResponse = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${creator.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: memberHeaders.getHeaders(),
+                body: JSON.stringify({ canEditGroup: false }),
+            },
+        );
+        expect(memberDemoteResponse.status).toBe(403);
+
         // Unrelated user tries to promote member
         const unrelatedHeaders = new HeaderCreator(unrelated);
         unrelatedHeaders.addHeader('Content-Type', 'application/json');
@@ -1527,5 +1551,16 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
             },
         );
         expect(unrelatedResponse.status).toBe(403);
+
+        // Unrelated user tries to demote the creator (editor)
+        const unrelatedDemoteResponse = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${creator.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: unrelatedHeaders.getHeaders(),
+                body: JSON.stringify({ canEditGroup: false }),
+            },
+        );
+        expect(unrelatedDemoteResponse.status).toBe(403);
     });
 });
