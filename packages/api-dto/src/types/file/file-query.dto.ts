@@ -143,6 +143,18 @@ export class FileQueryDto extends MissionQueryDto {
     matchAllTopics = false;
 
     @IsOptional()
+    @Transform(({ value }) => {
+        if (typeof value === 'string') {
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                return JSON.parse(value);
+            } catch {
+                return value;
+            }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return value;
+    })
     @IsObject()
     @ApiProperty({
         required: false,
