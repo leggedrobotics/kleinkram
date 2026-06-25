@@ -1,5 +1,14 @@
-import { AccessGroupEntity, UserEntity } from '@kleinkram/backend-common';
-import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
+import {
+    AccessGroupEntity,
+    AccessGroupEventEntity,
+    GroupMembershipEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
+import {
+    AccessGroupEventType,
+    AccessGroupRights,
+    AccessGroupType,
+} from '@kleinkram/shared';
 import {
     createAccessGroupUsingPost,
     createProjectUsingPost,
@@ -10,6 +19,31 @@ import { setupDatabaseHooks } from '../../utils/test-helpers';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
 const DEFAULT_GROUP_UUID = '00000000-0000-0000-0000-000000000000';
+
+async function pollForAuditEvent(
+    groupUuid: string,
+    type: AccessGroupEventType,
+    maxRetries = 10,
+    intervalMs = 50,
+): Promise<AccessGroupEventEntity> {
+    const eventRepo = database.getRepository(AccessGroupEventEntity);
+    for (let index = 0; index < maxRetries; index++) {
+        const events = await eventRepo.find({
+            where: {
+                accessGroup: { uuid: groupUuid },
+            },
+            order: { createdAt: 'DESC' },
+        });
+        const found = events.find((event) => event.type === type);
+        if (found) {
+            return found;
+        }
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+    throw new Error(
+        `Audit log event of type ${type} was not found for group ${groupUuid} after polling.`,
+    );
+}
 
 /**
  * This test suite tests the access control of the application.
@@ -1307,5 +1341,226 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
             },
         );
         expect(response.status).toBe(403);
+    });
+
+    test('if an editor can promote a group member to editor', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'promote_test_group' },
+            creator,
+            [creator, member],
+        );
+
+        // Member is not an editor initially
+        const membershipRepo = database.getRepository(GroupMembershipEntity);
+        const initialMembership = await membershipRepo.findOneOrFail({
+            where: {
+                accessGroup: { uuid: groupUuid },
+                user: { uuid: member.uuid },
+            },
+        });
+        expect(initialMembership.canEditGroup).toBe(false);
+
+        // Creator (editor) promotes member to editor
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${member.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({ canEditGroup: true }),
+            },
+        );
+        expect(response.status).toBeLessThan(300);
+
+        // Verify updated membership is returned
+        const responseJson = (await response.json()) as {
+            canEditGroup: boolean;
+        };
+        expect(responseJson.canEditGroup).toBe(true);
+
+        // Verify in database
+        const updatedMembership = await membershipRepo.findOneOrFail({
+            where: {
+                accessGroup: { uuid: groupUuid },
+                user: { uuid: member.uuid },
+            },
+        });
+        expect(updatedMembership.canEditGroup).toBe(true);
+
+        // Verify PROMOTE_USER event was logged in audit log
+        const promoteEvent = await pollForAuditEvent(
+            groupUuid,
+            AccessGroupEventType.PROMOTE_USER,
+        );
+        expect(promoteEvent).toBeDefined();
+        expect(promoteEvent.details.userUuid).toBe(member.uuid);
+    });
+
+    test('if an editor can demote a group editor to a normal member', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'demote_test_group' },
+            creator,
+            [creator, member],
+        );
+
+        // Promote member to editor via DB first
+        const membershipRepo = database.getRepository(GroupMembershipEntity);
+        const membership = await membershipRepo.findOneOrFail({
+            where: {
+                accessGroup: { uuid: groupUuid },
+                user: { uuid: member.uuid },
+            },
+        });
+        membership.canEditGroup = true;
+        await membershipRepo.save(membership);
+
+        // Creator (editor) demotes member to normal user
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${member.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({ canEditGroup: false }),
+            },
+        );
+        expect(response.status).toBeLessThan(300);
+
+        const responseJson = (await response.json()) as {
+            canEditGroup: boolean;
+        };
+        expect(responseJson.canEditGroup).toBe(false);
+
+        // Verify in database
+        const updatedMembership = await membershipRepo.findOneOrFail({
+            where: {
+                accessGroup: { uuid: groupUuid },
+                user: { uuid: member.uuid },
+            },
+        });
+        expect(updatedMembership.canEditGroup).toBe(false);
+
+        // Verify DEMOTE_USER event was logged in audit log
+        const demoteEvent = await pollForAuditEvent(
+            groupUuid,
+            AccessGroupEventType.DEMOTE_USER,
+        );
+        expect(demoteEvent).toBeDefined();
+        expect(demoteEvent.details.userUuid).toBe(member.uuid);
+    });
+
+    test('if demoting the last editor returns a conflict error', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'demote_last_editor_test_group' },
+            creator,
+            [creator],
+        );
+
+        // Attempt to demote the creator (the only editor)
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${creator.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({ canEditGroup: false }),
+            },
+        );
+        expect(response.status).toBe(409);
+    });
+
+    test('if a non-editor cannot promote or demote a user', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: unrelated } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'non_editor_permission_test_group' },
+            creator,
+            [creator, member],
+        );
+
+        // Member (non-editor) tries to promote themselves
+        const memberHeaders = new HeaderCreator(member);
+        memberHeaders.addHeader('Content-Type', 'application/json');
+        const memberResponse = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${member.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: memberHeaders.getHeaders(),
+                body: JSON.stringify({ canEditGroup: true }),
+            },
+        );
+        expect(memberResponse.status).toBe(403);
+
+        // Member (non-editor) tries to demote the creator (editor)
+        const memberDemoteResponse = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${creator.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: memberHeaders.getHeaders(),
+                body: JSON.stringify({ canEditGroup: false }),
+            },
+        );
+        expect(memberDemoteResponse.status).toBe(403);
+
+        // Unrelated user tries to promote member
+        const unrelatedHeaders = new HeaderCreator(unrelated);
+        unrelatedHeaders.addHeader('Content-Type', 'application/json');
+        const unrelatedResponse = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${member.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: unrelatedHeaders.getHeaders(),
+                body: JSON.stringify({ canEditGroup: true }),
+            },
+        );
+        expect(unrelatedResponse.status).toBe(403);
+
+        // Unrelated user tries to demote the creator (editor)
+        const unrelatedDemoteResponse = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users/${creator.uuid}/permissions`,
+            {
+                method: 'PUT',
+                headers: unrelatedHeaders.getHeaders(),
+                body: JSON.stringify({ canEditGroup: false }),
+            },
+        );
+        expect(unrelatedDemoteResponse.status).toBe(403);
     });
 });
