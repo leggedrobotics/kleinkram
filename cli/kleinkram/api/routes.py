@@ -626,6 +626,13 @@ def _delete_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp.raise_for_status()
 
 
+def _cancel_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
+    resp = client.post(f"/actions/{execution_id}/cancel")
+    if resp.status_code == 404:
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
+    resp.raise_for_status()
+
+
 DELETE_TRIGGER_ONE = "/triggers/{}"
 
 

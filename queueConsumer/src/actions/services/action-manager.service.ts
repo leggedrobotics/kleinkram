@@ -9,6 +9,7 @@ import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/ac
 import {
     AccessGroupRights,
     ActionState,
+    ArtifactState,
     KeyTypes,
     ResourceUsage,
     UserRole,
@@ -23,10 +24,12 @@ import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
 import { WideLogger } from '../helper/wide-logger';
+import { ActionCancellationService } from './action-cancellation.service';
 import { ActionErrorHintService } from './action-error-hint.service';
 import { ArtifactService } from './artifact.service';
 import { ContainerLifecycleService } from './container-lifecycle.service';
 import { ContainerStatsService } from './container-stats.service';
+import { DockerDaemon } from './docker-daemon.service';
 import { LogIngestionService } from './log-ingestion.service';
 
 @Injectable()
@@ -47,6 +50,8 @@ export class ActionManagerService implements OnModuleInit {
         private readonly logIngestionService: LogIngestionService,
         private readonly artifactService: ArtifactService,
         private readonly containerStatsService: ContainerStatsService,
+        private readonly dockerDaemon: DockerDaemon,
+        private readonly cancellationService: ActionCancellationService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -165,6 +170,17 @@ export class ActionManagerService implements OnModuleInit {
 
     @tracing('processing_action')
     async processAction(action: Readonly<ActionEntity>): Promise<boolean> {
+        this.cancellationService.registerAction(action.uuid);
+        try {
+            return await this.executeProcessAction(action);
+        } finally {
+            this.cancellationService.cleanup(action.uuid);
+        }
+    }
+
+    private async executeProcessAction(
+        action: Readonly<ActionEntity>,
+    ): Promise<boolean> {
         const wideLog = new WideLogger('action_processed', {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             action_uuid: action.uuid,
@@ -208,6 +224,19 @@ export class ActionManagerService implements OnModuleInit {
             wideLog.recordError(error);
             wideLog.flush('error');
             throw error;
+        }
+
+        if (this.cancellationService.isCancelled(action.uuid)) {
+            logger.info(`Action ${action.uuid} was cancelled before starting`);
+            await this.actionRepository.update(
+                { uuid: action.uuid },
+                {
+                    state: ActionState.CANCELLED,
+                    state_cause: 'Action cancelled by user',
+                },
+            );
+            this.cancellationService.cleanup(action.uuid);
+            return true;
         }
 
         // set state to 'STARTING'
@@ -257,6 +286,21 @@ export class ActionManagerService implements OnModuleInit {
                     );
                 },
             );
+
+            this.cancellationService.registerContainer(action.uuid, container);
+
+            if (this.cancellationService.isCancelled(action.uuid)) {
+                logger.info(
+                    `Action ${action.uuid} was cancelled during container start. Killing container...`,
+                );
+                try {
+                    await container.kill();
+                } catch (error) {
+                    logger.error(
+                        `Failed to kill container ${container.id} for action ${action.uuid}: ${String(error)}`,
+                    );
+                }
+            }
 
             wideLog.add({
                 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -362,10 +406,12 @@ export class ActionManagerService implements OnModuleInit {
                 relations: ['worker', 'template'],
             });
 
-            await this.actionRepository.update(
-                { uuid: action.uuid },
-                { state: ActionState.STOPPING },
-            );
+            if (!this.cancellationService.isCancelled(action.uuid)) {
+                await this.actionRepository.update(
+                    { uuid: action.uuid },
+                    { state: ActionState.STOPPING },
+                );
+            }
 
             this.containerLifecycleService.removeContainer(container.id, true);
             await this.setActionState(container, action, wideLog);
@@ -416,24 +462,42 @@ export class ActionManagerService implements OnModuleInit {
                 throw new Error('Template is undefined');
             }
 
-            // Delegate artifact upload to ArtifactService
-            const {
-                artifactSize,
-                artifactFiles,
-                containerLimits: artifactContainerLimits,
-            } = await this.artifactService.uploadArtifacts(
-                action.uuid,
-                this.currentInstanceId,
-            );
+            if (this.cancellationService.isCancelled(action.uuid)) {
+                logger.info(
+                    `Action ${action.uuid} was cancelled, skipping artifact upload and cleaning volume`,
+                );
+                await this.dockerDaemon
+                    .removeArtifactVolume(this.currentInstanceId, action.uuid)
+                    .catch((error: unknown) => {
+                        logger.warn(
+                            `Failed to clean up artifact volume: ${String(error)}`,
+                        );
+                    });
+                await this.actionRepository.update(
+                    { uuid: action.uuid },
+                    { artifacts: ArtifactState.ERROR },
+                );
+                this.cancellationService.cleanup(action.uuid);
+            } else {
+                // Delegate artifact upload to ArtifactService
+                const {
+                    artifactSize,
+                    artifactFiles,
+                    containerLimits: artifactContainerLimits,
+                } = await this.artifactService.uploadArtifacts(
+                    action.uuid,
+                    this.currentInstanceId,
+                );
 
-            wideLog.add({
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_size: artifactSize,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_files: artifactFiles?.length,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_memory_limit: artifactContainerLimits.memory_limit,
-            });
+                wideLog.add({
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    artifact_size: artifactSize,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    artifact_files: artifactFiles?.length,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    artifact_memory_limit: artifactContainerLimits.memory_limit,
+                });
+            }
 
             wideLog.flush();
 
@@ -442,19 +506,33 @@ export class ActionManagerService implements OnModuleInit {
             wideLog.recordError(error);
             wideLog.flush('error');
 
-            await this.actionRepository.update(
-                { uuid: action.uuid },
-                {
-                    state: ActionState.FAILED,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    state_cause:
-                        error instanceof Error ? error.message : String(error),
-                },
-            );
-            // Trigger hint assessment asynchronously
-            void this.actionErrorHintService.assess(action.uuid);
+            if (this.cancellationService.isCancelled(action.uuid)) {
+                await this.actionRepository.update(
+                    { uuid: action.uuid },
+                    {
+                        state: ActionState.CANCELLED,
+                        state_cause: 'Action cancelled by user',
+                    },
+                );
+                this.cancellationService.cleanup(action.uuid);
+            } else {
+                await this.actionRepository.update(
+                    { uuid: action.uuid },
+                    {
+                        state: ActionState.FAILED,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        state_cause:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+                // Trigger hint assessment asynchronously
+                void this.actionErrorHintService.assess(action.uuid);
+            }
             throw error;
         } finally {
+            this.cancellationService.unregisterContainer(action.uuid);
             await apikey[Symbol.asyncDispose]();
         }
     }
@@ -533,51 +611,59 @@ export class ActionManagerService implements OnModuleInit {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         let state_cause: string;
 
-        switch (exitCode) {
-            case 125: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause =
-                    'Container failed to run. Docker run command failed.';
-                break;
-            }
-            case 126: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause = 'Command cannot be invoked (Permission denied?).';
-                break;
-            }
-            case 127: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause = 'Command not found.';
-                break;
-            }
-            case 139: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause =
-                    'Container crashed (SIGSEGV). Invalid memory access.';
-                break;
-            }
-            case 143: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause =
-                    'Container stopped (SIGTERM). Time limit approached.';
-                break;
-            }
-            case 137: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause =
-                    'Container killed (SIGKILL). Exceeded memory or CPU limit.';
-                break;
-            }
-            default: {
-                state_cause = `Container exited with code ${exitCode.toString()}`;
-                state = exitCode === 0 ? ActionState.DONE : ActionState.FAILED;
-                exit_code = exitCode;
+        if (this.cancellationService.isCancelled(action.uuid)) {
+            state = ActionState.CANCELLED;
+            exit_code = exitCode;
+            state_cause = 'Action cancelled by user';
+        } else {
+            switch (exitCode) {
+                case 125: {
+                    state = ActionState.FAILED;
+                    exit_code = exitCode;
+                    state_cause =
+                        'Container failed to run. Docker run command failed.';
+                    break;
+                }
+                case 126: {
+                    state = ActionState.FAILED;
+                    exit_code = exitCode;
+                    state_cause =
+                        'Command cannot be invoked (Permission denied?).';
+                    break;
+                }
+                case 127: {
+                    state = ActionState.FAILED;
+                    exit_code = exitCode;
+                    state_cause = 'Command not found.';
+                    break;
+                }
+                case 139: {
+                    state = ActionState.FAILED;
+                    exit_code = exitCode;
+                    state_cause =
+                        'Container crashed (SIGSEGV). Invalid memory access.';
+                    break;
+                }
+                case 143: {
+                    state = ActionState.FAILED;
+                    exit_code = exitCode;
+                    state_cause =
+                        'Container stopped (SIGTERM). Time limit approached.';
+                    break;
+                }
+                case 137: {
+                    state = ActionState.FAILED;
+                    exit_code = exitCode;
+                    state_cause =
+                        'Container killed (SIGKILL). Exceeded memory or CPU limit.';
+                    break;
+                }
+                default: {
+                    state_cause = `Container exited with code ${exitCode.toString()}`;
+                    state =
+                        exitCode === 0 ? ActionState.DONE : ActionState.FAILED;
+                    exit_code = exitCode;
+                }
             }
         }
 

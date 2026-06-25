@@ -97,6 +97,7 @@ export enum ActionState {
     DONE = 'DONE',
     FAILED = 'FAILED',
     UNPROCESSABLE = 'UNPROCESSABLE',
+    CANCELLED = 'CANCELLED',
 }
 
 export enum KeyTypes {

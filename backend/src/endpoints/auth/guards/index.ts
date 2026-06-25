@@ -24,6 +24,7 @@ export { FileAccessGuard, MoveFilesGuard } from './file.guards';
 // Action guards
 export {
     CanModifyTriggerGuard,
+    CancelActionGuard,
     CreateActionGuard,
     CreateActionsGuard,
     DeleteActionGuard,

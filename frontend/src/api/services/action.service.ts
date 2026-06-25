@@ -63,6 +63,10 @@ export const ActionService = {
         await axios.delete(`/actions/${uuid}`);
     },
 
+    async cancel(uuid: string): Promise<void> {
+        await axios.post(`/actions/${uuid}/cancel`);
+    },
+
     async createTemplate(
         payload: CreateTemplateDto,
     ): Promise<ActionTemplateDto> {

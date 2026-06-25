@@ -534,6 +534,12 @@ def delete_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None
     kleinkram.api.routes._delete_execution(client, execution_id)
 
 
+def cancel_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None:
+    if not is_valid_uuid4(str(execution_id)):
+        raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
+    kleinkram.api.routes._cancel_execution(client, execution_id)
+
+
 def delete_trigger(*, client: AuthenticatedClient, trigger_uuid: UUID) -> None:
     if not is_valid_uuid4(str(trigger_uuid)):
         raise kleinkram.errors.TriggerValidationError("Invalid UUID")

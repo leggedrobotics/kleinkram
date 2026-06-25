@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import {
     AdminOnlyGuard,
+    CancelActionGuard,
     CanEditGroupByGroupUuid,
     CanModifyTriggerGuard,
     CanReadManyMissionsGuard,
@@ -297,6 +298,19 @@ export function CanDeleteAction() {
             type: ForbiddenException,
             description:
                 'User does not have Delete permissions on the specified project.',
+        }),
+    );
+}
+
+export function CanCancelAction() {
+    return applyDecorators(
+        SetMetadata('CanCancelAction', true),
+        UseGuards(CancelActionGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have Cancel permissions on the specified project.',
         }),
     );
 }

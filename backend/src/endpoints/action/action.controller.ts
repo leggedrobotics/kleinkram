@@ -18,6 +18,7 @@ import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
+    CanCancelAction,
     CanCreateAction,
     CanCreateActions,
     CanDeleteAction,
@@ -103,6 +104,17 @@ export class ActionsController {
         @ParameterUuid('uuid') uuid: string,
     ): Promise<SuccessResponseDto> {
         await this.actionService.delete(uuid);
+        return { success: true };
+    }
+
+    @Post(':uuid/cancel')
+    @CanCancelAction()
+    @ApiOperation({ summary: 'Cancel a running action' })
+    @OutputDto(SuccessResponseDto)
+    async cancel(
+        @ParameterUuid('uuid') uuid: string,
+    ): Promise<SuccessResponseDto> {
+        await this.actionService.cancel(uuid);
         return { success: true };
     }
 }
