@@ -433,4 +433,145 @@ describe('Verify tags/metadata type generation', () => {
         // Should return a conflict or bad request status
         expect(response.status).toBeGreaterThanOrEqual(400);
     });
+
+    test('if metadata values are successfully updated on second POST', async () => {
+        interface TestMission {
+            tags: {
+                type: {
+                    uuid: string;
+                };
+                value: unknown;
+            }[];
+        }
+
+        const { user } = await generateAndFetchDatabaseUser('internal', 'user');
+
+        const tagTypeUuid = await createMetadataUsingPost(
+            { type: DataType.STRING, name: 'update_test_tag' },
+            user,
+        );
+
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'update_test_project',
+                description: 'Test project',
+            },
+            user,
+        );
+
+        const missionUuid = await createMissionUsingPost(
+            {
+                name: 'update_test_mission',
+                projectUUID: projectUuid,
+                tags: {},
+                ignoreTags: true,
+            },
+            user,
+        );
+
+        // Add tag value first time (succeeds)
+        const headers = new HeaderCreator(user);
+        headers.addHeader('Content-Type', 'application/json');
+        const response1 = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/metadata`,
+            {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    metadata: { [tagTypeUuid]: 'original_value' },
+                }),
+            },
+        );
+        expect(response1.status).toBeLessThan(300);
+
+        // Verify value in DB
+        const tagRepo = database.getRepository(MetadataEntity);
+        let tagValue = await tagRepo.findOneOrFail({
+            where: {
+                mission: { uuid: missionUuid },
+                tagType: { uuid: tagTypeUuid },
+            },
+        });
+        expect(tagValue.value_string).toBe('original_value');
+
+        // Verify value via GET API
+        let getResponse = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}`,
+            {
+                method: 'GET',
+                headers: headers.getHeaders(),
+            },
+        );
+        expect(getResponse.status).toBe(200);
+        let missionData = (await getResponse.json()) as TestMission;
+        expect(
+            missionData.tags.find((t) => t.type.uuid === tagTypeUuid)?.value,
+        ).toBe('original_value');
+
+        // Update tag value second time (succeeds)
+        const response2 = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/metadata`,
+            {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    metadata: { [tagTypeUuid]: 'updated_value' },
+                }),
+            },
+        );
+        expect(response2.status).toBeLessThan(300);
+
+        // Verify updated value in DB
+        tagValue = await tagRepo.findOneOrFail({
+            where: {
+                mission: { uuid: missionUuid },
+                tagType: { uuid: tagTypeUuid },
+            },
+        });
+        expect(tagValue.value_string).toBe('updated_value');
+
+        // Verify updated value via GET API
+        getResponse = await fetch(`${DEFAULT_URL}/missions/${missionUuid}`, {
+            method: 'GET',
+            headers: headers.getHeaders(),
+        });
+        expect(getResponse.status).toBe(200);
+        missionData = (await getResponse.json()) as TestMission;
+        expect(
+            missionData.tags.find((t) => t.type.uuid === tagTypeUuid)?.value,
+        ).toBe('updated_value');
+
+        // Post empty metadata - should delete the tag
+        const response3 = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/metadata`,
+            {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    metadata: {},
+                }),
+            },
+        );
+        expect(response3.status).toBeLessThan(300);
+
+        // Verify it is deleted from DB
+        const deletedTag = await tagRepo.findOne({
+            where: {
+                mission: { uuid: missionUuid },
+                tagType: { uuid: tagTypeUuid },
+            },
+        });
+        expect(deletedTag).toBeNull();
+
+        // Verify it is deleted in GET API
+        getResponse = await fetch(`${DEFAULT_URL}/missions/${missionUuid}`, {
+            method: 'GET',
+            headers: headers.getHeaders(),
+        });
+        expect(getResponse.status).toBe(200);
+        missionData = (await getResponse.json()) as TestMission;
+        expect(
+            missionData.tags.find((t) => t.type.uuid === tagTypeUuid),
+        ).toBeUndefined();
+    });
 });

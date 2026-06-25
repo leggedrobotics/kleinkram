@@ -1,4 +1,8 @@
-import { AccessGroupEntity, ApiKeyEntity } from '@kleinkram/backend-common';
+import {
+    AccessGroupEntity,
+    ApiKeyEntity,
+    CategoryEntity,
+} from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
@@ -12,6 +16,7 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import {
     AccessGroupDto,
     ApiKeyMetadataDto,
+    CategoryDto,
     CurrentAPIUserDto,
     FileDto,
     FileWithTopicDto,
@@ -272,6 +277,12 @@ export const apiKeyEntityToMetadataDto = (
     apiKey: ApiKeyEntity,
 ): ApiKeyMetadataDto => {
     return plainToInstance(ApiKeyMetadataDto, apiKey, {
+        excludeExtraneousValues: true,
+    });
+};
+
+export const categoryEntityToDto = (category: CategoryEntity): CategoryDto => {
+    return plainToInstance(CategoryDto, category, {
         excludeExtraneousValues: true,
     });
 };

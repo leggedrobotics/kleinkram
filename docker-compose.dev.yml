@@ -35,6 +35,7 @@ services:
         depends_on:
             - database
             - redis
+            - loki
 
     database:
         image: postgres:17

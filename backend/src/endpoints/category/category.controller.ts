@@ -1,4 +1,5 @@
 import { ApiCreatedResponse, ApiOkResponse } from '@/decorators';
+import { categoryEntityToDto } from '@/serialization';
 import { CategoryService } from '@/services/category.service';
 import { QueryOptionalString, QueryUUID } from '@/validation/query-decorators';
 import {
@@ -43,8 +44,13 @@ export class CategoryController {
         @BodyString('name', 'Category Name') name: string,
         @AddUser() user: AuthHeader,
         @BodyUUID('projectUUID', 'Project UUID') projectUUID: string,
-    ) {
-        return this.categoryService.create(name, projectUUID, user);
+    ): Promise<CategoryDto> {
+        const category = await this.categoryService.create(
+            name,
+            projectUUID,
+            user,
+        );
+        return categoryEntityToDto(category);
     }
 
     // this should be moved to the file controller

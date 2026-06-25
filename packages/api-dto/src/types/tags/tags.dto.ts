@@ -3,7 +3,7 @@ import { Paginated } from '@api-dto/pagination';
 import { DataType } from '@kleinkram/shared';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
 import {
     IsDate,
     IsDefined,
@@ -92,7 +92,12 @@ export class TagDto {
     @ValidateNested()
     @Type(() => TagTypeDto)
     @Expose()
-    @Transform(({ value, obj }) => obj.tagType ?? value)
+    @Transform(({ value, obj }) => {
+        const t = (obj.tagType ?? value) as object | undefined;
+        return t
+            ? plainToInstance(TagTypeDto, t, { excludeExtraneousValues: true })
+            : undefined;
+    })
     type!: TagTypeDto;
 
     @ApiProperty()

@@ -5,7 +5,7 @@ import { UserDto } from '@api-dto/user/user.dto';
 import { AccessGroupType } from '@kleinkram/shared';
 import { IsNotUndefined } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
 import {
     IsBoolean,
     IsDate,
@@ -68,7 +68,17 @@ export class AccessGroupDto {
     @ValidateNested({ each: true })
     @Type(() => ProjectWithAccessRightsDto)
     @Expose()
-    @Transform(({ obj }) => obj.projectAccesses ?? [])
+    @Transform(({ value, obj }) => {
+        const accesses = (obj.projectAccesses ??
+            obj.project_accesses ??
+            value ??
+            []) as object[];
+        return accesses.map((access) =>
+            plainToInstance(ProjectWithAccessRightsDto, access, {
+                excludeExtraneousValues: true,
+            }),
+        );
+    })
     projectAccesses!: ProjectWithAccessRightsDto[];
 
     @ApiProperty({ required: false })

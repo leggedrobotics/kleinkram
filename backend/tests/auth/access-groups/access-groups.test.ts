@@ -1563,4 +1563,54 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         );
         expect(unrelatedDemoteResponse.status).toBe(403);
     });
+
+    test('if adding a duplicate user to an access group throws 409 ConflictException', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: targetUser } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'duplicate_member_test_group' },
+            creator,
+            [creator],
+        );
+
+        const headers = new HeaderCreator(creator);
+        headers.addHeader('Content-Type', 'application/json');
+
+        // Add user first time (succeeds)
+        const response1 = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
+            {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    userUuid: targetUser.uuid,
+                }),
+            },
+        );
+        expect(response1.status).toBe(201);
+
+        // Add user second time (fails with 409 Conflict)
+        const response2 = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/users`,
+            {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    userUuid: targetUser.uuid,
+                }),
+            },
+        );
+        expect(response2.status).toBe(409);
+        const data = (await response2.json()) as { message: string };
+        expect(data.message).toBe(
+            'User is already a member of this access group',
+        );
+    });
 });

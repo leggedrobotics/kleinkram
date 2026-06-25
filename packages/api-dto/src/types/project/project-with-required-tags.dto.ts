@@ -2,7 +2,7 @@
 import { ProjectWithCreator } from '@api-dto/project/project-with-creator.dto';
 import { TagTypeDto } from '@api-dto/tags/tags.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
 import { IsNumber, ValidateNested } from 'class-validator';
 
 @Expose()
@@ -30,6 +30,11 @@ export class ProjectWithRequiredTagsDto extends ProjectWithCreator {
     @ValidateNested()
     @Type(() => TagTypeDto)
     @Expose()
-    @Transform(({ obj }) => obj.requiredTags ?? [])
+    @Transform(({ value, obj }) => {
+        const tags = (obj.requiredTags ?? value ?? []) as object[];
+        return tags.map((tag) =>
+            plainToInstance(TagTypeDto, tag, { excludeExtraneousValues: true }),
+        );
+    })
     requiredTags!: TagTypeDto[];
 }

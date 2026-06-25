@@ -94,6 +94,8 @@ services:
                 condition: service_started
             base:
                 condition: service_started
+            loki:
+                condition: service_started
 
         volumes:
             - ./backend:/app/backend
@@ -344,6 +346,7 @@ services:
             - database
             - redis
             - base
+            - loki
 
     prometheus:
         image: prom/prometheus

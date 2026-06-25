@@ -261,10 +261,44 @@ export class MetadataService {
         missionUUID: string,
         tags: Record<string, string>,
     ): Promise<AddTagsDto> {
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+            relations: ['tags', 'tags.tagType'],
+        });
+
+        if (mission.tags === undefined) {
+            throw new Error('Mission tags are undefined');
+        }
+
+        // Filter out empty values and identify tags to keep/upsert
+        const tagsToUpsert = Object.entries(tags).filter(([_, value]) => {
+            const valueToCheck = value as unknown;
+            return (
+                valueToCheck !== '' &&
+                valueToCheck !== null &&
+                valueToCheck !== undefined
+            );
+        });
+        const tagTypeUUIDsToKeep = new Set(tagsToUpsert.map(([uuid]) => uuid));
+
+        // Delete any existing tags that are not in the list of tags to keep
+        const tagsToDelete = mission.tags.filter(
+            (tag) => !tagTypeUUIDsToKeep.has(tag.tagType?.uuid ?? ''),
+        );
+        if (tagsToDelete.length > 0) {
+            await this.tagRepository.remove(tagsToDelete);
+        }
+
         await Promise.all(
-            Object.entries(tags).map(([tagTypeUUID, value]) =>
-                this.addTagType(missionUUID, tagTypeUUID, value),
-            ),
+            tagsToUpsert.map(async ([tagTypeUUID, value]) => {
+                const tag = mission.tags?.find(
+                    (_tag) => _tag.tagType?.uuid === tagTypeUUID,
+                );
+                if (tag) {
+                    return this.updateTagType(missionUUID, tagTypeUUID, value);
+                }
+                return this.addTagType(missionUUID, tagTypeUUID, value);
+            }),
         );
         return { success: true };
     }

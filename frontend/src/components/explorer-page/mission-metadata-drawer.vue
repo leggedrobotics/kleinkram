@@ -63,17 +63,13 @@
                             class="bg-grey-1 rounded-borders q-pa-sm text-body2 cursor-pointer inline-block value-box"
                             @click="() => openLink(tag)"
                         >
-                            {{ tag.valueAsString || tag.value }}
+                            {{ tag.value }}
                         </div>
                         <div
                             v-else
                             class="bg-grey-1 rounded-borders q-pa-sm text-body2 inline-block value-box"
                         >
-                            {{
-                                tag.type.datatype === DataType.BOOLEAN
-                                    ? tag.value
-                                    : tag.valueAsString || tag.value
-                            }}
+                            {{ tag.value }}
                         </div>
 
                         <div
@@ -168,17 +164,38 @@ const openTagsDialog = (): void => {
 
 const openLink = (tag: TagDto): void => {
     if (tag.type.datatype === DataType.LINK) {
-        window.open(tag.valueAsString, '_blank');
+        const rawValue = tag.value as
+            | string
+            | Date
+            | number
+            | boolean
+            | null
+            | undefined;
+        const url =
+            rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
+        if (url) {
+            window.open(url, '_blank');
+        }
     }
 };
 
 const copiedStates = ref<Record<string, boolean>>({});
 
 const copyTagValue = async (tag: TagDto): Promise<void> => {
-    const value =
-        tag.type.datatype === DataType.BOOLEAN
-            ? tag.value
-            : tag.valueAsString || tag.value;
+    let value: unknown;
+    if (tag.type.datatype === DataType.BOOLEAN) {
+        value = tag.value;
+    } else {
+        const rawValue = tag.value as
+            | string
+            | Date
+            | number
+            | boolean
+            | null
+            | undefined;
+        value =
+            rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
+    }
     try {
         await copyToClipboard(String(value));
         copiedStates.value[tag.uuid] = true;

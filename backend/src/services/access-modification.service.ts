@@ -185,6 +185,23 @@ export class AccessModificationService {
                     },
                 );
 
+                const existingMembership =
+                    await transactionalEntityManager.findOne(
+                        GroupMembershipEntity,
+                        {
+                            where: {
+                                accessGroup: { uuid: accessGroupUUID },
+                                user: { uuid: userUUID },
+                            },
+                        },
+                    );
+
+                if (existingMembership) {
+                    throw new ConflictException(
+                        'User is already a member of this access group',
+                    );
+                }
+
                 // @ts-ignore
                 const agu = transactionalEntityManager.create(
                     GroupMembershipEntity,
