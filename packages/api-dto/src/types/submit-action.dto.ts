@@ -1,5 +1,5 @@
 import { ActionState } from '@kleinkram/shared';
-import { IsSkip } from '@kleinkram/validation';
+import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
@@ -31,7 +31,7 @@ export class ActionQuery {
 
     @ApiProperty()
     @IsOptional()
-    @IsSkip()
+    @IsTake()
     @Type(() => Number)
     take?: number | undefined;
 
