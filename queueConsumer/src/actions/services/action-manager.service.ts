@@ -170,6 +170,17 @@ export class ActionManagerService implements OnModuleInit {
 
     @tracing('processing_action')
     async processAction(action: Readonly<ActionEntity>): Promise<boolean> {
+        this.cancellationService.registerAction(action.uuid);
+        try {
+            return await this.executeProcessAction(action);
+        } finally {
+            this.cancellationService.cleanup(action.uuid);
+        }
+    }
+
+    private async executeProcessAction(
+        action: Readonly<ActionEntity>,
+    ): Promise<boolean> {
         const wideLog = new WideLogger('action_processed', {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             action_uuid: action.uuid,

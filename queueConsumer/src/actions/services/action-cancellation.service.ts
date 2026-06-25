@@ -11,6 +11,7 @@ export class ActionCancellationService
     private redisSubscriber!: Redis;
     private activeContainers = new Map<string, Dockerode.Container>();
     private cancelledActions = new Set<string>();
+    private activeActions = new Set<string>();
 
     async onModuleInit(): Promise<void> {
         this.redisSubscriber = new Redis(redis);
@@ -28,6 +29,13 @@ export class ActionCancellationService
 
     private async handleActionCancellation(actionUuid: string): Promise<void> {
         logger.info(`Received cancellation event for action ${actionUuid}`);
+        if (!this.activeActions.has(actionUuid)) {
+            logger.debug(
+                `Action ${actionUuid} is not active on this worker, ignoring cancellation.`,
+            );
+            return;
+        }
+
         const container = this.activeContainers.get(actionUuid);
         if (container) {
             logger.info(
@@ -44,6 +52,10 @@ export class ActionCancellationService
         } else {
             this.cancelledActions.add(actionUuid);
         }
+    }
+
+    registerAction(actionUuid: string): void {
+        this.activeActions.add(actionUuid);
     }
 
     registerContainer(
@@ -64,5 +76,6 @@ export class ActionCancellationService
     cleanup(actionUuid: string): void {
         this.cancelledActions.delete(actionUuid);
         this.activeContainers.delete(actionUuid);
+        this.activeActions.delete(actionUuid);
     }
 }

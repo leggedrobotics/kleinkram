@@ -52,21 +52,42 @@ pnpm run eslint-full:quiet
 
 ### Testing
 
-**Backend Tests:**
+### Backend Tests
+
+To run the NestJS API integration and unit tests, ensure the testing stack is running first, then execute the tests.
 
 ```bash
-# Run all tests
-pnpm test
+# Clear any previous test volumes and containers
+docker compose -f docker-compose.testing.yml down -v
 
-# Run specific test file
-npx jest tests/actions/action-file-events.test.ts --runInBand --detectOpenHandles --forceExit
+# Start the testing docker containers (api-server, database, loki, seaweedfs, fake-oauth, etc.)
+docker compose -f docker-compose.testing.yml up -d
+
+# Run all backend tests
+pnpm --filter "./backend" test
+
+# Run a specific backend test file
+pnpm --filter "./backend" test -- tests/actions/action-crud.test.ts
 ```
 
-**CLI/Python Tests:**
+### CLI / Python Tests
+
+The CLI integration/E2E tests require a fully running stack and a seeded database.
 
 ```bash
-# Run pytest (ensure virtualenv is active)
-pytest
+# 1. Start the testing docker stack if it is not already running
+docker compose -f docker-compose.testing.yml up -d
+
+# 2. Seed the database (since SEED=false in docker-compose.testing.yml)
+npx dotenv-cli -e .env -- pnpm --filter "@kleinkram/backend-common" seed:run
+
+# 3. Authenticate the CLI with fake OAuth
+source cli/.venv/bin/activate
+klein endpoint local
+klein login --oauth-provider fake-oauth --user 1
+
+# 4. Run the Python E2E/integration tests
+pytest cli/tests/ -v --tb=short
 ```
 
 > [!NOTE]

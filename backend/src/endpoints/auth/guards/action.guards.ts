@@ -162,7 +162,14 @@ export abstract class BaseActionModificationGuard extends BaseGuard {
             );
         }
 
-        return { user, action };
+        return {
+            user,
+            action: action as ActionEntity & {
+                mission: NonNullable<ActionEntity['mission']>;
+                creator: NonNullable<ActionEntity['creator']>;
+                template?: NonNullable<ActionEntity['template']>;
+            },
+        };
     }
 }
 
