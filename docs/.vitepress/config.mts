@@ -29,6 +29,9 @@ export default withMermaid({
         optimizeDeps: {
             include: ['mermaid'],
         },
+        build: {
+            target: 'es2022',
+        },
     },
     head: [
         [
