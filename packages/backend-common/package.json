@@ -6,7 +6,7 @@
     "license": "MIT",
     "scripts": {
         "build": "tsc -b && tsc-alias -p tsconfig.json",
-        "seed:run": "tsx src/scripts/run-seed.ts"
+        "seed:run": "ts-node --swc --project tsconfig.json -r tsconfig-paths/register src/scripts/run-seed.ts"
     },
     "exports": {
         ".": {
