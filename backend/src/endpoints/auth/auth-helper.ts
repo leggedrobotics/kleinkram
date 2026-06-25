@@ -92,8 +92,10 @@ export const addAccessConstraintsToProjectQuery = (
         }),
     );
 
-    query.setParameters(userIsAdminSubQuery.getParameters());
-    query.setParameters(projectUUIDQuery.getParameters());
+    query.setParameters({
+        ...userIsAdminSubQuery.getParameters(),
+        ...projectUUIDQuery.getParameters(),
+    });
 
     return query;
 };
@@ -119,9 +121,11 @@ export const addAccessConstraintsToMissionQuery = (
         }),
     );
 
-    query.setParameters(userIsAdminSubQuery.getParameters());
-    query.setParameters(missionUUIDQuery.getParameters());
-    query.setParameters(projectUUIDQuery.getParameters());
+    query.setParameters({
+        ...userIsAdminSubQuery.getParameters(),
+        ...missionUUIDQuery.getParameters(),
+        ...projectUUIDQuery.getParameters(),
+    });
 
     return query;
 };
@@ -147,20 +151,23 @@ export const addAccessConstraintsToFileQuery = (
         }),
     );
 
-    query.setParameters(userIsAdminSubQuery.getParameters());
-    query.setParameters(missionUUIDQuery.getParameters());
-    query.setParameters(projectUUIDQuery.getParameters());
+    query.setParameters({
+        ...userIsAdminSubQuery.getParameters(),
+        ...missionUUIDQuery.getParameters(),
+        ...projectUUIDQuery.getParameters(),
+    });
 
     return query;
 };
 
-// TODO: deprecate this in favor of the above functions
 export function addAccessConstraints(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     qb: SelectQueryBuilder<any>,
     userUUID: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): SelectQueryBuilder<any> {
+    qb.setParameter('userUUID', userUUID);
+
     // Add project access join
     qb.leftJoin(
         (subQuery) => {

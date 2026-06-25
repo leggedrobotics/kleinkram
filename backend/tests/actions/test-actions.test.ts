@@ -386,6 +386,32 @@ describe('Verify Action (Templates & Runs)', () => {
         expect(json).toHaveProperty('count');
     });
 
+    test('if a user can list actions with sortBy, sortDirection, and templateName', async () => {
+        const headers = new HeaderCreator(globalThis.creator as UserEntity);
+        headers.addHeader('Content-Type', 'application/json');
+        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
+            method: 'POST',
+            headers: headers.getHeaders(),
+            body: JSON.stringify({
+                missionUUID: globalThis.missionUuid,
+                templateUUID: globalThis.templateUuid,
+            }),
+        });
+        expect(submitResponse.status).toBe(201);
+
+        const response = await fetch(
+            `${DEFAULT_URL}/actions?take=100&skip=0&sortBy=createdAt&sortDirection=DESC&templateName=Run`,
+            {
+                method: 'GET',
+                headers: new HeaderCreator(
+                    globalThis.creator as UserEntity,
+                ).getHeaders(),
+            },
+        );
+        await response.json();
+        expect(response.status).toBe(200);
+    });
+
     test('if a user with DELETE rights can delete an action run', async () => {
         // 1. Submit Action
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument

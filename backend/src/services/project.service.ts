@@ -37,6 +37,7 @@ import {
     CategoryEntity,
     MissionEntity,
     ProjectAccessEntity,
+    ProjectAccessViewEntity,
     ProjectEntity,
     TagTypeEntity,
     UserEntity,
@@ -56,6 +57,7 @@ const FIND_MANY_SORT_KEYS = {
     createdAt: 'project.createdAt',
     updatedAt: 'project.updatedAt',
     creator: 'creator.name',
+    rights: 'projectAccessView.rights',
 };
 
 @Injectable()
@@ -136,6 +138,15 @@ export class ProjectService {
             projectPatterns,
             exactMatch,
         );
+
+        if (sortBy === 'rights') {
+            query = query.leftJoinAndSelect(
+                ProjectAccessViewEntity,
+                'projectAccessView',
+                'projectAccessView.projectUuid = project.uuid AND projectAccessView.userUuid = :userUuidForSort',
+                { userUuidForSort: userUuid },
+            );
+        }
 
         if (sortBy !== undefined) {
             query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);

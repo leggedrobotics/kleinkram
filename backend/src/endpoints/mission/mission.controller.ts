@@ -25,6 +25,7 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
     CanAddTag,
@@ -80,6 +81,8 @@ export class MissionController {
     @ApiOkResponse({
         description: 'Returns all missions',
         type: MissionsDto,
+        resolver: (request: Request) =>
+            request.query.minimal === 'true' ? MinimumMissionsDto : MissionsDto,
     })
     async getMany(
         @Query() query: MissionQueryDto,

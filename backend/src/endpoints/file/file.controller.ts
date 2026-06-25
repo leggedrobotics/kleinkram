@@ -165,22 +165,6 @@ export class FileController {
         return { url };
     }
 
-    // TODO: replace this with /file/:uuid
-    @Get(':uuid')
-    @CanReadFile()
-    @ApiOkResponse({
-        description: 'File',
-        type: FileWithTopicDto,
-    })
-    async getFileById(
-        @ParameterUID('uuid') uuid: string,
-    ): Promise<FileWithTopicDto> {
-        const file = await this.fileQueryService.findOne(uuid);
-        return plainToInstance(FileWithTopicDto, file, {
-            excludeExtraneousValues: true,
-        });
-    }
-
     @Put(':uuid')
     @CanWriteFile()
     @ApiOkResponse({
@@ -550,5 +534,20 @@ export class FileController {
     ): Promise<StopJobResponseDto> {
         await this.queueService.stopJob(queueUUID);
         return { success: true };
+    }
+
+    @Get(':uuid')
+    @CanReadFile()
+    @ApiOkResponse({
+        description: 'File',
+        type: FileWithTopicDto,
+    })
+    async getFileById(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<FileWithTopicDto> {
+        const file = await this.fileQueryService.findOne(uuid);
+        return plainToInstance(FileWithTopicDto, file, {
+            excludeExtraneousValues: true,
+        });
     }
 }

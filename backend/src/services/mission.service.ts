@@ -35,9 +35,11 @@ import { SortOrder } from '@kleinkram/api-dto';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 
 const FIND_MANY_SORT_KEYS = {
+    name: 'mission.name',
     missionName: 'mission.name',
     projectName: 'project.name',
-    creatorName: 'user.name',
+    creator: 'creator.name',
+    creatorName: 'creator.name',
     createdAt: 'mission.createdAt',
     updatedAt: 'mission.updatedAt',
 };
