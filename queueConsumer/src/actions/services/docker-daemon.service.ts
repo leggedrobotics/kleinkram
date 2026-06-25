@@ -208,7 +208,7 @@ export class DockerDaemon {
                 Memory: runLimits.memory_limit, // memory limit in bytes
                 NanoCpus: runLimits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
                 DiskQuota: runLimits.disk_quota,
-                NetworkMode,
+                NetworkMode: environment.DEV ? 'host' : NetworkMode,
                 LogConfig,
                 CapDrop,
                 SecurityOpt,
@@ -590,7 +590,7 @@ export class DockerDaemon {
                 Memory: containerOptions.limits.memory_limit, // memory limit in bytes
                 NanoCpus: containerOptions.limits.n_cpu * 1_000_000_000, // CPU limit in nano CPUs
                 DiskQuota: containerOptions.limits.disk_quota,
-                NetworkMode,
+                NetworkMode: environment.DEV ? 'host' : NetworkMode,
                 LogConfig,
                 CapDrop,
                 SecurityOpt,
