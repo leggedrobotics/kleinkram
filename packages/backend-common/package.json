@@ -6,7 +6,7 @@
     "license": "MIT",
     "scripts": {
         "build": "tsc -b && tsc-alias -p tsconfig.json",
-        "seed:run": "ts-node --project tsconfig.json -r tsconfig-paths/register src/scripts/run-seed.ts"
+        "seed:run": "tsx src/scripts/run-seed.ts"
     },
     "exports": {
         ".": {
@@ -37,8 +37,8 @@
         "@willsoto/nestjs-prometheus": "^6.0.2",
         "axios": "^1.13.2",
         "bull": "^4.16.4",
-        "ioredis": "^5.9.1",
         "fs-extra": "^11.3.2",
+        "ioredis": "^5.9.1",
         "jsonwebtoken": "^9.0.2",
         "minimatch": "^10.1.1",
         "pg": "^8.20.0",
@@ -58,6 +58,7 @@
         "ts-node": "^10.9.1",
         "tsc-alias": "^1.8.16",
         "tsconfig-paths": "^4.2.0",
+        "tsx": "^4.22.4",
         "typeorm": "^0.3.28",
         "typescript": "^5.9.3"
     }

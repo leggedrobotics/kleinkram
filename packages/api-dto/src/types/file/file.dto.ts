@@ -5,7 +5,7 @@ import { TopicDto } from '@api-dto/topic.dto';
 import { UserDto } from '@api-dto/user/user.dto';
 import { FileState, FileType } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
 import {
     IsBoolean,
     IsDate,
@@ -134,7 +134,9 @@ export class FileWithTopicDto extends FileDto {
         if (topics.length === 0 && obj.parent?.topics?.length) {
             topics = obj.parent.topics;
         }
-        return topics;
+        return plainToInstance(TopicDto, topics, {
+            excludeExtraneousValues: true,
+        });
     })
     topics!: TopicDto[];
 
