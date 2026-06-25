@@ -126,34 +126,7 @@ export class FileLifecycleService implements OnModuleInit {
             file.missionUuid &&
             file.missionUuid !== databaseFile.mission.uuid
         ) {
-            const newMissionUuid = file.missionUuid;
-
-            if (apiKey) {
-                if (newMissionUuid !== apiKey.mission.uuid) {
-                    throw new ForbiddenException(
-                        'API keys cannot move files to a different mission.',
-                    );
-                }
-                if (apiKey.rights < AccessGroupRights.CREATE) {
-                    throw new ForbiddenException(
-                        'API Key does not have CREATE permission on the destination mission.',
-                    );
-                }
-            } else if (actor) {
-                const hasCreateAccess =
-                    await this.missionGuardService.canAccessMission(
-                        actor,
-                        newMissionUuid,
-                        AccessGroupRights.CREATE,
-                    );
-                if (!hasCreateAccess) {
-                    throw new ForbiddenException(
-                        'User does not have CREATE permission on the destination mission.',
-                    );
-                }
-            } else {
-                throw new ForbiddenException('Unauthorized action.');
-            }
+            await this.checkMovePermission(file.missionUuid, actor, apiKey);
 
             oldMissionUuid = databaseFile.mission.uuid;
             const newMission = await this.missionRepository.findOneOrFail({
@@ -632,5 +605,38 @@ export class FileLifecycleService implements OnModuleInit {
         }
 
         return filesToFix.length;
+    }
+
+    private async checkMovePermission(
+        newMissionUuid: string,
+        actor?: UserEntity,
+        apiKey?: ApiKeyEntity,
+    ): Promise<void> {
+        if (apiKey) {
+            if (newMissionUuid !== apiKey.mission.uuid) {
+                throw new ForbiddenException(
+                    'API keys cannot move files to a different mission.',
+                );
+            }
+            if (apiKey.rights < AccessGroupRights.CREATE) {
+                throw new ForbiddenException(
+                    'API Key does not have CREATE permission on the destination mission.',
+                );
+            }
+        } else if (actor) {
+            const hasCreateAccess =
+                await this.missionGuardService.canAccessMission(
+                    actor,
+                    newMissionUuid,
+                    AccessGroupRights.CREATE,
+                );
+            if (!hasCreateAccess) {
+                throw new ForbiddenException(
+                    'User does not have CREATE permission on the destination mission.',
+                );
+            }
+        } else {
+            throw new ForbiddenException('Unauthorized action.');
+        }
     }
 }
