@@ -1,5 +1,7 @@
+import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { TriggerService } from '@/services/trigger.service';
 import { TemporaryFileAccessesDto, UpdateFile } from '@kleinkram/api-dto';
+import { ApiKeyEntity } from '@kleinkram/backend-common';
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
@@ -14,6 +16,7 @@ import {
     StorageCredentials,
 } from '@kleinkram/backend-common/modules/storage/types';
 import {
+    AccessGroupRights,
     FileEventType,
     FileOrigin,
     FileState,
@@ -23,6 +26,7 @@ import {
 import {
     BadRequestException,
     ConflictException,
+    ForbiddenException,
     Inject,
     Injectable,
     NotFoundException,
@@ -68,6 +72,7 @@ export class FileLifecycleService implements OnModuleInit {
         private readonly dataSource: DataSource,
         private readonly auditService: FileAuditService,
         private readonly triggerService: TriggerService,
+        private readonly missionGuardService: MissionGuardService,
     ) {}
 
     onModuleInit(): void {
@@ -81,6 +86,7 @@ export class FileLifecycleService implements OnModuleInit {
         file: UpdateFile,
         actor?: UserEntity,
         action?: ActionEntity,
+        apiKey?: ApiKeyEntity,
     ): Promise<FileEntity | null> {
         logger.debug(`Updating file with uuid: ${uuid}`);
 
@@ -120,6 +126,35 @@ export class FileLifecycleService implements OnModuleInit {
             file.missionUuid &&
             file.missionUuid !== databaseFile.mission.uuid
         ) {
+            const newMissionUuid = file.missionUuid;
+
+            if (apiKey) {
+                if (newMissionUuid !== apiKey.mission.uuid) {
+                    throw new ForbiddenException(
+                        'API keys cannot move files to a different mission.',
+                    );
+                }
+                if (apiKey.rights < AccessGroupRights.CREATE) {
+                    throw new ForbiddenException(
+                        'API Key does not have CREATE permission on the destination mission.',
+                    );
+                }
+            } else if (actor) {
+                const hasCreateAccess =
+                    await this.missionGuardService.canAccessMission(
+                        actor,
+                        newMissionUuid,
+                        AccessGroupRights.CREATE,
+                    );
+                if (!hasCreateAccess) {
+                    throw new ForbiddenException(
+                        'User does not have CREATE permission on the destination mission.',
+                    );
+                }
+            } else {
+                throw new ForbiddenException('Unauthorized action.');
+            }
+
             oldMissionUuid = databaseFile.mission.uuid;
             const newMission = await this.missionRepository.findOneOrFail({
                 where: { uuid: file.missionUuid },

@@ -8,6 +8,7 @@ import {
     ActionEntity,
     ActionTemplateEntity,
     ApiKeyEntity,
+    FileEntity,
     MissionEntity,
     ProjectEntity,
     UserEntity,
@@ -19,6 +20,7 @@ import {
     createMissionUsingPost,
     createProjectUsingPost,
     HeaderCreator,
+    uploadFile,
 } from '../utils/api-calls';
 import { clearAllData, database } from '../utils/database-utilities';
 
@@ -295,5 +297,159 @@ describe('Verify Action API Key Scope', () => {
         );
 
         expect(projectResponse.status).toBe(403); // Forbidden
+    });
+
+    test('if an action API key CANNOT move a file to another mission (even in the same project)', async () => {
+        // 1. Submit Action in the original mission
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        const headers = new HeaderCreator(globalThis.creator);
+        headers.addHeader('Content-Type', 'application/json');
+        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
+            method: 'POST',
+            headers: headers.getHeaders(),
+            body: JSON.stringify({
+                missionUUID: globalThis.missionUuid,
+                templateUUID: globalThis.templateUuid,
+            } as SubmitActionDto),
+        });
+        expect(submitResponse.status).toBe(201);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const { actionUUID: uuid } = await submitResponse.json();
+
+        // 2. Get API Key
+        const actionRepo = database.getRepository(ActionEntity);
+        const action = await actionRepo.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            where: { uuid },
+        });
+
+        const apiKeyRepo = database.getRepository(ApiKeyEntity);
+        const apiKeyEntity = apiKeyRepo.create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            key_type: KeyTypes.ACTION,
+            mission: { uuid: globalThis.missionUuid },
+            action: action,
+            rights: AccessGroupRights.WRITE,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            user: globalThis.creator,
+        });
+        await apiKeyRepo.save(apiKeyEntity);
+        const apiKey = apiKeyEntity.apikey;
+
+        // 3. Create another mission in the same project
+        const otherMissionUuid = await createMissionUsingPost(
+            {
+                name: 'other_mission_same_project',
+                projectUUID: globalThis.projectUuid,
+                tags: {},
+                ignoreTags: true,
+            },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            globalThis.creator,
+        );
+        // 4. Upload a file in the original mission using the helper (so it exists on S3)
+        await uploadFile(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            globalThis.creator,
+            'test.bag',
+            globalThis.missionUuid,
+        );
+        const fileRepo = database.getRepository(FileEntity);
+        const file = await fileRepo.findOneByOrFail({ filename: 'test.bag' });
+
+        // 5. Try to move file to the other mission using PUT /files/:uuid
+        const moveResponse = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
+            method: 'PUT',
+            headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'Content-Type': 'application/json',
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'x-api-key': apiKey,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'kleinkram-client-version': appVersion,
+            },
+            body: JSON.stringify({
+                uuid: file.uuid,
+                filename: 'test.bag',
+                date: file.date.toISOString(),
+                missionUuid: otherMissionUuid,
+            }),
+        });
+
+        expect(moveResponse.status).toBe(403); // Forbidden
+    });
+
+    test('if an action API key CAN update a file filename within its own mission', async () => {
+        // 1. Submit Action in the original mission
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        const headers = new HeaderCreator(globalThis.creator);
+        headers.addHeader('Content-Type', 'application/json');
+        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
+            method: 'POST',
+            headers: headers.getHeaders(),
+            body: JSON.stringify({
+                missionUUID: globalThis.missionUuid,
+                templateUUID: globalThis.templateUuid,
+            } as SubmitActionDto),
+        });
+        expect(submitResponse.status).toBe(201);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const { actionUUID: uuid } = await submitResponse.json();
+
+        // 2. Get API Key
+        const actionRepo = database.getRepository(ActionEntity);
+        const action = await actionRepo.findOneOrFail({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            where: { uuid },
+        });
+
+        const apiKeyRepo = database.getRepository(ApiKeyEntity);
+        const apiKeyEntity = apiKeyRepo.create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            key_type: KeyTypes.ACTION,
+            mission: { uuid: globalThis.missionUuid },
+            action: action,
+            rights: AccessGroupRights.WRITE,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            user: globalThis.creator,
+        });
+        await apiKeyRepo.save(apiKeyEntity);
+        const apiKey = apiKeyEntity.apikey;
+
+        // 3. Upload a file in the original mission using the helper (so it exists on S3)
+        await uploadFile(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            globalThis.creator,
+            'test.bag',
+            globalThis.missionUuid,
+        );
+        const fileRepo = database.getRepository(FileEntity);
+        const file = await fileRepo.findOneByOrFail({ filename: 'test.bag' });
+
+        // 4. Update file filename within the same mission using PUT /files/:uuid
+        const updateResponse = await fetch(
+            `${DEFAULT_URL}/files/${file.uuid}`,
+            {
+                method: 'PUT',
+                headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'Content-Type': 'application/json',
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'x-api-key': apiKey,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'kleinkram-client-version': appVersion,
+                },
+                body: JSON.stringify({
+                    uuid: file.uuid,
+                    filename: 'updated.bag',
+                    date: file.date.toISOString(),
+                    missionUuid: globalThis.missionUuid,
+                }),
+            },
+        );
+
+        expect(updateResponse.status).toBe(200);
+        const updatedFile = await fileRepo.findOneByOrFail({ uuid: file.uuid });
+        expect(updatedFile.filename).toBe('updated.bag');
     });
 });
