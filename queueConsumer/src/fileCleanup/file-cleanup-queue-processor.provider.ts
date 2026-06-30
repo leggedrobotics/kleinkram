@@ -12,7 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Redis } from 'ioredis';
 import crypto from 'node:crypto';
 import Redlock from 'redlock';
-import { IsNull, LessThanOrEqual, Not, Repository } from 'typeorm';
+import { In, IsNull, LessThanOrEqual, Not, Repository } from 'typeorm';
 import logger from '../logger';
 
 @Processor('file-cleanup')
@@ -147,6 +147,44 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         await this.queueRepository.save(queue);
                     }),
                 );
+
+                // Clean up canceled uploads older than 24 hours
+                const canceledUploads = await this.fileRepository.find({
+                    where: {
+                        state: FileState.CANCELED,
+                        updatedAt: LessThanOrEqual(
+                            new Date(Date.now() - 1000 * 60 * 60 * 24),
+                        ),
+                    },
+                });
+                if (canceledUploads.length > 0) {
+                    logger.debug(
+                        `Cleaning up ${String(canceledUploads.length)} canceled uploads`,
+                    );
+                    const canceledUuids = canceledUploads.map((f) => f.uuid);
+                    await this.queueRepository
+                        .softDelete({
+                            identifier: In(canceledUuids),
+                        })
+                        .catch((error: unknown) => {
+                            logger.error(
+                                `Failed to soft-delete ingestion jobs for canceled uploads: ${String(error)}`,
+                            );
+                        });
+
+                    await Promise.all(
+                        canceledUploads.map(async (file) => {
+                            try {
+                                await this.dataStorage.deleteFile(file.uuid);
+                                await this.fileRepository.softRemove(file);
+                            } catch (error: unknown) {
+                                logger.error(
+                                    `Failed to clean up canceled upload ${file.uuid}: ${String(error)}`,
+                                );
+                            }
+                        }),
+                    );
+                }
             })
             .catch(() => {
                 logger.debug(
