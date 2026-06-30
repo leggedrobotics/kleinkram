@@ -1397,6 +1397,7 @@ export class FileService implements OnModuleInit {
                             existingFile.date = new Date();
                             existingFile.size = 0;
                             existingFile.hash = '';
+                            existingFile.origin = FileOrigin.UPLOAD;
                             file = await nestedManager.save(
                                 FileEntity,
                                 existingFile,

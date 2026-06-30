@@ -62,7 +62,7 @@ class UploadCredentials(NamedTuple):
     bucket: str
 
 
-@retry(max_attempts=3, exceptions=(httpx.HTTPError,))
+@retry(max_attempts=3, exceptions=(httpx.TransportError,))
 def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: str) -> None:
     data = {
         "uuid": str(file_id),
@@ -73,7 +73,7 @@ def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: 
     resp.raise_for_status()
 
 
-@retry(max_attempts=3, exceptions=(httpx.HTTPError,))
+@retry(max_attempts=3, exceptions=(httpx.TransportError,))
 def _cancel_file_upload(client: AuthenticatedClient, file_id: UUID, mission_id: UUID) -> None:
     data = {
         "uuids": [str(file_id)],
@@ -95,7 +95,7 @@ FILE_ID_FIELD = "fileUUID"
 BUCKET_FIELD = "bucket"
 
 
-@retry(max_attempts=5, exceptions=(httpx.HTTPError,), exclude_exceptions=(FileExistsError,))
+@retry(max_attempts=5, exceptions=(httpx.TransportError,), exclude_exceptions=(FileExistsError,))
 def _get_upload_creditials(client: AuthenticatedClient, internal_filename: str, mission_id: UUID) -> UploadCredentials:
     dct = {
         "filenames": [internal_filename],
@@ -209,7 +209,7 @@ def upload_file(
                 logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
                 raise RuntimeError(f"Upload failed and cancellation failed for {creds.file_id}: {cancel_e}") from e
 
-            if attempt < 2:  # Retry if not the last attempt
+            if attempt < MAX_UPLOAD_RETRIES - 1:  # Retry if not the last attempt
                 logger.warning(f"Retrying upload for {path} (attempt {attempt + 1})")
                 continue
             else:
