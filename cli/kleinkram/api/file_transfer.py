@@ -210,7 +210,8 @@ def upload_file(
                 raise RuntimeError(f"Upload failed and cancellation failed for {creds.file_id}: {cancel_e}") from e
 
             if attempt < MAX_UPLOAD_RETRIES - 1:  # Retry if not the last attempt
-                logger.warning(f"Retrying upload for {path} (attempt {attempt + 1})")
+                logger.warning(f"Retrying upload for {path} (attempt {attempt + 1}), retrying after backoff...")
+                sleep(RETRY_BACKOFF_BASE**attempt)
                 continue
             else:
                 logger.error(f"Cancelling upload for {path} after {attempt + 1} attempts")
