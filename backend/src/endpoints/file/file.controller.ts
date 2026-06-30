@@ -1,16 +1,13 @@
-import { ApiOkResponse, OutputDto } from '@/decorators';
-import { FileService } from '@/services/file.service';
+import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
+import { FileLifecycleService } from '@/services/file-lifecycle.service';
+import { FileQueryService } from '@/services/file-query.service';
+import { FileStorageService } from '@/services/file-storage.service';
 import { QueueService } from '@/services/queue.service';
 import {
     QueryBoolean,
     QueryDate,
-    QueryOptionalDate,
-    QueryOptionalRecord,
     QueryOptionalString,
-    QueryOptionalUUID,
     QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
     QueryString,
     QueryTake,
     QueryUUID,
@@ -50,7 +47,6 @@ import {
     BodyString,
     BodyUUID,
     BodyUUIDArray,
-    isValidFileName,
 } from '@kleinkram/validation';
 import {
     BadRequestException,
@@ -58,6 +54,7 @@ import {
     Controller,
     Delete,
     Get,
+    Patch,
     Post,
     Put,
     Query,
@@ -80,12 +77,14 @@ import {
 } from '../auth/roles.decorator';
 
 import { FoxgloveService } from '@/services/foxglove.service';
-import { FileSource, HealthStatus } from '@kleinkram/shared';
+import { FileSource } from '@kleinkram/shared';
 
 @Controller(['files'])
 export class FileController {
     constructor(
-        private readonly fileService: FileService,
+        private readonly fileQueryService: FileQueryService,
+        private readonly fileStorageService: FileStorageService,
+        private readonly fileLifecycleService: FileLifecycleService,
         private readonly queueService: QueueService,
         private readonly foxgloveService: FoxgloveService,
     ) {}
@@ -100,126 +99,48 @@ export class FileController {
         @Query() query: FileQueryDto,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
+        let _missionUUID = query.missionUUID;
+        if (auth.apiKey) {
+            _missionUUID = auth.apiKey.mission.uuid;
+        }
+
+        const projectUuids =
+            query.projectUuids ??
+            (query.projectUUID ? [query.projectUUID] : []);
+        const missionUuids =
+            query.missionUuids ?? (_missionUUID ? [_missionUUID] : []);
+
         // we pre-check the access to give a proper error message
         // the actual findMany method will check access again per file
-        await this.fileService.checkResourceAccess(
-            query.projectUuids ?? [],
-            query.missionUuids ?? [],
+        await this.fileQueryService.checkResourceAccess(
+            projectUuids,
+            missionUuids,
             auth.user.uuid,
         );
 
         // also check access by patterns
-        await this.fileService.checkResourceAccessByName(
+        await this.fileQueryService.checkResourceAccessByName(
             query.projectPatterns ?? [],
             query.missionPatterns ?? [],
             auth.user.uuid,
         );
 
         // now fetch files, we only query files we have access to
-        return await this.fileService.findMany(
-            query.projectUuids ?? [],
-            query.projectPatterns ?? [],
-            query.missionUuids ?? [],
-            query.missionPatterns ?? [],
-            query.fileUuids ?? [],
-            query.filePatterns ?? [],
-            query.metadata ?? {},
-            query.sortBy,
-            query.sortOrder,
-            query.take,
-            query.skip,
+        return await this.fileQueryService.findMany(
+            query,
             auth.user.uuid,
-        );
-    }
-
-    @Get('filtered')
-    @LoggedIn()
-    @ApiOkResponse({
-        description: 'Filtered Files',
-        type: FilesDto,
-    })
-    async filteredFiles(
-        @QueryOptionalString('fileName', 'Filter for Filename')
-        fileName: string,
-        @QueryOptionalUUID('projectUUID', 'UUID of Project to filter by')
-        projectUUID: string,
-        @QueryOptionalUUID('missionUUID', 'UUID of Mission to filter by')
-        missionUUID: string,
-        @QueryOptionalDate(
-            'startDate',
-            'Date specifying the start of the filtered time range',
-        )
-        startDate: Date | undefined,
-        @QueryOptionalDate(
-            'endDate',
-            'Date specifying the end of the filtered time range',
-        )
-        endDate: Date | undefined,
-        @QueryOptionalString('topics', 'Name of Topics (coma separated)')
-        topics: string,
-        @QueryOptionalString(
-            'messageDatatypes',
-            'Message datatypes to filter by (coma separated). If multiple are given, ' +
-                'files containing any of the datatypes are returned (OR).',
-        )
-        messageDatatypes: string,
-        @QueryOptionalString(
-            'fileTypes',
-            'File types to filter by (coma separated)',
-        )
-        fileTypes: string,
-        @QueryOptionalString(
-            'categories',
-            'Categories to filter by (coma separated)',
-        )
-        categories: string,
-        @QueryBoolean(
-            'matchAllTopics',
-            'Returned File needs all specified topics (true) or any specified topics (false)',
-        )
-        matchAllTopics: boolean,
-        @QueryOptionalRecord('tags', 'Dictionary Tagtype name to Tag value') // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tags: Record<string, any>,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @QuerySortBy('sort') sort: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QueryOptionalString('health', 'File health') health: HealthStatus,
-        @AddUser() auth: AuthHeader,
-    ): Promise<FilesDto> {
-        let _missionUUID = missionUUID;
-        if (auth.apiKey) {
-            _missionUUID = auth.apiKey.mission.uuid;
-        }
-        return await this.fileService.findFiltered(
-            fileName,
-            projectUUID,
             _missionUUID,
-            startDate,
-            endDate,
-            topics,
-            messageDatatypes,
-            categories,
-            matchAllTopics,
-            fileTypes,
-            tags, // todo check if this is correct
-            auth.user.uuid,
-            Number.parseInt(String(take)), // TODO: fix
-            Number.parseInt(String(skip)), // TODO: fix
-            sort,
-            sortDirection,
-            health,
         );
     }
 
-    @Get('download')
+    @Get(':uuid/download')
     @CanReadFile()
     @ApiOkResponse({
         description: 'Download link',
         type: DownloadResponseDto,
     })
     async download(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
+        @ParameterUID('uuid') uuid: string,
         @QueryBoolean(
             'expires',
             'Whether the download link should stay valid for on week (false) or 4h (true)',
@@ -234,7 +155,7 @@ export class FileController {
         @AddUser() auth: AuthHeader,
     ): Promise<DownloadResponseDto> {
         logger.debug(`download ${uuid}: expires=${expires.toString()}`);
-        const url = await this.fileService.generateDownload(
+        const url = await this.fileStorageService.generateDownload(
             uuid,
             expires,
             previewOnly,
@@ -242,22 +163,6 @@ export class FileController {
             auth.apiKey?.action,
         );
         return { url };
-    }
-
-    // TODO: replace this with /file/:uuid
-    @Get('one')
-    @CanReadFile()
-    @ApiOkResponse({
-        description: 'File',
-        type: FileWithTopicDto,
-    })
-    async getFileById(
-        @QueryUUID('uuid', 'File UUID') uuid: string,
-    ): Promise<FileWithTopicDto> {
-        const file = await this.fileService.findOne(uuid);
-        return plainToInstance(FileWithTopicDto, file, {
-            excludeExtraneousValues: true,
-        });
     }
 
     @Put(':uuid')
@@ -271,7 +176,7 @@ export class FileController {
         @Body() dto: UpdateFile,
         @AddUser() auth: AuthHeader,
     ): Promise<FileDto> {
-        const file = await this.fileService.update(
+        const file = await this.fileLifecycleService.update(
             uuid,
             dto,
             auth.user,
@@ -282,7 +187,7 @@ export class FileController {
         });
     }
 
-    @Post('moveFiles')
+    @Patch()
     @CanMoveFiles()
     @ApiOkResponse({
         description: 'Move Files Response',
@@ -294,7 +199,7 @@ export class FileController {
         @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
         @AddUser() auth: AuthHeader,
     ): Promise<MoveFilesResponseDto> {
-        await this.fileService.moveFiles(
+        await this.fileLifecycleService.moveFiles(
             fileUUIDs,
             missionUUID,
             auth.user,
@@ -313,7 +218,7 @@ export class FileController {
         @QueryUUID('uuid', 'Mission UUID to search in') uuid: string,
         @QueryString('filename', 'Filename searched for') name: string,
     ): Promise<FileDto> {
-        const file = await this.fileService.findOneByName(uuid, name);
+        const file = await this.fileQueryService.findOneByName(uuid, name);
         return plainToInstance(FileDto, file, {
             excludeExtraneousValues: true,
         });
@@ -326,7 +231,11 @@ export class FileController {
         @ParameterUID('uuid') uuid: string,
         @AddUser() auth: AuthHeader,
     ): Promise<DeleteFileResponseDto> {
-        await this.fileService.deleteFile(uuid, auth.user, auth.apiKey?.action);
+        await this.fileLifecycleService.deleteFile(
+            uuid,
+            auth.user,
+            auth.apiKey?.action,
+        );
         return { success: true };
     }
 
@@ -337,7 +246,7 @@ export class FileController {
     })
     @LoggedIn()
     async getStorage(): Promise<StorageOverviewDto> {
-        return this.fileService.getStorage();
+        return this.fileStorageService.getStorage();
     }
 
     @Get('isUploading')
@@ -351,13 +260,15 @@ export class FileController {
         @AddUser() auth: AuthHeader,
     ): Promise<IsUploadingDto> {
         return {
-            isUploading: await this.fileService.isUploading(auth.user.uuid),
+            isUploading: await this.fileLifecycleService.isUploading(
+                auth.user.uuid,
+            ),
         };
     }
 
     @Post('temporaryAccess')
     @CanCreateInMissionByBody()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Temporary file access',
         type: TemporaryFileAccessesDto,
     })
@@ -375,24 +286,7 @@ export class FileController {
             }
         }
 
-        const invalidFiles: { filename: string; error: string }[] = [];
-        for (const filename of body.filenames) {
-            if (!isValidFileName(filename)) {
-                invalidFiles.push({
-                    filename,
-                    error: `Filename "${filename}" is not valid!`,
-                });
-            }
-        }
-
-        if (invalidFiles.length > 0) {
-            throw new BadRequestException({
-                message: 'Validation failed',
-                errors: invalidFiles,
-            });
-        }
-
-        return await this.fileService.getTemporaryAccess(
+        return await this.fileLifecycleService.getTemporaryAccess(
             body.filenames,
             body.missionUUID,
             auth.user.uuid,
@@ -401,7 +295,7 @@ export class FileController {
         );
     }
 
-    @Post('cancelUpload')
+    @Delete('uploads')
     @UserOnly() //Push back authentication to the queue to accelerate the request
     @OutputDto(CancelUploadResponseDto)
     async cancelUpload(
@@ -409,7 +303,7 @@ export class FileController {
         @AddUser() auth: AuthHeader,
     ): Promise<CancelUploadResponseDto> {
         logger.debug(`cancelUpload ${JSON.stringify(dto)}`);
-        await this.fileService.cancelUpload(
+        await this.fileLifecycleService.cancelUpload(
             dto.uuids,
             dto.missionUuid,
             auth.user.uuid,
@@ -417,7 +311,7 @@ export class FileController {
         return { success: true };
     }
 
-    @Post('deleteMultiple')
+    @Delete()
     @CanDeleteMission()
     @ApiOkResponse({
         description: 'Delete Files Response',
@@ -428,7 +322,7 @@ export class FileController {
         uuids: string[],
         @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
     ): Promise<DeleteFileResponseDto> {
-        await this.fileService.deleteMultiple(uuids, missionUUID);
+        await this.fileLifecycleService.deleteMultiple(uuids, missionUUID);
         return { success: true };
     }
 
@@ -441,28 +335,28 @@ export class FileController {
     async exists(
         @QueryUUID('uuid', 'FileUUID searched') uuid: string,
     ): Promise<FileExistsResponseDto> {
-        return this.fileService.exists(uuid);
+        return this.fileQueryService.exists(uuid);
     }
 
     @Post('resetS3Tags')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Resetting S3 tags completed',
     })
     async resetS3Tags(): Promise<void> {
         logger.debug('Resetting S3 tags');
-        await this.fileService.renameTags();
+        await this.fileStorageService.renameTags();
         logger.debug('Resetting S3 tags done');
     }
 
     @Post('recomputeFileSizes')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Recomputing file sizes completed',
     })
     async recomputeFileSizes(): Promise<void> {
         logger.debug('Recomputing file sizes');
-        await this.fileService.recomputeFileSizes();
+        await this.fileStorageService.recomputeFileSizes();
         logger.debug('Recomputing file sizes done');
     }
 
@@ -475,18 +369,18 @@ export class FileController {
     async getEvents(
         @ParameterUID('uuid') uuid: string,
     ): Promise<FileEventsDto> {
-        return this.fileService.getFileEvents(uuid);
+        return this.fileQueryService.getFileEvents(uuid);
     }
 
     @Post('reextractTopics')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Reextracting topics completed',
         type: ReextractTopicsResponseDto,
     })
     async reextractTopics(): Promise<ReextractTopicsResponseDto> {
         logger.debug('Triggering manual topic extraction for missing files');
-        const count = await this.fileService.reextractMissingTopics();
+        const count = await this.fileLifecycleService.reextractMissingTopics();
         return { count };
     }
 
@@ -509,7 +403,9 @@ export class FileController {
 
     @Post('import/drive')
     @CanCreateInMissionByBody()
-    @OutputDto(DriveImportResponseDto)
+    @ApiCreatedResponse({
+        type: DriveImportResponseDto,
+    })
     async importFromDrive(
         @Body() body: DriveCreate,
         @AddUser() authHeader: AuthHeader,
@@ -522,7 +418,7 @@ export class FileController {
 
     @Post('upload/confirm')
     @LoggedIn()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         type: ConfirmUploadDto,
     })
     async confirmUpload(
@@ -554,7 +450,7 @@ export class FileController {
 
     @Post('maintenance/recalculate-hashes')
     @AdminOnly()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Recalculating hashes completed',
         type: RecalculateHashesResponseDto,
     })
@@ -618,7 +514,7 @@ export class FileController {
 
     @Post('queue/:uuid/cancel')
     @CanDeleteMission()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         type: CancelProcessingResponseDto,
     })
     async cancelProcessing(
@@ -630,7 +526,7 @@ export class FileController {
 
     @Post('queue/:uuid/stop')
     @CanDeleteMission()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         type: StopJobResponseDto,
     })
     async stopJob(
@@ -638,5 +534,20 @@ export class FileController {
     ): Promise<StopJobResponseDto> {
         await this.queueService.stopJob(queueUUID);
         return { success: true };
+    }
+
+    @Get(':uuid')
+    @CanReadFile()
+    @ApiOkResponse({
+        description: 'File',
+        type: FileWithTopicDto,
+    })
+    async getFileById(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<FileWithTopicDto> {
+        const file = await this.fileQueryService.findOne(uuid);
+        return plainToInstance(FileWithTopicDto, file, {
+            excludeExtraneousValues: true,
+        });
     }
 }

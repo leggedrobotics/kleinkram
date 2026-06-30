@@ -177,7 +177,7 @@ describe('Action File Events', () => {
 
         // 5. Download File using Action API Key
         const downloadResponse = await fetch(
-            `${DEFAULT_URL}/files/download?uuid=${file.uuid}&expires=false&preview_only=false`,
+            `${DEFAULT_URL}/files/${file.uuid}/download?expires=false&preview_only=false`,
             {
                 method: 'GET',
                 headers: {

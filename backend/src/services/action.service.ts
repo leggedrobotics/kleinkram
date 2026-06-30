@@ -19,8 +19,13 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import environment from '@kleinkram/backend-common/environment';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
-import { ArtifactState, LogType, UserRole } from '@kleinkram/shared';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+    ActionState,
+    ArtifactState,
+    LogType,
+    UserRole,
+} from '@kleinkram/shared';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import {
@@ -274,8 +279,7 @@ export class ActionService {
                             typeof parsed !== 'object' ||
                             parsed === null ||
                             !('message' in parsed) ||
-                            typeof (parsed as { message: unknown }).message !==
-                                'string'
+                            typeof parsed.message !== 'string'
                         ) {
                             throw new Error('Invalid log format');
                         }
@@ -370,6 +374,25 @@ export class ActionService {
     async delete(actionUUID: string): Promise<boolean> {
         await this.actionRepository.delete(actionUUID);
         return true;
+    }
+
+    async cancel(actionUUID: string): Promise<void> {
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: actionUUID },
+        });
+
+        const activeStates = [
+            ActionState.PENDING,
+            ActionState.STARTING,
+            ActionState.PROCESSING,
+        ];
+        if (!activeStates.includes(action.state)) {
+            throw new BadRequestException(
+                `Cannot cancel action in state: ${action.state}`,
+            );
+        }
+
+        await this.actionDispatcher.stopAction(actionUUID);
     }
 
     async writeAuditLog(

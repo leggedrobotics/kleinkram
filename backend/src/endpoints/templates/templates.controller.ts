@@ -1,7 +1,9 @@
 import {
     ActionTemplateDto,
     ActionTemplatesDto,
+    ActionTemplatesQueryDto,
     CreateTemplateDto,
+    PaginatedQueryDto,
     UpdateTemplateDto,
 } from '@kleinkram/api-dto';
 import {
@@ -16,10 +18,9 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
 import { TemplateService } from '@/services/template.service';
 import { ParameterUuid } from '@/validation/parameter-decorators';
-import { QuerySkip, QueryTake } from '@/validation/query-decorators';
 import { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { CanCreate, LoggedIn } from '../auth/roles.decorator';
@@ -32,7 +33,7 @@ export class TemplatesController {
     @Post()
     @CanCreate()
     @ApiOperation({ summary: 'Create a new action template' })
-    @ApiOkResponse({ type: ActionTemplateDto })
+    @ApiCreatedResponse({ type: ActionTemplateDto })
     async createNewTemplate(
         @Body() dto: CreateTemplateDto,
         @AddUser() user: AuthHeader,
@@ -43,7 +44,7 @@ export class TemplatesController {
     @Post(':uuid/versions')
     @CanCreate()
     @ApiOperation({ summary: 'Create a new version of an existing template' })
-    @ApiOkResponse({ type: ActionTemplateDto })
+    @ApiCreatedResponse({ type: ActionTemplateDto })
     async createNewTemplateVersion(
         @Body() dto: UpdateTemplateDto,
         @AddUser() user: AuthHeader,
@@ -59,16 +60,13 @@ export class TemplatesController {
         type: ActionTemplatesDto,
     })
     async findAllTemplates(
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @Query('search') search?: string,
-        @Query('includeArchived') includeArchived?: boolean,
+        @Query() query: ActionTemplatesQueryDto,
     ): Promise<ActionTemplatesDto> {
         return this.templateService.findAll(
-            skip,
-            take,
-            search,
-            includeArchived,
+            query.skip,
+            query.take,
+            query.search,
+            query.includeArchived,
         );
     }
 
@@ -89,10 +87,9 @@ export class TemplatesController {
     @ApiOkResponse({ type: ActionTemplatesDto })
     async findTemplateRevisions(
         @ParameterUuid('uuid') uuid: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: PaginatedQueryDto,
     ): Promise<ActionTemplatesDto> {
-        return this.templateService.findRevisions(uuid, skip, take);
+        return this.templateService.findRevisions(uuid, query.skip, query.take);
     }
 
     @Delete(':uuid')

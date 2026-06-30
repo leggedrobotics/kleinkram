@@ -8,7 +8,6 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import accessConfig from './access_config.json';
 import { appVersion } from './app-version';
 import { AccessModule } from './endpoints/access/access.module';
@@ -18,10 +17,10 @@ import { CategoryModule } from './endpoints/category/category.module';
 import { FileModule } from './endpoints/file/file.module';
 import { HealthModule } from './endpoints/health/health.module';
 import { FoxgloveModule } from './endpoints/integrations/foxglove.module';
+import { MetadataModule } from './endpoints/metadata/metadata.module';
 import { MissionModule } from './endpoints/mission/mission.module';
 import { ProjectModule } from './endpoints/project/project.module';
 import { QueueModule } from './endpoints/queue/queue.module';
-import { TagModule } from './endpoints/tag/tag.module';
 import { TemplatesModule } from './endpoints/templates/templates.module';
 import { TopicModule } from './endpoints/topic/topic.module';
 import { TriggerModule } from './endpoints/trigger/trigger.module';
@@ -48,26 +47,22 @@ import { DBDumper } from './services/dbdumper.service';
                 configuration,
                 (): {
                     accessConfig: AccessGroupConfig;
-                } => ({ accessConfig: accessConfig as AccessGroupConfig }),
+                } => ({ accessConfig: accessConfig }),
             ],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
-            useFactory: (configService: ConfigService) =>
-                ({
-                    type: 'postgres',
-                    host: configService.getOrThrow<string>('database.host'),
-                    port: configService.getOrThrow<number>('database.port'),
-                    username:
-                        configService.getOrThrow<string>('database.username'),
-                    password:
-                        configService.getOrThrow<string>('database.password'),
-                    database:
-                        configService.getOrThrow<string>('database.database'),
-                    entities: configService.getOrThrow('entities'),
-                    synchronize: env.DEV,
-                    logging: ['warn', 'error'],
-                }) as PostgresConnectionOptions,
+            useFactory: (configService: ConfigService) => ({
+                type: 'postgres',
+                host: configService.getOrThrow<string>('database.host'),
+                port: configService.getOrThrow<number>('database.port'),
+                username: configService.getOrThrow<string>('database.username'),
+                password: configService.getOrThrow<string>('database.password'),
+                database: configService.getOrThrow<string>('database.database'),
+                entities: configService.getOrThrow('entities'),
+                synchronize: env.DEV,
+                logging: ['warn', 'error'],
+            }),
             inject: [ConfigService],
         }),
         FileModule,
@@ -84,7 +79,7 @@ import { DBDumper } from './services/dbdumper.service';
         PassportModule,
         ActionModule,
         TemplatesModule,
-        TagModule,
+        MetadataModule,
         WorkerModule,
         CategoryModule,
         ScheduleModule.forRoot(),

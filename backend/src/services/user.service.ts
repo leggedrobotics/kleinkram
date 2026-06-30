@@ -320,6 +320,20 @@ export class UserService implements OnModuleInit {
                 createdAt: true,
                 updatedAt: true,
                 deletedAt: true,
+                mission: {
+                    uuid: true,
+                    name: true,
+                    project: {
+                        uuid: true,
+                    },
+                },
+                action: {
+                    uuid: true,
+                    template: {
+                        name: true,
+                        version: true,
+                    },
+                },
             },
             relations: [
                 'mission',

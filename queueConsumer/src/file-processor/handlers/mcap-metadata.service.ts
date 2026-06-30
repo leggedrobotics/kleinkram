@@ -3,8 +3,7 @@ import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity'
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { UniversalHttpReader } from '@kleinkram/shared';
-import { McapIndexedReader } from '@mcap/core';
-import { IReadable } from '@mcap/core/dist/cjs/src/types';
+import { IReadable, McapIndexedReader } from '@mcap/core';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fsPromises from 'node:fs/promises';

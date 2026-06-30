@@ -123,10 +123,10 @@ describe('Verify Mission Level Admin Access', () => {
 
         // Admin queries the mission
         const headers = new HeaderCreator(admin);
-        const response = await fetch(
-            `${DEFAULT_URL}/mission/one?uuid=${missionUuid}`,
-            { method: 'GET', headers: headers.getHeaders() },
-        );
+        const response = await fetch(`${DEFAULT_URL}/missions/${missionUuid}`, {
+            method: 'GET',
+            headers: headers.getHeaders(),
+        });
         expect(response.status).toBeLessThan(300);
     });
 
@@ -149,14 +149,16 @@ describe('Verify Mission Level Admin Access', () => {
         // Admin updates mission name
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/mission/updateName`, {
-            method: 'POST',
-            headers: headers.getHeaders(),
-            body: JSON.stringify({
-                missionUUID: missionUuid,
-                name: 'admin-renamed-mission',
-            }),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/name`,
+            {
+                method: 'PATCH',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    name: 'admin-renamed-mission',
+                }),
+            },
+        );
         expect(response.status).toBeLessThan(300);
     });
 
@@ -197,7 +199,7 @@ describe('Verify Mission Level Admin Access', () => {
         // Admin moves mission to another project
         const headers = new HeaderCreator(admin);
         const response = await fetch(
-            `${DEFAULT_URL}/mission/move?missionUUID=${missionUuid}&projectUUID=${projectUuid2}`,
+            `${DEFAULT_URL}/missions/${missionUuid}/move?projectUUID=${projectUuid2}`,
             { method: 'POST', headers: headers.getHeaders() },
         );
         expect(response.status).toBeLessThan(300);
@@ -220,7 +222,7 @@ describe('Verify Mission Level Admin Access', () => {
         );
 
         const headers = new HeaderCreator(admin);
-        const response = await fetch(`${DEFAULT_URL}/mission/${missionUuid}`, {
+        const response = await fetch(`${DEFAULT_URL}/missions/${missionUuid}`, {
             method: 'DELETE',
             headers: headers.getHeaders(),
         });
@@ -246,9 +248,15 @@ describe('Verify Mission Level Admin Access', () => {
         // Admin lists files in mission
         const headers = new HeaderCreator(admin);
         const response = await fetch(
-            `${DEFAULT_URL}/files/filtered?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
+            `${DEFAULT_URL}/files?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
             { method: 'GET', headers: headers.getHeaders() },
         );
+        if (response.status >= 300) {
+            console.log(
+                'DEBUG: GET /files response error:',
+                await response.text(),
+            );
+        }
         expect(response.status).toBeLessThan(300);
     });
 
@@ -273,7 +281,7 @@ describe('Verify Mission Level Admin Access', () => {
 
         const headers = new HeaderCreator(admin);
         const response = await fetch(
-            `${DEFAULT_URL}/files/filtered?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
+            `${DEFAULT_URL}/files?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
             { method: 'GET', headers: headers.getHeaders() },
         );
         expect(response.status).toBeLessThan(300);
@@ -342,7 +350,7 @@ describe('Verify Mission Level Admin Access', () => {
         // Admin requests download link
         const headers = new HeaderCreator(admin);
         const response = await fetch(
-            `${DEFAULT_URL}/files/download?uuid=${file.uuid}&expires=true&preview_only=false`,
+            `${DEFAULT_URL}/files/${file.uuid}/download?expires=true&preview_only=false`,
             { method: 'GET', headers: headers.getHeaders() },
         );
         // May return 200 or could fail if S3 is not available, but should NOT return 403
@@ -432,8 +440,8 @@ describe('Verify Mission Level Admin Access', () => {
         // Admin moves the file
         const headers = new HeaderCreator(admin);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/files/moveFiles`, {
-            method: 'POST',
+        const response = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
             headers: headers.getHeaders(),
             body: JSON.stringify({
                 fileUUIDs: [file.uuid],
@@ -543,10 +551,10 @@ describe('Verify Mission Level User Access', () => {
         );
 
         const headers = new HeaderCreator(readUser);
-        const response = await fetch(
-            `${DEFAULT_URL}/mission/one?uuid=${missionUuid}`,
-            { method: 'GET', headers: headers.getHeaders() },
-        );
+        const response = await fetch(`${DEFAULT_URL}/missions/${missionUuid}`, {
+            method: 'GET',
+            headers: headers.getHeaders(),
+        });
         expect(response.status).toBeLessThan(300);
     });
 
@@ -569,14 +577,16 @@ describe('Verify Mission Level User Access', () => {
         // readUser tries to update mission name
         const headers = new HeaderCreator(readUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/mission/updateName`, {
-            method: 'POST',
-            headers: headers.getHeaders(),
-            body: JSON.stringify({
-                missionUUID: missionUuid,
-                name: 'unauthorized-rename',
-            }),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/name`,
+            {
+                method: 'PATCH',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    name: 'unauthorized-rename',
+                }),
+            },
+        );
         expect(response.status).toBe(403);
     });
 
@@ -598,14 +608,16 @@ describe('Verify Mission Level User Access', () => {
 
         const headers = new HeaderCreator(readUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/mission/tags`, {
-            method: 'POST',
-            headers: headers.getHeaders(),
-            body: JSON.stringify({
-                missionUUID: missionUuid,
-                tags: { custom: 'value' },
-            }),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/metadata`,
+            {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    metadata: { custom: 'value' },
+                }),
+            },
+        );
         expect(response.status).toBe(403);
     });
 
@@ -636,7 +648,7 @@ describe('Verify Mission Level User Access', () => {
 
         const headers = new HeaderCreator(readUser);
         const response = await fetch(
-            `${DEFAULT_URL}/mission/move?missionUUID=${missionUuid}&projectUUID=${targetProject}`,
+            `${DEFAULT_URL}/missions/${missionUuid}/move?projectUUID=${targetProject}`,
             { method: 'POST', headers: headers.getHeaders() },
         );
         expect(response.status).toBe(403);
@@ -659,7 +671,7 @@ describe('Verify Mission Level User Access', () => {
         );
 
         const headers = new HeaderCreator(readUser);
-        const response = await fetch(`${DEFAULT_URL}/mission/${missionUuid}`, {
+        const response = await fetch(`${DEFAULT_URL}/missions/${missionUuid}`, {
             method: 'DELETE',
             headers: headers.getHeaders(),
         });
@@ -685,14 +697,16 @@ describe('Verify Mission Level User Access', () => {
 
         const headers = new HeaderCreator(writeUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/mission/updateName`, {
-            method: 'POST',
-            headers: headers.getHeaders(),
-            body: JSON.stringify({
-                missionUUID: missionUuid,
-                name: 'write-renamed-mission',
-            }),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/name`,
+            {
+                method: 'PATCH',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    name: 'renamed-mission',
+                }),
+            },
+        );
         expect(response.status).toBeLessThan(300);
     });
 
@@ -714,19 +728,24 @@ describe('Verify Mission Level User Access', () => {
 
         const headers = new HeaderCreator(writeUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/mission/tags`, {
-            method: 'POST',
-            headers: headers.getHeaders(),
-            body: JSON.stringify({
-                missionUUID: missionUuid,
-                tags: {
-                    [await createMetadataUsingPost(
-                        { type: DataType.STRING, name: 'edit_metadata_tag' },
-                        creator,
-                    )]: 'test_value',
-                },
-            }),
-        });
+        const response = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/metadata`,
+            {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    metadata: {
+                        [await createMetadataUsingPost(
+                            {
+                                type: DataType.STRING,
+                                name: 'edit_metadata_tag',
+                            },
+                            creator,
+                        )]: 'test_value',
+                    },
+                }),
+            },
+        );
         expect(response.status).toBeLessThan(300);
     });
 
@@ -757,7 +776,7 @@ describe('Verify Mission Level User Access', () => {
 
         const headers = new HeaderCreator(writeUser);
         const response = await fetch(
-            `${DEFAULT_URL}/mission/move?missionUUID=${missionUuid}&projectUUID=${targetProject}`,
+            `${DEFAULT_URL}/missions/${missionUuid}/move?projectUUID=${targetProject}`,
             { method: 'POST', headers: headers.getHeaders() },
         );
         expect(response.status).toBe(403);
@@ -780,7 +799,7 @@ describe('Verify Mission Level User Access', () => {
         );
 
         const headers = new HeaderCreator(writeUser);
-        const response = await fetch(`${DEFAULT_URL}/mission/${missionUuid}`, {
+        const response = await fetch(`${DEFAULT_URL}/missions/${missionUuid}`, {
             method: 'DELETE',
             headers: headers.getHeaders(),
         });
@@ -840,7 +859,7 @@ describe('Verify Mission Level User Access', () => {
 
         const headers = new HeaderCreator(deleteUser);
         const response = await fetch(
-            `${DEFAULT_URL}/mission/move?missionUUID=${missionUuid}&projectUUID=${targetProject}`,
+            `${DEFAULT_URL}/missions/${missionUuid}/move?projectUUID=${targetProject}`,
             { method: 'POST', headers: headers.getHeaders() },
         );
         expect(response.status).toBeLessThan(300);
@@ -863,7 +882,7 @@ describe('Verify Mission Level User Access', () => {
         );
 
         const headers = new HeaderCreator(deleteUser);
-        const response = await fetch(`${DEFAULT_URL}/mission/${missionUuid}`, {
+        const response = await fetch(`${DEFAULT_URL}/missions/${missionUuid}`, {
             method: 'DELETE',
             headers: headers.getHeaders(),
         });
@@ -894,7 +913,7 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(readUser);
         const response = await fetch(
-            `${DEFAULT_URL}/files/filtered?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
+            `${DEFAULT_URL}/files?missionUUID=${missionUuid}&skip=0&take=10&sort=name&sortDirection=ASC&matchAllTopics=false`,
             { method: 'GET', headers: headers.getHeaders() },
         );
         expect(response.status).toBeLessThan(300);
@@ -962,7 +981,7 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(readUser);
         const response = await fetch(
-            `${DEFAULT_URL}/files/download?uuid=${file.uuid}&expires=true&preview_only=false`,
+            `${DEFAULT_URL}/files/${file.uuid}/download?expires=true&preview_only=false`,
             { method: 'GET', headers: headers.getHeaders() },
         );
         // Should not get 403 (may fail on S3 connectivity but not on access)
@@ -1090,8 +1109,8 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(readUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/files/moveFiles`, {
-            method: 'POST',
+        const response = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
             headers: headers.getHeaders(),
             body: JSON.stringify({
                 fileUUIDs: [file.uuid],
@@ -1224,8 +1243,8 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(editUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/files/moveFiles`, {
-            method: 'POST',
+        const response = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
             headers: headers.getHeaders(),
             body: JSON.stringify({
                 fileUUIDs: [file.uuid],
@@ -1319,8 +1338,8 @@ describe('Verify Mission File Level User Access', () => {
 
         const headers = new HeaderCreator(deleteUser);
         headers.addHeader('Content-Type', 'application/json');
-        const response = await fetch(`${DEFAULT_URL}/files/moveFiles`, {
-            method: 'POST',
+        const response = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
             headers: headers.getHeaders(),
             body: JSON.stringify({
                 fileUUIDs: [file.uuid],

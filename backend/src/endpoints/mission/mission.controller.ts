@@ -1,24 +1,34 @@
-import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ApiCreatedResponse, ApiOkResponse } from '@/decorators';
+import { missionEntityToFlatDto } from '@/serialization';
+import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
+import { QueryUUID } from '@/validation/query-decorators';
 import {
-    QueryOptionalString,
-    QuerySkip,
-    QuerySortBy,
-    QuerySortDirection,
-    QueryTake,
-    QueryUUID,
-} from '@/validation/query-decorators';
-import {
+    AddTagsDto,
+    AddTagsRequestDto,
     CreateMission,
     FlatMissionDto,
     MinimumMissionsDto,
+    MissionDownloadEntryDto,
+    MissionQueryDto,
     MissionsDto,
     MissionWithFilesDto,
+    SuccessResponseDto,
+    UpdateMissionNameDto,
 } from '@kleinkram/api-dto';
-import { BodyUUID, MISSION_NAME_REGEX } from '@kleinkram/validation';
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Patch,
+    Post,
+    Query,
+} from '@nestjs/common';
+import { Request } from 'express';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
+    CanAddTag,
     CanCreateInProjectByBody,
     CanDeleteMission,
     CanMoveMission,
@@ -27,17 +37,18 @@ import {
     UserOnly,
 } from '../auth/roles.decorator';
 
-import { MissionQueryDto } from '@kleinkram/api-dto';
-
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 
-@Controller(['mission', 'missions']) // TODO: migrate to 'missions'
+@Controller('missions')
 export class MissionController {
-    constructor(private readonly missionService: MissionService) {}
+    constructor(
+        private readonly missionService: MissionService,
+        private readonly metadataService: MetadataService,
+    ) {}
 
-    @Post('create')
+    @Post()
     @CanCreateInProjectByBody()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Returns the created mission',
         type: FlatMissionDto,
     })
@@ -48,19 +59,21 @@ export class MissionController {
         return this.missionService.create(createMission, user);
     }
 
-    @Post('updateName')
+    @Patch(':uuid/name')
     @CanWriteMissionByBody()
-    @OutputDto(null) // TODO: type API response
+    @ApiOkResponse({
+        description: 'Returns the updated mission',
+        type: FlatMissionDto,
+    })
     async updateMissionName(
-        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @Body('name') name: string,
-    ) {
-        // validate name
-        if (!MISSION_NAME_REGEX.test(name)) {
-            throw new Error('Invalid name');
-        }
-
-        return this.missionService.updateName(missionUUID, name);
+        @ParameterUID('uuid') missionUUID: string,
+        @Body() body: UpdateMissionNameDto,
+    ): Promise<FlatMissionDto> {
+        const updatedMission = await this.missionService.updateName(
+            missionUUID,
+            body.name,
+        );
+        return missionEntityToFlatDto(updatedMission);
     }
 
     @Get()
@@ -68,124 +81,78 @@ export class MissionController {
     @ApiOkResponse({
         description: 'Returns all missions',
         type: MissionsDto,
+        resolver: (request: Request) =>
+            request.query.minimal === 'true' ? MinimumMissionsDto : MissionsDto,
     })
     async getMany(
         @Query() query: MissionQueryDto,
         @AddUser() user: AuthHeader,
-    ): Promise<MissionsDto> {
-        return await this.missionService.findMany(
-            query.projectUuids ?? [],
-            query.projectPatterns ?? [],
-            query.missionUuids ?? [],
-            query.missionPatterns ?? [],
-            query.metadata ?? {},
-            query.sortBy,
-            query.sortOrder,
-            query.skip,
-            query.take,
-            user.user.uuid,
-        );
+    ): Promise<MissionsDto | MinimumMissionsDto> {
+        return await this.missionService.findMany(query, user.user.uuid);
     }
 
-    @Get('filteredMinimal')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Returns all missions filtered by project',
-        type: MinimumMissionsDto,
-    })
-    async filteredMissionsMinimal(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @QueryOptionalString('search', 'Search in mission name') search: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QuerySortBy('sortBy') sortBy: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @AddUser() user: AuthHeader,
-    ): Promise<MinimumMissionsDto> {
-        return this.missionService.findMissionByProjectMinimal(
-            user.user.uuid,
-            uuid,
-            // TODO: fix the following
-            Number.parseInt(String(skip)),
-            Number.parseInt(String(take)),
-            search,
-            sortDirection,
-            sortBy,
-        );
-    }
-
-    @Get('filtered')
-    @UserOnly()
-    @ApiOkResponse({
-        description: 'Returns all missions filtered by project',
-        type: MissionsDto,
-    })
-    async filteredMissions(
-        @QueryUUID('uuid', 'Project UUID') uuid: string,
-        @QueryOptionalString('search', 'Search in mission name') search: string,
-        @QuerySortDirection('sortDirection') sortDirection: 'ASC' | 'DESC',
-        @QuerySortBy('sortBy') sortBy: string,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
-        @AddUser() user: AuthHeader,
-    ): Promise<MissionsDto> {
-        return this.missionService.findMissionByProject(
-            user.user,
-            uuid,
-            // TODO: cleanup by using a dto for the query params
-            //  this automatically validates the query params
-            //  and converts them to the correct types
-            Number.parseInt(String(skip)),
-            Number.parseInt(String(take)),
-            search,
-            sortDirection,
-            sortBy,
-        );
-    }
-
-    @Get('one')
+    @Get(':uuid')
     @CanReadMission()
     @ApiOkResponse({
         description: 'Returns the mission',
         type: MissionWithFilesDto,
     })
     async getMissionById(
-        @QueryUUID('uuid', 'Mission UUID') uuid: string,
+        @ParameterUID('uuid') uuid: string,
     ): Promise<MissionWithFilesDto> {
         return this.missionService.findOne(uuid);
     }
 
-    @Get('download')
+    @Get(':uuid/download')
     @CanReadMission()
-    @OutputDto(null) // TODO: type API response
-    async downloadWithToken(@QueryUUID('uuid', 'Mission UUID') uuid: string) {
+    @ApiOkResponse({
+        description: 'Download links for the mission files',
+        type: [MissionDownloadEntryDto],
+    })
+    async downloadWithToken(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<MissionDownloadEntryDto[]> {
         return this.missionService.download(uuid);
     }
 
-    @Post('move')
+    @Post(':uuid/move')
     @CanMoveMission()
-    @OutputDto(null) // TODO: type API response
+    @ApiCreatedResponse({
+        description: 'Mission moved successfully',
+        type: SuccessResponseDto,
+    })
     async moveMission(
-        @QueryUUID('missionUUID', 'Mission UUID') missionUUID: string,
+        @ParameterUID('uuid') missionUUID: string,
         @QueryUUID('projectUUID', 'Project UUID') projectUUID: string,
-    ): Promise<void> {
-        return this.missionService.moveMission(missionUUID, projectUUID);
+    ): Promise<SuccessResponseDto> {
+        await this.missionService.moveMission(missionUUID, projectUUID);
+        return { success: true };
     }
 
     @Delete(':uuid')
     @CanDeleteMission()
-    @OutputDto(null) // TODO: type API response
-    async deleteMission(@ParameterUID('uuid') uuid: string): Promise<void> {
-        return this.missionService.deleteMission(uuid);
+    @ApiOkResponse({
+        description: 'Mission deleted',
+        type: SuccessResponseDto,
+    })
+    async deleteMission(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<SuccessResponseDto> {
+        await this.missionService.deleteMission(uuid);
+        return { success: true };
     }
 
-    @Post('tags')
-    @CanWriteMissionByBody()
-    @OutputDto(null) // TODO: type API response
-    async updateMissionTags(
-        @BodyUUID('missionUUID', 'Mission UUID') missionUUID: string,
-        @Body('tags') tags: Record<string, string>,
-    ): Promise<void> {
-        await this.missionService.updateTags(missionUUID, tags);
+    @Post(':uuid/metadata')
+    @CanAddTag()
+    @ApiCreatedResponse({
+        description: 'Metadata added to mission',
+        type: AddTagsDto,
+    })
+    async addTags(
+        @ParameterUID('uuid') uuid: string,
+        @Body() body: AddTagsRequestDto,
+    ): Promise<AddTagsDto> {
+        const metadata = body.metadata ?? body.tags ?? {};
+        return this.metadataService.addTags(uuid, metadata);
     }
 }

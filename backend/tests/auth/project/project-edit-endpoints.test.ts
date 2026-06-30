@@ -206,15 +206,20 @@ describe('Verify project manipulation endpoints', () => {
         headersBuilder.addHeader('Content-Type', 'application/json');
 
         const response = await fetch(
-            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/updateTagTypes`,
+            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/metadata-types`,
             {
-                method: 'POST',
+                method: 'PUT',
                 headers: headersBuilder.getHeaders(),
                 body: JSON.stringify({
                     tagTypeUUIDs: [metadataUuid, globalThis.metadataUuid],
                 }),
             },
         );
+
+        if (response.status >= 300) {
+            console.error('API Error Response:', await response.text());
+        }
+        expect(response.status).toBeLessThan(300);
 
         const TagTypeRepository =
             database.getRepository<TagTypeEntity>(TagTypeEntity);
@@ -225,7 +230,6 @@ describe('Verify project manipulation endpoints', () => {
         expect(tagType.name).toBe(name);
         expect(tagType.uuid).toBe(metadataUuid);
         expect(tagType.project?.[0]?.uuid).toBe(globalThis.projectUuid);
-        expect(response.status).toBeLessThan(300);
     });
 
     test('if access management of project can be edited by creator', async () => {

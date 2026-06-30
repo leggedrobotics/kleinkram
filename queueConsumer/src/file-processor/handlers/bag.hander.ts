@@ -44,7 +44,7 @@ export class RosBagHandler implements FileHandler {
 
     async process(context: FileProcessingContext): Promise<void> {
         const { primaryFile, filePath, workDirectory, queueItem } = context;
-        const job = queueItem as unknown as IngestionJobEntity;
+        const job = queueItem;
         const autoConvert = job.mission?.project?.autoConvert !== false;
 
         logger.debug(

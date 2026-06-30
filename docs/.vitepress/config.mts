@@ -18,6 +18,9 @@ export default withMermaid({
     vite: {
         envDir: '..',
         envPrefix: ['VITE_', 'BACKEND_URL'],
+        esbuild: {
+            target: 'es2022',
+        },
         // force use of esm version of dayjs
         resolve: {
             alias: {
@@ -28,6 +31,12 @@ export default withMermaid({
         },
         optimizeDeps: {
             include: ['mermaid'],
+            esbuildOptions: {
+                target: 'es2022',
+            },
+        },
+        build: {
+            target: 'es2022',
         },
     },
     head: [

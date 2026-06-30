@@ -4,8 +4,6 @@ import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { type Faker } from '@faker-js/faker';
 import { setSeederFactory } from 'typeorm-extension';
 
-import { AccessGroupRights } from '@kleinkram/shared';
-
 export interface ProjectAccessFactoryContext {
     project?: ProjectEntity;
     accessGroup?: AccessGroupEntity;
@@ -18,9 +16,7 @@ setSeederFactory(
     (faker: Faker, context: Partial<ProjectAccessFactoryContext> = {}) => {
         const projectAccess = new ProjectAccessEntity();
 
-        projectAccess.rights = faker.helpers.arrayElement([
-            0, 10, 20, 30,
-        ]) as AccessGroupRights;
+        projectAccess.rights = faker.helpers.arrayElement([0, 10, 20, 30]);
 
         if (context.project) {
             projectAccess.project = context.project;

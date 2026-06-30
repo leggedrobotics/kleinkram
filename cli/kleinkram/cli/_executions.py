@@ -45,6 +45,7 @@ INFO_HELP = "Get detailed information about a specific action execution."
 LOGS_HELP = "Stream the logs for a specific action execution."
 DELETE_HELP = "Delete a specific action execution."
 DOWNLOAD_HELP = "Download artifacts for a specific action execution."
+CANCEL_HELP = "Cancel a running action execution."
 
 
 @executions_typer.command(help=LAUNCH_HELP, name="launch")
@@ -162,6 +163,22 @@ def delete(
     client = AuthenticatedClient()
     kleinkram.core.delete_execution(client=client, execution_id=execution_id)
     typer.secho(f"Execution {execution_id} deleted successfully.", fg=typer.colors.GREEN)
+
+
+@executions_typer.command(help=CANCEL_HELP, name="cancel")
+def cancel(
+    execution: str = typer.Argument(..., metavar="EXECUTION_ID", help="The ID (UUID) of the execution to cancel.")
+) -> None:
+    """
+    Cancel a running action execution by its ID.
+    """
+    if not is_valid_uuid4(execution):
+        raise typer.BadParameter(f"'{execution}' is not a valid UUID.")
+    execution_id = parse_uuid_like(execution)
+
+    client = AuthenticatedClient()
+    kleinkram.core.cancel_execution(client=client, execution_id=execution_id)
+    typer.secho(f"Execution {execution_id} cancellation requested.", fg=typer.colors.GREEN)
 
 
 @executions_typer.command(name="info", help=INFO_HELP)

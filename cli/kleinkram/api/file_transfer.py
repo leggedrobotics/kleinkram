@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_CREDS = "/files/temporaryAccess"
 UPLOAD_CONFIRM = "/files/upload/confirm"
-UPLOAD_CANCEL = "/files/cancelUpload"
+UPLOAD_CANCEL = "/files/uploads"
 
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
-DOWNLOAD_URL = "/files/download"
+DOWNLOAD_URL = "/files/{}/download"
 
 MAX_UPLOAD_RETRIES = 3
 S3_MAX_RETRIES = 60  # same as frontend
@@ -79,7 +79,7 @@ def _cancel_file_upload(client: AuthenticatedClient, file_id: UUID, mission_id: 
         "uuids": [str(file_id)],
         "missionUuid": str(mission_id),
     }
-    resp = client.post(UPLOAD_CANCEL, json=data)
+    resp = client.delete(UPLOAD_CANCEL, json=data)
     resp.raise_for_status()
     return
 
@@ -225,7 +225,7 @@ def _get_file_download(client: AuthenticatedClient, id: UUID) -> str:
     """\
     get the download url for a file by file id
     """
-    resp = client.get(DOWNLOAD_URL, params={"uuid": str(id), "expires": True, "preview_only": False})
+    resp = client.get(DOWNLOAD_URL.format(id), params={"expires": True, "preview_only": False})
 
     if 400 <= resp.status_code < 500:
         raise AccessDenied(

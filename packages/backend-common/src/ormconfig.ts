@@ -4,9 +4,7 @@ import process from 'node:process';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { SeederOptions } from 'typeorm-extension';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-const isTsNode = !!(process as any)[Symbol.for('ts-node.register.instance')];
-const extension = isTsNode ? 'ts' : 'js';
+const extension = __filename.endsWith('.ts') ? 'ts' : 'js';
 
 export const dataSourceOptions: DataSourceOptions & SeederOptions = {
     type: 'postgres',
@@ -25,4 +23,4 @@ export const dataSourceOptions: DataSourceOptions & SeederOptions = {
     factories: [path.join(__dirname, 'factories', `**/*.factory.${extension}`)],
 };
 
-export default new DataSource(dataSourceOptions as DataSourceOptions);
+export default new DataSource(dataSourceOptions);

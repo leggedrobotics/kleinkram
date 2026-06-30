@@ -83,7 +83,11 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                                 .save(file)
                                 .then(resolve)
                                 .catch((error: unknown) => {
-                                    reject(error as Error);
+                                    reject(
+                                        error instanceof Error
+                                            ? error
+                                            : new Error(String(error)),
+                                    );
                                 });
                         });
                     });

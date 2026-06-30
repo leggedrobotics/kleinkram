@@ -85,7 +85,12 @@
                                 <q-item-section>View Details</q-item-section>
                             </q-item>
 
-                            <q-item v-ripple clickable disabled>
+                            <q-item
+                                v-ripple
+                                clickable
+                                :disabled="!canCancel(props.row.state)"
+                                @click="() => handleCancel(props.row.uuid)"
+                            >
                                 <q-item-section>Cancel Action</q-item-section>
                             </q-item>
                             <DeleteActionDialogOpener :action="props.row">
@@ -107,7 +112,8 @@
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import { ActionState } from '@kleinkram/shared';
 import ActionBadge from 'components/action-badge.vue';
-import { QTable } from 'quasar';
+import { QTable, useQuasar } from 'quasar';
+import { useCancelAction } from 'src/composables/use-action-mutations';
 import { useActionList } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { formatDate, formatDuration } from 'src/services/date-formating';
@@ -119,6 +125,31 @@ import DeleteActionDialogOpener from '../button-wrapper/delete-action-dialog-ope
 
 const router = useRouter();
 const route = useRoute();
+const $q = useQuasar();
+const { mutateAsync: cancelAction } = useCancelAction();
+
+const canCancel = (state: ActionState) => {
+    return (
+        state === ActionState.PENDING ||
+        state === ActionState.STARTING ||
+        state === ActionState.PROCESSING
+    );
+};
+
+const handleCancel = async (uuid: string) => {
+    try {
+        await cancelAction(uuid);
+        $q.notify({
+            type: 'positive',
+            message: 'Action cancellation requested',
+        });
+    } catch {
+        $q.notify({
+            type: 'negative',
+            message: 'Failed to cancel action',
+        });
+    }
+};
 
 const properties = defineProps<{
     handler: QueryHandler;

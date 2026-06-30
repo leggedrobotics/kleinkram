@@ -32,7 +32,7 @@ export function useActionList(
 
         queryFn: ({ queryKey }) => {
             const _filters = queryKey[2];
-            return ActionService.getAll(_filters as ActionQuery);
+            return ActionService.getAll(_filters);
         },
     });
 }

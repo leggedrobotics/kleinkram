@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
 import shutil
 import time
@@ -172,3 +173,58 @@ def test_trigger_cli_operations(empty_mission, action_template, api):
 
     delete_cmd = f"{CLI} triggers delete {trigger_uuid}"
     assert run_cmd(delete_cmd) == 0
+
+
+@pytest.mark.slow
+def test_cancel_execution(api, project, empty_mission):
+    assert api
+
+    # Create an action template that sleeps for 120 seconds
+    template_name = f"template-cancel-{secrets.token_hex(6)}"
+    kleinkram.wrappers.create_template(
+        name=template_name,
+        description="Template for cancellation test",
+        docker_image="ubuntu:latest",
+        cpu_cores=1,
+        cpu_memory_gb=1,
+        gpu_memory_gb=-1,
+        max_runtime_minutes=60,
+        command="sleep 120",
+    )
+
+    # Submit/launch the action run using the CLI launch command.
+    # Run it without follow mode so it runs asynchronously in the queue/worker.
+    import subprocess
+    from uuid import UUID
+
+    from kleinkram.api.client import AuthenticatedClient
+
+    launch_cmd = f"{CLI} executions launch {template_name} {empty_mission.id}"
+    res = subprocess.run(launch_cmd, shell=True, capture_output=True, text=True)
+    assert res.returncode == 0, f"Launch failed: {res.stderr}"
+
+    # Extract the Execution ID (UUID) from the launch output.
+    # Output structure: "Action submitted. Execution ID: <uuid>"
+    match = re.search(r"Execution ID:\s*([a-f0-9\-]+)", res.stdout, re.IGNORECASE)
+    assert match is not None, f"Could not find Execution ID in output: {res.stdout}"
+    execution_uuid = match.group(1)
+
+    # Cancel the action execution using the CLI cancel command.
+    cancel_cmd = f"{CLI} executions cancel {execution_uuid}"
+    res_cancel = subprocess.run(cancel_cmd, shell=True, capture_output=True, text=True)
+    assert res_cancel.returncode == 0, f"Cancel failed: {res_cancel.stderr}"
+    assert "cancellation requested" in res_cancel.stdout.lower()
+
+    # Poll the action details via get_execution wrapper for up to 10 seconds.
+    # Assert that its state becomes CANCELLED.
+    start_time = time.time()
+    cancelled = False
+    client = AuthenticatedClient()
+    while time.time() - start_time < 10:
+        execution_obj = kleinkram.api.routes.get_execution(client, execution_id=UUID(execution_uuid))
+        if execution_obj.state == "CANCELLED":
+            cancelled = True
+            break
+        time.sleep(0.5)
+
+    assert cancelled, f"Execution was not cancelled in 10s. Current state: {execution_obj.state}"

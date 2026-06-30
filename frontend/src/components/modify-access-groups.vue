@@ -93,10 +93,14 @@ const properties = defineProps<{
 const emit = defineEmits(['addAccessGroupToProject', 'addUsersToProject']);
 
 const search = ref('');
-const options = Object.keys(accessGroupRightsMap).map((key) => ({
-    label: accessGroupRightsMap[Number.parseInt(key, 10) as AccessGroupRights],
-    value: Number.parseInt(key, 10),
-}));
+const options = Object.keys(accessGroupRightsMap).map((key) => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    const right = Number.parseInt(key, 10) as AccessGroupRights;
+    return {
+        label: accessGroupRightsMap[right],
+        value: right,
+    };
+});
 const rights: Ref<Record<string, { label: string; value: AccessGroupRights }>> =
     ref({ ...properties.existingRights });
 

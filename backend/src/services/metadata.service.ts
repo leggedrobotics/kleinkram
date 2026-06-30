@@ -18,7 +18,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 
 @Injectable()
-export class TagService {
+export class MetadataService {
     constructor(
         @InjectRepository(MetadataEntity)
         private tagRepository: Repository<MetadataEntity>,
@@ -164,7 +164,7 @@ export class TagService {
         }
 
         await this.tagRepository.save(tag);
-        return {};
+        return { success: true };
     }
 
     async updateTagType(
@@ -195,8 +195,7 @@ export class TagService {
                         value = Number.parseInt(value as string);
                     }
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                    (exsitingTag as any)[tagType.datatype] = value as number;
+                    exsitingTag.value_number = value as number;
                     break;
                 }
                 throw new UnprocessableEntityException(
@@ -212,8 +211,7 @@ export class TagService {
                     );
                 }
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                (exsitingTag as any)[tagType.datatype] = value;
+                exsitingTag.value_string = value;
                 break;
             }
 
@@ -223,8 +221,7 @@ export class TagService {
                         value = value === 'true';
                     }
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                    (exsitingTag as any)[tagType.datatype] = value as boolean;
+                    exsitingTag.value_boolean = value as boolean;
                     break;
                 }
 
@@ -239,8 +236,17 @@ export class TagService {
                     );
                 }
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                (exsitingTag as any)[tagType.datatype] = new Date(value);
+                exsitingTag.value_date = new Date(value);
+                break;
+            }
+            case DataType.LOCATION: {
+                if (typeof value !== 'string') {
+                    throw new UnprocessableEntityException(
+                        'Value must be a string',
+                    );
+                }
+
+                exsitingTag.value_location = value;
                 break;
             }
 
@@ -255,16 +261,51 @@ export class TagService {
         missionUUID: string,
         tags: Record<string, string>,
     ): Promise<AddTagsDto> {
-        return Promise.all(
-            Object.entries(tags).map(([tagTypeUUID, value]) =>
-                this.addTagType(missionUUID, tagTypeUUID, value),
-            ),
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: missionUUID },
+            relations: ['tags', 'tags.tagType'],
+        });
+
+        if (mission.tags === undefined) {
+            throw new Error('Mission tags are undefined');
+        }
+
+        // Filter out empty values and identify tags to keep/upsert
+        const tagsToUpsert = Object.entries(tags).filter(([_, value]) => {
+            const valueToCheck = value as unknown;
+            return (
+                valueToCheck !== '' &&
+                valueToCheck !== null &&
+                valueToCheck !== undefined
+            );
+        });
+        const tagTypeUUIDsToKeep = new Set(tagsToUpsert.map(([uuid]) => uuid));
+
+        // Delete any existing tags that are not in the list of tags to keep
+        const tagsToDelete = mission.tags.filter(
+            (tag) => !tagTypeUUIDsToKeep.has(tag.tagType?.uuid ?? ''),
         );
+        if (tagsToDelete.length > 0) {
+            await this.tagRepository.remove(tagsToDelete);
+        }
+
+        await Promise.all(
+            tagsToUpsert.map(async ([tagTypeUUID, value]) => {
+                const tag = mission.tags?.find(
+                    (_tag) => _tag.tagType?.uuid === tagTypeUUID,
+                );
+                if (tag) {
+                    return this.updateTagType(missionUUID, tagTypeUUID, value);
+                }
+                return this.addTagType(missionUUID, tagTypeUUID, value);
+            }),
+        );
+        return { success: true };
     }
 
     async deleteTag(uuid: string): Promise<DeleteTagDto> {
         await this.tagRepository.delete({ uuid });
-        return {};
+        return { success: true };
     }
 
     async getAll(skip: number, take: number): Promise<TagTypesDto> {
@@ -291,13 +332,13 @@ export class TagService {
     }
 
     async getFiltered(
-        name: string,
+        name: string | undefined,
         type: DataType | undefined,
         skip: number,
         take: number,
     ): Promise<TagTypesDto> {
         const where: FindOptionsWhere<TagTypeEntity> = {};
-        if (name !== '') {
+        if (name) {
             where.name = ILike(`%${name}%`);
         }
         if (

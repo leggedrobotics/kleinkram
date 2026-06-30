@@ -1,3 +1,4 @@
+import { DynamicDtoResolver } from '@/decorators';
 import {
     CallHandler,
     ExecutionContext,
@@ -8,6 +9,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
+import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import logger from '../../logger';
@@ -87,8 +89,12 @@ export class GlobalResponseValidationInterceptor implements NestInterceptor {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         const target = context.getHandler();
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const dto = this.reflector.get('outputDto', target);
+        let dto = this.reflector.get<unknown>('outputDto', target);
+
+        if (dto && typeof dto === 'object' && 'resolver' in dto) {
+            const request = context.switchToHttp().getRequest<Request>();
+            dto = (dto as DynamicDtoResolver).resolver(request);
+        }
 
         if (dto === null) return next.handle(); // explicitly disabled
 
@@ -98,7 +104,8 @@ export class GlobalResponseValidationInterceptor implements NestInterceptor {
                 `No output DTO defined for route ${target.name}.`,
             );
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        return next.handle().pipe(map(validateResponseJSON(dto)));
+        return next
+            .handle()
+            .pipe(map(validateResponseJSON(dto as ClassConstructor<object>)));
     }
 }

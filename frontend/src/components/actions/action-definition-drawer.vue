@@ -274,17 +274,15 @@ const selectedAccessRights = computed({
 });
 
 const accessOptions = Object.keys(accessGroupRightsMap)
-    .filter(
-        (key) =>
-            (Number.parseInt(key) as AccessGroupRights) !==
-            AccessGroupRights._ADMIN,
-    )
-    .map((key) => ({
-        label: accessGroupRightsMap[
-            Number.parseInt(key, 10) as AccessGroupRights
-        ],
-        value: Number.parseInt(key, 10),
-    }));
+    .map((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        const right = Number.parseInt(key, 10) as AccessGroupRights;
+        return {
+            label: accessGroupRightsMap[right],
+            value: right,
+        };
+    })
+    .filter(({ value }) => value !== AccessGroupRights._ADMIN);
 
 const isEditing = computed(() => !!props.initialTemplate?.uuid);
 
@@ -422,7 +420,7 @@ async function saveTemplate(): Promise<void> {
                 color: 'positive',
             });
         } else {
-            await createTemplate(basePayload as CreateTemplateDto);
+            await createTemplate(basePayload);
             Notify.create({
                 message: 'Action Template Created',
                 color: 'positive',

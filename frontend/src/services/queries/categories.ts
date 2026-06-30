@@ -7,14 +7,14 @@ export const getCategories = async (
     filter?: string,
 ): Promise<CategoriesDto> => {
     const parameters: {
-        uuid: string;
+        projectUuid: string;
         filter?: string;
-    } = { uuid: projectUUID };
+    } = { projectUuid: projectUUID };
     if (filter) {
         parameters.filter = filter;
     }
     const response: AxiosResponse<CategoriesDto> = await axios.get(
-        '/category/all',
+        '/categories',
         {
             params: parameters,
         },

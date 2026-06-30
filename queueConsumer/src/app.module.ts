@@ -33,7 +33,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AccessGroupExpiryProvider } from './accessGroupExpiry/access-group-expiry.provider';
 import { ActionsModule } from './actions/actions.module';
 import { FileProcessorModule } from './file-processor/file-processor.module';
@@ -66,45 +65,41 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
-            useFactory: (configService: ConfigService) =>
-                ({
-                    type: 'postgres',
-                    host: configService.getOrThrow<string>('database.host'),
-                    port: configService.getOrThrow<number>('database.port'),
-                    username:
-                        configService.getOrThrow<string>('database.username'),
-                    password:
-                        configService.getOrThrow<string>('database.password'),
-                    database:
-                        configService.getOrThrow<string>('database.database'),
-                    entities: [
-                        IngestionJobEntity,
-                        FileEventEntity,
-                        MissionEntity,
-                        FileEntity,
-                        ProjectEntity,
-                        TopicEntity,
-                        ActionEntity,
-                        ActionRunnerEntity,
-                        ActionTemplateEntity,
-                        ActionTriggerEntity,
-                        UserEntity,
-                        ApiKeyEntity,
-                        AccountEntity,
-                        AccessGroupEntity,
-                        TagTypeEntity,
-                        MetadataEntity,
-                        ProjectAccessEntity,
-                        MissionAccessEntity,
-                        ProjectAccessViewEntity,
-                        MissionAccessViewEntity,
-                        WorkerEntity,
-                        CategoryEntity,
-                        GroupMembershipEntity,
-                    ],
-                    synchronize: env.DEV,
-                    logging: ['warn', 'error'],
-                }) as PostgresConnectionOptions,
+            useFactory: (configService: ConfigService) => ({
+                type: 'postgres',
+                host: configService.getOrThrow<string>('database.host'),
+                port: configService.getOrThrow<number>('database.port'),
+                username: configService.getOrThrow<string>('database.username'),
+                password: configService.getOrThrow<string>('database.password'),
+                database: configService.getOrThrow<string>('database.database'),
+                entities: [
+                    IngestionJobEntity,
+                    FileEventEntity,
+                    MissionEntity,
+                    FileEntity,
+                    ProjectEntity,
+                    TopicEntity,
+                    ActionEntity,
+                    ActionRunnerEntity,
+                    ActionTemplateEntity,
+                    ActionTriggerEntity,
+                    UserEntity,
+                    ApiKeyEntity,
+                    AccountEntity,
+                    AccessGroupEntity,
+                    TagTypeEntity,
+                    MetadataEntity,
+                    ProjectAccessEntity,
+                    MissionAccessEntity,
+                    ProjectAccessViewEntity,
+                    MissionAccessViewEntity,
+                    WorkerEntity,
+                    CategoryEntity,
+                    GroupMembershipEntity,
+                ],
+                synchronize: env.DEV,
+                logging: ['warn', 'error'],
+            }),
             inject: [ConfigService],
         }),
         TypeOrmModule.forFeature([

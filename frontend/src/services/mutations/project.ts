@@ -47,8 +47,8 @@ export const updateTagTypes = async (
     projectUUID: string,
     tagTypeUUIDs: string[],
 ) => {
-    const response = await axios.post(
-        `/projects/${projectUUID}/updateTagTypes`,
+    const response = await axios.put(
+        `/projects/${projectUUID}/metadata-types`,
         { tagTypeUUIDs },
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return

@@ -8,9 +8,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { FileContext } from '@backend-common/factories/file/file.factory';
 import { MetadataContext } from '@backend-common/factories/metadata/metadata.factory';
-import { TopicContext } from '@backend-common/factories/topic/topic.factory';
 import { extendedFaker } from '@backend-common/faker-extended';
 import {
     DataType,
@@ -237,7 +235,7 @@ export const seedFiles = async (
                         origin: FileOrigin.UPLOAD,
                         hash: fileHash,
                         categories: [category],
-                    } as FileContext)
+                    })
                     .save();
 
                 if (!fileEntity.uuid) {
@@ -297,7 +295,7 @@ export const seedFiles = async (
                                 frequency: topicDefinition.frequency,
                                 nrMessages: 1000n,
                                 messageEncoding: 'cdr',
-                            } as Partial<TopicContext>)
+                            })
                             .save();
                     }
 

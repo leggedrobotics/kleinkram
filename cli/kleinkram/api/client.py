@@ -167,3 +167,12 @@ class AuthenticatedClient(httpx.Client):
             return response
         else:
             return response
+
+    def delete(  # type: ignore[override]
+        self,
+        url: str | httpx.URL,
+        *,
+        params: QueryParams | None = None,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        return self.request("DELETE", url, params=params, **kwargs)

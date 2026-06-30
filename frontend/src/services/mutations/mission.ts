@@ -6,7 +6,7 @@ export const createMission = async (
     projectUUID: string,
     tags: Record<string, string>,
 ) => {
-    const response = await axios.post('/mission/create', {
+    const response = await axios.post('/missions', {
         name,
         projectUUID,
         tags,
@@ -17,16 +17,16 @@ export const createMission = async (
 
 export const moveMission = async (missionUUID: string, projectUUID: string) => {
     const response = await axios.post(
-        '/mission/move',
+        `/missions/${missionUUID}/move`,
         {},
-        { params: { missionUUID, projectUUID } },
+        { params: { projectUUID } },
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const deleteMission = async (mission: MissionWithFilesDto) => {
-    const response = await axios.delete(`/mission/${mission.uuid}`);
+    const response = await axios.delete(`/missions/${mission.uuid}`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
@@ -35,14 +35,15 @@ export const updateMissionTags = async (
     missionUUID: string,
     tags: Record<string, string>,
 ) => {
-    const response = await axios.post('/mission/tags', { missionUUID, tags });
+    const response = await axios.post(`/missions/${missionUUID}/metadata`, {
+        metadata: tags,
+    });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
 };
 
 export const updateMissionName = async (missionUUID: string, name: string) => {
-    const response = await axios.post('/mission/updateName', {
-        missionUUID,
+    const response = await axios.patch(`/missions/${missionUUID}/name`, {
         name,
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return

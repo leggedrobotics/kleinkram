@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import { Paginated } from '@api-dto/pagination';
 import { DataType } from '@kleinkram/shared';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
 import {
     IsDate,
     IsDefined,
@@ -47,6 +48,7 @@ export class TagTypeDto {
     @ApiProperty()
     @IsString()
     @Expose()
+    @Transform(({ value, obj }) => obj.description ?? value ?? '')
     description?: string;
 }
 
@@ -70,6 +72,7 @@ export class TagDto {
     @ApiProperty()
     @IsString()
     @Expose()
+    @Transform(({ value, obj }) => obj.tagType?.name ?? value)
     name!: string;
 
     @ApiProperty({
@@ -79,6 +82,7 @@ export class TagDto {
     })
     @IsEnum(DataType)
     @Expose()
+    @Transform(({ value, obj }) => obj.tagType?.datatype ?? value)
     datatype!: DataType;
 
     @ApiProperty({
@@ -88,11 +92,27 @@ export class TagDto {
     @ValidateNested()
     @Type(() => TagTypeDto)
     @Expose()
+    @Transform(({ value, obj }) => {
+        const t = (obj.tagType ?? value) as object | undefined;
+        return t
+            ? plainToInstance(TagTypeDto, t, { excludeExtraneousValues: true })
+            : undefined;
+    })
     type!: TagTypeDto;
 
     @ApiProperty()
     @IsDefined()
     @Expose()
+    @Transform(({ value, obj }) => {
+        return (
+            obj.value_string ??
+            obj.value_number ??
+            obj.value_boolean ??
+            obj.value_date ??
+            obj.value_location ??
+            value
+        );
+    })
     value!: string | Date | number | boolean;
 
     get valueAsString(): string {

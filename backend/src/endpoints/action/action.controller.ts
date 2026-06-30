@@ -1,6 +1,6 @@
-import { ApiOkResponse, OutputDto } from '@/decorators';
+import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
 import { ActionService } from '@/services/action.service';
-import { FileService } from '@/services/file.service';
+import { FileQueryService } from '@/services/file-query.service';
 import { ParameterUuid } from '@/validation/parameter-decorators';
 import {
     ActionDto,
@@ -12,14 +12,17 @@ import {
     PaginatedQueryDto,
     SubmitActionDto,
     SubmitActionMulti,
+    SuccessResponseDto,
 } from '@kleinkram/api-dto';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
+    CanCancelAction,
     CanCreateAction,
     CanCreateActions,
     CanDeleteAction,
+    CanReadAction,
     LoggedIn,
 } from '../auth/roles.decorator';
 
@@ -28,13 +31,13 @@ import {
 export class ActionsController {
     constructor(
         private readonly actionService: ActionService,
-        private readonly fileService: FileService,
+        private readonly fileQueryService: FileQueryService,
     ) {}
 
     @Post()
     @CanCreateAction()
     @ApiOperation({ summary: 'Submit (dispatch) a new action' })
-    @ApiOkResponse({ type: ActionSubmitResponseDto })
+    @ApiCreatedResponse({ type: ActionSubmitResponseDto })
     async create(
         @Body() dto: SubmitActionDto,
         @AddUser() user: AuthHeader,
@@ -45,7 +48,7 @@ export class ActionsController {
     @Post('batch')
     @CanCreateActions()
     @ApiOperation({ summary: 'Batch submit multiple actions' })
-    @ApiOkResponse({ type: [ActionSubmitResponseDto] })
+    @ApiCreatedResponse({ type: [ActionSubmitResponseDto] })
     async createBatch(
         @Body() dto: SubmitActionMulti,
         @AddUser() user: AuthHeader,
@@ -65,7 +68,7 @@ export class ActionsController {
     }
 
     @Get(':uuid')
-    @LoggedIn()
+    @CanReadAction()
     @ApiOperation({ summary: 'Get action details' })
     @ApiOkResponse({ type: ActionDto })
     async findOne(@ParameterUuid('uuid') uuid: string): Promise<ActionDto> {
@@ -73,7 +76,7 @@ export class ActionsController {
     }
 
     @Get(':uuid/logs')
-    @LoggedIn()
+    @CanReadAction()
     @ApiOperation({ summary: 'Get action logs' })
     @ApiOkResponse({ type: ActionLogsDto })
     async getLogs(
@@ -84,23 +87,34 @@ export class ActionsController {
     }
 
     @Get(':uuid/file-events')
-    @LoggedIn()
+    @CanReadAction()
     @ApiOperation({ summary: 'Get file events triggered by this action' })
     @ApiOkResponse({ type: FileEventsDto })
     async getFileEvents(
         @ParameterUuid('uuid') uuid: string,
     ): Promise<FileEventsDto> {
-        return this.fileService.getActionFileEvents(uuid);
+        return this.fileQueryService.getActionFileEvents(uuid);
     }
 
     @Delete(':uuid')
     @CanDeleteAction()
     @ApiOperation({ summary: 'Delete a specific action run' })
-    @OutputDto(null)
+    @OutputDto(SuccessResponseDto)
     async remove(
         @ParameterUuid('uuid') uuid: string,
-    ): Promise<{ success: boolean }> {
+    ): Promise<SuccessResponseDto> {
         await this.actionService.delete(uuid);
+        return { success: true };
+    }
+
+    @Post(':uuid/cancel')
+    @CanCancelAction()
+    @ApiOperation({ summary: 'Cancel a running action' })
+    @OutputDto(SuccessResponseDto)
+    async cancel(
+        @ParameterUuid('uuid') uuid: string,
+    ): Promise<SuccessResponseDto> {
+        await this.actionService.cancel(uuid);
         return { success: true };
     }
 }
