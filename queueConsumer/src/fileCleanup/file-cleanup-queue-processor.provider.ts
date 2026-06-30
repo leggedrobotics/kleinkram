@@ -175,7 +175,13 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                     await Promise.all(
                         canceledUploads.map(async (file) => {
                             try {
-                                await this.dataStorage.deleteFile(file.uuid);
+                                await this.dataStorage
+                                    .deleteFile(file.uuid)
+                                    .catch((error: unknown) => {
+                                        logger.error(
+                                            `Failed to delete S3 object for ${file.uuid}: ${String(error)}`,
+                                        );
+                                    });
                                 await this.fileRepository.softRemove(file);
                             } catch (error: unknown) {
                                 logger.error(
