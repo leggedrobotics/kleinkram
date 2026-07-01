@@ -226,7 +226,7 @@ def _parse_file(file: FileObject) -> File:
         created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
         state = _parse_file_state(file[FileObjectKeys.STATE])
-        categories = file[FileObjectKeys.CATEGORIES]
+        categories = [c["name"] if isinstance(c, dict) else c for c in file.get(FileObjectKeys.CATEGORIES, [])]
 
         mission_id, mission_name = _get_nested_info(file, MISSION)
         project_id, project_name = _get_nested_info(file[MISSION], PROJECT)

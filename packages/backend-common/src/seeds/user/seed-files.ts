@@ -97,9 +97,20 @@ export const seedFiles = async (
 ): Promise<void> => {
     // eslint-disable-next-line no-console
     console.log('4. Generate and Upload Data...');
-    const generateScriptPath = '/app/cli/tests/generate_test_data.py';
+    const rootDirectory = fs.existsSync('/app')
+        ? '/app'
+        : path.resolve(__dirname, '../../../../..');
+    const generateScriptPath = path.join(
+        rootDirectory,
+        'cli/tests/generate_test_data.py',
+    );
+    const pythonExecutable = fs.existsSync(
+        path.join(rootDirectory, 'cli/.venv/bin/python3'),
+    )
+        ? path.join(rootDirectory, 'cli/.venv/bin/python3')
+        : 'python3';
     try {
-        execSync(`python3 ${generateScriptPath}`);
+        execSync(`${pythonExecutable} ${generateScriptPath}`);
     } catch (error) {
         console.error('Failed to generate test data', error);
     }
@@ -127,7 +138,7 @@ export const seedFiles = async (
     });
 
     const bucketName = process.env.S3_DATA_BUCKET_NAME ?? 'data';
-    const dataDirectory = '/app/cli/tests/data';
+    const dataDirectory = path.join(rootDirectory, 'cli/tests/data');
 
     if (fs.existsSync(dataDirectory)) {
         const files = fs.readdirSync(dataDirectory);
