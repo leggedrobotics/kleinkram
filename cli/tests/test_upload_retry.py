@@ -88,3 +88,39 @@ def test_upload_file_fails_on_insufficient_storage(mission, tmp_path):
 
         assert "Insufficient storage space on the server" in str(exc_info.value)
         mock_post.assert_called_once()
+
+
+@pytest.mark.slow
+def test_upload_file_fails_mid_upload_on_s3_out_of_space(mission, tmp_path):
+    from botocore.exceptions import ClientError
+
+    from kleinkram.errors import InsufficientStorageError
+
+    # Create a temporary file
+    test_file = tmp_path / "test_s3_out_of_space.yaml"
+    test_file.write_text("Hello World for S3 Out of Space Test")
+
+    client = AuthenticatedClient()
+
+    # Create a simulated ClientError for out of space
+    error_response = {
+        "Error": {
+            "Code": "InsufficientStorageSpace",
+            "Message": "There is not enough space on the S3 device.",
+        },
+        "ResponseMetadata": {
+            "HTTPStatusCode": 507,
+        },
+    }
+    simulated_s3_error = ClientError(error_response, "PutObject")
+
+    def mock_s3_upload(*args, **kwargs):
+        raise simulated_s3_error
+
+    with patch("kleinkram.api.file_transfer._s3_upload", side_effect=mock_s3_upload):
+        with patch("kleinkram.api.file_transfer._cancel_file_upload", wraps=ft._cancel_file_upload) as mocked_cancel:
+            with pytest.raises(InsufficientStorageError) as exc_info:
+                upload_file(client=client, mission_id=mission.id, filename=test_file.name, path=test_file)
+
+            assert "Insufficient storage space on the server" in str(exc_info.value)
+            mocked_cancel.assert_called_once()

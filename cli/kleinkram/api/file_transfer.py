@@ -21,6 +21,7 @@ from uuid import UUID
 import boto3.s3.transfer
 import botocore.config
 import httpx
+from botocore.exceptions import ClientError
 
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_config
@@ -160,6 +161,42 @@ def _s3_upload(
     )
 
 
+def _is_s3_out_of_space_error(e: Exception) -> bool:
+    if isinstance(e, ClientError):
+        response = e.response
+        error = response.get("Error", {})
+        code = error.get("Code", "")
+        message = error.get("Message", "")
+        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode", 0)
+
+        if status_code == 507:
+            return True
+
+        out_of_space_codes = {
+            "InsufficientStorageSpace",
+            "QuotaExceeded",
+            "StorageLimitExceeded",
+            "QuotaExceededException",
+        }
+        if code in out_of_space_codes:
+            return True
+
+        message_lower = message.lower()
+        if "insufficient storage" in message_lower or "out of space" in message_lower or "no space left" in message_lower:
+            return True
+
+    e_str = str(e).lower()
+    if (
+        "insufficient storage" in e_str
+        or "out of space" in e_str
+        or "no space left" in e_str
+        or "507 insufficient storage" in e_str
+    ):
+        return True
+
+    return False
+
+
 class UploadState(Enum):
     UPLOADED = 1
     EXISTS = 2
@@ -208,6 +245,14 @@ def upload_file(
         try:
             _s3_upload(path, endpoint=s3_endpoint, credentials=creds, callback=boto3_cb)
         except Exception as e:
+            if _is_s3_out_of_space_error(e):
+                logger.error("Upload failed: S3 storage is out of space.")
+                try:
+                    _cancel_file_upload(client, creds.file_id, mission_id)
+                except Exception as cancel_e:
+                    logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
+                raise InsufficientStorageError("Insufficient storage space on the server") from e
+
             logger.error(format_traceback(e))
             try:
                 _cancel_file_upload(client, creds.file_id, mission_id)
