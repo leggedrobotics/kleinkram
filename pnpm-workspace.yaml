@@ -8,6 +8,7 @@ packages:
 minimumReleaseAge: 7200
 minimumReleaseAgeExclude:
   - '@aws-sdk/*'
+  - '@smithy/*'
   - '@nestjs/*'
   - '@types/*'
   - '@typescript-eslint/*'
@@ -18,6 +19,7 @@ minimumReleaseAgeExclude:
   - 'systeminformation'
   - 'dockerode'
   - 'autoprefixer'
+  - 'vite'
 
 
 allowBuilds:

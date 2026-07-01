@@ -18,9 +18,11 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN sed -i 's/minimumReleaseAge: [0-9]*/minimumReleaseAge: 0/' pnpm-workspace.yaml
 RUN pnpm fetch
 
 COPY . .
+RUN sed -i 's/minimumReleaseAge: [0-9]*/minimumReleaseAge: 0/' pnpm-workspace.yaml
 RUN pnpm install -r
 
 # Build packages and backend

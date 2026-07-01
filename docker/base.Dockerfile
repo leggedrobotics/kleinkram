@@ -19,10 +19,12 @@ USER node
 
 # Install dependencies using pnpm fetch for caching
 COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN sed -i 's/minimumReleaseAge: [0-9]*/minimumReleaseAge: 0/' pnpm-workspace.yaml
 RUN pnpm fetch
 
 # Only copy manifest files needed for installation, NOT source code
 COPY --chown=node:node package.json pnpm-workspace.yaml tsconfig.base.json ./
+RUN sed -i 's/minimumReleaseAge: [0-9]*/minimumReleaseAge: 0/' pnpm-workspace.yaml
 COPY --chown=node:node packages/shared/package.json ./packages/shared/
 COPY --chown=node:node packages/validation/package.json ./packages/validation/
 COPY --chown=node:node packages/api-dto/package.json ./packages/api-dto/

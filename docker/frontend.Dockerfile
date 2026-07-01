@@ -25,9 +25,11 @@ ENV VITE_S3_ENDPOINT=$VITE_S3_ENDPOINT
 WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN sed -i 's/minimumReleaseAge: [0-9]*/minimumReleaseAge: 0/' pnpm-workspace.yaml
 RUN pnpm fetch
 
 COPY . .
+RUN sed -i 's/minimumReleaseAge: [0-9]*/minimumReleaseAge: 0/' pnpm-workspace.yaml
 RUN pnpm install -r
 
 # Generate build info explicitly to ensure it captures build-time ARGs
