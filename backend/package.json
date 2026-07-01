@@ -94,7 +94,7 @@
         "@types/jest": "^30.0.0",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/multer": "^2.1.0",
-        "@types/node": "^24.10.1",
+        "@types/node": "^26.0.1",
         "@types/passport-github": "^1.1.13",
         "@types/passport-github2": "^1.2.0",
         "@types/passport-google-oauth20": "^2.0.16",
