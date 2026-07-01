@@ -186,7 +186,10 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                                             `Failed to delete S3 object for ${file.uuid}: ${String(error)}`,
                                         );
                                     });
-                                await this.fileRepository.softRemove(file);
+                                await this.fileRepository.softDelete({
+                                    uuid: file.uuid,
+                                    state: FileState.CANCELED,
+                                });
                             } catch (error: unknown) {
                                 logger.error(
                                     `Failed to clean up canceled upload ${file.uuid}: ${String(error)}`,
