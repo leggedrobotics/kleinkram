@@ -5,7 +5,19 @@ packages:
   - queueConsumer
   - docs
 
-minimumReleaseAge: 0
+minimumReleaseAge: 7200
+minimumReleaseAgeExclude:
+  - '@aws-sdk/*'
+  - '@nestjs/*'
+  - '@types/*'
+  - '@typescript-eslint/*'
+  - '@tanstack/*'
+  - 'vue'
+  - 'mermaid'
+  - 'vite-plugin-node-polyfills'
+  - 'systeminformation'
+  - 'dockerode'
+  - 'autoprefixer'
 
 
 allowBuilds:
