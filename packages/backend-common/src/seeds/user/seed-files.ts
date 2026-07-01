@@ -97,9 +97,28 @@ export const seedFiles = async (
 ): Promise<void> => {
     // eslint-disable-next-line no-console
     console.log('4. Generate and Upload Data...');
-    const rootDirectory = fs.existsSync('/app')
-        ? '/app'
-        : path.resolve(__dirname, '../../../../..');
+    let rootDirectory = '/app';
+    if (
+        !fs.existsSync(
+            path.join(rootDirectory, 'cli/tests/generate_test_data.py'),
+        )
+    ) {
+        let currentDirectory = __dirname;
+        while (currentDirectory !== path.dirname(currentDirectory)) {
+            if (
+                fs.existsSync(
+                    path.join(
+                        currentDirectory,
+                        'cli/tests/generate_test_data.py',
+                    ),
+                )
+            ) {
+                rootDirectory = currentDirectory;
+                break;
+            }
+            currentDirectory = path.dirname(currentDirectory);
+        }
+    }
     const generateScriptPath = path.join(
         rootDirectory,
         'cli/tests/generate_test_data.py',
@@ -110,7 +129,7 @@ export const seedFiles = async (
         ? path.join(rootDirectory, 'cli/.venv/bin/python3')
         : 'python3';
     try {
-        execSync(`${pythonExecutable} ${generateScriptPath}`);
+        execSync(`"${pythonExecutable}" "${generateScriptPath}"`);
     } catch (error) {
         console.error('Failed to generate test data', error);
     }

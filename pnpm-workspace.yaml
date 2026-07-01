@@ -5,6 +5,9 @@ packages:
   - queueConsumer
   - docs
 
+minimumReleaseAge: 0
+
+
 allowBuilds:
   '@nestjs/core': true
   '@parcel/watcher': true
