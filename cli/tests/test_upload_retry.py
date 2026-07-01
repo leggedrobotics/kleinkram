@@ -65,3 +65,26 @@ def test_upload_file_aborts_on_cancellation_error(mission, tmp_path):
             # The exception should wrap the cancellation error and abort immediately
             assert "cancellation failed" in str(exc_info.value)
             mocked_cancel.assert_called_once()
+
+
+@pytest.mark.slow
+def test_upload_file_fails_on_insufficient_storage(mission, tmp_path):
+    from httpx import Response
+
+    from kleinkram.errors import InsufficientStorageError
+
+    # Create a temporary file
+    test_file = tmp_path / "test_insufficient_storage.yaml"
+    test_file.write_text("Hello World for Storage Test")
+
+    client = AuthenticatedClient()
+
+    # Mock client.post to return 507 when requesting credentials
+    mock_response = Response(status_code=507)
+
+    with patch.object(client, "post", return_value=mock_response) as mock_post:
+        with pytest.raises(InsufficientStorageError) as exc_info:
+            upload_file(client=client, mission_id=mission.id, filename=test_file.name, path=test_file)
+
+        assert "Insufficient storage space on the server" in str(exc_info.value)
+        mock_post.assert_called_once()

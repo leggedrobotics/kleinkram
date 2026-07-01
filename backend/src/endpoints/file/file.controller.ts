@@ -308,6 +308,7 @@ export class FileController {
             auth.user.uuid,
             auth.apiKey?.action,
             source,
+            body.fileSizes,
         );
     }
 

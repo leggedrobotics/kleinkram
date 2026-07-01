@@ -27,6 +27,8 @@ import {
 import {
     BadRequestException,
     ConflictException,
+    HttpException,
+    HttpStatus,
     Inject,
     Injectable,
     NotFoundException,
@@ -334,6 +336,7 @@ export class FileLifecycleService implements OnModuleInit {
         userUUID: string,
         action?: ActionEntity,
         uploadSource = 'Web Interface',
+        fileSizes?: number[],
     ): Promise<TemporaryFileAccessesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
@@ -342,6 +345,25 @@ export class FileLifecycleService implements OnModuleInit {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
         });
+
+        if (
+            fileSizes &&
+            fileSizes.length > 0 &&
+            this.dataStorage.getSystemMetrics
+        ) {
+            const metrics = await this.dataStorage.getSystemMetrics();
+            const freeBytes = metrics.totalBytes - metrics.usedBytes;
+            const totalRequestedSize = fileSizes.reduce(
+                (sum, size) => sum + size,
+                0,
+            );
+            if (totalRequestedSize > freeBytes) {
+                throw new HttpException(
+                    'Insufficient storage space on the server',
+                    HttpStatus.INSUFFICIENT_STORAGE,
+                );
+            }
+        }
 
         return await this.dataSource.transaction(async (manager) => {
             // Deduplicate filenames to avoid self-collisions

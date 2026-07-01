@@ -25,6 +25,7 @@ import httpx
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
+from kleinkram.errors import InsufficientStorageError
 from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.utils import b64_md5
@@ -95,16 +96,21 @@ FILE_ID_FIELD = "fileUUID"
 BUCKET_FIELD = "bucket"
 
 
-@retry(max_attempts=5, exceptions=(httpx.TransportError,), exclude_exceptions=(FileExistsError,))
-def _get_upload_creditials(client: AuthenticatedClient, internal_filename: str, mission_id: UUID) -> UploadCredentials:
+@retry(max_attempts=5, exceptions=(httpx.TransportError,), exclude_exceptions=(FileExistsError, InsufficientStorageError))
+def _get_upload_creditials(
+    client: AuthenticatedClient, internal_filename: str, mission_id: UUID, file_size: int
+) -> UploadCredentials:
     dct = {
         "filenames": [internal_filename],
         "missionUUID": str(mission_id),
         "source": "CLI",
+        "fileSizes": [file_size],
     }
     resp = client.post(UPLOAD_CREDS, json=dct)
     if resp.status_code == 409:
         raise FileExistsError()
+    if resp.status_code == 507:
+        raise InsufficientStorageError("Insufficient storage space on the server")
     resp.raise_for_status()
 
     data = resp.json()["data"][0]
@@ -186,7 +192,7 @@ def upload_file(
 
         # get per file upload credentials
         try:
-            creds = _get_upload_creditials(client, internal_filename=filename, mission_id=mission_id)
+            creds = _get_upload_creditials(client, internal_filename=filename, mission_id=mission_id, file_size=total_size)
         except FileExistsError:
             return UploadState.EXISTS, 0
 
@@ -498,6 +504,11 @@ def upload_files(
 
             try:
                 state, size_bytes = future.result()
+            except InsufficientStorageError as e:
+                if on_message_cb is not None:
+                    on_message_cb("Upload failed: Insufficient storage space on the server", True)
+                executor.shutdown(wait=False, cancel_futures=True)
+                raise e
             except Exception as e:
                 logger.error(format_traceback(e))
                 if on_message_cb is not None:
