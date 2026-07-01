@@ -154,33 +154,30 @@ export class QueueService implements OnModuleInit {
         actor: UserEntity,
         source: FileSource | string = FileSource.WEB_INTERFACE,
     ): Promise<void> {
+        const file = await this.fileRepository.findOneOrFail({
+            where: { uuid },
+            relations: ['mission', 'mission.project'],
+        });
+
+        if (file.state === FileState.CANCELED) {
+            throw new ConflictException('Cannot confirm a canceled upload');
+        }
+
         let job = await this.queueRepository.findOne({
             where: { identifier: uuid },
             relations: ['mission', 'mission.project'],
         });
 
-        if (!job) {
-            logger.warn(
-                `confirmUpload: Job missing for file ${uuid}.Recreating...`,
-            );
-
-            const file = await this.fileRepository.findOneOrFail({
-                where: { uuid },
-                relations: ['mission', 'mission.project'],
-            });
-
-            job = await this.queueRepository.save(
-                this.queueRepository.create({
-                    identifier: file.uuid,
-
-                    displayName: file.filename,
-                    state: QueueState.AWAITING_UPLOAD,
-                    location: FileLocation.S3,
-                    mission: file.mission,
-                    creator: actor,
-                } as IngestionJobEntity),
-            );
-        }
+        job ??= await this.queueRepository.save(
+            this.queueRepository.create({
+                identifier: file.uuid,
+                displayName: file.filename,
+                state: QueueState.AWAITING_UPLOAD,
+                location: FileLocation.S3,
+                mission: file.mission,
+                creator: actor,
+            } as IngestionJobEntity),
+        );
 
         if (
             job.state !== QueueState.AWAITING_UPLOAD &&
@@ -192,11 +189,6 @@ export class QueueService implements OnModuleInit {
                 `Resuming upload for job ${job.uuid} in state ${job.state} `,
             );
         }
-
-        const file = await this.fileRepository.findOneOrFail({
-            where: { uuid: uuid },
-            relations: ['mission', 'mission.project'],
-        });
 
         const fileInfo = await this.dataStorage
             .getFileInfo(file.uuid)

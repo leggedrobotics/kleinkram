@@ -224,6 +224,22 @@ export class FileController {
         });
     }
 
+    @Delete('uploads')
+    @UserOnly() //Push back authentication to the queue to accelerate the request
+    @OutputDto(CancelUploadResponseDto)
+    async cancelUpload(
+        @Body() dto: CancelFileUploadDto,
+        @AddUser() auth: AuthHeader,
+    ): Promise<CancelUploadResponseDto> {
+        logger.debug(`cancelUpload ${JSON.stringify(dto)}`);
+        await this.fileLifecycleService.cancelUpload(
+            dto.uuids,
+            dto.missionUuid,
+            auth.user.uuid,
+        );
+        return { success: true };
+    }
+
     @Delete(':uuid')
     @CanDeleteFile()
     @OutputDto(DeleteFileResponseDto)
@@ -292,23 +308,8 @@ export class FileController {
             auth.user.uuid,
             auth.apiKey?.action,
             source,
+            body.fileSizes,
         );
-    }
-
-    @Delete('uploads')
-    @UserOnly() //Push back authentication to the queue to accelerate the request
-    @OutputDto(CancelUploadResponseDto)
-    async cancelUpload(
-        @Body() dto: CancelFileUploadDto,
-        @AddUser() auth: AuthHeader,
-    ): Promise<CancelUploadResponseDto> {
-        logger.debug(`cancelUpload ${JSON.stringify(dto)}`);
-        await this.fileLifecycleService.cancelUpload(
-            dto.uuids,
-            dto.missionUuid,
-            auth.user.uuid,
-        );
-        return { success: true };
     }
 
     @Delete()

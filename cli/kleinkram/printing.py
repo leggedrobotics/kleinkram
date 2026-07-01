@@ -56,6 +56,7 @@ FILE_STATE_COLOR = {
     FileState.CONVERSION_ERROR: "red",
     FileState.LOST: "bold red",
     FileState.FOUND: "yellow",
+    FileState.CANCELED: "bright_black",
 }
 
 

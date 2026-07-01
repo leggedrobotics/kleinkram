@@ -21,14 +21,17 @@ from uuid import UUID
 import boto3.s3.transfer
 import botocore.config
 import httpx
+from botocore.exceptions import ClientError
 
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
+from kleinkram.errors import InsufficientStorageError
 from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.utils import b64_md5
 from kleinkram.utils import format_traceback
+from kleinkram.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +64,7 @@ class UploadCredentials(NamedTuple):
     bucket: str
 
 
+@retry(max_attempts=3, exceptions=(httpx.TransportError,))
 def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: str) -> None:
     data = {
         "uuid": str(file_id),
@@ -71,6 +75,7 @@ def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: 
     resp.raise_for_status()
 
 
+@retry(max_attempts=3, exceptions=(httpx.TransportError,))
 def _cancel_file_upload(client: AuthenticatedClient, file_id: UUID, mission_id: UUID) -> None:
     data = {
         "uuids": [str(file_id)],
@@ -92,27 +97,24 @@ FILE_ID_FIELD = "fileUUID"
 BUCKET_FIELD = "bucket"
 
 
+@retry(max_attempts=5, exceptions=(httpx.TransportError,), exclude_exceptions=(FileExistsError, InsufficientStorageError))
 def _get_upload_creditials(
-    client: AuthenticatedClient, internal_filename: str, mission_id: UUID
-) -> Optional[UploadCredentials]:
+    client: AuthenticatedClient, internal_filename: str, mission_id: UUID, file_size: int
+) -> UploadCredentials:
     dct = {
         "filenames": [internal_filename],
         "missionUUID": str(mission_id),
         "source": "CLI",
+        "fileSizes": [file_size],
     }
-    try:
-        resp = client.post(UPLOAD_CREDS, json=dct)
-        resp.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        # 409 Conflict means file already exists
-        if e.response.status_code == 409:
-            return None
-        raise
+    resp = client.post(UPLOAD_CREDS, json=dct)
+    if resp.status_code == 409:
+        raise FileExistsError()
+    if resp.status_code == 507:
+        raise InsufficientStorageError("Insufficient storage space on the server")
+    resp.raise_for_status()
 
     data = resp.json()["data"][0]
-
-    if data.get("error") == FILE_EXISTS_ERROR:
-        return None
 
     bucket = data[BUCKET_FIELD]
     file_id = UUID(data[FILE_ID_FIELD], version=4)
@@ -159,37 +161,46 @@ def _s3_upload(
     )
 
 
+def _is_s3_out_of_space_error(e: Exception) -> bool:
+    if isinstance(e, ClientError):
+        response = e.response
+        error = response.get("Error", {})
+        code = error.get("Code", "")
+        message = error.get("Message", "")
+        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode", 0)
+
+        if status_code == 507:
+            return True
+
+        out_of_space_codes = {
+            "InsufficientStorageSpace",
+            "QuotaExceeded",
+            "StorageLimitExceeded",
+            "QuotaExceededException",
+        }
+        if code in out_of_space_codes:
+            return True
+
+        message_lower = message.lower()
+        if "insufficient storage" in message_lower or "out of space" in message_lower or "no space left" in message_lower:
+            return True
+
+    e_str = str(e).lower()
+    if (
+        "insufficient storage" in e_str
+        or "out of space" in e_str
+        or "no space left" in e_str
+        or "507 insufficient storage" in e_str
+    ):
+        return True
+
+    return False
+
+
 class UploadState(Enum):
     UPLOADED = 1
     EXISTS = 2
     CANCELED = 3
-
-
-def _get_upload_credentials_with_retry(client, filename, mission_id, max_attempts=5):
-    """
-    Retrieves upload credentials with retry logic.
-
-    Args:
-        client: The client object used for retrieving credentials.
-        filename: The internal filename.
-        mission_id: The mission ID.
-        max_attempts: Maximum number of retry attempts.
-
-    Returns:
-        The upload credentials or None if retrieval fails after all attempts.
-    """
-    attempt = 0
-    while attempt < max_attempts:
-        creds = _get_upload_creditials(client, internal_filename=filename, mission_id=mission_id)
-        if creds is not None:
-            return creds
-
-        attempt += 1
-        if attempt < max_attempts:
-            delay = 2**attempt  # Exponential backoff (2, 4, 8, 16...)
-            sleep(delay)
-
-    return None
 
 
 # TODO: i dont want to handle errors at this level
@@ -217,9 +228,9 @@ def upload_file(
             on_file_start_cb(path, total_size)
 
         # get per file upload credentials
-        creds = _get_upload_credentials_with_retry(client, filename, mission_id, max_attempts=5 if attempt > 0 else 1)
-
-        if creds is None:
+        try:
+            creds = _get_upload_creditials(client, internal_filename=filename, mission_id=mission_id, file_size=total_size)
+        except FileExistsError:
             return UploadState.EXISTS, 0
 
         # build the boto3 callback from our file progress callback
@@ -234,14 +245,24 @@ def upload_file(
         try:
             _s3_upload(path, endpoint=s3_endpoint, credentials=creds, callback=boto3_cb)
         except Exception as e:
+            if _is_s3_out_of_space_error(e):
+                logger.error("Upload failed: S3 storage is out of space.")
+                try:
+                    _cancel_file_upload(client, creds.file_id, mission_id)
+                except Exception as cancel_e:
+                    logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
+                raise InsufficientStorageError("Insufficient storage space on the server") from e
+
             logger.error(format_traceback(e))
             try:
                 _cancel_file_upload(client, creds.file_id, mission_id)
             except Exception as cancel_e:
                 logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
+                raise RuntimeError(f"Upload failed and cancellation failed for {creds.file_id}: {cancel_e}") from e
 
-            if attempt < 2:  # Retry if not the last attempt
-                logger.warning(f"Retrying upload for {path} (attempt {attempt + 1})")
+            if attempt < MAX_UPLOAD_RETRIES - 1:  # Retry if not the last attempt
+                logger.warning(f"Retrying upload for {path} (attempt {attempt + 1}), retrying after backoff...")
+                sleep(RETRY_BACKOFF_BASE**attempt)
                 continue
             else:
                 logger.error(f"Cancelling upload for {path} after {attempt + 1} attempts")
@@ -528,6 +549,11 @@ def upload_files(
 
             try:
                 state, size_bytes = future.result()
+            except InsufficientStorageError as e:
+                if on_message_cb is not None:
+                    on_message_cb("Upload failed: Insufficient storage space on the server", True)
+                executor.shutdown(wait=False, cancel_futures=True)
+                raise e
             except Exception as e:
                 logger.error(format_traceback(e))
                 if on_message_cb is not None:
