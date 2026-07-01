@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
 import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
@@ -128,7 +129,6 @@ const handleSearchFilter = (
 };
 
 const getExistingRight = (uuid: string): AccessGroupRights | undefined => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return accessRights.value?.find((g) => g.uuid === uuid)?.rights;
 };
 
