@@ -1,3 +1,4 @@
+import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import {
     ActionTriggerDto,
     CreateActionTriggerDto,
@@ -12,13 +13,16 @@ import {
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import {
+    AccessGroupRights,
     ActionTriggerSource,
     isValidCron,
     TriggerEvent,
     TriggerType,
+    UserRole,
 } from '@kleinkram/shared';
 import {
     BadRequestException,
+    ForbiddenException,
     Injectable,
     NotFoundException,
     OnModuleInit,
@@ -43,13 +47,28 @@ export class TriggerService implements OnModuleInit {
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
         private readonly actionDispatcher: ActionDispatcherService,
+        private readonly missionGuardService: MissionGuardService,
     ) {}
 
     onModuleInit(): void {
         this.triggerQueue = new Queue('trigger-queue', { redis });
     }
 
-    async findAll(missionUuid?: string): Promise<ActionTriggerDto[]> {
+    async findAll(
+        user: UserEntity,
+        missionUuid?: string,
+    ): Promise<ActionTriggerDto[]> {
+        if (missionUuid && user.role !== UserRole.ADMIN) {
+            const hasAccess = await this.missionGuardService.canAccessMission(
+                user,
+                missionUuid,
+                AccessGroupRights.READ,
+            );
+            if (!hasAccess) {
+                throw new ForbiddenException('Forbidden resource');
+            }
+        }
+
         const query = this.triggerRepository
             .createQueryBuilder('trigger')
             .leftJoinAndSelect('trigger.template', 'template')
@@ -59,10 +78,31 @@ export class TriggerService implements OnModuleInit {
             query.where('trigger.missionUuid = :missionUuid', { missionUuid });
         }
         const entities = await query.getMany();
+
+        if (!missionUuid && user.role !== UserRole.ADMIN) {
+            const allowedEntities: ActionTriggerEntity[] = [];
+            for (const entity of entities) {
+                if (entity.creatorUuid === user.uuid) {
+                    allowedEntities.push(entity);
+                } else {
+                    const hasAccess =
+                        await this.missionGuardService.canAccessMission(
+                            user,
+                            entity.missionUuid,
+                            AccessGroupRights.READ,
+                        );
+                    if (hasAccess) {
+                        allowedEntities.push(entity);
+                    }
+                }
+            }
+            return allowedEntities.map((entity) => this.toDto(entity));
+        }
+
         return entities.map((entity) => this.toDto(entity));
     }
 
-    async findOne(uuid: string): Promise<ActionTriggerDto> {
+    async findOne(uuid: string, user: UserEntity): Promise<ActionTriggerDto> {
         const trigger = await this.triggerRepository.findOne({
             where: { uuid },
             relations: { template: true, mission: true, creator: true },
@@ -70,6 +110,17 @@ export class TriggerService implements OnModuleInit {
 
         if (!trigger) {
             throw new NotFoundException('Trigger not found');
+        }
+
+        if (user.role !== UserRole.ADMIN && trigger.creatorUuid !== user.uuid) {
+            const hasAccess = await this.missionGuardService.canAccessMission(
+                user,
+                trigger.missionUuid,
+                AccessGroupRights.READ,
+            );
+            if (!hasAccess) {
+                throw new ForbiddenException('Forbidden resource');
+            }
         }
 
         return this.toDto(trigger);

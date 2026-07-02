@@ -32,9 +32,10 @@ export class TriggerController {
     @LoggedIn()
     @ApiOkResponse({ type: ActionTriggerDto, isArray: true })
     async findAll(
+        @AddUser() auth: AuthHeader,
         @Query('missionUuid') missionUuid?: string,
     ): Promise<ActionTriggerDto[]> {
-        return this.triggerService.findAll(missionUuid);
+        return this.triggerService.findAll(auth.user, missionUuid);
     }
 
     @Get(':uuid')
@@ -42,8 +43,9 @@ export class TriggerController {
     @ApiOkResponse({ type: ActionTriggerDto })
     async findOne(
         @ParameterUuid('uuid') uuid: string,
+        @AddUser() auth: AuthHeader,
     ): Promise<ActionTriggerDto> {
-        return this.triggerService.findOne(uuid);
+        return this.triggerService.findOne(uuid, auth.user);
     }
 
     @Post()
