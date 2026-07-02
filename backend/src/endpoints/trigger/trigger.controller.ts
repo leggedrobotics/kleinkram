@@ -20,6 +20,7 @@ import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreateInMissionByBody,
     CanModifyTrigger,
+    CanReadTrigger,
     fromBody,
     LoggedIn,
 } from '../auth/roles.decorator';
@@ -36,17 +37,23 @@ export class TriggerController {
         @AddUser() auth: AuthHeader,
         @Query('missionUuid') missionUuid?: string,
     ): Promise<ActionTriggerDto[]> {
-        return this.triggerService.findAll(auth.user, missionUuid);
+        const scopedMissionUuid = auth.apiKey
+            ? auth.apiKey.mission.uuid
+            : missionUuid;
+        return this.triggerService.findAll(
+            auth.user,
+            scopedMissionUuid,
+            auth.apiKey,
+        );
     }
 
     @Get(':uuid')
-    @LoggedIn()
+    @CanReadTrigger()
     @ApiOkResponse({ type: ActionTriggerDto })
     async findOne(
         @ParameterUuid('uuid') uuid: string,
-        @AddUser() auth: AuthHeader,
     ): Promise<ActionTriggerDto> {
-        return this.triggerService.findOne(uuid, auth.user);
+        return this.triggerService.findOne(uuid);
     }
 
     @Post()
