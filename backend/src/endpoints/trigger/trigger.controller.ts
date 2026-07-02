@@ -37,6 +37,15 @@ export class TriggerController {
         return this.triggerService.findAll(missionUuid);
     }
 
+    @Get(':uuid')
+    @LoggedIn()
+    @ApiOkResponse({ type: ActionTriggerDto })
+    async findOne(
+        @ParameterUuid('uuid') uuid: string,
+    ): Promise<ActionTriggerDto> {
+        return this.triggerService.findOne(uuid);
+    }
+
     @Post()
     @CanCreateInMissionByBody()
     @ApiCreatedResponse({ type: ActionTriggerDto })
