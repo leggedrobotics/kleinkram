@@ -180,7 +180,7 @@ describe('Trigger Ownership API Tests', () => {
         expect(response.status).toBe(200);
     });
 
-    test('User B should be able to read User A trigger', async () => {
+    test('User B should NOT be able to read User A trigger', async () => {
         const trigger = await createTrigger(userA, {
             name: 'User A Trigger',
             description: 'Owned by User A',
@@ -199,10 +199,7 @@ describe('Trigger Ownership API Tests', () => {
             },
         );
 
-        expect(response.status).toBe(200);
-        const body = (await response.json()) as { uuid: string; name: string };
-        expect(body.uuid).toBe(trigger.uuid);
-        expect(body.name).toBe('User A Trigger');
+        expect(response.status).toBe(403);
     });
 
     test('Should return 404 for non-existent trigger', async () => {
