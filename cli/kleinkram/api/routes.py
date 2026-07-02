@@ -281,11 +281,14 @@ def get_triggers(client: AuthenticatedClient, query: Optional[TriggerQuery] = No
     return list(map(lambda p: _parse_action_trigger(TriggerObject(p)), payload))
 
 
+GET_TRIGGER_ENDPOINT = "/triggers/{}"
+
+
 def get_trigger(
     client: AuthenticatedClient,
     trigger_uuid: UUID,
 ) -> ActionTrigger:
-    resp = client.patch(UPDATE_TRIGGER.format(trigger_uuid), json={})
+    resp = client.get(GET_TRIGGER_ENDPOINT.format(trigger_uuid))
     if resp.status_code == 404:
         raise kleinkram.errors.TriggerNotFound(f"Trigger not found: {trigger_uuid}")
     resp.raise_for_status()
