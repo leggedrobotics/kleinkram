@@ -14,6 +14,7 @@ from kleinkram.models import TriggerType
 from kleinkram.models import WebhookConfig
 from kleinkram.wrappers import create_trigger
 from kleinkram.wrappers import delete_trigger
+from kleinkram.wrappers import get_trigger
 from kleinkram.wrappers import list_triggers
 from kleinkram.wrappers import update_trigger
 
@@ -48,6 +49,11 @@ def test_trigger_crud_file(empty_mission, action_template):
     print(trigger.config)
     assert trigger.config.patterns == ("*.bag", "data/*.csv")
     assert trigger.config.event == (FileTriggerEvent.UPLOAD, FileTriggerEvent.DELETE)
+
+    # Verify via get_trigger
+    trigger_detail = get_trigger(trigger_uuid)
+    assert trigger_detail.uuid == trigger_uuid
+    assert trigger_detail.name == trigger_name
 
     # 3. Update
     new_name = f"trig-upd-{token_hex(4)}"
