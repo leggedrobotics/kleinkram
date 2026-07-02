@@ -179,4 +179,43 @@ describe('Trigger Ownership API Tests', () => {
 
         expect(response.status).toBe(200);
     });
+
+    test('User B should be able to read User A trigger', async () => {
+        const trigger = await createTrigger(userA, {
+            name: 'User A Trigger',
+            description: 'Owned by User A',
+            type: TriggerType.WEBHOOK,
+            missionUuid: missionUuid,
+            templateUuid: templateUuid,
+            config: {},
+        });
+
+        const headersBuilder = new HeaderCreator(userB);
+        const response = await fetch(
+            `${DEFAULT_URL}/triggers/${trigger.uuid}`,
+            {
+                method: 'GET',
+                headers: headersBuilder.getHeaders(),
+            },
+        );
+
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as { uuid: string; name: string };
+        expect(body.uuid).toBe(trigger.uuid);
+        expect(body.name).toBe('User A Trigger');
+    });
+
+    test('Should return 404 for non-existent trigger', async () => {
+        const headersBuilder = new HeaderCreator(userA);
+        const nonExistentUuid = '00000000-0000-0000-0000-000000000000';
+        const response = await fetch(
+            `${DEFAULT_URL}/triggers/${nonExistentUuid}`,
+            {
+                method: 'GET',
+                headers: headersBuilder.getHeaders(),
+            },
+        );
+
+        expect(response.status).toBe(404);
+    });
 });

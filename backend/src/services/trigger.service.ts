@@ -62,6 +62,19 @@ export class TriggerService implements OnModuleInit {
         return entities.map((entity) => this.toDto(entity));
     }
 
+    async findOne(uuid: string): Promise<ActionTriggerDto> {
+        const trigger = await this.triggerRepository.findOne({
+            where: { uuid },
+            relations: { template: true, mission: true, creator: true },
+        });
+
+        if (!trigger) {
+            throw new NotFoundException('Trigger not found');
+        }
+
+        return this.toDto(trigger);
+    }
+
     async create(
         dto: CreateActionTriggerDto,
         creator: UserEntity,
