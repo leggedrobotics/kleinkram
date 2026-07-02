@@ -1,3 +1,4 @@
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { FileEntity as File } from '@kleinkram/backend-common/entities/file/file.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
@@ -155,6 +156,38 @@ export const addAccessConstraintsToFileQuery = (
         ...userIsAdminSubQuery.getParameters(),
         ...missionUUIDQuery.getParameters(),
         ...projectUUIDQuery.getParameters(),
+    });
+
+    return query;
+};
+
+export const addAccessConstraintsToTriggerQuery = (
+    query: SelectQueryBuilder<ActionTriggerEntity>,
+    userUUID: string,
+): SelectQueryBuilder<ActionTriggerEntity> => {
+    const tok = uuidv4().replaceAll('-', '');
+    const missionUUIDQuery = missionAccessUUIDQuery(query, userUUID);
+    const projectUUIDQuery = projectAccessUUIDQuery(query, userUUID);
+    const userIsAdminSubQuery = getUserIsAdminSubQuery(query, userUUID);
+
+    const accessBracket = new Brackets((qb) => {
+        qb.where(`mission.uuid IN (${missionUUIDQuery.getQuery()})`);
+        qb.orWhere(`project.uuid IN (${projectUUIDQuery.getQuery()})`);
+        qb.orWhere(`trigger.creatorUuid = :creatorUserUUID_${tok}`);
+    });
+
+    query.andWhere(
+        new Brackets((qb) => {
+            qb.where(`EXISTS (${userIsAdminSubQuery.getQuery()})`);
+            qb.orWhere(accessBracket);
+        }),
+    );
+
+    query.setParameters({
+        ...userIsAdminSubQuery.getParameters(),
+        ...missionUUIDQuery.getParameters(),
+        ...projectUUIDQuery.getParameters(),
+        [`creatorUserUUID_${tok}`]: userUUID,
     });
 
     return query;

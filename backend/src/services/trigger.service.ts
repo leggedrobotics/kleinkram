@@ -1,3 +1,4 @@
+import { addAccessConstraintsToTriggerQuery } from '@/endpoints/auth/auth-helper';
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import {
     ActionTriggerDto,
@@ -7,6 +8,7 @@ import {
 import {
     ActionTemplateEntity,
     ActionTriggerEntity,
+    ApiKeyEntity,
     MissionEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
@@ -57,13 +59,20 @@ export class TriggerService implements OnModuleInit {
     async findAll(
         user: UserEntity,
         missionUuid?: string,
+        apiKey?: ApiKeyEntity,
     ): Promise<ActionTriggerDto[]> {
         if (missionUuid && user.role !== UserRole.ADMIN) {
-            const hasAccess = await this.missionGuardService.canAccessMission(
-                user,
-                missionUuid,
-                AccessGroupRights.READ,
-            );
+            const hasAccess = apiKey
+                ? this.missionGuardService.canKeyAccessMission(
+                      apiKey,
+                      missionUuid,
+                      AccessGroupRights.READ,
+                  )
+                : await this.missionGuardService.canAccessMission(
+                      user,
+                      missionUuid,
+                      AccessGroupRights.READ,
+                  );
             if (!hasAccess) {
                 throw new ForbiddenException('Forbidden resource');
             }
@@ -72,55 +81,34 @@ export class TriggerService implements OnModuleInit {
         const query = this.triggerRepository
             .createQueryBuilder('trigger')
             .leftJoinAndSelect('trigger.template', 'template')
-            .leftJoinAndSelect('trigger.creator', 'creator');
+            .leftJoinAndSelect('trigger.creator', 'creator')
+            .leftJoin('trigger.mission', 'mission')
+            .leftJoin('mission.project', 'project');
 
         if (missionUuid) {
-            query.where('trigger.missionUuid = :missionUuid', { missionUuid });
+            query.andWhere('trigger.missionUuid = :missionUuid', {
+                missionUuid,
+            });
         }
+
+        // API keys are scoped to their mission (verified above); skip user-level
+        // access constraints for them. Session users get SQL-level filtering.
+        if (user.role !== UserRole.ADMIN && !apiKey) {
+            addAccessConstraintsToTriggerQuery(query, user.uuid);
+        }
+
         const entities = await query.getMany();
-
-        if (!missionUuid && user.role !== UserRole.ADMIN) {
-            const allowedEntities: ActionTriggerEntity[] = [];
-            for (const entity of entities) {
-                if (entity.creatorUuid === user.uuid) {
-                    allowedEntities.push(entity);
-                } else {
-                    const hasAccess =
-                        await this.missionGuardService.canAccessMission(
-                            user,
-                            entity.missionUuid,
-                            AccessGroupRights.READ,
-                        );
-                    if (hasAccess) {
-                        allowedEntities.push(entity);
-                    }
-                }
-            }
-            return allowedEntities.map((entity) => this.toDto(entity));
-        }
-
         return entities.map((entity) => this.toDto(entity));
     }
 
-    async findOne(uuid: string, user: UserEntity): Promise<ActionTriggerDto> {
+    async findOne(uuid: string): Promise<ActionTriggerDto> {
         const trigger = await this.triggerRepository.findOne({
             where: { uuid },
-            relations: { template: true, mission: true, creator: true },
+            relations: { template: true, creator: true },
         });
 
         if (!trigger) {
             throw new NotFoundException('Trigger not found');
-        }
-
-        if (user.role !== UserRole.ADMIN && trigger.creatorUuid !== user.uuid) {
-            const hasAccess = await this.missionGuardService.canAccessMission(
-                user,
-                trigger.missionUuid,
-                AccessGroupRights.READ,
-            );
-            if (!hasAccess) {
-                throw new ForbiddenException('Forbidden resource');
-            }
         }
 
         return this.toDto(trigger);
