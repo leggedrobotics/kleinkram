@@ -69,6 +69,29 @@ textarea {
     display: none;
 }
 
+.q-header .q-tab .q-focus-helper,
+.q-header .header-icon-button.q-btn--round .q-focus-helper {
+    display: block;
+    width: auto;
+    height: auto;
+    border-radius: $generic-border-radius;
+}
+
+.q-header .header-icon-button.q-btn--round {
+    border-radius: $generic-border-radius;
+}
+
+.q-header .header-icon-button.q-btn--round .q-focus-helper {
+    inset: 4px;
+}
+
+.q-header .q-tab .q-focus-helper {
+    top: 11px;
+    right: -8px;
+    bottom: 11px;
+    left: -8px;
+}
+
 .q-tab,
 .q-tab__content {
     padding: 0;
