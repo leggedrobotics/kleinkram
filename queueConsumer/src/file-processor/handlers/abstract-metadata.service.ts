@@ -68,6 +68,7 @@ export abstract class AbstractMetadataService {
                 targetEntity.date = fileDate;
             }
             targetEntity.state = FileState.OK;
+            targetEntity.stateComment = null;
             targetEntity.size = fileSize;
             await this.fileRepo.save(targetEntity);
 
@@ -97,6 +98,7 @@ export abstract class AbstractMetadataService {
                 `Metadata extraction finalize failed for ${targetEntity.filename}: ${String(error)}`,
             );
             targetEntity.state = FileState.CONVERSION_ERROR;
+            targetEntity.stateComment = String(error);
             await this.fileRepo.save(targetEntity);
             throw error;
         }

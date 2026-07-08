@@ -77,6 +77,15 @@ export class FileDto {
     state!: FileState;
 
     @ApiProperty({
+        description: 'Diagnostic message when state is non-OK',
+        required: false,
+    })
+    @IsString()
+    @IsOptional()
+    @Expose()
+    stateComment?: string | null;
+
+    @ApiProperty({
         description: 'The creator of the file',
         type: () => UserDto,
     })
