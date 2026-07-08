@@ -35,6 +35,19 @@
                 <span class="text-weight-bold">.{{ fileExtension }}</span>
             </div>
         </div>
+
+        <div
+            v-if="file.stateComment"
+            class="text-caption q-mt-md text-red"
+            style="
+                max-width: 600px;
+                word-break: break-word;
+                margin-left: auto;
+                margin-right: auto;
+            "
+        >
+            {{ file.stateComment }}
+        </div>
     </div>
 </template>
 

@@ -35,7 +35,9 @@
                     :color="getColorFileState(props.row.state)"
                     size="20px"
                 >
-                    <q-tooltip>{{ getTooltip(props.row.state) }}</q-tooltip>
+                    <q-tooltip>{{
+                        getTooltip(props.row.state, props.row.stateComment)
+                    }}</q-tooltip>
                 </q-icon>
             </q-td>
         </template>
