@@ -118,11 +118,16 @@ def upload(
             typer.echo(f"\nUpload took {result.elapsed_seconds:.2f} seconds")
             typer.echo(f"Total uploaded: {format_bytes(result.total_bytes)}")
             typer.echo(f"Average speed: {format_bytes(avg_speed, speed=True)}")
-            if result.failed > 0:
+            if result.failed > 0 or result.canceled > 0:
+                parts = [f"Uploaded {result.uploaded} files", f"{result.skipped} skipped"]
+                if result.canceled > 0:
+                    parts.append(f"{result.canceled} canceled")
+                if result.failed > 0:
+                    parts.append(f"{result.failed} failed")
                 typer.echo(
                     typer.style(
-                        f"\nUploaded {result.uploaded} files, {result.skipped} skipped, {result.failed} failed",
-                        fg=typer.colors.RED,
+                        f"\n{', '.join(parts)}",
+                        fg=typer.colors.YELLOW if result.failed == 0 else typer.colors.RED,
                     ),
                     err=True,
                 )
@@ -138,11 +143,18 @@ def upload(
                 metadata=load_metadata(Path(metadata)) if metadata else None,
                 ignore_missing_metadata=ignore_missing_tags,
             )
-            if result.failed > 0:
+            if result.failed > 0 or result.canceled > 0:
+                parts = [f"Uploaded {result.uploaded} file(s)"]
+                if result.skipped > 0:
+                    parts.append(f"{result.skipped} skipped")
+                if result.canceled > 0:
+                    parts.append(f"{result.canceled} canceled")
+                if result.failed > 0:
+                    parts.append(f"{result.failed} failed")
                 typer.echo(
                     typer.style(
-                        f"\nUploaded {result.uploaded} file(s), {result.skipped} skipped, {result.failed} failed.",
-                        fg=typer.colors.RED,
+                        f"\n{', '.join(parts)}.",
+                        fg=typer.colors.YELLOW if result.failed == 0 else typer.colors.RED,
                     ),
                     err=True,
                 )
@@ -158,3 +170,6 @@ def upload(
         if create:
             raise  # dont change the error message
         raise MissionNotFound("Mission not found. Use `--create` to create it.")
+
+    if result.canceled > 0:
+        raise typer.Exit(code=130)
