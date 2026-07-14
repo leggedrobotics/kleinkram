@@ -457,6 +457,7 @@ def download_file(
         path.parent.mkdir(parents=True, exist_ok=True)
 
     # download the file and check the hash
+    had_prior_bytes = not overwrite and path.exists() and path.stat().st_size > 0
     try:
         _url_download(
             download_url,
@@ -471,7 +472,7 @@ def download_file(
         # If cancel was requested, treat as cancellation regardless of exception type
         if cancel_event is not None and cancel_event.is_set():
             logger.info(f"Download cancelled for {path}")
-            if path.exists():
+            if (not had_prior_bytes or overwrite) and path.exists():
                 try:
                     path.unlink()
                     logger.info(f"Removed potentially incomplete file {path}")
@@ -480,8 +481,8 @@ def download_file(
             return DownloadState.CANCELED, 0
 
         logger.error(f"Error during download of {path}: {e}")
-        # Attempt to clean up potentially partial file
-        if path.exists():
+        # Only clean up files we created; preserve prior bytes for resume
+        if (not had_prior_bytes or overwrite) and path.exists():
             try:
                 path.unlink()
                 logger.info(f"Removed potentially incomplete file {path}")
