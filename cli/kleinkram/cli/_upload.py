@@ -178,7 +178,7 @@ def upload(
         if create:
             raise  # dont change the error message
         raise MissionNotFound("Mission not found. Use `--create` to create it.")
-    
+
     else:
         if result.interrupted or result.canceled > 0:
             raise typer.Exit(code=130)
