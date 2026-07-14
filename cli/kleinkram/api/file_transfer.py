@@ -635,55 +635,62 @@ def upload_files(
     interrupted = False
     processed_futures: set = set()
 
-    with ThreadPoolExecutor(max_workers=n_workers) as executor:
-        try:
-            for name, path in files.items():
-                if not path.is_file():
-                    logger.warning(f"Skipping non-existent file: {path}")
-                    if on_message_cb is not None:
-                        on_message_cb(f"Skipping non-existent file: {path}", False)
-                    result.skipped += 1
-                    if on_overall_progress_cb is not None:
-                        on_overall_progress_cb()
-                    continue
+    executor = ThreadPoolExecutor(max_workers=n_workers)
+    try:
+        for name, path in files.items():
+            if not path.is_file():
+                logger.warning(f"Skipping non-existent file: {path}")
+                if on_message_cb is not None:
+                    on_message_cb(f"Skipping non-existent file: {path}", False)
+                result.skipped += 1
+                if on_overall_progress_cb is not None:
+                    on_overall_progress_cb()
+                continue
 
-                future = executor.submit(
-                    upload_file,
-                    client=client,
-                    mission_id=mission_id,
-                    filename=name,
-                    path=path,
-                    on_file_start_cb=on_file_start_cb,
-                    on_file_progress_cb=on_file_progress_cb,
+            future = executor.submit(
+                upload_file,
+                client=client,
+                mission_id=mission_id,
+                filename=name,
+                path=path,
+                on_file_start_cb=on_file_start_cb,
+                on_file_progress_cb=on_file_progress_cb,
+                cancel_event=cancel_event,
+            )
+            futures[future] = path
+
+        for future in as_completed(futures):
+            try:
+                processed_futures.add(future)
+                _resolve_upload_future(
+                    future=future,
+                    path=futures[future],
+                    result=result,
                     cancel_event=cancel_event,
+                    executor=executor,
+                    on_message_cb=on_message_cb,
+                    on_overall_progress_cb=on_overall_progress_cb,
                 )
-                futures[future] = path
+            except KeyboardInterrupt:
+                processed_futures.discard(future)
+                raise
 
-            for future in as_completed(futures):
-                try:
-                    processed_futures.add(future)
-                    _resolve_upload_future(
-                        future=future,
-                        path=futures[future],
-                        result=result,
-                        cancel_event=cancel_event,
-                        executor=executor,
-                        on_message_cb=on_message_cb,
-                        on_overall_progress_cb=on_overall_progress_cb,
-                    )
-                except KeyboardInterrupt:
-                    processed_futures.discard(future)
-                    raise
-
-        except KeyboardInterrupt:
-            logger.info("Upload interrupted by user, cancelling...")
-            interrupted = True
-            cancel_event.set()
-            executor.shutdown(wait=False, cancel_futures=True)
+    except KeyboardInterrupt:
+        logger.info("Upload interrupted by user, cancelling...")
+        interrupted = True
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+    else:
+        executor.shutdown(wait=True)
 
     if interrupted:
         for future, path in futures.items():
             if future in processed_futures:
+                continue
+            if not future.done():
+                result.canceled += 1
+                if on_overall_progress_cb is not None:
+                    on_overall_progress_cb()
                 continue
             _resolve_upload_future(
                 future=future,
@@ -768,48 +775,55 @@ def download_files(
     interrupted = False
     processed_futures: set = set()
 
-    with ThreadPoolExecutor(max_workers=n_workers) as executor:
-        try:
-            for path, file in files.items():
-                future = executor.submit(
-                    download_file,
-                    client=client,
-                    file=file,
+    executor = ThreadPoolExecutor(max_workers=n_workers)
+    try:
+        for path, file in files.items():
+            future = executor.submit(
+                download_file,
+                client=client,
+                file=file,
+                path=path,
+                overwrite=overwrite,
+                allow_corrupt_files=allow_corrupt_files,
+                create_parents=create_parents,
+                on_file_start_cb=on_file_start_cb,
+                on_file_progress_cb=on_file_progress_cb,
+                cancel_event=cancel_event,
+            )
+            futures[future] = (file, path)
+
+        for future in as_completed(futures):
+            try:
+                processed_futures.add(future)
+                file, path = futures[future]
+                _resolve_download_future(
+                    future=future,
                     path=path,
-                    overwrite=overwrite,
-                    allow_corrupt_files=allow_corrupt_files,
-                    create_parents=create_parents,
-                    on_file_start_cb=on_file_start_cb,
-                    on_file_progress_cb=on_file_progress_cb,
-                    cancel_event=cancel_event,
+                    file=file,
+                    result=result,
+                    on_message_cb=on_message_cb,
+                    on_overall_progress_cb=on_overall_progress_cb,
                 )
-                futures[future] = (file, path)
+            except KeyboardInterrupt:
+                processed_futures.discard(future)
+                raise
 
-            for future in as_completed(futures):
-                try:
-                    processed_futures.add(future)
-                    file, path = futures[future]
-                    _resolve_download_future(
-                        future=future,
-                        path=path,
-                        file=file,
-                        result=result,
-                        on_message_cb=on_message_cb,
-                        on_overall_progress_cb=on_overall_progress_cb,
-                    )
-                except KeyboardInterrupt:
-                    processed_futures.discard(future)
-                    raise
-
-        except KeyboardInterrupt:
-            logger.info("Download interrupted by user, cancelling...")
-            interrupted = True
-            cancel_event.set()
-            executor.shutdown(wait=False, cancel_futures=True)
+    except KeyboardInterrupt:
+        logger.info("Download interrupted by user, cancelling...")
+        interrupted = True
+        cancel_event.set()
+        executor.shutdown(wait=False, cancel_futures=True)
+    else:
+        executor.shutdown(wait=True)
 
     if interrupted:
         for future, (file, path) in futures.items():
             if future in processed_futures:
+                continue
+            if not future.done():
+                result.state_counts[DownloadState.CANCELED] = result.state_counts.get(DownloadState.CANCELED, 0) + 1
+                if on_overall_progress_cb is not None:
+                    on_overall_progress_cb()
                 continue
             _resolve_download_future(
                 future=future,
