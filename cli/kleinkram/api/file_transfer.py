@@ -558,6 +558,62 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
     return messages.get(state)
 
 
+def _resolve_upload_future(
+    future: Future[Tuple[UploadState, int]],
+    path: Path,
+    result: UploadResult,
+    cancel_event: threading.Event,
+    executor: Optional[ThreadPoolExecutor] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    is_cleanup: bool = False,
+) -> None:
+    """Resolves an upload future, updates telemetry, and triggers callbacks."""
+    if future.cancelled():
+        result.canceled += 1
+        if on_overall_progress_cb is not None:
+            on_overall_progress_cb()
+        return
+
+    try:
+        state, size_bytes = future.result()
+    except InsufficientStorageError as e:
+        if on_message_cb is not None:
+            on_message_cb("Upload failed: Insufficient storage space on the server", True)
+        cancel_event.set()
+        if executor is not None:
+            executor.shutdown(wait=False, cancel_futures=True)
+        if not is_cleanup:
+            raise e
+        return
+    except Exception as e:
+        logger.error(format_traceback(e))
+        if on_message_cb is not None:
+            on_message_cb(f"Error uploading {path}: {e}", True)
+        result.failed += 1
+        if on_overall_progress_cb is not None:
+            on_overall_progress_cb()
+        return
+
+    result.total_bytes += size_bytes
+
+    if state == UploadState.UPLOADED:
+        result.uploaded += 1
+        if on_message_cb is not None:
+            on_message_cb(f"uploaded {path}", False)
+    elif state == UploadState.EXISTS:
+        result.skipped += 1
+        if on_message_cb is not None:
+            on_message_cb(f"skipped {path} (already uploaded)", False)
+    elif state == UploadState.CANCELED:
+        result.canceled += 1
+        if on_message_cb is not None:
+            on_message_cb(f"canceled {path} upload", False)
+
+    if on_overall_progress_cb is not None:
+        on_overall_progress_cb()
+
+
 def upload_files(
     client: AuthenticatedClient,
     files: Dict[str, Path],
@@ -602,69 +658,91 @@ def upload_files(
                 futures[future] = path
 
             for future in as_completed(futures):
-                processed_futures.add(future)
-                path = futures[future]
-
                 try:
-                    state, size_bytes = future.result()
-                except InsufficientStorageError as e:
-                    if on_message_cb is not None:
-                        on_message_cb("Upload failed: Insufficient storage space on the server", True)
-                    cancel_event.set()
-                    executor.shutdown(wait=False, cancel_futures=True)
-                    raise e
-                except Exception as e:
-                    logger.error(format_traceback(e))
-                    if on_message_cb is not None:
-                        on_message_cb(f"Error uploading {path}: {e}", True)
-                    result.failed += 1
-                    if on_overall_progress_cb is not None:
-                        on_overall_progress_cb()
-                    continue
+                    processed_futures.add(future)
+                    _resolve_upload_future(
+                        future=future,
+                        path=futures[future],
+                        result=result,
+                        cancel_event=cancel_event,
+                        executor=executor,
+                        on_message_cb=on_message_cb,
+                        on_overall_progress_cb=on_overall_progress_cb,
+                    )
+                except KeyboardInterrupt:
+                    processed_futures.discard(future)
+                    raise
 
-                result.total_bytes += size_bytes
-
-                if state == UploadState.UPLOADED:
-                    result.uploaded += 1
-                    if on_message_cb is not None:
-                        on_message_cb(f"uploaded {path}", False)
-                elif state == UploadState.EXISTS:
-                    result.skipped += 1
-                    if on_message_cb is not None:
-                        on_message_cb(f"skipped {path} (already uploaded)", False)
-                elif state == UploadState.CANCELED:
-                    result.canceled += 1
-                    if on_message_cb is not None:
-                        on_message_cb(f"canceled {path} upload", False)
-
-                if on_overall_progress_cb is not None:
-                    on_overall_progress_cb()
         except KeyboardInterrupt:
             logger.info("Upload interrupted by user, cancelling...")
             interrupted = True
             cancel_event.set()
             executor.shutdown(wait=False, cancel_futures=True)
 
-    # After the with-block, all threads have been joined and every future is
-    # guaranteed to be done() or cancelled(). Drain unprocessed futures safely.
     if interrupted:
-        for future in futures:
+        for future, path in futures.items():
             if future in processed_futures:
                 continue
-            if future.cancelled():
-                result.canceled += 1
-                continue
-            try:
-                state, _ = future.result()
-                if state == UploadState.CANCELED:
-                    result.canceled += 1
-            except Exception:
-                result.failed += 1
+            _resolve_upload_future(
+                future=future,
+                path=path,
+                result=result,
+                cancel_event=cancel_event,
+                on_message_cb=on_message_cb,
+                on_overall_progress_cb=on_overall_progress_cb,
+                is_cleanup=True,
+            )
 
     result.elapsed_seconds = monotonic() - start
     if interrupted and on_message_cb is not None:
         on_message_cb("Upload interrupted by user", True)
     return result
+
+
+def _resolve_download_future(
+    future: Future[Tuple[DownloadState, int]],
+    path: Path,
+    file: File,
+    result: DownloadResult,
+    on_message_cb: Optional[OnMessageCb] = None,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+) -> None:
+    """Resolves a download future, updates telemetry, and triggers callbacks."""
+    if future.cancelled():
+        result.state_counts[DownloadState.CANCELED] = result.state_counts.get(DownloadState.CANCELED, 0) + 1
+        if on_overall_progress_cb is not None:
+            on_overall_progress_cb()
+        return
+
+    try:
+        state, size_bytes = future.result()
+    except Exception as e:
+        logger.error(format_traceback(e))
+        if on_message_cb is not None:
+            on_message_cb(f"Error downloading {path}: {e}", True)
+        result.failed += 1
+        if on_overall_progress_cb is not None:
+            on_overall_progress_cb()
+        return
+
+    result.state_counts[state] = result.state_counts.get(state, 0) + 1
+
+    if state in (
+        DownloadState.DOWNLOADED_OK,
+        DownloadState.DOWNLOADED_CORRUPTED,
+        DownloadState.SKIPPED_OK,
+        DownloadState.OVERWRITTEN_OK,
+        DownloadState.OVERWRITTEN_CORRUPTED,
+    ):
+        result.total_bytes += size_bytes
+
+    if on_message_cb is not None:
+        msg = _download_state_message(state, path, file)
+        if msg is not None:
+            on_message_cb(*msg)
+
+    if on_overall_progress_cb is not None:
+        on_overall_progress_cb()
 
 
 def download_files(
@@ -705,59 +783,39 @@ def download_files(
                 futures[future] = (file, path)
 
             for future in as_completed(futures):
-                processed_futures.add(future)
-                file, path = futures[future]
-
                 try:
-                    state, size_bytes = future.result()
-                except Exception as e:
-                    logger.error(format_traceback(e))
-                    if on_message_cb is not None:
-                        on_message_cb(f"Error downloading {path}: {e}", True)
-                    result.failed += 1
-                    if on_overall_progress_cb is not None:
-                        on_overall_progress_cb()
-                    continue
+                    processed_futures.add(future)
+                    file, path = futures[future]
+                    _resolve_download_future(
+                        future=future,
+                        path=path,
+                        file=file,
+                        result=result,
+                        on_message_cb=on_message_cb,
+                        on_overall_progress_cb=on_overall_progress_cb,
+                    )
+                except KeyboardInterrupt:
+                    processed_futures.discard(future)
+                    raise
 
-                result.state_counts[state] = result.state_counts.get(state, 0) + 1
-
-                if state in (
-                    DownloadState.DOWNLOADED_OK,
-                    DownloadState.DOWNLOADED_CORRUPTED,
-                    DownloadState.SKIPPED_OK,
-                    DownloadState.OVERWRITTEN_OK,
-                    DownloadState.OVERWRITTEN_CORRUPTED,
-                ):
-                    result.total_bytes += size_bytes
-
-                # Generate per-file status messages
-                if on_message_cb is not None:
-                    msg = _download_state_message(state, path, file)
-                    if msg is not None:
-                        on_message_cb(*msg)
-
-                if on_overall_progress_cb is not None:
-                    on_overall_progress_cb()
         except KeyboardInterrupt:
             logger.info("Download interrupted by user, cancelling...")
             interrupted = True
             cancel_event.set()
             executor.shutdown(wait=False, cancel_futures=True)
 
-    # After the with-block, all threads have been joined and every future is
-    # guaranteed to be done() or cancelled(). Drain unprocessed futures safely.
     if interrupted:
-        for future in futures:
+        for future, (file, path) in futures.items():
             if future in processed_futures:
                 continue
-            if future.cancelled():
-                result.state_counts[DownloadState.CANCELED] = result.state_counts.get(DownloadState.CANCELED, 0) + 1
-                continue
-            try:
-                state, _ = future.result()
-                result.state_counts[state] = result.state_counts.get(state, 0) + 1
-            except Exception:
-                result.failed += 1
+            _resolve_download_future(
+                future=future,
+                path=path,
+                file=file,
+                result=result,
+                on_message_cb=on_message_cb,
+                on_overall_progress_cb=on_overall_progress_cb,
+            )
 
     result.elapsed_seconds = monotonic() - start
     if interrupted and on_message_cb is not None:
