@@ -119,7 +119,9 @@ def upload(
             typer.echo(f"Total uploaded: {format_bytes(result.total_bytes)}")
             typer.echo(f"Average speed: {format_bytes(avg_speed, speed=True)}")
             if result.failed > 0 or result.canceled > 0:
-                parts = [f"Uploaded {result.uploaded} files", f"{result.skipped} skipped"]
+                parts = [f"Uploaded {result.uploaded} files"]
+                if result.skipped > 0:
+                    parts.append(f"{result.skipped} skipped")
                 if result.canceled > 0:
                     parts.append(f"{result.canceled} canceled")
                 if result.failed > 0:
@@ -132,7 +134,10 @@ def upload(
                     err=True,
                 )
             else:
-                typer.echo(f"\nUploaded {result.uploaded} files, {result.skipped} skipped")
+                parts = [f"Uploaded {result.uploaded} files"]
+                if result.skipped > 0:
+                    parts.append(f"{result.skipped} skipped")
+                typer.echo(f"\n{', '.join(parts)}")
         else:
             # No verbose: no progress bars, no callbacks
             result = kleinkram.core.upload(
@@ -159,9 +164,12 @@ def upload(
                     err=True,
                 )
             else:
+                parts = [f"Uploaded {result.uploaded} file(s)"]
+                if result.skipped > 0:
+                    parts.append(f"{result.skipped} skipped")
                 typer.echo(
                     typer.style(
-                        f"\nSuccessfully uploaded {result.uploaded} file(s).",
+                        f"\n{', '.join(parts)}.",
                         fg=typer.colors.GREEN,
                     )
                 )
