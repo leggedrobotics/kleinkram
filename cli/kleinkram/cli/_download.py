@@ -173,5 +173,5 @@ def download(
             )
 
     canceled = result.state_counts.get(DownloadState.CANCELED, 0)
-    if canceled > 0:
+    if result.interrupted or canceled > 0:
         raise typer.Exit(code=130)

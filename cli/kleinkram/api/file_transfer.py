@@ -511,6 +511,7 @@ class UploadResult:
     canceled: int = 0
     total_bytes: int = 0
     elapsed_seconds: float = 0.0
+    interrupted: bool = False
 
 
 @dataclass
@@ -519,6 +520,7 @@ class DownloadResult:
     failed: int = 0
     total_bytes: int = 0
     elapsed_seconds: float = 0.0
+    interrupted: bool = False
 
 
 def _download_state_message(state: DownloadState, path: Path, file: File) -> Optional[Tuple[str, bool]]:
@@ -696,6 +698,7 @@ def upload_files(
     result.elapsed_seconds = monotonic() - start
     if interrupted and on_message_cb is not None:
         on_message_cb("Upload interrupted by user", True)
+    result.interrupted = interrupted
     return result
 
 
@@ -820,4 +823,5 @@ def download_files(
     result.elapsed_seconds = monotonic() - start
     if interrupted and on_message_cb is not None:
         on_message_cb("Download interrupted by user", True)
+    result.interrupted = interrupted
     return result
