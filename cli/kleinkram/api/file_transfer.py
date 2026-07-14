@@ -289,7 +289,7 @@ def upload_file(
                 continue
             else:
                 logger.error(f"Cancelling upload for {path} after {attempt + 1} attempts")
-                raise e from e
+                raise
 
         else:
             _confirm_file_upload(client, creds.file_id, b64_md5(path))
