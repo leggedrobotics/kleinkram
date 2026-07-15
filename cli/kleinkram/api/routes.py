@@ -110,6 +110,8 @@ class Params(str, Enum):
     MISSION_IDS = "missionUuids"
     PROJECT_PATTERNS = "projectPatterns"
     PROJECT_IDS = "projectUuids"
+    INCLUDE_STATES = "includeStates"
+    EXCLUDE_STATES = "excludeStates"
 
 
 def _handle_list_params(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -151,6 +153,10 @@ def _file_query_to_params(file_query: FileQuery) -> Dict[str, List[str]]:
         params[Params.FILE_PATTERNS.value] = list(file_query.patterns)
     if file_query.ids:
         params[Params.FILE_IDS.value] = list(map(str, file_query.ids))
+    if file_query.include_states:
+        params[Params.INCLUDE_STATES.value] = file_query.include_states
+    if file_query.exclude_states:
+        params[Params.EXCLUDE_STATES.value] = file_query.exclude_states
     return params
 
 
