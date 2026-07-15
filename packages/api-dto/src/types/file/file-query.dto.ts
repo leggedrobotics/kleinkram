@@ -1,5 +1,5 @@
 import { MissionQueryDto } from '@api-dto/mission/mission-query.dto';
-import { HealthStatus } from '@kleinkram/shared';
+import { FileState, HealthStatus } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
@@ -176,4 +176,32 @@ export class FileQueryDto extends MissionQueryDto {
     @IsString()
     @ApiProperty({ required: false })
     sort?: string;
+
+    @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsEnum(FileState, { each: true })
+    @ApiProperty({
+        required: false,
+        isArray: true,
+        enum: FileState,
+        description: 'File states to include (whitelist)',
+    })
+    includeStates?: FileState[];
+
+    @IsOptional()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsEnum(FileState, { each: true })
+    @ApiProperty({
+        required: false,
+        isArray: true,
+        enum: FileState,
+        description: 'File states to exclude (blacklist)',
+    })
+    excludeStates?: FileState[];
 }
