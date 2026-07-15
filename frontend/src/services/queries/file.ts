@@ -78,12 +78,15 @@ export const fetchFilteredFiles = async (
         if (desc !== undefined)
             parameters.sortDirection = desc ? 'DESC' : 'ASC';
         if (health) parameters.health = health;
-        if (includeStates && includeStates.length > 0)
-            parameters.includeStates = includeStates.join(',');
-        if (excludeStates && excludeStates.length > 0)
-            parameters.excludeStates = excludeStates.join(',');
+        const stateParameters = new URLSearchParams(parameters);
+        for (const state of includeStates ?? []) {
+            stateParameters.append('includeStates', state);
+        }
+        for (const state of excludeStates ?? []) {
+            stateParameters.append('excludeStates', state);
+        }
 
-        const queryParameters = new URLSearchParams(parameters).toString();
+        const queryParameters = stateParameters.toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
             `/files?${queryParameters}`,
         );
