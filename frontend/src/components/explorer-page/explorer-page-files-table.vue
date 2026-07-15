@@ -214,7 +214,7 @@
 import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
-import { FileType, HealthStatus } from '@kleinkram/shared';
+import { FileState, FileType, HealthStatus } from '@kleinkram/shared';
 import {
     keepPreviousData,
     useQuery,
@@ -381,6 +381,8 @@ const {
                 ? h.searchParams.messageDatatypes.split(',')
                 : undefined,
             h.searchParams.matchAllTopics === 'true',
+            undefined,
+            [FileState.CANCELED],
         );
     },
     placeholderData: keepPreviousData,

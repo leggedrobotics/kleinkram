@@ -6,7 +6,7 @@ import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import type { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
 import type { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
 import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
-import { FileType, HealthStatus } from '@kleinkram/shared';
+import { FileState, FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
@@ -27,6 +27,8 @@ export interface FilteredFilesConfig {
     sort?: string | undefined;
     desc?: boolean | undefined;
     health?: HealthStatus | undefined;
+    includeStates?: FileState[] | undefined;
+    excludeStates?: FileState[] | undefined;
 }
 
 export const fetchFilteredFiles = async (
@@ -50,6 +52,8 @@ export const fetchFilteredFiles = async (
         sort,
         desc,
         health,
+        includeStates,
+        excludeStates,
     } = config;
     try {
         const parameters: Record<string, string> = {};
@@ -74,6 +78,10 @@ export const fetchFilteredFiles = async (
         if (desc !== undefined)
             parameters.sortDirection = desc ? 'DESC' : 'ASC';
         if (health) parameters.health = health;
+        if (includeStates && includeStates.length > 0)
+            parameters.includeStates = includeStates.join(',');
+        if (excludeStates && excludeStates.length > 0)
+            parameters.excludeStates = excludeStates.join(',');
 
         const queryParameters = new URLSearchParams(parameters).toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
@@ -131,6 +139,8 @@ export const filesOfMission = async (
     topics?: string[],
     messageDatatypes?: string[],
     matchAllTopics = true,
+    includeStates?: FileState[],
+    excludeStates?: FileState[],
 ): Promise<FilesDto> => {
     const tag: Record<string, unknown> = {};
 
@@ -150,6 +160,8 @@ export const filesOfMission = async (
         endDate,
         topics,
         messageDatatypes,
+        includeStates,
+        excludeStates,
     });
 };
 
