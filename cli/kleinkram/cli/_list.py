@@ -23,7 +23,9 @@ def files(
 ) -> None:
     from kleinkram.cli._file import list_files
 
-    list_files(files=files, projects=projects, missions=missions)
+    list_files(
+        files=files, projects=projects, missions=missions, include_canceled=False, include_states=None, exclude_states=None
+    )
 
 
 @list_typer.command()
