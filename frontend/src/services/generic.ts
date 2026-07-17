@@ -291,34 +291,53 @@ export function getActionColor(state: ActionState) {
     }
 }
 
-export function getTooltip(state: FileState | undefined) {
+export function getTooltip(
+    state: FileState | undefined,
+    stateComment?: string | null,
+) {
     if (state === undefined) {
         return 'Unknown';
     }
 
+    let baseText = '';
     switch (state) {
         case FileState.OK: {
-            return 'File is OK';
+            baseText = 'File is OK';
+            break;
         }
         case FileState.ERROR: {
-            return 'File has an error';
+            baseText = 'File has an error';
+            break;
         }
         case FileState.UPLOADING: {
-            return 'File is uploading';
+            baseText = 'File is uploading';
+            break;
         }
         case FileState.CORRUPTED: {
-            return 'File is corrupted';
+            baseText = 'File is corrupted';
+            break;
         }
         case FileState.LOST: {
-            return 'File cannot be found in storage';
+            baseText = 'File cannot be found in storage';
+            break;
         }
         case FileState.FOUND: {
-            return 'File was recovered';
+            baseText = 'File was recovered';
+            break;
         }
         case FileState.CONVERSION_ERROR: {
-            return 'File conversion failed';
+            baseText = 'File conversion failed';
+            break;
+        }
+        default: {
+            baseText = 'Unknown';
         }
     }
+
+    if (stateComment) {
+        return `${baseText}: ${stateComment}`;
+    }
+    return baseText;
 }
 
 export function getIcon(state: FileState) {

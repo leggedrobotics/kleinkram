@@ -545,11 +545,14 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
             False,
         ),
         DownloadState.SKIPPED_INVALID_REMOTE_STATE: (
-            f"skipped {path}, remote file has invalid state ({file.state.value})",
+            f"skipped {path}, remote file has invalid state ({file.state.value})"
+            + (f": {file.state_comment}" if file.state_comment else ""),
             False,
         ),
         DownloadState.SKIPPED_CORRUPTED: (
-            f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt to override)",
+            f"skipped {path}, remote file is CORRUPTED"
+            + (f": {file.state_comment}" if file.state_comment else "")
+            + " (use --allow-corrupt to override)",
             False,
         ),
         DownloadState.SKIPPED_CORRUPTED_LOCAL_OK: (
