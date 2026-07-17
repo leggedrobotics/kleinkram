@@ -13,6 +13,7 @@ import {
     CanEditGroupByGroupUuid,
     CanModifyTriggerGuard,
     CanReadManyMissionsGuard,
+    CanReadTriggerGuard,
     CreateActionGuard,
     CreateActionsGuard,
     CreateGuard,
@@ -376,6 +377,18 @@ export function CanModifyTrigger() {
             type: ForbiddenException,
             description:
                 'User does not have permission to modify this trigger.',
+        }),
+    );
+}
+
+export function CanReadTrigger() {
+    return applyDecorators(
+        SetMetadata('CanReadTrigger', true),
+        UseGuards(CanReadTriggerGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description: 'User does not have Read permissions on this trigger.',
         }),
     );
 }
