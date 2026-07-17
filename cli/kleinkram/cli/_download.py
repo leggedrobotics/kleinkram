@@ -130,6 +130,7 @@ def download(
             f"{result.state_counts.get(DownloadState.SKIPPED_FILE_SIZE_MISMATCH, 0)} skipped size mismatch, "
             f"{result.state_counts.get(DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0)} skipped invalid remote state, "
             f"{result.state_counts.get(DownloadState.DOWNLOADED_INVALID_HASH, 0)} downloaded with invalid hash, "
+            f"{result.state_counts.get(DownloadState.CANCELED, 0)} canceled, "
             f"{result.failed} failed"
         )
     else:
@@ -149,11 +150,17 @@ def download(
             + result.state_counts.get(DownloadState.OVERWRITTEN_OK, 0)
             + result.state_counts.get(DownloadState.OVERWRITTEN_CORRUPTED, 0)
         )
-        if result.failed > 0:
+        canceled = result.state_counts.get(DownloadState.CANCELED, 0)
+        if result.failed > 0 or canceled > 0:
+            parts = [f"Downloaded {downloaded} file(s)"]
+            if canceled > 0:
+                parts.append(f"{canceled} canceled")
+            if result.failed > 0:
+                parts.append(f"{result.failed} failed")
             typer.echo(
                 typer.style(
-                    f"\nDownloaded {downloaded} file(s), {result.failed} failed.",
-                    fg=typer.colors.RED,
+                    f"\n{', '.join(parts)}.",
+                    fg=typer.colors.YELLOW if result.failed == 0 else typer.colors.RED,
                 ),
                 err=True,
             )
@@ -164,3 +171,7 @@ def download(
                     fg=typer.colors.GREEN,
                 )
             )
+
+    canceled = result.state_counts.get(DownloadState.CANCELED, 0)
+    if result.interrupted or canceled > 0:
+        raise typer.Exit(code=130)
