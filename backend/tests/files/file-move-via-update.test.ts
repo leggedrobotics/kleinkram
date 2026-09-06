@@ -255,7 +255,7 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
         await uploadFile(owner, 'file1.bag', missionUuid);
         const fileRepository = database.getRepository(FileEntity);
         const file = await fileRepository.findOneOrFail({
-            where: { filename: 'file1.bag' },
+            where: { filename: 'file1.bag', mission: { uuid: missionUuid } },
         });
 
         const apiKeyRepository = database.getRepository(ApiKeyEntity);
