@@ -104,6 +104,16 @@ export default defineConfig((/* ctx */) => {
                 folder: path.resolve(appDirectory, '..'),
             },
 
+            // app-vite v3 only picks up prefixed variables from dotenv files;
+            // a bare `BACKEND_URL` set in process.env (the docker build ARG,
+            // no .env file in the image) is not exposed. Define it explicitly
+            // so production images do not silently fall back to localhost.
+            defineEnv: {
+                ...(process.env.BACKEND_URL === undefined
+                    ? {}
+                    : { BACKEND_URL: process.env.BACKEND_URL }),
+            },
+
             vueRouterMode: 'history', // available values: 'hash', 'history'
             // vueRouterBase,
             // vueDevtools,
