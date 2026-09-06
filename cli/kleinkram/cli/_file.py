@@ -14,6 +14,7 @@ from kleinkram.api.query import ProjectQuery
 from kleinkram.api.routes import get_file
 from kleinkram.api.routes import get_files
 from kleinkram.config import get_shared_state
+from kleinkram.models import FileState
 from kleinkram.printing import print_file_info
 from kleinkram.printing import print_files
 from kleinkram.utils import split_args
@@ -91,8 +92,21 @@ def list_files(
         None,
         help="file names, ids or patterns",
     ),
-    projects: Optional[List[str]] = typer.Option(None, "--project", "-p", help="project name or id"),
-    missions: Optional[List[str]] = typer.Option(None, "--mission", "-m", help="mission name or id"),
+    projects: Optional[List[str]] = typer.Option(
+        None, "--project", "-p", help="project name or id. Repeat flag for multiple values"
+    ),
+    missions: Optional[List[str]] = typer.Option(
+        None, "--mission", "-m", help="mission name or id. Repeat flag for multiple values"
+    ),
+    include_canceled: bool = typer.Option(False, "--include-canceled", help="include canceled files"),
+    include_states: Optional[List[FileState]] = typer.Option(
+        None,
+        "--include-states",
+        help="file states to include. Repeat flag for multiple (e.g. --include-states OK --include-states FOUND)",
+    ),
+    exclude_states: Optional[List[FileState]] = typer.Option(
+        None, "--exclude-states", help="file states to exclude. Repeat flag for multiple values"
+    ),
 ) -> None:
     file_ids, file_patterns = split_args(files or [])
     mission_ids, mission_patterns = split_args(missions or [])
@@ -104,7 +118,15 @@ def list_files(
         ids=mission_ids,
         patterns=mission_patterns,
     )
-    file_query = FileQuery(mission_query=mission_query, patterns=file_patterns, ids=file_ids)
+    file_query = FileQuery(
+        mission_query=mission_query,
+        patterns=file_patterns,
+        ids=file_ids,
+        include_states=[state.value for state in include_states] if include_states else [],
+        exclude_states=(
+            [state.value for state in exclude_states] if exclude_states else (["CANCELED"] if not include_canceled else [])
+        ),
+    )
 
     client = AuthenticatedClient()
     parsed_files = list(get_files(client, file_query=file_query))

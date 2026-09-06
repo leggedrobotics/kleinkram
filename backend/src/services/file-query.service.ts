@@ -314,6 +314,18 @@ export class FileQueryService {
             }
         }
 
+        if (query.includeStates && query.includeStates.length > 0) {
+            idQuery.andWhere('file.state IN (:...includeStates)', {
+                includeStates: query.includeStates,
+            });
+        }
+
+        if (query.excludeStates && query.excludeStates.length > 0) {
+            idQuery.andWhere('file.state NOT IN (:...excludeStates)', {
+                excludeStates: query.excludeStates,
+            });
+        }
+
         const categoryUUIDs = query.categories
             ? query.categories.split(',')
             : [];
