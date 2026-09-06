@@ -1,8 +1,10 @@
+import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { TriggerService } from '@/services/trigger.service';
 import { TemporaryFileAccessesDto, UpdateFile } from '@kleinkram/api-dto';
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { ApiKeyEntity } from '@kleinkram/backend-common/entities/auth/api-key.entity';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
@@ -27,6 +29,7 @@ import {
 import {
     BadRequestException,
     ConflictException,
+    ForbiddenException,
     HttpException,
     HttpStatus,
     Inject,
@@ -75,6 +78,7 @@ export class FileLifecycleService implements OnModuleInit {
         private readonly dataSource: DataSource,
         private readonly auditService: FileAuditService,
         private readonly triggerService: TriggerService,
+        private readonly missionGuardService: MissionGuardService,
     ) {}
 
     onModuleInit(): void {
@@ -88,6 +92,7 @@ export class FileLifecycleService implements OnModuleInit {
         file: UpdateFile,
         actor?: UserEntity,
         action?: ActionEntity,
+        apiKey?: ApiKeyEntity,
     ): Promise<FileEntity | null> {
         logger.debug(`Updating file with uuid: ${uuid}`);
 
@@ -127,6 +132,33 @@ export class FileLifecycleService implements OnModuleInit {
             file.missionUuid &&
             file.missionUuid !== databaseFile.mission.uuid
         ) {
+            // An API key is scoped to a single mission and the guard of this
+            // route only ever validates the key against the file it addresses.
+            // Authorizing the target mission through the rights of the key
+            // owner would let a key move files out of its own scope, so keys
+            // may not move files at all (as for `PATCH /files`).
+            if (apiKey) {
+                throw new ForbiddenException(
+                    'API keys cannot move files between missions',
+                );
+            }
+
+            // The route guard only authorizes the file itself, so the target
+            // mission is checked here through the very same service the guard
+            // of `PATCH /files` uses: moving a file there creates it there.
+            if (
+                !actor ||
+                !(await this.missionGuardService.canAccessMission(
+                    actor,
+                    file.missionUuid,
+                    AccessGroupRights.CREATE,
+                ))
+            ) {
+                throw new ForbiddenException(
+                    'You do not have permission to move files into the target mission',
+                );
+            }
+
             oldMissionUuid = databaseFile.mission.uuid;
             const newMission = await this.missionRepository.findOneOrFail({
                 where: { uuid: file.missionUuid },
