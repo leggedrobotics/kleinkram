@@ -411,7 +411,10 @@ async function saveTemplate(): Promise<void> {
             };
             await updateTemplate(updatePayload);
             Notify.create({
-                message: `New version created`,
+                message:
+                    props.mode === ActionDrawerMode.ACTION_RESTORE
+                        ? 'Version restored as a new version'
+                        : 'New version created',
                 color: 'positive',
             });
         } else {
