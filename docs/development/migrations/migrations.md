@@ -117,5 +117,5 @@ Migrations that add a value to a Postgres enum (for example new `FileState` or `
 
 1. Merge all feature branches into `dev` and make sure the `Check Migrations` workflow is green.
 2. Run `migration:show` against the target database and review the pending list.
-3. Run `migration:run` against the target database. Migrations are written to be safe to apply while the previous backend version is still running.
+3. Review each pending migration for backward compatibility with the backend version that is still running (adding columns, enum values or constraints is usually safe; dropping or renaming columns is not). Then run `migration:run` against the target database. Use an expand-and-contract rollout, deploying compatible application code first, when a migration is not safe to apply against the running version.
 4. Deploy the new backend.
