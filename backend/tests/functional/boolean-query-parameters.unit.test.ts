@@ -4,8 +4,16 @@ import {
     MissionQueryDto,
 } from '@kleinkram/api-dto';
 import { toBoolean } from '@kleinkram/validation';
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance as plainToInstanceRaw } from 'class-transformer';
 import { validateSync } from 'class-validator';
+
+// Mirror the global ValidationPipe options from backend/src/main.ts: implicit
+// conversion runs before custom transforms and is what made 'false' -> true.
+const plainToInstance: typeof plainToInstanceRaw = (cls, plain, options) =>
+    plainToInstanceRaw(cls, plain, {
+        enableImplicitConversion: true,
+        ...options,
+    });
 
 /**
  * Regression tests for boolean query parameters.

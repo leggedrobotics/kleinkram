@@ -44,4 +44,14 @@ export const toBoolean = (value: unknown): unknown => {
  * @returns the property decorator
  */
 export const TransformToBoolean = (): PropertyDecorator =>
-    Transform(({ value }): unknown => toBoolean(value));
+    Transform(({ value, obj, key }): unknown => {
+        // With `enableImplicitConversion` (used by the global ValidationPipe)
+        // class-transformer has already run `Boolean(value)` on the reflected
+        // type before this hook is called, turning 'false' into `true`. Read
+        // the untouched source value instead.
+        const raw =
+            obj !== null && typeof obj === 'object' && key in obj
+                ? (obj as Record<string, unknown>)[key]
+                : value;
+        return toBoolean(raw);
+    });
