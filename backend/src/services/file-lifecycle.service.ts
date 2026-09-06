@@ -27,6 +27,7 @@ import {
 import {
     BadRequestException,
     ConflictException,
+    ForbiddenException,
     HttpException,
     HttpStatus,
     Inject,
@@ -127,6 +128,18 @@ export class FileLifecycleService implements OnModuleInit {
             file.missionUuid &&
             file.missionUuid !== databaseFile.mission.uuid
         ) {
+            // The route guard only authorizes the file itself, so the target
+            // mission is checked here (as `MoveFilesGuard` does for
+            // `PATCH /files`): moving a file there creates it there.
+            if (
+                !actor ||
+                !(await this.canCreateInMission(actor, file.missionUuid))
+            ) {
+                throw new ForbiddenException(
+                    'You do not have permission to move files into the target mission',
+                );
+            }
+
             oldMissionUuid = databaseFile.mission.uuid;
             const newMission = await this.missionRepository.findOneOrFail({
                 where: { uuid: file.missionUuid },
@@ -599,6 +612,52 @@ export class FileLifecycleService implements OnModuleInit {
                 return;
             }),
         );
+    }
+
+    /**
+     * Whether `user` may add files to the mission `missionUUID`, i.e. holds
+     * CREATE rights on the mission itself or on the project owning it.
+     */
+    private async canCreateInMission(
+        user: UserEntity,
+        missionUUID: string,
+    ): Promise<boolean> {
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        const mission = await this.missionRepository.findOne({
+            where: { uuid: missionUUID },
+            relations: {
+                project: true,
+            },
+        });
+
+        if (mission?.project === undefined) {
+            return false;
+        }
+
+        const canAccessProject = await this.dataSource.manager.exists(
+            ProjectAccessViewEntity,
+            {
+                where: {
+                    projectUuid: mission.project.uuid,
+                    userUuid: user.uuid,
+                    rights: MoreThanOrEqual(AccessGroupRights.CREATE),
+                },
+            },
+        );
+        if (canAccessProject) {
+            return true;
+        }
+
+        return await this.dataSource.manager.exists(MissionAccessViewEntity, {
+            where: {
+                missionUuid: missionUUID,
+                userUuid: user.uuid,
+                rights: MoreThanOrEqual(AccessGroupRights.CREATE),
+            },
+        });
     }
 
     private async canCancelUpload(
