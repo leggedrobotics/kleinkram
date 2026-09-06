@@ -237,4 +237,67 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
         });
         expect(unmovedFile.mission?.uuid).toBe(sourceMissionUuid);
     }, 30_000);
+
+    test('an API key can still rename a file within its own mission', async () => {
+        // Positive counterpart of the move rejection (ported from #2293):
+        // the API-key restriction only applies to changing the mission.
+        const { user: owner } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { missionUuid } = await createProjectWithMission(
+            owner,
+            'key_rename',
+        );
+
+        const fileRepository = database.getRepository(FileEntity);
+        const file = await fileRepository.save(
+            fileRepository.create({
+                filename: 'before.bag',
+                mission: { uuid: missionUuid },
+                creator: { uuid: owner.uuid },
+                date: new Date(),
+                type: FileType.BAG,
+                size: 1024,
+            }),
+        );
+
+        const apiKeyRepository = database.getRepository(ApiKeyEntity);
+        const apiKey = apiKeyRepository.create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            key_type: KeyTypes.ACTION,
+            mission: { uuid: missionUuid },
+            rights: AccessGroupRights.WRITE,
+            user: { uuid: owner.uuid },
+        });
+        await apiKeyRepository.save(apiKey);
+
+        const response = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
+            method: 'PUT',
+            headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'Content-Type': 'application/json',
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'x-api-key': apiKey.apikey,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'kleinkram-client-version': appVersion,
+            },
+            body: JSON.stringify({
+                uuid: file.uuid,
+                filename: 'after.bag',
+                date: file.date,
+                missionUuid,
+                categories: [],
+            }),
+        });
+
+        expect(response.status).toBeLessThan(300);
+
+        const renamedFile = await fileRepository.findOneOrFail({
+            where: { uuid: file.uuid },
+            relations: { mission: true },
+        });
+        expect(renamedFile.filename).toBe('after.bag');
+        expect(renamedFile.mission?.uuid).toBe(missionUuid);
+    }, 30_000);
 });
