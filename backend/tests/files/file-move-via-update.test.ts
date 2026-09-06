@@ -252,10 +252,10 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
 
         // the update path re-tags the object in storage, so the file has to
         // exist there (a database-only row would make the request fail)
-        await uploadFile(owner, 'before.bag', missionUuid);
+        await uploadFile(owner, 'file1.bag', missionUuid);
         const fileRepository = database.getRepository(FileEntity);
         const file = await fileRepository.findOneOrFail({
-            where: { filename: 'before.bag' },
+            where: { filename: 'file1.bag' },
         });
 
         const apiKeyRepository = database.getRepository(ApiKeyEntity);
@@ -280,7 +280,7 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             },
             body: JSON.stringify({
                 uuid: file.uuid,
-                filename: 'after.bag',
+                filename: 'file1_renamed.bag',
                 date: file.date,
                 missionUuid,
                 categories: [],
@@ -293,7 +293,7 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             where: { uuid: file.uuid },
             relations: { mission: true },
         });
-        expect(renamedFile.filename).toBe('after.bag');
+        expect(renamedFile.filename).toBe('file1_renamed.bag');
         expect(renamedFile.mission?.uuid).toBe(missionUuid);
     }, 30_000);
 });
