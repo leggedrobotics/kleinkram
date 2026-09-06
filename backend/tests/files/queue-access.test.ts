@@ -46,6 +46,14 @@ async function setupProjectWithAccess(
     return { projectUuid, missionUuid };
 }
 
+/**
+ * Inserts an ingestion job directly.
+ *
+ * Going through the real upload flow would also enqueue a Bull job, which none
+ * of the handlers under test need: `delete` and `cancelProcessing` look the Bull
+ * job up by uuid and simply skip the removal when it is not there, and `stopJob`
+ * answers with a conflict.
+ */
 async function createQueueEntry(
     missionUuid: string,
     creator: UserEntity,
@@ -161,23 +169,31 @@ describe('Queue entry access control', () => {
             deleter,
             AccessGroupRights.DELETE,
         );
-        const queueEntry = await createQueueEntry(missionUuid, owner);
-
-        const response = await fetch(
-            `${DEFAULT_URL}/files/queue/${queueEntry.uuid}/stop`,
-            {
-                method: 'POST',
-                headers: jsonHeaders(deleter),
-            },
+        // `/stop` only ever succeeds for a job that a worker is currently
+        // running, which a test cannot arrange without a live Bull job. Both
+        // reachable states answer with a conflict; what matters here is that
+        // authorization no longer fails with a 403 on a route that carries no
+        // mission uuid at all.
+        const pendingEntry = await createQueueEntry(missionUuid, owner);
+        const pendingResponse = await fetch(
+            `${DEFAULT_URL}/files/queue/${pendingEntry.uuid}/stop`,
+            { method: 'POST', headers: jsonHeaders(deleter) },
         );
+        expect(pendingResponse.status).toBe(409);
 
-        // The job is not processing, so the handler rejects it with a conflict.
-        // What matters here is that authorization no longer fails with a 403:
-        // the route carries no mission uuid at all.
-        expect(response.status).toBe(409);
+        const processingEntry = await createQueueEntry(
+            missionUuid,
+            owner,
+            QueueState.PROCESSING,
+        );
+        const processingResponse = await fetch(
+            `${DEFAULT_URL}/files/queue/${processingEntry.uuid}/stop`,
+            { method: 'POST', headers: jsonHeaders(deleter) },
+        );
+        expect(processingResponse.status).toBe(409);
     }, 30_000);
 
-    test('a user with only READ rights cannot delete a queue entry', async () => {
+    test('a user with only READ rights is denied on every queue route', async () => {
         const { user: owner } = await generateAndFetchDatabaseUser(
             'internal',
             'admin',
@@ -192,18 +208,48 @@ describe('Queue entry access control', () => {
             reader,
             AccessGroupRights.READ,
         );
-        const queueEntry = await createQueueEntry(missionUuid, owner);
 
-        const response = await fetch(
-            `${DEFAULT_URL}/files/queue/${queueEntry.uuid}`,
+        const deleteEntry = await createQueueEntry(missionUuid, owner);
+        const deleteResponse = await fetch(
+            `${DEFAULT_URL}/files/queue/${deleteEntry.uuid}`,
             {
                 method: 'DELETE',
                 headers: jsonHeaders(reader),
                 body: JSON.stringify({ missionUUID: missionUuid }),
             },
         );
+        expect(deleteResponse.status).toBe(403);
 
-        expect(response.status).toBe(403);
+        const cancelEntry = await createQueueEntry(missionUuid, owner);
+        const cancelResponse = await fetch(
+            `${DEFAULT_URL}/files/queue/${cancelEntry.uuid}/cancel`,
+            {
+                method: 'POST',
+                headers: jsonHeaders(reader),
+                body: JSON.stringify({ missionUUID: missionUuid }),
+            },
+        );
+        expect(cancelResponse.status).toBe(403);
+
+        const stopEntry = await createQueueEntry(missionUuid, owner);
+        const stopResponse = await fetch(
+            `${DEFAULT_URL}/files/queue/${stopEntry.uuid}/stop`,
+            { method: 'POST', headers: jsonHeaders(reader) },
+        );
+        expect(stopResponse.status).toBe(403);
+
+        // Nothing was touched.
+        const survivors = await database
+            .getRepository(IngestionJobEntity)
+            .findBy([
+                { uuid: deleteEntry.uuid },
+                { uuid: cancelEntry.uuid },
+                { uuid: stopEntry.uuid },
+            ]);
+        expect(survivors).toHaveLength(3);
+        for (const survivor of survivors) {
+            expect(survivor.state).toBe(QueueState.AWAITING_UPLOAD);
+        }
     }, 30_000);
 
     test('the mission uuid in the body cannot authorize a foreign queue entry', async () => {
