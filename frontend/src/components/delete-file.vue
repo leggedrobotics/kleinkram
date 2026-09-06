@@ -13,6 +13,7 @@
 </template>
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query';
+import { isAxiosError } from 'axios';
 import { Notify } from 'quasar';
 import ROUTES from 'src/router/routes';
 import { deleteFile } from 'src/services/mutations/file';
@@ -28,52 +29,58 @@ const route = useRoute();
 const router = useRouter();
 
 async function deleteFileAction(): Promise<void> {
-    if (fileNameCheck.value === properties.file.filename) {
-        await deleteFile(properties.file)
-            .then(async () => {
-                await client.invalidateQueries({
-                    predicate: (query) =>
-                        query.queryKey[0] === 'files' ||
-                        (query.queryKey[0] === 'file' &&
-                            query.queryKey[1] === properties.file.uuid) ||
-                        query.queryKey[0] === 'Filtered Files',
-                });
-                Notify.create({
-                    message: 'File deleted',
-                    color: 'positive',
-                    timeout: 2000,
-                    position: 'bottom',
-                });
+    if (fileNameCheck.value !== properties.file.filename) return;
 
-                // Redirect to missions page if we are on the file page
-                if (route.name === ROUTES.FILE.routeName) {
-                    await router.push({
-                        name: ROUTES.FILES.routeName,
-                        params: {
-                            projectUuid: route.params.projectUuid,
-                            missionUuid: route.params.missionUuid,
-                        },
-                    });
-                }
-            })
-            .catch((error: unknown) => {
-                let errorMessage = '';
-                errorMessage =
-                    error instanceof Error
-                        ? error.message
-                        : ((
-                              error as {
-                                  response?: { data?: { message?: string } };
-                              }
-                          ).response?.data?.message ?? 'Unknown error');
+    try {
+        await deleteFile(properties.file);
+    } catch (error: unknown) {
+        const errorMessage =
+            (isAxiosError(error)
+                ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                  (error.response?.data?.message as string | undefined)
+                : undefined) ??
+            (error instanceof Error ? error.message : undefined) ??
+            'Unknown error';
 
-                Notify.create({
-                    message: `Error deleting file: ${errorMessage}`,
-                    color: 'negative',
-                    position: 'bottom',
-                });
-            });
+        Notify.create({
+            message: `Error deleting file: ${errorMessage}`,
+            color: 'negative',
+            position: 'bottom',
+        });
+        return;
     }
+
+    // Confirm the deletion before touching the query cache: invalidating the
+    // queries first delays the feedback by the (retried) refetches it triggers.
+    Notify.create({
+        message: 'File deleted',
+        color: 'positive',
+        timeout: 2000,
+        position: 'bottom',
+    });
+
+    // Leave the file page before its file query is dropped, otherwise the page
+    // refetches the file we just deleted and reports it as unloadable.
+    if (route.name === ROUTES.FILE.routeName) {
+        await router.push({
+            name: ROUTES.FILES.routeName,
+            params: {
+                projectUuid: route.params.projectUuid,
+                missionUuid: route.params.missionUuid,
+            },
+        });
+    }
+
+    // The file is gone, so its query is removed instead of invalidated
+    // (refetching it would only produce a 404).
+    client.removeQueries({ queryKey: ['file', properties.file.uuid] });
+
+    await client.invalidateQueries({
+        predicate: (query) =>
+            query.queryKey[0] === 'files' ||
+            query.queryKey[0] === 'Filtered Files' ||
+            query.queryKey[0] === 'missions',
+    });
 }
 
 const properties = defineProps<{
