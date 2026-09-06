@@ -8,6 +8,13 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 const appDirectory = import.meta.dirname;
 
+// An unset docker build ARG / CI variable arrives as an empty string; treat
+// that (and whitespace) as "not provided" so the code fallback still applies.
+const backendUrlFromProcess = (() => {
+    const raw = (process.env.BACKEND_URL ?? '').trim();
+    return raw === '' ? undefined : raw;
+})();
+
 export default defineConfig((/* ctx */) => {
     return {
         // https://quasar.dev/quasar-cli-vite/prefetch-feature
@@ -109,9 +116,9 @@ export default defineConfig((/* ctx */) => {
             // no .env file in the image) is not exposed. Define it explicitly
             // so production images do not silently fall back to localhost.
             defineEnv: {
-                ...(process.env.BACKEND_URL === undefined
+                ...(backendUrlFromProcess === undefined
                     ? {}
-                    : { BACKEND_URL: process.env.BACKEND_URL }),
+                    : { BACKEND_URL: backendUrlFromProcess }),
             },
 
             vueRouterMode: 'history', // available values: 'hash', 'history'
