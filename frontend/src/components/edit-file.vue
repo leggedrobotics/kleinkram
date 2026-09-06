@@ -78,9 +78,9 @@
 import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { isAxiosError } from 'axios';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/date-formating';
+import { getErrorMessage } from 'src/services/error-handling';
 import { updateFile } from 'src/services/mutations/file';
 import { ref, watch } from 'vue';
 
@@ -173,17 +173,10 @@ const { mutate: updateFileMutation } = useMutation({
     },
     onError(error: unknown) {
         console.error(error);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const message =
-            (isAxiosError(error)
-                ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                  error.response?.data?.message
-                : (error as Error).message) ?? 'Unknown error occurred';
 
         Notify.create({
             group: false,
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            message: `Error updating file: ${message}`,
+            message: `Error updating file: ${getErrorMessage(error)}`,
             color: 'negative',
             spinner: false,
             position: 'bottom',
