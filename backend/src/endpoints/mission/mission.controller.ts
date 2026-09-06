@@ -16,6 +16,7 @@ import {
     SuccessResponseDto,
     UpdateMissionNameDto,
 } from '@kleinkram/api-dto';
+import { toBoolean } from '@kleinkram/validation';
 import {
     Body,
     Controller,
@@ -82,7 +83,11 @@ export class MissionController {
         description: 'Returns all missions',
         type: MissionsDto,
         resolver: (request: Request) =>
-            request.query.minimal === 'true' ? MinimumMissionsDto : MissionsDto,
+            // must stay in sync with `MissionQueryDto.minimal`, which accepts
+            // the same set of boolean-ish query parameter values
+            toBoolean(request.query.minimal) === true
+                ? MinimumMissionsDto
+                : MissionsDto,
     })
     async getMany(
         @Query() query: MissionQueryDto,
