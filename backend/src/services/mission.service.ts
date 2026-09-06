@@ -237,7 +237,12 @@ export class MissionService {
         const count = await idQuery.getCount();
         const take = query.take;
         const skip = query.skip;
-        idQuery.take(take).skip(skip);
+
+        // `take`/`skip` are only translated into LIMIT/OFFSET by TypeORM when
+        // the query has no joins; this query has several, so they would be
+        // silently dropped and every page would return all missions.
+        // `limit`/`offset` are always emitted.
+        idQuery.limit(take).offset(skip);
 
         const missionIds = await idQuery.getRawMany();
 
