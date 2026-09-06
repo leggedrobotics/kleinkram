@@ -3,7 +3,12 @@
 We rely on TypeORM Migrations to manage database schema changes safely and efficiently. See [TypeORM Migrations](https://typeorm.io/migrations) for more information.
 
 ::: warning Working Directory
-All commands on this page must be run from the `/backend/` directory.
+All commands on this page must be run from the `/backend/` directory. The `migration:*` scripts are defined in `backend/package.json`, not in the repository root, so `pnpm run migration:check` from the root fails with `Missing script`.
+
+```bash
+cd backend
+```
+
 :::
 
 ## Local Development (Auto-Sync)
@@ -37,11 +42,13 @@ Robust pipelines require valid migrations. Our CI runs a check on every PR to `m
 1. All migrations are generated.
 2. Current entities match the migration state.
 
-**If CI fails:** You likely changed an entity but forgot to generate a migration. Run the clean generation command locally and commit the result. You can verify this locally before pushing:
+**If CI fails:** You likely changed an entity but forgot to generate a migration. Run the clean generation command locally and commit the result. You can verify this locally before pushing (requires Docker, since the check spins up a temporary `postgres:17` container):
 
 ```bash
 pnpm run migration:check
 ```
+
+Note that some dependency upgrades change the schema TypeORM derives from unchanged entities (for example, TypeORM 1 changed the default `ON DELETE`/`ON UPDATE` behaviour of many-to-many junction tables). In that case the check fails without any entity change; commit the generated migration under a descriptive name.
 
 ### Fallback: Standard Generation
 
@@ -66,7 +73,19 @@ To run local or manual migrations, you must set up your environment variables.
 ```
 
 2. **Configure credentials:**
-   Edit `migration/.env` with your database connection details.
+   Edit `migration/.env` with your database connection details. The file is git-ignored. The dev configuration reads the `dev_*` variables, the production configuration the `prod_*` variables (`dbhost`, `port`, `dbname`, `dbuser`, `dbpassword`, `ssl`).
+
+### Check Which Migrations Are Pending
+
+Before applying anything, list the migrations known to the code and whether the target database has them (`[X]` applied, `[ ]` pending). This is read-only.
+
+```bash
+# Staging / Dev
+pnpm run typeorm migration:show -d migration/dev/migration.config.ts
+
+# Production
+pnpm run typeorm migration:show -d migration/prod/migration.config.ts
+```
 
 ### Apply Migrations
 
@@ -83,5 +102,20 @@ pnpm run typeorm migration:run -d migration/prod/migration.config.ts
 Undo the last applied migration if necessary.
 
 ```bash
+# Staging / Dev
+pnpm run typeorm migration:revert -d migration/dev/migration.config.ts
+
+# Production
 pnpm run typeorm migration:revert -d migration/prod/migration.config.ts
 ```
+
+::: warning Enum migrations
+Migrations that add a value to a Postgres enum (for example new `FileState` or `ActionState` values) can only be reverted while no row uses the new value; otherwise the `down()` cast fails. See [#2367](https://github.com/leggedrobotics/kleinkram/issues/2367).
+:::
+
+## Release Checklist
+
+1. Merge all feature branches into `dev` and make sure the `Check Migrations` workflow is green.
+2. Run `migration:show` against the target database and review the pending list.
+3. Run `migration:run` against the target database. Migrations are written to be safe to apply while the previous backend version is still running.
+4. Deploy the new backend.
