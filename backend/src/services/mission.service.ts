@@ -230,6 +230,12 @@ export class MissionService {
 
         idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortField, order);
 
+        // Stable tie-breaker: without it, rows that compare equal on the sort
+        // column (e.g. missions created in the same instant) can be returned in
+        // a different order for every page, which duplicates and drops rows
+        // across LIMIT/OFFSET pages.
+        idQuery.addOrderBy('mission.uuid', 'ASC');
+
         // Get distinct mission UUIDs
         idQuery.groupBy('mission.uuid');
 
@@ -275,6 +281,8 @@ export class MissionService {
                 sortField,
                 order,
             );
+            // same tie-breaker as the id query, so the page keeps its order
+            sortedQuery.addOrderBy('mission.uuid', 'ASC');
             const missions = await sortedQuery.getMany();
 
             return {
@@ -299,6 +307,8 @@ export class MissionService {
             });
 
         dataQuery = addSort(dataQuery, FIND_MANY_SORT_KEYS, sortField, order);
+        // same tie-breaker as the id query, so the page keeps its order
+        dataQuery.addOrderBy('mission.uuid', 'ASC');
 
         dataQuery = addFileStats(dataQuery);
 
