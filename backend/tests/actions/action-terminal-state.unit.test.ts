@@ -4,28 +4,13 @@ import {
     CANCELLABLE_ACTION_STATES,
     isCancellableActionState,
     isTerminalActionState,
+    resolveCompletedActionState,
     TERMINAL_ACTION_STATES,
 } from '@kleinkram/shared';
 import { ExecutionContext } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { DeleteActionGuard } from '../../src/endpoints/auth/guards/action.guards';
 import { MissionGuardService } from '../../src/endpoints/auth/mission-guard.service';
-
-/**
- * Mimics the state transition performed by the `@OnQueueCompleted` hook of the
- * queue consumer (`markJobAsCompleted`). Bull fires that hook for every job
- * that resolves, including the cancellation paths of the action manager, so it
- * must never overwrite a state that is already final.
- */
-const markJobAsCompleted = async (
-    actionRepository: Pick<Repository<ActionEntity>, 'findOneOrFail' | 'save'>,
-    uuid: string,
-): Promise<void> => {
-    const action = await actionRepository.findOneOrFail({ where: { uuid } });
-    if (isTerminalActionState(action.state)) return;
-    action.state = ActionState.DONE;
-    await actionRepository.save(action);
-};
 
 describe('Action terminal state helpers', () => {
     test('every action state is either terminal or not, and the sets do not overlap', () => {
@@ -67,54 +52,29 @@ describe('Action terminal state helpers', () => {
     });
 });
 
-const buildRepository = (
-    state: ActionState,
-): {
-    repository: Pick<Repository<ActionEntity>, 'findOneOrFail' | 'save'>;
-    action: ActionEntity;
-} => {
-    const action = { uuid: 'action-uuid', state } as ActionEntity;
-    return {
-        action,
-        repository: {
-            findOneOrFail: jest.fn().mockResolvedValue(action),
-            save: jest.fn().mockResolvedValue(action),
-        } as unknown as Pick<
-            Repository<ActionEntity>,
-            'findOneOrFail' | 'save'
-        >,
-    };
-};
+describe('resolveCompletedActionState', () => {
+    test.each(TERMINAL_ACTION_STATES)(
+        'keeps the terminal state %s',
+        (state) => {
+            expect(resolveCompletedActionState(state)).toBe(state);
+        },
+    );
 
-describe('markJobAsCompleted state transition', () => {
-    test('does not overwrite a CANCELLED action with DONE', async () => {
-        const { repository, action } = buildRepository(ActionState.CANCELLED);
-        await markJobAsCompleted(repository, 'action-uuid');
-        expect(action.state).toBe(ActionState.CANCELLED);
-        expect(repository.save).not.toHaveBeenCalled();
+    test.each([
+        ActionState.PENDING,
+        ActionState.STARTING,
+        ActionState.PROCESSING,
+        ActionState.STOPPING,
+    ])('promotes the non-terminal state %s to DONE', (state) => {
+        expect(resolveCompletedActionState(state)).toBe(ActionState.DONE);
     });
 
-    test('does not overwrite a FAILED action with DONE', async () => {
-        const { repository, action } = buildRepository(ActionState.FAILED);
-        await markJobAsCompleted(repository, 'action-uuid');
-        expect(action.state).toBe(ActionState.FAILED);
-        expect(repository.save).not.toHaveBeenCalled();
-    });
-
-    test('does not overwrite an UNPROCESSABLE action with DONE', async () => {
-        const { repository, action } = buildRepository(
-            ActionState.UNPROCESSABLE,
-        );
-        await markJobAsCompleted(repository, 'action-uuid');
-        expect(action.state).toBe(ActionState.UNPROCESSABLE);
-        expect(repository.save).not.toHaveBeenCalled();
-    });
-
-    test('marks a still running action as DONE', async () => {
-        const { repository, action } = buildRepository(ActionState.STOPPING);
-        await markJobAsCompleted(repository, 'action-uuid');
-        expect(action.state).toBe(ActionState.DONE);
-        expect(repository.save).toHaveBeenCalledTimes(1);
+    test('resolves every action state to a terminal state', () => {
+        for (const state of Object.values(ActionState)) {
+            expect(
+                isTerminalActionState(resolveCompletedActionState(state)),
+            ).toBe(true);
+        }
     });
 });
 

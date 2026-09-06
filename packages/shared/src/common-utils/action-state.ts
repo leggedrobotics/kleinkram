@@ -23,6 +23,22 @@ export const isTerminalActionState = (state: ActionState): boolean =>
     TERMINAL_ACTION_STATES.includes(state);
 
 /**
+ * Resolves the state an action must have once its queue job resolved
+ * successfully.
+ *
+ * The queue lifecycle hook fires for every job that resolves, including the
+ * ones the action manager resolves after cancelling the action. A state that
+ * is already final therefore wins over the DONE the hook would otherwise
+ * write.
+ *
+ * @param current the state currently recorded for the action
+ * @returns the state the action must be stored with
+ */
+export const resolveCompletedActionState = (
+    current: ActionState,
+): ActionState => (isTerminalActionState(current) ? current : ActionState.DONE);
+
+/**
  * The states in which an action is still in flight and can be cancelled.
  */
 export const CANCELLABLE_ACTION_STATES: readonly ActionState[] = [
