@@ -498,4 +498,99 @@ describe('Action Management Tests', () => {
         });
         expect(stillThere).not.toBeNull();
     }, 30_000);
+
+    test('should restore an old template version as a new version', async () => {
+        const { user } = await setupTestEnvironment(
+            'test-restore@kleinkram.dev',
+            'Restore User',
+        );
+
+        const jsonHeaders = {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(user),
+        };
+
+        const versionOnePayload = {
+            name: 'Restore Test Action',
+            description: 'version one',
+            accessRights: AccessGroupRights.READ,
+            dockerImage: 'hello-world',
+            command: 'echo v1',
+            entrypoint: '/bin/sh',
+            maxRuntime: 10,
+            cpuCores: 1,
+            cpuMemory: 2,
+            gpuMemory: 0,
+        };
+
+        const versionOneUuid = await createActionUsingPost(
+            versionOnePayload,
+            user,
+        );
+
+        // Create a second version (this is what the "Save New Version" button does)
+        const versionTwoResponse = await fetch(
+            `${DEFAULT_URL}/templates/${versionOneUuid}/versions`,
+            {
+                method: 'POST',
+                headers: jsonHeaders,
+                body: JSON.stringify({
+                    ...versionOnePayload,
+                    uuid: versionOneUuid,
+                    description: 'version two',
+                    command: 'echo v2',
+                }),
+            },
+        );
+        expect(versionTwoResponse.status).toBe(201);
+        const versionTwo = (await versionTwoResponse.json()) as {
+            uuid: string;
+            version: string;
+        };
+        expect(Number(versionTwo.version)).toBe(2);
+
+        // Restore version one: the frontend posts the content of the old
+        // version, which the backend turns into a new (third) version.
+        const restoreResponse = await fetch(
+            `${DEFAULT_URL}/templates/${versionOneUuid}/versions`,
+            {
+                method: 'POST',
+                headers: jsonHeaders,
+                body: JSON.stringify({
+                    ...versionOnePayload,
+                    uuid: versionOneUuid,
+                }),
+            },
+        );
+        expect(restoreResponse.status).toBe(201);
+        const restored = (await restoreResponse.json()) as {
+            uuid: string;
+            version: string;
+            description: string;
+            command: string;
+        };
+        expect(Number(restored.version)).toBe(3);
+        expect(restored.uuid).not.toBe(versionOneUuid);
+        expect(restored.description).toBe('version one');
+        expect(restored.command).toBe('echo v1');
+
+        // The revision history contains all three versions, newest first
+        const revisionsResponse = await fetch(
+            `${DEFAULT_URL}/templates/${versionOneUuid}/revisions?skip=0&take=10`,
+            { headers: getAuthHeaders(user) },
+        );
+        expect(revisionsResponse.status).toBe(200);
+        const revisions = (await revisionsResponse.json()) as {
+            count: number;
+            data: { uuid: string; version: string; executionCount: number }[];
+        };
+        expect(revisions.count).toBe(3);
+        expect(revisions.data.map((rev) => Number(rev.version))).toEqual([
+            3, 2, 1,
+        ]);
+        expect(revisions.data.map((rev) => rev.executionCount)).toEqual([
+            0, 0, 0,
+        ]);
+    }, 30_000);
 });
