@@ -27,14 +27,16 @@ export class ActionErrorHintService {
         try {
             const action = await this.actionRepository.findOne({
                 where: { uuid: actionUuid },
-                select: [
-                    'uuid',
-                    'state',
-                    'state_cause',
-                    'template',
-                    'auditLogs',
-                ],
-                relations: ['template'],
+                select: {
+                    uuid: true,
+                    state: true,
+                    state_cause: true,
+                    template: true,
+                    auditLogs: true,
+                },
+                relations: {
+                    template: true,
+                },
             });
 
             if (action?.state !== ActionState.FAILED) {

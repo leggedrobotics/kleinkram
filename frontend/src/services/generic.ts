@@ -224,7 +224,6 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
             const reader = response.body?.getReader();
 
             // Function to pump the stream chunks to the file
-            // eslint-disable-next-line unicorn/consistent-function-scoping
             async function streamToFileSystem() {
                 let done: boolean;
                 let value: Uint8Array;

@@ -70,6 +70,13 @@ import { MissionGuardService } from './mission-guard.service';
     ],
     controllers: [AuthController],
     exports: [
+        // Re-exported (this module is @Global) so that `AuthModuleOptions` can be
+        // resolved wherever a guard derived from passport's `AuthGuard()` mixin is
+        // used. @nestjs/core v12 reads the mixin's `@Optional()` constructor marker
+        // with `Reflect.getOwnMetadata` instead of `Reflect.getMetadata`, so
+        // subclasses no longer inherit it and Nest treats `AuthModuleOptions` as a
+        // required dependency of every such guard.
+        PassportModule,
         AdminOnlyGuard,
         LoggedInUserGuard,
         ProjectGuardService,

@@ -71,7 +71,9 @@ async function setupMissionWithTagValue(
     const tagRepo = database.getRepository(MetadataEntity);
     const tagValues = await tagRepo.find({
         where: { mission: { uuid: missionUuid } },
-        relations: ['mission'],
+        relations: {
+            mission: true,
+        },
     });
     const tagValue = tagValues.find((t) => t.tagType?.uuid === tagTypeUuid);
     if (!tagValue) {

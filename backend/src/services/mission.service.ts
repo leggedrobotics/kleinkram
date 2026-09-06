@@ -70,7 +70,9 @@ export class MissionService {
         );
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
-            relations: ['requiredTags'],
+            relations: {
+                requiredTags: true,
+            },
         });
         if (!createMission.ignoreTags) {
             const missingTags = project.requiredTags.filter(
@@ -130,7 +132,10 @@ export class MissionService {
         return this.missionRepository
             .findOneOrFail({
                 where: { uuid: newMission.uuid },
-                relations: ['project', 'creator'],
+                relations: {
+                    project: true,
+                    creator: true,
+                },
             })
             .then((m) => missionEntityToFlatDto(m));
     }
@@ -138,18 +143,26 @@ export class MissionService {
     async findOne(uuid: string): Promise<MissionWithFilesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: [
-                'project',
-                'creator',
-                'tags',
-                'files',
-                'files.creator',
-                'files.mission', // TODO: we can remove this property
-                'files.mission.creator', // TODO: we can remove this property
-                'files.mission.project', // TODO: we can remove this property
-                'tags.tagType',
-                'project.requiredTags',
-            ],
+            relations: {
+                project: {
+                    requiredTags: true,
+                },
+
+                creator: true,
+
+                tags: {
+                    tagType: true,
+                },
+
+                files: {
+                    creator: true,
+
+                    mission: {
+                        creator: true,
+                        project: true,
+                    },
+                },
+            },
         });
 
         return missionEntityToDtoWithFiles(mission);
@@ -345,7 +358,9 @@ export class MissionService {
         // verify that the no mission with the same name exists in the project
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['files'],
+            relations: {
+                files: true,
+            },
         });
 
         const exists = await this.missionRepository.exists({
@@ -379,7 +394,9 @@ export class MissionService {
     async deleteMission(uuid: string): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['files'],
+            relations: {
+                files: true,
+            },
         });
         if (mission.files === undefined) throw new Error('Files not loaded');
 
@@ -397,7 +414,11 @@ export class MissionService {
     ): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['tags', 'tags.tagType'],
+            relations: {
+                tags: {
+                    tagType: true,
+                },
+            },
         });
 
         if (mission.tags === undefined) throw new Error('Tags not loaded');
@@ -428,7 +449,10 @@ export class MissionService {
     ): Promise<{ filename: string; link: string }[]> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['files', 'project'],
+            relations: {
+                files: true,
+                project: true,
+            },
         });
 
         if (mission.files === undefined) throw new Error('Files not loaded');
@@ -463,7 +487,10 @@ export class MissionService {
         });
         return this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['project', 'creator'],
+            relations: {
+                project: true,
+                creator: true,
+            },
         });
     }
 }

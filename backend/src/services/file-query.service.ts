@@ -351,17 +351,23 @@ export class FileQueryService {
     async findOne(uuid: string): Promise<FileWithTopicDto> {
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
-            relations: [
-                'mission',
-                'topics',
-                'mission.project',
-                'creator',
-                'categories',
-                'parent',
-                'parent.topics',
-                'derivedFiles',
-                'derivedFiles.topics',
-            ],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                topics: true,
+                creator: true,
+                categories: true,
+
+                parent: {
+                    topics: true,
+                },
+
+                derivedFiles: {
+                    topics: true,
+                },
+            },
         });
 
         return fileEntityToDtoWithTopic(file);
@@ -373,7 +379,9 @@ export class FileQueryService {
     ): Promise<FileEntity | null> {
         return this.fileRepository.findOne({
             where: { mission: { uuid: missionUUID }, filename: name },
-            relations: ['creator'],
+            relations: {
+                creator: true,
+            },
         });
     }
 
@@ -539,7 +547,14 @@ export class FileQueryService {
             where: {
                 file: { uuid: fileUuid },
             },
-            relations: ['actor', 'action', 'action.template', 'action.creator'],
+            relations: {
+                actor: true,
+
+                action: {
+                    template: true,
+                    creator: true,
+                },
+            },
             order: { createdAt: 'DESC' },
         });
 
@@ -586,14 +601,19 @@ export class FileQueryService {
             where: {
                 action: { uuid: actionUuid },
             },
-            relations: [
-                'actor',
-                'action',
-                'action.template',
-                'file',
-                'file.mission',
-                'file.mission.project',
-            ],
+            relations: {
+                actor: true,
+
+                action: {
+                    template: true,
+                },
+
+                file: {
+                    mission: {
+                        project: true,
+                    },
+                },
+            },
             order: { createdAt: 'DESC' },
         });
 

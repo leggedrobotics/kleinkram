@@ -32,6 +32,7 @@ services:
             SEED: 'false'
             DEVBUILD: 'false'
             REDIS_HOST: 'redis'
+            NODE_ENV: 'test'
         env_file:
             - .env
         networks:
@@ -144,6 +145,7 @@ services:
             - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
         environment:
             REDIS_HOST: 'redis'
+            NODE_ENV: 'test'
         env_file:
             - .env
         networks:

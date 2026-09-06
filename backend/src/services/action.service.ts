@@ -175,14 +175,19 @@ export class ActionService {
     async details(actionUuid: string): Promise<ActionDto> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUuid },
-            relations: [
-                'mission',
-                'mission.project',
-                'creator',
-                'template',
-                'template.creator',
-                'worker',
-            ],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                creator: true,
+
+                template: {
+                    creator: true,
+                },
+
+                worker: true,
+            },
         });
 
         const dto = actionEntityToDto(action);
@@ -203,7 +208,11 @@ export class ActionService {
     ): Promise<ActionLogsDto> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUuid },
-            select: ['uuid', 'createdAt', 'executionEndedAt'],
+            select: {
+                uuid: true,
+                createdAt: true,
+                executionEndedAt: true,
+            },
         });
 
         const start = action.createdAt.getTime() * 1_000_000; // Nanoseconds
@@ -406,7 +415,9 @@ export class ActionService {
                     ApiKeyEntity,
                     {
                         where: { apikey: apiKey },
-                        relations: ['action'],
+                        relations: {
+                            action: true,
+                        },
                     },
                 );
 
@@ -417,7 +428,9 @@ export class ActionService {
                     try {
                         const file = await manager.findOne(FileEntity, {
                             where: { uuid: fileUuid },
-                            select: ['size'],
+                            select: {
+                                size: true,
+                            },
                         });
                         if (file?.size && file.size > 0) {
                             auditLog.message = `Downloaded ${file.size.toString()}`;

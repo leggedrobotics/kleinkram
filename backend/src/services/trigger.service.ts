@@ -194,7 +194,11 @@ export class TriggerService implements OnModuleInit {
 
         const trigger = await this.triggerRepository.findOne({
             where: { uuid },
-            relations: ['template', 'mission', 'creator'],
+            relations: {
+                template: true,
+                mission: true,
+                creator: true,
+            },
         });
 
         if (!trigger) {

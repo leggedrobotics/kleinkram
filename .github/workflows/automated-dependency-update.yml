@@ -1,0 +1,96 @@
+name: Automated Dependency Updates
+
+on:
+    schedule:
+        # Run every Monday at midnight UTC
+        - cron: '0 0 * * 1'
+    workflow_dispatch: # Allows manual trigger from the GitHub UI
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    update-dependencies:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v7
+              with:
+                  ref: dev
+
+            - name: Close Old Dependency PRs (> 7 days)
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  now=$(date +%s)
+                  prs=$(gh pr list --state open --json number,createdAt,author,headRefName,isCrossRepository)
+                  echo "$prs" | jq -c '.[]' | while read -r pr; do
+                      pr_number=$(echo "$pr" | jq -r '.number')
+                      pr_created=$(echo "$pr" | jq -r '.createdAt')
+                      pr_author=$(echo "$pr" | jq -r '.author.login')
+                      pr_branch=$(echo "$pr" | jq -r '.headRefName')
+                      pr_is_fork=$(echo "$pr" | jq -r '.isCrossRepository')
+
+                      created_epoch=$(date -d "$pr_created" +%s)
+                      age_seconds=$((now - created_epoch))
+                      age_days=$((age_seconds / 86400))
+
+                      if [ "$age_days" -ge 7 ] && { [ "$pr_author" = "dependabot[bot]" ] || [[ "$pr_branch" == deps/* ]]; }; then
+                          echo "Closing PR #$pr_number ($pr_branch) created by $pr_author - $age_days days old..."
+                          gh pr close "$pr_number" --comment "Closing this dependency update pull request because it has been unmerged for over a week."
+                          # Only delete branches that live in this repository, never for PRs opened from forks
+                          if [ "$pr_is_fork" = "false" ]; then
+                              gh api -X DELETE "repos/{owner}/{repo}/git/refs/heads/$pr_branch" || true
+                          fi
+                      fi
+                  done
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v6
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - name: Install Dependencies
+              run: pnpm install --no-frozen-lockfile
+
+            - name: Update Monorepo Dependencies
+              run: pnpm update -r
+
+            - name: Setup Python
+              uses: actions/setup-python@v7
+              with:
+                  python-version: '3.10'
+
+            - name: Run Version Bump
+              run: |
+                  pnpm run bump:patch
+
+            - name: Run Linter & Formatter
+              run: |
+                  pnpm run eslint
+                  pnpm run prettier
+
+            - name: Create Pull Request
+              uses: peter-evans/create-pull-request@v8
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  commit-message: 'chore(release): bump version and update dependencies'
+                  title: 'chore(release): automated dependency update & version bump'
+                  body: |
+                      This is an automated pull request updating repository-wide dependencies and incrementing the project version (patch).
+
+                      - Workspace packages bumped to the next patch version.
+                      - Monorepo package dependencies updated.
+                      - Linters and formatters executed successfully.
+                  branch: deps/automated-update
+                  base: dev
+                  delete-branch: true
+                  labels: |
+                      dependencies
+                  assignees: |
+                      wp99cp

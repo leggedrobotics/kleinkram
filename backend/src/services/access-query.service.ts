@@ -218,13 +218,17 @@ export class AccessQueryService {
                 where,
                 skip,
                 take,
-                relations: [
-                    'memberships',
-                    'memberships.user',
-                    'project_accesses',
-                    'project_accesses.project',
-                    'creator',
-                ],
+                relations: {
+                    memberships: {
+                        user: true,
+                    },
+
+                    project_accesses: {
+                        project: true,
+                    },
+
+                    creator: true,
+                },
             });
 
         logger.debug(`Search access group with name containing '${search}'`);
@@ -271,11 +275,13 @@ export class AccessQueryService {
             {
                 where: { project: { uuid: projectUUID } },
                 order: { accessGroup: { name: 'ASC' } },
-                relations: [
-                    'project',
-                    'accessGroup',
-                    'accessGroup.memberships',
-                ],
+                relations: {
+                    project: true,
+
+                    accessGroup: {
+                        memberships: true,
+                    },
+                },
             },
         );
 

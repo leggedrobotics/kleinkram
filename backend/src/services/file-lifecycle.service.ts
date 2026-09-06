@@ -130,7 +130,9 @@ export class FileLifecycleService implements OnModuleInit {
             oldMissionUuid = databaseFile.mission.uuid;
             const newMission = await this.missionRepository.findOneOrFail({
                 where: { uuid: file.missionUuid },
-                relations: ['project'],
+                relations: {
+                    project: true,
+                },
             });
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (newMission) databaseFile.mission = newMission;
@@ -203,7 +205,11 @@ export class FileLifecycleService implements OnModuleInit {
         });
         return this.fileRepository.findOne({
             where: { uuid },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
     }
 
@@ -218,7 +224,9 @@ export class FileLifecycleService implements OnModuleInit {
                 try {
                     const file = await this.fileRepository.findOneOrFail({
                         where: { uuid },
-                        relations: ['mission'],
+                        relations: {
+                            mission: true,
+                        },
                     });
 
                     const oldMissionUuid = file.mission?.uuid;
@@ -250,7 +258,11 @@ export class FileLifecycleService implements OnModuleInit {
                     // ... [Existing Tag Update Logic] ...
                     const newFile = await this.fileRepository.findOneOrFail({
                         where: { uuid },
-                        relations: ['mission', 'mission.project'],
+                        relations: {
+                            mission: {
+                                project: true,
+                            },
+                        },
                     });
                     await this.dataStorage.addTags(file.uuid, {
                         filename: file.filename,
@@ -276,7 +288,9 @@ export class FileLifecycleService implements OnModuleInit {
 
         const file = await this.fileRepository.findOne({
             where: { uuid },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
 
         if (file) {
@@ -340,7 +354,9 @@ export class FileLifecycleService implements OnModuleInit {
     ): Promise<TemporaryFileAccessesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['project'],
+            relations: {
+                project: true,
+            },
         });
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
@@ -560,7 +576,9 @@ export class FileLifecycleService implements OnModuleInit {
             uuids.map(async (uuid) => {
                 const file = await this.fileRepository.findOne({
                     where: { uuid, mission: { uuid: missionUUID } },
-                    relations: ['mission'],
+                    relations: {
+                        mission: true,
+                    },
                 });
                 if (!file) {
                     return;
@@ -595,7 +613,9 @@ export class FileLifecycleService implements OnModuleInit {
         }
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['project'],
+            relations: {
+                project: true,
+            },
         });
 
         if (mission.project === undefined) {

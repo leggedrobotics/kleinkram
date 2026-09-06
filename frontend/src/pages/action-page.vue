@@ -152,8 +152,7 @@ const onTabChange = (value: string | number | null) => {
     if (typeof value !== 'string') return;
 
     const tabSlug = TAB_MAPPING[value as keyof typeof TAB_MAPPING] as
-        | string
-        | undefined;
+        string | undefined;
 
     if (
         route.name === ROUTES.ACTION.routeName &&
@@ -242,8 +241,7 @@ const openEditConfiguration = async (template: ActionTemplateDto) => {
 const handleRouteUpdate = async () => {
     const { templateId } = route.params;
     const drawerAction = route.meta.drawerAction as
-        | ActionDrawerMode
-        | undefined;
+        ActionDrawerMode | undefined;
 
     isCreateOpen.value = false;
     isLaunchOpen.value = false;
@@ -279,7 +277,7 @@ const handleRouteUpdate = async () => {
         case ActionDrawerMode.ACTION_HISTORY: {
             try {
                 const uuid = selectedTemplate.value.uuid;
-                selectedHistoryVersions.value = await queryClient.fetchQuery({
+                selectedHistoryVersions.value = await queryClient.query({
                     queryKey: actionKeys.templates.revisions(uuid),
                     queryFn: () => ActionService.getTemplateRevisions(uuid),
                 });

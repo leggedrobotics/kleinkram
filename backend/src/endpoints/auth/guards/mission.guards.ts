@@ -85,8 +85,7 @@ export class CanReadManyMissionsGuard extends BaseGuard {
         }
 
         const missionUUIDs = request.query.uuids as unknown as
-            | string[]
-            | undefined;
+            string[] | undefined;
 
         if (!missionUUIDs || missionUUIDs.length === 0) {
             return false; // Deny access if UUIDs not provided

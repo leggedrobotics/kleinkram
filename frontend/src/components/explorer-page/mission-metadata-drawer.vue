@@ -165,12 +165,7 @@ const openTagsDialog = (): void => {
 const openLink = (tag: TagDto): void => {
     if (tag.type.datatype === DataType.LINK) {
         const rawValue = tag.value as
-            | string
-            | Date
-            | number
-            | boolean
-            | null
-            | undefined;
+            string | Date | number | boolean | null | undefined;
         const url =
             rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
         if (url) {
@@ -187,12 +182,7 @@ const copyTagValue = async (tag: TagDto): Promise<void> => {
         value = tag.value;
     } else {
         const rawValue = tag.value as
-            | string
-            | Date
-            | number
-            | boolean
-            | null
-            | undefined;
+            string | Date | number | boolean | null | undefined;
         value =
             rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
     }

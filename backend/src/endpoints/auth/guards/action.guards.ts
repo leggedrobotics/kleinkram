@@ -10,7 +10,7 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import { BaseGuard } from './base.guards';
 
 interface ActionBody {
@@ -124,6 +124,11 @@ export class CreateActionGuard extends BaseGuard {
     }
 }
 
+const DEFAULT_ACTION_RELATIONS: FindOptionsRelations<ActionEntity> = {
+    mission: true,
+    creator: true,
+};
+
 export abstract class BaseActionModificationGuard extends BaseGuard {
     constructor(
         protected missionGuardService: MissionGuardService,
@@ -134,7 +139,7 @@ export abstract class BaseActionModificationGuard extends BaseGuard {
 
     protected async validateAndGetAction(
         context: ExecutionContext,
-        relations: string[] = ['mission', 'creator'],
+        relations: FindOptionsRelations<ActionEntity> = DEFAULT_ACTION_RELATIONS,
     ) {
         const { user, apiKey, request } = await this.getUser(context);
 
@@ -191,13 +196,11 @@ export class DeleteActionGuard extends BaseActionModificationGuard {
 
         const { user, action } = validationResult;
 
-        if (
-            !(
-                action.state === ActionState.DONE ||
-                action.state === ActionState.FAILED ||
-                action.state === ActionState.UNPROCESSABLE
-            )
-        ) {
+        if (!(
+            action.state === ActionState.DONE ||
+            action.state === ActionState.FAILED ||
+            action.state === ActionState.UNPROCESSABLE
+        )) {
             throw new BadRequestException(
                 "can't delete action unless its DONE, FAILED or UNPROCESSABLE",
             );
@@ -226,11 +229,11 @@ export class CancelActionGuard extends BaseActionModificationGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const validationResult = await this.validateAndGetAction(context, [
-            'mission',
-            'creator',
-            'template',
-        ]);
+        const validationResult = await this.validateAndGetAction(context, {
+            mission: true,
+            creator: true,
+            template: true,
+        });
         if (!validationResult) {
             return false;
         }
