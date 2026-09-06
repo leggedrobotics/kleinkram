@@ -35,6 +35,7 @@ import {
     CanMoveMission,
     CanReadMission,
     CanWriteMissionByBody,
+    fromParameter,
     UserOnly,
 } from '../auth/roles.decorator';
 
@@ -61,7 +62,7 @@ export class MissionController {
     }
 
     @Patch(':uuid/name')
-    @CanWriteMissionByBody()
+    @CanWriteMissionByBody(fromParameter('uuid'))
     @ApiOkResponse({
         description: 'Returns the updated mission',
         type: FlatMissionDto,
