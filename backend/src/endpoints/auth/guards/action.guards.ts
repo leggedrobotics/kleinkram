@@ -3,7 +3,11 @@ import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { AccessGroupRights, ActionState, UserRole } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    isTerminalActionState,
+    UserRole,
+} from '@kleinkram/shared';
 import {
     BadRequestException,
     ExecutionContext,
@@ -196,13 +200,9 @@ export class DeleteActionGuard extends BaseActionModificationGuard {
 
         const { user, action } = validationResult;
 
-        if (!(
-            action.state === ActionState.DONE ||
-            action.state === ActionState.FAILED ||
-            action.state === ActionState.UNPROCESSABLE
-        )) {
+        if (!isTerminalActionState(action.state)) {
             throw new BadRequestException(
-                "can't delete action unless its DONE, FAILED or UNPROCESSABLE",
+                "can't delete action unless its DONE, FAILED, UNPROCESSABLE or CANCELLED",
             );
         }
         if (action.creator.uuid === user.uuid) {

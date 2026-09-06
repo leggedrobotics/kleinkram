@@ -375,4 +375,127 @@ describe('Action Management Tests', () => {
             'Cannot cancel action in state: DONE',
         );
     }, 30_000);
+
+    test('should allow deleting a cancelled action run', async () => {
+        const { user, missionUuid } = await setupTestEnvironment(
+            'test-delete-cancelled@kleinkram.io',
+            'Delete Cancelled User',
+        );
+
+        const templateUuid = await createActionUsingPost(
+            {
+                name: 'Delete Cancelled Test Action',
+                description: 'desc',
+                accessRights: AccessGroupRights.READ,
+                dockerImage: 'hello-world',
+                maxRuntime: 10,
+                cpuCores: 1,
+                cpuMemory: 2,
+                gpuMemory: 0,
+            },
+            user,
+        );
+
+        await createMockWorker('test-worker-delete-cancelled');
+
+        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
+            method: 'POST',
+            headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(user),
+            },
+            body: JSON.stringify({
+                missionUUID: missionUuid,
+                templateUUID: templateUuid,
+            }),
+        });
+        expect(submitResponse.status).toBe(201);
+        const submitResult = (await submitResponse.json()) as {
+            actionUUID: string;
+        };
+        const actionUuid = submitResult.actionUUID;
+
+        // Simulate an action that was cancelled by the user
+        const actionRepo = database.getRepository(ActionEntity);
+        await actionRepo.update(
+            { uuid: actionUuid },
+            { state: ActionState.CANCELLED },
+        );
+
+        const deleteResponse = await fetch(
+            `${DEFAULT_URL}/actions/${actionUuid}`,
+            {
+                method: 'DELETE',
+                headers: getAuthHeaders(user),
+            },
+        );
+        expect(deleteResponse.status).toBeLessThan(300);
+
+        const deletedAction = await actionRepo.findOne({
+            where: { uuid: actionUuid },
+        });
+        expect(deletedAction).toBeNull();
+    }, 30_000);
+
+    test('should reject deleting a still running action run', async () => {
+        const { user, missionUuid } = await setupTestEnvironment(
+            'test-delete-running@kleinkram.io',
+            'Delete Running User',
+        );
+
+        const templateUuid = await createActionUsingPost(
+            {
+                name: 'Delete Running Test Action',
+                description: 'desc',
+                accessRights: AccessGroupRights.READ,
+                dockerImage: 'hello-world',
+                maxRuntime: 10,
+                cpuCores: 1,
+                cpuMemory: 2,
+                gpuMemory: 0,
+            },
+            user,
+        );
+
+        await createMockWorker('test-worker-delete-running');
+
+        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
+            method: 'POST',
+            headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(user),
+            },
+            body: JSON.stringify({
+                missionUUID: missionUuid,
+                templateUUID: templateUuid,
+            }),
+        });
+        expect(submitResponse.status).toBe(201);
+        const submitResult = (await submitResponse.json()) as {
+            actionUUID: string;
+        };
+        const actionUuid = submitResult.actionUUID;
+
+        const actionRepo = database.getRepository(ActionEntity);
+        await actionRepo.update(
+            { uuid: actionUuid },
+            { state: ActionState.PROCESSING },
+        );
+
+        const deleteResponse = await fetch(
+            `${DEFAULT_URL}/actions/${actionUuid}`,
+            {
+                method: 'DELETE',
+                headers: getAuthHeaders(user),
+            },
+        );
+        expect(deleteResponse.status).toBe(400);
+
+        const stillThere = await actionRepo.findOne({
+            where: { uuid: actionUuid },
+        });
+        expect(stillThere).not.toBeNull();
+    }, 30_000);
 });
