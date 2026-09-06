@@ -251,11 +251,13 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
         );
 
         // the update path re-tags the object in storage, so the file has to
-        // exist there (a database-only row would make the request fail)
-        await uploadFile(owner, 'file1.bag', missionUuid);
+        // exist there (a database-only row would make the request fail). A
+        // yaml file is used because .bag uploads are picked up by the queue
+        // consumer, whose re-save can race with the rename.
+        await uploadFile(owner, 'config.yaml', missionUuid);
         const fileRepository = database.getRepository(FileEntity);
         const file = await fileRepository.findOneOrFail({
-            where: { filename: 'file1.bag', mission: { uuid: missionUuid } },
+            where: { filename: 'config.yaml', mission: { uuid: missionUuid } },
         });
 
         const apiKeyRepository = database.getRepository(ApiKeyEntity);
@@ -280,7 +282,7 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             },
             body: JSON.stringify({
                 uuid: file.uuid,
-                filename: 'file1_renamed.bag',
+                filename: 'renamed_config.yaml',
                 date: file.date,
                 missionUuid,
                 categories: [],
@@ -293,7 +295,7 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             where: { uuid: file.uuid },
             relations: { mission: true },
         });
-        expect(renamedFile.filename).toBe('file1_renamed.bag');
+        expect(renamedFile.filename).toBe('renamed_config.yaml');
         expect(renamedFile.mission?.uuid).toBe(missionUuid);
     }, 30_000);
 });
