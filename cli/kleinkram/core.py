@@ -1053,16 +1053,18 @@ def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) ->
     # prefer an exact match; otherwise accept a case-insensitive *equality*
     # match (the server's own name comparison is case-insensitive), but never a
     # mere substring match
+    truncated = body.get("count", len(candidates)) > len(candidates)
     exact = [entry for entry in candidates if entry.get("name") == tag_name]
     if not exact:
-        exact = [entry for entry in candidates if str(entry.get("name", "")).lower() == tag_name.lower()]
-
-    if not exact:
-        if body.get("count", len(candidates)) > len(candidates):
-            # the exact match could be on a page we did not fetch
+        if truncated:
+            # the exact match could be on a page we did not fetch, so neither
+            # "does not exist" nor a case-insensitive pick would be safe
             raise kleinkram.errors.InvalidMissionMetadata(
                 f"metadata field: {tag_name} matches too many metadata types to resolve unambiguously"
             )
+        exact = [entry for entry in candidates if str(entry.get("name", "")).lower() == tag_name.lower()]
+
+    if not exact:
         return None, ""
 
     if len(exact) > 1:

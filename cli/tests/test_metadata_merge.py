@@ -10,6 +10,7 @@ import pytest
 import kleinkram.api.routes
 import kleinkram.core
 from kleinkram.api.deser import _parse_metadata
+from kleinkram.core import METADATA_TYPE_LOOKUP_TAKE
 from kleinkram.core import _get_metadata_type_id_by_name
 from kleinkram.core import _merge_mission_metadata
 from kleinkram.core import _metadata_value_to_payload
@@ -313,3 +314,10 @@ def test_validate_tag_value_accepts_native_types():
         _validate_tag_value("nope", "NUMBER")
     with pytest.raises(InvalidMissionMetadata):
         _validate_tag_value("nope", "BOOLEAN")
+
+
+def test_get_metadata_type_id_by_name_rejects_case_insensitive_fallback_when_truncated():
+    client = _FakeMetadataTypeClient(CPU_TYPES, count=METADATA_TYPE_LOOKUP_TAKE + 1)
+
+    with pytest.raises(InvalidMissionMetadata, match="too many"):
+        _get_metadata_type_id_by_name(client, "CPU")
