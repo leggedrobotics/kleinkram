@@ -24,12 +24,13 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   now=$(date +%s)
-                  prs=$(gh pr list --state open --json number,createdAt,author,headRefName)
+                  prs=$(gh pr list --state open --json number,createdAt,author,headRefName,isCrossRepository)
                   echo "$prs" | jq -c '.[]' | while read -r pr; do
                       pr_number=$(echo "$pr" | jq -r '.number')
                       pr_created=$(echo "$pr" | jq -r '.createdAt')
                       pr_author=$(echo "$pr" | jq -r '.author.login')
                       pr_branch=$(echo "$pr" | jq -r '.headRefName')
+                      pr_is_fork=$(echo "$pr" | jq -r '.isCrossRepository')
 
                       created_epoch=$(date -d "$pr_created" +%s)
                       age_seconds=$((now - created_epoch))
@@ -38,7 +39,10 @@ jobs:
                       if [ "$age_days" -ge 7 ] && { [ "$pr_author" = "dependabot[bot]" ] || [[ "$pr_branch" == deps/* ]]; }; then
                           echo "Closing PR #$pr_number ($pr_branch) created by $pr_author - $age_days days old..."
                           gh pr close "$pr_number" --comment "Closing this dependency update pull request because it has been unmerged for over a week."
-                          gh api -X DELETE "repos/{owner}/{repo}/git/refs/heads/$pr_branch" || true
+                          # Only delete branches that live in this repository, never for PRs opened from forks
+                          if [ "$pr_is_fork" = "false" ]; then
+                              gh api -X DELETE "repos/{owner}/{repo}/git/refs/heads/$pr_branch" || true
+                          fi
                       fi
                   done
 
