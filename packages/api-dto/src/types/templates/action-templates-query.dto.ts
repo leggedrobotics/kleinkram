@@ -1,3 +1,4 @@
+import { TransformToBoolean } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -31,8 +32,8 @@ export class ActionTemplatesQueryDto {
     search?: string;
 
     @IsOptional()
+    @TransformToBoolean()
     @IsBoolean()
-    @Type(() => Boolean)
     @ApiProperty({ required: false, default: false })
     includeArchived?: boolean;
 }

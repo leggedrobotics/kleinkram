@@ -1,5 +1,6 @@
 import { MissionQueryDto } from '@api-dto/mission/mission-query.dto';
 import { HealthStatus } from '@kleinkram/shared';
+import { TransformToBoolean } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
@@ -133,8 +134,8 @@ export class FileQueryDto extends MissionQueryDto {
     categories?: string;
 
     @IsOptional()
+    @TransformToBoolean()
     @IsBoolean()
-    @Type(() => Boolean)
     @ApiProperty({
         required: false,
         description:
