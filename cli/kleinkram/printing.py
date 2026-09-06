@@ -250,6 +250,8 @@ def file_info_table(file: File) -> Table:
     table.add_row("updated", str(file.updated_at))
     table.add_row("size", format_bytes(file.size))
     table.add_row("state", file_state_to_text(file.state))
+    if file.state_comment:
+        table.add_row("state comment", Text(file.state_comment, style="dim"))
     table.add_row("categories", ", ".join(file.categories))
     table.add_row("topics", ", ".join(file.topics))
     table.add_row("hash", file.hash)

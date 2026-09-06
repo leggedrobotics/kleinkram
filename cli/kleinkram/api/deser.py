@@ -60,6 +60,7 @@ class FileObjectKeys(str, Enum):
     HASH = "hash"
     TYPE = "type"
     CATEGORIES = "categories"
+    STATE_COMMENT = "stateComment"
 
 
 class MissionObjectKeys(str, Enum):
@@ -266,6 +267,7 @@ def _parse_file(file: FileObject) -> File:
         created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
         state = _parse_file_state(file[FileObjectKeys.STATE])
+        state_comment = file.get(FileObjectKeys.STATE_COMMENT)
         categories_raw = file.get(FileObjectKeys.CATEGORIES) or []
         categories = [c["name"] if isinstance(c, dict) and "name" in c else str(c) for c in categories_raw]
 
@@ -281,6 +283,7 @@ def _parse_file(file: FileObject) -> File:
             date=fdate,
             categories=categories,
             state=state,
+            state_comment=state_comment,
             created_at=created_at,
             updated_at=updated_at,
             mission_id=mission_id,

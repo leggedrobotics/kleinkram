@@ -118,6 +118,7 @@ export class FileQueueProcessorProvider {
             file.hash = hash;
             // Ensure state is OK if it was somehow different
             file.state = FileState.OK;
+            file.stateComment = null;
             await this.fileRepo.save(file);
             logger.debug(`Updated hash for ${fileUuid}`);
         } catch (error) {

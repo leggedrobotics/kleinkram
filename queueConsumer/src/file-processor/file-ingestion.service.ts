@@ -68,16 +68,20 @@ export class FileIngestionService {
                         fileData.filePath,
                     );
 
-                    const isValid = await MagicNumberValidator.validate(
-                        fileData.filePath,
-                        primaryFile.type,
-                    );
+                    const validationResult =
+                        await MagicNumberValidator.validate(
+                            fileData.filePath,
+                            primaryFile.type,
+                        );
 
-                    if (!isValid) {
+                    if (!validationResult.valid) {
                         logger.warn(
                             `Magic number validation failed for ${primaryFile.filename} (${primaryFile.type})`,
                         );
                         primaryFile.state = FileState.CORRUPTED;
+                        primaryFile.stateComment =
+                            validationResult.error ??
+                            'Magic number validation failed';
                         await this.fileRepo.save(primaryFile);
                         await this.updateQueueState(
                             queueItem,

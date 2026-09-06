@@ -79,6 +79,7 @@ export class RosBagHandler implements FileHandler {
             } catch (error: unknown) {
                 logger.error(`RosBag Conversion failed: ${String(error)}`);
                 primaryFile.state = FileState.CONVERSION_ERROR;
+                primaryFile.stateComment = String(error);
                 await this.fileRepo.save(primaryFile);
                 throw error;
             }
@@ -89,6 +90,7 @@ export class RosBagHandler implements FileHandler {
             } catch (error: unknown) {
                 logger.error(`RosBag Extraction failed: ${String(error)}`);
                 primaryFile.state = FileState.CORRUPTED;
+                primaryFile.stateComment = String(error);
                 await this.fileRepo.save(primaryFile);
                 throw error;
             }
@@ -162,6 +164,7 @@ export class RosBagHandler implements FileHandler {
             // Update Primary Bag File (inherit date from conversion result)
             primaryFile.date = savedMcapEntity.date;
             primaryFile.state = FileState.OK;
+            primaryFile.stateComment = null;
             await this.fileRepo.save(primaryFile);
 
             // Cleanup local converted file
@@ -195,6 +198,7 @@ export class RosBagHandler implements FileHandler {
             );
         } catch (error: unknown) {
             savedMcapEntity.state = FileState.CONVERSION_ERROR;
+            savedMcapEntity.stateComment = String(error);
             await this.fileRepo.save(savedMcapEntity);
 
             // Ensure cleanup on failure

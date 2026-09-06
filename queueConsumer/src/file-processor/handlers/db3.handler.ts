@@ -27,6 +27,7 @@ export class Db3Handler implements FileHandler {
             );
         } catch (error) {
             primaryFile.state = FileState.CORRUPTED;
+            primaryFile.stateComment = String(error);
             await this.fileRepo.save(primaryFile);
             throw error;
         }

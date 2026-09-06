@@ -58,6 +58,9 @@ export class FileEntity extends BaseEntity {
     @Column({ type: 'enum', enum: FileState, default: FileState.OK })
     state!: FileState;
 
+    @Column({ type: 'text', nullable: true })
+    stateComment?: string | null;
+
     @Column({ nullable: true })
     hash?: string;
 
