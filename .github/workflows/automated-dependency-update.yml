@@ -36,7 +36,7 @@ jobs:
                       age_seconds=$((now - created_epoch))
                       age_days=$((age_seconds / 86400))
 
-                      if [ "$age_days" -ge 7 ] && { [ "$pr_author" = "dependabot[bot]" ] || [[ "$pr_branch" == deps/* ]]; }; then
+                      if [ "$age_days" -ge 7 ] && { { [ "$pr_author" = "app/dependabot" ] || [ "$pr_author" = "dependabot[bot]" ]; } || [[ "$pr_branch" == deps/* ]]; }; then
                           echo "Closing PR #$pr_number ($pr_branch) created by $pr_author - $age_days days old..."
                           gh pr close "$pr_number" --comment "Closing this dependency update pull request because it has been unmerged for over a week."
                           # Only delete branches that live in this repository, never for PRs opened from forks
