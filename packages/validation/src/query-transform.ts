@@ -49,9 +49,10 @@ export const TransformToBoolean = (): PropertyDecorator =>
         // class-transformer has already run `Boolean(value)` on the reflected
         // type before this hook is called, turning 'false' into `true`. Read
         // the untouched source value instead.
+        const source: unknown = obj;
         const raw =
-            obj !== null && typeof obj === 'object' && key in obj
-                ? (obj as Record<string, unknown>)[key]
-                : value;
+            source !== null && typeof source === 'object' && key in source
+                ? (source as Record<string, unknown>)[key]
+                : (value as unknown);
         return toBoolean(raw);
     });
