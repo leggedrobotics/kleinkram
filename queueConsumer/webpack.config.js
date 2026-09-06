@@ -98,6 +98,12 @@ module.exports = function (options, webpackOptions) {
                 },
             }),
             ignoreOptionalNestPackages(),
+            // Nest 12 loads its HTTP adapter and optional packages via
+            // `import()`, which webpack turns into async chunks. The
+            // production image only ships `dist/main.js`, so keep the
+            // production bundle to a single file.
+            isProd &&
+                new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
             !isProd && new webpack.HotModuleReplacementPlugin(),
             !isProd &&
                 new webpack.WatchIgnorePlugin({
