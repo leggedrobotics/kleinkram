@@ -110,7 +110,7 @@
 
 <script setup lang="ts">
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
-import { ActionState } from '@kleinkram/shared';
+import { ActionState, isCancellableActionState } from '@kleinkram/shared';
 import ActionBadge from 'components/action-badge.vue';
 import { QTable, useQuasar } from 'quasar';
 import { useCancelAction } from 'src/composables/use-action-mutations';
@@ -128,13 +128,7 @@ const route = useRoute();
 const $q = useQuasar();
 const { mutateAsync: cancelAction } = useCancelAction();
 
-const canCancel = (state: ActionState) => {
-    return (
-        state === ActionState.PENDING ||
-        state === ActionState.STARTING ||
-        state === ActionState.PROCESSING
-    );
-};
+const canCancel = (state: ActionState) => isCancellableActionState(state);
 
 const handleCancel = async (uuid: string) => {
     try {

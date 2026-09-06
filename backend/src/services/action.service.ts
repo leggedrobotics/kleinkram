@@ -20,8 +20,8 @@ import environment from '@kleinkram/backend-common/environment';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
-    ActionState,
     ArtifactState,
+    isCancellableActionState,
     LogType,
     UserRole,
 } from '@kleinkram/shared';
@@ -390,12 +390,7 @@ export class ActionService {
             where: { uuid: actionUUID },
         });
 
-        const activeStates = [
-            ActionState.PENDING,
-            ActionState.STARTING,
-            ActionState.PROCESSING,
-        ];
-        if (!activeStates.includes(action.state)) {
+        if (!isCancellableActionState(action.state)) {
             throw new BadRequestException(
                 `Cannot cancel action in state: ${action.state}`,
             );

@@ -3,7 +3,11 @@ import {
     SubmittedAction,
 } from '@kleinkram/backend-common/entities/action/action.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
-import { ActionState, ArtifactState } from '@kleinkram/shared';
+import {
+    ActionState,
+    ArtifactState,
+    isTerminalActionState,
+} from '@kleinkram/shared';
 import {
     InjectQueue,
     OnQueueActive,
@@ -235,13 +239,14 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             where: { uuid: job.id as string },
         });
 
-        // set state to done if it is not already set to failed
+        // set state to done unless the action already reached a terminal
+        // state (e.g. FAILED or CANCELLED); those must not be overwritten
         let isActionDirty = false;
         if (action.executionEndedAt) {
             action.executionEndedAt = new Date();
             isActionDirty = true;
         }
-        if (action.state !== ActionState.FAILED) {
+        if (!isTerminalActionState(action.state)) {
             action.state = ActionState.DONE;
             isActionDirty = true;
         }
