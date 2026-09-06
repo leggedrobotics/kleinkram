@@ -34,7 +34,13 @@ export const seedUsers = async (
         // eslint-disable-next-line no-console
         console.log('Users exist in DB, skipping seeding.');
         const users = await dataSource.getRepository(UserEntity).find({
-            select: ['uuid', 'email', 'name', 'role', 'avatarUrl'],
+            select: {
+                uuid: true,
+                email: true,
+                name: true,
+                role: true,
+                avatarUrl: true,
+            },
         });
         // eslint-disable-next-line no-console
         console.log('Existing users:', users.map((u) => u.email).join(', '));
@@ -106,7 +112,11 @@ export const seedUsers = async (
                 .getRepository(UserEntity)
                 .findOne({
                     where: { uuid: user.uuid },
-                    relations: ['memberships', 'memberships.accessGroup'],
+                    relations: {
+                        memberships: {
+                            accessGroup: true,
+                        },
+                    },
                 });
 
             const hasPrimary = userWithGroups?.memberships?.some(

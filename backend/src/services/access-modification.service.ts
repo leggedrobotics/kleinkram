@@ -90,11 +90,19 @@ export class AccessModificationService {
     ): Promise<ProjectEntity> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
-            relations: ['project_accesses', 'project_accesses.accessGroup'],
+            relations: {
+                project_accesses: {
+                    accessGroup: true,
+                },
+            },
         });
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
         });
 
         if (dbuser.memberships === undefined)
@@ -140,7 +148,11 @@ export class AccessModificationService {
             await this.projectAccessRepository.save(existingAccess);
             return this.projectRepository.findOneOrFail({
                 where: { uuid: projectUUID },
-                relations: ['project_accesses', 'project_accesses.accessGroup'],
+                relations: {
+                    project_accesses: {
+                        accessGroup: true,
+                    },
+                },
             });
         }
 
@@ -157,7 +169,11 @@ export class AccessModificationService {
         await this.projectAccessRepository.save(projectAccess);
         return this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
-            relations: ['project_accesses', 'project_accesses.accessGroup'],
+            relations: {
+                project_accesses: {
+                    accessGroup: true,
+                },
+            },
         });
     }
 
@@ -175,7 +191,9 @@ export class AccessModificationService {
                         AccessGroupEntity,
                         {
                             where: { uuid: accessGroupUUID },
-                            relations: ['memberships'],
+                            relations: {
+                                memberships: true,
+                            },
                         },
                     );
                 const user = await transactionalEntityManager.findOneOrFail(
@@ -226,7 +244,11 @@ export class AccessModificationService {
                     AccessGroupEntity,
                     {
                         where: { uuid: accessGroupUUID },
-                        relations: ['memberships', 'memberships.user'],
+                        relations: {
+                            memberships: {
+                                user: true,
+                            },
+                        },
                     },
                 );
             },
@@ -262,7 +284,11 @@ export class AccessModificationService {
         if (userUuids.length === 0) {
             return this.accessGroupRepository.findOneOrFail({
                 where: { uuid: accessGroupUUID },
-                relations: ['memberships', 'memberships.user'],
+                relations: {
+                    memberships: {
+                        user: true,
+                    },
+                },
             });
         }
         const result = await this.entityManager.transaction(
@@ -294,7 +320,11 @@ export class AccessModificationService {
                     AccessGroupEntity,
                     {
                         where: { uuid: accessGroupUUID },
-                        relations: ['memberships', 'memberships.user'],
+                        relations: {
+                            memberships: {
+                                user: true,
+                            },
+                        },
                     },
                 );
             },
@@ -302,7 +332,10 @@ export class AccessModificationService {
 
         const removedUsers = await this.userRepository.find({
             where: { uuid: In(userUuids) },
-            select: ['uuid', 'name'],
+            select: {
+                uuid: true,
+                name: true,
+            },
         });
 
         this.accessGroupAuditService
@@ -333,11 +366,19 @@ export class AccessModificationService {
     ): Promise<ProjectDto> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
-            relations: ['project_accesses', 'project_accesses.accessGroup'],
+            relations: {
+                project_accesses: {
+                    accessGroup: true,
+                },
+            },
         });
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
 
         if (rights === AccessGroupRights.DELETE) {
@@ -398,7 +439,11 @@ export class AccessModificationService {
         await this.projectAccessRepository.save(projectAccess);
         const fullProject = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
-            relations: ['project_accesses', 'project_accesses.accessGroup'],
+            relations: {
+                project_accesses: {
+                    accessGroup: true,
+                },
+            },
         });
         this.accessGroupAuditService
             .log(
@@ -516,7 +561,9 @@ export class AccessModificationService {
             where: {
                 project: { uuid: projectUuid },
             },
-            relations: ['accessGroup'],
+            relations: {
+                accessGroup: true,
+            },
         });
 
         // filter out the access rights that have not been modified
@@ -627,7 +674,9 @@ export class AccessModificationService {
         const savedMembership =
             await this.groupMembershipRepository.findOneOrFail({
                 where: { uuid: membershipUuid },
-                relations: ['user'],
+                relations: {
+                    user: true,
+                },
             });
 
         this.accessGroupAuditService
@@ -682,7 +731,9 @@ export class AccessModificationService {
         const savedMembership =
             await this.groupMembershipRepository.findOneOrFail({
                 where: { uuid: membershipUuid },
-                relations: ['user'],
+                relations: {
+                    user: true,
+                },
             });
 
         this.accessGroupAuditService

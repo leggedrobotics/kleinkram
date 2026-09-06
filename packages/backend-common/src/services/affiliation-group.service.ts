@@ -115,7 +115,10 @@ export class AffiliationGroupService {
                                         user: { uuid: user.uuid },
                                         accessGroup: { uuid: group.uuid },
                                     },
-                                    relations: ['accessGroup', 'user'],
+                                    relations: {
+                                        accessGroup: true,
+                                        user: true,
+                                    },
                                 });
 
                             if (!existingMembership) {

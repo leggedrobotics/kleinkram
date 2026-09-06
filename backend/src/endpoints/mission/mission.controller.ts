@@ -16,6 +16,7 @@ import {
     SuccessResponseDto,
     UpdateMissionNameDto,
 } from '@kleinkram/api-dto';
+import { toBoolean } from '@kleinkram/validation';
 import {
     Body,
     Controller,
@@ -25,6 +26,7 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
+import { ApiOperation } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
@@ -34,6 +36,7 @@ import {
     CanMoveMission,
     CanReadMission,
     CanWriteMissionByBody,
+    fromParameter,
     UserOnly,
 } from '../auth/roles.decorator';
 
@@ -60,7 +63,7 @@ export class MissionController {
     }
 
     @Patch(':uuid/name')
-    @CanWriteMissionByBody()
+    @CanWriteMissionByBody(fromParameter('uuid'))
     @ApiOkResponse({
         description: 'Returns the updated mission',
         type: FlatMissionDto,
@@ -82,7 +85,11 @@ export class MissionController {
         description: 'Returns all missions',
         type: MissionsDto,
         resolver: (request: Request) =>
-            request.query.minimal === 'true' ? MinimumMissionsDto : MissionsDto,
+            // must stay in sync with `MissionQueryDto.minimal`, which accepts
+            // the same set of boolean-ish query parameter values
+            toBoolean(request.query.minimal) === true
+                ? MinimumMissionsDto
+                : MissionsDto,
     })
     async getMany(
         @Query() query: MissionQueryDto,
@@ -144,6 +151,18 @@ export class MissionController {
 
     @Post(':uuid/metadata')
     @CanAddTag()
+    @ApiOperation({
+        summary: "Replace a mission's metadata",
+        description:
+            'Replaces the **full** metadata set of the mission: metadata ' +
+            'whose type is absent from the request body (or present with an ' +
+            'empty value) is removed. Send the complete set, not just the ' +
+            'entries you want to change — the CLI/SDK merges a partial ' +
+            "update over the mission's existing metadata before calling " +
+            "this endpoint. Metadata types listed in the project's " +
+            '`requiredTags` cannot be removed; a body omitting one of them ' +
+            'is rejected with 400 instead of dropping the required value.',
+    })
     @ApiCreatedResponse({
         description: 'Metadata added to mission',
         type: AddTagsDto,

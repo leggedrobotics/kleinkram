@@ -51,12 +51,7 @@ watch(
                         tagValue as unknown as string;
                 } else {
                     const rawValue = tagValue as
-                        | string
-                        | Date
-                        | number
-                        | boolean
-                        | null
-                        | undefined;
+                        string | Date | number | boolean | null | undefined;
                     tagValues.value[tag.type.uuid] =
                         rawValue !== undefined && rawValue !== null
                             ? String(rawValue)

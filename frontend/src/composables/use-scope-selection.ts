@@ -25,13 +25,9 @@ export function useScopeSelection(
     // Loading States
     isLoading: ComputedRef<boolean>;
     isProjectsLoading:
-        | Ref<boolean, boolean>
-        | Ref<false, false>
-        | Ref<true, true>;
+        Ref<boolean, boolean> | Ref<false, false> | Ref<true, true>;
     isMissionsLoading:
-        | Ref<boolean, boolean>
-        | Ref<false, false>
-        | Ref<true, true>;
+        Ref<boolean, boolean> | Ref<false, false> | Ref<true, true>;
 
     // Actions
     setProject: (uuid: string | undefined) => void;

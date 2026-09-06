@@ -84,7 +84,9 @@ export class MissionGuardService {
         }
         const tag = await this.tagRepository.findOne({
             where: { uuid: tagUUID },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
 
         if (tag?.mission === undefined) throw new Error('Tag has no mission');
@@ -107,7 +109,9 @@ export class MissionGuardService {
         }
         const tag = await this.tagRepository.findOne({
             where: { uuid: tagUUID },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
 
         if (tag?.mission === undefined) throw new Error('Tag has no mission');
@@ -148,7 +152,9 @@ export class MissionGuardService {
     ): Promise<boolean> {
         const mission = await this.missionRepository.findOne({
             where: { uuid: missionUUID },
-            relations: ['project'],
+            relations: {
+                project: true,
+            },
         });
         if (!mission) {
             return false;

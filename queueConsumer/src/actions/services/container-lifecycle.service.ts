@@ -149,14 +149,19 @@ export class ContainerLifecycleService {
 
         // Fetch all known runners from DB
         const knownRunners = await this.actionRunnerRepository.find({
-            select: ['uuid', 'lastSeenAt'],
+            select: {
+                uuid: true,
+                lastSeenAt: true,
+            },
         });
         const runnerMap = new Map(knownRunners.map((r) => [r.uuid, r]));
 
         // Fetch all currently active actions
         const activeActions = await this.actionRepository.find({
             where: { state: ActionState.PROCESSING },
-            select: ['uuid'],
+            select: {
+                uuid: true,
+            },
         });
         const activeActionUuids = new Set(activeActions.map((a) => a.uuid));
 
@@ -275,7 +280,9 @@ export class ContainerLifecycleService {
                 state: ActionState.PROCESSING,
                 worker: { identifier: hostname },
             },
-            select: ['uuid'],
+            select: {
+                uuid: true,
+            },
         });
 
         for (const action of actionsOnThisWorker) {

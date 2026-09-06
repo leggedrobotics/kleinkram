@@ -183,7 +183,7 @@ describe('ActionDispatcherService Unit Tests', () => {
 
             expect(mockManager.findOne).toHaveBeenCalledWith(ActionEntity, {
                 where: { uuid: 'action-uuid' },
-                relations: ['worker'],
+                relations: { worker: true },
             });
             expect(mockManager.save).toHaveBeenCalledWith(
                 expect.objectContaining({

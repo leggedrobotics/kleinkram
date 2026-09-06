@@ -21,6 +21,9 @@ export {
 // File guards
 export { FileAccessGuard, MoveFilesGuard } from './file.guards';
 
+// Queue guards
+export { QueueItemAccessGuard } from './queue.guards';
+
 // Action guards
 export {
     CanModifyTriggerGuard,

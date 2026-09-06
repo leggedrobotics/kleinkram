@@ -24,7 +24,7 @@ ENV VITE_S3_ENDPOINT=$VITE_S3_ENDPOINT
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch
 
 COPY . .

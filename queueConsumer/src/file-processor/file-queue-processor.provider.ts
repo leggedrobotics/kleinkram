@@ -36,7 +36,13 @@ export class FileQueueProcessorProvider {
 
         const queueItem = await this.queueRepo.findOneOrFail({
             where: { uuid: job.data.queueUuid },
-            relations: ['mission', 'creator', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                creator: true,
+            },
         });
 
         // Check if it is a folder (recursive ingestion)
@@ -62,7 +68,13 @@ export class FileQueueProcessorProvider {
         logger.debug(`Processing S3 File Job: ${job.data.queueUuid}`);
         const queueItem = await this.queueRepo.findOneOrFail({
             where: { uuid: job.data.queueUuid },
-            relations: ['mission', 'creator', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                creator: true,
+            },
         });
         return this.runPipeline(queueItem);
     }

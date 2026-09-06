@@ -591,6 +591,12 @@ def update_mission(
     *,
     client: Optional[AuthenticatedClient] = None,
 ) -> None:
+    """\
+    update a mission's metadata
+
+    `metadata` is merged over the mission's existing metadata: fields that are
+    not mentioned keep their current value.
+    """
     client = client or AuthenticatedClient()
     kleinkram.core.update_mission(
         client=client,

@@ -99,7 +99,9 @@ export const seedProjects = async (
                     .getRepository(MissionEntity)
                     .find({
                         where: { project: { uuid: project.uuid } },
-                        relations: ['project'],
+                        relations: {
+                            project: true,
+                        },
                     });
 
                 createdProjects.push(project);

@@ -372,7 +372,6 @@ const responses = computed(() => {
 });
 
 
-// eslint-disable-next-line unicorn/prevent-abbreviations
 const hasParams = computed(() => params.value.length > 0);
 </script>
 

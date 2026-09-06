@@ -31,7 +31,9 @@ export class FileRepairProcessor {
         try {
             const fileEntity = await this.fileRepo.findOne({
                 where: { uuid: fileUuid },
-                relations: ['mission'],
+                relations: {
+                    mission: true,
+                },
             });
 
             if (!fileEntity) {

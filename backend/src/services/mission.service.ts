@@ -70,7 +70,9 @@ export class MissionService {
         );
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
-            relations: ['requiredTags'],
+            relations: {
+                requiredTags: true,
+            },
         });
         if (!createMission.ignoreTags) {
             const missingTags = project.requiredTags.filter(
@@ -130,7 +132,10 @@ export class MissionService {
         return this.missionRepository
             .findOneOrFail({
                 where: { uuid: newMission.uuid },
-                relations: ['project', 'creator'],
+                relations: {
+                    project: true,
+                    creator: true,
+                },
             })
             .then((m) => missionEntityToFlatDto(m));
     }
@@ -138,18 +143,26 @@ export class MissionService {
     async findOne(uuid: string): Promise<MissionWithFilesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: [
-                'project',
-                'creator',
-                'tags',
-                'files',
-                'files.creator',
-                'files.mission', // TODO: we can remove this property
-                'files.mission.creator', // TODO: we can remove this property
-                'files.mission.project', // TODO: we can remove this property
-                'tags.tagType',
-                'project.requiredTags',
-            ],
+            relations: {
+                project: {
+                    requiredTags: true,
+                },
+
+                creator: true,
+
+                tags: {
+                    tagType: true,
+                },
+
+                files: {
+                    creator: true,
+
+                    mission: {
+                        creator: true,
+                        project: true,
+                    },
+                },
+            },
         });
 
         return missionEntityToDtoWithFiles(mission);
@@ -217,6 +230,12 @@ export class MissionService {
 
         idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortField, order);
 
+        // Stable tie-breaker: without it, rows that compare equal on the sort
+        // column (e.g. missions created in the same instant) can be returned in
+        // a different order for every page, which duplicates and drops rows
+        // across LIMIT/OFFSET pages.
+        idQuery.addOrderBy('mission.uuid', 'ASC');
+
         // Get distinct mission UUIDs
         idQuery.groupBy('mission.uuid');
 
@@ -224,7 +243,12 @@ export class MissionService {
         const count = await idQuery.getCount();
         const take = query.take;
         const skip = query.skip;
-        idQuery.take(take).skip(skip);
+
+        // `take`/`skip` are only translated into LIMIT/OFFSET by TypeORM when
+        // the query has no joins; this query has several, so they would be
+        // silently dropped and every page would return all missions.
+        // `limit`/`offset` are always emitted.
+        idQuery.limit(take).offset(skip);
 
         const missionIds = await idQuery.getRawMany();
 
@@ -257,6 +281,8 @@ export class MissionService {
                 sortField,
                 order,
             );
+            // same tie-breaker as the id query, so the page keeps its order
+            sortedQuery.addOrderBy('mission.uuid', 'ASC');
             const missions = await sortedQuery.getMany();
 
             return {
@@ -281,6 +307,8 @@ export class MissionService {
             });
 
         dataQuery = addSort(dataQuery, FIND_MANY_SORT_KEYS, sortField, order);
+        // same tie-breaker as the id query, so the page keeps its order
+        dataQuery.addOrderBy('mission.uuid', 'ASC');
 
         dataQuery = addFileStats(dataQuery);
 
@@ -345,7 +373,9 @@ export class MissionService {
         // verify that the no mission with the same name exists in the project
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['files'],
+            relations: {
+                files: true,
+            },
         });
 
         const exists = await this.missionRepository.exists({
@@ -379,7 +409,9 @@ export class MissionService {
     async deleteMission(uuid: string): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['files'],
+            relations: {
+                files: true,
+            },
         });
         if (mission.files === undefined) throw new Error('Files not loaded');
 
@@ -397,7 +429,11 @@ export class MissionService {
     ): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['tags', 'tags.tagType'],
+            relations: {
+                tags: {
+                    tagType: true,
+                },
+            },
         });
 
         if (mission.tags === undefined) throw new Error('Tags not loaded');
@@ -428,7 +464,10 @@ export class MissionService {
     ): Promise<{ filename: string; link: string }[]> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['files', 'project'],
+            relations: {
+                files: true,
+                project: true,
+            },
         });
 
         if (mission.files === undefined) throw new Error('Files not loaded');
@@ -463,7 +502,10 @@ export class MissionService {
         });
         return this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['project', 'creator'],
+            relations: {
+                project: true,
+                creator: true,
+            },
         });
     }
 }

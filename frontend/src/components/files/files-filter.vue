@@ -85,8 +85,7 @@ const { data: missionData } = useMission(
 watch(missionData, (m) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
     const pUuid = ((m as any)?.project_uuid ?? (m as any)?.project?.uuid) as
-        | string
-        | undefined;
+        string | undefined;
     if (pUuid && !draftProjectUuid.value) {
         draftProjectUuid.value = pUuid;
     }

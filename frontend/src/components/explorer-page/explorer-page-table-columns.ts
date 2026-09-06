@@ -11,7 +11,8 @@ export interface ProjectColumnType {
     required?: boolean;
     label: string;
     align: string;
-    field?: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    field?:
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithMissionCountDto) => any)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithAccessRightsDto) => any)

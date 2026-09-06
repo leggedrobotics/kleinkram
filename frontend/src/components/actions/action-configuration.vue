@@ -475,15 +475,13 @@ async function submitAnalysis(): Promise<void> {
         return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
     if (
         dockerhubNamespace &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/restrict-template-expressions
-        !editingTemplate.value.imageName.startsWith(`${dockerhubNamespace}`)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        !editingTemplate.value.imageName.startsWith(dockerhubNamespace)
     ) {
         Notify.create({
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             message: `Image name must start with "${dockerhubNamespace}/"`,
             color: 'negative',
         });
@@ -608,7 +606,6 @@ const removeMission = (uuid: string): void => {
 
 const accessOptions = Object.keys(accessGroupRightsMap)
     .map((key) => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         const right = Number.parseInt(key, 10) as AccessGroupRights;
         return {
             label: accessGroupRightsMap[right],

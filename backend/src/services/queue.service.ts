@@ -128,7 +128,11 @@ export class QueueService implements OnModuleInit {
                 { hash: IsNull(), state: FileState.OK },
                 { hash: '', state: FileState.OK },
             ],
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -156,7 +160,11 @@ export class QueueService implements OnModuleInit {
     ): Promise<void> {
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         if (file.state === FileState.CANCELED) {
@@ -165,7 +173,11 @@ export class QueueService implements OnModuleInit {
 
         let job = await this.queueRepository.findOne({
             where: { identifier: uuid },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         job ??= await this.queueRepository.save(
@@ -258,7 +270,13 @@ export class QueueService implements OnModuleInit {
             }
             return await this.queueRepository.find({
                 where,
-                relations: ['mission', 'mission.project', 'creator'],
+                relations: {
+                    mission: {
+                        project: true,
+                    },
+
+                    creator: true,
+                },
                 skip,
                 take,
                 order: { createdAt: 'DESC' },
@@ -293,7 +311,11 @@ export class QueueService implements OnModuleInit {
     ): Promise<DeleteMissionResponseDto> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         if (
@@ -344,7 +366,11 @@ export class QueueService implements OnModuleInit {
     ): Promise<CancelProcessingResponseDto> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         if (queue.state >= QueueState.PROCESSING) {

@@ -59,6 +59,7 @@ from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
 from kleinkram.models import Execution
 from kleinkram.models import File
+from kleinkram.models import MetadataPayloadValue
 from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.models import TriggerConfig
@@ -459,7 +460,7 @@ def _create_mission(
     project_id: UUID,
     mission_name: str,
     *,
-    tags: Dict[UUID, str],
+    tags: Dict[UUID, MetadataPayloadValue],
     ignore_missing_tags: bool = False,
 ) -> UUID:
     payload = {
@@ -484,7 +485,14 @@ def _create_project(client: AuthenticatedClient, project_name: str, description:
     # TODO: add check for LOCATION tag datatype
 
 
-def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict[UUID, str]) -> None:
+def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict[UUID, MetadataPayloadValue]) -> None:
+    """\
+    replaces the mission's *full* metadata set
+
+    metadata types missing from `tags` are removed by the API, so callers have
+    to pass everything the mission should end up with (see
+    `kleinkram.core.update_mission`, which merges partial updates)
+    """
     payload = {
         "metadata": {str(k): v for k, v in tags.items()},
     }
