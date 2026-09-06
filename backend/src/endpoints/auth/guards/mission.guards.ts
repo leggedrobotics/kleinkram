@@ -1,3 +1,4 @@
+import { resolveAccessUuid } from '@/endpoints/auth/access-source';
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ProjectGuardService } from '@/services/project-guard.service';
 import { AccessGroupRights } from '@kleinkram/shared';
@@ -8,17 +9,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
-
-interface MissionBody {
-    missionUUID?: string;
-    missionUuid?: string;
-    uuid?: string;
-    mission?: string;
-}
-
-interface TagParameters {
-    uuid?: string;
-}
 
 @Injectable()
 export class MissionAccessGuard extends BaseGuard {
@@ -38,17 +28,10 @@ export class MissionAccessGuard extends BaseGuard {
                 context.getHandler(),
             ) ?? AccessGroupRights.READ;
 
-        const body = request.body as MissionBody | undefined;
-        const params = request.params as { uuid?: string } | undefined;
-        const missionUUID =
-            params?.uuid ??
-            (request.query.uuid as string | undefined) ??
-            (request.query.missionUuid as string | undefined) ??
-            (request.query.missionUUID as string | undefined) ??
-            body?.missionUUID ??
-            body?.missionUuid ??
-            body?.uuid ??
-            body?.mission;
+        // The mission uuid is read from exactly the location the route declared.
+        // Falling back to another location would let a caller authorize against
+        // a different mission than the one the handler actually operates on.
+        const missionUUID = resolveAccessUuid(this.reflector, context, request);
 
         if (!missionUUID) {
             return false; // Deny access if UUID not provided
@@ -116,9 +99,7 @@ export class DeleteTagGuard extends BaseGuard {
                 context.getHandler(),
             ) ?? AccessGroupRights.DELETE;
 
-        const body = request.body as MissionBody | undefined;
-        const params = request.params as TagParameters;
-        const tagUuid = body?.uuid ?? params.uuid;
+        const tagUuid = resolveAccessUuid(this.reflector, context, request);
 
         if (!tagUuid) {
             return false; // Deny access if tag UUID not provided
@@ -153,9 +134,10 @@ export class MoveMissionToProjectGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
+        // `POST /missions/:uuid/move?projectUUID=...`: the mission is always the
+        // route parameter, the target project always the query parameter.
         const params = request.params as { uuid?: string } | undefined;
-        const missionUUID =
-            params?.uuid ?? (request.query.missionUUID as string | undefined);
+        const missionUUID = params?.uuid;
         const projectUUID = request.query.projectUUID as string | undefined;
 
         if (!missionUUID || !projectUUID) {

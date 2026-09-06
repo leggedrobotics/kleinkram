@@ -1,3 +1,4 @@
+import { resolveAccessUuid } from '@/endpoints/auth/access-source';
 import { ProjectGuardService } from '@/services/project-guard.service';
 import { AccessGroupRights, KeyTypes } from '@kleinkram/shared';
 import {
@@ -8,16 +9,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
-
-interface ProjectBody {
-    projectUUID?: string;
-    uuid?: string;
-}
-
-interface ProjectParameters {
-    uuid?: string;
-    projectUuid?: string;
-}
 
 @Injectable()
 export class ProjectAccessGuard extends BaseGuard {
@@ -37,15 +28,10 @@ export class ProjectAccessGuard extends BaseGuard {
                 context.getHandler(),
             ) ?? AccessGroupRights.READ;
 
-        const body = request.body as ProjectBody | undefined;
-        const params = request.params as ProjectParameters | undefined;
-        const projectUUID =
-            (request.query.projectUuid as string | undefined) ??
-            (request.query.uuid as string | undefined) ??
-            params?.projectUuid ??
-            params?.uuid ??
-            body?.projectUUID ??
-            body?.uuid;
+        // The project uuid is read from exactly the location the route declared.
+        // Falling back to another location would let a caller authorize against
+        // a different project than the one the handler actually operates on.
+        const projectUUID = resolveAccessUuid(this.reflector, context, request);
 
         if (!projectUUID) {
             return false; // Deny access if UUID not provided

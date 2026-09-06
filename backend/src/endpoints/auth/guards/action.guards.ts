@@ -60,12 +60,10 @@ export class ReadActionGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
+        // Every route using this guard addresses the action through the route
+        // parameter (`/actions/:uuid/...`); query and body are never consulted.
         const params = request.params as { uuid?: string } | undefined;
-        const body = request.body as ActionBody | undefined;
-        const actionUUID =
-            (request.query.uuid as string | undefined) ??
-            params?.uuid ??
-            body?.actionUUID;
+        const actionUUID = params?.uuid;
 
         if (!actionUUID) {
             return false; // Deny access if UUID not provided
@@ -143,9 +141,12 @@ export abstract class BaseActionModificationGuard extends BaseGuard {
     ) {
         const { user, apiKey, request } = await this.getUser(context);
 
+        // `DELETE /actions/:uuid` and `POST /actions/:uuid/cancel` address the
+        // action through the route parameter. The body is only honoured when the
+        // route has no parameter, so a body value can never override the path.
         const body = request.body as ActionBody | undefined;
         const params = request.params as { uuid?: string } | undefined;
-        const actionUUID = body?.actionUUID ?? params?.uuid;
+        const actionUUID = params?.uuid ?? body?.actionUUID;
 
         if (!actionUUID) {
             return null;
