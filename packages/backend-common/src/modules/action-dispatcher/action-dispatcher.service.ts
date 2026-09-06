@@ -197,7 +197,7 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
      * Stops a running action by removing it from the specific worker queue
      */
     async stopAction(actionRunId: string): Promise<void> {
-        let actionIdentifier: string | undefined = undefined;
+        let actionIdentifier: string | undefined;
 
         await this.actionRepository.manager.transaction(
             async (manager: EntityManager): Promise<void> => {
@@ -218,7 +218,6 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             },
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (actionIdentifier === undefined)
             throw new ConflictException('Action or Worker not found');
 

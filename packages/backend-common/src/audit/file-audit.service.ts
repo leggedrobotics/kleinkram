@@ -27,8 +27,8 @@ export class FileAuditService {
     ): Promise<void> {
         try {
             // Resolve File and Mission Relations
-            let file: FileEntity | undefined = undefined;
-            let mission: MissionEntity | undefined = undefined;
+            let file: FileEntity | undefined;
+            let mission: MissionEntity | undefined;
 
             if (context.fileUuid) {
                 file =
