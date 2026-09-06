@@ -19,6 +19,7 @@ export default tseslint.config(
         ignores: [
             '**/dist/**',
             '**/node_modules/**',
+            '.claude/**',
             '**/.quasar/**',
             '**/.venv/**',
             '**/generated/**',
