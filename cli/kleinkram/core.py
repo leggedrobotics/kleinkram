@@ -1050,7 +1050,12 @@ def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) ->
     resp.raise_for_status()
     body = resp.json()
     candidates = body.get("data", [])
+    # prefer an exact match; otherwise accept a case-insensitive *equality*
+    # match (the server's own name comparison is case-insensitive), but never a
+    # mere substring match
     exact = [entry for entry in candidates if entry.get("name") == tag_name]
+    if not exact:
+        exact = [entry for entry in candidates if str(entry.get("name", "")).lower() == tag_name.lower()]
 
     if not exact:
         if body.get("count", len(candidates)) > len(candidates):

@@ -141,9 +141,22 @@ def test_get_metadata_type_id_by_name_requires_an_exact_match():
     assert _get_metadata_type_id_by_name(client, "cpu_cores") == (CPU_CORES_ID, "NUMBER")
 
 
-def test_get_metadata_type_id_by_name_is_case_sensitive():
+def test_get_metadata_type_id_by_name_falls_back_to_case_insensitive_equality():
+    # the server compares names case-insensitively, so `CPU` must still
+    # resolve to `cpu` -- but never to the substring match `cpu_cores`
     client = _FakeMetadataTypeClient(CPU_TYPES)
-    assert _get_metadata_type_id_by_name(client, "CPU") == (None, "")
+    assert _get_metadata_type_id_by_name(client, "CPU") == (CPU_ID, "STRING")
+
+
+def test_get_metadata_type_id_by_name_prefers_exact_case_over_case_insensitive():
+    client = _FakeMetadataTypeClient(
+        [
+            {"uuid": str(CPU_ID), "name": "cpu", "datatype": "STRING"},
+            {"uuid": str(CPU_CORES_ID), "name": "CPU", "datatype": "NUMBER"},
+        ]
+    )
+    assert _get_metadata_type_id_by_name(client, "CPU") == (CPU_CORES_ID, "NUMBER")
+    assert _get_metadata_type_id_by_name(client, "cpu") == (CPU_ID, "STRING")
 
 
 def test_get_metadata_type_id_by_name_reports_ambiguity():
