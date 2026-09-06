@@ -28,6 +28,7 @@ import {
     MissionWithFilesDto,
     ProjectAccessDto,
     ProjectDto,
+    ProjectWithAccessRightsDto,
     ProjectWithRequiredTagsDto,
     TagDto,
     TagTypeDto,
@@ -264,6 +265,33 @@ export const tagEntityToDto = (tag: MetadataEntity): TagDto => {
         excludeExtraneousValues: true,
     });
 };
+
+/**
+ * Maps the project accesses of an access group (loaded with
+ * `project_accesses.project`) to DTOs. Entries whose project relation is not
+ * loaded (or was soft-deleted) are skipped instead of producing a DTO full of
+ * `undefined` fields.
+ */
+export const projectAccessesToProjectDtos = (
+    projectAccesses: ProjectAccessEntity[] | undefined,
+): ProjectWithAccessRightsDto[] =>
+    (projectAccesses ?? []).flatMap((access) => {
+        const project = access.project;
+        if (project === undefined) {
+            return [];
+        }
+        return [
+            {
+                createdAt: project.createdAt,
+                description: project.description,
+                updatedAt: project.updatedAt,
+                name: project.name,
+                uuid: project.uuid,
+                rights: access.rights,
+                autoConvert: project.autoConvert ?? false,
+            } as ProjectWithAccessRightsDto,
+        ];
+    });
 
 export function accessGroupEntityToDto(
     accessGroup: AccessGroupEntity,

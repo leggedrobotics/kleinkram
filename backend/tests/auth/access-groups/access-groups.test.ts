@@ -269,6 +269,47 @@ describe('Verify Access Groups Internal', () => {
         expect(data.data.length).toBeGreaterThan(0);
     });
 
+    test('if listed access groups carry their project accesses', async () => {
+        const { user } = await generateAndFetchDatabaseUser('internal', 'user');
+
+        // creating a project grants the creator's primary group access to it
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'project_access_listing',
+                description: 'project for access group listing',
+                requiredTags: [],
+            },
+            user,
+        );
+
+        const headers = new HeaderCreator(user);
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups?search=&skip=0&take=100`,
+            { method: 'GET', headers: headers.getHeaders() },
+        );
+        expect(response.status).toBeLessThan(300);
+
+        const body = (await response.json()) as {
+            data: {
+                uuid: string;
+                projectAccesses: { uuid: string; rights: number }[];
+            }[];
+        };
+
+        // #2179: the list used to return an empty projectAccesses array for
+        // every group, so the "# Projects" column always showed 0
+        const groupsWithProject = body.data.filter((group) =>
+            group.projectAccesses.some((access) => access.uuid === projectUuid),
+        );
+        expect(groupsWithProject.length).toBeGreaterThan(0);
+        for (const group of groupsWithProject) {
+            for (const access of group.projectAccesses) {
+                expect(access.uuid).toBeDefined();
+                expect(typeof access.rights).toBe('number');
+            }
+        }
+    });
+
     test('if a single access group can be linked to multiple users', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
