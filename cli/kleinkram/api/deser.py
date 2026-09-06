@@ -152,12 +152,31 @@ def _parse_file_state(state: str) -> FileState:
         raise ParsingError(f"error parsing file state: {state}") from e
 
 
+def _parse_metadata_value(tag: Dict) -> MetadataValue:
+    raw = tag.get("valueAsString")
+    if raw is None:
+        # `valueAsString` is a plain getter on the API DTO and is therefore not
+        # part of the serialized response (see #2360); the value is carried by
+        # the `value` key instead.
+        raw = tag.get("value")
+
+    if isinstance(raw, bool):
+        # JSON booleans would stringify to "True"/"False", which neither the
+        # API nor `parse_metadata_value` understands.
+        value = "true" if raw else "false"
+    elif raw is None:
+        value = ""
+    else:
+        value = str(raw)
+
+    return MetadataValue(value, tag.get("datatype"))
+
+
 def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
     result = {}
     try:
         for tag in tags:
-            entry = {tag.get("name"): MetadataValue(tag.get("valueAsString"), tag.get("datatype"))}
-            result.update(entry)
+            result[tag.get("name")] = _parse_metadata_value(tag)
         return result
     except ValueError as e:
         raise ParsingError(f"error parsing metadata: {e}") from e

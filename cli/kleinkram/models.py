@@ -11,6 +11,7 @@ from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Tuple
+from typing import Union
 from uuid import UUID
 
 
@@ -27,6 +28,11 @@ class MetadataValueType(str, Enum):
 class MetadataValue:
     value: str
     type_: MetadataValueType
+
+
+# a metadata value as it is sent to the API; numbers and booleans are sent as
+# native JSON values so the API does not have to parse them out of a string
+MetadataPayloadValue = Union[str, float, bool]
 
 
 class FileState(str, Enum):
