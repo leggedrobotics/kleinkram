@@ -7,6 +7,7 @@ from typing import Dict
 from typing import List
 from typing import Literal
 from typing import NewType
+from typing import Optional
 from typing import Tuple
 from uuid import UUID
 
@@ -152,6 +153,26 @@ def _parse_file_state(state: str) -> FileState:
         raise ParsingError(f"error parsing file state: {state}") from e
 
 
+def _parse_metadata_type_id(tag: Dict) -> Optional[UUID]:
+    """\
+    the uuid of the metadata *type*, not of the metadata value itself
+
+    `TagDto` exposes it under `type`; the raw entity uses `tagType`.
+    """
+    type_object = tag.get("type") or tag.get("tagType")
+    if not isinstance(type_object, dict):
+        return None
+
+    raw = type_object.get("uuid")
+    if raw is None:
+        return None
+
+    try:
+        return UUID(str(raw), version=4)
+    except ValueError as e:
+        raise ParsingError(f"error parsing metadata type uuid: {raw}") from e
+
+
 def _parse_metadata_value(tag: Dict) -> MetadataValue:
     raw = tag.get("valueAsString")
     if raw is None:
@@ -169,7 +190,7 @@ def _parse_metadata_value(tag: Dict) -> MetadataValue:
     else:
         value = str(raw)
 
-    return MetadataValue(value, tag.get("datatype"))
+    return MetadataValue(value, tag.get("datatype"), _parse_metadata_type_id(tag))
 
 
 def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:

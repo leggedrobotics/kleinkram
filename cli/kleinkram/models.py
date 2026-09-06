@@ -29,6 +29,11 @@ class MetadataValue:
     value: str
     type_: MetadataValueType
 
+    # uuid of the metadata type this value belongs to, as reported by the API;
+    # `None` when the response did not carry it. Metadata type *names* are not
+    # a safe key: resolving one goes through a substring search.
+    type_id: Optional[UUID] = None
+
 
 # a metadata value as it is sent to the API; numbers and booleans are sent as
 # native JSON values so the API does not have to parse them out of a string

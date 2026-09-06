@@ -384,16 +384,35 @@ def _metadata_value_to_payload(value: MetadataValue) -> MetadataPayloadValue:
 
 def _merge_mission_metadata(
     client: AuthenticatedClient, mission_id: UUID, metadata: Mapping[str, str]
-) -> Dict[str, MetadataPayloadValue]:
+) -> Dict[UUID, MetadataPayloadValue]:
     """\
     merge `metadata` over the metadata the mission currently has
+
+    the result is keyed by metadata *type* uuid: entries the caller did not
+    touch reuse the uuid the API reported for them, so they are never
+    re-resolved by name through the substring search in
+    `_get_metadata_type_id_by_name`
     """
     mission = kleinkram.api.routes.get_mission(client, MissionQuery(ids=[mission_id]))
 
-    merged: Dict[str, MetadataPayloadValue] = {
-        name: _metadata_value_to_payload(value) for name, value in mission.metadata.items()
-    }
-    merged.update(metadata)
+    # names are only resolved for the entries the caller actually supplied
+    merged: Dict[UUID, MetadataPayloadValue] = dict(_get_tags_map(client, metadata))
+
+    for name, value in mission.metadata.items():
+        type_id = value.type_id
+        if type_id is None:
+            # older servers may not report the type uuid; fall back to the
+            # (exact) name lookup rather than dropping the field
+            type_id, _ = _get_metadata_type_id_by_name(client, name)
+            if type_id is None:
+                raise kleinkram.errors.InvalidMissionMetadata(
+                    f"cannot resolve the metadata type of the mission's existing field: {name}"
+                )
+
+        if type_id in merged:
+            continue  # overridden by the caller
+        merged[type_id] = _metadata_value_to_payload(value)
+
     return merged
 
 
@@ -407,8 +426,7 @@ def update_mission(*, client: AuthenticatedClient, mission_id: UUID, metadata: D
     through would delete everything it does not mention — including metadata
     the project requires.
     """
-    merged = _merge_mission_metadata(client, mission_id, metadata)
-    tags = _get_tags_map(client, merged)
+    tags = _merge_mission_metadata(client, mission_id, metadata)
     kleinkram.api.routes._update_mission(client, mission_id, tags=tags)
 
 
@@ -1010,18 +1028,46 @@ def _validate_tag_value(tag_value, tag_datatype) -> None:
         pass
 
 
+METADATA_TYPE_LOOKUP_TAKE = 1000
+
+
 def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) -> Tuple[Optional[UUID], str]:
-    resp = client.get("/metadata-types/filtered", params={"name": tag_name, "take": 1})
+    """\
+    resolve a metadata type name to its uuid
+
+    `/metadata-types/filtered` matches the name as a case-insensitive
+    *substring*, so the response has to be narrowed down to exact matches
+    before anything is picked: asking for `cpu` also returns `cpu_cores`.
+    """
+    resp = client.get(
+        "/metadata-types/filtered",
+        params={"name": tag_name, "take": METADATA_TYPE_LOOKUP_TAKE},
+    )
 
     if resp.status_code in (403, 404):
         return None, ""
 
     resp.raise_for_status()
-    try:
-        data = resp.json()["data"][0]
-    except IndexError:
+    body = resp.json()
+    candidates = body.get("data", [])
+    exact = [entry for entry in candidates if entry.get("name") == tag_name]
+
+    if not exact:
+        if body.get("count", len(candidates)) > len(candidates):
+            # the exact match could be on a page we did not fetch
+            raise kleinkram.errors.InvalidMissionMetadata(
+                f"metadata field: {tag_name} matches too many metadata types to resolve unambiguously"
+            )
         return None, ""
 
+    if len(exact) > 1:
+        raise kleinkram.errors.InvalidMissionMetadata(
+            f"metadata field: {tag_name} is ambiguous, "
+            f"{len(exact)} metadata types share this name: "
+            f"{', '.join(str(entry.get('uuid')) for entry in exact)}"
+        )
+
+    data = exact[0]
     return UUID(data["uuid"], version=4), data["datatype"]
 
 
