@@ -186,6 +186,7 @@ export class FileController {
             dto,
             auth.user,
             auth.apiKey?.action,
+            auth.apiKey,
         );
         return plainToInstance(FileDto, file, {
             excludeExtraneousValues: true,

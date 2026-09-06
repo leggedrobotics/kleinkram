@@ -1,5 +1,15 @@
-import { FileEntity, UserEntity } from '@kleinkram/backend-common';
-import { AccessGroupRights, FileType, UserRole } from '@kleinkram/shared';
+import { appVersion } from '@/app-version';
+import {
+    ApiKeyEntity,
+    FileEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
+import {
+    AccessGroupRights,
+    FileType,
+    KeyTypes,
+    UserRole,
+} from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -111,8 +121,11 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             'internal',
             'admin',
         );
+        // An external user: every internal user is a member of the affiliation
+        // group of `access_config.json`, which every new project grants CREATE
+        // rights to, so an internal user could legitimately move files here.
         const { user: editor } = await generateAndFetchDatabaseUser(
-            'internal',
+            'external',
             'user',
         );
 
@@ -143,6 +156,70 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
         const response = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
             method: 'PUT',
             headers: jsonHeaders(editor),
+            body: JSON.stringify({
+                uuid: file.uuid,
+                filename: file.filename,
+                date: file.date,
+                missionUuid: targetMissionUuid,
+                categories: [],
+            }),
+        });
+
+        expect(response.status).toBe(403);
+
+        const unmovedFile = await fileRepository.findOneOrFail({
+            where: { uuid: file.uuid },
+            relations: { mission: true },
+        });
+        expect(unmovedFile.mission?.uuid).toBe(sourceMissionUuid);
+    }, 30_000);
+
+    test('an API key cannot move a file out of the mission it is scoped to', async () => {
+        // The key belongs to an admin: without the check on the update path,
+        // the rights of the key owner would authorize the move even though the
+        // key itself is scoped to a single mission.
+        const { user: owner } = await generateAndFetchDatabaseUser(
+            'internal',
+            'admin',
+        );
+
+        const { missionUuid: sourceMissionUuid } =
+            await createProjectWithMission(owner, 'key_source');
+        const { missionUuid: targetMissionUuid } =
+            await createProjectWithMission(owner, 'key_target');
+
+        const fileRepository = database.getRepository(FileEntity);
+        const file = await fileRepository.save(
+            fileRepository.create({
+                filename: 'scoped.bag',
+                mission: { uuid: sourceMissionUuid },
+                creator: { uuid: owner.uuid },
+                date: new Date(),
+                type: FileType.BAG,
+                size: 1024,
+            }),
+        );
+
+        const apiKeyRepository = database.getRepository(ApiKeyEntity);
+        const apiKey = apiKeyRepository.create({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            key_type: KeyTypes.ACTION,
+            mission: { uuid: sourceMissionUuid },
+            rights: AccessGroupRights.WRITE,
+            user: { uuid: owner.uuid },
+        });
+        await apiKeyRepository.save(apiKey);
+
+        const response = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
+            method: 'PUT',
+            headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'Content-Type': 'application/json',
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'x-api-key': apiKey.apikey,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'kleinkram-client-version': appVersion,
+            },
             body: JSON.stringify({
                 uuid: file.uuid,
                 filename: file.filename,
