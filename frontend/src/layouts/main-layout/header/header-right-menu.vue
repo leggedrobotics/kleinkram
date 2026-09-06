@@ -8,7 +8,13 @@
             <header-create-menu />
 
             <div style="margin: auto 10px auto 30px" @click="showOverlay">
-                <q-btn round flat color="grey-8" icon="sym_o_export_notes">
+                <q-btn
+                    round
+                    flat
+                    class="header-icon-button"
+                    color="grey-8"
+                    icon="sym_o_export_notes"
+                >
                     <q-tooltip>Processing Uploads</q-tooltip>
                     <q-linear-progress
                         v-if="isUploading"

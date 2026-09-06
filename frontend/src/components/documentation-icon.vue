@@ -3,6 +3,7 @@
         :href="documentationLink"
         round
         flat
+        class="header-icon-button"
         color="grey-8"
         target="_blank"
         icon="sym_o_help"
