@@ -2,6 +2,7 @@ import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     groupMembershipEntityToDto,
     projectAccessEntityToDto,
+    projectAccessesToProjectDtos,
     userEntityToDto,
 } from '@/serialization';
 import {
@@ -9,7 +10,6 @@ import {
     AccessGroupDto,
     AccessGroupsDto,
     ProjectAccessListDto,
-    ProjectWithAccessRightsDto,
 } from '@kleinkram/api-dto';
 import {
     AccessGroupAuditService,
@@ -138,19 +138,9 @@ export class AccessQueryService {
             type: rawAccessGroup.type,
             updatedAt: rawAccessGroup.updatedAt,
             uuid: rawAccessGroup.uuid,
-            projectAccesses:
-                rawAccessGroup.project_accesses?.map(
-                    (value) =>
-                        ({
-                            createdAt: value.project?.createdAt,
-                            description: value.project?.description,
-                            updatedAt: value.project?.updatedAt,
-                            name: value.project?.name,
-                            uuid: value.project?.uuid,
-                            rights: value.rights,
-                            autoConvert: value.project?.autoConvert ?? false,
-                        }) as ProjectWithAccessRightsDto,
-                ) ?? [],
+            projectAccesses: projectAccessesToProjectDtos(
+                rawAccessGroup.project_accesses,
+            ),
             emailPattern:
                 rawAccessGroup.type === AccessGroupType.AFFILIATION
                     ? this.configService
@@ -250,7 +240,9 @@ export class AccessQueryService {
                     name: accessGroup.name,
                     type: accessGroup.type,
                     hidden: accessGroup.hidden,
-                    projectAccesses: [],
+                    projectAccesses: projectAccessesToProjectDtos(
+                        accessGroup.project_accesses,
+                    ),
                     emailPattern:
                         accessGroup.type === AccessGroupType.AFFILIATION
                             ? this.configService
