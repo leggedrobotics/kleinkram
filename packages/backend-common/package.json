@@ -21,10 +21,10 @@
         }
     },
     "peerDependencies": {
-        "@nestjs/common": "^11.0.0",
-        "@nestjs/core": "^11.0.0",
-        "@nestjs/typeorm": "^11.0.0",
-        "typeorm": "^0.3.0"
+        "@nestjs/common": "^12.0.0",
+        "@nestjs/core": "^12.0.0",
+        "@nestjs/typeorm": "^12.0.0",
+        "typeorm": "^1.0.0"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.967.0",
@@ -33,12 +33,12 @@
         "@kleinkram/api-dto": "workspace:*",
         "@kleinkram/shared": "workspace:*",
         "@kleinkram/validation": "workspace:*",
-        "@nestjs/schedule": "^5.0.1",
+        "@nestjs/schedule": "^12.0.1",
         "@willsoto/nestjs-prometheus": "^6.1.0",
         "axios": "^1.20.0",
         "bull": "^4.16.5",
         "fs-extra": "^11.4.0",
-        "ioredis": "^5.11.1",
+        "ioredis": "^6.0.0",
         "jsonwebtoken": "^9.0.3",
         "minimatch": "^10.2.6",
         "pg": "^8.23.0",
@@ -46,20 +46,20 @@
         "qs": "^6.16.0",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.2",
-        "typeorm-extension": "^3.9.0"
+        "typeorm-extension": "^4.1.0"
     },
     "devDependencies": {
         "@faker-js/faker": "^10.6.0",
-        "@nestjs/common": "^11.2.3",
-        "@nestjs/core": "^11.2.3",
-        "@nestjs/typeorm": "^11.0.3",
+        "@nestjs/common": "^12.0.1",
+        "@nestjs/core": "^12.0.1",
+        "@nestjs/typeorm": "^12.0.1",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^24.13.3",
         "ts-node": "^10.9.2",
         "tsc-alias": "^1.9.4",
         "tsconfig-paths": "^4.2.0",
         "tsx": "^4.23.13",
-        "typeorm": "^0.3.31",
+        "typeorm": "^1.1.1",
         "typescript": "^5.9.3"
     }
 }

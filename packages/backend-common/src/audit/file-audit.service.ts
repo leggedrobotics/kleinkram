@@ -34,7 +34,9 @@ export class FileAuditService {
                 file =
                     (await this.fileRepo.findOne({
                         where: { uuid: context.fileUuid },
-                        relations: ['mission'],
+                        relations: {
+                            mission: true,
+                        },
                     })) ?? undefined;
                 mission = file?.mission ?? undefined;
             }

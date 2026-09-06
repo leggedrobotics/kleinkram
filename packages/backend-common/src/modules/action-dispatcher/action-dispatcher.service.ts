@@ -203,7 +203,9 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             async (manager: EntityManager): Promise<void> => {
                 const action = await manager.findOne(ActionEntity, {
                     where: { uuid: actionRunId },
-                    relations: ['worker'],
+                    relations: {
+                        worker: true,
+                    },
                 });
 
                 if (action?.worker === undefined)
@@ -281,7 +283,9 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
                                     await this.actionRepository.findOneOrFail({
                                         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                                         where: { uuid: job.data.uuid },
-                                        relations: ['template'],
+                                        relations: {
+                                            template: true,
+                                        },
                                     });
 
                                 await job.remove();

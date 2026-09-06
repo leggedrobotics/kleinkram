@@ -60,8 +60,15 @@ describe('Verify Access Groups External', () => {
         const userRepository = database.getRepository(UserEntity);
         const user = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
-            relations: ['memberships', 'memberships.accessGroup'],
-            select: ['uuid', 'email'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
+            select: {
+                uuid: true,
+                email: true,
+            },
         });
         expect(user.email).toBe(mockEmail);
 
@@ -112,8 +119,15 @@ describe('Verify Access Groups Internal', () => {
         const userRepository = database.getRepository(UserEntity);
         const user = await userRepository.findOneOrFail({
             where: { uuid: internalUuid },
-            relations: ['memberships', 'memberships.accessGroup'],
-            select: ['uuid', 'email'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
+            select: {
+                uuid: true,
+                email: true,
+            },
         });
         expect(user.email).toBe(mockEmail);
 
@@ -141,7 +155,11 @@ describe('Verify Access Groups Internal', () => {
             .getRepository(UserEntity)
             .findOneOrFail({
                 where: { uuid: user.uuid },
-                relations: ['memberships', 'memberships.accessGroup'],
+                relations: {
+                    memberships: {
+                        accessGroup: true,
+                    },
+                },
             });
 
         const primaryGroup = userEntity.memberships?.find(
@@ -176,7 +194,11 @@ describe('Verify Access Groups Internal', () => {
             .getRepository(UserEntity)
             .findOneOrFail({
                 where: { uuid: otherUser.uuid },
-                relations: ['memberships', 'memberships.accessGroup'],
+                relations: {
+                    memberships: {
+                        accessGroup: true,
+                    },
+                },
             });
 
         const primaryGroup = userEntity.memberships?.find(
@@ -209,7 +231,11 @@ describe('Verify Access Groups Internal', () => {
             .getRepository(UserEntity)
             .findOneOrFail({
                 where: { uuid: user.uuid },
-                relations: ['memberships', 'memberships.accessGroup'],
+                relations: {
+                    memberships: {
+                        accessGroup: true,
+                    },
+                },
             });
 
         const primaryGroup = userEntity.memberships?.find(
@@ -264,7 +290,11 @@ describe('Verify Access Groups Internal', () => {
         const groupRepo = database.getRepository(AccessGroupEntity);
         const group = await groupRepo.findOneOrFail({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
 
         expect(group.memberships?.length).toBeGreaterThanOrEqual(2);
@@ -325,7 +355,11 @@ describe('Verify Access Groups Internal', () => {
         const groupRepo = database.getRepository(AccessGroupEntity);
         const group = await groupRepo.findOneOrFail({
             where: { uuid: groupUuid },
-            relations: ['project_accesses', 'project_accesses.project'],
+            relations: {
+                project_accesses: {
+                    project: true,
+                },
+            },
         });
 
         expect(group.project_accesses?.length).toBeGreaterThanOrEqual(2);
@@ -712,7 +746,11 @@ describe('Verify Access Groups Internal User Access', () => {
         const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const group = await accessGroupRepository.findOne({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
         expect(group).not.toBeNull();
         const memberUuids = group?.memberships?.map((m) => m.user?.uuid) ?? [];
@@ -756,7 +794,11 @@ describe('Verify Access Groups Internal User Access', () => {
         const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const group = await accessGroupRepository.findOne({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
         expect(group).not.toBeNull();
         const memberUuids = group?.memberships?.map((m) => m.user?.uuid) ?? [];
@@ -965,7 +1007,11 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const groupRepo = database.getRepository(AccessGroupEntity);
         const group = await groupRepo.findOneOrFail({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
         expect(group.name).toBe('test_access_group');
         expect(group.memberships?.length).toBeGreaterThanOrEqual(2);
@@ -1073,7 +1119,11 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const groupRepo = database.getRepository(AccessGroupEntity);
         const group = await groupRepo.findOneOrFail({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
         const memberUuids = group.memberships?.map((m) => m.user?.uuid) ?? [];
         expect(memberUuids).toContain(newMember.uuid);

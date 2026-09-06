@@ -62,7 +62,11 @@ export class MetadataService {
         });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['tags', 'tags.tagType'],
+            relations: {
+                tags: {
+                    tagType: true,
+                },
+            },
         });
 
         if (mission.tags === undefined)
@@ -180,7 +184,10 @@ export class MetadataService {
                 tagType: { uuid: tagTypeUUID },
                 mission: { uuid: missionUUID },
             },
-            relations: ['tagType', 'mission'],
+            relations: {
+                tagType: true,
+                mission: true,
+            },
         });
 
         if (!exsitingTag) {
@@ -263,7 +270,11 @@ export class MetadataService {
     ): Promise<AddTagsDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['tags', 'tags.tagType'],
+            relations: {
+                tags: {
+                    tagType: true,
+                },
+            },
         });
 
         if (mission.tags === undefined) {
@@ -315,16 +326,14 @@ export class MetadataService {
         });
 
         return {
-            data: tags.map(
-                (tag: TagTypeEntity): TagTypeDto => ({
-                    uuid: tag.uuid,
-                    updatedAt: tag.updatedAt,
-                    createdAt: tag.createdAt,
-                    name: tag.name,
-                    datatype: tag.datatype,
-                    description: '',
-                }),
-            ),
+            data: tags.map((tag: TagTypeEntity): TagTypeDto => ({
+                uuid: tag.uuid,
+                updatedAt: tag.updatedAt,
+                createdAt: tag.createdAt,
+                name: tag.name,
+                datatype: tag.datatype,
+                description: '',
+            })),
             count,
             take,
             skip,
@@ -356,16 +365,14 @@ export class MetadataService {
         });
 
         return {
-            data: tags.map(
-                (tag: TagTypeEntity): TagTypeDto => ({
-                    uuid: tag.uuid,
-                    updatedAt: tag.updatedAt,
-                    createdAt: tag.createdAt,
-                    name: tag.name,
-                    datatype: tag.datatype,
-                    description: '',
-                }),
-            ),
+            data: tags.map((tag: TagTypeEntity): TagTypeDto => ({
+                uuid: tag.uuid,
+                updatedAt: tag.updatedAt,
+                createdAt: tag.createdAt,
+                name: tag.name,
+                datatype: tag.datatype,
+                description: '',
+            })),
             count,
             take,
             skip,

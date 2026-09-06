@@ -83,13 +83,16 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async processAction(job: Job<{ uuid: string }>): Promise<boolean> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
-            relations: [
-                'template',
-                'mission',
-                'mission.project',
-                'creator',
-                'worker',
-            ],
+            relations: {
+                template: true,
+
+                mission: {
+                    project: true,
+                },
+
+                creator: true,
+                worker: true,
+            },
         });
 
         if (this.worker === undefined || action.worker === undefined) {

@@ -83,7 +83,11 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         // 3. Verify affiliation group membership
         const userWithGroups = await userRepository.findOneOrFail({
             where: { email },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
         });
 
         const hasKleinkramDevs = userWithGroups.memberships?.some(
@@ -147,7 +151,11 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         // 3. Verify affiliation group membership was added back
         const userWithGroups = await userRepository.findOneOrFail({
             where: { email: email2 },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
         });
 
         const hasKleinkramDevs = userWithGroups.memberships?.some(
@@ -211,7 +219,11 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         // 3. Verify affiliation group membership was added back
         const userWithGroups = await userRepository.findOneOrFail({
             where: { email: email3 },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
         });
 
         const hasKleinkramDevs = userWithGroups.memberships?.some(

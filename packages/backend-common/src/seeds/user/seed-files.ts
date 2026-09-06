@@ -236,7 +236,9 @@ export const seedFiles = async (
                             name: randomCategoryName ?? '',
                             project: { uuid: mission.project.uuid },
                         },
-                        relations: ['project'],
+                        relations: {
+                            project: true,
+                        },
                     });
                 // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                 if (!category) {

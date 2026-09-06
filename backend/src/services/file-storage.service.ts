@@ -42,7 +42,9 @@ export class FileStorageService {
 
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
 
         // verify that the file exists in DB
@@ -110,7 +112,11 @@ export class FileStorageService {
                 }
                 const fileEntity = await this.fileRepository.findOne({
                     where: { uuid: file.name },
-                    relations: ['mission', 'mission.project'],
+                    relations: {
+                        mission: {
+                            project: true,
+                        },
+                    },
                 });
                 if (fileEntity === null) {
                     logger.error(`File ${file.name} not found in database`);
