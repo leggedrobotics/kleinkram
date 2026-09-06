@@ -22,7 +22,11 @@ from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
 
 CREATE_HELP = "create a mission"
-UPDATE_HELP = "update a mission"
+UPDATE_HELP = (
+    "update a mission's metadata; the given fields are merged over the "
+    "mission's existing metadata, fields that are not mentioned keep "
+    "their current value"
+)
 DELETE_HELP = "delete a mission"
 INFO_HELP = "get information about a mission"
 NOT_IMPLEMENTED_YET = """\
@@ -85,7 +89,7 @@ def info(
 def update(
     project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
-    metadata: str = typer.Option(help="path to metadata file (json or yaml)"),
+    metadata: str = typer.Option(help="path to metadata file (json or yaml); merged over the existing metadata"),
 ) -> None:
     mission_ids, mission_patterns = split_args([mission])
     project_ids, project_patterns = split_args([project] if project else [])

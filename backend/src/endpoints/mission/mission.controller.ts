@@ -26,6 +26,7 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
+import { ApiOperation } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
@@ -150,6 +151,18 @@ export class MissionController {
 
     @Post(':uuid/metadata')
     @CanAddTag()
+    @ApiOperation({
+        summary: "Replace a mission's metadata",
+        description:
+            'Replaces the **full** metadata set of the mission: metadata ' +
+            'whose type is absent from the request body (or present with an ' +
+            'empty value) is removed. Send the complete set, not just the ' +
+            'entries you want to change — the CLI/SDK merges a partial ' +
+            "update over the mission's existing metadata before calling " +
+            "this endpoint. Metadata types listed in the project's " +
+            '`requiredTags` cannot be removed; a body omitting one of them ' +
+            'is rejected with 400 instead of dropping the required value.',
+    })
     @ApiCreatedResponse({
         description: 'Metadata added to mission',
         type: AddTagsDto,
