@@ -250,17 +250,13 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             'key_rename',
         );
 
+        // the update path re-tags the object in storage, so the file has to
+        // exist there (a database-only row would make the request fail)
+        await uploadFile(owner, 'before.bag', missionUuid);
         const fileRepository = database.getRepository(FileEntity);
-        const file = await fileRepository.save(
-            fileRepository.create({
-                filename: 'before.bag',
-                mission: { uuid: missionUuid },
-                creator: { uuid: owner.uuid },
-                date: new Date(),
-                type: FileType.BAG,
-                size: 1024,
-            }),
-        );
+        const file = await fileRepository.findOneOrFail({
+            where: { filename: 'before.bag' },
+        });
 
         const apiKeyRepository = database.getRepository(ApiKeyEntity);
         const apiKey = apiKeyRepository.create({
