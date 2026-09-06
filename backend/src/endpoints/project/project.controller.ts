@@ -210,9 +210,10 @@ export class ProjectController {
     @ApiOperation({
         summary: 'Add a required metadata type to a project',
         description:
-            'Exactly one of the `metadataTypeUUID` / `tagTypeUUID` query ' +
+            'At least one of the `metadataTypeUUID` / `tagTypeUUID` query ' +
             'parameters must be given (`tagTypeUUID` is the deprecated ' +
-            'alias). Requests providing neither are rejected with 400.',
+            'alias; if both are given, `metadataTypeUUID` wins). Requests ' +
+            'providing neither are rejected with 400.',
     })
     @ApiCreatedResponse({
         description: 'Empty response',
@@ -256,9 +257,10 @@ export class ProjectController {
     @ApiOperation({
         summary: "Replace a project's required metadata types",
         description:
-            'Replaces the full set of required metadata types. Exactly one ' +
+            'Replaces the full set of required metadata types. At least one ' +
             'of `metadataTypeUUIDs` / `tagTypeUUIDs` must be given in the ' +
-            'body (`tagTypeUUIDs` is the deprecated alias); a body providing ' +
+            'body (`tagTypeUUIDs` is the deprecated alias; if both are ' +
+            'given, `metadataTypeUUIDs` wins); a body providing ' +
             'neither — `{}`, or one that only carries a misspelled key — is ' +
             'rejected with 400 rather than clearing the project. Passing an ' +
             'explicit empty array clears the required metadata types.',

@@ -6,7 +6,8 @@ import { IsAtLeastOnePresent } from './tags/add-tags.dto';
  * Body of `PUT /projects/:uuid/metadata-types`.
  *
  * The endpoint replaces the project's *full* set of required metadata types,
- * so exactly one of the two fields has to be present: a body naming neither
+ * so at least one of the two fields has to be present (if both are given,
+ * the canonical `metadataTypeUUIDs` wins): a body naming neither
  * (`{}`, or one that only carries a misspelled key) would otherwise read as
  * "clear every required metadata type". An explicit empty array is still
  * accepted, since clearing on purpose is a valid request.
