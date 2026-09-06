@@ -39,6 +39,8 @@ RUN pnpm --filter @kleinkram/shared build
 RUN pnpm --filter @kleinkram/validation build
 RUN pnpm --filter @kleinkram/api-dto build
 RUN pnpm --filter kleinkram-frontend build
+# Fail the image build if the configured backend URL did not make it into the bundle
+RUN sh ./frontend/scripts/check-backend-url.sh frontend/dist/spa
 
 FROM debian:bookworm-slim AS nginx-base
 RUN apt-get update && \
