@@ -21,6 +21,7 @@ export enum PreviewType {
     NAV_SAT_FIX = 'NAV_SAT_FIX',
     POINT_STAMPED = 'POINT_STAMPED',
     ANYMAL_STATE = 'ANYMAL_STATE',
+    DIAGNOSTICS = 'DIAGNOSTICS',
 }
 
 // Lazy load components
@@ -87,6 +88,9 @@ const PointStampedViewer = defineAsyncComponent(
 const AnymalStateViewer = defineAsyncComponent(
     () => import('../components/inspect-file/viewers/anymal-state-viewer.vue'),
 );
+const DiagnosticsViewer = defineAsyncComponent(
+    () => import('../components/inspect-file/viewers/diagnostics-viewer.vue'),
+);
 
 export const detectPreviewType = (
     messageType: string,
@@ -133,6 +137,8 @@ export const detectPreviewType = (
         return PreviewType.POINT_STAMPED;
     if (typeLower.includes('anymal_msgs/anymalstate'))
         return PreviewType.ANYMAL_STATE;
+    if (typeLower.includes('diagnostic_msgs/diagnosticarray'))
+        return PreviewType.DIAGNOSTICS;
 
     // Heuristics
     if (sampleData) {
@@ -235,6 +241,7 @@ export const getViewerComponent = (type: PreviewType) => {
         [PreviewType.NAV_SAT_FIX]: NavSatFixViewer,
         [PreviewType.POINT_STAMPED]: PointStampedViewer,
         [PreviewType.ANYMAL_STATE]: AnymalStateViewer,
+        [PreviewType.DIAGNOSTICS]: DiagnosticsViewer,
     };
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return map[type] ?? JsonLogViewer;
