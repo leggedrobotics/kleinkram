@@ -1,6 +1,12 @@
 export interface GeoPoint {
     lat: number;
     lon: number;
+    /**
+     * True when samples without a valid position were dropped between the
+     * previous point and this one; the connecting segment is then only an
+     * interpolation and is drawn differently.
+     */
+    gapBefore?: boolean;
 }
 
 export const toRadians = (degrees: number): number => (degrees * Math.PI) / 180;

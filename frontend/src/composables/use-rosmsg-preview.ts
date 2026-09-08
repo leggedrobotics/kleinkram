@@ -6,6 +6,29 @@ import { McapStrategy } from '../services/decoding-strategies/mcap-strategy';
 import { RosbagStrategy } from '../services/decoding-strategies/rosbag-strategy';
 import { formatPayload } from './rosmsg-utilities.ts';
 
+/**
+ * Inserts a message keeping the array ordered by log time. Appending is the
+ * fast path; progressive (coarse-to-fine) loading delivers messages out of
+ * order and falls back to a binary search for the insertion point.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function insertSorted(messages: any[], message: { logTime: bigint }): void {
+    const last = messages.at(-1) as { logTime: bigint } | undefined;
+    if (last === undefined || last.logTime <= message.logTime) {
+        messages.push(message);
+        return;
+    }
+    let low = 0;
+    let high = messages.length;
+    while (low < high) {
+        const mid = Math.floor((low + high) / 2);
+        const midMessage = messages[mid] as { logTime: bigint };
+        if (midMessage.logTime <= message.logTime) low = mid + 1;
+        else high = mid;
+    }
+    messages.splice(low, 0, message);
+}
+
 export function useRosmsgPreview(): {
     isReaderReady: Ref<boolean, boolean>;
     readerError: Ref<string | null, string | null>;
@@ -20,7 +43,12 @@ export function useRosmsgPreview(): {
     ) => Promise<void>;
     fetchTopicMessages: (
         topicName: string,
-        options?: { limit?: number; append?: boolean; stride?: number },
+        options?: {
+            limit?: number;
+            append?: boolean;
+            stride?: number;
+            progressive?: boolean;
+        },
     ) => Promise<void>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     formatPayload: (data: any) => string;
@@ -107,7 +135,12 @@ export function useRosmsgPreview(): {
      */
     async function fetchTopicMessages(
         topicName: string,
-        options?: { limit?: number; append?: boolean; stride?: number },
+        options?: {
+            limit?: number;
+            append?: boolean;
+            stride?: number;
+            progressive?: boolean;
+        },
     ): Promise<void> {
         if (!strategy.value) return;
 
@@ -123,6 +156,7 @@ export function useRosmsgPreview(): {
         const limit = options?.limit ?? 10;
         const append = options?.append ?? false;
         const stride = options?.stride ?? 1;
+        const progressive = options?.progressive ?? false;
 
         let startTime: bigint | undefined;
 
@@ -150,11 +184,14 @@ export function useRosmsgPreview(): {
                 (message) => {
                     if (controller.signal.aborted) return;
                     // Use markRaw to prevent deep reactivity overhead
-                    (topicPreviews[topicName] ??= []).push(markRaw(message));
+                    insertSorted(
+                        (topicPreviews[topicName] ??= []),
+                        markRaw(message),
+                    );
                 },
                 controller.signal,
                 startTime,
-                stride,
+                { stride, progressive },
             );
         } catch (error: unknown) {
             if (controller.signal.aborted) return; // Ignore abort errors

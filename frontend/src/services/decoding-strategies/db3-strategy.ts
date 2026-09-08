@@ -6,7 +6,11 @@ import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import initSqlJs, { Database } from 'sql.js';
 import { DecodingStrategy } from './index';
-import { LogMessage, STANDARD_ROS2_DEFINITIONS } from './utilities';
+import {
+    LogMessage,
+    ReadOptions,
+    STANDARD_ROS2_DEFINITIONS,
+} from './utilities';
 
 export class Db3Strategy extends DecodingStrategy {
     private db: Database | null = null;
@@ -64,10 +68,10 @@ export class Db3Strategy extends DecodingStrategy {
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         startTime?: bigint,
-        stride = 1,
+        options: ReadOptions = {},
     ): Promise<LogMessage[]> {
         if (!this.db) return [];
-        const keepEvery = Math.max(1, Math.floor(stride));
+        const keepEvery = Math.max(1, Math.floor(options.stride ?? 1));
 
         // Find topic_id
         const topicStmt = this.db.prepare(

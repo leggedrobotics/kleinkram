@@ -151,8 +151,16 @@ const hasValidPosition = (data: NavSatFixData | undefined): boolean =>
     Number.isFinite(data.longitude) &&
     !(data.latitude === 0 && data.longitude === 0);
 
+// Valid messages together with their index in the full message list, so
+// that gaps (dropped samples between two valid ones) can be detected.
+const validEntries = computed(() =>
+    properties.messages
+        .map((message, index) => ({ message, index }))
+        .filter((entry) => hasValidPosition(entry.message.data)),
+);
+
 const validMessages = computed(() =>
-    properties.messages.filter((message) => hasValidPosition(message.data)),
+    validEntries.value.map((entry) => entry.message),
 );
 
 // --- Linked hover between the map and the altitude chart ---
@@ -209,10 +217,15 @@ const latest = computed(() => {
 });
 
 const track = computed<GeoPoint[]>(() =>
-    validMessages.value.map((message) => ({
-        lat: message.data?.latitude ?? 0,
-        lon: message.data?.longitude ?? 0,
-    })),
+    validEntries.value.map((entry, position, entries) => {
+        const previous = entries[position - 1];
+        return {
+            lat: entry.message.data?.latitude ?? 0,
+            lon: entry.message.data?.longitude ?? 0,
+            gapBefore:
+                previous !== undefined && previous.index !== entry.index - 1,
+        };
+    }),
 );
 
 const trackLength = computed(() => trackLengthMetres(track.value));

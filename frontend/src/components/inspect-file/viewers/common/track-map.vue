@@ -29,23 +29,40 @@
                 class="track-overlay absolute-full"
                 :viewBox="`0 0 ${String(size.width)} ${String(size.height)}`"
             >
+                <!-- Segments bridging samples without a fix -->
                 <polyline
-                    :points="trackPoints"
+                    v-for="(segment, index) in gapSegments"
+                    :key="`gap-${index}`"
+                    :points="segment"
                     fill="none"
-                    stroke="#ffffff"
-                    stroke-width="5"
-                    stroke-linejoin="round"
-                    stroke-linecap="round"
-                    opacity="0.9"
-                />
-                <polyline
-                    :points="trackPoints"
-                    fill="none"
-                    stroke="#1976d2"
-                    stroke-width="2.5"
-                    stroke-linejoin="round"
+                    stroke="#9e9e9e"
+                    stroke-width="2"
+                    stroke-dasharray="6 4"
                     stroke-linecap="round"
                 />
+                <!-- Track with a valid fix -->
+                <template
+                    v-for="(run, index) in trackRuns"
+                    :key="`run-${index}`"
+                >
+                    <polyline
+                        :points="run"
+                        fill="none"
+                        stroke="#ffffff"
+                        stroke-width="5"
+                        stroke-linejoin="round"
+                        stroke-linecap="round"
+                        opacity="0.9"
+                    />
+                    <polyline
+                        :points="run"
+                        fill="none"
+                        stroke="#1976d2"
+                        stroke-width="2.5"
+                        stroke-linejoin="round"
+                        stroke-linecap="round"
+                    />
+                </template>
                 <circle
                     v-if="startPixel"
                     :cx="startPixel.x"
@@ -124,6 +141,10 @@
                 Start
                 <span class="legend-dot" style="background: #f44336"></span>
                 End
+                <template v-if="gapSegments.length > 0">
+                    <span class="legend-dash"></span>
+                    No fix
+                </template>
             </div>
 
             <div class="map-attribution text-caption">
@@ -375,11 +396,39 @@ const screenPoints = computed(() =>
     validPoints.value.map((p) => toScreen(project(p, zoom.value))),
 );
 
-const trackPoints = computed(() =>
-    screenPoints.value
-        .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-        .join(' '),
-);
+const formatPoint = (p: { x: number; y: number }): string =>
+    `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+
+// Runs of consecutive fixed positions (drawn as the track) and the
+// segments that bridge dropped samples (drawn grey and dashed).
+const trackRuns = computed(() => {
+    const runs: string[] = [];
+    let current: string[] = [];
+    for (const [position, p] of screenPoints.value.entries()) {
+        if (
+            validEntries.value[position]?.point.gapBefore &&
+            current.length > 0
+        ) {
+            runs.push(current.join(' '));
+            current = [];
+        }
+        current.push(formatPoint(p));
+    }
+    if (current.length > 0) runs.push(current.join(' '));
+    return runs;
+});
+
+const gapSegments = computed(() => {
+    const segments: string[] = [];
+    const points = screenPoints.value;
+    for (const [position, p] of points.entries()) {
+        const previous = points[position - 1];
+        if (previous && validEntries.value[position]?.point.gapBefore) {
+            segments.push(`${formatPoint(previous)} ${formatPoint(p)}`);
+        }
+    }
+    return segments;
+});
 
 const startPixel = computed(() => screenPoints.value[0]);
 const endPixel = computed(() => screenPoints.value.at(-1));
@@ -470,6 +519,12 @@ watch(
     background: rgba(255, 255, 255, 0.9);
     padding: 2px 8px;
     border-radius: 4px;
+}
+
+.legend-dash {
+    display: inline-block;
+    width: 14px;
+    border-top: 2px dashed #9e9e9e;
 }
 
 .legend-dot {

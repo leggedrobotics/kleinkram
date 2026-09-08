@@ -6,7 +6,7 @@ import { McapIndexedReader } from '@mcap/core';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { DecodingStrategy } from './index';
-import { LogMessage } from './utilities';
+import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
 
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;
@@ -34,17 +34,27 @@ export class McapStrategy extends DecodingStrategy {
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         startTime?: bigint,
-        stride = 1,
+        options: ReadOptions = {},
     ): Promise<LogMessage[]> {
         if (!this.reader || !this.httpReader) return [];
+        const keepEvery = Math.max(1, Math.floor(options.stride ?? 1));
+
+        if (options.progressive && startTime === undefined) {
+            return this.getMessagesProgressive(
+                topic,
+                keepEvery,
+                onMessage,
+                signal,
+            );
+        }
+
         const msgs: LogMessage[] = [];
-        const keepEvery = Math.max(1, Math.floor(stride));
         let seen = 0;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const options: any = { topics: [topic] };
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (startTime !== undefined) options.startTime = startTime;
+        const readArguments: { topics: string[]; startTime?: bigint } = {
+            topics: [topic],
+        };
+        if (startTime !== undefined) readArguments.startTime = startTime;
 
         // Prefetch chunks
         // We need to access private chunkIndexes, but McapIndexedReader exposes them publicly in recent versions
@@ -81,8 +91,7 @@ export class McapStrategy extends DecodingStrategy {
             }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        for await (const message of this.reader.readMessages(options)) {
+        for await (const message of this.reader.readMessages(readArguments)) {
             if (signal?.aborted) break;
             if (msgs.length >= limit) break;
             // Skip (without decoding) messages that fall between samples
@@ -98,6 +107,84 @@ export class McapStrategy extends DecodingStrategy {
             const messageObject = { logTime: message.logTime, data };
             if (onMessage) onMessage(messageObject);
             msgs.push(messageObject);
+        }
+        return msgs;
+    }
+
+    /**
+     * Reads the chunks containing `topic` coarse-to-fine so that the whole
+     * recording is covered early. Within each chunk only every
+     * `keepEvery`-th message is decoded.
+     */
+    private async getMessagesProgressive(
+        topic: string,
+        keepEvery: number,
+        onMessage?: (message: LogMessage) => void,
+        signal?: AbortSignal,
+    ): Promise<LogMessage[]> {
+        if (!this.reader || !this.httpReader) return [];
+        const reader = this.reader;
+        const httpReader = this.httpReader;
+        const msgs: LogMessage[] = [];
+
+        const channelIds = new Set(
+            [...reader.channelsById.values()]
+                .filter((channel) => channel.topic === topic)
+                .map((channel) => channel.id),
+        );
+        const chunks = reader.chunkIndexes.filter((chunk) =>
+            chunk.messageIndexOffsets
+                .keys()
+                .some((id: number) => channelIds.has(id)),
+        );
+        const order = coarseToFineOrder(chunks.length);
+
+        // Adjacent chunks can overlap in time, so the same message may be
+        // yielded twice; a topic rarely has two messages with the same
+        // log time, so the log time is a sufficient identity for previews.
+        const emittedTimes = new Set<bigint>();
+
+        const PREFETCH_AHEAD = 3;
+        for (const [position, chunkIndex] of order.entries()) {
+            if (signal?.aborted) break;
+            const chunk = chunks[chunkIndex];
+            if (!chunk) continue;
+
+            for (let ahead = 0; ahead < PREFETCH_AHEAD; ahead++) {
+                const upcoming = chunks[order[position + ahead] ?? -1];
+                if (upcoming) {
+                    httpReader.prefetch(
+                        upcoming.chunkStartOffset,
+                        upcoming.chunkLength,
+                    );
+                }
+            }
+
+            let seen = 0;
+            for await (const message of reader.readMessages({
+                topics: [topic],
+                startTime: chunk.messageStartTime,
+                endTime: chunk.messageEndTime,
+            })) {
+                if (signal?.aborted) break;
+                if (seen++ % keepEvery !== 0) continue;
+                if (emittedTimes.has(message.logTime)) continue;
+                emittedTimes.add(message.logTime);
+
+                let data = message.data;
+                const channel = reader.channelsById.get(message.channelId);
+                if (channel) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    data =
+                        (await this.tryDecode(
+                            channel.schemaId,
+                            message.data,
+                        )) ?? message.data;
+                }
+                const messageObject = { logTime: message.logTime, data };
+                if (onMessage) onMessage(messageObject);
+                msgs.push(messageObject);
+            }
         }
         return msgs;
     }

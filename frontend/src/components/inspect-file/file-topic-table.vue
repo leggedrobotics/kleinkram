@@ -69,7 +69,13 @@
                             <MessageViewer
                                 :topic-name="props.row.name"
                                 :message-type="props.row.type"
-                                :total-count="expectedCount(props.row)"
+                                :total-count="
+                                    expectedCount(
+                                        props.row,
+                                        previews[props.row.name]?.length ?? 0,
+                                        loadingState[props.row.name] || false,
+                                    )
+                                "
                                 :sample-stride="getSmartLoad(props.row).stride"
                                 :messages="previews[props.row.name] || []"
                                 :is-loading="
@@ -244,11 +250,19 @@ const getSmartLoad = (row: TopicRow): LoadPlan => {
 
 /**
  * Number of messages the viewer should expect once loading is done. For
- * sampled plot topics this is the sampled count, otherwise the topic size.
+ * sampled plot topics this is the sampled count while loading, and the
+ * actual count once loading finished (sampling per chunk can differ from
+ * the estimate by a few messages). Otherwise it is the topic size.
  */
-const expectedCount = (row: TopicRow): number => {
+const expectedCount = (
+    row: TopicRow,
+    loadedCount: number,
+    isLoading: boolean,
+): number => {
     const plan = getSmartLoad(row);
-    return plan.full ? plan.limit : row.nrMessages;
+    if (!plan.full) return row.nrMessages;
+    if (isLoading || loadedCount === 0) return plan.limit;
+    return loadedCount;
 };
 
 const toggleExpand = (props: { row: TopicRow; expand: boolean }): void => {
@@ -278,13 +292,21 @@ const loadData = (
     count: number,
     append = false,
     stride = 1,
+    progressive = false,
 ): void => {
-    emit('load-preview', topic, { limit: count, append, stride });
+    emit('load-preview', topic, {
+        limit: count,
+        append,
+        stride,
+        progressive,
+    });
 };
 
 const loadSmart = (row: TopicRow): void => {
     const plan = getSmartLoad(row);
-    loadData(row.name, plan.limit, false, plan.stride);
+    // Plot viewers show the whole recording: load it coarse-to-fine so the
+    // full time range is visible early and refines as data streams in.
+    loadData(row.name, plan.limit, false, plan.stride, plan.full);
 };
 
 // Incremental Load (Load More button)
