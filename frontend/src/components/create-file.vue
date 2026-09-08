@@ -84,7 +84,7 @@
                     <div class="col file-card-body">
                         <template v-if="entry.editing">
                             <q-input
-                                v-model="entry.namePart"
+                                :model-value="entry.namePart"
                                 dense
                                 outlined
                                 autofocus
@@ -93,6 +93,9 @@
                                 :error-message="entry.errors[0]"
                                 :hint="`${entry.fullName.length} / ${FILENAME_MAX_LENGTH} characters`"
                                 hide-bottom-space
+                                @update:model-value="
+                                    (value) => setNamePart(entry.id, value)
+                                "
                                 @keydown.enter.prevent="
                                     () => finishEditing(entry)
                                 "
@@ -539,6 +542,11 @@ const removeAllFiles = () => {
 
 const findRawEntry = (id: number): FileEntry | undefined =>
     rawEntries.value.find((entry) => entry.id === id);
+
+const setNamePart = (id: number, value: string | number | null) => {
+    const raw = findRawEntry(id);
+    if (raw) raw.namePart = value === null ? '' : String(value);
+};
 
 const startEditing = (entry: FileEntryView) => {
     const raw = findRawEntry(entry.id);
