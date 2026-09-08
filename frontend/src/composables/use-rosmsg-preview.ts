@@ -4,6 +4,7 @@ import { DecodingStrategy } from '../services/decoding-strategies';
 import { Db3Strategy } from '../services/decoding-strategies/db3-strategy';
 import { McapStrategy } from '../services/decoding-strategies/mcap-strategy';
 import { RosbagStrategy } from '../services/decoding-strategies/rosbag-strategy';
+import type { ReadOptions } from '../services/decoding-strategies/utilities';
 import { formatPayload } from './rosmsg-utilities.ts';
 
 export interface FetchOptions {
@@ -20,6 +21,8 @@ export interface FetchOptions {
      * topic with a smaller stride.
      */
     merge?: boolean;
+    /** Total number of messages of the topic, for uniform sampling */
+    totalMessages?: number;
 }
 
 /**
@@ -167,6 +170,10 @@ export function useRosmsgPreview(): {
         const stride = options?.stride ?? 1;
         const progressive = options?.progressive ?? false;
         const merge = options?.merge ?? false;
+        const readOptions: ReadOptions = { stride, progressive };
+        if (options?.totalMessages !== undefined) {
+            readOptions.totalMessages = options.totalMessages;
+        }
 
         let startTime: bigint | undefined;
 
@@ -213,11 +220,10 @@ export function useRosmsgPreview(): {
                 startTime,
                 loadedTimes
                     ? {
-                          stride,
-                          progressive,
+                          ...readOptions,
                           skip: (logTime): boolean => loadedTimes.has(logTime),
                       }
-                    : { stride, progressive },
+                    : readOptions,
             );
         } catch (error: unknown) {
             if (controller.signal.aborted) return; // Ignore abort errors

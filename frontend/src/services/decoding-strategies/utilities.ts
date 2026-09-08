@@ -20,6 +20,12 @@ export interface ReadOptions {
      * that are in memory already are not decoded a second time.
      */
     skip?: (logTime: bigint) => boolean;
+    /**
+     * Total number of messages of the topic in the file, if known. Lets
+     * progressive reading sample uniformly across chunks even when a chunk
+     * holds only one message of the topic (typical for images).
+     */
+    totalMessages?: number;
 }
 
 /**

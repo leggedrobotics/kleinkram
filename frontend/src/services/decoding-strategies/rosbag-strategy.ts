@@ -105,6 +105,17 @@ export class RosbagStrategy extends DecodingStrategy {
             );
         const order = coarseToFineOrder(chunkIndexes.length);
 
+        // Exact global position of each chunk's first message of the topic,
+        // so that sampling stays uniform across chunks of any size.
+        const chunkOffsets: number[] = [];
+        let cumulative = 0;
+        for (const { chunk } of chunkIndexes) {
+            chunkOffsets.push(cumulative);
+            for (const c of chunk.connections) {
+                if (connectionIds.has(c.conn)) cumulative += c.count;
+            }
+        }
+
         const PREFETCH_AHEAD = 3;
         for (const [position, entryIndex] of order.entries()) {
             if (signal?.aborted) break;
@@ -125,9 +136,10 @@ export class RosbagStrategy extends DecodingStrategy {
             );
 
             let seen = 0;
+            const chunkOffset = chunkOffsets[entryIndex] ?? 0;
             for (const record of records) {
                 if (signal?.aborted) break;
-                if (seen++ % keepEvery !== 0) continue;
+                if ((chunkOffset + seen++) % keepEvery !== 0) continue;
                 if (!record.data) continue;
                 const logTime = toNano(record.time);
                 if (skip?.(logTime)) continue;

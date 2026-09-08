@@ -46,6 +46,7 @@ export class McapStrategy extends DecodingStrategy {
                 onMessage,
                 signal,
                 options.skip,
+                options.totalMessages,
             );
         }
 
@@ -123,6 +124,7 @@ export class McapStrategy extends DecodingStrategy {
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         skip?: (logTime: bigint) => boolean,
+        totalMessages?: number,
     ): Promise<LogMessage[]> {
         if (!this.reader || !this.httpReader) return [];
         const reader = this.reader;
@@ -140,6 +142,15 @@ export class McapStrategy extends DecodingStrategy {
                 .some((id: number) => channelIds.has(id)),
         );
         const order = coarseToFineOrder(chunks.length);
+
+        // The chunk index does not store per-chunk message counts, so the
+        // global position of a message is estimated from the average number
+        // of messages per chunk. Sampling on that global position keeps the
+        // samples uniform even when every chunk holds a single image.
+        const averagePerChunk =
+            totalMessages !== undefined && chunks.length > 0
+                ? Math.max(1, totalMessages / chunks.length)
+                : 1;
 
         // Adjacent chunks can overlap in time, so the same message may be
         // yielded twice; a topic rarely has two messages with the same
@@ -163,13 +174,14 @@ export class McapStrategy extends DecodingStrategy {
             }
 
             let seen = 0;
+            const chunkOffset = Math.round(chunkIndex * averagePerChunk);
             for await (const message of reader.readMessages({
                 topics: [topic],
                 startTime: chunk.messageStartTime,
                 endTime: chunk.messageEndTime,
             })) {
                 if (signal?.aborted) break;
-                if (seen++ % keepEvery !== 0) continue;
+                if ((chunkOffset + seen++) % keepEvery !== 0) continue;
                 if (emittedTimes.has(message.logTime)) continue;
                 emittedTimes.add(message.logTime);
                 if (skip?.(message.logTime)) continue;

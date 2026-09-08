@@ -338,11 +338,13 @@ const loadData = (
     stride = 1,
     progressive = false,
 ): void => {
+    const row = properties.topics.find((x) => x.name === topic);
     emit('load-preview', topic, {
         limit: count,
         append,
         stride,
         progressive,
+        totalMessages: row?.nrMessages,
     });
 };
 
@@ -371,6 +373,7 @@ const loadMore = (topicName: string): void => {
             stride: plan.stride,
             progressive: true,
             merge: true,
+            totalMessages: row.nrMessages,
         });
         return;
     }
