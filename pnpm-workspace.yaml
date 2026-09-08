@@ -8,12 +8,14 @@ packages:
 allowBuilds:
   # ships prebuilt binaries since v13; never compile it
   better-sqlite3: false
+  # optional ssh2 speedup (via dockerode); the slim build image has no compiler
+  # and ssh2 falls back to pure JS, so never compile it
+  cpu-features: false
   '@nestjs/core': true
   '@parcel/watcher': true
   '@scarf/scarf': true
   '@swc/core': true
   core-js: true
-  cpu-features: true
   esbuild: true
   msgpackr-extract: true
   protobufjs: true
@@ -27,7 +29,6 @@ onlyBuiltDependencies:
   - '@scarf/scarf'
   - '@swc/core'
   - core-js
-  - cpu-features
   - esbuild
   - msgpackr-extract
   - protobufjs
