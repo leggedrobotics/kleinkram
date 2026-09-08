@@ -465,10 +465,13 @@ const loadMore = (topicName: string): void => {
         width: 100%;
     }
 
-    /* The expanded preview gets the full width of the table */
+    /* The expanded preview gets exactly the width of the table: a table
+       cell otherwise grows to its content and pushes the row off screen */
     .topic-expanded {
-        min-width: 0;
+        width: 0;
+        min-width: 100%;
         padding: 8px 4px;
+        overflow-x: hidden;
     }
 
     /* The topic column takes the remaining width; breaking anywhere keeps

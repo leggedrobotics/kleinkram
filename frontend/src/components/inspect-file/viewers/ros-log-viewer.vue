@@ -27,39 +27,70 @@
                 class="q-pa-sm bg-grey-1 rounded-borders"
                 style="max-height: 500px; overflow-y: auto"
             >
-                <div
-                    v-for="(msg, idx) in messages"
-                    :key="idx"
-                    class="row no-wrap items-baseline q-py-xs"
-                    style="font-family: monospace; font-size: 0.8em"
-                >
-                    <!-- Time -->
-                    <span
-                        class="text-grey-7 q-mr-sm"
-                        :style="{ minWidth: $q.screen.xs ? '0' : '140px' }"
+                <template v-if="$q.screen.xs">
+                    <!-- Phones: two-line entries (meta line, then message) -->
+                    <div
+                        v-for="(msg, idx) in messages"
+                        :key="idx"
+                        class="log-entry q-py-xs"
                     >
-                        [{{ formatTime(msg.logTime) }}]
-                    </span>
-
-                    <!-- Level -->
-                    <span
-                        class="text-weight-bold q-mr-sm"
-                        :class="getLevelClass(msg.data.level)"
-                        style="min-width: 50px"
+                        <div class="row items-center no-wrap q-gutter-x-sm">
+                            <span
+                                class="log-level"
+                                :class="getLevelClass(msg.data.level)"
+                            >
+                                {{ getLevelLabel(msg.data.level) }}
+                            </span>
+                            <span class="text-grey-7 log-meta">
+                                {{ formatTime(msg.logTime) }}
+                            </span>
+                            <span
+                                class="text-grey-8 log-meta ellipsis col"
+                                :title="msg.data.name"
+                            >
+                                {{ msg.data.name }}
+                            </span>
+                        </div>
+                        <div class="text-grey-10 log-message">
+                            {{ msg.data.msg }}
+                        </div>
+                    </div>
+                </template>
+                <template v-else>
+                    <div
+                        v-for="(msg, idx) in messages"
+                        :key="idx"
+                        class="row no-wrap items-baseline q-py-xs"
+                        style="font-family: monospace; font-size: 0.8em"
                     >
-                        [{{ getLevelLabel(msg.data.level) }}]
-                    </span>
+                        <!-- Time -->
+                        <span
+                            class="text-grey-7 q-mr-sm"
+                            style="min-width: 140px"
+                        >
+                            [{{ formatTime(msg.logTime) }}]
+                        </span>
 
-                    <!-- Node -->
-                    <span class="text-grey-9 q-mr-sm text-weight-medium">
-                        [{{ msg.data.name }}]
-                    </span>
+                        <!-- Level -->
+                        <span
+                            class="text-weight-bold q-mr-sm"
+                            :class="getLevelClass(msg.data.level)"
+                            style="min-width: 50px"
+                        >
+                            [{{ getLevelLabel(msg.data.level) }}]
+                        </span>
 
-                    <!-- Message -->
-                    <span class="text-grey-10 break-word col">
-                        {{ msg.data.msg }}
-                    </span>
-                </div>
+                        <!-- Node -->
+                        <span class="text-grey-9 q-mr-sm text-weight-medium">
+                            [{{ msg.data.name }}]
+                        </span>
+
+                        <!-- Message -->
+                        <span class="text-grey-10 break-word col">
+                            {{ msg.data.msg }}
+                        </span>
+                    </div>
+                </template>
             </div>
 
             <div
@@ -192,5 +223,37 @@ const loadMore = (): void => {
 }
 .hover-bg:hover {
     background-color: #fafafa;
+}
+
+.log-entry {
+    border-bottom: 1px solid #eeeeee;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-level {
+    font-family: monospace;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.05);
+    flex: 0 0 auto;
+}
+
+.log-meta {
+    font-family: monospace;
+    font-size: 0.75em;
+    min-width: 0;
+}
+
+.log-message {
+    font-family: monospace;
+    font-size: 0.8em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin-top: 2px;
 }
 </style>
