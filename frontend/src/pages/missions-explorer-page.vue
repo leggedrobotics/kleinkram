@@ -1,10 +1,10 @@
 <template>
     <div>
         <title-section :title="project?.name">
-            <template #subtitle>
-                <span>
-                    {{ project?.description }}
-                </span>
+            <template v-if="project?.description.trim()" #subtitle>
+                <p class="text-body2 text-grey-8 q-ma-none">
+                    {{ project.description }}
+                </p>
             </template>
 
             <template #buttons>
