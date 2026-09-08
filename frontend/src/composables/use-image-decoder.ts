@@ -54,12 +54,35 @@ export function useImageDecoder(
 
         renderError.value = undefined;
         const canvas = canvasReference.value;
+
+        const onError = (error: Error): void => {
+            renderError.value = error.message;
+            if (isCompressed) parallelRequests.value--;
+        };
+
+        try {
+            renderMessageToCanvas(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+                messageData.value,
+                canvas,
+                () => {
+                    onRendered(canvas, isCompressed);
+                },
+                onError,
+            );
+        } catch (error) {
+            onError(error instanceof Error ? error : new Error(String(error)));
+        }
+    };
+
+    // Callback after rendering (async for compressed images)
+    const onRendered = (
+        canvas: HTMLCanvasElement,
+        isCompressed: boolean,
+    ): void => {
         const targetWidth = 600;
         const targetHeight = 400;
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        renderMessageToCanvas(messageData.value, canvas, () => {
-            // Callback after rendering (async for compressed images)
+        {
             const aspectRatio = canvas.width / canvas.height;
             isUltraWide.value = aspectRatio > 2.5;
 
@@ -108,7 +131,7 @@ export function useImageDecoder(
                 // Decrement parallel request count after completion
                 parallelRequests.value--;
             }
-        });
+        }
     };
 
     // Automatically redraw when data changes

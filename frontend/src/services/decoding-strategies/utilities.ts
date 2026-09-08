@@ -4,6 +4,57 @@ export interface LogMessage {
     data: any;
 }
 
+export interface ReadOptions {
+    /** Keep only every n-th message of the topic (1 = keep all). */
+    stride?: number;
+    /**
+     * Read the file's chunks coarse-to-fine (first, last, middle, quarters,
+     * ...) instead of front-to-back, so that a preview covering the whole
+     * recording appears after the first few chunks and refines as more data
+     * streams in. Messages are then emitted out of time order.
+     */
+    progressive?: boolean;
+    /**
+     * Messages for which this returns true are skipped before decoding.
+     * Used when refining an already loaded sampled topic, so that frames
+     * that are in memory already are not decoded a second time.
+     */
+    skip?: (logTime: bigint) => boolean;
+    /**
+     * Total number of messages of the topic in the file, if known. Lets
+     * progressive reading sample uniformly across chunks even when a chunk
+     * holds only one message of the topic (typical for images).
+     */
+    totalMessages?: number;
+}
+
+/**
+ * Returns the indices 0..count-1 in a coarse-to-fine order: the two ends
+ * first, then the middle, then the quarter points, and so on. Reading
+ * chunks in this order makes partial data cover the whole time range.
+ */
+export const coarseToFineOrder = (count: number): number[] => {
+    if (count <= 0) return [];
+    if (count === 1) return [0];
+    const order: number[] = [0, count - 1];
+    const taken = new Set(order);
+    // Breadth-first bisection of the remaining intervals
+    const queue: [number, number][] = [[0, count - 1]];
+    while (queue.length > 0) {
+        const interval = queue.shift();
+        if (!interval) break;
+        const [low, high] = interval;
+        if (high - low < 2) continue;
+        const mid = Math.floor((low + high) / 2);
+        if (!taken.has(mid)) {
+            taken.add(mid);
+            order.push(mid);
+        }
+        queue.push([low, mid], [mid, high]);
+    }
+    return order;
+};
+
 export const STANDARD_ROS2_DEFINITIONS: Record<string, string> = {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'sensor_msgs/msg/Image': `
