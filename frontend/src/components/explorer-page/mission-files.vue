@@ -98,11 +98,55 @@
             </div>
         </div>
         <div
-            v-else
-            class="selection-bar"
-            :class="$q.screen.xs ? 'q-py-sm' : 'q-py-lg'"
+            v-else-if="$q.screen.xs"
+            class="selection-bar selection-bar--phone"
             style="background: #0f62fe"
         >
+            <div class="row items-center justify-between no-wrap">
+                <div class="text-white text-subtitle1 text-weight-medium">
+                    {{ selectedFiles.length }}
+                    {{ selectedFiles.length === 1 ? 'file' : 'files' }}
+                    selected
+                </div>
+                <q-btn
+                    flat
+                    round
+                    icon="sym_o_close"
+                    color="white"
+                    aria-label="Clear selection"
+                    @click="deselect"
+                >
+                    <q-tooltip>Clear selection</q-tooltip>
+                </q-btn>
+            </div>
+            <div v-if="missionData" class="selection-bar__actions">
+                <OpenMultCategoryAdd
+                    :mission="missionData"
+                    :files="selectedFiles"
+                />
+                <OpenMultiFileMoveDialog
+                    :mission="missionData"
+                    :files="selectedFiles"
+                />
+                <q-btn
+                    flat
+                    no-caps
+                    icon="sym_o_download"
+                    label="Download"
+                    color="white"
+                    @click="downloadCallback"
+                />
+                <q-btn
+                    flat
+                    no-caps
+                    icon="sym_o_delete"
+                    label="Delete"
+                    color="white"
+                    @click="deleteFilesCallback"
+                />
+            </div>
+        </div>
+        <div v-else class="selection-bar q-py-lg" style="background: #0f62fe">
             <ButtonGroupOverlay>
                 <template #start>
                     <div style="margin: 0; font-size: 14pt; color: white">
@@ -632,16 +676,29 @@ const openUploadDialogWithFiles = (files: File[]) => {
     }
 }
 
-@media (max-width: 599px) {
-    /* The shared overlay uses generous side gutters; tighten them on phones
-       so the wrapped bulk-action buttons keep their room. */
-    .selection-bar :deep(.q-ml-lg) {
-        margin-left: 8px;
-    }
+/* Phone layout of the bulk-action bar: a header row with the count and the
+   close button, then the actions as a two-column grid of equal buttons */
+.selection-bar--phone {
+    padding: 8px 8px 8px 16px;
+}
 
-    .selection-bar :deep(.q-pr-lg) {
-        padding-right: 8px;
-    }
+.selection-bar__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 8px;
+    margin: 4px 8px 0 0;
+}
+
+.selection-bar__actions :deep(.q-btn) {
+    width: 100%;
+    min-height: 44px;
+    justify-content: flex-start;
+    text-transform: none;
+}
+
+.selection-bar__actions :deep(.q-btn .q-btn__content) {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
 }
 
 .drop-overlay {
