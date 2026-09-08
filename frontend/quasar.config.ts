@@ -172,6 +172,34 @@ export default defineConfig((/* ctx */) => {
                     'class-transformer/storage',
                 );
 
+                // @foxglove/rosmsg-serialization (pulled in via @foxglove/rosbag)
+                // builds its ROS 1 MessageWriter with a direct `eval`, which
+                // trips rolldown's [EVAL] check on every production build.
+                // We only ever use the reader, and the package's index
+                // re-exports both, so the writer cannot be kept out of the
+                // module graph. Drop that one known third-party warning and
+                // keep the check active for everything else.
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                viteConfig.build = viteConfig.build ?? {};
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                viteConfig.build.rolldownOptions =
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    viteConfig.build.rolldownOptions ?? {};
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                viteConfig.build.rolldownOptions.onLog = (
+                    level: string,
+                    log: { code?: string; id?: string },
+                    defaultHandler: (level: string, log: unknown) => void,
+                ) => {
+                    if (
+                        log.code === 'EVAL' &&
+                        log.id?.includes('@foxglove/rosmsg-serialization')
+                    ) {
+                        return;
+                    }
+                    defaultHandler(level, log);
+                };
+
                 // Add validation/frontend alias for runtime resolution
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                 viteConfig.resolve = viteConfig.resolve ?? {};
