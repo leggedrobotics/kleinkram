@@ -211,6 +211,7 @@ import {
     isValidFileName,
     isValidFileNamePart,
     isValidGoogleDriveUrl,
+    NON_UUID_REGEX,
     splitFileName,
 } from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -222,7 +223,7 @@ import { formatSize } from 'src/services/general-formatting';
 import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-const emit = defineEmits(['update:ready']);
+const emit = defineEmits(['update:ready', 'update:hasErrors']);
 
 const props = withDefaults(
     defineProps<{
@@ -307,6 +308,8 @@ const nameErrors = (entry: FileEntry, fullName: string): string[] => {
         errors.push('File name must have at least 3 characters');
     } else if (!isValidFileName(fullName)) {
         errors.push('File name contains characters that are not accepted');
+    } else if (!NON_UUID_REGEX.test(fullName)) {
+        errors.push('File name must not be a UUID');
     }
     return errors;
 };
@@ -425,6 +428,14 @@ watch(
     { immediate: true },
 );
 
+watch(
+    () => invalidCount.value > 0,
+    (value) => {
+        emit('update:hasErrors', value);
+    },
+    { immediate: true },
+);
+
 const filesToUpload = (): File[] =>
     entries.value.map((entry) =>
         entry.renamed
@@ -437,6 +448,17 @@ const filesToUpload = (): File[] =>
 
 const createFile = async (): Promise<void> => {
     if (!selectedMission.value || !selectedProject.value) return;
+    if (!ready.value) {
+        if (invalidCount.value > 0) {
+            quasar.notify({
+                message:
+                    'Some selected files are invalid. Please fix or remove them before uploading.',
+                color: 'negative',
+                timeout: 4000,
+            });
+        }
+        return;
+    }
 
     if (entries.value.length === 0 && driveUrl.value !== '') {
         const success = await driveUpload(selectedMission.value, driveUrl);
@@ -521,15 +543,25 @@ const addFiles = (fileList: FileList) => {
                 `${entry.file.name}:${String(entry.file.size)}:${String(entry.file.lastModified)}`,
         ),
     );
-    const newEntries = [...fileList]
-        .filter(
-            (file) =>
-                !known.has(
-                    `${file.name}:${String(file.size)}:${String(file.lastModified)}`,
-                ),
-        )
-        .map((file) => toEntry(file));
+    const newEntries: FileEntry[] = [];
+    let skipped = 0;
+    for (const file of fileList) {
+        const key = `${file.name}:${String(file.size)}:${String(file.lastModified)}`;
+        if (known.has(key)) {
+            skipped++;
+            continue;
+        }
+        known.add(key);
+        newEntries.push(toEntry(file));
+    }
     rawEntries.value = [...rawEntries.value, ...newEntries];
+    if (skipped > 0) {
+        quasar.notify({
+            message: `${String(skipped)} file${skipped === 1 ? ' was' : 's were'} already selected and ${skipped === 1 ? 'was' : 'were'} skipped.`,
+            color: 'warning',
+            timeout: 3000,
+        });
+    }
 };
 
 const removeFile = (id: number) => {

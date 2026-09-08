@@ -104,6 +104,7 @@
                     <CreateFile
                         v-if="newMission"
                         ref="createFileReference"
+                        v-model:has-errors="uploadHasErrors"
                         :mission="newMission"
                         :uploads="uploads"
                         :disable-scope="true"
@@ -138,6 +139,7 @@
                 flat
                 label="Upload & Exit"
                 class="bg-button-primary"
+                :disable="uploadHasErrors"
                 @click="uploadEventHandler"
             />
         </template>
@@ -182,6 +184,7 @@ const tab_selection = ref('meta_data');
 const createFileReference = ref<InstanceType<typeof CreateFile> | undefined>(
     undefined,
 );
+const uploadHasErrors = ref(false);
 
 const props = defineProps<{
     projectUuid: string | undefined;
