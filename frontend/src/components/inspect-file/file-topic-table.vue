@@ -188,8 +188,12 @@ const getSmartLimit = (row: TopicRow): number => {
         return row.nrMessages;
     }
 
-    // 2. Medium Load (Logs)
-    if (type === PreviewType.ROS_LOG || type === PreviewType.STRING) {
+    // 2. Medium Load (Logs, ~1 Hz diagnostics)
+    if (
+        type === PreviewType.ROS_LOG ||
+        type === PreviewType.STRING ||
+        type === PreviewType.DIAGNOSTICS
+    ) {
         return 100;
     }
 

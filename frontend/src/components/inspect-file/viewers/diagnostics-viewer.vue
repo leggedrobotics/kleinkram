@@ -12,16 +12,14 @@
                             :color="overallHealth.color"
                             size="md"
                         />
-                        <span
-                            :class="
-                                `text-${overallHealth.color}-9` || 'text-grey-9'
-                            "
-                            >{{ overallHealth.title }}</span
-                        >
+                        <span :class="`text-${overallHealth.color}-9`">{{
+                            overallHealth.title
+                        }}</span>
                     </div>
                     <div class="text-caption text-grey-7">
-                        Aggregated state from {{ messages.length }} messages on
-                        topic
+                        Aggregated state up to message
+                        {{ currentIndex + 1 }} of {{ messages.length }} loaded
+                        ({{ totalCount }} total) on topic
                         <code>{{ topicName }}</code>
                     </div>
                 </div>
@@ -41,20 +39,6 @@
                     </q-chip>
                 </div>
             </q-card-section>
-
-            <!-- Topic Stale Banner -->
-            <q-slide-transition>
-                <div
-                    v-show="isTopicStale"
-                    class="bg-amber-1 text-amber-9 q-pa-sm border-top row items-center justify-center text-caption q-gutter-x-sm"
-                >
-                    <q-icon name="sym_o_warning" />
-                    <span
-                        ><strong>Diagnostics Feed Stale:</strong> No updates
-                        received in the last 5 seconds.</span
-                    >
-                </div>
-            </q-slide-transition>
         </q-card>
 
         <!-- Playback Controls -->
@@ -90,11 +74,7 @@
                     icon="sym_o_grid_view"
                     label="System Matrix"
                 />
-                <q-tab
-                    name="metrics"
-                    icon="sym_o_bar_chart"
-                    label="Live Metrics"
-                />
+                <q-tab name="metrics" icon="sym_o_bar_chart" label="Metrics" />
                 <q-tab
                     name="alerts"
                     icon="sym_o_warning"
@@ -262,11 +242,11 @@
                 </div>
             </q-tab-panel>
 
-            <!-- 2. Live Metrics & Telemetry Gauges -->
+            <!-- 2. Metrics & Telemetry Gauges -->
             <q-tab-panel name="metrics" class="q-pa-none">
-                <div v-if="liveMetrics.length > 0" class="row q-col-gutter-sm">
+                <div v-if="metrics.length > 0" class="row q-col-gutter-sm">
                     <div
-                        v-for="(metric, idx) in liveMetrics"
+                        v-for="(metric, idx) in metrics"
                         :key="idx"
                         class="col-12 col-sm-6 col-md-4 col-lg-3"
                     >
@@ -353,9 +333,7 @@
                                 <q-chip
                                     dense
                                     size="xs"
-                                    :color="
-                                        issue.level === 2 ? 'red' : 'orange'
-                                    "
+                                    :color="getLevelColor(issue.level)"
                                     text-color="white"
                                     class="text-weight-bold"
                                     :label="getLevelLabel(issue.level)"
@@ -392,11 +370,31 @@
                         All Systems Nominal
                     </div>
                     <div class="text-caption text-grey-7">
-                        No errors or warnings are currently active.
+                        No errors or warnings match the current filters at this
+                        point of the recording.
                     </div>
                 </div>
             </q-tab-panel>
         </q-tab-panels>
+
+        <div
+            v-if="messages.length < totalCount"
+            class="text-center q-pa-md bg-grey-1 rounded-borders"
+        >
+            <SmoothLoading
+                :current="messages.length"
+                :total="totalCount"
+                message="Loaded {current} / {total} messages."
+            />
+            <q-btn
+                label="Load More"
+                icon="sym_o_download"
+                size="sm"
+                flat
+                color="primary"
+                @click="loadMore"
+            />
+        </div>
 
         <!-- Slide-out Node Inspector Drawer Dialog -->
         <q-dialog v-model="isInspectorOpen" position="right" full-height>
@@ -613,10 +611,7 @@
                                 <div class="row items-center justify-between">
                                     <span
                                         class="text-weight-bold"
-                                        :class="
-                                            `text-${getLevelColor(event.level)}-9` ||
-                                            'text-grey-9'
-                                        "
+                                        :class="`text-${getLevelColor(event.level)}-9`"
                                     >
                                         {{ getLevelLabel(event.level) }}
                                     </span>
@@ -640,7 +635,8 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/naming-convention */
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import SmoothLoading from '../../common/smooth-loading.vue';
 import PlaybackControls from './playback-controls.vue';
 
 // --- Type Safety Definitions ---
@@ -684,14 +680,20 @@ const properties = defineProps<{
     topicName: string;
 }>();
 
-const emit = defineEmits(['load-required']);
+const emit = defineEmits(['load-required', 'load-more']);
+
+/**
+ * A status that has not been refreshed for this long (in recording time,
+ * relative to the message currently selected in the playback) is shown as
+ * STALE, mirroring the behaviour of the ROS diagnostic aggregator.
+ */
+const STALE_THRESHOLD_NANOS = 5_000_000_000n;
+const MAX_HISTORY_PER_NODE = 50;
 
 // --- Local State ---
 const activeTab = ref('grid');
 const searchQuery = ref('');
 const selectedLevels = ref<number[]>([0, 1, 2, 3]);
-const isTopicStale = ref(false);
-const lastMessageReceivedTime = ref(Date.now());
 
 // Playback slider state
 const currentIndex = ref(0);
@@ -707,6 +709,7 @@ const togglePlay = (): void => {
     } else {
         if (intervalId) {
             clearInterval(intervalId);
+            intervalId = null;
         }
     }
 };
@@ -740,13 +743,9 @@ const isInspectorOpen = ref(false);
 const selectedNodeName = ref('');
 
 // Health transitions tracker
-const nodeHistory = ref<Record<string, StatusTransition[]>>({});
 const selectedNodeHistory = computed(
-    () => nodeHistory.value[selectedNodeName.value] ?? [],
+    () => aggregation.value.history.get(selectedNodeName.value) ?? [],
 );
-
-// Normalized Time helper
-const startTime = ref<bigint | null>(null);
 
 // --- Lifecycle ---
 onMounted(() => {
@@ -755,59 +754,46 @@ onMounted(() => {
     }
 });
 
-// Update the message timestamp and current index when messages grow
+const loadMore = (): void => {
+    emit('load-more');
+};
+
+// Follow the newest message while messages stream in, unless the user is
+// playing back or has scrubbed to an earlier position.
 watch(
     () => properties.messages.length,
-    (newLength, oldLength) => {
-        lastMessageReceivedTime.value = Date.now();
-        isTopicStale.value = false;
-
-        if (
-            newLength > 0 &&
-            (oldLength === 0 || !isPlaying.value) &&
-            (currentIndex.value === (oldLength ?? 0) - 1 ||
-                (oldLength ?? 0) === 0)
-        ) {
+    (newLength, previousLength = 0) => {
+        if (newLength === 0) {
+            currentIndex.value = 0;
+            return;
+        }
+        const wasAtEnd = currentIndex.value >= previousLength - 1;
+        if (previousLength === 0 || (!isPlaying.value && wasAtEnd)) {
             currentIndex.value = newLength - 1;
         }
     },
     { immediate: true },
 );
 
-// Realtime Stale checking timer
-let staleTimer: ReturnType<typeof setInterval> | null = null;
-onMounted(() => {
-    staleTimer = globalThis.setInterval(() => {
-        if (properties.messages.length > 0) {
-            const elapsed = Date.now() - lastMessageReceivedTime.value;
-            if (elapsed > 5000) {
-                isTopicStale.value = true;
-            }
-        }
-    }, 1000);
-});
+// --- Node Aggregation ---
+const normalizeLevel = (level: number | undefined): number =>
+    level === 0 || level === 1 || level === 2 ? level : 3;
 
-onUnmounted(() => {
-    if (staleTimer) {
-        clearInterval(staleTimer);
-    }
-});
-
-// --- Node Aggregation & Incremental Parsing ---
-const latestLogTime = computed(() => {
-    if (properties.messages.length === 0) return 0n;
-    return properties.messages.at(-1)?.logTime ?? 0n;
-});
+// Log time of the message selected in the playback; staleness is judged
+// against this instant, not against the newest loaded message.
+const selectedLogTime = computed(
+    () => properties.messages[currentIndex.value]?.logTime ?? 0n,
+);
 
 const getNodeLevel = (node: {
     level: number;
     lastUpdatedNanos: bigint;
 }): number => {
     if (
-        latestLogTime.value > 0n &&
-        latestLogTime.value - node.lastUpdatedNanos > 5_000_000_000n
+        selectedLogTime.value > 0n &&
+        selectedLogTime.value - node.lastUpdatedNanos > STALE_THRESHOLD_NANOS
     ) {
-        return 3; // STALE (Grey)
+        return 3; // STALE
     }
     return node.level;
 };
@@ -821,84 +807,78 @@ interface AggregatedNode {
     lastUpdatedNanos: bigint;
 }
 
-const aggregatedMap = shallowRef<Record<string, AggregatedNode>>({});
+interface Aggregation {
+    nodes: Map<string, AggregatedNode>;
+    history: Map<string, StatusTransition[]>;
+}
 
-watch(
-    [() => properties.messages, currentIndex],
-    ([newMessages, newIndex]) => {
-        const limit = newIndex;
-        if (
-            newMessages.length === 0 ||
-            limit < 0 ||
-            limit >= newMessages.length
-        ) {
-            aggregatedMap.value = {};
-            startTime.value = null;
-            nodeHistory.value = {};
-            return;
-        }
+// Replays all messages up to the selected playback index. Maps are used
+// instead of plain objects so status names such as "constructor" cannot
+// collide with inherited properties.
+const aggregation = computed<Aggregation>(() => {
+    const nodes = new Map<string, AggregatedNode>();
+    const history = new Map<string, StatusTransition[]>();
+    const limit = Math.min(currentIndex.value, properties.messages.length - 1);
+    let start: bigint | null = null;
 
-        const map: Record<string, AggregatedNode> = {};
-        const history: Record<string, StatusTransition[]> = {};
-        let start: bigint | null = null;
+    for (let index = 0; index <= limit; index++) {
+        const message = properties.messages[index];
+        if (!message) continue;
+        const statuses = message.data?.status ?? [];
+        const logTime = message.logTime ?? 0n;
 
-        for (let index = 0; index <= limit; index++) {
-            const message = newMessages[index];
-            if (!message) continue;
-            const statuses = message.data?.status ?? [];
-            const logTime = message.logTime ?? 0n;
+        start ??= logTime;
+        const timestamp = Number(logTime - start) / 1_000_000_000;
 
-            start ??= logTime;
-            const timestamp = Number(logTime - start) / 1_000_000_000;
+        for (const status of statuses) {
+            if (!status.name) continue;
 
-            for (const status of statuses) {
-                if (!status.name) continue;
+            const previousNode = nodes.get(status.name);
+            const newLevel = normalizeLevel(status.level);
 
-                const previousNode = map[status.name];
-                const newLevel = status.level ?? 0;
-
-                // Record health transition history
-                if (previousNode?.level !== newLevel) {
-                    const nodeTransitions = history[status.name] ?? [];
-                    nodeTransitions.push({
-                        time: timestamp,
-                        level: newLevel,
-                        message: status.message ?? '',
-                    });
-
-                    // Cap history size to prevent memory growth
-                    if (nodeTransitions.length > 50) {
-                        nodeTransitions.shift();
-                    }
-                    history[status.name] = nodeTransitions;
-                }
-
-                map[status.name] = {
+            // Record health transition history
+            if (previousNode?.level !== newLevel) {
+                const nodeTransitions = history.get(status.name) ?? [];
+                nodeTransitions.push({
+                    time: timestamp,
                     level: newLevel,
-                    name: status.name,
                     message: status.message ?? '',
-                    hardware_id: status.hardware_id ?? '',
-                    values: status.values ?? [],
-                    lastUpdatedNanos: logTime,
-                };
+                });
+
+                // Cap history size to prevent memory growth
+                if (nodeTransitions.length > MAX_HISTORY_PER_NODE) {
+                    nodeTransitions.shift();
+                }
+                history.set(status.name, nodeTransitions);
             }
+
+            nodes.set(status.name, {
+                level: newLevel,
+                name: status.name,
+                message: status.message ?? '',
+                hardware_id: status.hardware_id ?? '',
+                values: status.values ?? [],
+                lastUpdatedNanos: logTime,
+            });
         }
+    }
 
-        aggregatedMap.value = map;
-        nodeHistory.value = history;
-        startTime.value = start;
-    },
-    { immediate: true },
-);
+    return { nodes, history };
+});
 
-const aggregatedNodes = computed(() => aggregatedMap.value);
+const aggregatedNodes = computed(() => [...aggregation.value.nodes.values()]);
+
+const matchesFilters = (node: AggregatedNode): boolean => {
+    if (!selectedLevels.value.includes(node.level)) return false;
+    const query = searchQuery.value.trim().toLowerCase();
+    return !query || node.name.toLowerCase().includes(query);
+};
 
 // Overall health calculation
 const levelCounts = computed(() => {
     const counts = { 0: 0, 1: 0, 2: 0, 3: 0 };
-    for (const node of Object.values(aggregatedNodes.value)) {
-        const effective = getNodeLevel(node);
-        counts[effective as 0 | 1 | 2 | 3]++;
+    for (const node of aggregatedNodes.value) {
+        counts[getNodeLevel(node) as 0 | 1 | 2 | 3]++;
     }
     return counts;
 });
@@ -926,9 +906,12 @@ const overallHealth = computed(() => {
             icon: 'sym_o_warning',
         };
     }
-    if (counts[3] > 0 && counts[0] === 0) {
+    if (counts[3] > 0) {
         return {
-            title: 'System Stale / Unknown',
+            title:
+                counts[0] === 0
+                    ? 'System Stale / Unknown'
+                    : `System Partially Stale (${String(counts[3])} Stale)`,
             color: 'grey',
             icon: 'sym_o_help_outline',
         };
@@ -940,14 +923,17 @@ const overallHealth = computed(() => {
     };
 });
 
-// Active issues (WARN or ERROR)
+// Active issues (WARN or ERROR), honouring the shared search / level filters
 const activeIssues = computed(() => {
-    return Object.values(aggregatedNodes.value)
+    return aggregatedNodes.value
         .map((node) => ({
             ...node,
             level: getNodeLevel(node),
         }))
-        .filter((node) => node.level === 1 || node.level === 2)
+        .filter(
+            (node) =>
+                (node.level === 1 || node.level === 2) && matchesFilters(node),
+        )
         .toSorted((a, b) => b.level - a.level || a.name.localeCompare(b.name));
 });
 
@@ -1000,20 +986,12 @@ const groupedNodes = computed(() => {
         'Other Diagnostics': [],
     };
 
-    const query = searchQuery.value.trim().toLowerCase();
-
-    for (const node of Object.values(aggregatedNodes.value)) {
-        const effectiveLvl = getNodeLevel(node);
-
-        // Filters
-        if (!selectedLevels.value.includes(effectiveLvl)) continue;
-        if (query && !node.name.toLowerCase().includes(query)) continue;
+    for (const node of aggregatedNodes.value) {
+        const effective = { ...node, level: getNodeLevel(node) };
+        if (!matchesFilters(effective)) continue;
 
         const cat = getCategory(node.name);
-        (groups[cat] ??= []).push({
-            ...node,
-            level: effectiveLvl,
-        });
+        (groups[cat] ??= []).push(effective);
     }
 
     // Sort nodes alphabetically within groups
@@ -1035,8 +1013,6 @@ interface MetricItem {
     nodeName: string;
     key: string;
     value: string;
-    parsedValue: number;
-    unit: string;
     type: 'frequency' | 'percentage' | 'temperature' | 'other';
     ratio: number;
     color: string;
@@ -1053,12 +1029,10 @@ const parseNodeMetrics = (
         const valueNumber = Number.parseFloat(item.value);
         if (Number.isNaN(valueNumber)) continue;
 
-        let unit = '';
         let type: 'frequency' | 'percentage' | 'temperature' | 'other' =
             'other';
         let ratio = 0;
         let color = 'primary';
-        let parsedValue = valueNumber;
 
         const isHz =
             keyLower.includes('hz') ||
@@ -1075,7 +1049,6 @@ const parseNodeMetrics = (
                     keyLower === 'fps')
             )
                 continue;
-            unit = 'Hz';
             type = 'frequency';
             ratio = 1;
             color = 'primary';
@@ -1086,11 +1059,9 @@ const parseNodeMetrics = (
             keyLower.includes('load') ||
             keyLower.includes('fill_level')
         ) {
-            unit = '%';
             type = 'percentage';
             const maxValue = valueNumber > 1 ? 100 : 1;
             ratio = Math.max(0, Math.min(1, valueNumber / maxValue));
-            parsedValue = maxValue === 1 ? valueNumber * 100 : valueNumber;
             if (ratio > 0.9) color = 'negative';
             else if (ratio > 0.75) color = 'warning';
             else color = 'positive';
@@ -1100,7 +1071,6 @@ const parseNodeMetrics = (
             keyLower.includes('°c') ||
             keyLower.includes('deg')
         ) {
-            unit = '°C';
             type = 'temperature';
             ratio = Math.max(0, Math.min(1, valueNumber / 100));
             if (valueNumber > 80) color = 'negative';
@@ -1114,8 +1084,6 @@ const parseNodeMetrics = (
             nodeName: node.name,
             key: item.key,
             value: item.value,
-            parsedValue: parsedValue,
-            unit,
             type,
             ratio,
             color,
@@ -1125,10 +1093,10 @@ const parseNodeMetrics = (
     return list;
 };
 
-const liveMetrics = computed<MetricItem[]>(() => {
+const metrics = computed<MetricItem[]>(() => {
     const list: MetricItem[] = [];
 
-    for (const node of Object.values(aggregatedNodes.value)) {
+    for (const node of aggregatedNodes.value) {
         const freqData = parseFrequencyData(node.values);
         if (freqData) {
             let color = 'positive';
@@ -1139,8 +1107,6 @@ const liveMetrics = computed<MetricItem[]>(() => {
                 nodeName: node.name,
                 key: 'Frequency',
                 value: `${String(freqData.actual)} Hz`,
-                parsedValue: freqData.actual,
-                unit: 'Hz',
                 type: 'frequency',
                 ratio: freqData.ratio,
                 color,
@@ -1160,7 +1126,7 @@ const liveMetrics = computed<MetricItem[]>(() => {
 // --- Node Details Dialog Computeds ---
 const selectedNode = computed<AggregatedNode>(() => {
     return (
-        aggregatedNodes.value[selectedNodeName.value] ?? {
+        aggregation.value.nodes.get(selectedNodeName.value) ?? {
             level: 3,
             name: '',
             message: '',
@@ -1514,7 +1480,7 @@ const resetFilters = () => {
     border-color: rgba(var(--status-color-rgb), 0.6) !important;
 }
 
-/* 2. Live Metrics Cards */
+/* 2. Metrics Cards */
 .metric-gauge-card {
     border-radius: 8px;
     transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -1560,13 +1526,6 @@ const resetFilters = () => {
 }
 .body--dark .dark-bg-grey-9 {
     background: #1e1e1e;
-}
-
-.border-top {
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-.body--dark .border-top {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .border-bottom {
