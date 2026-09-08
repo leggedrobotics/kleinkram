@@ -14,7 +14,7 @@
                             <slot name="titleAppend" />
                         </div>
                     </slot>
-                    <div v-if="slots.subtitle" class="q-pt-sm">
+                    <div v-if="slots.subtitle" class="q-pt-md">
                         <slot name="subtitle" />
                     </div>
                 </div>
