@@ -25,8 +25,8 @@
                     />
                 </div>
 
-                <div v-if="$slots.tabs" class="q-mx-lg justify-start flex">
-                    <div class="q-mt-md q-pa-none">
+                <div v-if="$slots.tabs" class="q-mx-lg base-dialog__tabs">
+                    <div class="q-mt-md q-pa-none base-dialog__tabs-inner">
                         <slot name="tabs" />
                     </div>
                 </div>
@@ -76,6 +76,25 @@ export default {
 </script>
 
 <style scoped>
+/* The tabs must not widen the dialog: they scroll inside their row */
+.base-dialog__tabs {
+    display: flex;
+    justify-content: flex-start;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.base-dialog__tabs-inner {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.base-dialog__card,
+.base-dialog__card > div {
+    min-width: 0;
+    max-width: 100%;
+}
+
 .base-dialog__content {
     margin: 40px 24px;
     max-height: calc(min(650px, 100vh - 350px));
@@ -95,6 +114,14 @@ export default {
     .base-dialog__header,
     .base-dialog__actions {
         padding: 16px;
+    }
+
+    .base-dialog__tabs {
+        margin: 0 16px;
+    }
+
+    .base-dialog__tabs-inner {
+        width: 100%;
     }
 
     .base-dialog__title {

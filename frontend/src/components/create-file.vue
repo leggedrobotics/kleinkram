@@ -189,7 +189,6 @@
             dense
             clearable
             placeholder="Google Drive Link"
-            style="min-width: 300px"
             :rules="driveUrlRules"
             :disable="entries.length > 0"
             :hint="

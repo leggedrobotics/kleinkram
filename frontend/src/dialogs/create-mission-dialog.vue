@@ -100,7 +100,7 @@
                         @update:tag-values="updateTagValue"
                     />
                 </q-tab-panel>
-                <q-tab-panel name="upload" style="min-width: 280px">
+                <q-tab-panel name="upload">
                     <CreateFile
                         v-if="newMission"
                         ref="createFileReference"

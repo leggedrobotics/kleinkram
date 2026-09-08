@@ -1,6 +1,6 @@
 <template>
     <q-table
-        class="table-white q-mt-xs"
+        class="table-white q-mt-xs access-rights-table"
         :columns="columns"
         :rows="accessRights"
         hide-pagination
@@ -177,3 +177,16 @@ const isDeleteDisabled = (group: DefaultRightDto): boolean => {
     return false;
 };
 </script>
+
+<style scoped>
+@media (max-width: 599px) {
+    /* Scroll inside the dialog rather than widening it */
+    .access-rights-table {
+        max-width: 100%;
+    }
+
+    .access-rights-table :deep(.q-table__middle) {
+        overflow-x: auto;
+    }
+}
+</style>
