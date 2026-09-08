@@ -428,8 +428,14 @@ watch(
     { immediate: true },
 );
 
+const hasErrors = computed(
+    () =>
+        invalidCount.value > 0 ||
+        (driveUrl.value !== '' && !isValidGoogleDriveUrl(driveUrl.value)),
+);
+
 watch(
-    () => invalidCount.value > 0,
+    () => hasErrors.value,
     (value) => {
         emit('update:hasErrors', value);
     },
