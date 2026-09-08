@@ -1,8 +1,8 @@
 <template>
-    <div class="q-pa-md">
+    <div :class="$q.screen.xs ? 'q-py-md' : 'q-pa-md'">
         <div class="row q-col-gutter-md">
             <!-- State Info -->
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput label="State" :model-value="action.state" readonly>
                     <template
                         v-if="
@@ -15,7 +15,7 @@
                     </template>
                 </AppInput>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="State Reason"
                     :model-value="action.stateCause || 'N/A'"
@@ -24,7 +24,7 @@
             </div>
 
             <!-- Execution Info -->
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <template
                     v-if="action.triggerSource === ActionTriggerSource.MANUAL"
                 >
@@ -55,7 +55,7 @@
                     </AppInput>
                 </template>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Submitted At"
                     :model-value="
@@ -64,7 +64,7 @@
                     readonly
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Last Updated At"
                     :model-value="
@@ -73,10 +73,10 @@
                     readonly
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <ActionRuntime :action="action" />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Project / Mission"
                     :model-value="`${action.mission?.project?.name} / ${action.mission?.name}`"
@@ -141,7 +141,7 @@
             <!-- Technical Details -->
             <div class="col-12 text-h6">Technical Details</div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Docker Image"
                     :model-value="action.template.imageName"
@@ -162,7 +162,7 @@
                 </AppInput>
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Image ID"
                     :model-value="action.image.sha || 'N/A'"
@@ -194,7 +194,7 @@
                     </template>
                 </AppInput>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Image Source"
                     :model-value="
@@ -302,7 +302,7 @@
                 </AppInput>
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Repo Digest"
                     :model-value="action.image.repoDigests?.[0] || 'N/A'"
@@ -335,14 +335,14 @@
                 </AppInput>
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Runner CPU Model"
                     :model-value="action.worker?.cpuModel || 'N/A'"
                     readonly
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Runner Hostname"
                     :model-value="action.worker?.hostname || 'N/A'"

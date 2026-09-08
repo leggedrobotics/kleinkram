@@ -2,16 +2,16 @@
     <q-drawer
         v-model="_open"
         side="right"
-        :width="800"
+        :width="$q.screen.lt.md ? $q.screen.width : 800"
         style="bottom: 0 !important"
         bordered
-        behavior="desktop"
+        :behavior="$q.screen.lt.md ? 'mobile' : 'desktop'"
     >
         <div
             class="q-pa-lg flex row justify-between items-center"
             style="height: 84px"
         >
-            <h3 class="text-h4 q-ma-none">
+            <h3 class="q-ma-none" :class="$q.screen.xs ? 'text-h5' : 'text-h4'">
                 {{
                     mode === ActionDrawerMode.ACTION_RESTORE
                         ? 'Restore Action Template Version'
@@ -23,7 +23,7 @@
             <q-btn
                 flat
                 dense
-                padding="6px"
+                :padding="$q.screen.xs ? '10px' : '6px'"
                 class="button-border"
                 icon="sym_o_close"
                 @click="closeDrawer"
@@ -32,7 +32,7 @@
 
         <q-separator />
 
-        <div class="q-pa-lg">
+        <div :class="$q.screen.xs ? 'q-pa-md' : 'q-pa-lg'">
             <span class="help-text">
                 Define the technical specifications for an action. These
                 settings serve as the blueprint for future executions.

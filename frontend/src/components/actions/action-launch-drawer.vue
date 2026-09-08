@@ -2,10 +2,10 @@
     <q-drawer
         v-model="_open"
         side="right"
-        :width="1000"
+        :width="$q.screen.lt.md ? $q.screen.width : 1000"
         style="bottom: 0 !important"
         bordered
-        behavior="desktop"
+        :behavior="$q.screen.lt.md ? 'mobile' : 'desktop'"
     >
         <DrawerHeader
             title="Launch Action"
@@ -17,7 +17,7 @@
 
         <q-separator />
 
-        <div class="q-pa-lg">
+        <div :class="$q.screen.xs ? 'q-pa-md' : 'q-pa-lg'">
             <InfoBanner
                 text="Need a different action configuration?"
                 button-label="Create New Action"

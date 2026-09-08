@@ -1,6 +1,9 @@
 <template>
-    <div class="row items-center">
-        <div class="col-5 q-py-md q-pr-md">
+    <div class="row items-center queue-filters">
+        <div
+            class="col-12 col-md-5 q-py-md"
+            :class="$q.screen.gt.sm ? 'q-pr-md' : ''"
+        >
             <q-input v-model="startDate" filled hint="File Processing since: ">
                 <template #prepend>
                     <q-icon name="sym_o_event" class="cursor-pointer">
@@ -49,7 +52,10 @@
                 </template>
             </q-input>
         </div>
-        <div class="col-5 q-py-md q-pr-md">
+        <div
+            class="col-12 col-md-5 q-py-md"
+            :class="$q.screen.gt.sm ? 'q-pr-md' : ''"
+        >
             <q-select
                 v-model="fileStateFilter"
                 multiple
@@ -87,7 +93,10 @@
                 </template>
             </q-select>
         </div>
-        <div class="col-2 q-py-md">
+        <div
+            class="col-12 col-md-2 q-py-md"
+            :class="$q.screen.gt.sm ? '' : 'q-pt-none'"
+        >
             <app-refresh-button @click="refresh" />
         </div>
     </div>
@@ -98,14 +107,99 @@
         v-model:selected="selected"
         :rows="queueEntries?.data || []"
         :columns="columns as any"
+        :visible-columns="visibleColumns"
         row-key="uuid"
         flat
-        bordered
+        :bordered="!$q.screen.xs"
+        :grid="$q.screen.xs"
         :loading="isLoading"
         binary-state-sort
-        selection="multiple"
+        :selection="$q.screen.lt.md ? 'none' : 'multiple'"
+        class="queue-table"
         @row-click="rowClick"
     >
+        <template #item="props">
+            <div class="col-12 q-pb-sm">
+                <q-card
+                    flat
+                    bordered
+                    class="queue-card"
+                    @click="() => openRow(props.row)"
+                >
+                    <q-card-section>
+                        <div class="row no-wrap items-start">
+                            <div class="col" style="min-width: 0">
+                                <div
+                                    class="queue-card__name text-weight-medium"
+                                >
+                                    {{ displayNameOf(props.row) }}
+                                </div>
+                                <div
+                                    class="queue-card__meta text-caption q-mt-xs"
+                                >
+                                    {{ props.row.mission.project.name }} /
+                                    {{ props.row.mission.name }}
+                                </div>
+                            </div>
+                            <q-btn
+                                flat
+                                round
+                                icon="sym_o_more_vert"
+                                unelevated
+                                color="primary"
+                                aria-label="File actions"
+                                class="queue-card__action cursor-pointer"
+                                @click.stop
+                            >
+                                <q-menu
+                                    auto-close
+                                    style="
+                                        max-width: 200px;
+                                        min-width: 160px;
+                                        width: 180px;
+                                    "
+                                >
+                                    <q-list>
+                                        <q-item
+                                            v-for="action in rowActions(
+                                                props.row,
+                                            )"
+                                            :key="action.label"
+                                            v-ripple
+                                            clickable
+                                            :disable="action.disabled"
+                                            @click="action.handler"
+                                        >
+                                            <q-item-section>
+                                                {{ action.label }}
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </q-menu>
+                            </q-btn>
+                        </div>
+
+                        <div
+                            class="row items-center justify-between q-mt-sm"
+                            style="gap: 8px"
+                        >
+                            <q-badge :color="getColor(props.row.state)">
+                                {{ getSimpleFileStateName(props.row.state) }}
+                            </q-badge>
+                            <span class="queue-card__meta text-caption">
+                                {{ lastUpdateOf(props.row) }}
+                            </span>
+                        </div>
+
+                        <div class="queue-card__meta text-caption q-mt-xs">
+                            {{ props.row.location }} ·
+                            {{ props.row.creator.name }}
+                        </div>
+                    </q-card-section>
+                </q-card>
+            </div>
+        </template>
+
         <template #body-selection="props">
             <q-checkbox
                 v-model="props.selected"
@@ -141,40 +235,15 @@
                     >
                         <q-list>
                             <q-item
+                                v-for="action in rowActions(props.row)"
+                                :key="action.label"
                                 v-ripple
                                 clickable
-                                :disable="
-                                    props.row.state !== QueueState.COMPLETED
-                                "
-                                @click="() => downloadFile(props.row)"
-                            >
-                                <q-item-section>Download File</q-item-section>
-                            </q-item>
-                            <q-item
-                                v-ripple
-                                clickable
-                                :disable="!canDelete(props.row)"
-                                @click="() => openDeleteFileDialog(props.row)"
-                            >
-                                <q-item-section>Delete File</q-item-section>
-                            </q-item>
-                            <q-item
-                                v-ripple
-                                clickable
-                                :disable="
-                                    props.row.state !==
-                                    QueueState.AWAITING_PROCESSING
-                                "
-                                @click="
-                                    () =>
-                                        _cancelProcessing({
-                                            missionUUID: props.row.mission.uuid,
-                                            queueUUID: props.row.uuid,
-                                        })
-                                "
+                                :disable="action.disabled"
+                                @click="action.handler"
                             >
                                 <q-item-section>
-                                    Cancel Processing
+                                    {{ action.label }}
                                 </q-item-section>
                             </q-item>
                         </q-list>
@@ -316,6 +385,10 @@ async function refresh(): Promise<void> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
+    await openRow(row);
+}
+
+async function openRow(row: FileQueueEntryDto): Promise<void> {
     const isFile =
         row.displayName.endsWith('.bag') || row.displayName.endsWith('.mcap');
     const isCompleted = row.state === QueueState.COMPLETED;
@@ -366,10 +439,69 @@ async function downloadFile(row: FileQueueEntryDto): Promise<void> {
     );
 }
 
+/**
+ * On phones the table is rendered as a card list (see the `#item` slot), on
+ * small screens we only keep the columns that carry the essential
+ * information so that the table does not need horizontal scrolling.
+ */
+const visibleColumns = computed<string[] | undefined>(() =>
+    $q.screen.lt.md
+        ? ['Filename', 'Mission', 'Status', 'change', 'action']
+        : undefined,
+);
+
+function displayNameOf(row: FileQueueEntryDto): string {
+    if (
+        row.displayName === row.identifier &&
+        row.location === FileLocation.DRIVE
+    )
+        return 'Not available';
+    return row.displayName;
+}
+
+function lastUpdateOf(row: FileQueueEntryDto): string {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    return row.updatedAt ? formatDate(row.updatedAt, true) : 'error';
+}
+
+interface QueueRowAction {
+    label: string;
+    disabled: boolean;
+    handler: () => void;
+}
+
+function rowActions(row: FileQueueEntryDto): QueueRowAction[] {
+    return [
+        {
+            label: 'Download File',
+            disabled: row.state !== QueueState.COMPLETED,
+            handler: (): void => {
+                void downloadFile(row);
+            },
+        },
+        {
+            label: 'Delete File',
+            disabled: !canDelete(row),
+            handler: (): void => {
+                openDeleteFileDialog(row);
+            },
+        },
+        {
+            label: 'Cancel Processing',
+            disabled: row.state !== QueueState.AWAITING_PROCESSING,
+            handler: (): void => {
+                _cancelProcessing({
+                    missionUUID: row.mission.uuid,
+                    queueUUID: row.uuid,
+                });
+            },
+        },
+    ];
+}
+
 const columns = [
     {
         name: 'Project',
-        required: true,
         label: 'Project',
         align: 'left',
         field: (row: FileQueueEntryDto): string => row.mission.project.name,
@@ -384,7 +516,6 @@ const columns = [
     { name: 'Status', label: 'Status', align: 'left', field: 'state' },
     {
         name: 'Location',
-        required: true,
         label: 'File Origin',
         align: 'left',
         field: 'location',
@@ -394,27 +525,17 @@ const columns = [
         required: true,
         label: 'Filename',
         align: 'left',
-        field: (row: FileQueueEntryDto): string => {
-            if (
-                row.displayName === row.identifier &&
-                row.location === FileLocation.DRIVE
-            )
-                return 'Not available';
-            return row.displayName;
-        },
+        field: (row: FileQueueEntryDto): string => displayNameOf(row),
     },
     {
         name: 'change',
         required: true,
         label: 'Last status update',
         align: 'left',
-        field: (row: FileQueueEntryDto): string =>
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            row.updatedAt ? formatDate(row.updatedAt, true) : 'error',
+        field: (row: FileQueueEntryDto): string => lastUpdateOf(row),
     },
     {
         name: 'Creator',
-        required: true,
         label: 'Creator',
         align: 'left',
         field: (row: FileQueueEntryDto): string => row.creator.name,
@@ -431,4 +552,56 @@ const columns = [
 ];
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Stacked filter controls need to span the full width on small screens */
+@media (max-width: 1023px) {
+    .queue-filters :deep(.q-field) {
+        width: 100%;
+    }
+
+    /* Enlarge the icon-only refresh button to a comfortable touch target */
+    .queue-filters :deep(.q-btn) {
+        height: 40px !important;
+        width: 40px !important;
+    }
+}
+
+.queue-card {
+    cursor: pointer;
+}
+
+/* The dense row-action button is below the comfortable touch target size */
+@media (max-width: 1023px) {
+    .queue-table :deep(.q-td .q-btn) {
+        min-height: 40px;
+        min-width: 40px;
+    }
+}
+
+.queue-card__name {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.queue-card__meta {
+    color: #58585c;
+    overflow-wrap: anywhere;
+}
+
+.queue-card__action {
+    min-height: 40px;
+    min-width: 40px;
+}
+
+@media (max-width: 599px) {
+    /* The pagination controls must wrap instead of overflowing the page */
+    .queue-table :deep(.q-table__bottom) {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .queue-table :deep(.q-table__grid-content) {
+        margin: 0;
+    }
+}
+</style>

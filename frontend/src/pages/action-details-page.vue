@@ -63,9 +63,11 @@
                     class="button-border"
                     flat
                     icon="sym_o_arrow_back"
-                    label="Back to Actions"
+                    :label="$q.screen.xs ? 'Back' : 'Back to Actions'"
                     @click="navigateBackToActions"
-                />
+                >
+                    <q-tooltip>Back to Actions</q-tooltip>
+                </q-btn>
                 <q-btn
                     class="button-border"
                     flat
@@ -172,15 +174,28 @@
                 >
             </div>
 
-            <div class="row justify-between items-center q-mb-md">
-                <div class="row q-gutter-x-md items-center">
+            <div
+                class="q-mb-md"
+                :class="
+                    $q.screen.xs
+                        ? 'column q-gutter-y-sm'
+                        : 'row justify-between items-center'
+                "
+            >
+                <div
+                    :class="
+                        $q.screen.xs
+                            ? 'column q-gutter-y-sm'
+                            : 'row q-gutter-x-md items-center'
+                    "
+                >
                     <q-input
                         v-model="logsSearch"
                         dense
                         outlined
                         placeholder="Search logs..."
                         debounce="300"
-                        style="width: 200px"
+                        :style="$q.screen.xs ? undefined : 'width: 200px'"
                     >
                         <template #append>
                             <q-icon name="sym_o_search" />
@@ -193,17 +208,24 @@
                         dense
                         outlined
                         label="Level"
-                        style="width: 120px"
+                        :style="$q.screen.xs ? undefined : 'width: 120px'"
                         emit-value
                         map-options
                     />
 
-                    <div v-if="logs?.count" class="text-caption q-ml-md">
+                    <div
+                        v-if="logs?.count"
+                        class="text-caption"
+                        :class="$q.screen.xs ? '' : 'q-ml-md'"
+                    >
                         Showing {{ logs.data.length }} of {{ logs.count }} lines
                     </div>
                 </div>
 
-                <div class="q-gutter-x-sm">
+                <div
+                    class="q-gutter-x-sm"
+                    :class="$q.screen.xs ? 'row justify-end' : ''"
+                >
                     <q-btn
                         v-if="(logs?.count || 0) > (logs?.data.length || 0)"
                         flat
@@ -222,26 +244,20 @@
             </div>
 
             <q-card
-                class="q-pa-lg"
+                :class="$q.screen.xs ? 'q-pa-sm' : 'q-pa-lg'"
                 style="background-color: #f4f4f4"
                 flat
                 bordered
             >
-                <q-card-section class="flex column q-pa-none">
+                <q-card-section class="flex column q-pa-none log-output">
                     <div
                         v-for="(log, index) in logs?.data"
                         :id="`log-line-${index}`"
                         :key="log.timestamp"
-                        class="flex justify-start q-pb-xs"
+                        class="flex justify-start q-pb-xs log-line"
                         :class="{
                             'bg-orange-1': index === highlightedLogIndex,
                         }"
-                        style="
-                            font-family: monospace;
-                            color: #222222;
-                            font-size: 0.8em;
-                            transition: background-color 3s ease-out;
-                        "
                     >
                         <template v-if="log.type == 'stdout'">
                             <span
@@ -258,9 +274,7 @@
                                 [{{ log.type }}]
                             </span>
 
-                            <span
-                                style="margin-left: -250px; padding-left: 250px"
-                            >
+                            <span class="log-line__message">
                                 {{ log.message.replaceAll(' ', '\u00a0') }}
                             </span>
                         </template>
@@ -281,11 +295,8 @@
                             </span>
 
                             <span
-                                style="
-                                    margin-left: -250px;
-                                    padding-left: 250px;
-                                    color: #ff3c3c;
-                                "
+                                class="log-line__message"
+                                style="color: #ff3c3c"
                             >
                                 {{ log.message.replaceAll(' ', '\u00a0') }}
                             </span>
@@ -312,30 +323,27 @@
 
             <h2 class="text-h5 q-mb-sm text-grey-9">Called Endpoints</h2>
             <q-card
-                class="q-pa-lg"
+                :class="$q.screen.xs ? 'q-pa-sm' : 'q-pa-lg'"
                 style="background-color: #f4f4f4"
                 flat
                 bordered
             >
-                <div
-                    v-for="log in action?.auditLogs"
-                    :key="log.url"
-                    class="flex justify-start q-pb-xs"
-                    style="
-                        font-family: monospace;
-                        color: #222222;
-                        font-size: 0.8em;
-                    "
-                >
-                    <span
-                        class="q-pr-sm"
-                        style="user-select: none; color: #525252"
-                        >{{ log.method }}</span
+                <div class="log-output">
+                    <div
+                        v-for="log in action?.auditLogs"
+                        :key="log.url"
+                        class="flex justify-start q-pb-xs log-line"
                     >
+                        <span
+                            class="q-pr-sm"
+                            style="user-select: none; color: #525252"
+                            >{{ log.method }}</span
+                        >
 
-                    <span>
-                        {{ log.url }}
-                    </span>
+                        <span>
+                            {{ log.url }}
+                        </span>
+                    </div>
                 </div>
             </q-card>
         </q-tab-panel>
@@ -565,6 +573,37 @@ const navigateBackToActions = async (): Promise<void> => {
 };
 </script>
 
-<style>
-/* Styles removed as table is no longer used */
+<style scoped>
+/*
+ * Log and audit-log output must scroll inside its own box, so that a long
+ * line never widens the page (which would make the whole page scroll
+ * horizontally on a phone).
+ */
+.log-output {
+    overflow-x: auto;
+}
+
+.log-line {
+    font-family: monospace;
+    color: #222222;
+    font-size: 0.8em;
+    transition: background-color 3s ease-out;
+    flex-wrap: nowrap;
+    width: max-content;
+    min-width: 100%;
+}
+
+/* Hanging indent so that wrapped output lines up after the timestamp */
+.log-line__message {
+    margin-left: -250px;
+    padding-left: 250px;
+}
+
+/* There is no room for a 250px indent on small screens */
+@media (max-width: 1023px) {
+    .log-line__message {
+        margin-left: 0;
+        padding-left: 0;
+    }
+}
 </style>

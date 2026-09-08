@@ -1,19 +1,27 @@
 <template>
     <title-section :title="accessGroup?.name">
         <template #title>
-            <div class="row items-center q-gutter-x-sm">
+            <div class="row items-center no-wrap q-gutter-x-sm">
                 <q-avatar
                     v-if="personal"
-                    size="48px"
+                    :size="$q.screen.xs ? '36px' : '48px'"
                     color="blue-1"
                     text-color="primary"
                 >
                     <q-icon name="sym_o_person" />
                 </q-avatar>
-                <q-avatar v-else size="48px" color="grey-2" text-color="grey-8">
+                <q-avatar
+                    v-else
+                    :size="$q.screen.xs ? '36px' : '48px'"
+                    color="grey-2"
+                    text-color="grey-8"
+                >
                     <q-icon name="sym_o_group" />
                 </q-avatar>
-                <div class="column q-ml-sm">
+                <div
+                    class="col column items-start q-ml-sm"
+                    style="min-width: 0"
+                >
                     <h1 class="text-h5 text-md-h3 q-ma-none ellipsis">
                         {{ accessGroup?.name ?? 'Loading...' }}
                     </h1>
@@ -26,16 +34,17 @@
                         text-color="primary"
                         size="sm"
                         class="q-ma-none q-mt-xs"
+                        style="max-width: 100%"
                     >
-                        <div class="row items-center">
+                        <div class="row items-center no-wrap">
                             <q-icon
                                 name="sym_o_info"
                                 size="16px"
                                 class="q-mr-sm"
                             />
                             <span
-                                class="text-weight-regular"
-                                style="font-size: 13px"
+                                class="text-weight-regular ellipsis"
+                                style="font-size: 13px; min-width: 0"
                             >
                                 Email:
                                 <span class="text-weight-bold"
@@ -82,13 +91,13 @@
 
     <q-tab-panels v-model="tab" class="q-mt-lg" style="background: transparent">
         <q-tab-panel name="projects">
-            <div class="flex justify-between items-center q-mb-lg">
+            <div class="flex justify-between items-center q-mb-lg ag-toolbar">
                 <div />
-                <button-group>
+                <button-group class="ag-toolbar__actions">
                     <app-search-bar
                         v-model="search"
                         placeholder="Search"
-                        class="q-mr-sm"
+                        class="q-mr-sm ag-toolbar__search"
                     />
                     <app-refresh-button @click="refetchOnClick" />
                     <app-create-button
@@ -107,11 +116,127 @@
                 separator="none"
                 :rows="projectRows"
                 :columns="projectCols as any"
+                :grid="$q.screen.xs"
                 selection="multiple"
                 row-key="uuid"
                 :filter="search"
                 binary-state-sort
             >
+                <!-- phones: one tappable card per project -->
+                <template v-if="$q.screen.xs" #item="props">
+                    <div class="col-12 q-pa-xs">
+                        <q-card
+                            flat
+                            bordered
+                            class="ag-card"
+                            :class="{ 'ag-card--selected': props.selected }"
+                            @click="() => rowClick(props.row.uuid)"
+                        >
+                            <q-card-section class="q-px-md q-py-sm">
+                                <div class="row items-center no-wrap">
+                                    <q-checkbox
+                                        v-model="props.selected"
+                                        color="grey-8"
+                                        dense
+                                        class="q-mr-md"
+                                        aria-label="Select project"
+                                        @click.stop
+                                    />
+                                    <div
+                                        class="col column"
+                                        style="min-width: 0"
+                                    >
+                                        <div
+                                            class="text-weight-medium ellipsis"
+                                        >
+                                            {{ props.row.name }}
+                                        </div>
+                                        <div
+                                            class="text-caption text-grey-7 ellipsis"
+                                        >
+                                            {{ props.row.description }}
+                                        </div>
+                                    </div>
+                                    <q-btn
+                                        flat
+                                        round
+                                        dense
+                                        icon="sym_o_more_vert"
+                                        unelevated
+                                        color="primary"
+                                        class="cursor-pointer"
+                                        aria-label="Project actions"
+                                        @click.stop
+                                    >
+                                        <q-menu auto-close>
+                                            <q-list>
+                                                <q-item
+                                                    v-ripple
+                                                    style="width: 180px"
+                                                    clickable
+                                                    @click="
+                                                        () =>
+                                                            rowClick(
+                                                                props.row.uuid,
+                                                            )
+                                                    "
+                                                >
+                                                    <q-item-section>
+                                                        View Project Details
+                                                    </q-item-section>
+                                                </q-item>
+
+                                                <change-project-rights-dialog-opener
+                                                    :project-uuid="
+                                                        props.row.uuid
+                                                    "
+                                                    :project-access-uuid="
+                                                        props.row
+                                                            .project_access_uuid
+                                                    "
+                                                >
+                                                    <q-item v-ripple clickable>
+                                                        <q-item-section>
+                                                            Change rights
+                                                        </q-item-section>
+                                                    </q-item>
+                                                </change-project-rights-dialog-opener>
+                                                <RemoveProjectDialogOpener
+                                                    v-if="accessGroup"
+                                                    :access-group="accessGroup"
+                                                    :project-u-u-i-d="
+                                                        props.row.uuid
+                                                    "
+                                                >
+                                                    <q-item v-ripple clickable>
+                                                        <q-item-section>
+                                                            Remove
+                                                        </q-item-section>
+                                                    </q-item>
+                                                </RemoveProjectDialogOpener>
+                                            </q-list>
+                                        </q-menu>
+                                    </q-btn>
+                                </div>
+                                <div class="q-mt-sm">
+                                    <q-chip
+                                        dense
+                                        square
+                                        size="sm"
+                                        color="grey-2"
+                                        text-color="grey-9"
+                                        class="q-ma-none"
+                                    >
+                                        {{
+                                            AccessGroupRights[props.row.rights]
+                                        }}
+                                    </q-chip>
+                                </div>
+                            </q-card-section>
+                        </q-card>
+                    </div>
+                </template>
+
                 <template #no-data>
                     <div class="full-width row flex-center q-pa-xl text-grey-8">
                         <div class="text-center">
@@ -197,14 +322,14 @@
         <q-tab-panel v-if="!personal" name="members">
             <div
                 v-if="selectedUsers.length === 0"
-                class="flex justify-between items-center q-mb-lg"
+                class="flex justify-between items-center q-mb-lg ag-toolbar"
             >
                 <div />
-                <button-group>
+                <button-group class="ag-toolbar__actions">
                     <app-search-bar
                         v-model="search"
                         placeholder="Search"
-                        class="q-mr-sm"
+                        class="q-mr-sm ag-toolbar__search"
                     />
                     <app-refresh-button @click="refetchOnClick" />
 
@@ -216,7 +341,11 @@
                     </DialogOpenerAddUser>
                 </button-group>
             </div>
-            <div v-else class="q-py-lg" style="background: #0f62fe">
+            <div
+                v-else
+                class="q-py-lg selection-banner"
+                style="background: #0f62fe"
+            >
                 <ButtonGroupOverlay>
                     <template #start>
                         <div style="margin: 0; font-size: 14pt; color: white">
@@ -255,7 +384,8 @@
                 v-model:pagination="pagination2"
                 v-model:selected="selectedUsers"
                 :rows="accessGroup?.memberships || []"
-                :columns="userCols as any"
+                :columns="activeUserCols as any"
+                :grid="$q.screen.xs"
                 selection="multiple"
                 row-key="uuid"
                 :filter="search"
@@ -263,6 +393,148 @@
                 flat
                 bordered
             >
+                <!-- phones: one card per member -->
+                <template v-if="$q.screen.xs" #item="props">
+                    <div class="col-12 q-pa-xs">
+                        <q-card
+                            flat
+                            bordered
+                            class="ag-card"
+                            :class="{ 'ag-card--selected': props.selected }"
+                        >
+                            <q-card-section class="q-px-md q-py-sm">
+                                <div class="row items-center no-wrap">
+                                    <q-checkbox
+                                        v-model="props.selected"
+                                        color="grey-8"
+                                        dense
+                                        class="q-mr-md"
+                                        aria-label="Select member"
+                                    />
+                                    <div
+                                        class="col column"
+                                        style="min-width: 0"
+                                    >
+                                        <div
+                                            class="text-weight-medium ellipsis"
+                                        >
+                                            {{ props.row.user.name }}
+                                        </div>
+                                        <div
+                                            class="text-caption text-grey-7 ellipsis"
+                                        >
+                                            {{ props.row.user.email ?? 'N/A' }}
+                                        </div>
+                                    </div>
+                                    <q-btn
+                                        flat
+                                        round
+                                        dense
+                                        icon="sym_o_more_vert"
+                                        unelevated
+                                        color="primary"
+                                        class="cursor-pointer"
+                                        aria-label="Member actions"
+                                        @click.stop
+                                    >
+                                        <q-menu auto-close>
+                                            <q-list>
+                                                <q-item
+                                                    v-ripple
+                                                    clickable
+                                                    :disable="
+                                                        !currentUserCanEdit
+                                                    "
+                                                    @click="
+                                                        () =>
+                                                            toggleUserRole(
+                                                                props.row,
+                                                            )
+                                                    "
+                                                >
+                                                    <q-item-section>
+                                                        {{
+                                                            props.row
+                                                                .canEditGroup
+                                                                ? 'Demote to Member'
+                                                                : 'Promote to Owner'
+                                                        }}
+                                                    </q-item-section>
+                                                </q-item>
+                                                <q-item
+                                                    v-ripple
+                                                    clickable
+                                                    :disable="
+                                                        !currentUserCanEdit
+                                                    "
+                                                    @click="
+                                                        () =>
+                                                            removeSingleUser(
+                                                                props.row.user
+                                                                    .uuid,
+                                                            )
+                                                    "
+                                                >
+                                                    <q-item-section>
+                                                        Remove
+                                                    </q-item-section>
+                                                </q-item>
+                                            </q-list>
+                                        </q-menu>
+                                    </q-btn>
+                                </div>
+                                <div
+                                    class="row items-center q-gutter-x-sm q-mt-sm"
+                                >
+                                    <app-status-chip
+                                        :expiration-date="
+                                            props.row.expirationDate
+                                        "
+                                    />
+                                    <q-chip
+                                        dense
+                                        square
+                                        size="sm"
+                                        color="grey-2"
+                                        text-color="grey-9"
+                                        class="q-ma-none"
+                                    >
+                                        {{
+                                            props.row.canEditGroup
+                                                ? 'Owner'
+                                                : 'Member'
+                                        }}
+                                    </q-chip>
+                                </div>
+                                <q-btn
+                                    flat
+                                    dense
+                                    no-caps
+                                    size="sm"
+                                    class="button-border q-mt-sm full-width"
+                                    :class="
+                                        isExpired(props.row.expirationDate)
+                                            ? 'text-negative'
+                                            : 'text-grey-9'
+                                    "
+                                    :disable="!currentUserCanEdit"
+                                    icon="sym_o_date_range"
+                                    :label="
+                                        props.row.expirationDate
+                                            ? `Valid until ${new Date(
+                                                  props.row.expirationDate,
+                                              ).toDateString()}`
+                                            : 'Valid forever'
+                                    "
+                                    @click="
+                                        () => openSetExpirationDialog(props.row)
+                                    "
+                                />
+                            </q-card-section>
+                        </q-card>
+                    </div>
+                </template>
+
                 <template #no-data>
                     <div class="full-width row flex-center q-pa-xl text-grey-8">
                         <div class="text-center">
@@ -422,8 +694,9 @@
             <q-table
                 flat
                 bordered
+                :wrap-cells="$q.screen.xs"
                 :rows="auditLogs?.data || []"
-                :columns="auditLogCols as any"
+                :columns="activeAuditLogCols as any"
                 row-key="uuid"
                 :pagination="{
                     rowsPerPage: 50,
@@ -449,6 +722,14 @@
                 <template #body-cell-createdAt="props">
                     <q-td :props="props">
                         {{ formatDate(new Date(props.row.createdAt), true) }}
+                        <!-- phones: actor and type columns are folded in here -->
+                        <div
+                            v-if="$q.screen.xs"
+                            class="text-caption text-grey-7"
+                        >
+                            {{ props.row.actor?.name ?? 'System' }} &middot;
+                            {{ props.row.type }}
+                        </div>
                     </q-td>
                 </template>
                 <template #body-cell-actor="props">
@@ -945,6 +1226,12 @@ const userCols = [
     },
 ];
 
+// the email column is dropped on tablets, on phones the table is replaced by
+// a card list that shows the email below the name
+const activeUserCols = computed(() =>
+    $q.screen.sm ? userCols.filter((col) => col.name !== 'email') : userCols,
+);
+
 const rowClick = async (_uuid: string): Promise<void> => {
     await router.push({
         name: ROUTES.MISSIONS.routeName,
@@ -988,5 +1275,57 @@ const auditLogCols = [
         field: 'details',
     },
 ];
+
+// on phones only the timestamp and the details fit; the actor and the action
+// type are rendered below the timestamp instead
+const activeAuditLogCols = computed(() =>
+    $q.screen.xs
+        ? auditLogCols.filter(
+              (col) => col.name === 'createdAt' || col.name === 'details',
+          )
+        : auditLogCols,
+);
 </script>
-<style scoped></style>
+<style scoped>
+.button-border {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.ag-card--selected {
+    background-color: #e7efff;
+}
+
+/* below 1024px the toolbars stack: search on its own row, buttons below */
+@media (max-width: 1023px) {
+    .ag-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .ag-toolbar__actions {
+        flex-wrap: wrap;
+    }
+
+    .ag-toolbar__search {
+        flex: 1 0 100%;
+        margin-right: 0;
+    }
+
+    .ag-toolbar :deep(.q-btn) {
+        min-height: 40px;
+        min-width: 40px;
+    }
+}
+
+@media (max-width: 599px) {
+    .selection-banner :deep(.q-ml-lg) {
+        margin-left: 12px;
+    }
+
+    .selection-banner :deep(.q-pr-lg) {
+        padding-right: 12px;
+    }
+}
+</style>

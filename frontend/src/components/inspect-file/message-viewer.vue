@@ -1,14 +1,18 @@
 <template>
     <div class="message-viewer q-pa-sm rounded-borders">
-        <div class="row justify-between items-center q-mb-sm">
-            <div class="text-subtitle2 text-grey-8 flex items-center">
+        <div
+            class="row justify-between items-center q-mb-sm message-viewer__header"
+        >
+            <div
+                class="text-subtitle2 text-grey-8 flex items-center message-viewer__title"
+            >
                 {{ topicName }}
                 <q-badge color="grey-4" text-color="black" class="q-ml-sm">
                     {{ messageType }}
                 </q-badge>
             </div>
 
-            <div class="row items-center q-gutter-x-sm">
+            <div class="row items-center q-gutter-x-sm message-viewer__badges">
                 <q-badge
                     v-if="(sampleStride ?? 1) > 1"
                     color="grey-3"
@@ -196,3 +200,33 @@ const emitPausePreview = (): void => {
     emit('pause-preview');
 };
 </script>
+
+<style scoped>
+.message-viewer {
+    min-width: 0;
+}
+
+@media (max-width: 599px) {
+    /* Topic name, type badge, sampling badge and BETA wrap onto their own
+       lines instead of pushing each other out of the viewport */
+    .message-viewer__header {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .message-viewer__title {
+        flex-wrap: wrap;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .message-viewer__badges {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .message-viewer {
+        padding: 4px;
+    }
+}
+</style>

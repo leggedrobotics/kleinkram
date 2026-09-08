@@ -1,9 +1,9 @@
 <template>
     <div class="row">
-        <div style="width: 300px">
+        <div class="admin-action">
             <q-btn
                 label="Reset S3 Tagging"
-                class="button-border bg-button-primary full-width"
+                class="button-border bg-button-primary full-width admin-action__btn"
                 icon="sym_o_sell"
                 flat
                 @click="resetS3Tagging"
@@ -14,10 +14,10 @@
                 cannot be undone. There is no confirmation!
             </div>
         </div>
-        <div style="width: 300px; margin-left: 20px">
+        <div class="admin-action">
             <q-btn
                 label="Recompute File Sizes"
-                class="button-border bg-button-primary full-width"
+                class="button-border bg-button-primary full-width admin-action__btn"
                 icon="sym_o_expand"
                 flat
                 @click="resetFileSizes"
@@ -29,10 +29,10 @@
             </div>
         </div>
 
-        <div style="width: 300px; margin-left: 20px">
+        <div class="admin-action">
             <q-btn
                 label="Recalculate Hashes"
-                class="button-border bg-button-primary full-width"
+                class="button-border bg-button-primary full-width admin-action__btn"
                 icon="sym_o_fingerprint"
                 flat
                 @click="recalculateHashes"
@@ -44,10 +44,10 @@
             </div>
         </div>
 
-        <div style="width: 300px; margin-left: 20px">
+        <div class="admin-action">
             <q-btn
                 label="Fix Missing Topics"
-                class="button-border bg-button-primary full-width"
+                class="button-border bg-button-primary full-width admin-action__btn"
                 icon="sym_o_topic"
                 flat
                 @click="reextractTopics"
@@ -114,3 +114,32 @@ async function reextractTopics(): Promise<void> {
     });
 }
 </script>
+
+<style scoped>
+.admin-action {
+    width: 300px;
+}
+
+.admin-action + .admin-action {
+    margin-left: 20px;
+}
+
+/*
+ * Below the desktop breakpoint the four fixed-width maintenance blocks are
+ * stacked and span the full width instead of overflowing the row.
+ */
+@media (max-width: 1023px) {
+    .admin-action {
+        width: 100%;
+    }
+
+    .admin-action + .admin-action {
+        margin-left: 0;
+        margin-top: 24px;
+    }
+
+    .admin-action__btn {
+        min-height: 44px;
+    }
+}
+</style>

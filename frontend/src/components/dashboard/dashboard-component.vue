@@ -36,15 +36,34 @@ const greeting = computed(() => {
 </script>
 
 <style scoped>
+/*
+ * Phones (< 600px) stack every panel in a single column. The container turns
+ * into a flex column so that the `grid-column: span 2` / `grid-row: span 2`
+ * rules the panels declare for the desktop grid are ignored instead of
+ * creating implicit columns that would overflow the viewport. The panels then
+ * size themselves to their content rather than to a fixed 350px row.
+ */
 .dashboard-grid {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(4, 350px);
-    gap: 24px;
+    gap: 16px;
 }
 
-@media (min-width: 800px) {
+.dashboard-grid > * {
+    min-width: 0;
+}
+
+@media (min-width: 600px) {
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(4, 350px);
+        gap: 24px;
+    }
+}
+
+@media (min-width: 1024px) {
     .dashboard-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         grid-template-rows: repeat(3, 350px);

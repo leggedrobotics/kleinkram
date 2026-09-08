@@ -1,6 +1,6 @@
 <template>
     <div
-        class="text-center q-pa-xl bg-grey-1 rounded-borders border-dashed text-grey-7"
+        class="text-center q-pa-xl bg-grey-1 rounded-borders border-dashed text-grey-7 file-error-state"
     >
         <div v-if="file.state === FileState.CORRUPTED">
             <q-icon name="sym_o_broken_image" size="4em" class="q-mb-md" />
@@ -56,5 +56,11 @@ const fileExtension = computed(
 <style scoped>
 .border-dashed {
     border: 2px dashed #e0e0e0;
+}
+
+@media (max-width: 599px) {
+    .file-error-state {
+        padding: 32px 16px;
+    }
 }
 </style>
