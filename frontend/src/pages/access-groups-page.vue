@@ -15,11 +15,11 @@
     </title-section>
 
     <div class="q-my-lg">
-        <div class="flex justify-between items-center">
-            <button-group>
+        <div class="flex justify-between items-center ag-toolbar">
+            <button-group class="ag-toolbar__filters">
                 <div
                     v-if="tab === 'groups'"
-                    class="self-stretch flex items-center"
+                    class="self-stretch flex items-center scroll-x-nowrap"
                 >
                     <q-btn-toggle
                         v-model="prefilter"
@@ -36,9 +36,10 @@
                 </div>
             </button-group>
 
-            <button-group>
+            <button-group class="ag-toolbar__actions">
                 <app-search-bar
                     v-model="filterOptions.search"
+                    class="ag-toolbar__search"
                     :placeholder="
                         tab === 'groups' ? 'Search Groups' : 'Search Users'
                     "
@@ -81,7 +82,8 @@
             flat
             bordered
             wrap-cells
-            virtual-scroll
+            :virtual-scroll="!$q.screen.xs"
+            :grid="$q.screen.xs"
             separator="none"
             :rows="accessGroupsTable"
             :columns="activeColumns as any"
@@ -90,6 +92,175 @@
             row-key="uuid"
             @row-click="rowClick"
         >
+            <!-- phones: the table header is replaced by an explicit sort menu -->
+            <template v-if="$q.screen.xs" #top>
+                <q-btn
+                    flat
+                    dense
+                    no-caps
+                    class="button-border q-px-sm"
+                    icon="sym_o_swap_vert"
+                    :label="sortLabel"
+                    aria-label="Change sorting"
+                >
+                    <q-menu auto-close>
+                        <q-list>
+                            <q-item
+                                v-for="column in sortableColumns"
+                                :key="column.name"
+                                v-ripple
+                                clickable
+                                @click="() => setSort(column.name)"
+                            >
+                                <q-item-section>
+                                    {{ column.label }}
+                                </q-item-section>
+                                <q-item-section
+                                    v-if="pagination.sortBy === column.name"
+                                    side
+                                >
+                                    <q-icon
+                                        :name="
+                                            pagination.descending
+                                                ? 'sym_o_arrow_downward'
+                                                : 'sym_o_arrow_upward'
+                                        "
+                                        size="18px"
+                                    />
+                                </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-btn>
+            </template>
+
+            <!-- phones: one tappable card per access group -->
+            <template v-if="$q.screen.xs" #item="props">
+                <div class="col-12 q-pa-xs">
+                    <q-card
+                        flat
+                        bordered
+                        class="ag-card"
+                        :class="{ 'ag-card--selected': props.selected }"
+                        @click="() => rowClick(undefined, props.row)"
+                    >
+                        <q-card-section class="q-px-md q-py-sm">
+                            <div class="row items-center no-wrap">
+                                <q-checkbox
+                                    v-model="props.selected"
+                                    color="grey-8"
+                                    dense
+                                    class="q-mr-md"
+                                    aria-label="Select access group"
+                                    @click.stop
+                                />
+                                <div class="col column" style="min-width: 0">
+                                    <div class="text-weight-medium ellipsis">
+                                        {{ props.row.name }}
+                                    </div>
+                                    <div
+                                        class="text-caption text-grey-7 ellipsis"
+                                    >
+                                        <template v-if="tab === 'users'">
+                                            {{
+                                                props.row.memberships[0]?.user
+                                                    .email ?? '-'
+                                            }}
+                                        </template>
+                                        <template v-else>
+                                            {{ props.row.creator?.name ?? '-' }}
+                                            &middot;
+                                            {{
+                                                formatDate(
+                                                    new Date(
+                                                        props.row.createdAt,
+                                                    ),
+                                                )
+                                            }}
+                                        </template>
+                                    </div>
+                                </div>
+                                <q-btn
+                                    flat
+                                    round
+                                    dense
+                                    icon="sym_o_more_vert"
+                                    unelevated
+                                    color="primary"
+                                    class="cursor-pointer"
+                                    aria-label="Access group actions"
+                                    @click.stop
+                                >
+                                    <q-menu auto-close>
+                                        <q-list>
+                                            <q-item
+                                                v-ripple
+                                                clickable
+                                                @click="
+                                                    () =>
+                                                        rowClick(
+                                                            undefined,
+                                                            props.row,
+                                                        )
+                                                "
+                                            >
+                                                <q-item-section>
+                                                    View Details
+                                                </q-item-section>
+                                            </q-item>
+                                            <q-item v-ripple clickable disabled>
+                                                <q-item-section>
+                                                    Edit
+                                                </q-item-section>
+                                            </q-item>
+                                            <DeleteAccessGroup
+                                                :access-group="props.row"
+                                            >
+                                                <q-item v-ripple clickable>
+                                                    <q-item-section>
+                                                        Delete
+                                                    </q-item-section>
+                                                </q-item>
+                                            </DeleteAccessGroup>
+                                        </q-list>
+                                    </q-menu>
+                                </q-btn>
+                            </div>
+                            <div class="row items-center q-gutter-x-sm q-mt-sm">
+                                <app-status-chip
+                                    v-if="tab === 'users'"
+                                    :expiration-date="
+                                        props.row.memberships[0]?.expirationDate
+                                    "
+                                />
+                                <q-chip
+                                    v-else
+                                    dense
+                                    square
+                                    size="sm"
+                                    color="grey-2"
+                                    text-color="grey-9"
+                                    class="q-ma-none"
+                                >
+                                    {{ props.row.memberships.length }} members
+                                </q-chip>
+                                <q-chip
+                                    dense
+                                    square
+                                    size="sm"
+                                    color="grey-2"
+                                    text-color="grey-9"
+                                    class="q-ma-none"
+                                >
+                                    {{ props.row.projectAccesses.length }}
+                                    projects
+                                </q-chip>
+                            </div>
+                        </q-card-section>
+                    </q-card>
+                </div>
+            </template>
+
             <template #body-selection="props">
                 <q-checkbox
                     v-model="props.selected"
@@ -174,19 +345,38 @@ import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import AppStatusChip from 'components/common/app-status-chip.vue';
 import TitleSection from 'components/title-section.vue';
-import { QTable } from 'quasar';
+import { QTable, useQuasar } from 'quasar';
 import ROUTES from 'src/router/routes';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { useRoute, useRouter } from 'vue-router';
 
+interface AccessGroupColumn {
+    name: string;
+    required?: boolean;
+    label: string;
+    align: string;
+    field?: (row: AccessGroupDto) => string;
+    format?: (value: string) => string;
+    sortable?: boolean;
+    style?: string;
+}
+
+const $q = useQuasar();
 const $router = useRouter();
 const route = useRoute();
 const tab = ref((route.query.tab as string) || 'groups');
 
-const prefilterOptions = [
-    { label: 'Custom Groups', value: AccessGroupType.CUSTOM },
-    { label: 'Affiliation Groups', value: AccessGroupType.AFFILIATION },
-];
+// the long labels do not fit next to each other on a phone
+const prefilterOptions = computed(() => [
+    {
+        label: $q.screen.xs ? 'Custom' : 'Custom Groups',
+        value: AccessGroupType.CUSTOM,
+    },
+    {
+        label: $q.screen.xs ? 'Affiliation' : 'Affiliation Groups',
+        value: AccessGroupType.AFFILIATION,
+    },
+]);
 const prefilter = ref<AccessGroupType>(AccessGroupType.CUSTOM);
 
 const selectedAccessGroups: Ref<ProjectWithMissionsDto[]> = ref([]);
@@ -290,7 +480,7 @@ async function rowClick(event: any, row: AccessGroupDto) {
     });
 }
 
-const usersColumns = [
+const usersColumns: AccessGroupColumn[] = [
     {
         name: 'Name',
         required: true,
@@ -346,7 +536,7 @@ const usersColumns = [
     },
 ];
 
-const accessGroupsColumns = [
+const accessGroupsColumns: AccessGroupColumn[] = [
     {
         name: 'Access Group',
         required: true,
@@ -407,9 +597,77 @@ const accessGroupsColumns = [
     },
 ];
 
-const activeColumns = computed(() => {
-    return tab.value === 'users' ? usersColumns : accessGroupsColumns;
-});
+const allColumns = computed(() =>
+    tab.value === 'users' ? usersColumns : accessGroupsColumns,
+);
+
+// secondary columns are dropped on tablet-sized screens, on phones the table
+// is replaced by a card list and the columns are only used for sorting
+const secondaryColumns = computed(() =>
+    tab.value === 'users'
+        ? new Set(['Projects'])
+        : new Set(['Creator', 'createdAt']),
+);
+
+const activeColumns = computed(() =>
+    $q.screen.sm
+        ? allColumns.value.filter(
+              (column) => !secondaryColumns.value.has(column.name),
+          )
+        : allColumns.value,
+);
+
+const sortableColumns = computed(() =>
+    allColumns.value.filter((column) => column.sortable),
+);
+
+const sortLabel = computed(
+    () =>
+        sortableColumns.value.find(
+            (column) => column.name === pagination.value.sortBy,
+        )?.label ?? 'Sort',
+);
+
+const setSort = (columnName: string): void => {
+    if (pagination.value.sortBy === columnName) {
+        pagination.value.descending = !pagination.value.descending;
+    } else {
+        pagination.value.sortBy = columnName;
+        pagination.value.descending = false;
+    }
+};
 </script>
 
-<style scoped></style>
+<style scoped>
+.button-border {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.ag-card--selected {
+    background-color: #e7efff;
+}
+
+/* below 1024px the toolbar stacks: search on its own row, buttons below */
+@media (max-width: 1023px) {
+    .ag-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .ag-toolbar__actions {
+        order: -1;
+        flex-wrap: wrap;
+    }
+
+    .ag-toolbar__search {
+        flex: 1 0 100%;
+    }
+
+    .ag-toolbar :deep(.q-btn) {
+        min-height: 40px;
+        min-width: 40px;
+    }
+}
+</style>

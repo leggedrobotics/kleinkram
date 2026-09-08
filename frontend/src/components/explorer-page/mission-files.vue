@@ -12,7 +12,12 @@
 
         <div
             v-if="selectedFiles.length === 0"
-            class="q-my-lg flex justify-between items-center"
+            class="q-my-lg flex files-header"
+            :class="
+                isMobile
+                    ? 'column items-stretch'
+                    : 'justify-between items-center'
+            "
         >
             <Suspense>
                 <ExplorerPageTableHeader
@@ -21,24 +26,27 @@
                 />
 
                 <template #fallback>
-                    <div style="width: 550px; height: 67px">
+                    <div class="files-header__skeleton">
                         <q-skeleton
                             class="q-mr-md q-mb-sm q-mt-sm"
-                            style="width: 300px; height: 20px"
+                            style="width: 300px; max-width: 100%; height: 20px"
                         />
                         <q-skeleton
                             class="q-mr-md"
-                            style="width: 200px; height: 18px"
+                            style="width: 200px; max-width: 100%; height: 18px"
                         />
                     </div>
                 </template>
             </Suspense>
             <div
-                class="q-pa-md bg-grey-1 rounded-borders border-grey-3"
-                style="border: 1px solid #e0e0e0; flex-grow: 1"
+                class="q-pa-md bg-grey-1 rounded-borders border-grey-3 files-header__search"
+                style="border: 1px solid #e0e0e0"
             >
-                <div class="row items-start no-wrap q-gutter-x-sm">
-                    <div class="col">
+                <div
+                    class="search-row"
+                    :class="{ 'search-row--stacked': isMobile }"
+                >
+                    <div class="search-row__input">
                         <SmartSearchInput
                             :model-value="filterText"
                             :provider="provider"
@@ -51,22 +59,25 @@
                             @toggle-advanced="toggleAdvanced"
                         />
                     </div>
-                    <div class="col-auto">
+                    <div class="search-row__actions">
                         <q-btn
                             flat
-                            class="bg-button-secondary text-on-color"
+                            class="bg-button-secondary text-on-color search-row__search"
                             icon="sym_o_search"
-                            label="Search"
+                            :label="$q.screen.xs ? undefined : 'Search'"
+                            aria-label="Search files"
                             @click="refresh"
-                        />
-                    </div>
-                    <div class="col-auto">
+                        >
+                            <q-tooltip v-if="$q.screen.xs">Search</q-tooltip>
+                        </q-btn>
                         <create-file-dialog-opener
                             :mission="missionData as MissionWithFilesDto"
+                            class="search-row__upload"
                         >
                             <app-create-button
                                 label="Upload File"
                                 icon="sym_o_upload"
+                                class="full-width"
                             />
                         </create-file-dialog-opener>
                     </div>
@@ -86,7 +97,12 @@
                 </q-slide-transition>
             </div>
         </div>
-        <div v-else class="q-py-lg" style="background: #0f62fe">
+        <div
+            v-else
+            class="selection-bar"
+            :class="$q.screen.xs ? 'q-py-sm' : 'q-py-lg'"
+            style="background: #0f62fe"
+        >
             <ButtonGroupOverlay>
                 <template #start>
                     <div style="margin: 0; font-size: 14pt; color: white">
@@ -97,6 +113,7 @@
                 </template>
                 <template v-if="missionData" #end>
                     <klein-download-files
+                        v-if="$q.screen.gt.xs"
                         :files="selectedFiles"
                         style="max-width: 300px"
                     />
@@ -212,6 +229,12 @@ const $q = useQuasar();
 
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
+
+/**
+ * Below 1024px the search panel is stacked under the section title and the
+ * search/upload buttons move onto their own row.
+ */
+const isMobile = computed(() => $q.screen.lt.md);
 
 const {
     data: missionData,
@@ -550,6 +573,75 @@ const openUploadDialogWithFiles = (files: File[]) => {
     position: relative;
     height: 100%;
     min-height: 400px;
+}
+
+.files-header__search {
+    flex-grow: 1;
+}
+
+.files-header__skeleton {
+    width: 550px;
+    max-width: 100%;
+    height: 67px;
+}
+
+.search-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.search-row__input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.search-row__actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px;
+}
+
+/* Mobile: search input on its own row, the buttons on a second one */
+.search-row--stacked {
+    flex-direction: column;
+}
+
+.search-row--stacked .search-row__actions {
+    width: 100%;
+}
+
+.search-row--stacked .search-row__upload {
+    flex: 1 1 auto;
+}
+
+.search-row--stacked .q-btn {
+    min-height: 40px;
+}
+
+@media (max-width: 1023px) {
+    .files-header__search {
+        width: 100%;
+        margin-top: 12px;
+    }
+
+    .files-header__skeleton {
+        width: 100%;
+        height: auto;
+    }
+}
+
+@media (max-width: 599px) {
+    /* The shared overlay uses generous side gutters; tighten them on phones
+       so the wrapped bulk-action buttons keep their room. */
+    .selection-bar :deep(.q-ml-lg) {
+        margin-left: 8px;
+    }
+
+    .selection-bar :deep(.q-pr-lg) {
+        padding-right: 8px;
+    }
 }
 
 .drop-overlay {

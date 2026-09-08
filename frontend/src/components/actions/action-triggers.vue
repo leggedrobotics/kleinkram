@@ -1,12 +1,21 @@
 <template>
     <div class="column q-gutter-y-md">
-        <div class="flex justify-between items-center">
+        <div
+            :class="
+                $q.screen.xs
+                    ? 'column q-gutter-y-sm'
+                    : 'flex justify-between items-center'
+            "
+        >
             <AppSearchBar
                 v-model="searchTerm"
                 placeholder="Search Action Triggers..."
-                style="min-width: 300px"
+                :style="$q.screen.xs ? undefined : 'min-width: 300px'"
             />
-            <div class="row q-gutter-x-sm">
+            <div
+                class="row q-gutter-x-sm"
+                :class="$q.screen.xs ? 'justify-end' : ''"
+            >
                 <AppRefreshButton @click="loadTriggers" />
                 <AppCreateButton
                     label="New Trigger"
@@ -23,6 +32,8 @@
             v-else-if="filteredTriggers.length > 0"
             :rows="filteredTriggers"
             :columns="columns"
+            :visible-columns="visibleColumns"
+            :grid="$q.screen.xs"
             row-key="uuid"
             flat
             bordered
@@ -30,6 +41,96 @@
             class="bg-white"
             :pagination="{ rowsPerPage: 20 }"
         >
+            <!-- Phones get a tappable card per trigger instead of a table -->
+            <template #item="itemProps">
+                <div class="col-12 q-pa-xs">
+                    <q-card flat bordered>
+                        <q-card-section class="row items-start no-wrap q-pb-xs">
+                            <q-icon
+                                :name="getTypeIcon(itemProps.row.type)"
+                                size="sm"
+                                class="q-mr-md q-mt-xs text-grey-7"
+                            />
+                            <div class="col" style="min-width: 0">
+                                <div class="text-weight-bold ellipsis">
+                                    {{ itemProps.row.name }}
+                                </div>
+                                <div class="text-caption text-grey-7">
+                                    {{ itemProps.row.description }}
+                                </div>
+                                <div
+                                    class="row items-center q-gutter-x-sm q-mt-xs"
+                                >
+                                    <q-badge
+                                        color="grey-3"
+                                        text-color="grey-9"
+                                        :label="itemProps.row.type"
+                                    />
+                                    <span
+                                        class="text-caption text-grey-7 ellipsis"
+                                    >
+                                        {{
+                                            itemProps.row.templateName ||
+                                            itemProps.row.templateUuid
+                                        }}
+                                    </span>
+                                </div>
+                            </div>
+                        </q-card-section>
+
+                        <q-card-actions align="right">
+                            <q-btn
+                                flat
+                                round
+                                icon="sym_o_edit"
+                                color="grey-7"
+                                aria-label="Edit trigger"
+                                :disable="
+                                    itemProps.row.creatorUuid !==
+                                    currentUser?.uuid
+                                "
+                                @click="() => editTrigger(itemProps.row)"
+                            >
+                                <q-tooltip
+                                    v-if="
+                                        itemProps.row.creatorUuid ===
+                                        currentUser?.uuid
+                                    "
+                                    >Edit</q-tooltip
+                                >
+                                <q-tooltip v-else
+                                    >Only the creator can edit this
+                                    trigger</q-tooltip
+                                >
+                            </q-btn>
+                            <q-btn
+                                flat
+                                round
+                                icon="sym_o_delete"
+                                color="negative"
+                                aria-label="Delete trigger"
+                                :disable="
+                                    itemProps.row.creatorUuid !==
+                                    currentUser?.uuid
+                                "
+                                @click="() => confirmDelete(itemProps.row)"
+                            >
+                                <q-tooltip
+                                    v-if="
+                                        itemProps.row.creatorUuid ===
+                                        currentUser?.uuid
+                                    "
+                                    >Delete</q-tooltip
+                                >
+                                <q-tooltip v-else
+                                    >Only the creator can delete this
+                                    trigger</q-tooltip
+                                >
+                            </q-btn>
+                        </q-card-actions>
+                    </q-card>
+                </div>
+            </template>
             <template #body="props">
                 <q-tr :props="props">
                     <q-td key="name" :props="props">
@@ -49,7 +150,7 @@
                             </div>
                         </div>
                     </q-td>
-                    <q-td key="type" :props="props">
+                    <q-td v-if="!$q.screen.lt.md" key="type" :props="props">
                         <q-badge
                             color="grey-3"
                             text-color="grey-9"
@@ -61,7 +162,7 @@
                             props.row.templateName || props.row.templateUuid
                         }}</span>
                     </q-td>
-                    <q-td key="creator" :props="props">
+                    <q-td v-if="!$q.screen.lt.md" key="creator" :props="props">
                         <span class="text-grey-8">{{
                             props.row.creatorName || props.row.creatorUuid
                         }}</span>
@@ -186,6 +287,16 @@ const columns: QTableColumn[] = [
     { name: 'creator', label: 'Creator', field: 'creatorName', align: 'left' },
     { name: 'actions', label: '', field: 'actions', align: 'right' },
 ];
+
+/**
+ * Type and creator are dropped below `md`; the type is shown as a badge in
+ * the phone card layout instead.
+ */
+const visibleColumns = computed(() =>
+    $q.screen.lt.md
+        ? ['name', 'template', 'actions']
+        : columns.map((column) => column.name),
+);
 
 // Computed
 const filteredTriggers = computed(() => {

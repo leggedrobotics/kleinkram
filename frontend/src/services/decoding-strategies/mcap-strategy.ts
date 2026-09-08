@@ -10,11 +10,12 @@ import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
 
 /** Identity of a message record, used to drop duplicates from overlapping chunks */
 const messageIdentity = (message: {
+    channelId: number;
     logTime: bigint;
     publishTime: bigint;
     sequence: number;
 }): string =>
-    `${String(message.logTime)}:${String(message.publishTime)}:${String(message.sequence)}`;
+    `${String(message.channelId)}:${String(message.logTime)}:${String(message.publishTime)}:${String(message.sequence)}`;
 
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;

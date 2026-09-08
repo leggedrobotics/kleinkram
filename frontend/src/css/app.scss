@@ -60,6 +60,24 @@ q-page {
         min-width: 0 !important;
         width: 100%;
     }
+
+    // Pagination controls wrap instead of overflowing
+    .q-table__bottom {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    // Long chip values (UUIDs, tokens, group names) wrap instead of
+    // forcing horizontal scroll
+    .q-chip {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .q-chip__content {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
 }
 
 // A horizontally scrollable row (e.g. tabs, chips) that must not wrap

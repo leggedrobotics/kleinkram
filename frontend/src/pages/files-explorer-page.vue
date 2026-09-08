@@ -1,7 +1,12 @@
 <template>
     <div>
         <title-section :title="mission?.name">
-            <template v-if="mission?.tags" #titleAppend>
+            <!--
+                On phones the chip does not fit next to the (already
+                ellipsized) mission name, so it is rendered underneath the
+                title instead of beside it.
+            -->
+            <template v-if="mission?.tags" #[metadataChipSlot]>
                 <div class="q-shrink">
                     <q-btn
                         unelevated
@@ -196,7 +201,7 @@ import MissionActions from 'components/explorer-page/mission-actions.vue';
 import MissionFiles from 'components/explorer-page/mission-files.vue';
 import MissionMetadataDrawer from 'components/explorer-page/mission-metadata-drawer.vue';
 import TitleSection from 'components/title-section.vue';
-import { copyToClipboard, Notify } from 'quasar';
+import { copyToClipboard, Notify, useQuasar } from 'quasar';
 import {
     registerNoPermissionErrorHandler,
     useMission,
@@ -207,9 +212,18 @@ import { useRoute, useRouter } from 'vue-router';
 
 const $router = useRouter();
 const $route = useRoute();
+const $q = useQuasar();
 
 const missionUuid = useMissionUUID();
 const isMetadataDrawerOpen = ref(false);
+
+/**
+ * The metadata chip sits next to the title on wider screens and moves below
+ * it on phones, where the title row has no room left.
+ */
+const metadataChipSlot = computed<'subtitle' | 'titleAppend'>(() =>
+    $q.screen.xs ? 'subtitle' : 'titleAppend',
+);
 
 const openMetadataDrawer = () => {
     isMetadataDrawerOpen.value = true;

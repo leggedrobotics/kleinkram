@@ -32,10 +32,12 @@
                 </q-tabs>
             </template>
         </title-section>
-        <h4>{{ tab }}</h4>
+        <h4 :class="$q.screen.xs ? 'text-h5 q-mt-md q-mb-sm' : ''">
+            {{ tab }}
+        </h4>
         <q-tab-panels
             v-model="tab"
-            class="q-mt-lg"
+            :class="$q.screen.xs ? 'q-mt-md' : 'q-mt-lg'"
             style="background: transparent"
         >
             <q-tab-panel name="Details">
@@ -70,10 +72,12 @@ import AdminSettings from 'components/user-profile/admin-settings.vue';
 import UserProfileApiKeys from 'components/user-profile/user-profile-api-keys.vue';
 import UserProfileBanner from 'components/user-profile/user-profile-banner.vue';
 import UserProfileDetails from 'components/user-profile/user-profile-details.vue';
+import { useQuasar } from 'quasar';
 import { useHandler, useUser } from 'src/hooks/query-hooks';
 import { ref } from 'vue';
 import 'vue-json-pretty/lib/styles.css';
 
+const $q = useQuasar();
 const { data: user } = useUser();
 const tab = ref('Details');
 

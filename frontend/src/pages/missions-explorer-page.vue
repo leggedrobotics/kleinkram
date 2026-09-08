@@ -16,20 +16,28 @@
                         <q-btn
                             class="button-border"
                             flat
-                            style="height: 100%"
+                            style="height: 100%; min-height: 40px"
                             color="primary"
                             icon="sym_o_sell"
-                            label="Enforce Metadata"
+                            :label="
+                                $q.screen.xs ? undefined : 'Enforce Metadata'
+                            "
+                            aria-label="Enforce Metadata"
                             :disable="!projectUuid"
-                        />
+                        >
+                            <q-tooltip v-if="$q.screen.xs">
+                                Enforce Metadata
+                            </q-tooltip>
+                        </q-btn>
                     </ConfigureTagsDialogOpener>
 
                     <q-btn
                         icon="sym_o_more_vert"
                         class="button-border"
                         flat
-                        style="height: 100%"
+                        style="height: 100%; min-height: 40px; min-width: 40px"
                         color="primary"
+                        aria-label="More Actions"
                     >
                         <q-tooltip> More Actions</q-tooltip>
 
@@ -115,35 +123,49 @@
         <div>
             <div
                 v-if="selectedMissions.length === 0"
-                class="q-my-lg flex justify-between items-center"
+                class="missions-toolbar"
+                :class="$q.screen.xs ? 'q-my-md' : 'q-my-lg'"
             >
-                <h2 class="text-h4 q-mb-xs">
-                    All Missions of {{ project?.name }}
+                <h2 class="text-h4 q-mb-xs missions-toolbar__title">
+                    {{ missionsHeading }}
                 </h2>
 
-                <button-group>
+                <div class="missions-toolbar__search">
                     <app-search-bar
                         v-model="search"
                         placeholder="Search by Mission Name"
                     />
+                </div>
 
+                <div class="missions-toolbar__actions">
                     <app-refresh-button @click="refresh" />
                     <UploadMissionFolder :project-uuid="projectUuid">
                         <q-btn
                             flat
-                            style="height: 100%"
+                            style="height: 100%; min-height: 40px"
                             color="icon-secondary"
                             class="button-border"
                             icon="sym_o_drive_folder_upload"
-                        />
+                            aria-label="Create Mission from Folder"
+                        >
+                            <q-tooltip>Create Mission from Folder</q-tooltip>
+                        </q-btn>
                     </UploadMissionFolder>
                     <create-mission-dialog-opener :project-uuid="projectUuid">
-                        <app-create-button label="Create Mission" />
+                        <app-create-button
+                            :label="$q.screen.xs ? 'Create' : 'Create Mission'"
+                            aria-label="Create Mission"
+                        />
                     </create-mission-dialog-opener>
-                </button-group>
+                </div>
             </div>
-            <div v-else class="q-py-lg" style="background: #0f62fe">
-                <ButtonGroupOverlay>
+            <div
+                v-else
+                class="missions-selection"
+                :class="$q.screen.xs ? 'q-py-md' : 'q-py-lg'"
+                style="background: #0f62fe"
+            >
+                <ButtonGroupOverlay class="missions-selection__bar">
                     <template #start>
                         <div style="margin: 0; font-size: 14pt; color: white">
                             {{ selectedMissions.length }}
@@ -158,7 +180,7 @@
                     <template #end>
                         <KleinDownloadMissions
                             :missions="selectedMissions"
-                            style="max-width: 400px"
+                            class="missions-selection__cli"
                         />
                         <q-btn
                             flat
@@ -204,6 +226,7 @@
                             padding="6px"
                             icon="sym_o_close"
                             color="white"
+                            aria-label="Clear selection"
                             @click="deselect"
                         />
                     </template>
@@ -213,14 +236,16 @@
             <div>
                 <Suspense>
                     <template #fallback>
-                        <div style="width: 550px; height: 67px">
+                        <div
+                            style="width: 100%; max-width: 550px; height: 67px"
+                        >
                             <q-skeleton
                                 class="q-mr-md q-mb-sm q-mt-sm"
-                                style="width: 300px; height: 20px"
+                                style="max-width: 300px; height: 20px"
                             />
                             <q-skeleton
                                 class="q-mr-md"
-                                style="width: 200px; height: 18px"
+                                style="max-width: 200px; height: 18px"
                             />
                         </div>
                     </template>
@@ -272,6 +297,17 @@ const { data: project, isLoadingError, error } = useProjectQuery(projectUuid);
 const createAction = ref(false);
 
 registerNoPermissionErrorHandler(isLoadingError, projectUuid, 'project', error);
+
+/**
+ * Repeating a (potentially long) project name in the section heading wastes
+ * the little horizontal space a phone has, the title section right above
+ * already shows it.
+ */
+const missionsHeading = computed(() =>
+    $q.screen.lt.md
+        ? 'Missions'
+        : `All Missions of ${project.value?.name ?? ''}`,
+);
 
 const onClose = (): void => {
     createAction.value = false;
@@ -330,3 +366,92 @@ const copyProjectUuidToClipboard = async (): Promise<void> => {
     await copyToClipboard(projectUuid.value ?? '');
 };
 </script>
+
+<style scoped>
+/*
+ * Desktop keeps the original single row: heading on the left, search and the
+ * action buttons on the right.
+ */
+.missions-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.missions-toolbar__title {
+    margin-right: auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.missions-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.missions-selection__cli {
+    max-width: 400px;
+}
+
+/*
+ * Below 1024px the heading, the search field and the buttons each get their
+ * own row and the buttons keep comfortable touch targets.
+ */
+@media (max-width: 1023px) {
+    .missions-toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .missions-toolbar__title {
+        flex: 1 0 100%;
+        margin-right: 0;
+
+        /* `text-h4` is far too large on a phone; fall back to a h6 scale */
+        font-size: 1.25rem;
+        font-weight: 500;
+        line-height: 1.75rem;
+        letter-spacing: 0.0125em;
+    }
+
+    .missions-toolbar__search {
+        flex: 1 0 100%;
+        min-width: 0;
+    }
+
+    .missions-toolbar__actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .missions-toolbar__actions :deep(.q-btn) {
+        min-height: 40px;
+        min-width: 40px;
+    }
+
+    .missions-toolbar__search :deep(.q-field .q-field__control),
+    .missions-toolbar__search :deep(.q-field .q-field__marginal) {
+        height: 40px;
+        min-height: 40px;
+    }
+
+    /*
+     * The selection bar stacks: the counter above the wrapped actions. The
+     * horizontal inset moves from margin/padding-left to symmetric padding so
+     * a full-width row cannot push the page into horizontal scrolling.
+     */
+    .missions-selection__bar :deep(.q-ml-lg),
+    .missions-selection__bar :deep(.q-pr-lg) {
+        flex: 1 0 100%;
+        margin-left: 0;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .missions-selection__cli {
+        flex: 1 0 100%;
+        max-width: 100%;
+    }
+}
+</style>

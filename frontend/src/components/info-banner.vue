@@ -3,7 +3,7 @@
         class="q-pa-md rounded-borders q-mb-lg flex justify-between items-center relative-position info-banner"
         :class="[`bg-${color}`, `text-${textColor}`]"
     >
-        <div class="flex items-center">
+        <div class="flex items-center info-banner__text">
             <q-icon name="sym_o_info" class="q-mr-sm" size="sm" />
             <span>{{ text }}</span>
         </div>
@@ -41,6 +41,27 @@ const emitClick = (): void => {
 </script>
 
 <style scoped>
+/*
+ * On phones the text and the button do not fit next to each other, so the
+ * banner turns into a stack with the action below the message.
+ */
+@media (max-width: 599px) {
+    .info-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .info-banner__text {
+        align-items: flex-start;
+        flex-wrap: nowrap;
+    }
+
+    .info-banner__text .q-icon {
+        margin-top: 2px;
+    }
+}
+
 .info-banner::before {
     content: '';
     position: absolute;

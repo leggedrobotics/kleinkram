@@ -1,7 +1,9 @@
 <template>
     <div class="file-topic-table">
-        <div class="flex justify-between items-center q-mb-md">
-            <h2 class="text-h4 q-my-none flex items-center">
+        <div
+            class="flex justify-between items-center q-mb-md file-topic-table__head"
+        >
+            <h2 class="text-h5 text-md-h4 q-my-none flex items-center">
                 Messages
                 <q-badge
                     color="orange-7"
@@ -19,7 +21,11 @@
                     </q-tooltip>
                 </q-badge>
             </h2>
-            <app-search-bar v-model="search" placeholder="Search topics..." />
+            <app-search-bar
+                v-model="search"
+                placeholder="Search topics..."
+                class="file-topic-table__search"
+            />
         </div>
 
         <q-table
@@ -48,6 +54,11 @@
                                 round
                                 flat
                                 dense
+                                :aria-label="
+                                    props.expand
+                                        ? 'Collapse topic preview'
+                                        : 'Expand topic preview'
+                                "
                                 :icon="
                                     props.expand
                                         ? 'sym_o_expand_less'
@@ -55,6 +66,16 @@
                                 "
                                 @click.stop="() => toggleExpand(props)"
                             />
+                        </template>
+
+                        <template v-else-if="col.name === 'name'">
+                            <div class="topic-name">{{ col.value }}</div>
+                            <div
+                                v-if="$q.screen.xs"
+                                class="text-caption text-grey-7 topic-name"
+                            >
+                                {{ props.row.type }}
+                            </div>
                         </template>
 
                         <template v-else>
@@ -65,7 +86,7 @@
 
                 <q-tr v-if="props.expand" :props="props">
                     <q-td colspan="100%" class="q-pa-none">
-                        <div class="q-pa-md">
+                        <div class="q-pa-md topic-expanded">
                             <MessageViewer
                                 :topic-name="props.row.name"
                                 :message-type="props.row.type"
@@ -102,6 +123,7 @@
 <script setup lang="ts">
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import type { QTableColumn } from 'quasar';
+import { useQuasar } from 'quasar';
 import { computed, ref } from 'vue';
 import { detectPreviewType, PreviewType } from '../../services/message-factory';
 import MessageViewer from './message-viewer.vue';
@@ -125,6 +147,7 @@ const properties = defineProps<{
 }>();
 
 const emit = defineEmits(['load-preview', 'pause-preview', 'resume-preview']);
+const $q = useQuasar();
 const search = ref('');
 
 const filteredTopics = computed(() => {
@@ -137,7 +160,7 @@ const filteredTopics = computed(() => {
     );
 });
 
-const columns: QTableColumn[] = [
+const allColumns: QTableColumn[] = [
     {
         name: 'expand',
         label: '',
@@ -174,6 +197,20 @@ const columns: QTableColumn[] = [
         align: 'right',
     },
 ];
+
+/**
+ * Phones only have room for the topic and the message count; the datatype
+ * is shown as a caption below the topic name instead of in its own column.
+ */
+const HIDDEN_COLUMNS_ON_PHONES = new Set(['type', 'freq']);
+
+const columns = computed<QTableColumn[]>(() =>
+    $q.screen.xs
+        ? allColumns.filter(
+              (column) => !HIDDEN_COLUMNS_ON_PHONES.has(column.name),
+          )
+        : allColumns,
+);
 
 interface LoadPlan {
     /** Number of messages to keep in memory */
@@ -405,3 +442,59 @@ const loadMore = (topicName: string): void => {
     loadData(topicName, 20, true);
 };
 </script>
+
+<style scoped>
+.file-topic-table {
+    max-width: 100%;
+}
+
+/* Long topic names wrap instead of widening the table */
+.topic-name {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 599px) {
+    /* Title and search bar stack, the search bar takes the full width */
+    .file-topic-table__head {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .file-topic-table__search {
+        width: 100%;
+    }
+
+    /* The expanded preview gets the full width of the table */
+    .topic-expanded {
+        min-width: 0;
+        padding: 8px 4px;
+    }
+
+    /* Fixed layout so the topic column shrinks and the count stays visible */
+    :deep(.q-table) {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    :deep(.q-table th:first-child),
+    :deep(.q-table td:first-child) {
+        width: 44px;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    :deep(.q-table th:last-child),
+    :deep(.q-table td:last-child) {
+        width: 84px;
+    }
+
+    :deep(.q-table td[colspan]) {
+        width: auto;
+    }
+
+    .topic-name {
+        overflow-wrap: anywhere;
+    }
+}
+</style>

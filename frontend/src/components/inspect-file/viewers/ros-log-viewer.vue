@@ -34,7 +34,10 @@
                     style="font-family: monospace; font-size: 0.8em"
                 >
                     <!-- Time -->
-                    <span class="text-grey-7 q-mr-sm" style="min-width: 140px">
+                    <span
+                        class="text-grey-7 q-mr-sm"
+                        :style="{ minWidth: $q.screen.xs ? '0' : '140px' }"
+                    >
                         [{{ formatTime(msg.logTime) }}]
                     </span>
 
@@ -82,9 +85,11 @@
 </template>
 
 <script setup lang="ts">
-import { Notify, copyToClipboard as quasarCopy } from 'quasar';
+import { Notify, copyToClipboard as quasarCopy, useQuasar } from 'quasar';
 import { onMounted } from 'vue';
 import SmoothLoading from '../../common/smooth-loading.vue';
+
+const $q = useQuasar();
 
 const properties = defineProps<{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
