@@ -27,7 +27,7 @@
                 v-else-if="messages.length === 0"
                 class="absolute-center column items-center text-grey-5"
             >
-                <q-spinner-dots size="2em" color="white" />
+                <q-spinner-dots size="2em" color="primary" />
                 <div class="q-mt-sm text-caption">Loading frames…</div>
             </div>
 
@@ -35,7 +35,7 @@
                 v-if="isLoading && messages.length > 0"
                 class="loading-indicator text-caption"
             >
-                <q-spinner size="12px" color="white" class="q-mr-xs" />
+                <q-spinner size="12px" color="primary" class="q-mr-xs" />
                 Loading frames · {{ messages.length }} / {{ totalCount }}
             </div>
         </div>
@@ -55,22 +55,23 @@
                     :viewBox="`0 0 1000 12`"
                     preserveAspectRatio="none"
                 >
-                    <!-- Loaded frames -->
-                    <line
-                        v-for="(x, index) in loadedTicks"
+                    <rect x="0" y="4" width="1000" height="4" class="track" />
+                    <!-- Time ranges covered by loaded frames -->
+                    <rect
+                        v-for="(segment, index) in coverage"
                         :key="index"
-                        :x1="x"
-                        :x2="x"
-                        y1="2"
-                        y2="10"
-                        class="tick"
+                        :x="segment.x"
+                        y="4"
+                        :width="segment.width"
+                        height="4"
+                        class="buffered"
                     />
                     <!-- Played portion -->
                     <rect
                         x="0"
-                        y="5"
+                        y="4"
                         :width="playedFraction * 1000"
-                        height="2"
+                        height="4"
                         class="played"
                     />
                 </svg>
@@ -85,7 +86,7 @@
                     flat
                     dense
                     round
-                    color="white"
+                    color="primary"
                     :icon="isPlaying ? 'sym_o_pause' : 'sym_o_play_arrow'"
                     @click="togglePlay"
                 >
@@ -98,7 +99,7 @@
                     dense
                     round
                     size="sm"
-                    color="white"
+                    color="grey-8"
                     icon="sym_o_skip_previous"
                     @click="previousFrame"
                 >
@@ -109,7 +110,7 @@
                     dense
                     round
                     size="sm"
-                    color="white"
+                    color="grey-8"
                     icon="sym_o_skip_next"
                     @click="nextFrame"
                 >
@@ -118,14 +119,14 @@
 
                 <div class="time-display text-caption q-ml-sm">
                     {{ formatDuration(playhead) }}
-                    <span class="text-grey-5">
+                    <span class="text-grey-6">
                         / {{ formatDuration(duration) }}
                     </span>
                 </div>
 
                 <q-space />
 
-                <div class="text-caption text-grey-5 q-mr-sm gt-xs">
+                <div class="text-caption text-grey-6 q-mr-sm gt-xs">
                     Frame {{ currentIndex + 1 }} / {{ messages.length }}
                     <template v-if="sampleStride > 1">
                         · every {{ sampleStride }}th
@@ -136,7 +137,7 @@
                     flat
                     dense
                     no-caps
-                    color="white"
+                    color="grey-8"
                     :label="`${formatSpeed(speed)}×`"
                     content-class="speed-menu"
                 >
@@ -257,9 +258,36 @@ const playedFraction = computed(() =>
     duration.value > 0 ? Math.min(1, playhead.value / duration.value) : 0,
 );
 
-const loadedTicks = computed(() => {
-    if (duration.value <= 0) return [];
-    return frameTimes.value.map((t) => (t / duration.value) * 1000);
+/**
+ * Time ranges (in timeline units, 0..1000) that are covered by loaded
+ * frames. Two consecutive frames are considered contiguous when their
+ * spacing is at most twice the typical spacing of the loaded sample, so
+ * gaps that still have to be filled show as holes in the buffered bar.
+ */
+const coverage = computed(() => {
+    const times = frameTimes.value;
+    if (duration.value <= 0 || times.length < 2) return [];
+    const typicalGap = duration.value / (times.length - 1);
+    const maxGap = typicalGap * 2;
+    const scale = 1000 / duration.value;
+    const segments: { x: number; width: number }[] = [];
+    let segmentStart = times[0] ?? 0;
+    let previous = segmentStart;
+    for (const t of times.slice(1)) {
+        if (t - previous > maxGap) {
+            segments.push({
+                x: segmentStart * scale,
+                width: Math.max(2, (previous - segmentStart) * scale),
+            });
+            segmentStart = t;
+        }
+        previous = t;
+    }
+    segments.push({
+        x: segmentStart * scale,
+        width: Math.max(2, (previous - segmentStart) * scale),
+    });
+    return segments;
 });
 
 // --- Playback loop (real time × speed) ---
@@ -493,9 +521,8 @@ const magicBytes = computed(() => {
 
 <style scoped>
 .image-sequence-viewer {
-    background: #111;
-    color: #fff;
-    border: 1px solid #333;
+    background: #fff;
+    border: 1px solid #e0e0e0;
     outline: none;
 }
 
@@ -505,7 +532,7 @@ const magicBytes = computed(() => {
 
 .viewport {
     height: 420px;
-    background: #000;
+    background: #f5f5f5;
     cursor: pointer;
 }
 
@@ -526,7 +553,8 @@ const magicBytes = computed(() => {
     position: absolute;
     top: 8px;
     left: 8px;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(255, 255, 255, 0.9);
+    color: #424242;
     padding: 2px 8px;
     border-radius: 4px;
     display: flex;
@@ -534,8 +562,8 @@ const magicBytes = computed(() => {
 }
 
 .controls {
-    padding: 6px 12px 4px;
-    background: #1c1c1c;
+    padding: 8px 12px 4px;
+    border-top: 1px solid #e0e0e0;
 }
 
 .timeline {
@@ -552,10 +580,12 @@ const magicBytes = computed(() => {
     display: block;
 }
 
-.tick {
-    stroke: rgba(255, 255, 255, 0.25);
-    stroke-width: 1;
-    vector-effect: non-scaling-stroke;
+.track {
+    fill: #e0e0e0;
+}
+
+.buffered {
+    fill: #bdbdbd;
 }
 
 .played {
@@ -564,17 +594,20 @@ const magicBytes = computed(() => {
 
 .playhead {
     position: absolute;
-    top: 1px;
-    width: 3px;
+    top: 0;
+    width: 12px;
     height: 12px;
-    margin-left: -1.5px;
-    background: #fff;
-    border-radius: 2px;
+    margin-left: -6px;
+    background: #1976d2;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
     pointer-events: none;
 }
 
 .time-display {
     font-variant-numeric: tabular-nums;
     min-width: 110px;
+    color: #424242;
 }
 </style>
