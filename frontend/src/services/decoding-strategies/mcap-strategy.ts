@@ -34,9 +34,12 @@ export class McapStrategy extends DecodingStrategy {
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         startTime?: bigint,
+        stride = 1,
     ): Promise<LogMessage[]> {
         if (!this.reader || !this.httpReader) return [];
         const msgs: LogMessage[] = [];
+        const keepEvery = Math.max(1, Math.floor(stride));
+        let seen = 0;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const options: any = { topics: [topic] };
@@ -82,6 +85,8 @@ export class McapStrategy extends DecodingStrategy {
         for await (const message of this.reader.readMessages(options)) {
             if (signal?.aborted) break;
             if (msgs.length >= limit) break;
+            // Skip (without decoding) messages that fall between samples
+            if (seen++ % keepEvery !== 0) continue;
             let data = message.data;
             const channel = this.reader.channelsById.get(message.channelId);
             if (channel) {
@@ -106,15 +111,22 @@ export class McapStrategy extends DecodingStrategy {
             const schema = this.reader.schemasById.get(schemaId);
             if (!schema) return;
             try {
+                const isRos1 = schema.encoding.includes('ros1');
+                // ROS 2 definitions use a different grammar (e.g. constants
+                // with negative values), so the parser must know the dialect.
                 const defs = parseMessageDefer(
                     new TextDecoder().decode(schema.data),
+                    { ros2: !isRos1 },
                 );
-                if (schema.encoding.includes('ros1'))
-                    decoder = new Ros1Reader(defs);
+                if (isRos1) decoder = new Ros1Reader(defs);
                 else if (['cdr', 'ros2msg'].includes(schema.encoding))
                     decoder = new CdrReader(defs);
                 if (decoder) this.decoders.set(schemaId, decoder);
-            } catch {
+            } catch (error) {
+                console.warn(
+                    `Failed to parse schema ${schema.name} (${schema.encoding})`,
+                    error,
+                );
                 return;
             }
         }

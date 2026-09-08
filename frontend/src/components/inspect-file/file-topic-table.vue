@@ -69,7 +69,8 @@
                             <MessageViewer
                                 :topic-name="props.row.name"
                                 :message-type="props.row.type"
-                                :total-count="props.row.nrMessages"
+                                :total-count="expectedCount(props.row)"
+                                :sample-stride="getSmartLoad(props.row).stride"
                                 :messages="previews[props.row.name] || []"
                                 :is-loading="
                                     loadingState[props.row.name] || false
@@ -167,49 +168,87 @@ const columns: QTableColumn[] = [
     },
 ];
 
-const getSmartLimit = (row: TopicRow): number => {
+interface LoadPlan {
+    /** Number of messages to keep in memory */
+    limit: number;
+    /** Keep only every n-th message (1 = every message) */
+    stride: number;
+    /** Whether the plan covers the whole topic (possibly sampled) */
+    full: boolean;
+}
+
+/**
+ * Upper bound of messages kept for plot viewers. High-rate topics (e.g. a
+ * 400 Hz odometry with >100k messages) are sampled down to this many
+ * evenly spaced messages instead of being decoded in full, which would
+ * exhaust browser memory.
+ */
+const MAX_PLOT_MESSAGES = 5000;
+
+const PLOT_TYPES = new Set<PreviewType>([
+    PreviewType.TWIST,
+    PreviewType.TEMPERATURE,
+    PreviewType.IMU,
+    PreviewType.STATISTICS,
+    PreviewType.ODOMETRY,
+    PreviewType.POSE_STAMPED,
+    PreviewType.PATH,
+    PreviewType.TRANSFORM_STAMPED,
+    PreviewType.NAV_SAT_FIX,
+    PreviewType.POINT_STAMPED,
+]);
+
+const getSmartLoad = (row: TopicRow): LoadPlan => {
     const type = detectPreviewType(row.type);
 
-    // 1. Full Load (Visual Plots / Images)
     if (type === PreviewType.CAMERA_INFO) {
-        return 1;
+        return { limit: 1, stride: 1, full: false };
     }
-    // 1. Full Load (Visual Plots / Images)
-    if (
-        type === PreviewType.TWIST ||
-        type === PreviewType.TEMPERATURE ||
-        type === PreviewType.IMU ||
-        type === PreviewType.STATISTICS ||
-        type === PreviewType.ODOMETRY ||
-        type === PreviewType.POSE_STAMPED ||
-        type === PreviewType.PATH ||
-        type === PreviewType.TRANSFORM_STAMPED
-    ) {
-        return row.nrMessages;
+
+    // 1. Full (sampled) Load for plot viewers
+    if (PLOT_TYPES.has(type)) {
+        const stride = Math.max(
+            1,
+            Math.ceil(row.nrMessages / MAX_PLOT_MESSAGES),
+        );
+        return {
+            limit: Math.ceil(row.nrMessages / stride),
+            stride,
+            full: true,
+        };
     }
 
     // 2. Medium Load (Logs)
     if (type === PreviewType.ROS_LOG || type === PreviewType.STRING) {
-        return 100;
+        return { limit: 100, stride: 1, full: false };
     }
 
     // 2.5 Sequence Viewer Streaming (Video)
     if (type === PreviewType.IMAGE) {
-        return 1;
+        return { limit: 1, stride: 1, full: false };
     }
 
     // 3. Light Load (TimeReference)
     if (type === PreviewType.TIME_REFERENCE) {
-        return 20;
+        return { limit: 20, stride: 1, full: false };
     }
 
     // 3. Strict Load (Heavy Binary)
     if (type === PreviewType.POINT_CLOUD || type === PreviewType.GRID_MAP) {
-        return 1;
+        return { limit: 1, stride: 1, full: false };
     }
 
     // 4. Default
-    return 5;
+    return { limit: 5, stride: 1, full: false };
+};
+
+/**
+ * Number of messages the viewer should expect once loading is done. For
+ * sampled plot topics this is the sampled count, otherwise the topic size.
+ */
+const expectedCount = (row: TopicRow): number => {
+    const plan = getSmartLoad(row);
+    return plan.full ? plan.limit : row.nrMessages;
 };
 
 const toggleExpand = (props: { row: TopicRow; expand: boolean }): void => {
@@ -234,15 +273,18 @@ const toggleExpand = (props: { row: TopicRow; expand: boolean }): void => {
 };
 
 // Directly load specific count (Base function)
-const loadData = (topic: string, count: number, append = false): void => {
-    emit('load-preview', topic, { limit: count, append });
+const loadData = (
+    topic: string,
+    count: number,
+    append = false,
+    stride = 1,
+): void => {
+    emit('load-preview', topic, { limit: count, append, stride });
 };
 
-// In file-topic-table.vue > script > loadSmart
-
 const loadSmart = (row: TopicRow): void => {
-    const limit = getSmartLimit(row);
-    loadData(row.name, limit);
+    const plan = getSmartLoad(row);
+    loadData(row.name, plan.limit, false, plan.stride);
 };
 
 // Incremental Load (Load More button)

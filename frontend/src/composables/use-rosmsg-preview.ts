@@ -20,7 +20,7 @@ export function useRosmsgPreview(): {
     ) => Promise<void>;
     fetchTopicMessages: (
         topicName: string,
-        options?: { limit?: number; append?: boolean },
+        options?: { limit?: number; append?: boolean; stride?: number },
     ) => Promise<void>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     formatPayload: (data: any) => string;
@@ -107,7 +107,7 @@ export function useRosmsgPreview(): {
      */
     async function fetchTopicMessages(
         topicName: string,
-        options?: { limit?: number; append?: boolean },
+        options?: { limit?: number; append?: boolean; stride?: number },
     ): Promise<void> {
         if (!strategy.value) return;
 
@@ -122,6 +122,7 @@ export function useRosmsgPreview(): {
 
         const limit = options?.limit ?? 10;
         const append = options?.append ?? false;
+        const stride = options?.stride ?? 1;
 
         let startTime: bigint | undefined;
 
@@ -153,6 +154,7 @@ export function useRosmsgPreview(): {
                 },
                 controller.signal,
                 startTime,
+                stride,
             );
         } catch (error: unknown) {
             if (controller.signal.aborted) return; // Ignore abort errors

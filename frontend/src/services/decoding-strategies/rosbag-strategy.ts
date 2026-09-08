@@ -33,9 +33,12 @@ export class RosbagStrategy extends DecodingStrategy {
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         startTime?: bigint,
+        stride = 1,
     ): Promise<LogMessage[]> {
         if (!this.bag || !this.httpReader) return [];
         const msgs: LogMessage[] = [];
+        const keepEvery = Math.max(1, Math.floor(stride));
+        let seen = 0;
 
         // eslint-disable-next-line unicorn/consistent-function-scoping
         const toNano = (t: { sec: number; nsec: number }) =>
@@ -110,6 +113,7 @@ export class RosbagStrategy extends DecodingStrategy {
         for await (const result of iterator) {
             if (signal?.aborted) break;
             if (msgs.length >= limit) break;
+            if (seen++ % keepEvery !== 0) continue;
             const messageObject = {
                 logTime: toNano(result.timestamp),
                 data: result.message,
