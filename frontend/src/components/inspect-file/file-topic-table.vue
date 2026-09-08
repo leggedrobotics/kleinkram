@@ -471,26 +471,31 @@ const loadMore = (topicName: string): void => {
         padding: 8px 4px;
     }
 
-    /* Fixed layout so the topic column shrinks and the count stays visible */
+    /* The topic column takes the remaining width; breaking anywhere keeps
+       its minimum width tiny so the table can shrink to the phone width */
     :deep(.q-table) {
-        table-layout: fixed;
         width: 100%;
     }
 
     :deep(.q-table th:first-child),
-    :deep(.q-table td:first-child) {
+    :deep(.q-table td:first-child:not([colspan])) {
         width: 44px;
         padding-left: 4px;
         padding-right: 4px;
     }
 
-    :deep(.q-table th:last-child),
-    :deep(.q-table td:last-child) {
-        width: 84px;
+    :deep(.q-table th:nth-child(2)),
+    :deep(.q-table td:nth-child(2)) {
+        width: 100%;
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 
-    :deep(.q-table td[colspan]) {
-        width: auto;
+    :deep(.q-table th:last-child),
+    :deep(.q-table td:last-child:not([colspan])) {
+        white-space: nowrap;
+        text-align: right;
     }
 
     .topic-name {
