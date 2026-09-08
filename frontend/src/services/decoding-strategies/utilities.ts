@@ -14,6 +14,12 @@ export interface ReadOptions {
      * streams in. Messages are then emitted out of time order.
      */
     progressive?: boolean;
+    /**
+     * Messages for which this returns true are skipped before decoding.
+     * Used when refining an already loaded sampled topic, so that frames
+     * that are in memory already are not decoded a second time.
+     */
+    skip?: (logTime: bigint) => boolean;
 }
 
 /**

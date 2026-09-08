@@ -77,6 +77,7 @@
                                     )
                                 "
                                 :sample-stride="getSmartLoad(props.row).stride"
+                                :can-refine="canRefineImage(props.row)"
                                 :messages="previews[props.row.name] || []"
                                 :is-loading="
                                     loadingState[props.row.name] || false
@@ -191,6 +192,19 @@ interface LoadPlan {
  */
 const MAX_PLOT_MESSAGES = 5000;
 
+/**
+ * Image streams are shown as a sampled sequence covering the whole
+ * recording. The initial sample is bounded by a frame count and by a byte
+ * budget (raw images can be several MB each); "Load more frames" halves
+ * the sampling step, up to a hard frame cap.
+ */
+const INITIAL_IMAGE_FRAMES = 120;
+const MAX_IMAGE_FRAMES = 2000;
+const IMAGE_BYTE_BUDGET = 400 * 1024 * 1024;
+
+/** Refinement level per image topic: each level halves the stride. */
+const imageRefinement = ref<Record<string, number>>({});
+
 const PLOT_TYPES = new Set<PreviewType>([
     PreviewType.TWIST,
     PreviewType.TEMPERATURE,
@@ -204,11 +218,52 @@ const PLOT_TYPES = new Set<PreviewType>([
     PreviewType.POINT_STAMPED,
 ]);
 
+const imageStrideForLevel = (row: TopicRow, level: number): number => {
+    const bytesPerFrame =
+        row.size !== undefined && row.size > 0 && row.nrMessages > 0
+            ? row.size / row.nrMessages
+            : 0;
+    const framesWithinBudget =
+        bytesPerFrame > 0
+            ? Math.floor(IMAGE_BYTE_BUDGET / bytesPerFrame)
+            : MAX_IMAGE_FRAMES;
+    const targetFrames = Math.max(
+        1,
+        Math.min(
+            MAX_IMAGE_FRAMES,
+            framesWithinBudget,
+            INITIAL_IMAGE_FRAMES * 2 ** level,
+        ),
+    );
+    return Math.max(1, Math.ceil(row.nrMessages / targetFrames));
+};
+
+const getImageLoad = (row: TopicRow): LoadPlan => {
+    const stride = imageStrideForLevel(
+        row,
+        imageRefinement.value[row.name] ?? 0,
+    );
+    return { limit: Math.ceil(row.nrMessages / stride), stride, full: true };
+};
+
+/** Whether an image topic can still be refined with a smaller stride. */
+const canRefineImage = (row: TopicRow): boolean => {
+    const level = imageRefinement.value[row.name] ?? 0;
+    return (
+        imageStrideForLevel(row, level + 1) < imageStrideForLevel(row, level)
+    );
+};
+
 const getSmartLoad = (row: TopicRow): LoadPlan => {
     const type = detectPreviewType(row.type);
 
     if (type === PreviewType.CAMERA_INFO) {
         return { limit: 1, stride: 1, full: false };
+    }
+
+    // 0. Sampled sequence covering the whole recording (video)
+    if (type === PreviewType.IMAGE) {
+        return getImageLoad(row);
     }
 
     // 1. Full (sampled) Load for plot viewers
@@ -227,11 +282,6 @@ const getSmartLoad = (row: TopicRow): LoadPlan => {
     // 2. Medium Load (Logs)
     if (type === PreviewType.ROS_LOG || type === PreviewType.STRING) {
         return { limit: 100, stride: 1, full: false };
-    }
-
-    // 2.5 Sequence Viewer Streaming (Video)
-    if (type === PreviewType.IMAGE) {
-        return { limit: 1, stride: 1, full: false };
     }
 
     // 3. Light Load (TimeReference)
@@ -268,19 +318,13 @@ const expectedCount = (
 const toggleExpand = (props: { row: TopicRow; expand: boolean }): void => {
     props.expand = !props.expand;
     if (props.expand) {
-        const type = detectPreviewType(props.row.type);
         const hasData =
             properties.previews[props.row.name] &&
             (properties.previews[props.row.name]?.length ?? 0) > 0;
 
-        // Only resume fetching for video/image topics (buffering)
-        // For others, only fetch if no data exists (initial load)
-        if (type === PreviewType.IMAGE) {
-            emit('resume-preview', props.row.name, 50);
-            if (!hasData) loadSmart(props.row);
-        } else if (!hasData) {
-            loadSmart(props.row);
-        }
+        // Only fetch if no data exists (initial load). Sampled sequences
+        // (images, plots) stay in memory while collapsed.
+        if (!hasData) loadSmart(props.row);
     } else {
         emit('pause-preview', props.row.name);
     }
@@ -311,10 +355,26 @@ const loadSmart = (row: TopicRow): void => {
 
 // Incremental Load (Load More button)
 const loadMore = (topicName: string): void => {
-    // If it's an image stream, load a larger background buffer, else default back to 20
-    const t = properties.topics.find((x) => x.name === topicName);
-    const type = t ? detectPreviewType(t.type) : PreviewType.STRING;
-    const limit = type === PreviewType.IMAGE ? 50 : 20;
-    loadData(topicName, limit, true);
+    const row = properties.topics.find((x) => x.name === topicName);
+    const type = row ? detectPreviewType(row.type) : PreviewType.STRING;
+
+    // Image streams: refine the sampled sequence with a smaller stride,
+    // keeping the frames already loaded.
+    if (row && type === PreviewType.IMAGE) {
+        if (!canRefineImage(row)) return;
+        imageRefinement.value[row.name] =
+            (imageRefinement.value[row.name] ?? 0) + 1;
+        const plan = getImageLoad(row);
+        emit('load-preview', row.name, {
+            limit: plan.limit,
+            append: false,
+            stride: plan.stride,
+            progressive: true,
+            merge: true,
+        });
+        return;
+    }
+
+    loadData(topicName, 20, true);
 };
 </script>

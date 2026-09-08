@@ -45,6 +45,7 @@ export class McapStrategy extends DecodingStrategy {
                 keepEvery,
                 onMessage,
                 signal,
+                options.skip,
             );
         }
 
@@ -121,6 +122,7 @@ export class McapStrategy extends DecodingStrategy {
         keepEvery: number,
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
+        skip?: (logTime: bigint) => boolean,
     ): Promise<LogMessage[]> {
         if (!this.reader || !this.httpReader) return [];
         const reader = this.reader;
@@ -170,6 +172,7 @@ export class McapStrategy extends DecodingStrategy {
                 if (seen++ % keepEvery !== 0) continue;
                 if (emittedTimes.has(message.logTime)) continue;
                 emittedTimes.add(message.logTime);
+                if (skip?.(message.logTime)) continue;
 
                 let data = message.data;
                 const channel = reader.channelsById.get(message.channelId);

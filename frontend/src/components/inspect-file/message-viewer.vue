@@ -94,6 +94,8 @@
                 :topic-name="topicName"
                 :total-count="totalCount"
                 :is-loading="isLoading"
+                :sample-stride="sampleStride ?? 1"
+                :can-refine="canRefine ?? false"
                 @load-required="loadRequired"
                 @load-more="loadMore"
                 @pause-preview="emitPausePreview"
@@ -136,6 +138,8 @@ const properties = defineProps<{
     topicSize?: number;
     /** Only every n-th message was loaded (1 = all messages) */
     sampleStride?: number;
+    /** Whether a sampled topic can be refined with more messages */
+    canRefine?: boolean;
 }>();
 
 const emit = defineEmits(['load-more', 'load-required', 'pause-preview']);

@@ -6,6 +6,22 @@ import { McapStrategy } from '../services/decoding-strategies/mcap-strategy';
 import { RosbagStrategy } from '../services/decoding-strategies/rosbag-strategy';
 import { formatPayload } from './rosmsg-utilities.ts';
 
+export interface FetchOptions {
+    limit?: number;
+    /** Continue after the last loaded message (paging) */
+    append?: boolean;
+    /** Keep only every n-th message */
+    stride?: number;
+    /** Read chunks coarse-to-fine so the whole recording is covered early */
+    progressive?: boolean;
+    /**
+     * Keep the messages already loaded and add the new ones in time order,
+     * skipping messages that are already present. Used to refine a sampled
+     * topic with a smaller stride.
+     */
+    merge?: boolean;
+}
+
 /**
  * Inserts a message keeping the array ordered by log time. Appending is the
  * fast path; progressive (coarse-to-fine) loading delivers messages out of
@@ -14,7 +30,7 @@ import { formatPayload } from './rosmsg-utilities.ts';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function insertSorted(messages: any[], message: { logTime: bigint }): void {
     const last = messages.at(-1) as { logTime: bigint } | undefined;
-    if (last === undefined || last.logTime <= message.logTime) {
+    if (last === undefined || last.logTime < message.logTime) {
         messages.push(message);
         return;
     }
@@ -23,9 +39,12 @@ function insertSorted(messages: any[], message: { logTime: bigint }): void {
     while (low < high) {
         const mid = Math.floor((low + high) / 2);
         const midMessage = messages[mid] as { logTime: bigint };
-        if (midMessage.logTime <= message.logTime) low = mid + 1;
+        if (midMessage.logTime < message.logTime) low = mid + 1;
         else high = mid;
     }
+    // Ignore exact duplicates (same log time) when merging refinements
+    const existing = messages[low] as { logTime: bigint } | undefined;
+    if (existing?.logTime === message.logTime) return;
     messages.splice(low, 0, message);
 }
 
@@ -43,12 +62,7 @@ export function useRosmsgPreview(): {
     ) => Promise<void>;
     fetchTopicMessages: (
         topicName: string,
-        options?: {
-            limit?: number;
-            append?: boolean;
-            stride?: number;
-            progressive?: boolean;
-        },
+        options?: FetchOptions,
     ) => Promise<void>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     formatPayload: (data: any) => string;
@@ -135,12 +149,7 @@ export function useRosmsgPreview(): {
      */
     async function fetchTopicMessages(
         topicName: string,
-        options?: {
-            limit?: number;
-            append?: boolean;
-            stride?: number;
-            progressive?: boolean;
-        },
+        options?: FetchOptions,
     ): Promise<void> {
         if (!strategy.value) return;
 
@@ -157,6 +166,7 @@ export function useRosmsgPreview(): {
         const append = options?.append ?? false;
         const stride = options?.stride ?? 1;
         const progressive = options?.progressive ?? false;
+        const merge = options?.merge ?? false;
 
         let startTime: bigint | undefined;
 
@@ -170,10 +180,20 @@ export function useRosmsgPreview(): {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                 startTime = BigInt(lastMessage.logTime) + 1n;
             }
-        } else {
+        } else if (!merge) {
             // Reset the array so it can be filled from scratch
             topicPreviews[topicName] = [];
         }
+
+        // When merging, do not decode messages that are already loaded
+        const loadedTimes = merge
+            ? new Set<bigint>(
+                  (topicPreviews[topicName] ?? []).map(
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+                      (message) => message.logTime,
+                  ),
+              )
+            : undefined;
 
         try {
             // We ignore the return value (full array) because we populate
@@ -191,7 +211,13 @@ export function useRosmsgPreview(): {
                 },
                 controller.signal,
                 startTime,
-                { stride, progressive },
+                loadedTimes
+                    ? {
+                          stride,
+                          progressive,
+                          skip: (logTime): boolean => loadedTimes.has(logTime),
+                      }
+                    : { stride, progressive },
             );
         } catch (error: unknown) {
             if (controller.signal.aborted) return; // Ignore abort errors

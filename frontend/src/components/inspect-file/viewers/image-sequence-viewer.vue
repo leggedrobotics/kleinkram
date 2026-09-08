@@ -61,14 +61,27 @@
             <div v-if="frameSize">Size: {{ frameSize }}</div>
         </div>
 
-        <div v-if="messages.length < totalCount" class="text-center q-mt-md">
+        <div
+            v-if="messages.length < totalCount || isLoading"
+            class="text-center q-mt-md"
+        >
             <SmoothLoading
                 :current="messages.length"
                 :total="totalCount"
-                message="Showing {current} / {total} frames."
+                message="Loaded {current} / {total} frames."
             />
+        </div>
+        <div
+            v-else-if="sampleStride > 1"
+            class="row items-center justify-center q-gutter-x-sm q-mt-md text-caption text-grey-7"
+        >
+            <span>
+                Showing every {{ sampleStride }}th frame ({{ messages.length }}
+                frames across the recording).
+            </span>
             <q-btn
-                label="Load More"
+                v-if="canRefine"
+                label="Load more frames"
                 icon="sym_o_download"
                 size="sm"
                 flat
@@ -85,12 +98,19 @@ import { useImageDecoder } from '../../../composables/use-image-decoder';
 import SmoothLoading from '../../common/smooth-loading.vue';
 import PlaybackControls from './playback-controls.vue';
 
-const properties = defineProps<{
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: any[];
-    totalCount: number;
-    isLoading?: boolean;
-}>();
+const properties = withDefaults(
+    defineProps<{
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        messages: any[];
+        totalCount: number;
+        isLoading?: boolean;
+        /** Only every n-th frame is loaded (1 = all frames) */
+        sampleStride?: number;
+        /** Whether "Load more frames" can still reduce the sampling step */
+        canRefine?: boolean;
+    }>(),
+    { isLoading: false, sampleStride: 1, canRefine: false },
+);
 
 const emit = defineEmits(['load-more', 'pause-preview']);
 
@@ -164,24 +184,6 @@ watch(
     },
 );
 
-// Auto-buffer continuously in the background
-// We watch isLoading transitioning to false (a fetch finished), or the initial state
-watch(
-    () => properties.isLoading,
-    (loading) => {
-        /* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
-        if (
-            loading === false &&
-            properties.messages.length > 0 &&
-            properties.messages.length < properties.totalCount
-        ) {
-            emitLoadMore();
-        }
-        /* eslint-enable @typescript-eslint/no-unnecessary-boolean-literal-compare */
-    },
-    { immediate: true },
-);
-
 watch(renderError, (error) => {
     if (error) {
         emit('pause-preview');
@@ -210,6 +212,9 @@ const inferredInterval = computed(() => {
     }
 
     if (count === 0) return 100;
+
+    // A sampled sequence plays back as a time-lapse rather than in real time
+    if (properties.sampleStride > 1) return 100;
 
     const avgNano = Number(totalDiff) / count;
     const avgMs = avgNano / 1_000_000;

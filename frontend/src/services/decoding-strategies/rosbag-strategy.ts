@@ -73,6 +73,7 @@ export class RosbagStrategy extends DecodingStrategy {
         keepEvery: number,
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
+        skip?: (logTime: bigint) => boolean,
     ): Promise<LogMessage[]> {
         if (!this.bag || !this.httpReader) return [];
         const bag = this.bag;
@@ -128,9 +129,11 @@ export class RosbagStrategy extends DecodingStrategy {
                 if (signal?.aborted) break;
                 if (seen++ % keepEvery !== 0) continue;
                 if (!record.data) continue;
+                const logTime = toNano(record.time);
+                if (skip?.(logTime)) continue;
                 const reader = readers.get(record.conn);
                 const messageObject: LogMessage = {
-                    logTime: toNano(record.time),
+                    logTime,
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     data: reader
                         ? reader.readMessage(record.data)
@@ -160,6 +163,7 @@ export class RosbagStrategy extends DecodingStrategy {
                 keepEvery,
                 onMessage,
                 signal,
+                options.skip,
             );
         }
 
