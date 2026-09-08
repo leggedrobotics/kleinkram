@@ -54,11 +54,15 @@ q-page {
         padding: 8px 10px;
     }
 
-    // Dialogs take the full width on phones
+    // Dialogs take the full width on phones, whatever inline size they set
+    .q-dialog__inner--minimized {
+        padding: 8px;
+    }
+
     .q-dialog__inner--minimized > div {
-        max-width: 100vw !important;
+        max-width: 100% !important;
         min-width: 0 !important;
-        width: 100%;
+        width: 100% !important;
     }
 
     // Pagination controls wrap instead of overflowing

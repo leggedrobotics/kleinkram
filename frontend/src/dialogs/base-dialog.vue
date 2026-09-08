@@ -1,12 +1,17 @@
 <template>
     <q-dialog ref="dialogRef">
         <q-card
-            class="flex column justify-between"
+            class="flex column justify-between base-dialog__card"
             style="min-height: 400px; min-width: 600px"
         >
             <div :style="contentStyle">
-                <div class="q-pa-lg flex row justify-between">
-                    <h3 class="text-h3 q-ma-none" style="max-width: 80%">
+                <div
+                    class="q-pa-lg flex row justify-between base-dialog__header"
+                >
+                    <h3
+                        class="text-h3 q-ma-none base-dialog__title"
+                        style="max-width: 80%"
+                    >
                         <slot name="title" />
                     </h3>
                     <q-btn
@@ -27,20 +32,14 @@
                 </div>
 
                 <q-separator />
-                <div
-                    style="
-                        margin: 40px 24px;
-                        max-height: calc(min(650px, 100vh - 350px));
-                        overflow-y: auto;
-                    "
-                >
+                <div class="base-dialog__content">
                     <slot name="content" />
                 </div>
             </div>
 
             <div>
                 <q-separator />
-                <div class="q-pa-lg flex row justify-end">
+                <div class="q-pa-lg flex row justify-end base-dialog__actions">
                     <slot name="actions" />
                 </div>
             </div>
@@ -75,3 +74,36 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.base-dialog__content {
+    margin: 40px 24px;
+    max-height: calc(min(650px, 100vh - 350px));
+    overflow-y: auto;
+}
+
+@media (max-width: 599px) {
+    .base-dialog__card {
+        min-height: 0 !important;
+    }
+
+    .base-dialog__content {
+        margin: 16px;
+        max-height: calc(100vh - 200px);
+    }
+
+    .base-dialog__header,
+    .base-dialog__actions {
+        padding: 16px;
+    }
+
+    .base-dialog__title {
+        font-size: 1.5rem;
+        line-height: 2rem;
+    }
+
+    .base-dialog__actions {
+        gap: 8px;
+    }
+}
+</style>
