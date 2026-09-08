@@ -16,6 +16,21 @@ import { JwtPayload } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import logger from '../logger';
 
+async function syncAffiliationAndReturn(
+    affiliationGroupService: AffiliationGroupService,
+    config: AccessGroupConfig,
+    user: UserEntity,
+    email: unknown,
+): Promise<UserEntity> {
+    const resolvedEmail = typeof email === 'string' ? email : undefined;
+    await affiliationGroupService.addToAffiliationGroups(
+        config,
+        user,
+        resolvedEmail,
+    );
+    return user;
+}
+
 @Injectable()
 export class AuthService implements OnModuleInit {
     private readonly config: AccessGroupConfig;
@@ -51,7 +66,9 @@ export class AuthService implements OnModuleInit {
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.GITHUB },
-            relations: ['user'],
+            relations: {
+                user: true,
+            },
         });
 
         if (account !== null && account.user === undefined) {
@@ -62,7 +79,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
+                this.config,
+                account.user,
+                email,
+            );
         }
 
         return this.create(
@@ -87,7 +109,9 @@ export class AuthService implements OnModuleInit {
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.FakeOAuth },
-            relations: ['user'],
+            relations: {
+                user: true,
+            },
         });
 
         if (account !== null && account.user === undefined) {
@@ -98,7 +122,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
+                this.config,
+                account.user,
+                email,
+            );
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -116,7 +145,9 @@ export class AuthService implements OnModuleInit {
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.GOOGLE },
-            relations: ['user'],
+            relations: {
+                user: true,
+            },
         });
 
         if (account !== null && account.user === undefined) {
@@ -127,7 +158,12 @@ export class AuthService implements OnModuleInit {
         }
 
         if (account?.user !== undefined) {
-            return account.user;
+            return syncAffiliationAndReturn(
+                this.affiliationGroupService,
+                this.config,
+                account.user,
+                email,
+            );
         }
 
         return this.create(
@@ -217,7 +253,9 @@ export const createNewUser = async (
 ): Promise<UserEntity> => {
     const existingUser = await userRepository.findOne({
         where: { email: options.email },
-        relations: ['account'],
+        relations: {
+            account: true,
+        },
     });
 
     // assert that we don't have a user with the same email but a different provider
@@ -238,7 +276,14 @@ export const createNewUser = async (
             `Linking account ${account.uuid} to existing user ${existingUser.uuid}`,
         );
         account.user = existingUser;
-        return accountRepository.save(account).then(() => existingUser);
+        await accountRepository.save(account);
+        await syncAffiliationAndReturn(
+            affiliationGroupService,
+            config,
+            existingUser,
+            options.email,
+        );
+        return existingUser;
     }
 
     /////////////////////////////////////////////////////////
@@ -258,8 +303,16 @@ export const createNewUser = async (
     user = await userRepository.save(user);
     user = await userRepository.findOneOrFail({
         where: { uuid: user.uuid },
-        relations: ['memberships'],
-        select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
+        relations: {
+            memberships: true,
+        },
+        select: {
+            uuid: true,
+            name: true,
+            email: true,
+            role: true,
+            avatarUrl: true,
+        },
     });
 
     /////////////////////////////////////////////////////////
@@ -272,7 +325,15 @@ export const createNewUser = async (
 
     return await userRepository.findOneOrFail({
         where: { uuid: user.uuid },
-        relations: ['memberships'],
-        select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
+        relations: {
+            memberships: true,
+        },
+        select: {
+            uuid: true,
+            name: true,
+            email: true,
+            role: true,
+            avatarUrl: true,
+        },
     });
 };

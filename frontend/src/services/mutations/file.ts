@@ -27,14 +27,20 @@ export type GenerateTemporaryCredentialsResponse = {
     } | null;
 }[];
 
+/**
+ * Updates a file. Passing a `missionUuid` of another mission moves the file
+ * into that mission (see `PUT /files/:uuid`).
+ */
 export const updateFile = async ({
     file,
+    missionUuid,
 }: {
     file: FileWithTopicDto;
+    missionUuid: string;
 }): Promise<FileDto> => {
     const response = await axios.put<FileDto>(`/files/${file.uuid}`, {
         uuid: file.uuid,
-        missionUuid: file.missionUUID,
+        missionUuid,
         filename: file.filename,
         date: file.date,
         categories: file.categories.map(
@@ -48,13 +54,10 @@ export const moveFiles = async (
     fileUUIDs: string[],
     missionUUID: string,
 ): Promise<MoveFilesResponseDto> => {
-    const response = await axios.post<MoveFilesResponseDto>(
-        '/files/moveFiles',
-        {
-            fileUUIDs,
-            missionUUID,
-        },
-    );
+    const response = await axios.patch<MoveFilesResponseDto>('/files', {
+        fileUUIDs,
+        missionUUID,
+    });
     return response.data;
 };
 
@@ -78,11 +81,13 @@ export const cancelUploads = async (
     fileUuids: string[],
     missionUuid: string,
 ): Promise<CancelUploadResponseDto> => {
-    const response = await axios.post<CancelUploadResponseDto>(
-        '/files/cancelUpload',
+    const response = await axios.delete<CancelUploadResponseDto>(
+        '/files/uploads',
         {
-            uuids: fileUuids,
-            missionUuid: missionUuid,
+            data: {
+                uuids: fileUuids,
+                missionUuid: missionUuid,
+            },
         },
     );
     return response.data;
@@ -92,13 +97,12 @@ export const deleteFiles = async (
     fileUUIDs: string[],
     missionUUID: string,
 ): Promise<DeleteFileResponseDto> => {
-    const response = await axios.post<DeleteFileResponseDto>(
-        '/files/deleteMultiple',
-        {
+    const response = await axios.delete<DeleteFileResponseDto>('/files', {
+        data: {
             uuids: fileUUIDs,
             missionUUID,
         },
-    );
+    });
     return response.data;
 };
 

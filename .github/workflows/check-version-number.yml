@@ -12,15 +12,15 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
 
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
               with:
                   run_install: false
 
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with:
-                  node-version: '22'
+                  node-version: '22.22.0'
                   cache: 'pnpm'
 
             - name: Validate Version Number by calling grunt validateVersions

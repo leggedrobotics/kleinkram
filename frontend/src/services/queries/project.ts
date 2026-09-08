@@ -45,7 +45,7 @@ export const getProject = async (
 
 export const getProjectDefaultAccess = async (): Promise<DefaultRights> => {
     const response: AxiosResponse<DefaultRights> = await axios.get(
-        '/oldProject/getDefaultRights',
+        '/projects/default-rights',
     );
     return response.data;
 };
@@ -53,7 +53,7 @@ export const getProjectDefaultAccess = async (): Promise<DefaultRights> => {
 export const recentProjects = async (
     take: number,
 ): Promise<ResentProjectsDto> => {
-    const response = await axios.get<ResentProjectsDto>('/oldProject/recent', {
+    const response = await axios.get<ResentProjectsDto>('/projects/recent', {
         params: { take },
     });
     return response.data;

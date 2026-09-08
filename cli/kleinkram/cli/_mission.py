@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import List
 from typing import Optional
 
 import typer
@@ -11,15 +12,21 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.api.routes import get_mission
+from kleinkram.api.routes import get_missions
 from kleinkram.api.routes import get_project
 from kleinkram.config import get_shared_state
 from kleinkram.errors import InvalidMissionQuery
 from kleinkram.printing import print_mission_info
+from kleinkram.printing import print_missions
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
 
 CREATE_HELP = "create a mission"
-UPDATE_HELP = "update a mission"
+UPDATE_HELP = (
+    "update a mission's metadata; the given fields are merged over the "
+    "mission's existing metadata, fields that are not mentioned keep "
+    "their current value"
+)
 DELETE_HELP = "delete a mission"
 INFO_HELP = "get information about a mission"
 NOT_IMPLEMENTED_YET = """\
@@ -45,7 +52,7 @@ def create(
     project = get_project(client, project_query, exact_match=True)
     project_id = project.id
     project_required_tags = project.required_tags
-    mission_id = kleinkram.api.routes._create_mission(
+    mission_id = kleinkram.core.create_mission(
         client,
         project_id,
         mission_name,
@@ -82,7 +89,7 @@ def info(
 def update(
     project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
-    metadata: str = typer.Option(help="path to metadata file (json or yaml)"),
+    metadata: str = typer.Option(help="path to metadata file (json or yaml); merged over the existing metadata"),
 ) -> None:
     mission_ids, mission_patterns = split_args([mission])
     project_ids, project_patterns = split_args([project] if project else [])
@@ -147,3 +154,23 @@ def prune(
     """
 
     raise NotImplementedError("Not implemented yet")
+
+
+@mission_typer.command(name="list", help="list missions")
+def list_missions(
+    projects: Optional[List[str]] = typer.Option(None, "--project", "-p", help="project name or id"),
+    missions: Optional[List[str]] = typer.Argument(None, help="mission names"),
+) -> None:
+    mission_ids, mission_patterns = split_args(missions or [])
+    project_ids, project_patterns = split_args(projects or [])
+
+    project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
+    mission_query = MissionQuery(
+        ids=mission_ids,
+        patterns=mission_patterns,
+        project_query=project_query,
+    )
+
+    client = AuthenticatedClient()
+    parsed_missions = list(get_missions(client, mission_query=mission_query))
+    print_missions(parsed_missions, pprint=get_shared_state().verbose)

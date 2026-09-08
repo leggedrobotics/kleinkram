@@ -32,6 +32,7 @@ services:
             SEED: 'false'
             DEVBUILD: 'false'
             REDIS_HOST: 'redis'
+            NODE_ENV: 'test'
         env_file:
             - .env
         networks:
@@ -72,7 +73,7 @@ services:
             - ./docker/testing-pg_hba.conf:/etc/postgresql/pg_hba.conf
 
     seaweedfs:
-        image: chrislusf/seaweedfs:latest
+        image: chrislusf/seaweedfs:4.17
         container_name: kleinkram-seaweedfs-test
 
         command: server -dir=/data -s3 -s3.port=9000
@@ -144,6 +145,7 @@ services:
             - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
         environment:
             REDIS_HOST: 'redis'
+            NODE_ENV: 'test'
         env_file:
             - .env
         networks:

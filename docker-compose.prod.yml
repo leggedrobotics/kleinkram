@@ -56,7 +56,7 @@ services:
             - postgres_db_data:/var/lib/postgresql/data
 
     seaweedfs:
-        image: chrislusf/seaweedfs:latest
+        image: chrislusf/seaweedfs:4.17
         container_name: kleinkram-seaweedfs-prod
 
         command: server -dir=/data -s3 -s3.port=9000

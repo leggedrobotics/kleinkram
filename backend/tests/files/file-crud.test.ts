@@ -30,7 +30,9 @@ describe('File Management Tests', () => {
         const fileRepo = database.getRepository(FileEntity);
         const file = await fileRepo.findOne({
             where: { filename: 'test.bag' },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         expect(file).not.toBeNull();
         expect(file?.mission?.uuid).toBe(missionUuid);
@@ -40,7 +42,7 @@ describe('File Management Tests', () => {
         // Download
         const downloadResponse = await fetch(
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `${DEFAULT_URL}/files/download?uuid=${file?.uuid}&expires=false&preview_only=false`,
+            `${DEFAULT_URL}/files/${file?.uuid}/download?expires=false&preview_only=false`,
             {
                 method: 'GET',
                 headers: getAuthHeaders(user),
@@ -95,21 +97,18 @@ describe('File Management Tests', () => {
             where: { filename: 'file2.bag' },
         });
 
-        const deleteResponse = await fetch(
-            `${DEFAULT_URL}/files/deleteMultiple`,
-            {
-                method: 'POST',
-                headers: {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'Content-Type': 'application/json',
-                    ...getAuthHeaders(user),
-                },
-                body: JSON.stringify({
-                    uuids: [file1.uuid, file2.uuid],
-                    missionUUID: missionUuid,
-                }),
+        const deleteResponse = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'DELETE',
+            headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(user),
             },
-        );
+            body: JSON.stringify({
+                uuids: [file1.uuid, file2.uuid],
+                missionUUID: missionUuid,
+            }),
+        });
         expect(deleteResponse.status).toBeLessThan(300);
 
         const deletedFile1 = await fileRepo.findOne({
@@ -144,13 +143,15 @@ describe('File Management Tests', () => {
         const fileRepo = database.getRepository(FileEntity);
         const file = await fileRepo.findOneOrFail({
             where: { filename: 'move_me.bag' },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(file?.mission?.uuid).toBe(mission1Uuid);
 
-        const moveResponse = await fetch(`${DEFAULT_URL}/files/moveFiles`, {
-            method: 'POST',
+        const moveResponse = await fetch(`${DEFAULT_URL}/files`, {
+            method: 'PATCH',
 
             headers: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -166,7 +167,9 @@ describe('File Management Tests', () => {
 
         const movedFile = await fileRepo.findOneOrFail({
             where: { uuid: file.uuid },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(movedFile?.mission?.uuid).toBe(mission2Uuid);

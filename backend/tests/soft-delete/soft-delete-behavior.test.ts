@@ -172,7 +172,7 @@ describe('Comprehensive Soft Delete Behavior', () => {
         // 2. Soft-delete Mission via API
         const header = new HeaderCreator(creator);
         const deleteResponse = await fetch(
-            `${DEFAULT_URL}/mission/${missionUuid}`,
+            `${DEFAULT_URL}/missions/${missionUuid}`,
             {
                 method: 'DELETE',
                 headers: header.getHeaders(),

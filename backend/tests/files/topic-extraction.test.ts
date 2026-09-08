@@ -44,13 +44,10 @@ describe('Topic Extraction Tests', () => {
         // Verify topics via API
         // GET /topic/all
         console.log('[DEBUG] Fetching topics via API');
-        const response = await fetch(
-            `${DEFAULT_URL}/topic/all?skip=0&take=10`,
-            {
-                method: 'GET',
-                headers: getAuthHeaders(user),
-            },
-        );
+        const response = await fetch(`${DEFAULT_URL}/topics?skip=0&take=10`, {
+            method: 'GET',
+            headers: getAuthHeaders(user),
+        });
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         console.log(`[DEBUG] API response status: ${response.status}`);
         expect(response.status).toBe(200);

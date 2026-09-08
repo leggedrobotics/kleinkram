@@ -22,6 +22,7 @@ from kleinkram.config import Credentials
 from kleinkram.config import get_config
 from kleinkram.config import save_config
 from kleinkram.errors import NotAuthenticated
+from kleinkram.errors import UpdateCLIVersion
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ class AuthenticatedClient(httpx.Client):
     _config_lock: Lock
 
     def __init__(self, config_path: Path = CONFIG_PATH, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("timeout", 60.0)
         super().__init__(*args, **kwargs)
 
         self._config = get_config(path=config_path)
@@ -121,7 +123,7 @@ class AuthenticatedClient(httpx.Client):
 
         # check version compatibility
         if response.status_code == 426:
-            raise kleinkram.errors.UpdateCLIVersion
+            raise UpdateCLIVersion()
         return response
 
     def request(
@@ -165,3 +167,12 @@ class AuthenticatedClient(httpx.Client):
             return response
         else:
             return response
+
+    def delete(  # type: ignore[override]
+        self,
+        url: str | httpx.URL,
+        *,
+        params: QueryParams | None = None,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        return self.request("DELETE", url, params=params, **kwargs)

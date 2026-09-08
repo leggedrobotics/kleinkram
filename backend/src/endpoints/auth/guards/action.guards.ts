@@ -3,14 +3,18 @@ import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { AccessGroupRights, ActionState } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    isTerminalActionState,
+    UserRole,
+} from '@kleinkram/shared';
 import {
     BadRequestException,
     ExecutionContext,
     Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import { BaseGuard } from './base.guards';
 
 interface ActionBody {
@@ -60,7 +64,10 @@ export class ReadActionGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
-        const actionUUID = request.query.uuid as string | undefined;
+        // Every route using this guard addresses the action through the route
+        // parameter (`/actions/:uuid/...`); query and body are never consulted.
+        const params = request.params as { uuid?: string } | undefined;
+        const actionUUID = params?.uuid;
 
         if (!actionUUID) {
             return false; // Deny access if UUID not provided
@@ -119,30 +126,39 @@ export class CreateActionGuard extends BaseGuard {
     }
 }
 
-@Injectable()
-export class DeleteActionGuard extends BaseGuard {
+const DEFAULT_ACTION_RELATIONS: FindOptionsRelations<ActionEntity> = {
+    mission: true,
+    creator: true,
+};
+
+export abstract class BaseActionModificationGuard extends BaseGuard {
     constructor(
-        private missionGuardService: MissionGuardService,
-        @InjectRepository(ActionEntity)
-        private actionRepository: Repository<ActionEntity>,
+        protected missionGuardService: MissionGuardService,
+        protected actionRepository: Repository<ActionEntity>,
     ) {
         super();
     }
 
-    async canActivate(context: ExecutionContext): Promise<boolean> {
+    protected async validateAndGetAction(
+        context: ExecutionContext,
+        relations: FindOptionsRelations<ActionEntity> = DEFAULT_ACTION_RELATIONS,
+    ) {
         const { user, apiKey, request } = await this.getUser(context);
 
+        // `DELETE /actions/:uuid` and `POST /actions/:uuid/cancel` address the
+        // action through the route parameter. The body is only honoured when the
+        // route has no parameter, so a body value can never override the path.
         const body = request.body as ActionBody | undefined;
         const params = request.params as { uuid?: string } | undefined;
-        const actionUUID = body?.actionUUID ?? params?.uuid;
+        const actionUUID = params?.uuid ?? body?.actionUUID;
 
         if (!actionUUID) {
-            return false; // Deny access if UUID not provided
+            return null;
         }
 
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUUID },
-            relations: ['mission', 'creator'],
+            relations,
         });
 
         if (action.mission === undefined)
@@ -152,18 +168,42 @@ export class DeleteActionGuard extends BaseGuard {
 
         if (apiKey) {
             throw new BadRequestException(
-                'apiKey in DeleteActionGuard is not supported',
+                `apiKey in ${this.constructor.name} is not supported`,
             );
         }
-        if (
-            !(
-                action.state === ActionState.DONE ||
-                action.state === ActionState.FAILED ||
-                action.state === ActionState.UNPROCESSABLE
-            )
-        ) {
+
+        return {
+            user,
+            action: action as ActionEntity & {
+                mission: NonNullable<ActionEntity['mission']>;
+                creator: NonNullable<ActionEntity['creator']>;
+                template?: NonNullable<ActionEntity['template']>;
+            },
+        };
+    }
+}
+
+@Injectable()
+export class DeleteActionGuard extends BaseActionModificationGuard {
+    constructor(
+        missionGuardService: MissionGuardService,
+        @InjectRepository(ActionEntity)
+        actionRepository: Repository<ActionEntity>,
+    ) {
+        super(missionGuardService, actionRepository);
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const validationResult = await this.validateAndGetAction(context);
+        if (!validationResult) {
+            return false;
+        }
+
+        const { user, action } = validationResult;
+
+        if (!isTerminalActionState(action.state)) {
             throw new BadRequestException(
-                "can't delete action unless its DONE, FAILED or UNPROCESSABLE",
+                "can't delete action unless its DONE, FAILED, UNPROCESSABLE or CANCELLED",
             );
         }
         if (action.creator.uuid === user.uuid) {
@@ -175,6 +215,48 @@ export class DeleteActionGuard extends BaseGuard {
             user,
             missionUUID,
             AccessGroupRights.DELETE,
+        );
+    }
+}
+
+@Injectable()
+export class CancelActionGuard extends BaseActionModificationGuard {
+    constructor(
+        missionGuardService: MissionGuardService,
+        @InjectRepository(ActionEntity)
+        actionRepository: Repository<ActionEntity>,
+    ) {
+        super(missionGuardService, actionRepository);
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const validationResult = await this.validateAndGetAction(context, {
+            mission: true,
+            creator: true,
+            template: true,
+        });
+        if (!validationResult) {
+            return false;
+        }
+
+        const { user, action } = validationResult;
+
+        if (action.template === undefined)
+            throw new BadRequestException('Action does not have a template');
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        if (action.creator.uuid === user.uuid) {
+            return true;
+        }
+
+        const missionUUID = action.mission.uuid;
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            action.template.accessRights,
         );
     }
 }

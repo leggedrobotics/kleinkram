@@ -1,22 +1,39 @@
 from __future__ import annotations
 
 from kleinkram._version import __version__
+from kleinkram.api.file_transfer import DownloadResult
+from kleinkram.api.file_transfer import UploadResult
 from kleinkram.wrappers import create_mission
 from kleinkram.wrappers import create_project
+from kleinkram.wrappers import create_template
+from kleinkram.wrappers import create_template_version
+from kleinkram.wrappers import create_trigger
+from kleinkram.wrappers import delete_execution
 from kleinkram.wrappers import delete_file
 from kleinkram.wrappers import delete_files
 from kleinkram.wrappers import delete_mission
 from kleinkram.wrappers import delete_project
+from kleinkram.wrappers import delete_template
+from kleinkram.wrappers import delete_trigger
 from kleinkram.wrappers import download
+from kleinkram.wrappers import download_artifact
+from kleinkram.wrappers import get_execution
 from kleinkram.wrappers import get_file
 from kleinkram.wrappers import get_mission
 from kleinkram.wrappers import get_project
+from kleinkram.wrappers import get_template
+from kleinkram.wrappers import get_template_revisions
+from kleinkram.wrappers import launch_execution
+from kleinkram.wrappers import list_executions
 from kleinkram.wrappers import list_files
 from kleinkram.wrappers import list_missions
 from kleinkram.wrappers import list_projects
+from kleinkram.wrappers import list_templates
+from kleinkram.wrappers import list_triggers
 from kleinkram.wrappers import update_file
 from kleinkram.wrappers import update_mission
 from kleinkram.wrappers import update_project
+from kleinkram.wrappers import update_trigger
 from kleinkram.wrappers import upload
 from kleinkram.wrappers import verify
 
@@ -25,12 +42,18 @@ __all__ = [
     "upload",
     "verify",
     "download",
+    "download_artifact",
+    "get_execution",
     "get_file",
     "get_mission",
     "get_project",
+    "get_template",
+    "get_template_revisions",
     "list_files",
     "list_missions",
     "list_projects",
+    "list_templates",
+    "list_executions",
     "update_file",
     "update_mission",
     "update_project",
@@ -38,6 +61,17 @@ __all__ = [
     "delete_file",
     "delete_mission",
     "delete_project",
+    "delete_template",
+    "delete_execution",
     "create_mission",
     "create_project",
+    "create_template",
+    "create_template_version",
+    "launch_execution",
+    "create_trigger",
+    "update_trigger",
+    "list_triggers",
+    "delete_trigger",
+    "UploadResult",
+    "DownloadResult",
 ]

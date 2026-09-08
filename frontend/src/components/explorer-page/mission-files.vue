@@ -190,10 +190,7 @@ import {
     DEFAULT_MISSION_STATE,
     useMissionFileFilter,
 } from 'src/composables/use-mission-file-filter';
-import {
-    MissionFileSearchContextData,
-    useMissionFileSearch,
-} from 'src/composables/use-mission-file-search';
+import { useMissionFileSearch } from 'src/composables/use-mission-file-search';
 import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
 import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue';
 import CreateFileDialog from 'src/dialogs/create-file-dialog.vue';
@@ -285,7 +282,7 @@ const { filterString, parse, validateSyntax } = useFilterParser(
     state,
     // @ts-ignore
     filters,
-    () => contextData.value as unknown as MissionFileSearchContextData,
+    () => contextData.value,
     {
         defaultStartDate: defaultState.startDates,
         defaultEndDate: defaultState.endDates,

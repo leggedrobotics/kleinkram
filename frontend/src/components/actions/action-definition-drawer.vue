@@ -274,17 +274,14 @@ const selectedAccessRights = computed({
 });
 
 const accessOptions = Object.keys(accessGroupRightsMap)
-    .filter(
-        (key) =>
-            (Number.parseInt(key) as AccessGroupRights) !==
-            AccessGroupRights._ADMIN,
-    )
-    .map((key) => ({
-        label: accessGroupRightsMap[
-            Number.parseInt(key, 10) as AccessGroupRights
-        ],
-        value: Number.parseInt(key, 10),
-    }));
+    .map((key) => {
+        const right = Number.parseInt(key, 10) as AccessGroupRights;
+        return {
+            label: accessGroupRightsMap[right],
+            value: right,
+        };
+    })
+    .filter(({ value }) => value !== AccessGroupRights._ADMIN);
 
 const isEditing = computed(() => !!props.initialTemplate?.uuid);
 
@@ -345,7 +342,6 @@ watch(
             isCheckingName.value = false;
             nameCheckDirty.value = false;
 
-            // eslint-disable-next-line unicorn/prefer-ternary
             if (props.initialTemplate) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 localTemplate.value = {
@@ -397,15 +393,12 @@ async function saveTemplate(): Promise<void> {
         };
 
         // 2. Validate Namespace
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
         if (
             dockerhubNamespace &&
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            !basePayload.dockerImage.startsWith(`${dockerhubNamespace}`)
+            !basePayload.dockerImage.startsWith(dockerhubNamespace)
         ) {
             throw new Error(
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Image name must start with "${dockerhubNamespace}/"`,
             );
         }
@@ -418,11 +411,14 @@ async function saveTemplate(): Promise<void> {
             };
             await updateTemplate(updatePayload);
             Notify.create({
-                message: `New version created`,
+                message:
+                    props.mode === ActionDrawerMode.ACTION_RESTORE
+                        ? 'Version restored as a new version'
+                        : 'New version created',
                 color: 'positive',
             });
         } else {
-            await createTemplate(basePayload as CreateTemplateDto);
+            await createTemplate(basePayload);
             Notify.create({
                 message: 'Action Template Created',
                 color: 'positive',

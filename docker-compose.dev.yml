@@ -35,6 +35,7 @@ services:
         depends_on:
             - database
             - redis
+            - loki
 
     database:
         image: postgres:17
@@ -55,7 +56,7 @@ services:
             - postgres_db_data:/var/lib/postgresql/data
 
     seaweedfs:
-        image: chrislusf/seaweedfs:latest
+        image: chrislusf/seaweedfs:4.17
         container_name: kleinkram-seaweedfs-dev
 
         command: server -dir=/data -s3 -s3.port=9000

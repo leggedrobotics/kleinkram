@@ -1,4 +1,4 @@
-import { IReadable } from '@mcap/core/dist/cjs/src/types';
+import { IReadable } from '@mcap/core';
 import { AdaptiveChunkOptimizer } from './adaptive-chunk-optimizer';
 
 interface CachedBlock {

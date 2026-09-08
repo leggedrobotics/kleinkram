@@ -20,7 +20,6 @@ import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
 import { UserService } from './user.service';
 
 import {
-    addMissionCount,
     addProjectCreatorFilter,
     addProjectFilters,
     addSort,
@@ -37,6 +36,7 @@ import {
     CategoryEntity,
     MissionEntity,
     ProjectAccessEntity,
+    ProjectAccessViewEntity,
     ProjectEntity,
     TagTypeEntity,
     UserEntity,
@@ -56,6 +56,7 @@ const FIND_MANY_SORT_KEYS = {
     createdAt: 'project.createdAt',
     updatedAt: 'project.updatedAt',
     creator: 'creator.name',
+    rights: 'projectAccessView.rights',
 };
 
 @Injectable()
@@ -111,6 +112,43 @@ export class ProjectService {
         return sizeMap;
     }
 
+    /**
+     * Counts the (non-deleted) missions of the given projects.
+     *
+     * TypeORM v1 removed `QueryBuilder.loadRelationCountAndMap()`, so the counts
+     * are fetched with a dedicated aggregate query (the same shape as
+     * `_getProjectSizes`) instead of being mapped onto the entity.
+     */
+    private async _getMissionCounts(
+        projectUuids: string[],
+    ): Promise<Map<string, number>> {
+        if (projectUuids.length === 0) {
+            return new Map();
+        }
+
+        const rawResults = await this.projectRepository
+            .createQueryBuilder('project')
+            .select('project.uuid', 'projectUuid')
+            .addSelect('COUNT(mission.uuid)', 'missionCount')
+            .leftJoin(
+                'project.missions',
+                'mission',
+                'mission.deletedAt IS NULL',
+            )
+            .where('project.uuid IN (:...projectUuids)', { projectUuids })
+            .groupBy('project.uuid')
+            .getRawMany<{ projectUuid: string; missionCount: string }>();
+
+        const countMap = new Map<string, number>();
+        for (const raw of rawResults) {
+            countMap.set(
+                raw.projectUuid,
+                Number.parseInt(raw.missionCount) || 0,
+            );
+        }
+        return countMap;
+    }
+
     async findMany(
         projectUuids: string[],
         projectPatterns: string[],
@@ -137,23 +175,35 @@ export class ProjectService {
             exactMatch,
         );
 
+        if (sortBy === 'rights') {
+            query = query.leftJoinAndSelect(
+                ProjectAccessViewEntity,
+                'projectAccessView',
+                'projectAccessView.projectUuid = project.uuid AND projectAccessView.userUuid = :userUuidForSort',
+                { userUuidForSort: userUuid },
+            );
+        }
+
         if (sortBy !== undefined) {
             query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
         }
 
         query = addProjectCreatorFilter(query, creatorUuid);
-        query = addMissionCount(query);
 
         query.skip(skip).take(take);
         const [projects, count] = await query.getManyAndCount();
 
         const foundProjectUuids = projects.map((p) => p.uuid);
-        const sizes = await this._getProjectSizes(foundProjectUuids);
+        const [sizes, missionCounts] = await Promise.all([
+            this._getProjectSizes(foundProjectUuids),
+            this._getMissionCounts(foundProjectUuids),
+        ]);
 
         return {
             data: projects.map((element) => {
                 const dto = projectEntityToDtoWithMissionCountAndTags(element);
                 dto.size = sizes.get(element.uuid) ?? 0;
+                dto.missionCount = missionCounts.get(element.uuid) ?? 0;
                 return dto;
             }),
             count,
@@ -324,7 +374,7 @@ export class ProjectService {
                         updatedAt: project.latestUpdate as Date,
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         createdAt: project.project_createdAt as Date,
-                    } as ResentProjectDto;
+                    };
                 })
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/no-array-sort
                 .sort(
@@ -471,7 +521,9 @@ export class ProjectService {
     async updateTagTypes(uuid: string, tagTypeUUIDs: string[]): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
-            relations: ['requiredTags'],
+            relations: {
+                requiredTags: true,
+            },
         });
         project.requiredTags = await Promise.all(
             tagTypeUUIDs.map((tag) => {
@@ -673,7 +725,7 @@ export class ProjectService {
                             memberCount,
                             rights: _rights,
                             type: right.type,
-                        } as DefaultRightDto;
+                        };
                     }),
             );
 

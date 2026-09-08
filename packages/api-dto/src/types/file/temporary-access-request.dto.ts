@@ -1,9 +1,11 @@
 import { FileSource } from '@kleinkram/shared';
-import { IsNoValidUUID } from '@kleinkram/validation';
+import { IsNoValidUUID, IsValidFileName } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import {
+    IsArray,
     IsEnum,
     IsNotEmpty,
+    IsNumber,
     IsOptional,
     IsString,
     IsUUID,
@@ -13,6 +15,7 @@ export class TemporaryAccessRequestDto {
     @IsString({ each: true })
     @IsNotEmpty({ each: true })
     @IsNoValidUUID({ each: true })
+    @IsValidFileName({ each: true })
     @ApiProperty({
         description: 'Filenames for which to generate temporary access',
     })
@@ -33,4 +36,15 @@ export class TemporaryAccessRequestDto {
         enum: FileSource,
     })
     source?: FileSource;
+
+    @IsNumber({}, { each: true })
+    @IsArray()
+    @IsOptional()
+    @ApiProperty({
+        description:
+            'Sizes of the files in bytes matching the order of filenames',
+        required: false,
+        type: [Number],
+    })
+    fileSizes?: number[];
 }

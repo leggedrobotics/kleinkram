@@ -266,7 +266,6 @@ import { computed, Ref, ref, watch } from 'vue';
 
 // 1. New Composable Imports
 import {
-    SubmitActionPayload,
     useCreateTemplate,
     useSubmitAction,
     useUpdateTemplateVersion,
@@ -476,15 +475,13 @@ async function submitAnalysis(): Promise<void> {
         return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
     if (
         dockerhubNamespace &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/restrict-template-expressions
-        !editingTemplate.value.imageName.startsWith(`${dockerhubNamespace}`)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        !editingTemplate.value.imageName.startsWith(dockerhubNamespace)
     ) {
         Notify.create({
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             message: `Image name must start with "${dockerhubNamespace}/"`,
             color: 'negative',
         });
@@ -522,7 +519,7 @@ async function submitAnalysis(): Promise<void> {
             missionUUIDs: hasMissionUUIDs.value
                 ? allMissionUUIDs.value
                 : undefined,
-        } as SubmitActionPayload);
+        });
 
         Notify.create({ message: 'Analysis submitted', color: 'positive' });
         closeDrawer();
@@ -608,17 +605,12 @@ const removeMission = (uuid: string): void => {
 };
 
 const accessOptions = Object.keys(accessGroupRightsMap)
-    .filter(
-        (key) =>
-            (Number.parseInt(key) as AccessGroupRights) !==
-            AccessGroupRights._ADMIN,
-    )
-    .map((key) => ({
-        label:
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            accessGroupRightsMap[
-                Number.parseInt(key, 10) as AccessGroupRights
-            ] ?? '',
-        value: Number.parseInt(key, 10),
-    }));
+    .map((key) => {
+        const right = Number.parseInt(key, 10) as AccessGroupRights;
+        return {
+            label: accessGroupRightsMap[right],
+            value: right,
+        };
+    })
+    .filter(({ value }) => value !== AccessGroupRights._ADMIN);
 </script>

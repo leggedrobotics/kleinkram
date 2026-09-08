@@ -57,7 +57,10 @@ describe('Verify Project Groups Access', () => {
                 accessGroup: { uuid: otherUserGroup.uuid },
                 project: { uuid: projectUuid },
             },
-            relations: ['accessGroup', 'project'],
+            relations: {
+                accessGroup: true,
+                project: true,
+            },
         });
         expect(access.rights).toBe(AccessGroupRights.READ);
     });
@@ -100,7 +103,10 @@ describe('Verify Project Groups Access', () => {
                 accessGroup: { uuid: otherUserGroup.uuid },
                 project: { uuid: projectUuid },
             },
-            relations: ['accessGroup', 'project'],
+            relations: {
+                accessGroup: true,
+                project: true,
+            },
         });
         expect(access.rights).toBe(AccessGroupRights.CREATE);
     });
@@ -143,7 +149,10 @@ describe('Verify Project Groups Access', () => {
                 accessGroup: { uuid: otherUserGroup.uuid },
                 project: { uuid: projectUuid },
             },
-            relations: ['accessGroup', 'project'],
+            relations: {
+                accessGroup: true,
+                project: true,
+            },
         });
         expect(access.rights).toBe(AccessGroupRights.WRITE);
     });
@@ -186,7 +195,10 @@ describe('Verify Project Groups Access', () => {
                 accessGroup: { uuid: otherUserGroup.uuid },
                 project: { uuid: projectUuid },
             },
-            relations: ['accessGroup', 'project'],
+            relations: {
+                accessGroup: true,
+                project: true,
+            },
         });
         expect(access.rights).toBe(AccessGroupRights.DELETE);
     });
@@ -240,7 +252,10 @@ describe('Verify Project Groups Access', () => {
             database.getRepository<ProjectAccessEntity>(ProjectAccessEntity);
         const accesses = await projectAccessRepo.find({
             where: { accessGroup: { uuid: otherUserGroup.uuid } },
-            relations: ['accessGroup', 'project'],
+            relations: {
+                accessGroup: true,
+                project: true,
+            },
         });
 
         const matchingAccesses = accesses.filter(
@@ -303,7 +318,10 @@ describe('Verify Project Groups Access', () => {
             database.getRepository<ProjectAccessEntity>(ProjectAccessEntity);
         const accesses = await projectAccessRepo.find({
             where: { accessGroup: { uuid: otherUserGroup.uuid } },
-            relations: ['accessGroup', 'project'],
+            relations: {
+                accessGroup: true,
+                project: true,
+            },
         });
 
         const matchingAccesses = accesses.filter(
@@ -366,7 +384,10 @@ describe('Verify Project Groups Access', () => {
             database.getRepository<ProjectAccessEntity>(ProjectAccessEntity);
         const accesses = await projectAccessRepo.find({
             where: { accessGroup: { uuid: otherUserGroup.uuid } },
-            relations: ['accessGroup', 'project'],
+            relations: {
+                accessGroup: true,
+                project: true,
+            },
         });
 
         const matchingAccesses = accesses.filter(
@@ -429,7 +450,10 @@ describe('Verify Project Groups Access', () => {
             database.getRepository<ProjectAccessEntity>(ProjectAccessEntity);
         const accesses = await projectAccessRepo.find({
             where: { accessGroup: { uuid: otherUserGroup.uuid } },
-            relations: ['accessGroup', 'project'],
+            relations: {
+                accessGroup: true,
+                project: true,
+            },
         });
 
         const matchingAccesses = accesses.filter(

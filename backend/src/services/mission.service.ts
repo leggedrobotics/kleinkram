@@ -1,10 +1,6 @@
-import {
-    addAccessConstraints,
-    addAccessConstraintsToMissionQuery,
-} from '@/endpoints/auth/auth-helper';
+import { addAccessConstraintsToMissionQuery } from '@/endpoints/auth/auth-helper';
 import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
-    missionEntityToDtoWithCreator,
     missionEntityToDtoWithFiles,
     missionEntityToFlatDto,
     missionEntityToMinimumDto,
@@ -13,6 +9,7 @@ import {
     CreateMission,
     FlatMissionDto,
     MinimumMissionsDto,
+    MissionQueryDto,
     MissionsDto,
     MissionWithFilesDto,
 } from '@kleinkram/api-dto';
@@ -25,7 +22,7 @@ import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
-import { TagService } from './tag.service';
+import { MetadataService } from './metadata.service';
 import { UserService } from './user.service';
 import {
     addFileStats,
@@ -38,9 +35,11 @@ import { SortOrder } from '@kleinkram/api-dto';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 
 const FIND_MANY_SORT_KEYS = {
+    name: 'mission.name',
     missionName: 'mission.name',
     projectName: 'project.name',
-    creatorName: 'user.name',
+    creator: 'creator.name',
+    creatorName: 'creator.name',
     createdAt: 'mission.createdAt',
     updatedAt: 'mission.updatedAt',
 };
@@ -55,7 +54,7 @@ export class MissionService {
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
         private userService: UserService,
-        private tagService: TagService,
+        private metadataService: MetadataService,
         @Inject('DataStorageBucket')
         private readonly dataStorage: IStorageBucket,
     ) {}
@@ -71,7 +70,9 @@ export class MissionService {
         );
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
-            relations: ['requiredTags'],
+            relations: {
+                requiredTags: true,
+            },
         });
         if (!createMission.ignoreTags) {
             const missingTags = project.requiredTags.filter(
@@ -120,7 +121,7 @@ export class MissionService {
         await Promise.all(
             Object.entries(createMission.tags).map(
                 async ([tagTypeUUID, value]) => {
-                    return this.tagService.addTagType(
+                    return this.metadataService.addTagType(
                         newMission.uuid,
                         tagTypeUUID,
                         value,
@@ -131,7 +132,10 @@ export class MissionService {
         return this.missionRepository
             .findOneOrFail({
                 where: { uuid: newMission.uuid },
-                relations: ['project', 'creator'],
+                relations: {
+                    project: true,
+                    creator: true,
+                },
             })
             .then((m) => missionEntityToFlatDto(m));
     }
@@ -139,35 +143,39 @@ export class MissionService {
     async findOne(uuid: string): Promise<MissionWithFilesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: [
-                'project',
-                'creator',
-                'tags',
-                'files',
-                'files.creator',
-                'files.mission', // TODO: we can remove this property
-                'files.mission.creator', // TODO: we can remove this property
-                'files.mission.project', // TODO: we can remove this property
-                'tags.tagType',
-                'project.requiredTags',
-            ],
+            relations: {
+                project: {
+                    requiredTags: true,
+                },
+
+                creator: true,
+
+                tags: {
+                    tagType: true,
+                },
+
+                files: {
+                    creator: true,
+
+                    mission: {
+                        creator: true,
+                        project: true,
+                    },
+                },
+            },
         });
 
         return missionEntityToDtoWithFiles(mission);
     }
 
     async findMany(
-        projectUuids: string[],
-        projectPatterns: string[],
-        missionUuids: string[],
-        missionPatterns: string[],
-        missionMetadata: Record<string, string>,
-        sortBy: string | undefined,
-        sortOrder: SortOrder,
-        skip: number,
-        take: number,
+        query: MissionQueryDto,
         userUuid: string,
-    ): Promise<MissionsDto> {
+    ): Promise<MissionsDto | MinimumMissionsDto> {
+        const user = await this.userRepository.findOneOrFail({
+            where: { uuid: userUuid },
+        });
+
         let idQuery = this.missionRepository
             .createQueryBuilder('mission')
             .select('mission.uuid')
@@ -176,33 +184,71 @@ export class MissionService {
             .leftJoin('mission.tags', 'tag')
             .leftJoin('tag.tagType', 'tagType');
 
-        idQuery = addAccessConstraintsToMissionQuery(idQuery, userUuid);
+        if (user.role !== UserRole.ADMIN) {
+            idQuery = addAccessConstraintsToMissionQuery(idQuery, userUuid);
+        }
+
+        // Unify single-project filters with projectUuids
+        const projectUuid = query.projectUuid ?? query.uuid;
+        const projectUuids =
+            query.projectUuids ?? (projectUuid ? [projectUuid] : []);
 
         idQuery = addProjectFilters(
             idQuery,
             this.projectRepository,
             projectUuids,
-            projectPatterns,
+            query.projectPatterns ?? [],
+            query.exactMatch === 'true',
         );
 
         idQuery = addMissionFilters(
             idQuery,
             this.missionRepository,
-            missionUuids,
-            missionPatterns,
-            missionMetadata,
+            query.missionUuids ?? [],
+            query.missionPatterns ?? [],
+            query.metadata ?? {},
         );
 
-        if (sortBy !== undefined) {
-            idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+        if (query.search) {
+            const tokens = query.search.trim().split(/\s+/);
+            for (const [index, token] of tokens.entries()) {
+                idQuery.andWhere(
+                    `mission.name ILIKE :search_${String(index)}`,
+                    {
+                        [`search_${String(index)}`]: `%${token}%`,
+                    },
+                );
+            }
         }
+
+        const sortField = query.sortBy ?? 'createdAt';
+        let order = query.sortOrder;
+        if (query.sortDirection) {
+            order =
+                query.sortDirection === 'DESC' ? SortOrder.DESC : SortOrder.ASC;
+        }
+
+        idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortField, order);
+
+        // Stable tie-breaker: without it, rows that compare equal on the sort
+        // column (e.g. missions created in the same instant) can be returned in
+        // a different order for every page, which duplicates and drops rows
+        // across LIMIT/OFFSET pages.
+        idQuery.addOrderBy('mission.uuid', 'ASC');
 
         // Get distinct mission UUIDs
         idQuery.groupBy('mission.uuid');
 
         // Get count before pagination
         const count = await idQuery.getCount();
-        idQuery.take(take).skip(skip);
+        const take = query.take;
+        const skip = query.skip;
+
+        // `take`/`skip` are only translated into LIMIT/OFFSET by TypeORM when
+        // the query has no joins; this query has several, so they would be
+        // silently dropped and every page would return all missions.
+        // `limit`/`offset` are always emitted.
+        idQuery.limit(take).offset(skip);
 
         const missionIds = await idQuery.getRawMany();
 
@@ -215,25 +261,54 @@ export class MissionService {
             };
         }
 
+        const mappedMissionIds = missionIds.map(
+            (m: { mission_uuid: string }) => m.mission_uuid,
+        );
+
+        if (query.minimal) {
+            // Minimal projection logic (does not fetch tags, metadata, file stats)
+            const dataQuery = this.missionRepository
+                .createQueryBuilder('mission')
+                .leftJoinAndSelect('mission.project', 'project')
+                .leftJoinAndSelect('mission.creator', 'creator')
+                .where('mission.uuid IN (:...mappedMissionIds)', {
+                    mappedMissionIds,
+                });
+
+            const sortedQuery = addSort(
+                dataQuery,
+                FIND_MANY_SORT_KEYS,
+                sortField,
+                order,
+            );
+            // same tie-breaker as the id query, so the page keeps its order
+            sortedQuery.addOrderBy('mission.uuid', 'ASC');
+            const missions = await sortedQuery.getMany();
+
+            return {
+                data: missions.map((element) =>
+                    missionEntityToMinimumDto(element),
+                ),
+                count,
+                skip,
+                take,
+            };
+        }
+
+        // Full projection logic (similar to standard findMany/findMissionByProject)
         let dataQuery = this.missionRepository
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('mission.creator', 'creator')
             .leftJoinAndSelect('mission.tags', 'tag')
             .leftJoinAndSelect('tag.tagType', 'tagType')
-            .where('mission.uuid IN (:...missionIds)', {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-                missionIds: missionIds.map((m) => m.mission_uuid),
+            .where('mission.uuid IN (:...mappedMissionIds)', {
+                mappedMissionIds,
             });
 
-        if (sortBy !== undefined) {
-            dataQuery = addSort(
-                dataQuery,
-                FIND_MANY_SORT_KEYS,
-                sortBy,
-                sortOrder,
-            );
-        }
+        dataQuery = addSort(dataQuery, FIND_MANY_SORT_KEYS, sortField, order);
+        // same tie-breaker as the id query, so the page keeps its order
+        dataQuery.addOrderBy('mission.uuid', 'ASC');
 
         dataQuery = addFileStats(dataQuery);
 
@@ -248,14 +323,13 @@ export class MissionService {
         >();
         for (const raw of rawResults) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            const missionUuid = raw.mission_uuid;
+            const mUuid = raw.mission_uuid;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            if (!statsMap.has(missionUuid)) {
+            if (!statsMap.has(mUuid)) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-                statsMap.set(missionUuid, {
+                statsMap.set(mUuid, {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     fileCount: Number.parseInt(raw.fileCount) || 0,
-
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                     fileSize: Number.parseInt(raw.fileSize) || 0,
                 });
@@ -275,135 +349,11 @@ export class MissionService {
         }
 
         return {
-            data: missions.map((element) => missionEntityToFlatDto(element)),
-            count,
-            skip,
-            take,
-        };
-    }
-
-    async findMissionByProjectMinimal(
-        userUUID: string,
-        projectUUID: string,
-        skip: number,
-        take: number,
-        search?: string,
-        sortDirection?: 'ASC' | 'DESC',
-        sortBy?: string,
-    ): Promise<MinimumMissionsDto> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
-
-        const query = this.missionRepository
-            .createQueryBuilder('mission')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .where('project.uuid = :projectUUID', { projectUUID })
-            .take(take)
-            .skip(skip);
-
-        if (search) {
-            const tokens = search.trim().split(/\s+/);
-            for (const [index, token] of tokens.entries()) {
-                query.andWhere(`mission.name ILIKE :search_${String(index)}`, {
-                    [`search_${String(index)}`]: `%${token}%`,
-                });
-            }
-        }
-        if (sortBy) {
-            query.orderBy(`mission.${sortBy}`, sortDirection);
-        }
-        if (user.role !== UserRole.ADMIN) {
-            addAccessConstraints(query, userUUID);
-        }
-        const [missions, count] = await query.getManyAndCount();
-
-        return {
-            data: missions.map((element) => missionEntityToMinimumDto(element)),
-            count,
-            skip,
-            take,
-        };
-    }
-
-    async findMissionByProject(
-        user: UserEntity,
-        projectUuid: string,
-        skip: number,
-        take: number,
-        search?: string,
-        sortDirection?: 'ASC' | 'DESC',
-        sortBy?: string,
-    ): Promise<MissionsDto> {
-        const query = this.missionRepository
-            .createQueryBuilder('mission')
-            .addSelect('COUNT(files.uuid)::int', 'fileCount')
-            .addSelect('COALESCE(SUM(files.size), 0)::bigint', 'totalSize')
-            .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoin('mission.files', 'files')
-            .leftJoinAndSelect('mission.tags', 'tags')
-            .leftJoinAndSelect('tags.tagType', 'tagType')
-            .where('project.uuid = :projectUuid', { projectUuid })
-            .take(take)
-            .skip(skip);
-
-        query
-            .addGroupBy('mission.uuid')
-            .addGroupBy('project.uuid')
-            .addGroupBy('project.name')
-            .addGroupBy('creator.uuid')
-            .addGroupBy('tags.uuid')
-            .addGroupBy('tagType.uuid');
-
-        if (search) {
-            const tokens = search.trim().split(/\s+/);
-            for (const [index, token] of tokens.entries()) {
-                query.andWhere(`mission.name ILIKE :search_${String(index)}`, {
-                    [`search_${String(index)}`]: `%${token}%`,
-                });
-            }
-        }
-        if (sortBy) {
-            query.orderBy(`mission.${sortBy}`, sortDirection);
-        }
-        if (user.role !== UserRole.ADMIN) {
-            addAccessConstraints(query, user.uuid);
-        }
-
-        const count = await query.getCount();
-        const { raw, entities } = await query.getRawAndEntities();
-
-        // this is necessary as raw and entities at not of the same length / order
-        // eslint-disable-next-line unicorn/no-array-reduce, @typescript-eslint/no-unsafe-assignment
-        const rawLookup = raw.reduce(
-            (
-                lookup: Record<string, unknown>,
-
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                rawEntry: { mission_uuid: string },
-            ) => {
-                lookup[rawEntry.mission_uuid] = rawEntry;
-                return lookup;
-            },
-            {},
-        );
-
-        return {
-            data: entities.map((m) => {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                const rawEntry = rawLookup[m.uuid];
-                return {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...missionEntityToDtoWithCreator(m),
-
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                    filesCount: rawEntry?.fileCount,
-
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-                    size: Number.parseInt(rawEntry?.totalSize),
-                };
+            data: missions.map((element) => {
+                const dto = missionEntityToFlatDto(element);
+                dto.filesCount = element.fileCount ?? 0;
+                dto.size = element.size ?? 0;
+                return dto;
             }),
             count,
             skip,
@@ -423,7 +373,9 @@ export class MissionService {
         // verify that the no mission with the same name exists in the project
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['files'],
+            relations: {
+                files: true,
+            },
         });
 
         const exists = await this.missionRepository.exists({
@@ -457,7 +409,9 @@ export class MissionService {
     async deleteMission(uuid: string): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
-            relations: ['files'],
+            relations: {
+                files: true,
+            },
         });
         if (mission.files === undefined) throw new Error('Files not loaded');
 
@@ -475,7 +429,11 @@ export class MissionService {
     ): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['tags', 'tags.tagType'],
+            relations: {
+                tags: {
+                    tagType: true,
+                },
+            },
         });
 
         if (mission.tags === undefined) throw new Error('Tags not loaded');
@@ -486,13 +444,13 @@ export class MissionService {
                     (_tag) => _tag.tagType?.uuid === tagTypeUUID,
                 );
                 if (tag) {
-                    return this.tagService.updateTagType(
+                    return this.metadataService.updateTagType(
                         missionUUID,
                         tagTypeUUID,
                         value,
                     );
                 }
-                return this.tagService.addTagType(
+                return this.metadataService.addTagType(
                     missionUUID,
                     tagTypeUUID,
                     value,
@@ -506,7 +464,10 @@ export class MissionService {
     ): Promise<{ filename: string; link: string }[]> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['files', 'project'],
+            relations: {
+                files: true,
+                project: true,
+            },
         });
 
         if (mission.files === undefined) throw new Error('Files not loaded');
@@ -527,10 +488,7 @@ export class MissionService {
         );
     }
 
-    async updateName(
-        uuid: string,
-        name: string,
-    ): Promise<MissionEntity | null> {
+    async updateName(uuid: string, name: string): Promise<MissionEntity> {
         const exists = await this.missionRepository.exists({
             where: { name: ILike(name), uuid: Not(uuid) },
         });
@@ -542,6 +500,12 @@ export class MissionService {
         await this.missionRepository.update(uuid, {
             name: name,
         });
-        return this.missionRepository.findOne({ where: { uuid } });
+        return this.missionRepository.findOneOrFail({
+            where: { uuid },
+            relations: {
+                project: true,
+                creator: true,
+            },
+        });
     }
 }

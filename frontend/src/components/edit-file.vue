@@ -78,9 +78,9 @@
 import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { isAxiosError } from 'axios';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import { formatDate, parseDate } from 'src/services/date-formating';
+import { getErrorMessage } from 'src/services/error-handling';
 import { updateFile } from 'src/services/mutations/file';
 import { ref, watch } from 'vue';
 
@@ -144,7 +144,8 @@ watch(selectedMission, (newMission) => {
 });
 
 const { mutate: updateFileMutation } = useMutation({
-    mutationFn: (fileData: FileWithTopicDto) => updateFile({ file: fileData }),
+    mutationFn: (payload: { file: FileWithTopicDto; missionUuid: string }) =>
+        updateFile(payload),
     onSuccess: async () => {
         Notify.create({
             group: false,
@@ -155,15 +156,15 @@ const { mutate: updateFileMutation } = useMutation({
             timeout: 3000,
         });
         const cache = queryClient.getQueryCache();
-        const filtered = cache
-            .getAll()
-            .filter(
-                (query) =>
-                    query.queryKey[0] === 'Filtered Files' ||
-                    (query.queryKey[0] === 'file' &&
-                        query.queryKey[1] === fileUuid) ||
-                    query.queryKey[0] === 'files',
-            );
+        const filtered = cache.getAll().filter(
+            (query) =>
+                query.queryKey[0] === 'Filtered Files' ||
+                (query.queryKey[0] === 'file' &&
+                    query.queryKey[1] === fileUuid) ||
+                query.queryKey[0] === 'files' ||
+                // a file may have been moved into another mission
+                query.queryKey[0] === 'missions',
+        );
 
         await Promise.all(
             filtered.map((query) =>
@@ -173,17 +174,10 @@ const { mutate: updateFileMutation } = useMutation({
     },
     onError(error: unknown) {
         console.error(error);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const message =
-            (isAxiosError(error)
-                ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                  error.response?.data?.message
-                : (error as Error).message) ?? 'Unknown error occurred';
 
         Notify.create({
             group: false,
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            message: `Error updating file: ${message}`,
+            message: `Error updating file: ${getErrorMessage(error)}`,
             color: 'negative',
             spinner: false,
             position: 'bottom',
@@ -197,17 +191,19 @@ function _updateMission(): void {
 
     if (
         editableFile.value &&
+        missionUuid.value &&
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         convertedDate &&
         !Number.isNaN(convertedDate.getTime())
     ) {
         editableFile.value.date = convertedDate;
 
-        const noncircularMission = { ...editableFile.value.mission };
-        noncircularMission.project =
-            undefined as unknown as typeof noncircularMission.project;
-        editableFile.value.mission = noncircularMission;
-        updateFileMutation(editableFile.value);
+        // The mission selected in the ScopeSelector is the target location of
+        // the file; sending a different mission than the current one moves it.
+        updateFileMutation({
+            file: editableFile.value,
+            missionUuid: missionUuid.value,
+        });
         onDialogOK();
     }
 }

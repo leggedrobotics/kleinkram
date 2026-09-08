@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import base64
+import functools
 import hashlib
+import logging
 import math
+import random
 import re
 import string
+import time
 import traceback
 from hashlib import md5
 from pathlib import Path
@@ -26,6 +30,47 @@ from kleinkram.errors import FileTypeNotSupported
 from kleinkram.models import File
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
+
+logger = logging.getLogger(__name__)
+
+
+def retry(
+    max_attempts: int = 5,
+    backoff_base: int = 2,
+    exceptions: Tuple[type[Exception], ...] = (Exception,),
+    exclude_exceptions: Tuple[type[Exception], ...] = (),
+):
+    """
+    Decorator for retrying a function on specified exceptions with exponential backoff and jitter.
+    Can override max_attempts dynamically by passing `_retry_attempts` to the wrapped function.
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            attempts = kwargs.pop("_retry_attempts", max_attempts)
+
+            for attempt in range(1, attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exclude_exceptions:
+                    raise
+                except exceptions as e:
+                    if attempt == attempts:
+                        logger.error(f"Function '{func.__name__}' failed after {attempts} attempts. Final error: {e}")
+                        raise
+
+                    delay = (backoff_base**attempt) + random.uniform(0, 0.5)
+                    logger.warning(
+                        f"Function '{func.__name__}' failed (Error: {e}). "
+                        f"Attempt {attempt}/{attempts} failed. Retrying in {delay:.2f}s..."
+                    )
+                    time.sleep(delay)
+
+        return wrapper
+
+    return decorator
+
 
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
 SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml"]

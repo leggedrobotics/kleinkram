@@ -19,8 +19,13 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import environment from '@kleinkram/backend-common/environment';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
-import { ArtifactState, LogType, UserRole } from '@kleinkram/shared';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+    ArtifactState,
+    isCancellableActionState,
+    LogType,
+    UserRole,
+} from '@kleinkram/shared';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import {
@@ -170,19 +175,24 @@ export class ActionService {
     async details(actionUuid: string): Promise<ActionDto> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUuid },
-            relations: [
-                'mission',
-                'mission.project',
-                'creator',
-                'template',
-                'template.creator',
-                'worker',
-            ],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                creator: true,
+
+                template: {
+                    creator: true,
+                },
+
+                worker: true,
+            },
         });
 
         const dto = actionEntityToDto(action);
 
-        if (action.artifacts === ArtifactState.UPLOADED) {
+        if (dto.artifacts === ArtifactState.UPLOADED) {
             dto.artifactUrl = await this.generateArtifactUrl(
                 dto.artifactUrl,
                 action,
@@ -198,7 +208,11 @@ export class ActionService {
     ): Promise<ActionLogsDto> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUuid },
-            select: ['uuid', 'createdAt', 'executionEndedAt'],
+            select: {
+                uuid: true,
+                createdAt: true,
+                executionEndedAt: true,
+            },
         });
 
         const start = action.createdAt.getTime() * 1_000_000; // Nanoseconds
@@ -274,8 +288,7 @@ export class ActionService {
                             typeof parsed !== 'object' ||
                             parsed === null ||
                             !('message' in parsed) ||
-                            typeof (parsed as { message: unknown }).message !==
-                                'string'
+                            typeof parsed.message !== 'string'
                         ) {
                             throw new Error('Invalid log format');
                         }
@@ -372,6 +385,20 @@ export class ActionService {
         return true;
     }
 
+    async cancel(actionUUID: string): Promise<void> {
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid: actionUUID },
+        });
+
+        if (!isCancellableActionState(action.state)) {
+            throw new BadRequestException(
+                `Cannot cancel action in state: ${action.state}`,
+            );
+        }
+
+        await this.actionDispatcher.stopAction(actionUUID);
+    }
+
     async writeAuditLog(
         apiKey: string,
         auditLog: { method: string; url: string; message?: string },
@@ -383,7 +410,9 @@ export class ActionService {
                     ApiKeyEntity,
                     {
                         where: { apikey: apiKey },
-                        relations: ['action'],
+                        relations: {
+                            action: true,
+                        },
                     },
                 );
 
@@ -394,7 +423,9 @@ export class ActionService {
                     try {
                         const file = await manager.findOne(FileEntity, {
                             where: { uuid: fileUuid },
-                            select: ['size'],
+                            select: {
+                                size: true,
+                            },
                         });
                         if (file?.size && file.size > 0) {
                             auditLog.message = `Downloaded ${file.size.toString()}`;

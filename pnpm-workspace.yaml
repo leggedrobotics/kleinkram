@@ -5,12 +5,27 @@ packages:
   - queueConsumer
   - docs
 
+allowBuilds:
+  # ships prebuilt binaries since v13; never compile it
+  better-sqlite3: false
+  '@nestjs/core': true
+  '@parcel/watcher': true
+  '@scarf/scarf': true
+  '@swc/core': true
+  core-js: true
+  cpu-features: true
+  esbuild: true
+  msgpackr-extract: true
+  protobufjs: true
+  ssh2: true
+  unrs-resolver: true
+  vue-demi: true
+
 onlyBuiltDependencies:
   - '@nestjs/core'
   - '@parcel/watcher'
   - '@scarf/scarf'
   - '@swc/core'
-  - better-sqlite3
   - core-js
   - cpu-features
   - esbuild
@@ -21,6 +36,7 @@ onlyBuiltDependencies:
 
 overrides:
   '@nestjs/common@<10.4.16': '>=10.4.16'
+  better-sqlite3: '^13.0.3'
   esbuild@<=0.24.2: '>=0.25.0'
   got@<11.8.5: '>=11.8.5'
   js-yaml@>=4.0.0 <4.1.1: '>=4.1.1'

@@ -4,8 +4,14 @@ from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 from enum import Enum
+from enum import IntEnum
+from typing import Any
 from typing import Dict
 from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
+from typing import Union
 from uuid import UUID
 
 
@@ -23,6 +29,16 @@ class MetadataValue:
     value: str
     type_: MetadataValueType
 
+    # uuid of the metadata type this value belongs to, as reported by the API;
+    # `None` when the response did not carry it. Metadata type *names* are not
+    # a safe key: resolving one goes through a substring search.
+    type_id: Optional[UUID] = None
+
+
+# a metadata value as it is sent to the API; numbers and booleans are sent as
+# native JSON values so the API does not have to parse them out of a string
+MetadataPayloadValue = Union[str, float, bool]
+
 
 class FileState(str, Enum):
     OK = "OK"
@@ -33,6 +49,7 @@ class FileState(str, Enum):
     CONVERSION_ERROR = "CONVERSION_ERROR"
     LOST = "LOST"
     FOUND = "FOUND"
+    CANCELED = "CANCELED"
 
 
 @dataclass(frozen=True)
@@ -77,12 +94,20 @@ class File:
     state: FileState = FileState.OK
 
 
-class RunStatus(str, Enum):
+class ExecutionStatus(str, Enum):
     QUEUED = "Queued"
     IN_PROGRESS = "In Progress"
     SUCCESS = "Success"
     FAILED = "Failed"
     CANCELLED = "Cancelled"
+
+
+class ArtifactState(IntEnum):
+    AWAITING_ACTION = 10
+    UPLOADING = 20
+    UPLOADED = 30
+    ERROR = 40
+    EXPIRED = 50
 
 
 @dataclass(frozen=True)
@@ -93,11 +118,13 @@ class LogEntry:
 
 
 @dataclass(frozen=True)
-class Run:
+class Execution:
     uuid: UUID
     state: str
     state_cause: str | None
     artifact_url: str | None
+    artifact_state: ArtifactState | None
+    artifact_size: int | None
     created_at: datetime
     updated_at: datetime | None
     project_name: str
@@ -115,6 +142,7 @@ class ActionTemplate:
     command: str
     cpu_cores: int
     cpu_memory_gb: int
+    description: str
     entrypoint: str
     gpu_memory_gb: int
     image_name: str
@@ -133,3 +161,58 @@ class FileVerificationStatus(str, Enum):
     MISMATCHED_HASH = "hash mismatch"
     MISMATCHED_SIZE = "size mismatch"
     UNKNOWN = "unknown"
+
+
+class TriggerType(str, Enum):
+    FILE = "FILE"
+    WEBHOOK = "WEBHOOK"
+    TIME = "TIME"
+
+
+class FileTriggerEvent(str, Enum):
+    UPLOAD = "UPLOAD"
+    RENAME = "RENAME"
+    MOVE = "MOVE"
+    DELETE = "DELETE"
+
+
+# ---
+# The attribute names of the following Config dataclasses match the keys of
+# the corresponding API objects, which allows for easy parsing. Thus, if the
+# key names of the API objects change, the attribute names of the dataclasses
+# should be updated accordingly.
+# ---
+
+
+@dataclass(frozen=True)
+class FileConfig:
+    patterns: Tuple[str, ...] = field(default_factory=tuple)
+    event: Tuple[FileTriggerEvent, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class TimeConfig:
+    cron: str
+
+
+# placeholder for future config options
+@dataclass(frozen=True)
+class WebhookConfig:
+    extra_options: Mapping[str, Any] = field(default_factory=dict)
+
+
+TriggerConfig = FileConfig | TimeConfig | WebhookConfig
+
+
+@dataclass(frozen=True)
+class ActionTrigger:
+    uuid: UUID
+    name: str
+    description: str
+    template_uuid: UUID
+    template_name: Optional[str]
+    mission_uuid: UUID
+    type: TriggerType
+    config: TriggerConfig
+    creator_name: str
+    creator_uuid: UUID

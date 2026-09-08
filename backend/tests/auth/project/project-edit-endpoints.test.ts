@@ -182,7 +182,9 @@ describe('Verify project manipulation endpoints', () => {
             database.getRepository<TagTypeEntity>(TagTypeEntity);
         const tagType = await TagTypeRepository.findOneOrFail({
             where: { uuid: globalThis.metadataUuid },
-            relations: ['project'],
+            relations: {
+                project: true,
+            },
         });
         expect(tagType.name).toBe(globalThis.tagName);
         expect(tagType.uuid).toBe(globalThis.metadataUuid);
@@ -206,9 +208,9 @@ describe('Verify project manipulation endpoints', () => {
         headersBuilder.addHeader('Content-Type', 'application/json');
 
         const response = await fetch(
-            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/updateTagTypes`,
+            `${DEFAULT_URL}/projects/${globalThis.projectUuid}/metadata-types`,
             {
-                method: 'POST',
+                method: 'PUT',
                 headers: headersBuilder.getHeaders(),
                 body: JSON.stringify({
                     tagTypeUUIDs: [metadataUuid, globalThis.metadataUuid],
@@ -216,16 +218,22 @@ describe('Verify project manipulation endpoints', () => {
             },
         );
 
+        if (response.status >= 300) {
+            console.error('API Error Response:', await response.text());
+        }
+        expect(response.status).toBeLessThan(300);
+
         const TagTypeRepository =
             database.getRepository<TagTypeEntity>(TagTypeEntity);
         const tagType = await TagTypeRepository.findOneOrFail({
             where: { uuid: metadataUuid },
-            relations: ['project'],
+            relations: {
+                project: true,
+            },
         });
         expect(tagType.name).toBe(name);
         expect(tagType.uuid).toBe(metadataUuid);
         expect(tagType.project?.[0]?.uuid).toBe(globalThis.projectUuid);
-        expect(response.status).toBeLessThan(300);
     });
 
     test('if access management of project can be edited by creator', async () => {
@@ -245,13 +253,17 @@ describe('Verify project manipulation endpoints', () => {
             database.getRepository<ProjectAccessEntity>(ProjectAccessEntity);
         const projectUserAccess = await projectAccessRepository.findOneOrFail({
             where: { accessGroup: { uuid: accessGroupUser.uuid } },
-            relations: ['accessGroup'],
+            relations: {
+                accessGroup: true,
+            },
         });
 
         const projectCreatorAccess =
             await projectAccessRepository.findOneOrFail({
                 where: { accessGroup: { uuid: accessGroupCreator.uuid } },
-                relations: ['accessGroup'],
+                relations: {
+                    accessGroup: true,
+                },
             });
 
         console.log('[DEBUG]: Access group USER:', accessGroupUser);
@@ -324,7 +336,9 @@ describe('Verify project manipulation endpoints', () => {
 
         const projectGroup = await projectAccessRepository.findOneOrFail({
             where: { accessGroup: { uuid: accessGroupUser.uuid } },
-            relations: ['accessGroup'],
+            relations: {
+                accessGroup: true,
+            },
         });
 
         expect(projectGroup.accessGroup?.uuid).toBe(accessGroupUser.uuid);

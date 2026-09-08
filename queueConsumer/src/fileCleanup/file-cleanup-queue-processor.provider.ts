@@ -1,39 +1,19 @@
 import { redis } from '@kleinkram/backend-common/consts';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
-import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
-import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
-import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
-import {
-    AccessGroupRights,
-    FileState,
-    QueueState,
-    UserRole,
-} from '@kleinkram/shared';
-import { Process, Processor } from '@nestjs/bull';
+import { FileState, QueueState } from '@kleinkram/shared';
+import { Processor } from '@nestjs/bull';
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Job } from 'bull';
+
 import { Redis } from 'ioredis';
 import crypto from 'node:crypto';
 import Redlock from 'redlock';
-import {
-    IsNull,
-    LessThanOrEqual,
-    MoreThanOrEqual,
-    Not,
-    Repository,
-} from 'typeorm';
+import { In, IsNull, LessThanOrEqual, Not, Repository } from 'typeorm';
 import logger from '../logger';
-
-type CancelUploadJob = Job<{
-    uuids: string[];
-    missionUUID: string;
-    userUUID: string;
-}>;
 
 @Processor('file-cleanup')
 @Injectable()
@@ -45,14 +25,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         private fileRepository: Repository<FileEntity>,
         @InjectRepository(IngestionJobEntity)
         private queueRepository: Repository<IngestionJobEntity>,
-        @InjectRepository(UserEntity)
-        private userRepository: Repository<UserEntity>,
-        @InjectRepository(MissionEntity)
-        private missionRepository: Repository<MissionEntity>,
-        @InjectRepository(ProjectAccessViewEntity)
-        private projectAccessView: Repository<ProjectAccessViewEntity>,
-        @InjectRepository(MissionAccessViewEntity)
-        private missionAccessView: Repository<MissionAccessViewEntity>,
+
         @Inject('DataStorageBucket')
         private readonly dataStorage: IStorageBucket,
     ) {}
@@ -65,53 +38,6 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
         });
     }
 
-    @Process({ concurrency: 10, name: 'cancelUpload' })
-    async process(job: CancelUploadJob): Promise<void> {
-        const userUUID = job.data.userUUID;
-        const uuids = job.data.uuids;
-        const missionUUID = job.data.missionUUID;
-        const canCancelUpload = await this.canCancelUpload(
-            userUUID,
-            missionUUID,
-        );
-        if (!canCancelUpload) {
-            logger.debug(`User ${userUUID} can't cancel upload`);
-            return;
-        }
-        await Promise.all(
-            uuids.map(async (uuid) => {
-                const file = await this.fileRepository.findOne({
-                    where: { uuid, mission: { uuid: missionUUID } },
-                    relations: ['mission'],
-                });
-                if (!file) {
-                    return;
-                }
-                if (file.state === FileState.OK) {
-                    return;
-                }
-
-                if (file.mission === undefined) {
-                    logger.error(
-                        `Mission of file ${file.uuid} is undefined, skipping`,
-                    );
-                    return;
-                }
-
-                const queue = await this.queueRepository.findOneOrFail({
-                    where: {
-                        displayName: file.filename,
-                        mission: { uuid: file.mission.uuid },
-                    },
-                });
-                queue.state = QueueState.CANCELED;
-                await this.queueRepository.save(queue);
-                await this.fileRepository.remove(file);
-                return;
-            }),
-        );
-    }
-
     @Cron(CronExpression.EVERY_DAY_AT_3AM)
     async fixFileHashes(): Promise<void> {
         await this.redlock
@@ -120,7 +46,11 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
                 const files = await this.fileRepository.find({
                     where: { hash: IsNull(), state: Not(FileState.LOST) },
-                    relations: ['mission', 'mission.project'],
+                    relations: {
+                        mission: {
+                            project: true,
+                        },
+                    },
                 });
                 for (const file of files) {
                     const hash = crypto.createHash('md5');
@@ -157,7 +87,11 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                                 .save(file)
                                 .then(resolve)
                                 .catch((error: unknown) => {
-                                    reject(error as Error);
+                                    reject(
+                                        error instanceof Error
+                                            ? error
+                                            : new Error(String(error)),
+                                    );
                                 });
                         });
                     });
@@ -221,52 +155,58 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         await this.queueRepository.save(queue);
                     }),
                 );
+
+                // Clean up canceled uploads older than 24 hours
+                const canceledUploads = await this.fileRepository.find({
+                    where: {
+                        state: FileState.CANCELED,
+                        updatedAt: LessThanOrEqual(
+                            new Date(Date.now() - 1000 * 60 * 60 * 24),
+                        ),
+                    },
+                });
+                if (canceledUploads.length > 0) {
+                    logger.debug(
+                        `Cleaning up ${String(canceledUploads.length)} canceled uploads`,
+                    );
+                    const canceledUuids = canceledUploads.map((f) => f.uuid);
+                    await this.queueRepository
+                        .softDelete({
+                            identifier: In(canceledUuids),
+                        })
+                        .catch((error: unknown) => {
+                            logger.error(
+                                `Failed to soft-delete ingestion jobs for canceled uploads: ${String(error)}`,
+                            );
+                        });
+
+                    await Promise.all(
+                        canceledUploads.map(async (file) => {
+                            try {
+                                await this.dataStorage
+                                    .deleteFile(file.uuid)
+                                    .catch((error: unknown) => {
+                                        logger.error(
+                                            `Failed to delete S3 object for ${file.uuid}: ${String(error)}`,
+                                        );
+                                    });
+                                await this.fileRepository.softDelete({
+                                    uuid: file.uuid,
+                                    state: FileState.CANCELED,
+                                });
+                            } catch (error: unknown) {
+                                logger.error(
+                                    `Failed to clean up canceled upload ${file.uuid}: ${String(error)}`,
+                                );
+                            }
+                        }),
+                    );
+                }
             })
             .catch(() => {
                 logger.debug(
                     "Couldn't acquire lock for cleanup failed uploads",
                 );
             });
-    }
-
-    async canCancelUpload(
-        userUUID: string,
-        missionUUID: string,
-    ): Promise<boolean> {
-        const user = await this.userRepository.findOneOrFail({
-            where: { uuid: userUUID },
-        });
-        if (user.role === UserRole.ADMIN) {
-            return true;
-        }
-        const mission = await this.missionRepository.findOneOrFail({
-            where: { uuid: missionUUID },
-            relations: ['project'],
-        });
-
-        if (mission.project === undefined) {
-            logger.error(
-                `Project of mission ${mission.uuid} is undefined, skipping`,
-            );
-            return false;
-        }
-
-        const canAccessProject = await this.projectAccessView.exists({
-            where: {
-                projectUuid: mission.project.uuid,
-                userUuid: userUUID,
-                rights: MoreThanOrEqual(AccessGroupRights.WRITE),
-            },
-        });
-        if (canAccessProject) {
-            return true;
-        }
-        return await this.missionAccessView.exists({
-            where: {
-                missionUuid: missionUUID,
-                userUuid: userUUID,
-                rights: MoreThanOrEqual(AccessGroupRights.WRITE),
-            },
-        });
     }
 }

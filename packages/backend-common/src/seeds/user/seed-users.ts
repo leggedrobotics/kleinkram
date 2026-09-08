@@ -1,7 +1,6 @@
 import { systemUser } from '@backend-common/consts';
 import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { AccessGroupFactoryContext } from '@backend-common/factories/auth/accessgroup.factory';
 import { UserContext } from '@backend-common/factories/user/user.factory';
 import { AffiliationGroupService } from '@backend-common/services/affiliation-group.service';
 import {
@@ -35,7 +34,13 @@ export const seedUsers = async (
         // eslint-disable-next-line no-console
         console.log('Users exist in DB, skipping seeding.');
         const users = await dataSource.getRepository(UserEntity).find({
-            select: ['uuid', 'email', 'name', 'role', 'avatarUrl'],
+            select: {
+                uuid: true,
+                email: true,
+                name: true,
+                role: true,
+                avatarUrl: true,
+            },
         });
         // eslint-disable-next-line no-console
         console.log('Existing users:', users.map((u) => u.email).join(', '));
@@ -107,7 +112,11 @@ export const seedUsers = async (
                 .getRepository(UserEntity)
                 .findOne({
                     where: { uuid: user.uuid },
-                    relations: ['memberships', 'memberships.accessGroup'],
+                    relations: {
+                        memberships: {
+                            accessGroup: true,
+                        },
+                    },
                 });
 
             const hasPrimary = userWithGroups?.memberships?.some(
@@ -120,7 +129,7 @@ export const seedUsers = async (
                     .setMeta({
                         user: user,
                         isPersonal: true,
-                    } as Partial<AccessGroupFactoryContext>)
+                    })
                     .save();
             }
         }),

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import List
 from typing import Optional
 
 import typer
@@ -9,8 +10,10 @@ import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import ProjectQuery
 from kleinkram.api.routes import get_project
+from kleinkram.api.routes import get_projects
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_project_info
+from kleinkram.printing import print_projects
 from kleinkram.utils import split_args
 
 project_typer = typer.Typer(no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]})
@@ -32,7 +35,7 @@ def create(
     description: str = typer.Option(..., "--description", "-d", help="project description"),
 ) -> None:
     client = AuthenticatedClient()
-    project_id = kleinkram.api.routes._create_project(client, project, description)
+    project_id = kleinkram.core.create_project(client, project, description)
 
     project_parsed = get_project(client, ProjectQuery(ids=[project_id]))
     print_project_info(project_parsed, pprint=get_shared_state().verbose)
@@ -81,3 +84,15 @@ def delete(project: str = typer.Option(..., "--project", "-p", help="project id 
 @project_typer.command(help=NOT_IMPLEMENTED_YET)
 def prune() -> None:
     raise NotImplementedError(NOT_IMPLEMENTED_YET)
+
+
+@project_typer.command(name="list", help="list projects")
+def list_projects(
+    projects: Optional[List[str]] = typer.Argument(None, help="project names"),
+) -> None:
+    project_ids, project_patterns = split_args(projects or [])
+    project_query = ProjectQuery(patterns=project_patterns, ids=project_ids)
+
+    client = AuthenticatedClient()
+    parsed_projects = list(get_projects(client, project_query=project_query))
+    print_projects(parsed_projects, pprint=get_shared_state().verbose)

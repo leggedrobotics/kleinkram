@@ -62,14 +62,17 @@ is backed by disk storage on the host machine and does not count towards the con
 
 ### Action Limitations
 
-Actions have certain limitations to for resource management and scheduling purposes:
+Actions have certain limitations to for resource management, scheduling, and security purposes:
 
-| Limitation       | Description                                                                                                                                     |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Execution Time   | Actions have a maximum runtime.                                                                                                                 |
-| Memory Limits    | Actions are allocated a specific memory quota.                                                                                                  |
-| GPU Acceleration | GPU acceleration is available via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html). |
-| Access Scoping   | Actions are confined to the project they are executed within.                                                                                   |
+| Limitation              | Description                                                                                                                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Execution Time          | Actions have a maximum runtime.                                                                                                                                                           |
+| Memory Limits           | Actions are allocated a specific memory quota.                                                                                                                                            |
+| GPU Acceleration        | GPU acceleration is available via [NVIDIA Docker Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html).                                           |
+| Access Scoping          | Actions are confined to the project they are executed within.                                                                                                                             |
+| Network Isolation       | In production, actions run on an isolated bridge network namespace. They cannot access host loopback services or other private compose networks, and can only access the public internet. |
+| Dropped Capabilities    | All default Linux capabilities are dropped (`CapDrop = ['ALL']`). Actions cannot execute low-level host kernel operations.                                                                |
+| No Privilege Escalation | Enforces `no-new-privileges`, preventing container processes from gaining elevated permissions via `setuid` or `setgid` binaries.                                                         |
 
 ### Action Status (Exit Codes)
 
@@ -103,14 +106,18 @@ fi
 
 ## Container Termination
 
-In some cases, the system may forcefully terminate your action container. This typically results in an exit code of `137` (SIGKILL) or `143` (SIGTERM). Common reasons include:
+In some cases, the system may forcefully terminate your action container. This typically results in an exit code of
+`137` (SIGKILL) or `143` (SIGTERM). Common reasons include:
 
 - **Time Limit Exceeded**: The action ran longer than the configured `max_runtime` (default: 2 hours).
 - **Resource Limits**: The container consumed more memory or CPU than allocated (OOMKilled).
-- **Scheduler Interruption**: If the Action Runner service is updated or restarted, it may terminate containers running from previous instances to ensure system consistency. This is reported with the status cause "Interrupted by new Runner Instance".
+- **Scheduler Interruption**: If the Action Runner service is updated or restarted, it may terminate containers running
+  from previous instances to ensure system consistency. This is reported with the status cause "Interrupted by new
+  Runner Instance".
 
 :::tip
-If you see "Interrupted by new Runner Instance", simply retry the action later. If the issue persists, contact your administrator.
+If you see "Interrupted by new Runner Instance", simply retry the action later. If the issue persists, contact your
+administrator.
 :::
 
 ## Environment Variables

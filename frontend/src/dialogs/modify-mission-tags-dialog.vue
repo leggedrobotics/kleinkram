@@ -45,12 +45,18 @@ watch(
             tagValues.value = {};
 
             for (const tag of newMission.tags) {
-                // @ts-ignore
-
-                tagValues.value[tag.type.uuid] =
-                    tag.type.datatype === DataType.BOOLEAN
-                        ? tag.value
-                        : tag.valueAsString;
+                const tagValue = tag.value;
+                if (tag.type.datatype === DataType.BOOLEAN) {
+                    tagValues.value[tag.type.uuid] =
+                        tagValue as unknown as string;
+                } else {
+                    const rawValue = tagValue as
+                        string | Date | number | boolean | null | undefined;
+                    tagValues.value[tag.type.uuid] =
+                        rawValue !== undefined && rawValue !== null
+                            ? String(rawValue)
+                            : '';
+                }
             }
         }
     },

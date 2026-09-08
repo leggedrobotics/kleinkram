@@ -15,11 +15,12 @@ import {
     Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ApiOkResponse, OutputDto } from '../../decorators';
+import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '../../decorators';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreateInMissionByBody,
     CanModifyTrigger,
+    fromBody,
     LoggedIn,
 } from '../auth/roles.decorator';
 
@@ -38,8 +39,8 @@ export class TriggerController {
     }
 
     @Post()
-    @CanCreateInMissionByBody()
-    @ApiOkResponse({ type: ActionTriggerDto })
+    @CanCreateInMissionByBody(fromBody('missionUuid'))
+    @ApiCreatedResponse({ type: ActionTriggerDto })
     async create(
         @Body() dto: CreateActionTriggerDto,
         @AddUser() auth: AuthHeader,

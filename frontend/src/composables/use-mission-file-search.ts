@@ -129,14 +129,8 @@ export function useMissionFileSearch(
                 MissionFilterState,
                 MissionFileSearchContextData
             >,
-            new StartDateFilter() as unknown as Filter<
-                MissionFilterState,
-                MissionFileSearchContextData
-            >,
-            new EndDateFilter() as unknown as Filter<
-                MissionFilterState,
-                MissionFileSearchContextData
-            >,
+            new StartDateFilter(),
+            new EndDateFilter(),
         ];
 
     // --- Keyword Strategy (for suggesting filter keywords like "health:", "category:", etc.) ---

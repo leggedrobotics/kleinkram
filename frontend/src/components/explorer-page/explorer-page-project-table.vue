@@ -188,10 +188,7 @@ const {
         ...urlHandler.value.searchParams,
         ...(myProjects
             ? // eslint-disable-next-line @typescript-eslint/naming-convention
-              ({ 'creator.uuid': user.value?.uuid ?? '' } as Record<
-                  string,
-                  string
-              >)
+              { 'creator.uuid': user.value?.uuid ?? '' }
             : {}),
     })),
 );

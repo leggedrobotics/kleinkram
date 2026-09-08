@@ -1,6 +1,6 @@
 {
     "name": "@kleinkram/shared",
-    "version": "0.59.0",
+    "version": "0.60.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "license": "MIT",
@@ -21,8 +21,8 @@
         }
     },
     "dependencies": {
-        "@mcap/core": "^2.1.7",
-        "minimatch": "^10.1.1"
+        "@mcap/core": "^2.2.1",
+        "minimatch": "^10.2.6"
     },
     "devDependencies": {
         "typescript": "^5.9.3"

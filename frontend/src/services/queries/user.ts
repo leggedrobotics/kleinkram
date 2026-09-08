@@ -13,14 +13,14 @@ export const searchUsers = async (search: string): Promise<UsersDto> => {
         };
     }
     const response: AxiosResponse<UsersDto> = await axios.get<UsersDto>(
-        '/user/search',
+        '/users/search',
         { params: { search } },
     );
     return response.data;
 };
 
 export const getMe = async (): Promise<CurrentAPIUserDto> => {
-    const response = await axios.get<CurrentAPIUserDto>('/user/me');
+    const response = await axios.get<CurrentAPIUserDto>('/users/me');
     const user = response.data;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!user) throw new Error('User not found');
@@ -28,8 +28,9 @@ export const getMe = async (): Promise<CurrentAPIUserDto> => {
 };
 
 export const getPermissions = async (): Promise<PermissionsDto> => {
-    const response: AxiosResponse<PermissionsDto> =
-        await axios.get('/user/permissions');
+    const response: AxiosResponse<PermissionsDto> = await axios.get(
+        '/users/me/permissions',
+    );
     return response.data;
 };
 
@@ -46,8 +47,21 @@ export const getMyApiKeys = async (
         sortOrder: descending ? 'DESC' : 'ASC',
     };
 
-    const response = await axios.get<ApiKeysDto>('/user/api-keys', {
+    const response = await axios.get<ApiKeysDto>('/users/me/api-keys', {
         params: parameters,
     });
+    return response.data;
+};
+
+export const resolveUsers = async (
+    uuids: string[],
+): Promise<Record<string, string>> => {
+    if (uuids.length === 0) return {};
+    const response = await axios.post<Record<string, string>>(
+        '/users/resolve',
+        {
+            uuids,
+        },
+    );
     return response.data;
 };

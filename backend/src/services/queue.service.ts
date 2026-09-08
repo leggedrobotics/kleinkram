@@ -128,7 +128,11 @@ export class QueueService implements OnModuleInit {
                 { hash: IsNull(), state: FileState.OK },
                 { hash: '', state: FileState.OK },
             ],
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -154,33 +158,38 @@ export class QueueService implements OnModuleInit {
         actor: UserEntity,
         source: FileSource | string = FileSource.WEB_INTERFACE,
     ): Promise<void> {
-        let job = await this.queueRepository.findOne({
-            where: { identifier: uuid },
-            relations: ['mission', 'mission.project'],
+        const file = await this.fileRepository.findOneOrFail({
+            where: { uuid },
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
-        if (!job) {
-            logger.warn(
-                `confirmUpload: Job missing for file ${uuid}.Recreating...`,
-            );
-
-            const file = await this.fileRepository.findOneOrFail({
-                where: { uuid },
-                relations: ['mission', 'mission.project'],
-            });
-
-            job = await this.queueRepository.save(
-                this.queueRepository.create({
-                    identifier: file.uuid,
-
-                    displayName: file.filename,
-                    state: QueueState.AWAITING_UPLOAD,
-                    location: FileLocation.S3,
-                    mission: file.mission,
-                    creator: actor,
-                } as IngestionJobEntity),
-            );
+        if (file.state === FileState.CANCELED) {
+            throw new ConflictException('Cannot confirm a canceled upload');
         }
+
+        let job = await this.queueRepository.findOne({
+            where: { identifier: uuid },
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
+        });
+
+        job ??= await this.queueRepository.save(
+            this.queueRepository.create({
+                identifier: file.uuid,
+                displayName: file.filename,
+                state: QueueState.AWAITING_UPLOAD,
+                location: FileLocation.S3,
+                mission: file.mission,
+                creator: actor,
+            } as IngestionJobEntity),
+        );
 
         if (
             job.state !== QueueState.AWAITING_UPLOAD &&
@@ -192,11 +201,6 @@ export class QueueService implements OnModuleInit {
                 `Resuming upload for job ${job.uuid} in state ${job.state} `,
             );
         }
-
-        const file = await this.fileRepository.findOneOrFail({
-            where: { uuid: uuid },
-            relations: ['mission', 'mission.project'],
-        });
 
         const fileInfo = await this.dataStorage
             .getFileInfo(file.uuid)
@@ -266,7 +270,13 @@ export class QueueService implements OnModuleInit {
             }
             return await this.queueRepository.find({
                 where,
-                relations: ['mission', 'mission.project', 'creator'],
+                relations: {
+                    mission: {
+                        project: true,
+                    },
+
+                    creator: true,
+                },
                 skip,
                 take,
                 order: { createdAt: 'DESC' },
@@ -301,7 +311,11 @@ export class QueueService implements OnModuleInit {
     ): Promise<DeleteMissionResponseDto> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         if (
@@ -343,7 +357,7 @@ export class QueueService implements OnModuleInit {
                 }
             }
         }
-        return {};
+        return { success: true };
     }
 
     async cancelProcessing(
@@ -352,7 +366,11 @@ export class QueueService implements OnModuleInit {
     ): Promise<CancelProcessingResponseDto> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         if (queue.state >= QueueState.PROCESSING) {

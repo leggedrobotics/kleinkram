@@ -1,16 +1,16 @@
 export enum QueueState {
-    'AWAITING_UPLOAD' = 0,
-    'AWAITING_PROCESSING' = 10,
-    'PROCESSING' = 20,
-    'DOWNLOADING' = 21,
-    'CONVERTING_AND_EXTRACTING_TOPICS' = 22,
-    'UPLOADING' = 23,
-    'COMPLETED' = 30,
-    'ERROR' = 40,
-    'CORRUPTED' = 41,
-    'CANCELED' = 42,
-    'UNSUPPORTED_FILE_TYPE' = 43,
-    'FILE_ALREADY_EXISTS' = 44,
+    AWAITING_UPLOAD = 0,
+    AWAITING_PROCESSING = 10,
+    PROCESSING = 20,
+    DOWNLOADING = 21,
+    CONVERTING_AND_EXTRACTING_TOPICS = 22,
+    UPLOADING = 23,
+    COMPLETED = 30,
+    ERROR = 40,
+    CORRUPTED = 41,
+    CANCELED = 42,
+    UNSUPPORTED_FILE_TYPE = 43,
+    FILE_ALREADY_EXISTS = 44,
 }
 
 export enum FileOrigin {
@@ -77,6 +77,18 @@ export enum AccessGroupType {
     CUSTOM = 'CUSTOM',
 }
 
+export enum AccessGroupEventType {
+    CREATE_GROUP = 'CREATE_GROUP',
+    ADD_USER = 'ADD_USER',
+    REMOVE_USER = 'REMOVE_USER',
+    UPDATE_EXPIRE_DATE = 'UPDATE_EXPIRE_DATE',
+    ADD_PROJECT = 'ADD_PROJECT',
+    REMOVE_PROJECT = 'REMOVE_PROJECT',
+    UPDATE_PROJECT_ACCESS = 'UPDATE_PROJECT_ACCESS',
+    PROMOTE_USER = 'PROMOTE_USER',
+    DEMOTE_USER = 'DEMOTE_USER',
+}
+
 export enum ActionState {
     PENDING = 'PENDING',
     STARTING = 'STARTING',
@@ -85,6 +97,7 @@ export enum ActionState {
     DONE = 'DONE',
     FAILED = 'FAILED',
     UNPROCESSABLE = 'UNPROCESSABLE',
+    CANCELLED = 'CANCELLED',
 }
 
 export enum KeyTypes {
@@ -128,6 +141,7 @@ export enum ArtifactState {
     UPLOADING = 20,
     UPLOADED = 30,
     ERROR = 40,
+    EXPIRED = 50,
 }
 
 export enum FileState {
@@ -139,6 +153,7 @@ export enum FileState {
     CONVERSION_ERROR = 'CONVERSION_ERROR',
     LOST = 'LOST',
     FOUND = 'FOUND',
+    CANCELED = 'CANCELED',
 }
 
 export enum HealthStatus {

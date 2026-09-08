@@ -162,6 +162,19 @@ const ddr_open2 = ref(false);
 const localTagValues = ref({ ...properties.tagValues });
 const additionalTags: Ref<TagTypeDto[]> = ref<TagTypeDto[]>([]);
 
+// Keep local copy in sync with prop changes from parent
+watch(
+    () => properties.tagValues,
+    (newValue) => {
+        const isDifferent =
+            JSON.stringify(newValue) !== JSON.stringify(localTagValues.value);
+        if (isDifferent) {
+            localTagValues.value = { ...newValue };
+        }
+    },
+    { deep: true, immediate: true },
+);
+
 // Watch for changes in localTagValues and emit them back to the parent
 watch(
     localTagValues,
@@ -180,6 +193,7 @@ watch(
     () => ({
         project: project.value,
         tagTypes: tagTypes.value,
+        tagKeys: Object.keys(localTagValues.value).join(','),
     }),
     ({ project: newProject, tagTypes: newTagTypes }) => {
         if (newProject && newTagTypes) {
@@ -226,6 +240,13 @@ const DataType_InputType = {
 
 const addTag = (metadataType: TagTypeDto): void => {
     additionalTags.value.push(metadataType);
+    if (!(metadataType.uuid in localTagValues.value)) {
+        // Use undefined for BOOLEAN so that the toggle starts in the neutral/undefined state
+        localTagValues.value[metadataType.uuid] =
+            metadataType.datatype === DataType.BOOLEAN
+                ? (undefined as unknown as string)
+                : '';
+    }
 };
 
 const tagColor = (metadataType: TagTypeDto): string => {
@@ -252,6 +273,8 @@ const removeTagType = (metadataTypeUUID: string): void => {
     if (index !== -1) {
         additionalTags.value.splice(index, 1);
     }
+    const { [metadataTypeUUID]: _, ...rest } = localTagValues.value;
+    localTagValues.value = rest;
 };
 </script>
 <style scoped>
