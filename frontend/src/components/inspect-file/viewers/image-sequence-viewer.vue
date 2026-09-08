@@ -18,10 +18,12 @@
 
             <div
                 v-if="renderError"
-                class="absolute-center text-negative bg-white q-pa-sm rounded-borders"
+                class="absolute-center text-negative bg-white q-pa-md rounded-borders text-center"
+                style="max-width: 80%"
                 @click.stop
             >
-                <q-icon name="sym_o_warning" /> {{ renderError }}
+                <q-icon name="sym_o_warning" size="sm" />
+                <div class="q-mt-xs">{{ renderError }}</div>
             </div>
             <div
                 v-else-if="messages.length === 0"
@@ -306,6 +308,8 @@ const tick = (now: number): void => {
 
 const play = (): void => {
     if (isPlaying.value || properties.messages.length === 0) return;
+    // Nothing to show yet (or nothing decodable): do not start the clock
+    if (!isDecoded.value || renderError.value) return;
     isPlaying.value = true;
     lastTick = performance.now();
     animationFrame = requestAnimationFrame(tick);
