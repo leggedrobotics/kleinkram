@@ -12,7 +12,7 @@
     >
         <template v-if="hasPoints">
             <img
-                v-for="tile in tiles"
+                v-for="tile in showTiles ? tiles : []"
                 :key="tile.key"
                 :src="tile.url"
                 class="map-tile"
@@ -134,7 +134,24 @@
                 >
                     <q-tooltip>Fit track</q-tooltip>
                 </q-btn>
+                <q-btn
+                    dense
+                    unelevated
+                    size="sm"
+                    :color="showTiles ? 'primary' : 'white'"
+                    :text-color="showTiles ? 'white' : 'grey-9'"
+                    icon="sym_o_map"
+                    @click.stop="toggleTiles"
+                >
+                    <q-tooltip>
+                        {{ showTiles ? 'Hide' : 'Show' }} map background. Map
+                        tiles are fetched from openstreetmap.org, which reveals
+                        the approximate area of this track to that service.
+                    </q-tooltip>
+                </q-btn>
             </div>
+
+            <div v-if="!showTiles" class="absolute-full tile-placeholder" />
 
             <div class="map-legend row items-center q-gutter-x-sm text-caption">
                 <span class="legend-dot" style="background: #4caf50"></span>
@@ -147,7 +164,7 @@
                 </template>
             </div>
 
-            <div class="map-attribution text-caption">
+            <div v-if="showTiles" class="map-attribution text-caption">
                 ©
                 <a
                     href="https://www.openstreetmap.org/copyright"
@@ -218,6 +235,52 @@ const validPoints = computed(() =>
 );
 const hasPoints = computed(() => validPoints.value.length > 0);
 
+/**
+ * A track crossing the antimeridian has raw longitudes near both +180 and
+ * -180. Shifting the negative ones by 360° keeps it contiguous; tiles
+ * wrap horizontally, so projected x may exceed the world width.
+ */
+const crossesAntimeridian = computed(() => {
+    let minLon = Infinity;
+    let maxLon = -Infinity;
+    for (const p of validPoints.value) {
+        minLon = Math.min(minLon, p.lon);
+        maxLon = Math.max(maxLon, p.lon);
+    }
+    if (maxLon - minLon <= 180) return false;
+    // Compare the raw span with the span of the unwrapped longitudes
+    let minUnwrapped = Infinity;
+    let maxUnwrapped = -Infinity;
+    for (const p of validPoints.value) {
+        const lon = p.lon < 0 ? p.lon + 360 : p.lon;
+        minUnwrapped = Math.min(minUnwrapped, lon);
+        maxUnwrapped = Math.max(maxUnwrapped, lon);
+    }
+    return maxUnwrapped - minUnwrapped < maxLon - minLon;
+});
+
+const effectiveLon = (lon: number): number =>
+    crossesAntimeridian.value && lon < 0 ? lon + 360 : lon;
+
+// --- Map background (OpenStreetMap tiles) ---
+const TILES_STORAGE_KEY = 'kleinkram.trackMap.showTiles';
+const readTilePreference = (): boolean => {
+    try {
+        return localStorage.getItem(TILES_STORAGE_KEY) !== 'false';
+    } catch {
+        return true;
+    }
+};
+const showTiles = ref(readTilePreference());
+const toggleTiles = (): void => {
+    showTiles.value = !showTiles.value;
+    try {
+        localStorage.setItem(TILES_STORAGE_KEY, String(showTiles.value));
+    } catch {
+        // Preference cannot be persisted; keep it for this view only
+    }
+};
+
 // --- Web Mercator helpers (world pixels at a given zoom) ---
 const worldSize = (z: number): number => TILE_SIZE * 2 ** z;
 
@@ -225,7 +288,7 @@ const project = (p: GeoPoint, z: number): { x: number; y: number } => {
     const scale = worldSize(z);
     const sinLat = Math.sin((p.lat * Math.PI) / 180);
     return {
-        x: ((p.lon + 180) / 360) * scale,
+        x: ((effectiveLon(p.lon) + 180) / 360) * scale,
         y:
             (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) *
             scale,
@@ -252,6 +315,19 @@ const fitToTrack = (): void => {
         maxLat = Math.max(maxLat, p.lat);
         minLon = Math.min(minLon, p.lon);
         maxLon = Math.max(maxLon, p.lon);
+    }
+    if (crossesAntimeridian.value) {
+        // Bounds in unwrapped longitudes; project() applies the same shift
+        minLon = Infinity;
+        maxLon = -Infinity;
+        for (const p of validPoints.value) {
+            const lon = p.lon < 0 ? p.lon + 360 : p.lon;
+            minLon = Math.min(minLon, lon);
+            maxLon = Math.max(maxLon, lon);
+        }
+        // Undo the shift so project() can re-apply it consistently
+        minLon = minLon > 180 ? minLon - 360 : minLon;
+        maxLon = maxLon > 180 ? maxLon - 360 : maxLon;
     }
 
     const padding = 40;
@@ -510,6 +586,15 @@ watch(
     position: absolute;
     top: 8px;
     right: 8px;
+}
+
+.tile-placeholder {
+    background-color: #eceff1;
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
 }
 
 .map-legend {

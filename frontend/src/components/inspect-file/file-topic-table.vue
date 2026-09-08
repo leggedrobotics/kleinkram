@@ -218,11 +218,35 @@ const PLOT_TYPES = new Set<PreviewType>([
     PreviewType.POINT_STAMPED,
 ]);
 
+/**
+ * Bytes per frame of an image topic: from the topic size when the API
+ * provides it, otherwise measured on the frames loaded so far (the first
+ * sample is small, so its measurement bounds every refinement).
+ */
+const bytesPerImageFrame = (row: TopicRow): number => {
+    if (row.size !== undefined && row.size > 0 && row.nrMessages > 0) {
+        return row.size / row.nrMessages;
+    }
+    const loaded = properties.previews[row.name] ?? [];
+    if (loaded.length === 0) return 0;
+    let bytes = 0;
+    let counted = 0;
+    for (const message of loaded) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const payload = message?.data?.data;
+        if (payload instanceof Uint8Array) {
+            bytes += payload.byteLength;
+            counted++;
+        } else if (Array.isArray(payload)) {
+            bytes += payload.length;
+            counted++;
+        }
+    }
+    return counted > 0 ? bytes / counted : 0;
+};
+
 const imageStrideForLevel = (row: TopicRow, level: number): number => {
-    const bytesPerFrame =
-        row.size !== undefined && row.size > 0 && row.nrMessages > 0
-            ? row.size / row.nrMessages
-            : 0;
+    const bytesPerFrame = bytesPerImageFrame(row);
     const framesWithinBudget =
         bytesPerFrame > 0
             ? Math.floor(IMAGE_BYTE_BUDGET / bytesPerFrame)

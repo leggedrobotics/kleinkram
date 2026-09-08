@@ -30,8 +30,12 @@ export interface FetchOptions {
  * fast path; progressive (coarse-to-fine) loading delivers messages out of
  * order and falls back to a binary search for the insertion point.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function insertSorted(messages: any[], message: { logTime: bigint }): void {
+function insertSorted(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    messages: any[],
+    message: { logTime: bigint },
+    dedupeByTime: boolean,
+): void {
     const last = messages.at(-1) as { logTime: bigint } | undefined;
     if (last === undefined || last.logTime < message.logTime) {
         messages.push(message);
@@ -45,9 +49,13 @@ function insertSorted(messages: any[], message: { logTime: bigint }): void {
         if (midMessage.logTime < message.logTime) low = mid + 1;
         else high = mid;
     }
-    // Ignore exact duplicates (same log time) when merging refinements
-    const existing = messages[low] as { logTime: bigint } | undefined;
-    if (existing?.logTime === message.logTime) return;
+    // When merging a refinement, a message with the same log time is one
+    // that was loaded before; distinct records with equal timestamps are
+    // kept during ordinary loads.
+    if (dedupeByTime) {
+        const existing = messages[low] as { logTime: bigint } | undefined;
+        if (existing?.logTime === message.logTime) return;
+    }
     messages.splice(low, 0, message);
 }
 
@@ -214,6 +222,7 @@ export function useRosmsgPreview(): {
                     insertSorted(
                         (topicPreviews[topicName] ??= []),
                         markRaw(message),
+                        merge,
                     );
                 },
                 controller.signal,

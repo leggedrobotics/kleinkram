@@ -71,12 +71,14 @@ export class RosbagStrategy extends DecodingStrategy {
     private async getMessagesProgressive(
         topic: string,
         keepEvery: number,
+        limit: number,
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         skip?: (logTime: bigint) => boolean,
     ): Promise<LogMessage[]> {
         if (!this.bag || !this.httpReader) return [];
         const bag = this.bag;
+        const hardLimit = Math.ceil(limit * 1.1) + 1;
         const msgs: LogMessage[] = [];
 
         const connections = [...bag.connections.values()].filter(
@@ -119,6 +121,7 @@ export class RosbagStrategy extends DecodingStrategy {
         const PREFETCH_AHEAD = 3;
         for (const [position, entryIndex] of order.entries()) {
             if (signal?.aborted) break;
+            if (msgs.length >= hardLimit) break;
             const entry = chunkIndexes[entryIndex];
             if (!entry) continue;
 
@@ -139,6 +142,7 @@ export class RosbagStrategy extends DecodingStrategy {
             const chunkOffset = chunkOffsets[entryIndex] ?? 0;
             for (const record of records) {
                 if (signal?.aborted) break;
+                if (msgs.length >= hardLimit) break;
                 if ((chunkOffset + seen++) % keepEvery !== 0) continue;
                 if (!record.data) continue;
                 const logTime = toNano(record.time);
@@ -173,6 +177,7 @@ export class RosbagStrategy extends DecodingStrategy {
             return this.getMessagesProgressive(
                 topic,
                 keepEvery,
+                limit,
                 onMessage,
                 signal,
                 options.skip,

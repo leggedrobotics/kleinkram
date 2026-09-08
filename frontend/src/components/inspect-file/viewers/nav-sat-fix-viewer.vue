@@ -18,10 +18,10 @@
                 text-color="orange-10"
                 class="cursor-help"
             >
-                {{ droppedCount }} without position
+                {{ droppedCount }} without fix
                 <q-tooltip>
-                    {{ droppedCount }} messages report no position (all-zero or
-                    invalid coordinates) and are not plotted.
+                    {{ droppedCount }} messages report no fix (zero or invalid
+                    coordinates or altitude) and are not plotted.
                 </q-tooltip>
             </q-badge>
         </template>
@@ -139,9 +139,10 @@ const isLoading = computed(
 );
 
 /**
- * Receivers without a fix report all-zero coordinates (or NaN). Those
- * samples carry no position information and are excluded from the map,
- * the altitude chart and the coordinate display.
+ * Receivers without a fix report all-zero coordinates and altitude (or
+ * NaN). Those samples carry no position information and are excluded
+ * consistently from the map, the track length, the altitude chart and the
+ * coordinate display, and counted in the "without fix" badge.
  */
 const hasValidPosition = (data: NavSatFixData | undefined): boolean =>
     data !== undefined &&
@@ -149,7 +150,8 @@ const hasValidPosition = (data: NavSatFixData | undefined): boolean =>
     typeof data.longitude === 'number' &&
     Number.isFinite(data.latitude) &&
     Number.isFinite(data.longitude) &&
-    !(data.latitude === 0 && data.longitude === 0);
+    !(data.latitude === 0 && data.longitude === 0) &&
+    data.altitude !== 0;
 
 // Valid messages together with their index in the full message list, so
 // that gaps (dropped samples between two valid ones) can be detected.
@@ -248,12 +250,7 @@ const altitudeSeries = computed<ChartSeries[]>(() => {
     const data: { time: number; value: number }[] = [];
     for (const message of validMessages.value) {
         const altitude = message.data?.altitude;
-        // An exact 0 altitude is a placeholder from receivers without a fix
-        if (
-            typeof altitude !== 'number' ||
-            !Number.isFinite(altitude) ||
-            altitude === 0
-        ) {
+        if (typeof altitude !== 'number' || !Number.isFinite(altitude)) {
             continue;
         }
         data.push({

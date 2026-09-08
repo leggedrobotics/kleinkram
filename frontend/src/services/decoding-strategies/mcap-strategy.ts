@@ -8,6 +8,14 @@ import lz4js from 'lz4js';
 import { DecodingStrategy } from './index';
 import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
 
+/** Identity of a message record, used to drop duplicates from overlapping chunks */
+const messageIdentity = (message: {
+    logTime: bigint;
+    publishTime: bigint;
+    sequence: number;
+}): string =>
+    `${String(message.logTime)}:${String(message.publishTime)}:${String(message.sequence)}`;
+
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,6 +51,7 @@ export class McapStrategy extends DecodingStrategy {
             return this.getMessagesProgressive(
                 topic,
                 keepEvery,
+                limit,
                 onMessage,
                 signal,
                 options.skip,
@@ -121,6 +130,7 @@ export class McapStrategy extends DecodingStrategy {
     private async getMessagesProgressive(
         topic: string,
         keepEvery: number,
+        limit: number,
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         skip?: (logTime: bigint) => boolean,
@@ -128,6 +138,9 @@ export class McapStrategy extends DecodingStrategy {
     ): Promise<LogMessage[]> {
         if (!this.reader || !this.httpReader) return [];
         const reader = this.reader;
+        // Sampling positions are estimated for MCAP, so allow a little
+        // headroom before stopping hard at the requested count.
+        const hardLimit = Math.ceil(limit * 1.1) + 1;
         const httpReader = this.httpReader;
         const msgs: LogMessage[] = [];
 
@@ -153,13 +166,15 @@ export class McapStrategy extends DecodingStrategy {
                 : 1;
 
         // Adjacent chunks can overlap in time, so the same message may be
-        // yielded twice; a topic rarely has two messages with the same
-        // log time, so the log time is a sufficient identity for previews.
-        const emittedTimes = new Set<bigint>();
+        // yielded twice. Log time, publish time and sequence number
+        // together identify a message record well enough to drop only
+        // true duplicates.
+        const emitted = new Set<string>();
 
         const PREFETCH_AHEAD = 3;
         for (const [position, chunkIndex] of order.entries()) {
             if (signal?.aborted) break;
+            if (msgs.length >= hardLimit) break;
             const chunk = chunks[chunkIndex];
             if (!chunk) continue;
 
@@ -181,9 +196,11 @@ export class McapStrategy extends DecodingStrategy {
                 endTime: chunk.messageEndTime,
             })) {
                 if (signal?.aborted) break;
+                if (msgs.length >= hardLimit) break;
                 if ((chunkOffset + seen++) % keepEvery !== 0) continue;
-                if (emittedTimes.has(message.logTime)) continue;
-                emittedTimes.add(message.logTime);
+                const key = messageIdentity(message);
+                if (emitted.has(key)) continue;
+                emitted.add(key);
                 if (skip?.(message.logTime)) continue;
 
                 let data = message.data;
