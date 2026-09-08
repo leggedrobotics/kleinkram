@@ -5,9 +5,9 @@
         :class="{ dragging: isDragging }"
         :style="{ height: `${String(height)}px` }"
         @mousedown="onDragStart"
-        @mousemove="onDragMove"
+        @mousemove="onMouseMove"
         @mouseup="onDragEnd"
-        @mouseleave="onDragEnd"
+        @mouseleave="onMouseLeave"
         @wheel.prevent="onWheel"
     >
         <template v-if="hasPoints">
@@ -64,6 +64,23 @@
                     stroke="#fff"
                     stroke-width="2"
                 />
+                <template v-if="highlightPixel">
+                    <circle
+                        :cx="highlightPixel.x"
+                        :cy="highlightPixel.y"
+                        r="11"
+                        fill="#ff9800"
+                        opacity="0.3"
+                    />
+                    <circle
+                        :cx="highlightPixel.x"
+                        :cy="highlightPixel.y"
+                        r="6"
+                        fill="#ff9800"
+                        stroke="#fff"
+                        stroke-width="2"
+                    />
+                </template>
             </svg>
 
             <div class="map-controls column q-gutter-y-xs">
@@ -139,9 +156,17 @@ const properties = withDefaults(
     defineProps<{
         points: GeoPoint[];
         height?: number;
+        /** Index into `points` of a sample highlighted from outside the map */
+        // eslint-disable-next-line vue/require-default-prop
+        highlightIndex?: number | null;
     }>(),
     { height: 320 },
 );
+
+const emit = defineEmits<{
+    /** Index of the track point under the cursor, or null */
+    hover: [index: number | null];
+}>();
 
 const TILE_SIZE = 256;
 const MIN_ZOOM = 2;
@@ -154,14 +179,21 @@ const size = ref({ width: 800, height: properties.height });
 const zoom = ref(MIN_ZOOM);
 const center = ref({ x: 0, y: 0 });
 
+const isValidPoint = (p: GeoPoint): boolean =>
+    Number.isFinite(p.lat) &&
+    Number.isFinite(p.lon) &&
+    Math.abs(p.lat) <= 85 &&
+    Math.abs(p.lon) <= 180;
+
+// Valid points together with their index in the `points` prop, so that
+// hover events refer to the caller's indices.
+const validEntries = computed(() =>
+    properties.points
+        .map((point, index) => ({ point, index }))
+        .filter((entry) => isValidPoint(entry.point)),
+);
 const validPoints = computed(() =>
-    properties.points.filter(
-        (p) =>
-            Number.isFinite(p.lat) &&
-            Number.isFinite(p.lon) &&
-            Math.abs(p.lat) <= 85 &&
-            Math.abs(p.lon) <= 180,
-    ),
+    validEntries.value.map((entry) => entry.point),
 );
 const hasPoints = computed(() => validPoints.value.length > 0);
 
@@ -265,6 +297,46 @@ const onDragEnd = (): void => {
     isDragging.value = false;
 };
 
+// --- Hover: nearest track point to the cursor ---
+const HOVER_RADIUS_PX = 20;
+const hoveredIndex = ref<number | null>(null);
+
+const onMouseMove = (event: MouseEvent): void => {
+    if (isDragging.value) {
+        onDragMove(event);
+        return;
+    }
+    if (!container.value || !hasPoints.value) return;
+    const rect = container.value.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    let best: number | null = null;
+    let bestDistance = HOVER_RADIUS_PX * HOVER_RADIUS_PX;
+    const points = screenPoints.value;
+    for (const [position, p] of points.entries()) {
+        const dx = p.x - x;
+        const dy = p.y - y;
+        const distance = dx * dx + dy * dy;
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            best = validEntries.value[position]?.index ?? null;
+        }
+    }
+    if (best !== hoveredIndex.value) {
+        hoveredIndex.value = best;
+        emit('hover', best);
+    }
+};
+
+const onMouseLeave = (): void => {
+    onDragEnd();
+    if (hoveredIndex.value !== null) {
+        hoveredIndex.value = null;
+        emit('hover', null);
+    }
+};
+
 // --- Tiles visible in the current view ---
 const tiles = computed(() => {
     if (!hasPoints.value) return [];
@@ -311,6 +383,16 @@ const trackPoints = computed(() =>
 
 const startPixel = computed(() => screenPoints.value[0]);
 const endPixel = computed(() => screenPoints.value.at(-1));
+
+const highlightPixel = computed(() => {
+    const index = properties.highlightIndex ?? hoveredIndex.value;
+    if (index === null) return;
+    const position = validEntries.value.findIndex(
+        (entry) => entry.index === index,
+    );
+    if (position === -1) return;
+    return screenPoints.value[position];
+});
 
 // --- Sizing ---
 let resizeObserver: ResizeObserver | undefined;

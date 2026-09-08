@@ -28,7 +28,12 @@
 
         <div class="row q-col-gutter-md">
             <div class="col-12">
-                <TrackMap :points="track" :height="340" />
+                <TrackMap
+                    :points="track"
+                    :height="340"
+                    :highlight-index="hoveredIndex"
+                    @hover="onMapHover"
+                />
             </div>
 
             <div v-if="latest" class="col-12">
@@ -70,6 +75,8 @@
                     y-axis-label="m"
                     :height="160"
                     :start-time="startTime"
+                    :highlight-time="hoveredTime"
+                    @hover="onChartHover"
                 />
             </div>
 
@@ -93,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { GeoPoint, trackLengthMetres } from './common/geo';
 import TrackMap from './common/track-map.vue';
 import { BaseMessage, useViewer } from './common/use-viewer';
@@ -148,9 +155,58 @@ const validMessages = computed(() =>
     properties.messages.filter((message) => hasValidPosition(message.data)),
 );
 
-const latest = computed(
-    () => validMessages.value.at(-1)?.data ?? properties.messages.at(-1)?.data,
-);
+// --- Linked hover between the map and the altitude chart ---
+// Index into validMessages (and therefore into `track`) of the hovered sample
+const hoveredIndex = ref<number | null>(null);
+
+const hoveredTime = computed(() => {
+    if (hoveredIndex.value === null) return null;
+    const message = validMessages.value[hoveredIndex.value];
+    return message ? getNormalizedTime(message.logTime) : null;
+});
+
+const onMapHover = (index: number | null): void => {
+    hoveredIndex.value = index;
+};
+
+const onChartHover = (time: number | null): void => {
+    if (time === null) {
+        hoveredIndex.value = null;
+        return;
+    }
+    // Binary search for the sample closest in time
+    const messages = validMessages.value;
+    let low = 0;
+    let high = messages.length - 1;
+    while (low < high) {
+        const mid = Math.floor((low + high) / 2);
+        const midMessage = messages[mid];
+        if (midMessage && getNormalizedTime(midMessage.logTime) < time) {
+            low = mid + 1;
+        } else {
+            high = mid;
+        }
+    }
+    const previous = messages[low - 1];
+    const candidate = messages[low];
+    if (
+        previous &&
+        candidate &&
+        Math.abs(time - getNormalizedTime(previous.logTime)) <
+            Math.abs(time - getNormalizedTime(candidate.logTime))
+    ) {
+        low--;
+    }
+    hoveredIndex.value = messages.length > 0 ? low : null;
+};
+
+const latest = computed(() => {
+    if (hoveredIndex.value !== null) {
+        const hovered = validMessages.value[hoveredIndex.value];
+        if (hovered) return hovered.data;
+    }
+    return validMessages.value.at(-1)?.data ?? properties.messages.at(-1)?.data;
+});
 
 const track = computed<GeoPoint[]>(() =>
     validMessages.value.map((message) => ({
