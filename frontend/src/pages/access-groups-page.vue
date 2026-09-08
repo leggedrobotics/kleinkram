@@ -158,26 +158,19 @@
                                     <div class="text-weight-medium ellipsis">
                                         {{ props.row.name }}
                                     </div>
+                                    <!-- The search endpoint does not expose user
+                                         emails, so personal groups show no caption -->
                                     <div
+                                        v-if="tab !== 'users'"
                                         class="text-caption text-grey-7 ellipsis"
                                     >
-                                        <template v-if="tab === 'users'">
-                                            {{
-                                                props.row.memberships[0]?.user
-                                                    .email ?? '-'
-                                            }}
-                                        </template>
-                                        <template v-else>
-                                            {{ props.row.creator?.name ?? '-' }}
-                                            &middot;
-                                            {{
-                                                formatDate(
-                                                    new Date(
-                                                        props.row.createdAt,
-                                                    ),
-                                                )
-                                            }}
-                                        </template>
+                                        {{ props.row.creator?.name ?? '-' }}
+                                        &middot;
+                                        {{
+                                            formatDate(
+                                                new Date(props.row.createdAt),
+                                            )
+                                        }}
                                     </div>
                                 </div>
                                 <q-btn
