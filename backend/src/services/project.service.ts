@@ -16,7 +16,14 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
+import {
+    DataSource,
+    EntityManager,
+    ILike,
+    Not,
+    Repository,
+    SelectQueryBuilder,
+} from 'typeorm';
 import { UserService } from './user.service';
 
 import {
@@ -49,6 +56,14 @@ import {
 } from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
 
+/**
+ * Alias of the computed column holding the total file size of a project, see
+ * {@link ProjectService._addProjectSizeForSorting}. Lower case on purpose: the
+ * ORDER BY refers to it by select alias, which TypeORM emits unquoted, and
+ * postgres folds unquoted identifiers to lower case.
+ */
+const PROJECT_SIZE_SORT_ALIAS = 'project_total_size';
+
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',
     description: 'project.description',
@@ -57,6 +72,7 @@ const FIND_MANY_SORT_KEYS = {
     updatedAt: 'project.updatedAt',
     creator: 'creator.name',
     rights: 'projectAccessView.rights',
+    size: PROJECT_SIZE_SORT_ALIAS,
 };
 
 @Injectable()
@@ -149,6 +165,47 @@ export class ProjectService {
         return countMap;
     }
 
+    /**
+     * Adds the total size of a project (the summed size of all files of all its
+     * non-deleted missions) as a computed column, so that the database can sort
+     * by it.
+     *
+     * The size is not stored on the project and `_getProjectSizes` only fetches
+     * it for the rows of the current page, which is too late for sorting.
+     */
+    private _addProjectSizeForSorting(
+        query: SelectQueryBuilder<ProjectEntity>,
+    ): SelectQueryBuilder<ProjectEntity> {
+        return query
+            .leftJoin(
+                (subQuery) =>
+                    subQuery
+                        .select('sizeProject.uuid', 'projectUuid')
+                        .addSelect(
+                            'COALESCE(SUM(sizeFile.size), 0)',
+                            'totalSize',
+                        )
+                        .from(ProjectEntity, 'sizeProject')
+                        .leftJoin(
+                            'sizeProject.missions',
+                            'sizeMission',
+                            'sizeMission.deletedAt IS NULL',
+                        )
+                        .leftJoin(
+                            'sizeMission.files',
+                            'sizeFile',
+                            'sizeFile.deletedAt IS NULL',
+                        )
+                        .groupBy('sizeProject.uuid'),
+                'projectSize',
+                '"projectSize"."projectUuid" = project.uuid',
+            )
+            .addSelect(
+                'COALESCE("projectSize"."totalSize", 0)',
+                PROJECT_SIZE_SORT_ALIAS,
+            );
+    }
+
     async findMany(
         projectUuids: string[],
         projectPatterns: string[],
@@ -182,6 +239,10 @@ export class ProjectService {
                 'projectAccessView.projectUuid = project.uuid AND projectAccessView.userUuid = :userUuidForSort',
                 { userUuidForSort: userUuid },
             );
+        }
+
+        if (sortBy === 'size') {
+            query = this._addProjectSizeForSorting(query);
         }
 
         if (sortBy !== undefined) {
