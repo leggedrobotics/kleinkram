@@ -13,6 +13,7 @@ import {
     QueryUUID,
 } from '@/validation/query-decorators';
 import {
+    ActionSubmitResponseDto,
     BackfillRecordingTimesResponseDto,
     CancelFileUploadDto,
     CancelProcessingResponseDto,
@@ -171,6 +172,23 @@ export class FileController {
         return { url };
     }
 
+    @Post(':uuid/recover')
+    @CanWriteFile()
+    @ApiOkResponse({
+        description: 'Recover broken MCAP file',
+        type: ActionSubmitResponseDto,
+    })
+    async recover(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() auth: AuthHeader,
+    ): Promise<ActionSubmitResponseDto> {
+        const actionUUID = await this.fileLifecycleService.recoverMcap(
+            uuid,
+            auth.user,
+        );
+        return { actionUUID };
+    }
+
     @Put(':uuid')
     @CanWriteFile()
     @ApiOkResponse({
@@ -316,6 +334,7 @@ export class FileController {
             auth.apiKey?.action,
             source,
             body.fileSizes,
+            body.parentUuid,
         );
     }
 

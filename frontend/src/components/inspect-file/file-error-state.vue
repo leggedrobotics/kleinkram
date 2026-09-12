@@ -9,6 +9,25 @@
                 The file content does not match the expected format for
                 <span class="text-weight-bold">.{{ fileExtension }}</span>
             </div>
+
+            <div v-if="file.relatedFileUuid" class="q-mt-md">
+                <q-btn
+                    flat
+                    color="primary"
+                    icon="sym_o_check_circle"
+                    label="View Recovered File"
+                    :to="relatedFileRoute"
+                />
+            </div>
+            <div v-else-if="isMcap" class="q-mt-md">
+                <q-btn
+                    color="primary"
+                    icon="sym_o_build"
+                    label="Try to Recover MCAP"
+                    :loading="recovering"
+                    @click="recoverFile"
+                />
+            </div>
         </div>
 
         <div v-else-if="file.state === FileState.CONVERSION_ERROR">
@@ -40,17 +59,62 @@
 
 <script setup lang="ts">
 import type { FileDto } from '@kleinkram/api-dto/types/file/file.dto';
-import { FileState } from '@kleinkram/shared';
-import { computed } from 'vue';
+import { FileState, FileType } from '@kleinkram/shared';
+import { useQuasar } from 'quasar';
+import { recoverMcapFile } from 'src/services/mutations/file';
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 const props = defineProps<{
     file: FileDto;
 }>();
 
+const $q = useQuasar();
+const route = useRoute();
+const recovering = ref(false);
+
 const fileExtension = computed(
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     () => props.file.filename?.split('.').pop()?.toLowerCase() ?? '',
 );
+
+const isMcap = computed(
+    () => props.file.type === FileType.MCAP || fileExtension.value === 'mcap',
+);
+
+const relatedFileRoute = computed(() => ({
+    name: 'FilePage',
+    params: {
+        ...route.params,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        file_uuid: props.file.relatedFileUuid,
+    },
+}));
+
+const recoverFile = async () => {
+    recovering.value = true;
+    try {
+        await recoverMcapFile(props.file.uuid);
+        $q.notify({
+            message: 'MCAP recovery action started successfully',
+            color: 'positive',
+            position: 'bottom',
+            timeout: 3000,
+        });
+    } catch (error_: unknown) {
+        const error = error_ as { response?: { data?: { message?: string } } };
+        $q.notify({
+            message:
+                error.response?.data?.message ??
+                'Failed to start MCAP recovery action',
+            color: 'negative',
+            position: 'bottom',
+            timeout: 3000,
+        });
+    } finally {
+        recovering.value = false;
+    }
+};
 </script>
 
 <style scoped>

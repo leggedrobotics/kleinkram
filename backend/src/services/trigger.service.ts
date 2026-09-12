@@ -209,6 +209,12 @@ export class TriggerService implements OnModuleInit {
             throw new BadRequestException('Trigger is not a webhook trigger');
         }
 
+        if (!trigger.mission) {
+            throw new BadRequestException(
+                'Trigger does not have an associated mission',
+            );
+        }
+
         const actionUuid = await this.actionDispatcher.dispatch(
             trigger.template.uuid,
             trigger.mission,

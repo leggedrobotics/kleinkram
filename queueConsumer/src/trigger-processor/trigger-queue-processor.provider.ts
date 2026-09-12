@@ -1,4 +1,8 @@
-import { ActionTriggerEntity, FileEntity } from '@kleinkram/backend-common';
+import {
+    ActionTriggerEntity,
+    FileEntity,
+    MissionEntity,
+} from '@kleinkram/backend-common';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import {
     ActionTriggerSource,
@@ -39,7 +43,9 @@ export class TriggerQueueProcessorProvider {
         const file = await this.fileRepository.findOne({
             where: { uuid: fileUuid },
             relations: {
-                mission: true,
+                mission: {
+                    project: true,
+                },
             },
         });
 
@@ -49,13 +55,32 @@ export class TriggerQueueProcessorProvider {
         }
 
         const triggers = await this.triggerRepository.find({
-            where: {
-                mission: { uuid: file.mission.uuid },
-                type: TriggerType.FILE,
-            },
+            where: [
+                {
+                    mission: { uuid: file.mission.uuid },
+                    type: TriggerType.FILE,
+                },
+                {
+                    mission: { uuid: file.mission.uuid },
+                    type: TriggerType.CORRUPTED_FILE,
+                },
+                ...(file.mission.project
+                    ? [
+                          {
+                              project: { uuid: file.mission.project.uuid },
+                              type: TriggerType.FILE,
+                          },
+                          {
+                              project: { uuid: file.mission.project.uuid },
+                              type: TriggerType.CORRUPTED_FILE,
+                          },
+                      ]
+                    : []),
+            ],
             relations: {
                 template: true,
                 mission: true,
+                project: true,
                 creator: true,
             },
         });
@@ -66,12 +91,18 @@ export class TriggerQueueProcessorProvider {
                 event?: TriggerEvent[];
             };
 
-            // Check event type match
-            if (config.event && !config.event.includes(event)) {
-                continue;
+            if (trigger.type === TriggerType.CORRUPTED_FILE) {
+                if (event !== TriggerEvent.CORRUPTED) {
+                    continue;
+                }
+            } else {
+                // TriggerType.FILE
+                if (config.event && !config.event.includes(event)) {
+                    continue;
+                }
             }
 
-            // Check pattern match
+            // Check pattern match if patterns defined
             const patterns = config.patterns ?? [];
             const matches = patterns.some((p) =>
                 minimatch(file.filename, p, { dot: true, matchBase: true }),
@@ -86,6 +117,7 @@ export class TriggerQueueProcessorProvider {
             );
             await this.dispatchAction(
                 trigger,
+                file.mission,
                 {
                     fileUuid: file.uuid,
                     filename: file.filename,
@@ -138,14 +170,17 @@ export class TriggerQueueProcessorProvider {
                     this.logger.log(
                         `Trigger ${trigger.name} matched cron time ${previousDate.toISOString()}`,
                     );
-                    await this.dispatchAction(
-                        trigger,
-                        {
-                            scheduledTime: previousDate.toISOString(),
-                            triggerTime: timestamp.toISOString(),
-                        },
-                        ActionTriggerSource.CRON,
-                    );
+                    if (trigger.mission) {
+                        await this.dispatchAction(
+                            trigger,
+                            trigger.mission,
+                            {
+                                scheduledTime: previousDate.toISOString(),
+                                triggerTime: timestamp.toISOString(),
+                            },
+                            ActionTriggerSource.CRON,
+                        );
+                    }
                 }
             } catch (error) {
                 this.logger.error(
@@ -157,13 +192,15 @@ export class TriggerQueueProcessorProvider {
 
     private async dispatchAction(
         trigger: ActionTriggerEntity,
+        targetMission: MissionEntity,
         payload: Record<string, unknown>,
         triggerSource: ActionTriggerSource,
     ): Promise<void> {
         try {
+            const mission = trigger.mission ?? targetMission;
             await this.actionDispatcher.dispatch(
                 trigger.template.uuid,
-                trigger.mission,
+                mission,
                 trigger.creator,
                 payload,
                 triggerSource,

@@ -7,12 +7,14 @@ jest.mock('@kleinkram/backend-common/environment', () => ({
 }));
 
 import {
+    ActionTemplateEntity,
     CategoryEntity,
     FileEntity,
     MissionEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
+import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
@@ -92,6 +94,12 @@ describe('File Upload Pre-Flight Capacity Check', () => {
             {
                 canAccessMission: jest.fn().mockResolvedValue(true),
             } as unknown as jest.Mocked<MissionGuardService>,
+            {
+                findOne: jest.fn(),
+            } as unknown as Repository<ActionTemplateEntity>,
+            {
+                dispatch: jest.fn(),
+            } as unknown as ActionDispatcherService,
         );
     });
 
@@ -204,6 +212,12 @@ describe('File Upload Pre-Flight Capacity Check', () => {
             {
                 canAccessMission: jest.fn().mockResolvedValue(true),
             } as unknown as jest.Mocked<MissionGuardService>,
+            {
+                findOne: jest.fn(),
+            } as unknown as Repository<ActionTemplateEntity>,
+            {
+                dispatch: jest.fn(),
+            } as unknown as ActionDispatcherService,
         );
 
         const result = await serviceNoMetrics.getTemporaryAccess(

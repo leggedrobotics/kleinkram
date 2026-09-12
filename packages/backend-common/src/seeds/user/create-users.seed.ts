@@ -1,12 +1,12 @@
+import { systemUser } from '@backend-common/consts';
 import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AffiliationGroupService } from '@backend-common/services/affiliation-group.service';
 import { AccessGroupConfig } from '@kleinkram/shared';
 import * as fs from 'node:fs';
-
-import { systemUser } from '@backend-common/consts';
 import path from 'node:path';
+import * as process from 'node:process';
 import { DataSource, Not } from 'typeorm';
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
 import { seedActionTemplates } from './seed-action-templates';
@@ -28,14 +28,13 @@ export default class CreateUsers implements Seeder {
         const userCount = await dataSource.getRepository(UserEntity).count({
             where: { uuid: Not(systemUser.uuid) },
         });
-        if (userCount > 0) {
-            // eslint-disable-next-line no-console
-            console.log('Users exist in DB, skipping seeding.');
-            return;
-        }
 
-        // eslint-disable-next-line no-console
-        console.log('\n\n »» Seeding Users and Data...\n\n');
+        // Load config
+        const configPath = path.resolve(
+            __dirname,
+            '../../../../../backend/src/access_config.json',
+        );
+        let config: AccessGroupConfig | undefined;
 
         // Create Access Groups first
         const accessGroupRepository =
@@ -47,13 +46,6 @@ export default class CreateUsers implements Seeder {
             accessGroupRepository,
             groupMembershipRepository,
         );
-
-        // Load config
-        const configPath = path.resolve(
-            __dirname,
-            '../../../../../backend/src/access_config.json',
-        );
-        let config: AccessGroupConfig | undefined;
 
         if (fs.existsSync(configPath)) {
             try {
@@ -76,6 +68,15 @@ export default class CreateUsers implements Seeder {
             affiliationGroupService,
             config,
         );
+
+        if (userCount > 0) {
+            // Even if users exist, ensure action templates (and their project triggers) are seeded
+            await seedActionTemplates(dataSource, adminUser);
+            return;
+        }
+
+        // eslint-disable-next-line no-console
+        console.log('\n\n »» Seeding Users and Data...\n\n');
 
         const { createdMissions, tagTypes } = await seedProjects(
             factoryManager,
