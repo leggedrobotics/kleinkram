@@ -64,7 +64,7 @@
                     <q-file
                         v-model="files"
                         outlined
-                        style="min-width: 300px"
+                        style="width: 100%"
                         @click="transferClick"
                     >
                         <template #prepend>

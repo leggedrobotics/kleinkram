@@ -51,14 +51,26 @@
 
                 <!-- Cursor Line -->
                 <line
-                    v-if="hoverX !== null"
-                    :x1="hoverX"
+                    v-if="cursorX !== null"
+                    :x1="cursorX"
                     :y1="0"
-                    :x2="hoverX"
+                    :x2="cursorX"
                     :y2="height"
                     stroke="#666"
                     stroke-width="1"
                     stroke-dasharray="2"
+                />
+                <!-- Externally highlighted sample -->
+                <circle
+                    v-for="m in highlightMarkers"
+                    :key="m.name"
+                    :cx="m.x"
+                    :cy="m.y"
+                    r="4"
+                    :fill="m.color"
+                    stroke="#fff"
+                    stroke-width="1.5"
+                    vector-effect="non-scaling-stroke"
                 />
             </svg>
 
@@ -127,6 +139,9 @@ const properties = withDefaults(
         width?: number;
         // eslint-disable-next-line vue/require-default-prop
         startTime?: bigint; // Absolute start time in nanoseconds
+        /** Relative time (s) of a sample highlighted from outside the chart */
+        // eslint-disable-next-line vue/require-default-prop
+        highlightTime?: number | null;
     }>(),
     {
         title: '',
@@ -134,6 +149,11 @@ const properties = withDefaults(
         width: 1000,
     },
 );
+
+const emit = defineEmits<{
+    /** Relative time (s) under the cursor, or null when the cursor leaves */
+    hover: [time: number | null];
+}>();
 
 const SUBSAMPLE_THRESHOLD = 10_000;
 const TARGET_POINTS = 2000;
@@ -236,6 +256,56 @@ const getPoints = (data: (DataPoint | undefined)[]): string => {
 
 const fmt = (n: number): string => n.toFixed(2);
 
+// --- External highlight (e.g. hovering a linked map) ---
+const timeToX = (time: number): number =>
+    (time / maxTime.value) * properties.width;
+
+const findClosest = (data: DataPoint[], t: number): DataPoint | undefined => {
+    if (data.length === 0) return;
+    let low = 0;
+    let high = data.length - 1;
+    while (low < high) {
+        const mid = Math.floor((low + high) / 2);
+        if ((data[mid]?.time ?? 0) < t) low = mid + 1;
+        else high = mid;
+    }
+    const candidate = data[low];
+    const previous = data[low - 1];
+    if (
+        previous &&
+        candidate &&
+        Math.abs(t - previous.time) < Math.abs(t - candidate.time)
+    ) {
+        return previous;
+    }
+    return candidate;
+};
+
+const highlightMarkers = computed(() => {
+    const t = properties.highlightTime;
+    if (t === null || t === undefined) return [];
+    const markers: { name: string; color: string; x: number; y: number }[] = [];
+    for (const s of properties.series) {
+        const p = findClosest(s.data, t);
+        if (p) {
+            markers.push({
+                name: s.name,
+                color: s.color,
+                x: timeToX(p.time),
+                y: getY(p.value),
+            });
+        }
+    }
+    return markers;
+});
+
+const cursorX = computed(() => {
+    if (hoverX.value !== null) return hoverX.value;
+    const t = properties.highlightTime;
+    if (t === null || t === undefined) return null;
+    return timeToX(t);
+});
+
 // --- Inspection Logic ---
 const graphContainer = ref<HTMLElement | null>(null);
 const hoverX = ref<number | null>(null);
@@ -272,6 +342,7 @@ const onMouseMove = (event: MouseEvent) => {
     // Calculate time
     const t = (svgX / properties.width) * maxTime.value;
     hoverTime.value = t;
+    emit('hover', t);
 
     // Find closest points
     const points: { name: string; color: string; value: number }[] = [];
@@ -352,6 +423,7 @@ const onMouseLeave = () => {
     hoverX.value = null;
     hoverTime.value = null;
     hoverPoints.value = [];
+    emit('hover', null);
 };
 </script>
 

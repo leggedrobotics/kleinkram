@@ -1,5 +1,5 @@
 <template>
-    <div class="fixed-center text-center">
+    <div class="fixed-center text-center q-px-md landing-status">
         <q-spinner color="primary" size="3em" />
         <div class="q-mt-md text-h6">Login Successful</div>
         <div class="text-subtitle2 text-grey">Redirecting...</div>
@@ -17,4 +17,9 @@ onMounted(async () => {
     await $router.push({ name: ROUTES.DASHBOARD.routeName });
 });
 </script>
-<style scoped></style>
+<style scoped>
+/* Keep the centered status text inside the viewport on narrow screens */
+.landing-status {
+    max-width: 100vw;
+}
+</style>

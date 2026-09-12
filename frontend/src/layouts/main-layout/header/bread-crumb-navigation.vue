@@ -1,10 +1,13 @@
 <template>
-    <div class="bg-default text-grey-8" style="margin: 0 -24px; z-index: 999">
+    <div
+        class="bg-default text-grey-8"
+        style="margin: 0 calc(-1 * var(--page-gutter)); z-index: 999"
+    >
         <q-separator />
 
         <div
-            class="height-xl flex column justify-center q-px-lg"
-            style="overflow-x: auto"
+            class="height-xl flex column justify-center scroll-x-nowrap"
+            style="padding: 0 var(--page-gutter)"
         >
             <q-breadcrumbs
                 gutter="xs"

@@ -63,9 +63,11 @@
                     class="button-border"
                     flat
                     icon="sym_o_arrow_back"
-                    label="Back to Actions"
+                    :label="$q.screen.xs ? 'Back' : 'Back to Actions'"
                     @click="navigateBackToActions"
-                />
+                >
+                    <q-tooltip>Back to Actions</q-tooltip>
+                </q-btn>
                 <q-btn
                     class="button-border"
                     flat
@@ -172,15 +174,28 @@
                 >
             </div>
 
-            <div class="row justify-between items-center q-mb-md">
-                <div class="row q-gutter-x-md items-center">
+            <div
+                class="q-mb-md"
+                :class="
+                    $q.screen.xs
+                        ? 'column q-gutter-y-sm'
+                        : 'row justify-between items-center'
+                "
+            >
+                <div
+                    :class="
+                        $q.screen.xs
+                            ? 'column q-gutter-y-sm'
+                            : 'row q-gutter-x-md items-center'
+                    "
+                >
                     <q-input
                         v-model="logsSearch"
                         dense
                         outlined
                         placeholder="Search logs..."
                         debounce="300"
-                        style="width: 200px"
+                        :style="$q.screen.xs ? undefined : 'width: 200px'"
                     >
                         <template #append>
                             <q-icon name="sym_o_search" />
@@ -193,17 +208,39 @@
                         dense
                         outlined
                         label="Level"
-                        style="width: 120px"
+                        :style="$q.screen.xs ? undefined : 'width: 120px'"
                         emit-value
                         map-options
                     />
 
-                    <div v-if="logs?.count" class="text-caption q-ml-md">
+                    <div
+                        v-if="logs?.count"
+                        class="text-caption"
+                        :class="$q.screen.xs ? '' : 'q-ml-md'"
+                    >
                         Showing {{ logs.data.length }} of {{ logs.count }} lines
                     </div>
                 </div>
 
-                <div class="q-gutter-x-sm">
+                <div
+                    class="q-gutter-x-sm items-center"
+                    :class="$q.screen.xs ? 'row justify-end' : 'row'"
+                >
+                    <q-toggle
+                        v-model="wrapLogLines"
+                        label="Wrap lines"
+                        color="primary"
+                        dense
+                        left-label
+                    >
+                        <q-tooltip>
+                            {{
+                                wrapLogLines
+                                    ? 'Long log lines wrap onto the next line'
+                                    : 'Long log lines stay on one line, scroll horizontally to read them'
+                            }}
+                        </q-tooltip>
+                    </q-toggle>
                     <q-btn
                         v-if="(logs?.count || 0) > (logs?.data.length || 0)"
                         flat
@@ -222,26 +259,21 @@
             </div>
 
             <q-card
-                class="q-pa-lg"
+                :class="$q.screen.xs ? 'q-pa-sm' : 'q-pa-lg'"
                 style="background-color: #f4f4f4"
                 flat
                 bordered
             >
-                <q-card-section class="flex column q-pa-none">
+                <q-card-section class="flex column q-pa-none log-output">
                     <div
                         v-for="(log, index) in logs?.data"
                         :id="`log-line-${index}`"
                         :key="log.timestamp"
-                        class="flex justify-start q-pb-xs"
+                        class="flex justify-start q-pb-xs log-line"
                         :class="{
                             'bg-orange-1': index === highlightedLogIndex,
+                            'log-line--wrap': wrapLogLines,
                         }"
-                        style="
-                            font-family: monospace;
-                            color: #222222;
-                            font-size: 0.8em;
-                            transition: background-color 3s ease-out;
-                        "
                     >
                         <template v-if="log.type == 'stdout'">
                             <span
@@ -258,11 +290,9 @@
                                 [{{ log.type }}]
                             </span>
 
-                            <span
-                                style="margin-left: -250px; padding-left: 250px"
-                            >
-                                {{ log.message.replaceAll(' ', '\u00a0') }}
-                            </span>
+                            <span class="log-line__message">{{
+                                log.message
+                            }}</span>
                         </template>
 
                         <template v-else>
@@ -281,14 +311,10 @@
                             </span>
 
                             <span
-                                style="
-                                    margin-left: -250px;
-                                    padding-left: 250px;
-                                    color: #ff3c3c;
-                                "
+                                class="log-line__message"
+                                style="color: #ff3c3c"
+                                >{{ log.message }}</span
                             >
-                                {{ log.message.replaceAll(' ', '\u00a0') }}
-                            </span>
                         </template>
                     </div>
                 </q-card-section>
@@ -312,30 +338,27 @@
 
             <h2 class="text-h5 q-mb-sm text-grey-9">Called Endpoints</h2>
             <q-card
-                class="q-pa-lg"
+                :class="$q.screen.xs ? 'q-pa-sm' : 'q-pa-lg'"
                 style="background-color: #f4f4f4"
                 flat
                 bordered
             >
-                <div
-                    v-for="log in action?.auditLogs"
-                    :key="log.url"
-                    class="flex justify-start q-pb-xs"
-                    style="
-                        font-family: monospace;
-                        color: #222222;
-                        font-size: 0.8em;
-                    "
-                >
-                    <span
-                        class="q-pr-sm"
-                        style="user-select: none; color: #525252"
-                        >{{ log.method }}</span
+                <div class="log-output">
+                    <div
+                        v-for="log in action?.auditLogs"
+                        :key="log.url"
+                        class="flex justify-start q-pb-xs log-line"
                     >
+                        <span
+                            class="q-pr-sm"
+                            style="user-select: none; color: #525252"
+                            >{{ log.method }}</span
+                        >
 
-                    <span>
-                        {{ log.url }}
-                    </span>
+                        <span>
+                            {{ log.url }}
+                        </span>
+                    </div>
                 </div>
             </q-card>
         </q-tab-panel>
@@ -387,6 +410,26 @@ const totalLogsCount = ref(0);
 const highlightedLogIndex = ref<number | null>(null);
 const logsSearch = ref('');
 const logsLevel = ref('all');
+
+const LOG_WRAP_STORAGE_KEY = 'kleinkram.actionLogs.wrapLines';
+const readLogWrapPreference = (): boolean => {
+    try {
+        return localStorage.getItem(LOG_WRAP_STORAGE_KEY) !== 'false';
+    } catch {
+        return true;
+    }
+};
+
+// Wrapping is the default: it keeps every log line readable without
+// horizontal scrolling.
+const wrapLogLines = ref(readLogWrapPreference());
+watch(wrapLogLines, (wrap) => {
+    try {
+        localStorage.setItem(LOG_WRAP_STORAGE_KEY, String(wrap));
+    } catch {
+        // Preference cannot be persisted; keep it for this view only
+    }
+});
 
 const logsSkip = computed(() => {
     if (totalLogsCount.value === 0) return 0;
@@ -565,6 +608,62 @@ const navigateBackToActions = async (): Promise<void> => {
 };
 </script>
 
-<style>
-/* Styles removed as table is no longer used */
+<style scoped>
+/*
+ * Log and audit-log output must scroll inside its own box, so that a long
+ * line never widens the page (which would make the whole page scroll
+ * horizontally on a phone).
+ */
+.log-output {
+    overflow-x: auto;
+}
+
+.log-line {
+    font-family: monospace;
+    color: #222222;
+    font-size: 0.8em;
+    transition: background-color 3s ease-out;
+    flex-wrap: nowrap;
+    width: max-content;
+    min-width: 100%;
+}
+
+/* Keep the original spacing of the log output (tabs, indentation, ...) */
+.log-line__message {
+    white-space: pre;
+}
+
+/*
+ * Wrapped mode: the line is limited to the width of the box and only the
+ * message column grows, so continuation lines line up after the timestamp
+ * instead of running off to the right.
+ */
+.log-line--wrap {
+    width: auto;
+}
+
+.log-line--wrap > * {
+    flex: 0 0 auto;
+}
+
+.log-line--wrap .log-line__message {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/*
+ * On phones the timestamp eats most of the width, so the message gets a line
+ * of its own below it.
+ */
+@media (max-width: 599px) {
+    .log-line--wrap {
+        flex-wrap: wrap;
+    }
+
+    .log-line--wrap .log-line__message {
+        flex-basis: 100%;
+    }
+}
 </style>

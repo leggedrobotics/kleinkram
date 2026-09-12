@@ -1,58 +1,53 @@
 <template>
     <div>
         <title-section :title="mission?.name">
-            <template #title>
-                <div class="row no-wrap items-center q-gutter-x-md">
-                    <h1
-                        class="text-h5 text-md-h3 q-ma-none ellipsis"
-                        style="line-height: 1.2"
+            <!--
+                On phones the chip does not fit next to the (already
+                ellipsized) mission name, so it is rendered underneath the
+                title instead of beside it.
+            -->
+            <template v-if="mission?.tags" #[metadataChipSlot]>
+                <div class="q-shrink">
+                    <q-btn
+                        unelevated
+                        no-caps
+                        dense
+                        class="bg-grey-2 text-grey-9 q-px-sm"
+                        style="
+                            font-size: 12px;
+                            font-weight: 500;
+                            border-radius: 4px;
+                            min-height: 24px;
+                            padding-top: 2px;
+                            padding-bottom: 2px;
+                        "
+                        @click="openMetadataDrawer"
                     >
-                        {{ mission?.name ?? '' }}
-                        <q-tooltip v-if="mission?.name">
-                            {{ mission?.name }}
-                        </q-tooltip>
-                    </h1>
-                    <div v-if="mission?.tags" class="q-shrink">
-                        <q-btn
-                            unelevated
-                            no-caps
-                            dense
-                            class="bg-grey-2 text-grey-9 q-px-sm"
-                            style="
-                                font-size: 12px;
-                                font-weight: 500;
-                                border-radius: 4px;
-                                min-height: 24px;
-                                padding-top: 2px;
-                                padding-bottom: 2px;
-                            "
-                            @click="openMetadataDrawer"
+                        <span
+                            class="text-center col items-center justify-center row"
                         >
+                            <q-icon
+                                name="sym_o_sell"
+                                size="14px"
+                                class="q-mr-xs"
+                            />
                             <span
-                                class="text-center col items-center justify-center row"
+                                >{{ mission.tags.length }} metadata
+                                attributes</span
                             >
-                                <q-icon
-                                    name="sym_o_sell"
-                                    size="14px"
-                                    class="q-mr-xs"
-                                />
-                                <span
-                                    >{{ mission.tags.length }} metadata
-                                    attributes</span
-                                >
-                            </span>
-                        </q-btn>
-                    </div>
+                        </span>
+                    </q-btn>
                 </div>
             </template>
 
             <template #buttons>
-                <div class="row q-gutter-x-sm" style="height: 100%">
+                <button-group>
                     <q-btn
                         v-if="mission"
                         class="button-border"
                         flat
                         style="height: 100%"
+                        color="primary"
                         icon="sym_o_sell"
                         label="Metadata"
                         @click="openMetadataDrawer"
@@ -64,6 +59,7 @@
                         class="button-border"
                         flat
                         style="height: 100%"
+                        color="primary"
                     >
                         <q-tooltip> More Actions</q-tooltip>
 
@@ -152,7 +148,7 @@
                             </q-list>
                         </q-menu>
                     </q-btn>
-                </div>
+                </button-group>
             </template>
 
             <template #tabs>
@@ -199,12 +195,13 @@
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dialog-opener.vue';
 import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
+import ButtonGroup from 'components/buttons/button-group.vue';
 import KleinDownloadMission from 'components/cli-links/klein-download-mission.vue';
 import MissionActions from 'components/explorer-page/mission-actions.vue';
 import MissionFiles from 'components/explorer-page/mission-files.vue';
 import MissionMetadataDrawer from 'components/explorer-page/mission-metadata-drawer.vue';
 import TitleSection from 'components/title-section.vue';
-import { copyToClipboard, Notify } from 'quasar';
+import { copyToClipboard, Notify, useQuasar } from 'quasar';
 import {
     registerNoPermissionErrorHandler,
     useMission,
@@ -215,9 +212,18 @@ import { useRoute, useRouter } from 'vue-router';
 
 const $router = useRouter();
 const $route = useRoute();
+const $q = useQuasar();
 
 const missionUuid = useMissionUUID();
 const isMetadataDrawerOpen = ref(false);
+
+/**
+ * The metadata chip sits next to the title on wider screens and moves below
+ * it on phones, where the title row has no room left.
+ */
+const metadataChipSlot = computed<'subtitle' | 'titleAppend'>(() =>
+    $q.screen.xs ? 'subtitle' : 'titleAppend',
+);
 
 const openMetadataDrawer = () => {
     isMetadataDrawerOpen.value = true;

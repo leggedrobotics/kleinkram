@@ -6,7 +6,16 @@ import { McapIndexedReader } from '@mcap/core';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { DecodingStrategy } from './index';
-import { LogMessage } from './utilities';
+import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
+
+/** Identity of a message record, used to drop duplicates from overlapping chunks */
+const messageIdentity = (message: {
+    channelId: number;
+    logTime: bigint;
+    publishTime: bigint;
+    sequence: number;
+}): string =>
+    `${String(message.channelId)}:${String(message.logTime)}:${String(message.publishTime)}:${String(message.sequence)}`;
 
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;
@@ -34,14 +43,30 @@ export class McapStrategy extends DecodingStrategy {
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         startTime?: bigint,
+        options: ReadOptions = {},
     ): Promise<LogMessage[]> {
         if (!this.reader || !this.httpReader) return [];
-        const msgs: LogMessage[] = [];
+        const keepEvery = Math.max(1, Math.floor(options.stride ?? 1));
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const options: any = { topics: [topic] };
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (startTime !== undefined) options.startTime = startTime;
+        if (options.progressive && startTime === undefined) {
+            return this.getMessagesProgressive(
+                topic,
+                keepEvery,
+                limit,
+                onMessage,
+                signal,
+                options.skip,
+                options.totalMessages,
+            );
+        }
+
+        const msgs: LogMessage[] = [];
+        let seen = 0;
+
+        const readArguments: { topics: string[]; startTime?: bigint } = {
+            topics: [topic],
+        };
+        if (startTime !== undefined) readArguments.startTime = startTime;
 
         // Prefetch chunks
         // We need to access private chunkIndexes, but McapIndexedReader exposes them publicly in recent versions
@@ -78,10 +103,11 @@ export class McapStrategy extends DecodingStrategy {
             }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        for await (const message of this.reader.readMessages(options)) {
+        for await (const message of this.reader.readMessages(readArguments)) {
             if (signal?.aborted) break;
             if (msgs.length >= limit) break;
+            // Skip (without decoding) messages that fall between samples
+            if (seen++ % keepEvery !== 0) continue;
             let data = message.data;
             const channel = this.reader.channelsById.get(message.channelId);
             if (channel) {
@@ -97,6 +123,105 @@ export class McapStrategy extends DecodingStrategy {
         return msgs;
     }
 
+    /**
+     * Reads the chunks containing `topic` coarse-to-fine so that the whole
+     * recording is covered early. Within each chunk only every
+     * `keepEvery`-th message is decoded.
+     */
+    private async getMessagesProgressive(
+        topic: string,
+        keepEvery: number,
+        limit: number,
+        onMessage?: (message: LogMessage) => void,
+        signal?: AbortSignal,
+        skip?: (logTime: bigint) => boolean,
+        totalMessages?: number,
+    ): Promise<LogMessage[]> {
+        if (!this.reader || !this.httpReader) return [];
+        const reader = this.reader;
+        // Sampling positions are estimated for MCAP, so allow a little
+        // headroom before stopping hard at the requested count.
+        const hardLimit = Math.ceil(limit * 1.1) + 1;
+        const httpReader = this.httpReader;
+        const msgs: LogMessage[] = [];
+
+        const channelIds = new Set(
+            [...reader.channelsById.values()]
+                .filter((channel) => channel.topic === topic)
+                .map((channel) => channel.id),
+        );
+        const chunks = reader.chunkIndexes.filter((chunk) =>
+            chunk.messageIndexOffsets
+                .keys()
+                .some((id: number) => channelIds.has(id)),
+        );
+        const order = coarseToFineOrder(chunks.length);
+
+        // The chunk index does not store per-chunk message counts, so the
+        // global position of a message is estimated from the average number
+        // of messages per chunk. Sampling on that global position keeps the
+        // samples uniform even when every chunk holds a single image.
+        const averagePerChunk =
+            totalMessages !== undefined && chunks.length > 0
+                ? Math.max(1, totalMessages / chunks.length)
+                : 1;
+
+        // Adjacent chunks can overlap in time, so the same message may be
+        // yielded twice. Log time, publish time and sequence number
+        // together identify a message record well enough to drop only
+        // true duplicates.
+        const emitted = new Set<string>();
+
+        const PREFETCH_AHEAD = 3;
+        for (const [position, chunkIndex] of order.entries()) {
+            if (signal?.aborted) break;
+            if (msgs.length >= hardLimit) break;
+            const chunk = chunks[chunkIndex];
+            if (!chunk) continue;
+
+            for (let ahead = 0; ahead < PREFETCH_AHEAD; ahead++) {
+                const upcoming = chunks[order[position + ahead] ?? -1];
+                if (upcoming) {
+                    httpReader.prefetch(
+                        upcoming.chunkStartOffset,
+                        upcoming.chunkLength,
+                    );
+                }
+            }
+
+            let seen = 0;
+            const chunkOffset = Math.round(chunkIndex * averagePerChunk);
+            for await (const message of reader.readMessages({
+                topics: [topic],
+                startTime: chunk.messageStartTime,
+                endTime: chunk.messageEndTime,
+            })) {
+                if (signal?.aborted) break;
+                if (msgs.length >= hardLimit) break;
+                if ((chunkOffset + seen++) % keepEvery !== 0) continue;
+                const key = messageIdentity(message);
+                if (emitted.has(key)) continue;
+                emitted.add(key);
+                if (skip?.(message.logTime)) continue;
+
+                let data = message.data;
+                const channel = reader.channelsById.get(message.channelId);
+                if (channel) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    data =
+                        (await this.tryDecode(
+                            channel.schemaId,
+                            message.data,
+                        )) ?? message.data;
+                }
+                const messageObject = { logTime: message.logTime, data };
+                if (onMessage) onMessage(messageObject);
+                msgs.push(messageObject);
+            }
+        }
+        return msgs;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private tryDecode(schemaId: number, data: Uint8Array): any {
         if (!this.reader) return;
@@ -106,15 +231,22 @@ export class McapStrategy extends DecodingStrategy {
             const schema = this.reader.schemasById.get(schemaId);
             if (!schema) return;
             try {
+                const isRos1 = schema.encoding.includes('ros1');
+                // ROS 2 definitions use a different grammar (e.g. constants
+                // with negative values), so the parser must know the dialect.
                 const defs = parseMessageDefer(
                     new TextDecoder().decode(schema.data),
+                    { ros2: !isRos1 },
                 );
-                if (schema.encoding.includes('ros1'))
-                    decoder = new Ros1Reader(defs);
+                if (isRos1) decoder = new Ros1Reader(defs);
                 else if (['cdr', 'ros2msg'].includes(schema.encoding))
                     decoder = new CdrReader(defs);
                 if (decoder) this.decoders.set(schemaId, decoder);
-            } catch {
+            } catch (error) {
+                console.warn(
+                    `Failed to parse schema ${schema.name} (${schema.encoding})`,
+                    error,
+                );
                 return;
             }
         }

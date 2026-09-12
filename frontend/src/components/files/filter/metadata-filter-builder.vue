@@ -58,6 +58,8 @@
                         dense
                         icon="sym_o_close"
                         color="negative"
+                        aria-label="Remove metadata filter"
+                        class="remove-metadata-filter"
                         @click="() => removeTag(tagTypeUUID)"
                     />
                 </div>
@@ -186,3 +188,13 @@ const metadataPlaceholder = computed(() => {
     return "e.g. description='some description'";
 });
 </script>
+
+<style scoped>
+/* Finger-sized delete target on touch devices */
+@media (max-width: 1023px) {
+    .remove-metadata-filter {
+        min-width: 40px;
+        min-height: 40px;
+    }
+}
+</style>

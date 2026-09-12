@@ -12,10 +12,10 @@
     <div v-if="file" class="q-my-lg">
         <!-- YAML/Text Preview -->
         <div v-if="isYaml" class="q-mb-lg">
-            <h2 class="text-h4 q-mb-md">Content Preview</h2>
+            <h2 class="text-h5 text-md-h4 q-mb-md">Content Preview</h2>
             <div
                 v-if="yamlContent"
-                class="bg-grey-1 q-pa-md rounded-borders border-solid"
+                class="bg-grey-1 q-pa-md rounded-borders border-solid code-block"
             >
                 <pre class="q-ma-none text-code" style="overflow-x: auto">{{
                     yamlContent
@@ -28,7 +28,7 @@
 
         <!-- TUM Preview -->
         <div v-else-if="isTum" class="q-mb-lg">
-            <h2 class="text-h4 q-mb-md flex items-center">
+            <h2 class="text-h5 text-md-h4 q-mb-md flex items-center">
                 Trajectory Preview
                 <q-badge
                     color="orange-7"
@@ -79,7 +79,7 @@
                 "
                 class="q-mt-lg"
             >
-                <h3 class="text-h5 q-mb-md">SQL Schema</h3>
+                <h3 class="text-h6 text-md-h5 q-mb-md">SQL Schema</h3>
                 <div
                     v-if="isLoading"
                     class="row justify-center q-pa-md bg-grey-1 rounded-borders"
@@ -89,7 +89,7 @@
                 </div>
                 <div
                     v-else-if="preview.dbSchema?.value"
-                    class="bg-grey-1 q-pa-md rounded-borders border-solid"
+                    class="bg-grey-1 q-pa-md rounded-borders border-solid code-block"
                 >
                     <pre class="q-ma-none text-code" style="overflow-x: auto">{{
                         preview.dbSchema.value
@@ -103,7 +103,7 @@
         <!-- Uploading Placeholder -->
         <div
             v-else-if="file.state === FileState.UPLOADING"
-            class="text-center q-pa-xl bg-grey-1 rounded-borders border-dashed text-grey-7"
+            class="text-center q-pa-xl q-px-md bg-grey-1 rounded-borders border-dashed text-grey-7"
         >
             <q-icon name="sym_o_cloud_upload" size="4em" class="q-mb-md" />
             <div class="text-h6">No preview available while uploading</div>
@@ -285,6 +285,12 @@ function handleResumePreview(t: string, limit: number) {
 .text-code {
     font-family: monospace;
     font-size: 13px;
+}
+/* Code previews scroll inside their own box, the page never scrolls */
+.code-block {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
 }
 .border-solid {
     border: 1px solid #e0e0e0;

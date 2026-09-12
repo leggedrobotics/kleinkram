@@ -2,16 +2,89 @@
     <q-table
         v-model:pagination="pagination"
         flat
-        bordered
+        :bordered="!$q.screen.xs"
         :rows="apiKeys"
         :columns="columns"
+        :visible-columns="visibleColumns"
         row-key="uuid"
         wrap-cells
         separator="none"
+        :grid="$q.screen.xs"
         :rows-per-page-options="[10, 20, 50]"
         :loading="isLoading"
+        class="api-key-table"
         @request="onRequest"
     >
+        <template #item="props">
+            <div class="col-12 q-pb-sm">
+                <q-card flat bordered>
+                    <q-card-section>
+                        <div class="row no-wrap items-center justify-between">
+                            <span class="text-weight-medium api-key-card__type">
+                                {{ props.row.keyType }}
+                            </span>
+                            <q-badge
+                                :color="
+                                    props.row.expired ? 'negative' : 'positive'
+                                "
+                                :label="
+                                    props.row.expired ? 'Expired' : 'Active'
+                                "
+                            />
+                        </div>
+
+                        <div class="api-key-card__row">
+                            <span class="api-key-card__label">Rights</span>
+                            <span>{{ rightsLabel(props.row.rights) }}</span>
+                        </div>
+
+                        <div class="api-key-card__row">
+                            <span class="api-key-card__label">Mission</span>
+                            <router-link
+                                v-if="
+                                    props.row.missionUuid &&
+                                    props.row.projectUuid
+                                "
+                                :to="{
+                                    name: ROUTES.FILES.routeName,
+                                    params: {
+                                        projectUuid: props.row.projectUuid,
+                                        missionUuid: props.row.missionUuid,
+                                    },
+                                }"
+                                class="text-primary"
+                            >
+                                {{ props.row.missionName }}
+                            </router-link>
+                            <span v-else>{{
+                                props.row.missionName ?? '—'
+                            }}</span>
+                        </div>
+
+                        <div class="api-key-card__row">
+                            <span class="api-key-card__label">Action</span>
+                            <router-link
+                                v-if="props.row.actionUuid"
+                                :to="{
+                                    name: ROUTES.ANALYSIS_DETAILS.routeName,
+                                    params: { id: props.row.actionUuid },
+                                }"
+                                class="text-primary"
+                            >
+                                {{ actionLabel(props.row) }}
+                            </router-link>
+                            <span v-else>—</span>
+                        </div>
+
+                        <div class="api-key-card__row">
+                            <span class="api-key-card__label">Created</span>
+                            <span>{{ createdLabel(props.row) }}</span>
+                        </div>
+                    </q-card-section>
+                </q-card>
+            </div>
+        </template>
+
         <template #no-data>
             <div
                 class="flex flex-center"
@@ -55,11 +128,7 @@
                     }"
                     class="text-primary"
                 >
-                    {{
-                        props.row.actionTemplateVersion
-                            ? `${props.row.actionTemplateName} v${props.row.actionTemplateVersion}`
-                            : props.row.actionTemplateName || '—'
-                    }}
+                    {{ actionLabel(props.row) }}
                 </router-link>
                 <span v-else>—</span>
             </q-td>
@@ -83,6 +152,7 @@
 import type { ApiKeyMetadataDto } from '@kleinkram/api-dto/types/user/api-key-metadata.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import type { QTableColumn } from 'quasar';
+import { useQuasar } from 'quasar';
 import { useMyApiKeys } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
@@ -90,7 +160,30 @@ import { QueryURLHandler } from 'src/services/query-handler';
 import { computed, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 
+const $q = useQuasar();
 const router = useRouter();
+
+/**
+ * On phones the table is rendered as a card list (see the `#item` slot); on
+ * small screens the least important columns are dropped so that the table
+ * fits without horizontal scrolling.
+ */
+const visibleColumns = computed<string[] | undefined>(() =>
+    $q.screen.lt.md
+        ? ['key_type', 'rights', 'missionName', 'deletedAt']
+        : undefined,
+);
+
+const actionLabel = (row: ApiKeyMetadataDto): string => {
+    const name = row.actionTemplateName ?? '';
+    if (name === '') return '—';
+    return row.actionTemplateVersion === undefined
+        ? name
+        : `${name} v${String(row.actionTemplateVersion)}`;
+};
+
+const createdLabel = (row: ApiKeyMetadataDto): string =>
+    formatDate(new Date(row.createdAt));
 const queryHandler = reactive(
     new QueryURLHandler(router, undefined, undefined, 'createdAt', true),
 );
@@ -191,7 +284,6 @@ const columns: QTableColumn<ApiKeyMetadataDto>[] = [
     },
     {
         name: 'actionTemplateName',
-        required: true,
         label: 'Action',
         align: 'left',
         field: (row) => row.actionTemplateName,
@@ -208,7 +300,6 @@ const columns: QTableColumn<ApiKeyMetadataDto>[] = [
     },
     {
         name: 'createdAt',
-        required: true,
         label: 'Created',
         align: 'left',
         field: (row) => row.createdAt,
@@ -217,3 +308,35 @@ const columns: QTableColumn<ApiKeyMetadataDto>[] = [
     },
 ];
 </script>
+
+<style scoped>
+.api-key-card__type {
+    overflow-wrap: anywhere;
+}
+
+.api-key-card__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.api-key-card__label {
+    color: #58585c;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 599px) {
+    /* The pagination controls must wrap instead of overflowing the page */
+    .api-key-table :deep(.q-table__bottom) {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .api-key-table :deep(.q-table__grid-content) {
+        margin: 0;
+    }
+}
+</style>

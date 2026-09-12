@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="col-9">
+        <div class="col-12 col-md-9">
             <label>Metadata</label>
             <q-select
                 ref="selectReference"

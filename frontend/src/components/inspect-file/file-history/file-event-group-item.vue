@@ -39,9 +39,12 @@
                     </span>
                     <FileEventFileInfo :file="event.file" />
                 </q-item-label>
+                <q-item-label v-if="$q.screen.xs" caption class="text-grey-6">
+                    {{ formatDate(event.createdAt) }}
+                </q-item-label>
             </q-item-section>
 
-            <q-item-section side>
+            <q-item-section v-if="!$q.screen.xs" side>
                 <div class="text-caption text-grey-6">
                     {{ formatDate(event.createdAt) }}
                 </div>
@@ -54,7 +57,7 @@
                     <q-item
                         v-for="subEvent in event.events"
                         :key="subEvent.uuid"
-                        class="q-pl-xl"
+                        :class="$q.screen.xs ? 'q-pl-md' : 'q-pl-xl'"
                     >
                         <q-item-section>
                             <q-item-label class="text-caption text-grey-7">
@@ -98,8 +101,15 @@
                                 &rarr;
                                 {{ subEvent.details.newFilename }}
                             </q-item-label>
+                            <q-item-label
+                                v-if="$q.screen.xs"
+                                caption
+                                class="text-grey-6"
+                            >
+                                {{ formatDate(subEvent.createdAt) }}
+                            </q-item-label>
                         </q-item-section>
-                        <q-item-section side>
+                        <q-item-section v-if="!$q.screen.xs" side>
                             <div class="text-caption text-grey-6">
                                 {{ formatDate(subEvent.createdAt) }}
                             </div>
@@ -113,6 +123,7 @@
 
 <script setup lang="ts">
 import { FileEventType } from '@kleinkram/shared';
+import { useQuasar } from 'quasar';
 import { formatDate } from 'src/services/date-formating';
 import FileEventAttribution from './file-event-attribution.vue';
 import FileEventFileInfo from './file-event-file-info.vue';
@@ -124,4 +135,6 @@ defineProps<{
     event: GroupedFileEvent;
     hideActionAttribution?: boolean;
 }>();
+
+const $q = useQuasar();
 </script>
