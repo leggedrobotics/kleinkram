@@ -26,8 +26,31 @@ export class FileEntity extends BaseEntity {
     })
     mission?: MissionEntity;
 
+    /**
+     * The date the file is sorted and filtered by. It mirrors
+     * {@link recordingStartDate} as soon as the recording times are known and
+     * falls back to the upload time for files we cannot extract a recording
+     * start from (e.g. configs). Use {@link recordingStartDate} whenever you
+     * need to know whether a date really comes from the recorded data, and
+     * `createdAt` for the upload time.
+     */
     @Column()
     date!: Date;
+
+    /**
+     * Timestamp of the first message in the recording.
+     * `null` while unknown (not yet extracted, or not a recording at all).
+     */
+    @Column({ type: 'timestamp', nullable: true })
+    recordingStartDate?: Date | null;
+
+    /**
+     * Timestamp of the last message in the recording. Together with
+     * {@link recordingStartDate} this gives the wall-clock length of the
+     * recording.
+     */
+    @Column({ type: 'timestamp', nullable: true })
+    recordingEndDate?: Date | null;
 
     @OneToMany(() => TopicEntity, (topic: TopicEntity) => topic.file)
     topics?: TopicEntity[];

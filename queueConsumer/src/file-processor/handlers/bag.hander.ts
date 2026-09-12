@@ -159,8 +159,11 @@ export class RosBagHandler implements FileHandler {
                     logger.warn(`Tagging failed: ${String(error)}`),
                 );
 
-            // Update Primary Bag File (inherit date from conversion result)
+            // Update Primary Bag File (inherit the recording window from the
+            // conversion result, the messages are the same in both files)
             primaryFile.date = savedMcapEntity.date;
+            primaryFile.recordingStartDate = savedMcapEntity.recordingStartDate;
+            primaryFile.recordingEndDate = savedMcapEntity.recordingEndDate;
             primaryFile.state = FileState.OK;
             await this.fileRepo.save(primaryFile);
 

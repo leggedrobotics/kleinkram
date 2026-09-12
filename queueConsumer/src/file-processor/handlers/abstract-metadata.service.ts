@@ -6,6 +6,7 @@ import { FileEventType, FileState } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { ExtractedTopicInfo } from './file-handler.interface';
+import { RecordingTimes } from './time';
 
 export abstract class AbstractMetadataService {
     constructor(
@@ -22,7 +23,7 @@ export abstract class AbstractMetadataService {
         targetEntity: FileEntity,
         rawTopics: ExtractedTopicInfo[],
         fileSize: number,
-        fileDate: Date | undefined,
+        recordingTimes: RecordingTimes,
         method: string,
         startTime: number,
         actor?: UserEntity,
@@ -64,9 +65,7 @@ export abstract class AbstractMetadataService {
             }
 
             // Update File Entity
-            if (fileDate) {
-                targetEntity.date = fileDate;
-            }
+            applyRecordingTimes(targetEntity, recordingTimes);
             targetEntity.state = FileState.OK;
             targetEntity.size = fileSize;
             await this.fileRepo.save(targetEntity);
@@ -89,6 +88,18 @@ export abstract class AbstractMetadataService {
                         method,
                         extractedAt: new Date(),
                         durationMs,
+                        ...(recordingTimes.startDate
+                            ? {
+                                  recordingStartDate:
+                                      recordingTimes.startDate.toISOString(),
+                              }
+                            : {}),
+                        ...(recordingTimes.endDate
+                            ? {
+                                  recordingEndDate:
+                                      recordingTimes.endDate.toISOString(),
+                              }
+                            : {}),
                     },
                 }),
             );
@@ -106,5 +117,25 @@ export abstract class AbstractMetadataService {
         if (!Number.isFinite(value)) return 0;
         if (value < 0) return 0;
         return value;
+    }
+}
+
+/**
+ * Copies the extracted recording bounds onto the file.
+ *
+ * `date` is what the API sorts and filters by, so it follows the recording
+ * start as soon as we know it; without a start it keeps the upload time it was
+ * created with rather than being cleared.
+ */
+export function applyRecordingTimes(
+    file: FileEntity,
+    recordingTimes: RecordingTimes,
+): void {
+    if (recordingTimes.startDate) {
+        file.recordingStartDate = recordingTimes.startDate;
+        file.date = recordingTimes.startDate;
+    }
+    if (recordingTimes.endDate) {
+        file.recordingEndDate = recordingTimes.endDate;
     }
 }

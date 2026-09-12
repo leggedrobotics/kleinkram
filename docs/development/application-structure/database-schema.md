@@ -201,21 +201,23 @@ Defined in: `file/file.entity.ts`
 
 ### Columns
 
-| Column         | Type                                         | Constraints  | Description                                                                                                         |
-| :------------- | :------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
-| `mission`      | [MissionEntity](#missionentity-mission)      | FK, Nullable |                                                                                                                     |
-| `date`         | `Date`                                       | Not Null     |                                                                                                                     |
-| `topics`       | [TopicEntity](#topicentity-topic)[]          | OneToMany    |                                                                                                                     |
-| `filename`     | `string`                                     | Not Null     |                                                                                                                     |
-| `size`         | `bigint`                                     | Nullable     |                                                                                                                     |
-| `creator`      | [UserEntity](#userentity-user)               | FK, Nullable | The user who uploaded the file.                                                                                     |
-| `type`         | `enum`                                       | Not Null     |                                                                                                                     |
-| `state`        | `enum`                                       | Not Null     |                                                                                                                     |
-| `hash`         | `string`                                     | Nullable     |                                                                                                                     |
-| `categories`   | [CategoryEntity](#categoryentity-category)[] | ManyToMany   |                                                                                                                     |
-| `parent`       | [FileEntity](#fileentity-file_entity)        | FK, Nullable | The parent file this file was derived from. e.g., If this is a .mcap converted from a .bag, the .bag is the parent. |
-| `derivedFiles` | [FileEntity](#fileentity-file_entity)[]      | OneToMany    | Files derived from this file.                                                                                       |
-| `origin`       | `enum`                                       | Nullable     |                                                                                                                     |
+| Column               | Type                                         | Constraints  | Description                                                                                                         |
+| :------------------- | :------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
+| `mission`            | [MissionEntity](#missionentity-mission)      | FK, Nullable |                                                                                                                     |
+| `date`               | `Date`                                       | Not Null     | The date the file is sorted and filtered by. Mirrors `recordingStartDate` once known, otherwise the upload time.    |
+| `recordingStartDate` | `timestamp`                                  | Nullable     | Timestamp of the first message in the recording. Null while unknown.                                                |
+| `recordingEndDate`   | `timestamp`                                  | Nullable     | Timestamp of the last message in the recording. Null while unknown.                                                 |
+| `topics`             | [TopicEntity](#topicentity-topic)[]          | OneToMany    |                                                                                                                     |
+| `filename`           | `string`                                     | Not Null     |                                                                                                                     |
+| `size`               | `bigint`                                     | Nullable     |                                                                                                                     |
+| `creator`            | [UserEntity](#userentity-user)               | FK, Nullable | The user who uploaded the file.                                                                                     |
+| `type`               | `enum`                                       | Not Null     |                                                                                                                     |
+| `state`              | `enum`                                       | Not Null     |                                                                                                                     |
+| `hash`               | `string`                                     | Nullable     |                                                                                                                     |
+| `categories`         | [CategoryEntity](#categoryentity-category)[] | ManyToMany   |                                                                                                                     |
+| `parent`             | [FileEntity](#fileentity-file_entity)        | FK, Nullable | The parent file this file was derived from. e.g., If this is a .mcap converted from a .bag, the .bag is the parent. |
+| `derivedFiles`       | [FileEntity](#fileentity-file_entity)[]      | OneToMany    | Files derived from this file.                                                                                       |
+| `origin`             | `enum`                                       | Nullable     |                                                                                                                     |
 
 ---
 
