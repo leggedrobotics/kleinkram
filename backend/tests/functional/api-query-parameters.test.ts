@@ -176,9 +176,11 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
         const fetchSorted = async (
             sortOrder: string,
+            take = 10,
+            skip = 0,
         ): Promise<{ uuid: string; size: number }[]> => {
             const response = await fetch(
-                `${DEFAULT_URL}/projects?take=10&skip=0&sortBy=size&sortOrder=${sortOrder}`,
+                `${DEFAULT_URL}/projects?take=${String(take)}&skip=${String(skip)}&sortBy=size&sortOrder=${sortOrder}`,
                 {
                     method: 'GET',
                     headers: getAuthHeaders(user),
@@ -204,6 +206,23 @@ describe('Comprehensive API Query Parameters Tests', () => {
             projectUuid,
         ]);
         expect(descending.map((project) => project.size)).toEqual([2048, 1024]);
+
+        // Two more projects without any files, so that half the projects tie at
+        // a size of zero: paging has to stay stable despite the tie.
+        for (const name of ['empty_project_a', 'empty_project_b']) {
+            await createProjectUsingPost(
+                { name, description: 'no files', requiredTags: [] },
+                user,
+            );
+        }
+
+        const pagedUuids = [
+            ...(await fetchSorted('asc', 2, 0)),
+            ...(await fetchSorted('asc', 2, 2)),
+        ].map((project) => project.uuid);
+        expect(pagedUuids).toHaveLength(4);
+        expect(new Set(pagedUuids).size).toBe(4);
+        expect(pagedUuids.slice(2)).toEqual([projectUuid, biggerProjectUuid]);
     });
 
     test('should support all mission query parameters (take, skip, sortBy, sortDirection, projectUuid, uuid, missionUuids, missionPatterns, minimal)', async () => {

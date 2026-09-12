@@ -58,9 +58,9 @@ import { ConfigService } from '@nestjs/config';
 
 /**
  * Alias of the computed column holding the total file size of a project, see
- * {@link ProjectService._addProjectSizeForSorting}. Lower case on purpose: the
- * ORDER BY refers to it by select alias, which TypeORM emits unquoted, and
- * postgres folds unquoted identifiers to lower case.
+ * {@link ProjectService._addProjectSizeForSorting}. The ORDER BY refers to the
+ * column by this alias, which is what makes TypeORM carry the sort over into
+ * the distinct-ids query it runs for paginated queries with joins.
  */
 const PROJECT_SIZE_SORT_ALIAS = 'project_total_size';
 
@@ -176,34 +176,25 @@ export class ProjectService {
     private _addProjectSizeForSorting(
         query: SelectQueryBuilder<ProjectEntity>,
     ): SelectQueryBuilder<ProjectEntity> {
-        return query
+        // Correlated on purpose: the aggregate is evaluated for the projects
+        // that survive the access constraints and filters of the outer query,
+        // and not at all for the count query, which drops the select list.
+        const totalSize = this.projectRepository.manager
+            .createQueryBuilder()
+            .select('COALESCE(SUM(sizeFile.size), 0)')
+            .from(MissionEntity, 'sizeMission')
             .leftJoin(
-                (subQuery) =>
-                    subQuery
-                        .select('sizeProject.uuid', 'projectUuid')
-                        .addSelect(
-                            'COALESCE(SUM(sizeFile.size), 0)',
-                            'totalSize',
-                        )
-                        .from(ProjectEntity, 'sizeProject')
-                        .leftJoin(
-                            'sizeProject.missions',
-                            'sizeMission',
-                            'sizeMission.deletedAt IS NULL',
-                        )
-                        .leftJoin(
-                            'sizeMission.files',
-                            'sizeFile',
-                            'sizeFile.deletedAt IS NULL',
-                        )
-                        .groupBy('sizeProject.uuid'),
-                'projectSize',
-                '"projectSize"."projectUuid" = project.uuid',
+                'sizeMission.files',
+                'sizeFile',
+                'sizeFile.deletedAt IS NULL',
             )
-            .addSelect(
-                'COALESCE("projectSize"."totalSize", 0)',
-                PROJECT_SIZE_SORT_ALIAS,
-            );
+            .where('"sizeMission"."projectUuid" = "project"."uuid"')
+            .andWhere('sizeMission.deletedAt IS NULL');
+
+        return query.addSelect(
+            `(${totalSize.getQuery()})`,
+            PROJECT_SIZE_SORT_ALIAS,
+        );
     }
 
     async findMany(
@@ -247,6 +238,12 @@ export class ProjectService {
 
         if (sortBy !== undefined) {
             query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+
+            // Stable tie-breaker: rows that compare equal on the sort column
+            // (projects of the same size, most notably the empty ones) would
+            // otherwise be free to swap places between two requests, which
+            // duplicates and drops rows across LIMIT/OFFSET pages.
+            query.addOrderBy('project.uuid', 'ASC');
         }
 
         query = addProjectCreatorFilter(query, creatorUuid);
