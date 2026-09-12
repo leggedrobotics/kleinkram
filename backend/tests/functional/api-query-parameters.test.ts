@@ -225,6 +225,89 @@ describe('Comprehensive API Query Parameters Tests', () => {
         expect(pagedUuids.slice(2)).toEqual([projectUuid, biggerProjectUuid]);
     });
 
+    test('should sort projects by mission count (sortBy=nrOfMissions)', async () => {
+        // The setup project holds a single mission
+        const { user, projectUuid } = await setupTestEnvironment(
+            'proj-missions@kleinkram.dev',
+            'Project Mission Count User',
+        );
+
+        // A second project, holding two missions
+        const busyProjectUuid = await createProjectUsingPost(
+            {
+                name: 'busy_project',
+                description: 'holds two missions',
+                requiredTags: [],
+            },
+            user,
+        );
+        for (const name of ['busy_mission_a', 'busy_mission_b']) {
+            await createMissionUsingPost(
+                {
+                    name,
+                    projectUUID: busyProjectUuid,
+                    tags: {},
+                    ignoreTags: true,
+                },
+                user,
+            );
+        }
+
+        const fetchSorted = async (
+            sortOrder: string,
+            take = 10,
+            skip = 0,
+        ): Promise<{ uuid: string; missionCount: number }[]> => {
+            const response = await fetch(
+                `${DEFAULT_URL}/projects?take=${String(take)}&skip=${String(skip)}&sortBy=nrOfMissions&sortOrder=${sortOrder}`,
+                {
+                    method: 'GET',
+                    headers: getAuthHeaders(user),
+                },
+            );
+            expect(response.status).toBe(200);
+            const json = (await response.json()) as {
+                data: { uuid: string; missionCount: number }[];
+            };
+            return json.data;
+        };
+
+        const ascending = await fetchSorted('asc');
+        expect(ascending.map((project) => project.uuid)).toEqual([
+            projectUuid,
+            busyProjectUuid,
+        ]);
+        expect(ascending.map((project) => project.missionCount)).toEqual([
+            1, 2,
+        ]);
+
+        const descending = await fetchSorted('desc');
+        expect(descending.map((project) => project.uuid)).toEqual([
+            busyProjectUuid,
+            projectUuid,
+        ]);
+        expect(descending.map((project) => project.missionCount)).toEqual([
+            2, 1,
+        ]);
+
+        // Two more projects without any mission, so that half the projects tie
+        // at a count of zero: paging has to stay stable despite the tie.
+        for (const name of ['empty_project_a', 'empty_project_b']) {
+            await createProjectUsingPost(
+                { name, description: 'no missions', requiredTags: [] },
+                user,
+            );
+        }
+
+        const pagedUuids = [
+            ...(await fetchSorted('asc', 2, 0)),
+            ...(await fetchSorted('asc', 2, 2)),
+        ].map((project) => project.uuid);
+        expect(pagedUuids).toHaveLength(4);
+        expect(new Set(pagedUuids).size).toBe(4);
+        expect(pagedUuids.slice(2)).toEqual([projectUuid, busyProjectUuid]);
+    });
+
     test('should support all mission query parameters (take, skip, sortBy, sortDirection, projectUuid, uuid, missionUuids, missionPatterns, minimal)', async () => {
         const { user, projectUuid, missionUuid } = await setupTestEnvironment(
             'mission-params@kleinkram.dev',
