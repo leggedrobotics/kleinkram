@@ -57,10 +57,28 @@
                 metadata extraction (without conversion).
             </div>
         </div>
+
+        <div class="admin-action">
+            <q-btn
+                label="Backfill Recording Times"
+                class="button-border bg-button-primary full-width admin-action__btn"
+                icon="sym_o_schedule"
+                flat
+                @click="backfillRecordingTimes"
+            />
+            <div class="help-text q-pt-sm">
+                Reads the first and last message time from files that do not
+                know their recording window yet, so that the start date stops
+                showing the upload time. Also runs hourly on its own.
+            </div>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
-import type { RecalculateHashesResponseDto } from '@kleinkram/api-dto';
+import type {
+    BackfillRecordingTimesResponseDto,
+    RecalculateHashesResponseDto,
+} from '@kleinkram/api-dto';
 import { useQuasar } from 'quasar';
 import axios from 'src/api/axios';
 
@@ -101,6 +119,19 @@ async function recalculateHashes(): Promise<void> {
     });
 }
 
+async function backfillRecordingTimes(): Promise<void> {
+    const { data } = await axios.post<BackfillRecordingTimesResponseDto>(
+        'files/maintenance/backfill-recording-times',
+    );
+
+    $q.notify({
+        message: `Recording time backfill started. ${String(data.fileCount)} files queued.`,
+        color: 'positive',
+        position: 'bottom',
+        timeout: 3000,
+    });
+}
+
 async function reextractTopics(): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { data } = await axios.post('files/reextractTopics');
@@ -116,26 +147,26 @@ async function reextractTopics(): Promise<void> {
 </script>
 
 <style scoped>
+/*
+ * A gutter on the row rather than on the blocks themselves, so that the
+ * maintenance blocks keep their spacing once there are more of them than fit
+ * on a single line.
+ */
+.row {
+    gap: 24px;
+}
+
 .admin-action {
     width: 300px;
 }
 
-.admin-action + .admin-action {
-    margin-left: 20px;
-}
-
 /*
- * Below the desktop breakpoint the four fixed-width maintenance blocks are
- * stacked and span the full width instead of overflowing the row.
+ * Below the desktop breakpoint the fixed-width maintenance blocks are stacked
+ * and span the full width instead of overflowing the row.
  */
 @media (max-width: 1023px) {
     .admin-action {
         width: 100%;
-    }
-
-    .admin-action + .admin-action {
-        margin-left: 0;
-        margin-top: 24px;
     }
 
     .admin-action__btn {
