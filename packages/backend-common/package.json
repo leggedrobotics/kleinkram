@@ -27,9 +27,9 @@
         "typeorm": "^1.0.0"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.967.0",
-        "@aws-sdk/client-sts": "3.967.0",
-        "@aws-sdk/s3-request-presigner": "3.967.0",
+        "@aws-sdk/client-s3": "3.1127.0",
+        "@aws-sdk/client-sts": "3.1127.0",
+        "@aws-sdk/s3-request-presigner": "3.1127.0",
         "@kleinkram/api-dto": "workspace:*",
         "@kleinkram/shared": "workspace:*",
         "@kleinkram/validation": "workspace:*",
