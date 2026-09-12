@@ -10,4 +10,5 @@ export class UpdateFile {
     @IsOptional() @IsUUID() missionUuid?: string;
     @IsDate() @Type(() => Date) date!: Date;
     @IsOptional() @IsUUID('all', { each: true }) categories!: string[];
+    @IsOptional() @IsUUID() parentUuid?: string | null;
 }

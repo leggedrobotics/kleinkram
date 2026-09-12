@@ -19,7 +19,12 @@ export interface FileConfig {
     event?: TriggerEvent[];
 }
 
-export type TriggerConfig = WebhookConfig | TimeConfig | FileConfig;
+export interface CorruptedFileConfig {
+    patterns?: string[];
+}
+
+export type TriggerConfig =
+    WebhookConfig | TimeConfig | FileConfig | CorruptedFileConfig;
 
 export class ActionTriggerDto {
     @ApiProperty()
@@ -43,9 +48,15 @@ export class ActionTriggerDto {
     @IsOptional()
     templateName?: string | null;
 
-    @ApiProperty()
+    @ApiProperty({ required: false, nullable: true })
     @IsUUID()
-    missionUuid!: string;
+    @IsOptional()
+    missionUuid?: string | null;
+
+    @ApiProperty({ required: false, nullable: true })
+    @IsUUID()
+    @IsOptional()
+    projectUuid?: string | null;
 
     @ApiProperty({ enum: TriggerType })
     @IsEnum(TriggerType)

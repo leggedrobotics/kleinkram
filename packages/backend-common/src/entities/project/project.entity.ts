@@ -1,3 +1,4 @@
+import { ActionTriggerEntity } from '@backend-common/entities/action/action-trigger.entity';
 import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { CategoryEntity } from '@backend-common/entities/category/category.entity';
@@ -63,4 +64,13 @@ export class ProjectEntity extends BaseEntity {
 
     @Column({ default: false })
     autoConvert?: boolean;
+
+    @Column({ default: true })
+    autoRecoverMcap?: boolean;
+
+    @OneToMany(
+        () => ActionTriggerEntity,
+        (trigger: ActionTriggerEntity) => trigger.project,
+    )
+    triggers?: ActionTriggerEntity[];
 }

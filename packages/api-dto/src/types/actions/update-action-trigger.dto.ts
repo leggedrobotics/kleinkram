@@ -30,6 +30,11 @@ export class UpdateActionTriggerDto {
     @IsUUID()
     missionUuid?: string;
 
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsUUID()
+    projectUuid?: string;
+
     @ApiPropertyOptional({ enum: TriggerType })
     @IsOptional()
     @IsEnum(TriggerType)

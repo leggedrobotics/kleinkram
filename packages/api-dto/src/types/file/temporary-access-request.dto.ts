@@ -47,4 +47,12 @@ export class TemporaryAccessRequestDto {
         type: [Number],
     })
     fileSizes?: number[];
+
+    @IsUUID()
+    @IsOptional()
+    @ApiProperty({
+        description: 'UUID of the parent file to link uploaded file(s) to',
+        required: false,
+    })
+    parentUuid?: string;
 }

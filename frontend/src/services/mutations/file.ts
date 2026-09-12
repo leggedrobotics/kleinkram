@@ -31,6 +31,15 @@ export type GenerateTemporaryCredentialsResponse = {
  * Updates a file. Passing a `missionUuid` of another mission moves the file
  * into that mission (see `PUT /files/:uuid`).
  */
+export const recoverMcapFile = async (
+    fileUuid: string,
+): Promise<{ actionUUID: string }> => {
+    const response = await axios.post<{ actionUUID: string }>(
+        `/files/${fileUuid}/recover`,
+    );
+    return response.data;
+};
+
 export const updateFile = async ({
     file,
     missionUuid,

@@ -3,6 +3,7 @@ import { TriggerType } from '@kleinkram/shared';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../base-entity.entity';
 import { MissionEntity } from '../mission/mission.entity';
+import { ProjectEntity } from '../project/project.entity';
 import { UserEntity } from '../user/user.entity';
 import { ActionTemplateEntity } from './action-template.entity';
 
@@ -21,12 +22,25 @@ export class ActionTriggerEntity extends BaseEntity {
     @Column()
     templateUuid!: string;
 
-    @ManyToOne(() => MissionEntity, { nullable: false })
+    @ManyToOne(() => MissionEntity, {
+        nullable: true,
+        onDelete: 'CASCADE',
+    })
     @JoinColumn({ name: 'missionUuid' })
-    mission!: MissionEntity;
+    mission?: MissionEntity | null;
 
-    @Column()
-    missionUuid!: string;
+    @Column({ nullable: true })
+    missionUuid?: string | null;
+
+    @ManyToOne(() => ProjectEntity, {
+        nullable: true,
+        onDelete: 'CASCADE',
+    })
+    @JoinColumn({ name: 'projectUuid' })
+    project?: ProjectEntity | null;
+
+    @Column({ nullable: true })
+    projectUuid?: string | null;
 
     @Column({
         type: 'enum',

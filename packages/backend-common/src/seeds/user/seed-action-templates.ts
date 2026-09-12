@@ -1,4 +1,5 @@
 import { UserEntity } from '@backend-common/entities/user/user.entity';
+import { AccessGroupRights } from '@kleinkram/shared';
 import { DataSource } from 'typeorm';
 
 export const seedActionTemplates = async (
@@ -9,7 +10,11 @@ export const seedActionTemplates = async (
     console.log('3. Creating Action Templates...');
     const tag = 'latest';
 
-    const actionTemplates = [
+    const actionTemplates: {
+        name: string;
+        description: string;
+        accessRights?: number;
+    }[] = [
         {
             name: 'validate-data',
             description: 'Validates data integrity',
@@ -29,6 +34,12 @@ export const seedActionTemplates = async (
         {
             name: 'gpu-example',
             description: 'Example action utilizing GPU resources',
+        },
+        {
+            name: 'recover-mcap',
+            description:
+                'Recovers corrupted MCAP files using mcap doctor and mcap recover',
+            accessRights: AccessGroupRights.WRITE,
         },
     ];
 
@@ -55,7 +66,7 @@ export const seedActionTemplates = async (
                 cpuMemory: 1,
                 gpuMemory: -1,
                 maxRuntime: 1,
-                accessRights: 0,
+                accessRights: templateDefinition.accessRights ?? 0,
             });
             await ActionTemplateRepo.save(template);
         }

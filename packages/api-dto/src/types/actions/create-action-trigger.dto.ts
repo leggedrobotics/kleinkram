@@ -22,9 +22,15 @@ export class CreateActionTriggerDto {
     @IsUUID()
     templateUuid!: string;
 
-    @ApiProperty()
+    @ApiProperty({ required: false })
+    @IsOptional()
     @IsUUID()
-    missionUuid!: string;
+    missionUuid?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsUUID()
+    projectUuid?: string;
 
     @ApiProperty({ enum: TriggerType })
     @IsEnum(TriggerType)

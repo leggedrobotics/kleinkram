@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
 
 export class SubmitActionDto {
     @IsUUID()
@@ -9,6 +9,11 @@ export class SubmitActionDto {
     @IsUUID()
     @ApiProperty()
     templateUUID!: string;
+
+    @IsOptional()
+    @IsUUID()
+    @ApiProperty({ required: false })
+    fileUUID?: string;
 }
 
 export class ActionSubmitResponseDto {

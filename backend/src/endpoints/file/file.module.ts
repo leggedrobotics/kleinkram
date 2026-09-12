@@ -6,6 +6,7 @@ import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
 import { TopicService } from '@/services/topic.service';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
@@ -16,6 +17,7 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
+import { ActionDispatcherModule } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.module';
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -38,11 +40,13 @@ import { FileController } from './file.controller';
             TagTypeEntity,
             CategoryEntity,
             FileEventEntity,
+            ActionTemplateEntity,
         ]),
         StorageModule,
         FoxgloveModule,
         QueueModule,
         TriggerModule,
+        ActionDispatcherModule,
     ],
     providers: [
         FileQueryService,

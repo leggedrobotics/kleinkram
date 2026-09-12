@@ -128,6 +128,11 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             );
         }
 
+        const fileUuid =
+            typeof parameters.fileUuid === 'string'
+                ? parameters.fileUuid
+                : undefined;
+
         let action = this.actionRepository.create({
             mission,
             creator,
@@ -135,6 +140,7 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             template,
             triggerSource,
             triggerUuid,
+            ...(fileUuid ? { fileUuid } : {}),
         });
 
         action = await this.actionRepository.save(action);

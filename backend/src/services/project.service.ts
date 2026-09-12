@@ -40,6 +40,8 @@ import {
 } from '@/serialization';
 import {
     AccessGroupEntity,
+    ActionTemplateEntity,
+    ActionTriggerEntity,
     CategoryEntity,
     MissionEntity,
     ProjectAccessEntity,
@@ -52,6 +54,7 @@ import {
     AccessGroupConfig,
     AccessGroupRights,
     AccessGroupType,
+    TriggerType,
     UserRole,
 } from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
@@ -524,6 +527,8 @@ export class ProjectService {
             description: project.description,
             creator: creator,
             requiredTags: tagTypes,
+            autoConvert: project.autoConvert ?? false,
+            autoRecoverMcap: project.autoRecoverMcap ?? true,
         });
 
         const accessGroupsDefaultIds = new Set(
@@ -557,6 +562,28 @@ export class ProjectService {
                     savedProject,
                     project.removedDefaultGroups,
                 );
+
+                if (newProject.autoRecoverMcap) {
+                    const recoverTemplate = await manager.findOne(
+                        ActionTemplateEntity,
+                        {
+                            where: { name: 'recover-mcap', version: 1 },
+                        },
+                    );
+                    if (recoverTemplate) {
+                        const trigger = manager.create(ActionTriggerEntity, {
+                            name: 'Auto-recover MCAP',
+                            description:
+                                'Automatically recovers corrupted MCAP files uploaded to this project',
+                            template: recoverTemplate,
+                            project: savedProject,
+                            type: TriggerType.CORRUPTED_FILE,
+                            config: { patterns: ['*.mcap'] },
+                            creator: creator,
+                        });
+                        await manager.save(ActionTriggerEntity, trigger);
+                    }
+                }
 
                 if (project.accessGroups) {
                     try {
@@ -597,6 +624,9 @@ export class ProjectService {
             ...(project.autoConvert === undefined
                 ? {}
                 : { autoConvert: project.autoConvert }),
+            ...(project.autoRecoverMcap === undefined
+                ? {}
+                : { autoRecoverMcap: project.autoRecoverMcap }),
         });
         const updatedProject = await this.projectRepository.findOneOrFail({
             where: { uuid },

@@ -212,6 +212,7 @@ export enum TriggerType {
     WEBHOOK = 'WEBHOOK',
     TIME = 'TIME',
     FILE = 'FILE',
+    CORRUPTED_FILE = 'CORRUPTED_FILE',
 }
 
 export enum TriggerEvent {
@@ -219,6 +220,7 @@ export enum TriggerEvent {
     RENAME = 'RENAME',
     MOVE = 'MOVE',
     DELETE = 'DELETE',
+    CORRUPTED = 'CORRUPTED',
 }
 
 export enum ActionTriggerSource {
