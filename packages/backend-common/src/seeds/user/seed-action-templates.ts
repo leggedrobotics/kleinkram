@@ -1,5 +1,8 @@
+import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@backend-common/entities/action/action-trigger.entity';
+import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { AccessGroupRights } from '@kleinkram/shared';
+import { AccessGroupRights, TriggerType } from '@kleinkram/shared';
 import { DataSource } from 'typeorm';
 
 export const seedActionTemplates = async (
@@ -43,18 +46,19 @@ export const seedActionTemplates = async (
         },
     ];
 
-    // Dynamic import or string repo access
-    const ActionTemplateRepo = dataSource.getRepository('ActionTemplateEntity');
+    const actionTemplateRepo = dataSource.getRepository(ActionTemplateEntity);
+    const actionTriggerRepo = dataSource.getRepository(ActionTriggerEntity);
+    const projectRepo = dataSource.getRepository(ProjectEntity);
 
     // eslint-disable-next-line no-console
     console.log('Checking action templates...');
     for (const templateDefinition of actionTemplates) {
-        const existing = await ActionTemplateRepo.findOne({
+        const existing = await actionTemplateRepo.findOne({
             where: { name: templateDefinition.name, version: 1 },
         });
 
         if (!existing) {
-            const template = ActionTemplateRepo.create({
+            const template = actionTemplateRepo.create({
                 name: templateDefinition.name,
                 description: templateDefinition.description,
 
@@ -68,7 +72,38 @@ export const seedActionTemplates = async (
                 maxRuntime: 1,
                 accessRights: templateDefinition.accessRights ?? 0,
             });
-            await ActionTemplateRepo.save(template);
+            await actionTemplateRepo.save(template);
+        }
+    }
+
+    // Ensure recover-mcap trigger exists for projects with autoRecoverMcap enabled
+    const recoverTemplate = await actionTemplateRepo.findOne({
+        where: { name: 'recover-mcap', version: 1 },
+    });
+    if (recoverTemplate) {
+        const projects = await projectRepo.find();
+        for (const project of projects) {
+            if (project.autoRecoverMcap ?? true) {
+                const existingTrigger = await actionTriggerRepo.findOne({
+                    where: {
+                        projectUuid: project.uuid,
+                        type: TriggerType.CORRUPTED_FILE,
+                    },
+                });
+                if (!existingTrigger) {
+                    const trigger = actionTriggerRepo.create({
+                        name: 'Auto-recover MCAP',
+                        description:
+                            'Automatically recovers corrupted MCAP files uploaded to this project',
+                        template: recoverTemplate,
+                        project: project,
+                        type: TriggerType.CORRUPTED_FILE,
+                        config: { patterns: ['*.mcap'] },
+                        creator: adminUser,
+                    });
+                    await actionTriggerRepo.save(trigger);
+                }
+            }
         }
     }
 };
