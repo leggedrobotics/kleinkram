@@ -13,6 +13,7 @@ import {
     QueryUUID,
 } from '@/validation/query-decorators';
 import {
+    BackfillRecordingTimesResponseDto,
     CancelFileUploadDto,
     CancelProcessingResponseDto,
     CancelUploadResponseDto,
@@ -463,6 +464,17 @@ export class FileController {
     })
     async recalculateHashes(): Promise<RecalculateHashesResponseDto> {
         return await this.queueService.recalculateHashes();
+    }
+
+    @Post('maintenance/backfill-recording-times')
+    @AdminOnly()
+    @ApiCreatedResponse({
+        description: 'Recording time backfill scheduled',
+        type: BackfillRecordingTimesResponseDto,
+    })
+    async backfillRecordingTimes(): Promise<BackfillRecordingTimesResponseDto> {
+        logger.debug('Triggering manual recording time backfill');
+        return await this.queueService.backfillRecordingTimes();
     }
 
     @Get('queue')

@@ -24,6 +24,8 @@ import { RosBagHandler } from './handlers/bag.hander';
 import { METRIC_PROVIDERS } from './handlers/file-processor.metrics';
 import { McapMetadataService } from './handlers/mcap-metadata.service';
 import { RosBagMetadataService } from './handlers/rosbag-metadata.service';
+import { RecordingTimesBackfillProvider } from './recording-times-backfill.provider';
+import { RecordingTimesBackfillService } from './recording-times-backfill.service';
 
 import { Db3MetadataService } from './handlers/db3-metadata.service';
 import { Db3Handler } from './handlers/db3.handler';
@@ -48,6 +50,8 @@ import { Db3Handler } from './handlers/db3.handler';
         FileQueueProcessorProvider,
         FileRepairProcessor,
         FileIngestionService,
+        RecordingTimesBackfillService,
+        RecordingTimesBackfillProvider,
         GoogleDriveStrategy,
         S3Strategy,
 

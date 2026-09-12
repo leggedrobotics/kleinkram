@@ -13,6 +13,11 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import env from '@kleinkram/backend-common/environment';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
+    findFilesMissingRecordingTimes,
+    RECORDING_TIMES_BACKFILL_JOB,
+    recordingTimesBackfillJobOptions,
+} from '@kleinkram/backend-common/services/recording-times-backfill';
+import {
     FileEventType,
     FileLocation,
     FileOrigin,
@@ -41,6 +46,12 @@ import { FindOptionsWhere, In, IsNull, MoreThan, Repository } from 'typeorm';
 import logger from '../logger';
 import { TriggerService } from './trigger.service';
 import { UserService } from './user.service';
+
+/**
+ * Upper bound of files a single manual backfill run queues, so that a click
+ * cannot enqueue a million storage reads at once.
+ */
+const RECORDING_TIMES_BACKFILL_BATCH_SIZE = 2000;
 
 @Injectable()
 export class QueueService implements OnModuleInit {
@@ -145,6 +156,39 @@ export class QueueService implements OnModuleInit {
                 });
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
+                logger.error(error);
+            }
+        }
+
+        return { success: true, fileCount: files.length };
+    }
+
+    /**
+     * Queues the recovery of the recording window for files that do not know
+     * theirs yet. The nightly job in the queue consumer does the same; this is
+     * the manual trigger for when a fix should not wait for the night.
+     */
+    async backfillRecordingTimes(): Promise<{
+        success: boolean;
+        fileCount: number;
+    }> {
+        const files = await findFilesMissingRecordingTimes(
+            this.fileRepository,
+            RECORDING_TIMES_BACKFILL_BATCH_SIZE,
+        );
+
+        logger.debug(
+            `Add ${files.length.toString()} files to queue for recording time backfill`,
+        );
+
+        for (const file of files) {
+            try {
+                await this.fileQueue.add(
+                    RECORDING_TIMES_BACKFILL_JOB,
+                    { fileUuid: file.uuid },
+                    recordingTimesBackfillJobOptions(file.uuid),
+                );
+            } catch (error: unknown) {
                 logger.error(error);
             }
         }

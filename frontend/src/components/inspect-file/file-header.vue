@@ -134,11 +134,37 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-3">
-                        <div v-if="file?.date" class="file-header__meta-item">
+                    <div class="col-12 col-md-2">
+                        <div class="file-header__meta-item">
                             <div class="text-placeholder">Start Date</div>
                             <div class="text-subtitle1 text-primary">
-                                {{ formatDate(file?.date, true) }}
+                                {{
+                                    recordingStart
+                                        ? formatDate(recordingStart, true)
+                                        : '-'
+                                }}
+                                <q-tooltip v-if="!recordingStart">
+                                    The recording start is only known once the
+                                    messages of this file have been indexed.
+                                </q-tooltip>
+                            </div>
+                            <div
+                                v-if="duration"
+                                class="text-caption text-placeholder"
+                            >
+                                Duration {{ duration }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <div class="file-header__meta-item">
+                            <div class="text-placeholder">Uploaded</div>
+                            <div class="text-subtitle1 text-primary">
+                                {{
+                                    file?.createdAt
+                                        ? formatDate(file.createdAt, true)
+                                        : '-'
+                                }}
                             </div>
                         </div>
                     </div>
@@ -207,7 +233,7 @@ import EditFileButton from 'components/buttons/edit-file-button.vue';
 import KleinDownloadFile from 'components/cli-links/klein-download-file.vue';
 import TitleSection from 'components/title-section.vue';
 import { useQuasar } from 'quasar';
-import { formatDate } from 'src/services/date-formating';
+import { formatDate, formatDuration } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import {
     getColorFileState,
@@ -227,6 +253,22 @@ const emit = defineEmits([
     'copy-hash',
     'copy-uuid',
 ]);
+
+/**
+ * `date` falls back to the upload time for files we could not read a recording
+ * start from, so the header only ever shows `recordingStartDate`.
+ */
+const recordingStart = computed(
+    () =>
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        properties.file?.recordingStartDate ?? undefined,
+);
+
+const duration = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const seconds = properties.file?.durationSeconds ?? undefined;
+    return seconds === undefined ? undefined : formatDuration(seconds);
+});
 
 const isDownloadDisabled = computed(() =>
     [FileState.LOST, FileState.UPLOADING].includes(

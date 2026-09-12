@@ -16,6 +16,21 @@ import {
     ValidateNested,
 } from 'class-validator';
 
+const toDateOrNull = (value: unknown): Date | null => {
+    if (value === null || value === undefined) return null;
+    const date = value instanceof Date ? value : new Date(value as string);
+    return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const durationSeconds = (start: unknown, end: unknown): number | null => {
+    const startDate = toDateOrNull(start);
+    const endDate = toDateOrNull(end);
+    if (!startDate || !endDate) return null;
+
+    const seconds = (endDate.getTime() - startDate.getTime()) / 1000;
+    return seconds >= 0 ? seconds : null;
+};
+
 @Expose()
 export class FileDto {
     @ApiProperty()
@@ -28,11 +43,58 @@ export class FileDto {
     @Expose()
     filename!: string;
 
+    /**
+     * The date the file is sorted and filtered by: the recording start where
+     * it is known, the upload time otherwise. Prefer `recordingStartDate` when
+     * you need to tell the two apart.
+     */
     @ApiProperty()
     @IsDate()
     @Expose()
     date!: Date;
 
+    @ApiProperty({
+        description:
+            'Timestamp of the first message of the recording, null while unknown',
+        nullable: true,
+    })
+    @IsDate()
+    @IsOptional()
+    @Expose()
+    @Transform(({ obj }) => toDateOrNull(obj.recordingStartDate))
+    recordingStartDate!: Date | null;
+
+    @ApiProperty({
+        description:
+            'Timestamp of the last message of the recording, null while unknown',
+        nullable: true,
+    })
+    @IsDate()
+    @IsOptional()
+    @Expose()
+    @Transform(({ obj }) => toDateOrNull(obj.recordingEndDate))
+    recordingEndDate!: Date | null;
+
+    /**
+     * Wall-clock length of the recording in seconds, derived from the
+     * recording bounds. Null whenever either bound is unknown.
+     */
+    @ApiProperty({
+        description:
+            'Wall-clock length of the recording in seconds, null while unknown',
+        nullable: true,
+    })
+    @IsNumber()
+    @IsOptional()
+    @Expose()
+    @Transform(({ obj }) =>
+        durationSeconds(obj.recordingStartDate, obj.recordingEndDate),
+    )
+    durationSeconds!: number | null;
+
+    /**
+     * The time the file was uploaded to Kleinkram.
+     */
     @ApiProperty()
     @IsDate()
     @Expose()
