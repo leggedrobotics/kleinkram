@@ -52,6 +52,14 @@ export class FileEntity extends BaseEntity {
     @Column({ type: 'timestamp', nullable: true })
     recordingEndDate?: Date | null;
 
+    /**
+     * When the recording window of this file was last looked for, whether or
+     * not one was found. It is what lets the backfill rotate through its
+     * backlog instead of retrying the same unreadable files forever.
+     */
+    @Column({ type: 'timestamp', nullable: true })
+    recordingTimesCheckedAt?: Date | null;
+
     @OneToMany(() => TopicEntity, (topic: TopicEntity) => topic.file)
     topics?: TopicEntity[];
 

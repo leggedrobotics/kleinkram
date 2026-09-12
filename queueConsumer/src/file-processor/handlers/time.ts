@@ -30,17 +30,22 @@ export function getDurationSeconds(
 }
 
 /**
- * Converts a message timestamp to a `Date`.
+ * Converts a message timestamp to a `Date`, or to `undefined` when it cannot
+ * stand for a point in time.
  *
  * A zero timestamp is not a recording from 1970 but the default an empty
  * recording reports (MCAP statistics of a file without messages hold
- * `messageStartTime === messageEndTime === 0n`), so it is reported as unknown.
+ * `messageStartTime === messageEndTime === 0n`). A timestamp beyond the range
+ * `Date` can represent is a corrupt statistics record; both are unknown rather
+ * than a bound we could hand on.
  */
 export function nanosecondsToDate(
     timeNs: bigint | undefined,
 ): Date | undefined {
     if (timeNs === undefined || timeNs <= 0n) return undefined;
-    return new Date(Number(timeNs / 1_000_000n));
+
+    const date = new Date(Number(timeNs / 1_000_000n));
+    return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 /**

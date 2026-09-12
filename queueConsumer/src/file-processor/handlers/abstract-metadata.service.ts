@@ -121,21 +121,37 @@ export abstract class AbstractMetadataService {
 }
 
 /**
- * Copies the extracted recording bounds onto the file.
+ * The columns the extracted recording bounds are written to.
  *
  * `date` is what the API sorts and filters by, so it follows the recording
- * start as soon as we know it; without a start it keeps the upload time it was
- * created with rather than being cleared.
+ * start as soon as we know it; without a start it keeps the upload time the
+ * file was created with rather than being cleared. Bounds we do not know are
+ * left out entirely, so that a later pass can still fill them in.
+ */
+export function recordingTimeColumns(
+    recordingTimes: RecordingTimes,
+): Partial<
+    Pick<FileEntity, 'date' | 'recordingStartDate' | 'recordingEndDate'>
+> {
+    return {
+        ...(recordingTimes.startDate
+            ? {
+                  date: recordingTimes.startDate,
+                  recordingStartDate: recordingTimes.startDate,
+              }
+            : {}),
+        ...(recordingTimes.endDate
+            ? { recordingEndDate: recordingTimes.endDate }
+            : {}),
+    };
+}
+
+/**
+ * Copies the extracted recording bounds onto the file.
  */
 export function applyRecordingTimes(
     file: FileEntity,
     recordingTimes: RecordingTimes,
 ): void {
-    if (recordingTimes.startDate) {
-        file.recordingStartDate = recordingTimes.startDate;
-        file.date = recordingTimes.startDate;
-    }
-    if (recordingTimes.endDate) {
-        file.recordingEndDate = recordingTimes.endDate;
-    }
+    Object.assign(file, recordingTimeColumns(recordingTimes));
 }

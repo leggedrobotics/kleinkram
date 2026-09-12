@@ -7,7 +7,7 @@ import * as fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import { IsNull, Not, Repository } from 'typeorm';
 import logger from '../logger';
-import { applyRecordingTimes } from './handlers/abstract-metadata.service';
+import { recordingTimeColumns } from './handlers/abstract-metadata.service';
 import { Db3MetadataService } from './handlers/db3-metadata.service';
 import { McapMetadataService } from './handlers/mcap-metadata.service';
 import { RosBagMetadataService } from './handlers/rosbag-metadata.service';
@@ -54,15 +54,24 @@ export class RecordingTimesBackfillService {
             (await this.inheritFromRelatedFile(file)) ??
             (await this.probeRecordingTimes(file));
 
+        // Reading the object takes long enough for the file to be renamed,
+        // moved or rehashed in the meantime, so only the columns this job owns
+        // are written rather than the entity we loaded before the read. The
+        // `IsNull` guard makes that a no-op if another worker got there first.
+        await this.fileRepo.update(
+            { uuid: file.uuid, recordingStartDate: IsNull() },
+            {
+                ...recordingTimeColumns(recordingTimes ?? {}),
+                recordingTimesCheckedAt: new Date(),
+            },
+        );
+
         if (!recordingTimes?.startDate) {
             logger.debug(
                 `[Backfill] No recording start found for ${file.filename} (${fileUuid})`,
             );
             return false;
         }
-
-        applyRecordingTimes(file, recordingTimes);
-        await this.fileRepo.save(file);
 
         logger.debug(
             `[Backfill] Recovered recording window of ${file.filename} (${fileUuid})`,
