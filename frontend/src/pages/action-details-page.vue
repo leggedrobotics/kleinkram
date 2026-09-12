@@ -223,9 +223,24 @@
                 </div>
 
                 <div
-                    class="q-gutter-x-sm"
-                    :class="$q.screen.xs ? 'row justify-end' : ''"
+                    class="q-gutter-x-sm items-center"
+                    :class="$q.screen.xs ? 'row justify-end' : 'row'"
                 >
+                    <q-toggle
+                        v-model="wrapLogLines"
+                        label="Wrap lines"
+                        color="primary"
+                        dense
+                        left-label
+                    >
+                        <q-tooltip>
+                            {{
+                                wrapLogLines
+                                    ? 'Long log lines wrap onto the next line'
+                                    : 'Long log lines stay on one line, scroll horizontally to read them'
+                            }}
+                        </q-tooltip>
+                    </q-toggle>
                     <q-btn
                         v-if="(logs?.count || 0) > (logs?.data.length || 0)"
                         flat
@@ -257,6 +272,7 @@
                         class="flex justify-start q-pb-xs log-line"
                         :class="{
                             'bg-orange-1': index === highlightedLogIndex,
+                            'log-line--wrap': wrapLogLines,
                         }"
                     >
                         <template v-if="log.type == 'stdout'">
@@ -274,9 +290,9 @@
                                 [{{ log.type }}]
                             </span>
 
-                            <span class="log-line__message">
-                                {{ log.message.replaceAll(' ', '\u00a0') }}
-                            </span>
+                            <span class="log-line__message">{{
+                                log.message
+                            }}</span>
                         </template>
 
                         <template v-else>
@@ -297,9 +313,8 @@
                             <span
                                 class="log-line__message"
                                 style="color: #ff3c3c"
+                                >{{ log.message }}</span
                             >
-                                {{ log.message.replaceAll(' ', '\u00a0') }}
-                            </span>
                         </template>
                     </div>
                 </q-card-section>
@@ -395,6 +410,26 @@ const totalLogsCount = ref(0);
 const highlightedLogIndex = ref<number | null>(null);
 const logsSearch = ref('');
 const logsLevel = ref('all');
+
+const LOG_WRAP_STORAGE_KEY = 'kleinkram.actionLogs.wrapLines';
+const readLogWrapPreference = (): boolean => {
+    try {
+        return localStorage.getItem(LOG_WRAP_STORAGE_KEY) !== 'false';
+    } catch {
+        return true;
+    }
+};
+
+// Wrapping is the default: it keeps every log line readable without
+// horizontal scrolling.
+const wrapLogLines = ref(readLogWrapPreference());
+watch(wrapLogLines, (wrap) => {
+    try {
+        localStorage.setItem(LOG_WRAP_STORAGE_KEY, String(wrap));
+    } catch {
+        // Preference cannot be persisted; keep it for this view only
+    }
+});
 
 const logsSkip = computed(() => {
     if (totalLogsCount.value === 0) return 0;
@@ -593,17 +628,42 @@ const navigateBackToActions = async (): Promise<void> => {
     min-width: 100%;
 }
 
-/* Hanging indent so that wrapped output lines up after the timestamp */
+/* Keep the original spacing of the log output (tabs, indentation, ...) */
 .log-line__message {
-    margin-left: -250px;
-    padding-left: 250px;
+    white-space: pre;
 }
 
-/* There is no room for a 250px indent on small screens */
-@media (max-width: 1023px) {
-    .log-line__message {
-        margin-left: 0;
-        padding-left: 0;
+/*
+ * Wrapped mode: the line is limited to the width of the box and only the
+ * message column grows, so continuation lines line up after the timestamp
+ * instead of running off to the right.
+ */
+.log-line--wrap {
+    width: auto;
+}
+
+.log-line--wrap > * {
+    flex: 0 0 auto;
+}
+
+.log-line--wrap .log-line__message {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/*
+ * On phones the timestamp eats most of the width, so the message gets a line
+ * of its own below it.
+ */
+@media (max-width: 599px) {
+    .log-line--wrap {
+        flex-wrap: wrap;
+    }
+
+    .log-line--wrap .log-line__message {
+        flex-basis: 100%;
     }
 }
 </style>
