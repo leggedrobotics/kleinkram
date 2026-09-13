@@ -98,7 +98,7 @@ describe('Trigger Ownership API Tests', () => {
             .getRepository(UserEntity)
             .findOneOrFail({
                 where: { uuid: user.uuid },
-                relations: ['memberships', 'memberships.accessGroup'],
+                relations: { memberships: { accessGroup: true } },
             });
         const primaryGroup = userWithGroups.memberships?.find(
             (m) => m.accessGroup?.type === AccessGroupType.PRIMARY,

@@ -1,7 +1,7 @@
 <template>
     <title-section title="Projects" />
 
-    <div class="q-my-lg">
+    <div :class="$q.screen.xs ? 'q-my-md' : 'q-my-lg'">
         <project-list-filter-options v-model="myProjects" />
 
         <div style="padding-top: 10px">

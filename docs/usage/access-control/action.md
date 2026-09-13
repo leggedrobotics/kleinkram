@@ -3,12 +3,13 @@
 ## Action
 
 The valid operations that can be performed on an action are:
-| **Operation** | **Description** | **Access Level** |
-|---------------|-------------------------------|------------------|
-| view | View an existing Action | <Read /> |
-| launch | Launch an Action | <Create /> |
-| delete | delete an Action | <Delete /> <Creator/> |
-|- **Delete**: Can delete the action.
+
+| **Operation**                        | **Description**         | **Access Level**      |
+| ------------------------------------ | ----------------------- | --------------------- |
+| view                                 | View an existing Action | <Read />              |
+| launch                               | Launch an Action        | <Create />            |
+| delete                               | delete an Action        | <Delete /> <Creator/> |
+| - **Delete**: Can delete the action. |
 
 ### Example
 
@@ -22,8 +23,9 @@ The valid operations that can be performed on an action are:
 ## Action Template
 
 The valid operations that can be performed on an action template are:
-| **Operation** | **Description** | **Access Level** |
-|---------------|-------------------------------|------------------|
-| view | View an existing Action Template | <Any /> |
-| create | Create a new Action Template | <Create /> |
-| delete | Action Template cannot be deleted | - |
+
+| **Operation** | **Description**                   | **Access Level** |
+| ------------- | --------------------------------- | ---------------- |
+| view          | View an existing Action Template  | <Any />          |
+| create        | Create a new Action Template      | <Create />       |
+| delete        | Action Template cannot be deleted | -                |

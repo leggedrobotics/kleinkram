@@ -243,10 +243,10 @@ describe('Verify Action (Templates & Runs)', () => {
         // Verify in DB
         const actionRepo = database.getRepository(ActionEntity);
         const savedAction = await actionRepo.findOne({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            where: { uuid: json.uuid },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            where: { uuid },
         });
-        expect(savedAction).toBeDefined();
+        expect(savedAction).not.toBeNull();
     });
 
     test('if a user can view details of a submitted action', async () => {

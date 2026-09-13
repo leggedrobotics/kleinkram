@@ -590,6 +590,46 @@ describe('Verify Mission Level User Access', () => {
         expect(response.status).toBe(403);
     });
 
+    // Renaming without write rights must be reported as a permission problem.
+    // The guard has to reject the request before the body is validated,
+    // otherwise the user is told the name is invalid instead of being told
+    // that they lack the rights to rename the mission.
+    test('if a user with read access renaming a mission gets 403, not 400', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'admin',
+        );
+        const { user: readUser } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const { missionUuid } = await setupProjectWithAccess(
+            creator,
+            readUser,
+            AccessGroupRights.READ,
+        );
+
+        const headers = new HeaderCreator(readUser);
+        headers.addHeader('Content-Type', 'application/json');
+
+        // an invalid name (spaces are not allowed) must still be answered with
+        // the permission error, as the guard runs before the validation pipe
+        const response = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}/name`,
+            {
+                method: 'PATCH',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    name: 'not a valid mission name!',
+                }),
+            },
+        );
+
+        expect(response.status).not.toBe(400);
+        expect(response.status).toBe(403);
+    });
+
     test('if user with read access on a project cannot edit metadata of a mission', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',

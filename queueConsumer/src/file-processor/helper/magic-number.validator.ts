@@ -105,7 +105,7 @@ export const MagicNumberValidator = {
                 if (fileType === FileType.MCAP) {
                     specUrl = ' See https://mcap.dev/spec';
                 } else if (fileType === FileType.BAG) {
-                    specUrl = ' See http://wiki.ros.org/Bags/Format/2.0';
+                    specUrl = ' See https://wiki.ros.org/Bags/Format/2.0';
                 }
 
                 return {

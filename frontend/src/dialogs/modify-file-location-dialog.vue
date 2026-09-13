@@ -39,7 +39,7 @@ import { ref } from 'vue';
 
 // API Types
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 
 // Components & Services
 import ScopeSelector from 'components/common/scope-selector.vue';
@@ -56,9 +56,7 @@ const { dialogRef, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 const queryClient = useQueryClient();
 
 // State: Initialize with the current location of the file(s)
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
 const targetProjectUuid = ref<string | undefined>(props.mission.project.uuid);
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
 const targetMissionUuid = ref<string | undefined>(props.mission.uuid);
 
 const { mutate: moveFilesMutation, isPending } = useMutation({

@@ -33,6 +33,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import * as pg from 'pg';
 import { AccessGroupExpiryProvider } from './accessGroupExpiry/access-group-expiry.provider';
 import { ActionsModule } from './actions/actions.module';
 import { FileProcessorModule } from './file-processor/file-processor.module';
@@ -67,6 +68,10 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
             imports: [ConfigModule],
             useFactory: (configService: ConfigService) => ({
                 type: 'postgres',
+                // TypeORM v1 loads its driver package through a dynamic
+                // `require()` that webpack cannot resolve when the app is
+                // bundled, so hand it the already bundled `pg` module.
+                driver: pg,
                 host: configService.getOrThrow<string>('database.host'),
                 port: configService.getOrThrow<number>('database.port'),
                 username: configService.getOrThrow<string>('database.username'),

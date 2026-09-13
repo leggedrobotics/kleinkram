@@ -2,16 +2,16 @@
     <q-drawer
         v-model="_open"
         side="right"
-        :width="800"
+        :width="$q.screen.lt.md ? $q.screen.width : 800"
         style="bottom: 0 !important"
         bordered
-        behavior="desktop"
+        :behavior="$q.screen.lt.md ? 'mobile' : 'desktop'"
     >
         <div
             class="q-pa-lg flex row justify-between items-center"
             style="height: 84px"
         >
-            <h3 class="text-h4 q-ma-none">
+            <h3 class="q-ma-none" :class="$q.screen.xs ? 'text-h5' : 'text-h4'">
                 {{
                     mode === ActionDrawerMode.ACTION_RESTORE
                         ? 'Restore Action Template Version'
@@ -23,7 +23,7 @@
             <q-btn
                 flat
                 dense
-                padding="6px"
+                :padding="$q.screen.xs ? '10px' : '6px'"
                 class="button-border"
                 icon="sym_o_close"
                 @click="closeDrawer"
@@ -32,7 +32,7 @@
 
         <q-separator />
 
-        <div class="q-pa-lg">
+        <div :class="$q.screen.xs ? 'q-pa-md' : 'q-pa-lg'">
             <span class="help-text">
                 Define the technical specifications for an action. These
                 settings serve as the blueprint for future executions.
@@ -275,7 +275,6 @@ const selectedAccessRights = computed({
 
 const accessOptions = Object.keys(accessGroupRightsMap)
     .map((key) => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         const right = Number.parseInt(key, 10) as AccessGroupRights;
         return {
             label: accessGroupRightsMap[right],
@@ -343,7 +342,6 @@ watch(
             isCheckingName.value = false;
             nameCheckDirty.value = false;
 
-            // eslint-disable-next-line unicorn/prefer-ternary
             if (props.initialTemplate) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 localTemplate.value = {
@@ -395,15 +393,12 @@ async function saveTemplate(): Promise<void> {
         };
 
         // 2. Validate Namespace
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
         if (
             dockerhubNamespace &&
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            !basePayload.dockerImage.startsWith(`${dockerhubNamespace}`)
+            !basePayload.dockerImage.startsWith(dockerhubNamespace)
         ) {
             throw new Error(
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 `Image name must start with "${dockerhubNamespace}/"`,
             );
         }
@@ -416,7 +411,10 @@ async function saveTemplate(): Promise<void> {
             };
             await updateTemplate(updatePayload);
             Notify.create({
-                message: `New version created`,
+                message:
+                    props.mode === ActionDrawerMode.ACTION_RESTORE
+                        ? 'Version restored as a new version'
+                        : 'New version created',
                 color: 'positive',
             });
         } else {

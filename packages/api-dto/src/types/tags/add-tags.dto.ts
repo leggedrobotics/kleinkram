@@ -20,8 +20,7 @@ export function IsAtLeastOnePresent(
                 validate(_value: unknown, args: ValidationArguments) {
                     const [relatedFields] = args.constraints as [string[]];
                     const object = args.object as
-                        | Record<string, unknown>
-                        | undefined;
+                        Record<string, unknown> | undefined;
                     return relatedFields.some(
                         (field) =>
                             object?.[field] !== undefined &&

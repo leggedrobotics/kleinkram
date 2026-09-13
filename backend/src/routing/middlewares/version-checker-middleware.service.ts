@@ -27,8 +27,7 @@ const FORBIDDEN_RANGES = ['<0.58.0'];
 export class VersionCheckerMiddlewareService implements NestMiddleware {
     use(request: Request, response: Response, next: NextFunction): void {
         let clientVersion = request.headers['kleinkram-client-version'] as
-            | string
-            | undefined;
+            string | undefined;
 
         const requestPath = request.originalUrl;
 

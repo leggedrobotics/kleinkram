@@ -204,7 +204,7 @@ describe('Action File Events', () => {
         expect(events.count).toBeGreaterThan(0);
 
         const downloadEvent = events.data.find(
-            // eslint-disable-next-line unicorn/prevent-abbreviations
+            // eslint-disable-next-line unicorn/name-replacements
             (e) => e.type === FileEventType.DOWNLOADED,
         );
         expect(downloadEvent).toBeDefined();

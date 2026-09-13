@@ -3,7 +3,11 @@ import {
     SubmittedAction,
 } from '@kleinkram/backend-common/entities/action/action.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
-import { ActionState, ArtifactState } from '@kleinkram/shared';
+import {
+    ActionState,
+    ArtifactState,
+    resolveCompletedActionState,
+} from '@kleinkram/shared';
 import {
     InjectQueue,
     OnQueueActive,
@@ -83,13 +87,16 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
     async processAction(job: Job<{ uuid: string }>): Promise<boolean> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: job.data.uuid },
-            relations: [
-                'template',
-                'mission',
-                'mission.project',
-                'creator',
-                'worker',
-            ],
+            relations: {
+                template: true,
+
+                mission: {
+                    project: true,
+                },
+
+                creator: true,
+                worker: true,
+            },
         });
 
         if (this.worker === undefined || action.worker === undefined) {
@@ -164,9 +171,16 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
         );
 
         // update the state of the action in the database
-        const action = await this.actionRepository.findOneOrFail({
+        // the action may have been deleted in the meantime, which is not an error
+        const action = await this.actionRepository.findOne({
             where: { uuid: job.id as string },
         });
+        if (action === null) {
+            logger.debug(
+                `Action ${job.id.toString()} no longer exists (likely deleted). Skipping retry state update.`,
+            );
+            return;
+        }
         action.state = ActionState.PENDING;
         action.state_cause = `Pending... ${error.message}`;
         await this.actionRepository.save(action);
@@ -195,25 +209,22 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
         logger.error(error.stack);
         try {
             // update the state of the action in the database
-            const action = await this.actionRepository.findOneOrFail({
+            // the action may have been deleted concurrently, which is not an error
+            const action = await this.actionRepository.findOne({
                 where: { uuid: job.id as string },
             });
+            if (action === null) {
+                logger.debug(
+                    `Action ${job.id.toString()} no longer exists (likely deleted). Skipping state update.`,
+                );
+                return;
+            }
 
             action.state = ActionState.FAILED;
             action.state_cause = error.message;
             action.artifacts = ArtifactState.ERROR;
             await this.actionRepository.save(action);
         } catch (error_: unknown) {
-            // If the entity is not found, it means it was deleted concurrently
-            if (
-                error_ instanceof Error &&
-                error_.name === 'EntityNotFoundError'
-            ) {
-                logger.warn(
-                    `Action entity ${job.id.toString()} found missing during processing (likely deleted). Skipping state update.`,
-                );
-                return;
-            }
             logger.error(
                 `Failed to update action state in database: ${(error_ as { message: string }).message}`,
             );
@@ -228,18 +239,30 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
      */
     private async markJobAsCompleted(job: Job<SubmittedAction>): Promise<void> {
         // update the state of the action in the database
-        const action = await this.actionRepository.findOneOrFail({
+        // the action may already be gone: a cancelled action reaches a
+        // terminal state before this hook runs and the user is free to delete
+        // it right away, so a missing row is expected and not an error
+        const action = await this.actionRepository.findOne({
             where: { uuid: job.id as string },
         });
+        if (action === null) {
+            logger.debug(
+                `Action ${job.id.toString()} no longer exists (likely deleted). Skipping completion update.`,
+            );
+            return;
+        }
 
-        // set state to done if it is not already set to failed
+        // keep a state that is already final (e.g. FAILED or CANCELLED);
+        // only a non-terminal action is promoted to DONE
+        const resolvedState = resolveCompletedActionState(action.state);
+
         let isActionDirty = false;
         if (action.executionEndedAt) {
             action.executionEndedAt = new Date();
             isActionDirty = true;
         }
-        if (action.state !== ActionState.FAILED) {
-            action.state = ActionState.DONE;
+        if (action.state !== resolvedState) {
+            action.state = resolvedState;
             isActionDirty = true;
         }
         if (isActionDirty) {

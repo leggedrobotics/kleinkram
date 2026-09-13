@@ -221,13 +221,13 @@ export function useFilterParser<TContext extends FilterParserContext>(
         for (const token of tokens) {
             if (!token.key) continue;
             const fullKey = token.key + ':';
-            const filter = filters.find(
+            const hasFilter = filters.some(
                 (f) =>
                     f.key === fullKey ||
                     (fullKey === KEYWORDS.TOPIC_AND &&
                         f.key === KEYWORDS.TOPIC),
             );
-            if (!filter) {
+            if (!hasFilter) {
                 extraFreeText += (extraFreeText ? ' ' : '') + token.original;
             }
         }

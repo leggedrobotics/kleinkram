@@ -6,7 +6,11 @@ import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import initSqlJs, { Database } from 'sql.js';
 import { DecodingStrategy } from './index';
-import { LogMessage, STANDARD_ROS2_DEFINITIONS } from './utilities';
+import {
+    LogMessage,
+    ReadOptions,
+    STANDARD_ROS2_DEFINITIONS,
+} from './utilities';
 
 export class Db3Strategy extends DecodingStrategy {
     private db: Database | null = null;
@@ -40,7 +44,9 @@ export class Db3Strategy extends DecodingStrategy {
 
                 if (name && row_data) {
                     try {
-                        const parsedDefs = parseMessageDefer(row_data);
+                        const parsedDefs = parseMessageDefer(row_data, {
+                            ros2: true,
+                        });
                         this.definitions.set(name, parsedDefs);
                     } catch (error) {
                         console.warn(
@@ -62,8 +68,10 @@ export class Db3Strategy extends DecodingStrategy {
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         startTime?: bigint,
+        options: ReadOptions = {},
     ): Promise<LogMessage[]> {
         if (!this.db) return [];
+        const keepEvery = Math.max(1, Math.floor(options.stride ?? 1));
 
         // Find topic_id
         const topicStmt = this.db.prepare(
@@ -117,13 +125,16 @@ export class Db3Strategy extends DecodingStrategy {
             query += ` AND timestamp >= ${startTime}`;
         }
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        query += ` ORDER BY timestamp ASC LIMIT ${limit}`;
+        query += ` ORDER BY timestamp ASC LIMIT ${limit * keepEvery}`;
 
         const stmt = this.db.prepare(query);
         const msgs: LogMessage[] = [];
+        let seen = 0;
 
         while (stmt.step()) {
             if (signal?.aborted) break;
+            if (msgs.length >= limit) break;
+            if (seen++ % keepEvery !== 0) continue;
             const row = stmt.getAsObject();
             const timestamp = BigInt(row.timestamp_str as string);
             let data = row.data as Uint8Array;
@@ -173,7 +184,9 @@ export class Db3Strategy extends DecodingStrategy {
 
         if (!defs && STANDARD_ROS2_DEFINITIONS[type]) {
             try {
-                defs = parseMessageDefer(STANDARD_ROS2_DEFINITIONS[type]);
+                defs = parseMessageDefer(STANDARD_ROS2_DEFINITIONS[type], {
+                    ros2: true,
+                });
                 this.definitions.set(type, defs);
             } catch (error) {
                 console.warn(

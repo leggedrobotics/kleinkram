@@ -30,7 +30,9 @@ describe('File Management Tests', () => {
         const fileRepo = database.getRepository(FileEntity);
         const file = await fileRepo.findOne({
             where: { filename: 'test.bag' },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         expect(file).not.toBeNull();
         expect(file?.mission?.uuid).toBe(missionUuid);
@@ -141,7 +143,9 @@ describe('File Management Tests', () => {
         const fileRepo = database.getRepository(FileEntity);
         const file = await fileRepo.findOneOrFail({
             where: { filename: 'move_me.bag' },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(file?.mission?.uuid).toBe(mission1Uuid);
@@ -163,7 +167,9 @@ describe('File Management Tests', () => {
 
         const movedFile = await fileRepo.findOneOrFail({
             where: { uuid: file.uuid },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(movedFile?.mission?.uuid).toBe(mission2Uuid);

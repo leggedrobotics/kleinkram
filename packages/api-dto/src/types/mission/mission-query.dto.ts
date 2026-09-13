@@ -1,7 +1,10 @@
 import { ProjectQueryDto } from '@api-dto/project/project-query.dto';
-import { IsRecordStringString } from '@kleinkram/validation';
+import {
+    IsRecordStringString,
+    TransformToBoolean,
+} from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
     ArrayNotEmpty,
     IsArray,
@@ -39,8 +42,8 @@ export class MissionQueryDto extends ProjectQueryDto {
     metadata?: Record<string, string>;
 
     @IsOptional()
+    @TransformToBoolean()
     @IsBoolean()
-    @Type(() => Boolean)
     @ApiProperty({
         required: false,
         description: 'Return minimal mission info',

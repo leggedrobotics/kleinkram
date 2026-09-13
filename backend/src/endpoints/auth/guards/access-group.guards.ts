@@ -8,7 +8,6 @@ import { BaseGuard } from './base.guards';
 
 interface AccessGroupBody {
     projectAccessUUID?: string;
-    uuid?: string;
 }
 
 interface AccessGroupParameters {
@@ -31,10 +30,12 @@ export class IsAccessGroupCreatorByProjectAccessGuard extends BaseGuard {
             );
         }
 
+        // The route parameter wins: a body value must never be able to point the
+        // guard at a different project access than the one in the path.
         const body = request.body as AccessGroupBody | undefined;
         const params = request.params as AccessGroupParameters | undefined;
         const projectAccessUUID =
-            body?.projectAccessUUID ?? params?.projectAccessUUID;
+            params?.projectAccessUUID ?? body?.projectAccessUUID;
 
         if (!projectAccessUUID) {
             return false; // Deny access if UUID not provided
@@ -62,9 +63,10 @@ export class CanEditGroupByGroupUuid extends BaseGuard {
             );
         }
 
-        const body = request.body as AccessGroupBody | undefined;
+        // Every route using this guard addresses the access group through the
+        // route parameter (`/access-groups/:uuid/...`); the body is never read.
         const params = request.params as AccessGroupParameters | undefined;
-        const aguUUID = body?.uuid ?? params?.uuid;
+        const aguUUID = params?.uuid;
 
         if (!aguUUID) {
             return false; // Deny access if UUID not provided

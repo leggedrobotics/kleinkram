@@ -1,5 +1,10 @@
 <template>
-    <q-btn-dropdown dense flat class="button-border q-px-sm">
+    <q-btn-dropdown
+        dense
+        flat
+        class="button-border q-px-sm my-projects-selector"
+        aria-label="Filter the project list by owner"
+    >
         <template #label>
             {{ myProjects ? 'My Projects' : 'All Projects' }}
         </template>
@@ -21,3 +26,12 @@
 <script setup lang="ts">
 const myProjects = defineModel<boolean>();
 </script>
+
+<style scoped>
+/* Comfortable touch target on phones and tablets */
+@media (max-width: 1023px) {
+    .my-projects-selector {
+        min-height: 40px;
+    }
+}
+</style>

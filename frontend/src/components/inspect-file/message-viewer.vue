@@ -1,24 +1,44 @@
 <template>
     <div class="message-viewer q-pa-sm rounded-borders">
-        <div class="row justify-between items-center q-mb-sm">
-            <div class="text-subtitle2 text-grey-8 flex items-center">
+        <div
+            class="row justify-between items-center q-mb-sm message-viewer__header"
+        >
+            <div
+                class="text-subtitle2 text-grey-8 flex items-center message-viewer__title"
+            >
                 {{ topicName }}
                 <q-badge color="grey-4" text-color="black" class="q-ml-sm">
                     {{ messageType }}
                 </q-badge>
             </div>
 
-            <q-badge
-                color="orange-7"
-                text-color="white"
-                label="BETA"
-                class="text-weight-bold cursor-help"
-                style="font-size: 10px; padding: 2px 6px"
-            >
-                <q-tooltip>
-                    Preview functionality is currently in beta.
-                </q-tooltip>
-            </q-badge>
+            <div class="row items-center q-gutter-x-sm message-viewer__badges">
+                <q-badge
+                    v-if="(sampleStride ?? 1) > 1"
+                    color="grey-3"
+                    text-color="grey-9"
+                    class="cursor-help"
+                >
+                    <q-icon name="sym_o_filter_alt" size="xs" class="q-mr-xs" />
+                    Sampled: every {{ sampleStride }}th message
+                    <q-tooltip>
+                        This topic has {{ totalCount }} messages after sampling.
+                        Only every {{ sampleStride }}th message is loaded to
+                        keep the preview responsive.
+                    </q-tooltip>
+                </q-badge>
+                <q-badge
+                    color="orange-7"
+                    text-color="white"
+                    label="BETA"
+                    class="text-weight-bold cursor-help"
+                    style="font-size: 10px; padding: 2px 6px"
+                >
+                    <q-tooltip>
+                        Preview functionality is currently in beta.
+                    </q-tooltip>
+                </q-badge>
+            </div>
         </div>
 
         <div
@@ -50,12 +70,36 @@
                 class="absolute-top"
                 style="z-index: 1; height: 2px"
             />
+            <div
+                v-if="renderError"
+                class="q-pa-md bg-orange-1 text-orange-10 rounded-borders q-mb-sm row items-center q-gutter-x-sm"
+            >
+                <q-icon name="sym_o_warning" size="sm" />
+                <div class="col">
+                    <div class="text-weight-medium">
+                        The {{ messageType }} preview failed to render. Showing
+                        the raw messages instead.
+                    </div>
+                    <div class="text-caption ellipsis">{{ renderError }}</div>
+                </div>
+                <q-btn
+                    flat
+                    dense
+                    no-caps
+                    label="Retry"
+                    color="orange-10"
+                    @click="retryRender"
+                />
+            </div>
             <component
-                :is="activeComponent"
+                :is="renderError ? fallbackComponent : activeComponent"
+                :key="renderAttempt"
                 :messages="messages"
                 :topic-name="topicName"
                 :total-count="totalCount"
                 :is-loading="isLoading"
+                :sample-stride="sampleStride ?? 1"
+                :can-refine="canRefine ?? false"
                 @load-required="loadRequired"
                 @load-more="loadMore"
                 @pause-preview="emitPausePreview"
@@ -79,10 +123,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onErrorCaptured, ref, watch } from 'vue';
 import {
     detectPreviewType,
     getViewerComponent,
+    PreviewType,
 } from '../../services/message-factory';
 
 const properties = defineProps<{
@@ -95,6 +140,10 @@ const properties = defineProps<{
     error: string | null;
     protocol?: string;
     topicSize?: number;
+    /** Only every n-th message was loaded (1 = all messages) */
+    sampleStride?: number;
+    /** Whether a sampled topic can be refined with more messages */
+    canRefine?: boolean;
 }>();
 
 const emit = defineEmits(['load-more', 'load-required', 'pause-preview']);
@@ -114,6 +163,30 @@ const currentPreviewType = computed(() => {
 const activeComponent = computed(() => {
     return getViewerComponent(currentPreviewType.value);
 });
+const fallbackComponent = getViewerComponent(PreviewType.JSON);
+
+// --- Error Boundary ---
+// A viewer that throws while rendering must not take down the whole page.
+const renderError = ref<string | null>(null);
+const renderAttempt = ref(0);
+
+onErrorCaptured((error) => {
+    console.error(`Preview of ${properties.topicName} failed`, error);
+    renderError.value = error instanceof Error ? error.message : String(error);
+    return false;
+});
+
+const retryRender = (): void => {
+    renderError.value = null;
+    renderAttempt.value++;
+};
+
+watch(
+    () => properties.topicName,
+    () => {
+        renderError.value = null;
+    },
+);
 
 const loadRequired = (): void => {
     emit('load-required');
@@ -127,3 +200,33 @@ const emitPausePreview = (): void => {
     emit('pause-preview');
 };
 </script>
+
+<style scoped>
+.message-viewer {
+    min-width: 0;
+}
+
+@media (max-width: 599px) {
+    /* Topic name, type badge, sampling badge and BETA wrap onto their own
+       lines instead of pushing each other out of the viewport */
+    .message-viewer__header {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .message-viewer__title {
+        flex-wrap: wrap;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .message-viewer__badges {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .message-viewer {
+        padding: 4px;
+    }
+}
+</style>

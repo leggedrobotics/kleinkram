@@ -60,7 +60,11 @@ const createTestUser = async (username = 'testuser'): Promise<UserEntity> => {
 
     return getRepo<UserEntity>(UserEntity).findOneOrFail({
         where: { uuid: user.uuid },
-        relations: ['memberships', 'memberships.accessGroup'],
+        relations: {
+            memberships: {
+                accessGroup: true,
+            },
+        },
     });
 };
 
