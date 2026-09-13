@@ -47,9 +47,9 @@ const FIND_MANY_SORT_KEYS = {
     createdAt: 'file.createdAt',
     updatedAt: 'file.updatedAt',
     creator: 'user.name',
-    size: 'file.size',
-    state: 'file.state',
-    date: 'file.date',
+    size: 'activeVersion.size',
+    state: 'activeVersion.state',
+    date: 'activeVersion.date',
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.filename': 'file.filename',
@@ -60,11 +60,11 @@ const FIND_MANY_SORT_KEYS = {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.updatedAt': 'file.updatedAt',
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    'file.size': 'file.size',
+    'file.size': 'activeVersion.size',
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    'file.state': 'file.state',
+    'file.state': 'activeVersion.state',
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    'file.date': 'file.date',
+    'file.date': 'activeVersion.date',
 };
 
 @Injectable()
@@ -144,7 +144,8 @@ export class FileQueryService {
             .select('file.uuid') // Select only the UUID
             .leftJoin('file.mission', 'mission')
             .leftJoin('mission.project', 'project')
-            .leftJoin('file.topics', 'topic')
+            .leftJoin('file.activeVersion', 'activeVersion')
+            .leftJoin('activeVersion.topics', 'topic')
             .leftJoin('file.creator', 'creator');
 
         // ADMIN users see all, others are constrained
@@ -249,7 +250,7 @@ export class FileQueryService {
             logger.debug(
                 `Filtering files by start date: ${query.startDate.toString()}`,
             );
-            idQuery.andWhere('file.date >= :startDate', {
+            idQuery.andWhere('activeVersion.date >= :startDate', {
                 startDate: query.startDate,
             });
         }
@@ -258,7 +259,7 @@ export class FileQueryService {
             logger.debug(
                 `Filtering files by end date: ${query.endDate.toString()}`,
             );
-            idQuery.andWhere('file.date <= :endDate', {
+            idQuery.andWhere('activeVersion.date <= :endDate', {
                 endDate: query.endDate,
             });
         }
@@ -289,24 +290,30 @@ export class FileQueryService {
             logger.debug(`Filtering files by health: ${query.health}`);
             switch (query.health) {
                 case HealthStatus.HEALTHY: {
-                    idQuery.andWhere('file.state IN (:...healthyStates)', {
-                        healthyStates: [FileState.OK, FileState.FOUND],
-                    });
+                    idQuery.andWhere(
+                        'activeVersion.state IN (:...healthyStates)',
+                        {
+                            healthyStates: [FileState.OK, FileState.FOUND],
+                        },
+                    );
                     break;
                 }
                 case HealthStatus.UNHEALTHY: {
-                    idQuery.andWhere('file.state IN (:...unhealthyStates)', {
-                        unhealthyStates: [
-                            FileState.ERROR,
-                            FileState.CONVERSION_ERROR,
-                            FileState.LOST,
-                            FileState.CORRUPTED,
-                        ],
-                    });
+                    idQuery.andWhere(
+                        'activeVersion.state IN (:...unhealthyStates)',
+                        {
+                            unhealthyStates: [
+                                FileState.ERROR,
+                                FileState.CONVERSION_ERROR,
+                                FileState.LOST,
+                                FileState.CORRUPTED,
+                            ],
+                        },
+                    );
                     break;
                 }
                 case HealthStatus.UPLOADING: {
-                    idQuery.andWhere('file.state = :uploadingState', {
+                    idQuery.andWhere('activeVersion.state = :uploadingState', {
                         uploadingState: FileState.UPLOADING,
                     });
                     break;
@@ -315,13 +322,13 @@ export class FileQueryService {
         }
 
         if (query.includeStates && query.includeStates.length > 0) {
-            idQuery.andWhere('file.state IN (:...includeStates)', {
+            idQuery.andWhere('activeVersion.state IN (:...includeStates)', {
                 includeStates: query.includeStates,
             });
         }
 
         if (query.excludeStates && query.excludeStates.length > 0) {
-            idQuery.andWhere('file.state NOT IN (:...excludeStates)', {
+            idQuery.andWhere('activeVersion.state NOT IN (:...excludeStates)', {
                 excludeStates: query.excludeStates,
             });
         }
@@ -400,7 +407,8 @@ export class FileQueryService {
             .createQueryBuilder('file')
             .leftJoinAndSelect('file.mission', 'mission')
             .leftJoinAndSelect('mission.project', 'project')
-            .leftJoinAndSelect('file.topics', 'topic')
+            .leftJoinAndSelect('file.activeVersion', 'activeVersion')
+            .leftJoinAndSelect('activeVersion.topics', 'topic')
             .leftJoinAndSelect('file.creator', 'creator')
             .leftJoinAndSelect('file.categories', 'category')
             .where('file.uuid IN (:...fileIds)', { fileIds });
@@ -419,22 +427,28 @@ export class FileQueryService {
 
     async findOne(uuid: string): Promise<FileWithTopicDto> {
         const file = await this.fileRepository.findOneOrFail({
-            where: { uuid },
+            where: [{ uuid }, { activeVersionUuid: uuid }],
             relations: {
                 mission: {
                     project: true,
                 },
 
-                topics: true,
+                activeVersion: {
+                    topics: true,
+                },
                 creator: true,
                 categories: true,
 
                 parent: {
-                    topics: true,
+                    activeVersion: {
+                        topics: true,
+                    },
                 },
 
                 derivedFiles: {
-                    topics: true,
+                    activeVersion: {
+                        topics: true,
+                    },
                 },
             },
         });
@@ -767,7 +781,7 @@ export class FileQueryService {
             logger.debug(
                 `Filtering files by types: ${typesToFilter.join(',')}`,
             );
-            query.andWhere('file.type IN (:...fileTypes)', {
+            query.andWhere('activeVersion.type IN (:...fileTypes)', {
                 fileTypes: typesToFilter,
             });
         } else {

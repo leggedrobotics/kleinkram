@@ -397,7 +397,7 @@ export class MissionService {
 
         await Promise.all(
             mission.files.map(async (file) =>
-                this.dataStorage.addTags(file.uuid, {
+                this.dataStorage.addTags(file.storageUuid, {
                     filename: file.filename,
                     missionUuid: missionUUID,
                     projectUuid: projectUUID,
@@ -476,7 +476,7 @@ export class MissionService {
             mission.files.map(async (f) => ({
                 filename: f.filename,
                 link: await this.dataStorage.getPresignedDownloadUrl(
-                    f.uuid,
+                    f.storageUuid,
                     4 * 60 * 60,
                     {
                         // set filename in response headers

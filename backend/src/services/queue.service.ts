@@ -136,8 +136,8 @@ export class QueueService implements OnModuleInit {
     }> {
         const files = await this.fileRepository.find({
             where: [
-                { hash: IsNull(), state: FileState.OK },
-                { hash: '', state: FileState.OK },
+                { activeVersion: { hash: IsNull(), state: FileState.OK } },
+                { activeVersion: { hash: '', state: FileState.OK } },
             ],
             relations: {
                 mission: {
@@ -203,7 +203,7 @@ export class QueueService implements OnModuleInit {
         source: FileSource | string = FileSource.WEB_INTERFACE,
     ): Promise<void> {
         const file = await this.fileRepository.findOneOrFail({
-            where: { uuid },
+            where: [{ uuid }, { activeVersionUuid: uuid }],
             relations: {
                 mission: {
                     project: true,
@@ -247,7 +247,7 @@ export class QueueService implements OnModuleInit {
         }
 
         const fileInfo = await this.dataStorage
-            .getFileInfo(file.uuid)
+            .getFileInfo(file.storageUuid)
             .catch((error: unknown): void => {
                 logger.error(
                     `Error in getFileInfo for ${file.uuid}: ${error instanceof Error ? error.message : String(error)}`,
@@ -379,11 +379,19 @@ export class QueueService implements OnModuleInit {
         await this.queueRepository.remove(queue);
 
         const file = await this.fileRepository.findOne({
-            where: { uuid: queue.identifier, mission: { uuid: missionUUID } },
+            where: [
+                { uuid: queue.identifier, mission: { uuid: missionUUID } },
+                {
+                    activeVersionUuid: queue.identifier,
+                    mission: { uuid: missionUUID },
+                },
+            ],
         });
 
         if (file) {
-            await this.dataStorage.deleteFile(file.uuid).catch(logger.log);
+            await this.dataStorage
+                .deleteFile(file.storageUuid)
+                .catch(logger.log);
             await this.fileRepository.remove(file);
 
             if (file.type === FileType.BAG) {
@@ -395,7 +403,7 @@ export class QueueService implements OnModuleInit {
                 });
                 if (mcap) {
                     await this.dataStorage
-                        .deleteFile(mcap.uuid)
+                        .deleteFile(mcap.storageUuid)
                         .catch(logger.log);
                     await this.fileRepository.remove(mcap);
                 }

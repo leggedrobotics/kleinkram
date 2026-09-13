@@ -1,9 +1,15 @@
 import {
     ApiKeyEntity,
     FileEntity,
+    FileVersionEntity,
     MissionEntity,
 } from '@kleinkram/backend-common';
-import { AccessGroupRights, FileType, KeyTypes } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    FileState,
+    FileType,
+    KeyTypes,
+} from '@kleinkram/shared';
 import { DEFAULT_URL } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -153,26 +159,48 @@ describe('Comprehensive API Query Parameters Tests', () => {
         );
 
         const fileRepository = database.getRepository(FileEntity);
-        await fileRepository.save(
+        const versionRepository = database.getRepository(FileVersionEntity);
+        const smallFile = await fileRepository.save(
             fileRepository.create({
                 filename: 'small.bag',
                 mission: { uuid: missionUuid },
                 creator: { uuid: user.uuid },
+            }),
+        );
+        const smallVersion = await versionRepository.save(
+            versionRepository.create({
+                file: smallFile,
+                versionNumber: 1,
                 date: new Date(),
                 type: FileType.BAG,
                 size: 1024,
+                state: FileState.OK,
             }),
         );
-        await fileRepository.save(
+        smallFile.activeVersion = smallVersion;
+        smallFile.activeVersionUuid = smallVersion.uuid;
+        await fileRepository.save(smallFile);
+
+        const bigFile = await fileRepository.save(
             fileRepository.create({
                 filename: 'big.bag',
                 mission: { uuid: biggerMissionUuid },
                 creator: { uuid: user.uuid },
+            }),
+        );
+        const bigVersion = await versionRepository.save(
+            versionRepository.create({
+                file: bigFile,
+                versionNumber: 1,
                 date: new Date(),
                 type: FileType.BAG,
                 size: 2048,
+                state: FileState.OK,
             }),
         );
+        bigFile.activeVersion = bigVersion;
+        bigFile.activeVersionUuid = bigVersion.uuid;
+        await fileRepository.save(bigFile);
 
         const fetchSorted = async (
             sortOrder: string,

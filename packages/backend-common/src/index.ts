@@ -15,6 +15,7 @@ export * from './entities/auth/project-access.entity';
 export * from './entities/base-entity.entity';
 export * from './entities/category/category.entity';
 export * from './entities/file/file-event.entity';
+export * from './entities/file/file-version.entity';
 export * from './entities/file/file.entity';
 export * from './entities/file/ingestion-job.entity';
 export * from './entities/metadata/metadata.entity';
@@ -54,6 +55,7 @@ import { MissionAccessEntity } from './entities/auth/mission-access.entity';
 import { ProjectAccessEntity } from './entities/auth/project-access.entity';
 import { CategoryEntity } from './entities/category/category.entity';
 import { FileEventEntity } from './entities/file/file-event.entity';
+import { FileVersionEntity } from './entities/file/file-version.entity';
 import { FileEntity } from './entities/file/file.entity';
 import { IngestionJobEntity } from './entities/file/ingestion-job.entity';
 import { MetadataEntity } from './entities/metadata/metadata.entity';
@@ -79,6 +81,7 @@ export const ALL_ENTITIES = [
     ProjectAccessEntity,
     CategoryEntity,
     FileEventEntity,
+    FileVersionEntity,
     FileEntity,
     IngestionJobEntity,
     MetadataEntity,

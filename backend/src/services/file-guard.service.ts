@@ -35,7 +35,7 @@ export class FileGuardService {
             return true;
         }
         const file = await this.fileRepository.findOne({
-            where: { uuid: fileUUID },
+            where: [{ uuid: fileUUID }, { activeVersionUuid: fileUUID }],
             relations: {
                 mission: {
                     project: true,
@@ -111,7 +111,7 @@ export class FileGuardService {
         rights: AccessGroupRights = AccessGroupRights.READ,
     ) {
         const file = await this.fileRepository.findOne({
-            where: { uuid: fileUUID },
+            where: [{ uuid: fileUUID }, { activeVersionUuid: fileUUID }],
             relations: {
                 mission: {
                     project: true,

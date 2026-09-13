@@ -4,7 +4,7 @@ import { MissionDto } from '@api-dto/mission/mission.dto';
 import { TopicDto } from '@api-dto/topic.dto';
 import { UserDto } from '@api-dto/user/user.dto';
 import { FileState, FileType } from '@kleinkram/shared';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
 import {
     IsBoolean,
@@ -15,6 +15,7 @@ import {
     IsString,
     ValidateNested,
 } from 'class-validator';
+import { FileVersionDto } from './file-version.dto';
 
 const toDateOrNull = (value: unknown): Date | null => {
     if (value === null || value === undefined) return null;
@@ -51,6 +52,7 @@ export class FileDto {
     @ApiProperty()
     @IsDate()
     @Expose()
+    @Transform(({ value, obj }) => obj.activeVersion?.date ?? obj.date ?? value)
     date!: Date;
 
     @ApiProperty({
@@ -61,7 +63,11 @@ export class FileDto {
     @IsDate()
     @IsOptional()
     @Expose()
-    @Transform(({ obj }) => toDateOrNull(obj.recordingStartDate))
+    @Transform(({ obj }) =>
+        toDateOrNull(
+            obj.activeVersion?.recordingStartDate ?? obj.recordingStartDate,
+        ),
+    )
     recordingStartDate!: Date | null;
 
     @ApiProperty({
@@ -72,7 +78,11 @@ export class FileDto {
     @IsDate()
     @IsOptional()
     @Expose()
-    @Transform(({ obj }) => toDateOrNull(obj.recordingEndDate))
+    @Transform(({ obj }) =>
+        toDateOrNull(
+            obj.activeVersion?.recordingEndDate ?? obj.recordingEndDate,
+        ),
+    )
     recordingEndDate!: Date | null;
 
     /**
@@ -88,7 +98,10 @@ export class FileDto {
     @IsOptional()
     @Expose()
     @Transform(({ obj }) =>
-        durationSeconds(obj.recordingStartDate, obj.recordingEndDate),
+        durationSeconds(
+            obj.activeVersion?.recordingStartDate ?? obj.recordingStartDate,
+            obj.activeVersion?.recordingEndDate ?? obj.recordingEndDate,
+        ),
     )
     durationSeconds!: number | null;
 
@@ -126,7 +139,9 @@ export class FileDto {
     @ApiProperty()
     @IsNumber()
     @Expose()
-    @Transform(({ value, obj }) => obj.size ?? value ?? 0)
+    @Transform(
+        ({ value, obj }) => obj.activeVersion?.size ?? obj.size ?? value ?? 0,
+    )
     size!: number;
 
     @ApiProperty({
@@ -136,7 +151,24 @@ export class FileDto {
     })
     @IsEnum(FileState)
     @Expose()
+    @Transform(
+        ({ value, obj }) =>
+            obj.activeVersion?.state ?? obj.state ?? value ?? FileState.OK,
+    )
     state!: FileState;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    @Expose()
+    @Transform(
+        ({ value, obj }) =>
+            obj.activeVersion?.state_cause ??
+            obj.state_cause ??
+            value ??
+            undefined,
+    )
+    state_cause?: string | null;
 
     @ApiProperty({
         description: 'The creator of the file',
@@ -154,13 +186,16 @@ export class FileDto {
     })
     @IsEnum(FileType)
     @Expose()
+    @Transform(({ value, obj }) => obj.activeVersion?.type ?? obj.type ?? value)
     type!: FileType;
 
     @ApiProperty()
     @IsString()
     @IsOptional()
     @Expose()
-    @Transform(({ value, obj }) => obj.hash ?? value ?? '')
+    @Transform(
+        ({ value, obj }) => obj.activeVersion?.hash ?? obj.hash ?? value ?? '',
+    )
     hash!: string | null;
 
     @ApiProperty()
@@ -172,6 +207,47 @@ export class FileDto {
             obj.parent?.uuid ?? obj.derivedFiles?.[0]?.uuid ?? value,
     )
     relatedFileUuid?: string | undefined;
+
+    @ApiPropertyOptional({
+        description: 'The active version of the file',
+        type: () => FileVersionDto,
+    })
+    @ValidateNested()
+    @Type(() => FileVersionDto)
+    @Expose()
+    activeVersion?: FileVersionDto;
+
+    @ApiPropertyOptional({
+        description: 'All versions belonging to this file',
+        type: () => [FileVersionDto],
+    })
+    @ValidateNested()
+    @Type(() => FileVersionDto)
+    @Expose()
+    versions?: FileVersionDto[];
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    @Expose()
+    @Transform(
+        ({ value, obj }) =>
+            obj.activeVersion?.uuid ??
+            obj.activeVersionUuid ??
+            value ??
+            undefined,
+    )
+    versionUuid?: string;
+
+    @ApiPropertyOptional()
+    @IsNumber()
+    @IsOptional()
+    @Expose()
+    @Transform(
+        ({ value, obj }) =>
+            obj.activeVersion?.versionNumber ?? value ?? undefined,
+    )
+    versionNumber?: number;
 }
 
 @Expose()
@@ -184,17 +260,23 @@ export class FileWithTopicDto extends FileDto {
     @Type(() => TopicDto)
     @Expose()
     @Transform(({ obj }) => {
-        let topics = obj.topics ?? [];
+        let topics = obj.topics ?? obj.activeVersion?.topics ?? [];
         if (topics.length === 0 && obj.derivedFiles?.length) {
             const derivedWithTopics = obj.derivedFiles.find(
-                (f: any) => f.topics && f.topics.length > 0,
+                (f: any) =>
+                    (f.topics?.length ?? 0) > 0 ||
+                    (f.activeVersion?.topics?.length ?? 0) > 0,
             );
             if (derivedWithTopics) {
-                topics = derivedWithTopics.topics ?? [];
+                topics =
+                    derivedWithTopics.topics ??
+                    derivedWithTopics.activeVersion?.topics ??
+                    [];
             }
         }
-        if (topics.length === 0 && obj.parent?.topics?.length) {
-            topics = obj.parent.topics;
+        if (topics.length === 0 && obj.parent) {
+            topics =
+                obj.parent.topics ?? obj.parent.activeVersion?.topics ?? [];
         }
         return plainToInstance(TopicDto, topics, {
             excludeExtraneousValues: true,

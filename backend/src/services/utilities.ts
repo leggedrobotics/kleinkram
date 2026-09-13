@@ -215,8 +215,13 @@ export const addFileStats = (
         }, 'fileCount')
         .addSelect((subQuery) => {
             return subQuery
-                .select('COALESCE(SUM(file.size), 0)', 'sum')
+                .select('COALESCE(SUM(version.size), 0)', 'sum')
                 .from('file_entity', 'file')
+                .leftJoin(
+                    'file_version_entity',
+                    'version',
+                    'version.uuid = file."activeVersionUuid" AND version."deletedAt" IS NULL',
+                )
                 .where('file."missionUuid" = mission.uuid');
         }, 'fileSize');
 

@@ -117,13 +117,18 @@ export class ProjectService {
         const rawResults = await this.projectRepository
             .createQueryBuilder('project')
             .select('project.uuid', 'projectUuid')
-            .addSelect('COALESCE(SUM(file.size), 0)', 'totalSize')
+            .addSelect('COALESCE(SUM(activeVersion.size), 0)', 'totalSize')
             .leftJoin(
                 'project.missions',
                 'mission',
                 'mission.deletedAt IS NULL',
             )
             .leftJoin('mission.files', 'file', 'file.deletedAt IS NULL')
+            .leftJoin(
+                'file.activeVersion',
+                'activeVersion',
+                'activeVersion.deletedAt IS NULL',
+            )
             .where('project.uuid IN (:...projectUuids)', { projectUuids })
             .groupBy('project.uuid')
             .getRawMany<{ projectUuid: string; totalSize: string }>();
@@ -189,12 +194,17 @@ export class ProjectService {
         // and not at all for the count query, which drops the select list.
         const totalSize = this.projectRepository.manager
             .createQueryBuilder()
-            .select('COALESCE(SUM(sizeFile.size), 0)')
+            .select('COALESCE(SUM(sizeVersion.size), 0)')
             .from(MissionEntity, 'sizeMission')
             .leftJoin(
                 'sizeMission.files',
                 'sizeFile',
                 'sizeFile.deletedAt IS NULL',
+            )
+            .leftJoin(
+                'sizeFile.activeVersion',
+                'sizeVersion',
+                'sizeVersion.deletedAt IS NULL',
             )
             .where('"sizeMission"."projectUuid" = "project"."uuid"')
             .andWhere('sizeMission.deletedAt IS NULL');

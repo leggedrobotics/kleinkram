@@ -6,6 +6,7 @@ import { redis } from '@kleinkram/backend-common/consts';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { ApiKeyEntity } from '@kleinkram/backend-common/entities/auth/api-key.entity';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
+import { FileVersionEntity } from '@kleinkram/backend-common/entities/file/file-version.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
@@ -229,7 +230,7 @@ export class FileLifecycleService implements OnModuleInit {
             );
         }
 
-        await this.dataStorage.addTags(databaseFile.uuid, {
+        await this.dataStorage.addTags(databaseFile.storageUuid, {
             // @ts-expect-error
             projectUuid: databaseFile.mission.project.uuid,
             missionUuid: databaseFile.mission.uuid,
@@ -255,7 +256,7 @@ export class FileLifecycleService implements OnModuleInit {
             fileUUIDs.map(async (uuid) => {
                 try {
                     const file = await this.fileRepository.findOneOrFail({
-                        where: { uuid },
+                        where: [{ uuid }, { activeVersionUuid: uuid }],
                         relations: {
                             mission: true,
                         },
@@ -289,14 +290,14 @@ export class FileLifecycleService implements OnModuleInit {
 
                     // ... [Existing Tag Update Logic] ...
                     const newFile = await this.fileRepository.findOneOrFail({
-                        where: { uuid },
+                        where: [{ uuid }, { activeVersionUuid: uuid }],
                         relations: {
                             mission: {
                                 project: true,
                             },
                         },
                     });
-                    await this.dataStorage.addTags(file.uuid, {
+                    await this.dataStorage.addTags(file.storageUuid, {
                         filename: file.filename,
                         missionUuid: missionUUID,
                         projectUuid: newFile.mission?.project?.uuid ?? '',
@@ -319,7 +320,7 @@ export class FileLifecycleService implements OnModuleInit {
         logger.debug(`Deleting file with uuid: ${uuid}`);
 
         const file = await this.fileRepository.findOne({
-            where: { uuid },
+            where: [{ uuid }, { activeVersionUuid: uuid }],
             relations: {
                 mission: true,
             },
@@ -345,10 +346,10 @@ export class FileLifecycleService implements OnModuleInit {
                 // [Existing Deletion Logic]
                 const fileToDelete =
                     await transactionalEntityManager.findOneOrFail(FileEntity, {
-                        where: { uuid },
+                        where: [{ uuid }, { activeVersionUuid: uuid }],
                     });
                 await this.dataStorage
-                    .deleteFile(fileToDelete.uuid)
+                    .deleteFile(fileToDelete.storageUuid)
                     .catch(() => {
                         logger.error(
                             `File ${fileToDelete.uuid} not found in storage, deleting from database only!`,
@@ -366,7 +367,9 @@ export class FileLifecycleService implements OnModuleInit {
         return this.fileRepository
             .findOne({
                 where: {
-                    state: FileState.UPLOADING,
+                    activeVersion: {
+                        state: FileState.UPLOADING,
+                    },
                     createdAt: MoreThan(
                         new Date(Date.now() - 12 * 60 * 60 * 1000),
                     ),
@@ -513,16 +516,27 @@ export class FileLifecycleService implements OnModuleInit {
                             file = await nestedManager.save(
                                 FileEntity,
                                 nestedManager.create(FileEntity, {
-                                    date: new Date(),
-                                    size: 0,
                                     filename,
                                     mission,
                                     creator: user,
+                                }),
+                            );
+                            const version = await nestedManager.save(
+                                FileVersionEntity,
+                                nestedManager.create(FileVersionEntity, {
+                                    file,
+                                    fileUuid: file.uuid,
+                                    versionNumber: 1,
+                                    date: new Date(),
+                                    size: 0,
                                     type: fileType,
                                     state: FileState.UPLOADING,
                                     origin: FileOrigin.UPLOAD,
                                 }),
                             );
+                            file.activeVersion = version;
+                            file.activeVersionUuid = version.uuid;
+                            file = await nestedManager.save(FileEntity, file);
                         }
 
                         await this.auditService.log(
@@ -543,11 +557,11 @@ export class FileLifecycleService implements OnModuleInit {
 
                         credentials.push({
                             bucket: env.S3_DATA_BUCKET_NAME,
-                            fileUUID: file.uuid,
+                            fileUUID: file.storageUuid,
                             fileName: filename,
                             accessCredentials:
                                 await this.dataStorage.generateTemporaryCredential(
-                                    file.uuid,
+                                    file.storageUuid,
                                 ),
                         });
                     });
@@ -721,7 +735,7 @@ export class FileLifecycleService implements OnModuleInit {
                 await Promise.all(
                     files.map(async (file) => {
                         await this.dataStorage
-                            .deleteFile(file.uuid)
+                            .deleteFile(file.storageUuid)
                             .catch(() => {
                                 logger.error(
                                     `File ${file.uuid} not found in storage, deleting from database only!`,
@@ -741,9 +755,10 @@ export class FileLifecycleService implements OnModuleInit {
     async reextractMissingTopics(): Promise<number> {
         const filesToFix = await this.fileRepository
             .createQueryBuilder('file')
-            .leftJoin('file.topics', 'topic')
-            .where('file.type = :type', { type: FileType.BAG })
-            .andWhere('file.state = :state', { state: FileState.OK })
+            .leftJoin('file.activeVersion', 'activeVersion')
+            .leftJoin('activeVersion.topics', 'topic')
+            .where('activeVersion.type = :type', { type: FileType.BAG })
+            .andWhere('activeVersion.state = :state', { state: FileState.OK })
             .andWhere('topic.uuid IS NULL')
             .select(['file.uuid', 'file.filename'])
             .getMany();

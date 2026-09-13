@@ -41,7 +41,7 @@ export class FileStorageService {
             throw new BadRequestException('UUID is required');
 
         const file = await this.fileRepository.findOneOrFail({
-            where: { uuid },
+            where: [{ uuid }, { activeVersionUuid: uuid }],
             relations: {
                 mission: true,
             },
@@ -49,10 +49,10 @@ export class FileStorageService {
 
         // verify that the file exists in DB
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (file.uuid === undefined || file.uuid !== uuid)
+        if (!file || (file.uuid !== uuid && file.activeVersionUuid !== uuid))
             throw new BadRequestException('File not found');
 
-        const stats = await this.dataStorage.getFileInfo(file.uuid);
+        const stats = await this.dataStorage.getFileInfo(file.storageUuid);
 
         // verify that the file exists in storage
         if (!stats) throw new NotFoundException('File not found');
@@ -63,7 +63,7 @@ export class FileStorageService {
             await this.auditService.log(
                 FileEventType.DOWNLOADED,
                 {
-                    fileUuid: file.uuid,
+                    fileUuid: file.storageUuid,
                     filename: file.filename,
                     missionUuid: file.mission?.uuid ?? '',
                     details: { expiresIn: expires ? '4 hours' : '1 week' },
@@ -81,7 +81,7 @@ export class FileStorageService {
               };
 
         return await this.dataStorage.getPresignedDownloadUrl(
-            file.uuid,
+            file.storageUuid,
             expires ? 4 * 60 * 60 : 604_800,
             disposition,
         );
@@ -144,12 +144,16 @@ export class FileStorageService {
     async recomputeFileSizes(): Promise<void> {
         const files = await this.fileRepository.find({
             where: {
-                state: In([FileState.OK, FileState.FOUND]),
+                activeVersion: {
+                    state: In([FileState.OK, FileState.FOUND]),
+                },
             },
         });
         await Promise.all(
             files.map(async (file) => {
-                const stats = await this.dataStorage.getFileInfo(file.uuid);
+                const stats = await this.dataStorage.getFileInfo(
+                    file.storageUuid,
+                );
 
                 if (stats) {
                     file.size = stats.size;
