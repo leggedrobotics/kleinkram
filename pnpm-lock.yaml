@@ -753,6 +753,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.1127.0
         version: 3.1127.0
+      '@aws-sdk/client-sts':
+        specifier: 3.1127.0
+        version: 3.1127.0
       '@aws-sdk/s3-request-presigner':
         specifier: 3.1127.0
         version: 3.1127.0

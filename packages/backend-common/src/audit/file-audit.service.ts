@@ -33,7 +33,10 @@ export class FileAuditService {
             if (context.fileUuid) {
                 file =
                     (await this.fileRepo.findOne({
-                        where: { uuid: context.fileUuid },
+                        where: [
+                            { uuid: context.fileUuid },
+                            { activeVersionUuid: context.fileUuid },
+                        ],
                         relations: {
                             mission: true,
                         },

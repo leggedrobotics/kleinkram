@@ -26,7 +26,7 @@ export class McapHandler implements FileHandler {
         try {
             const presignedUrl =
                 await this.dataStorage.getInternalPresignedDownloadUrl(
-                    primaryFile.uuid,
+                    primaryFile.storageUuid,
                     15 * 60,
                 );
 

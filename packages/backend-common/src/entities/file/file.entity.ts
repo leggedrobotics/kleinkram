@@ -6,6 +6,7 @@ import { FileOrigin, FileState, FileType } from '@kleinkram/shared';
 import * as crypto from 'node:crypto';
 import {
     BeforeInsert,
+    BeforeUpdate,
     Column,
     Entity,
     Index,
@@ -49,7 +50,7 @@ export class FileEntity extends BaseEntity {
     @ManyToOne(() => FileVersionEntity, {
         nullable: true,
         onDelete: 'SET NULL',
-        cascade: false,
+        cascade: ['insert', 'update'],
         eager: true,
     })
     @JoinColumn({ name: 'activeVersionUuid' })
@@ -215,6 +216,23 @@ export class FileEntity extends BaseEntity {
         if (!this.uuid) {
             this.uuid = crypto.randomUUID();
         }
+        if (this.activeVersion) {
+            if (!this.activeVersion.uuid) {
+                this.activeVersion.uuid = crypto.randomUUID();
+            }
+            this.activeVersionUuid = this.activeVersion.uuid;
+            this.activeVersion.file = this;
+            this.activeVersion.fileUuid = this.uuid;
+            if (!this.versions) {
+                this.versions = [this.activeVersion];
+            } else if (!this.versions.includes(this.activeVersion)) {
+                this.versions.push(this.activeVersion);
+            }
+        }
+    }
+
+    @BeforeUpdate()
+    beforeUpdate() {
         if (this.activeVersion) {
             if (!this.activeVersion.uuid) {
                 this.activeVersion.uuid = crypto.randomUUID();

@@ -125,16 +125,15 @@ export class FileIngestionService {
 
         const downloadPath = path.join(workDirectory, source.filename);
 
+        const taggingKey = source.storageUuid ?? queueItem.identifier;
         // Start Tagging in the Background
         const taggingPromise = this.dataStorage
-            .addTags(queueItem.identifier, {
+            .addTags(taggingKey, {
                 missionUuid: queueItem.mission?.uuid ?? '',
                 projectUuid: queueItem.mission?.project?.uuid ?? '',
                 filename: source.filename,
             })
-            .then(() =>
-                logger.debug(`File Tags added for ${queueItem.identifier}`),
-            )
+            .then(() => logger.debug(`File Tags added for ${taggingKey}`))
             .catch((error: unknown) =>
                 logger.warn(
                     `Failed to add tags during download: ${String(error)}`,
@@ -172,7 +171,10 @@ export class FileIngestionService {
         // For standard uploads, the identifier IS the UUID.
         if (queueItem.location !== FileLocation.DRIVE) {
             existingFile = await this.fileRepo.findOne({
-                where: { uuid: queueItem.identifier },
+                where: [
+                    { uuid: queueItem.identifier },
+                    { activeVersionUuid: queueItem.identifier },
+                ],
             });
         }
 
@@ -220,7 +222,7 @@ export class FileIngestionService {
         filePath: string,
     ): Promise<void> {
         if (queueItem.location === FileLocation.DRIVE) {
-            await this.dataStorage.uploadFile(file.uuid, filePath);
+            await this.dataStorage.uploadFile(file.storageUuid, filePath);
         }
     }
 

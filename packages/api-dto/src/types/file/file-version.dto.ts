@@ -51,12 +51,6 @@ export class FileVersionDto {
     @IsString()
     @IsOptional()
     @Expose()
-    state_cause?: string | null;
-
-    @ApiPropertyOptional()
-    @IsString()
-    @IsOptional()
-    @Expose()
     hash?: string | null;
 
     @ApiPropertyOptional({

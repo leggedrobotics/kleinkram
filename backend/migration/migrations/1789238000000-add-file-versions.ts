@@ -22,8 +22,7 @@ export class AddFileVersions1789238000000 implements MigrationInterface {
 
         // 2. Create file_version_entity table
         await queryRunner.query(`
-            CREATE TABLE "file_version_entity" (
-                "uuid" uuid NOT NULL DEFAULT uuid_generate_v4(),
+            CREATE TABLE "file_version_entity" (\n                "uuid" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
                 "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
                 "deletedAt" TIMESTAMP,
@@ -346,6 +345,15 @@ export class AddFileVersions1789238000000 implements MigrationInterface {
         await queryRunner.query(
             `ALTER TABLE "topic" DROP CONSTRAINT IF EXISTS "FK_f6e034f8bfd13df9df40da281d0"`,
         );
+
+        // Remap topic references from physical version UUID back to logical file UUID before restoring FK
+        await queryRunner.query(`
+            UPDATE "topic" t
+            SET "fileVersionUuid" = v."fileUuid"
+            FROM "file_version_entity" v
+            WHERE t."fileVersionUuid" = v."uuid"
+        `);
+
         await queryRunner.query(`
             DO $$
             BEGIN

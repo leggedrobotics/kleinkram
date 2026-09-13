@@ -63,7 +63,7 @@ export class FileStorageService {
             await this.auditService.log(
                 FileEventType.DOWNLOADED,
                 {
-                    fileUuid: file.storageUuid,
+                    fileUuid: file.uuid,
                     filename: file.filename,
                     missionUuid: file.mission?.uuid ?? '',
                     details: { expiresIn: expires ? '4 hours' : '1 week' },
@@ -111,7 +111,10 @@ export class FileStorageService {
                     return;
                 }
                 const fileEntity = await this.fileRepository.findOne({
-                    where: { uuid: file.name },
+                    where: [
+                        { uuid: file.name },
+                        { activeVersionUuid: file.name },
+                    ],
                     relations: {
                         mission: {
                             project: true,

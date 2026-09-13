@@ -21,14 +21,17 @@ export class S3Strategy implements FileSourceStrategy {
 
     async fetch(identifier: string): Promise<FileSourceResult> {
         const fileEntity = await this.fileEntityRepository.findOneOrFail({
-            where: { uuid: identifier },
+            where: [{ uuid: identifier }, { activeVersionUuid: identifier }],
         });
 
-        const stream = await this.dataStorage.getFileStream(identifier);
+        const stream = await this.dataStorage.getFileStream(
+            fileEntity.storageUuid,
+        );
 
         return {
             stream,
             filename: fileEntity.filename,
+            storageUuid: fileEntity.storageUuid,
         };
     }
 }

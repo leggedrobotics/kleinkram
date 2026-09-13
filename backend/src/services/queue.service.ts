@@ -98,6 +98,7 @@ export class QueueService implements OnModuleInit {
         const { id: fileId, isFolder } = getGoogleDriveInfo(
             driveCreate.driveURL,
         );
+
         if (fileId === null) throw new ConflictException('Invalid Drive URL');
 
         if (
@@ -216,7 +217,11 @@ export class QueueService implements OnModuleInit {
         }
 
         let job = await this.queueRepository.findOne({
-            where: { identifier: uuid },
+            where: [
+                { identifier: file.uuid },
+                { identifier: file.storageUuid },
+                { identifier: uuid },
+            ],
             relations: {
                 mission: {
                     project: true,
@@ -264,6 +269,11 @@ export class QueueService implements OnModuleInit {
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
         file.hash = md5;
+        if (file.activeVersion) {
+            file.activeVersion.state = file.state;
+            file.activeVersion.size = file.size;
+            file.activeVersion.hash = file.hash;
+        }
         await this.fileRepository.save(file);
 
         job.state = QueueState.AWAITING_PROCESSING;
