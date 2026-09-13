@@ -31,6 +31,7 @@ export * from './modules/access-control/access-control.module';
 export * from './modules/access-control/access-control.service';
 export * from './modules/action-dispatcher/action-dispatcher.module';
 export * from './modules/action-dispatcher/action-dispatcher.service';
+export * from './modules/storage/endpoint';
 export * from './modules/storage/storage-auth.service';
 export * from './modules/storage/storage-config.factory';
 export * from './modules/storage/storage-metrics.service';

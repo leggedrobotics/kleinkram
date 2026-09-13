@@ -1,5 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import environment from '@backend-common/environment';
+import { externalS3Endpoint } from './endpoint';
 
 export interface S3ClientContainer {
     external: S3Client;
@@ -14,25 +15,7 @@ export const S3ClientFactory = {
             secretAccessKey: environment.S3_SECRET_KEY,
         };
 
-        let externalEndpoint = environment.S3_ENDPOINT;
-        if (
-            !externalEndpoint.startsWith('http://') &&
-            !externalEndpoint.startsWith('https://')
-        ) {
-            const externalProtocol = environment.DEV ? 'http' : 'https';
-            externalEndpoint = `${externalProtocol}://${environment.S3_ENDPOINT}`;
-        }
-
-        try {
-            const url = new URL(externalEndpoint);
-            if (environment.DEV && !url.port) {
-                url.port = '9000';
-            }
-            // Remove trailing slash to be safe
-            externalEndpoint = url.toString().replace(/\/$/, '');
-        } catch {
-            // ignore if invalid URL, S3Client will throw later
-        }
+        const externalEndpoint = externalS3Endpoint();
 
         let internalEndpoint =
             environment.S3_ENDPOINT_INTERNAL ?? 'seaweedfs:9000';
