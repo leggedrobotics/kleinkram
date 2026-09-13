@@ -1,4 +1,8 @@
+import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
+import { ActionTriggerEntity } from '@backend-common/entities/action/action-trigger.entity';
+import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
+import { AccessGroupRights, TriggerType } from '@kleinkram/shared';
 import { DataSource } from 'typeorm';
 
 export const seedActionTemplates = async (
@@ -9,7 +13,11 @@ export const seedActionTemplates = async (
     console.log('3. Creating Action Templates...');
     const tag = 'latest';
 
-    const actionTemplates = [
+    const actionTemplates: {
+        name: string;
+        description: string;
+        accessRights?: number;
+    }[] = [
         {
             name: 'validate-data',
             description: 'Validates data integrity',
@@ -30,20 +38,27 @@ export const seedActionTemplates = async (
             name: 'gpu-example',
             description: 'Example action utilizing GPU resources',
         },
+        {
+            name: 'recover-mcap',
+            description:
+                'Recovers corrupted MCAP files using mcap doctor and mcap recover',
+            accessRights: AccessGroupRights.WRITE,
+        },
     ];
 
-    // Dynamic import or string repo access
-    const ActionTemplateRepo = dataSource.getRepository('ActionTemplateEntity');
+    const actionTemplateRepo = dataSource.getRepository(ActionTemplateEntity);
+    const actionTriggerRepo = dataSource.getRepository(ActionTriggerEntity);
+    const projectRepo = dataSource.getRepository(ProjectEntity);
 
     // eslint-disable-next-line no-console
     console.log('Checking action templates...');
     for (const templateDefinition of actionTemplates) {
-        const existing = await ActionTemplateRepo.findOne({
+        const existing = await actionTemplateRepo.findOne({
             where: { name: templateDefinition.name, version: 1 },
         });
 
         if (!existing) {
-            const template = ActionTemplateRepo.create({
+            const template = actionTemplateRepo.create({
                 name: templateDefinition.name,
                 description: templateDefinition.description,
 
@@ -55,9 +70,40 @@ export const seedActionTemplates = async (
                 cpuMemory: 1,
                 gpuMemory: -1,
                 maxRuntime: 1,
-                accessRights: 0,
+                accessRights: templateDefinition.accessRights ?? 0,
             });
-            await ActionTemplateRepo.save(template);
+            await actionTemplateRepo.save(template);
+        }
+    }
+
+    // Ensure recover-mcap trigger exists for projects with autoRecoverMcap enabled
+    const recoverTemplate = await actionTemplateRepo.findOne({
+        where: { name: 'recover-mcap', version: 1 },
+    });
+    if (recoverTemplate) {
+        const projects = await projectRepo.find();
+        for (const project of projects) {
+            if (project.autoRecoverMcap ?? true) {
+                const existingTrigger = await actionTriggerRepo.findOne({
+                    where: {
+                        projectUuid: project.uuid,
+                        type: TriggerType.CORRUPTED_FILE,
+                    },
+                });
+                if (!existingTrigger) {
+                    const trigger = actionTriggerRepo.create({
+                        name: 'Auto-recover MCAP',
+                        description:
+                            'Automatically recovers corrupted MCAP files uploaded to this project',
+                        template: recoverTemplate,
+                        project: project,
+                        type: TriggerType.CORRUPTED_FILE,
+                        config: { patterns: ['*.mcap'] },
+                        creator: adminUser,
+                    });
+                    await actionTriggerRepo.save(trigger);
+                }
+            }
         }
     }
 };

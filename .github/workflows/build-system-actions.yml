@@ -1,0 +1,65 @@
+name: Build System Actions
+
+on:
+    workflow_dispatch:
+        inputs:
+            kleinkram_version:
+                description: 'Kleinkram version to install'
+                required: false
+                default: ''
+    workflow_run:
+        workflows: ['Update PyPI']
+        types:
+            - completed
+    push:
+        paths:
+            - 'system-actions/**'
+
+jobs:
+    build-and-push:
+        runs-on: ubuntu-latest
+        if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        strategy:
+            matrix:
+                action: [recover-mcap]
+                type: [dev, prod]
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v7
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v4
+
+            - name: Login to Docker Hub
+              uses: docker/login-action@v4
+              with:
+                  username: ${{ secrets.DOCKERHUB_USERNAME }}
+                  password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+            - name: Determine Tag
+              id: tag
+              run: |
+                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                    if [ "${{ matrix.type }}" == "prod" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
+                      echo "tag=latest" >> $GITHUB_OUTPUT
+                    else
+                      echo "tag=dev" >> $GITHUB_OUTPUT
+                    fi
+                    echo "kleinkram_version=${{ inputs.kleinkram_version }}" >> $GITHUB_OUTPUT
+                  elif [ "${{ matrix.type }}" == "dev" ]; then
+                    echo "tag=dev" >> $GITHUB_OUTPUT
+                    echo "kleinkram_version=" >> $GITHUB_OUTPUT
+                  else
+                    echo "tag=latest" >> $GITHUB_OUTPUT
+                    echo "kleinkram_version=" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Build and push
+              uses: docker/build-push-action@v7
+              with:
+                  context: system-actions/${{ matrix.action }}
+                  push: true
+                  tags: rslethz/action:${{ matrix.action }}-${{ steps.tag.outputs.tag }}
+                  build-args: |
+                      KLEINKRAM_VERSION=${{ steps.tag.outputs.kleinkram_version }}

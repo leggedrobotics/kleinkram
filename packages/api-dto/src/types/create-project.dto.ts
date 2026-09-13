@@ -23,6 +23,10 @@ export class CreateProject {
     @IsBoolean()
     autoConvert?: boolean;
 
+    @IsOptional()
+    @IsBoolean()
+    autoRecoverMcap?: boolean;
+
     @IsArray()
     @IsOptional()
     requiredTags?: string[];

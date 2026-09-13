@@ -73,6 +73,9 @@ export class ContainerLifecycleService {
             KLEINKRAM_ACTION_UUID: action.uuid,
             KLEINKRAM_API_ENDPOINT: environment.BACKEND_URL,
             KLEINKRAM_S3_ENDPOINT: `https://${environment.S3_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+            ...(action.fileUuid
+                ? { KLEINKRAM_FILE_UUID: action.fileUuid }
+                : {}),
         };
 
         const labels: Record<string, string> = {

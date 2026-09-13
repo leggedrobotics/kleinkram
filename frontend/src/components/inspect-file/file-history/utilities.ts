@@ -13,11 +13,13 @@ export function formatEventType(type: FileEventType): string {
         [FileEventType.FILE_CONVERTED]: 'Auto Converted To',
         [FileEventType.FILE_CONVERTED_FROM]: 'Auto Converted From',
         [FileEventType.VERSION_UPLOADED]: 'New Version Uploaded',
+        [FileEventType.RECOVERY_TRIGGERED]: 'Recovery Action Triggered',
     };
     return map[type] ?? type;
 }
 
 export function getEventIcon(type: FileEventType): string {
+    if (type === FileEventType.RECOVERY_TRIGGERED) return 'sym_o_build';
     if (type.includes('FAILED') || type.includes('ERROR')) return 'sym_o_error';
     if (type === FileEventType.VERSION_UPLOADED) return 'sym_o_history_2';
     if (type.includes('COMPLETED') || type.includes('CREATED'))
@@ -45,6 +47,8 @@ export function getEventColor(type: string): string {
     if ((type as FileEventType) === FileEventType.TOPICS_EXTRACTED)
         return 'info';
     if (type.includes('CONVERTED')) return 'accent';
+    if ((type as FileEventType) === FileEventType.RECOVERY_TRIGGERED)
+        return 'warning';
 
     return 'primary';
 }

@@ -1,5 +1,7 @@
+import { InjectQueue } from '@nestjs/bull';
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Queue } from 'bull';
 import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import path from 'node:path';
@@ -17,6 +19,7 @@ import {
     FileState,
     FileType,
     QueueState,
+    TriggerEvent,
 } from '@kleinkram/shared';
 import logger from '../logger';
 import {
@@ -44,7 +47,28 @@ export class FileIngestionService {
         private queueRepo: Repository<IngestionJobEntity>,
         @Inject('DataStorageBucket')
         private readonly dataStorage: IStorageBucket,
+        @InjectQueue('trigger-queue')
+        private readonly triggerQueue: Queue,
     ) {}
+
+    /**
+     * Announces a corrupted file so that `CORRUPTED_FILE` triggers - the
+     * automatic MCAP recovery among them - get a chance to run. Failing to
+     * enqueue must not fail the ingestion itself, which has already recorded
+     * the corruption.
+     */
+    private async announceCorruption(file: FileEntity): Promise<void> {
+        try {
+            await this.triggerQueue.add('fileEvent', {
+                fileUuid: file.uuid,
+                event: TriggerEvent.CORRUPTED,
+            });
+        } catch (error: unknown) {
+            logger.error(
+                `Failed to enqueue corruption trigger for ${file.uuid}: ${String(error)}`,
+            );
+        }
+    }
 
     async processJob(
         queueItem: IngestionJobEntity,
@@ -90,6 +114,7 @@ export class FileIngestionService {
                             QueueState.CORRUPTED,
                             cause,
                         );
+                        await this.announceCorruption(primaryFile);
                         return;
                     }
 
@@ -119,6 +144,13 @@ export class FileIngestionService {
                             );
                         } catch {
                             // ignore save failure during error handling
+                        }
+
+                        // A handler that could not read the bytes marks the
+                        // file corrupted rather than errored, and that is what
+                        // the recovery triggers listen for.
+                        if (primaryFile.state === FileState.CORRUPTED) {
+                            await this.announceCorruption(primaryFile);
                         }
                     }
                     await this.updateQueueState(

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 from typing import Optional
+from uuid import UUID
 
 import typer
 
@@ -45,6 +46,20 @@ def _build_mission_query(mission: str, project: Optional[str]) -> MissionQuery:
     )
 
 
+def _parse_parent(parent: Optional[str]) -> Optional[UUID]:
+    """Parses the `--parent` option, which has to name a file by uuid."""
+    if parent is None:
+        return None
+    try:
+        return UUID(parent)
+    except ValueError:
+        typer.echo(
+            typer.style(f"--parent expects a file uuid, got: {parent}", fg=typer.colors.RED),
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+
 def _handle_no_files_to_upload(original_count: int, uploaded_count: int) -> None:
     """Checks if any files are left to upload and exits if not."""
     if uploaded_count > 0:
@@ -84,9 +99,15 @@ def upload(
         "--new-version",
         help="upload files that already exist as a new version instead of skipping them",
     ),
+    parent: Optional[str] = typer.Option(
+        None,
+        "--parent",
+        help="uuid of the file these files were derived from",
+    ),
 ) -> None:
     original_file_paths = [Path(file) for file in files]
     mission_query = _build_mission_query(mission, project)
+    parent_id = _parse_parent(parent)
 
     validator = FileValidator(
         skip=skip,
@@ -113,6 +134,7 @@ def upload(
                     metadata=load_metadata(Path(metadata)) if metadata else None,
                     ignore_missing_metadata=ignore_missing_tags,
                     new_version=new_version,
+                    parent_id=parent_id,
                     on_overall_progress_cb=cbs.on_overall_progress,
                     on_file_start_cb=cbs.on_file_start,
                     on_file_progress_cb=cbs.on_file_progress,
@@ -144,6 +166,7 @@ def upload(
                 metadata=load_metadata(Path(metadata)) if metadata else None,
                 ignore_missing_metadata=ignore_missing_tags,
                 new_version=new_version,
+                parent_id=parent_id,
             )
             if result.failed > 0:
                 typer.echo(

@@ -28,6 +28,19 @@ export type GenerateTemporaryCredentialsResponse = {
 }[];
 
 /**
+ * Asks the backend to run the MCAP recovery action on a corrupted file and
+ * returns the action it started.
+ */
+export const recoverMcapFile = async (
+    fileUuid: string,
+): Promise<{ actionUUID: string }> => {
+    const response = await axios.post<{ actionUUID: string }>(
+        `/files/${fileUuid}/recover`,
+    );
+    return response.data;
+};
+
+/**
  * Updates a file. Passing a `missionUuid` of another mission moves the file
  * into that mission (see `PUT /files/:uuid`).
  */

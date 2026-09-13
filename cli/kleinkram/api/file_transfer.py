@@ -11,6 +11,7 @@ from enum import Enum
 from pathlib import Path
 from time import monotonic
 from time import sleep
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
@@ -99,15 +100,22 @@ BUCKET_FIELD = "bucket"
 
 @retry(max_attempts=5, exceptions=(httpx.TransportError,), exclude_exceptions=(FileExistsError, InsufficientStorageError))
 def _get_upload_creditials(
-    client: AuthenticatedClient, internal_filename: str, mission_id: UUID, file_size: int, new_version: bool = False
+    client: AuthenticatedClient,
+    internal_filename: str,
+    mission_id: UUID,
+    file_size: int,
+    new_version: bool = False,
+    parent_id: Optional[UUID] = None,
 ) -> UploadCredentials:
-    dct = {
+    dct: Dict[str, Any] = {
         "filenames": [internal_filename],
         "missionUUID": str(mission_id),
         "source": "CLI",
         "fileSizes": [file_size],
         "newVersion": new_version,
     }
+    if parent_id is not None:
+        dct["parentUuid"] = str(parent_id)
     resp = client.post(UPLOAD_CREDS, json=dct)
     if resp.status_code == 409:
         raise FileExistsError()
@@ -213,6 +221,7 @@ def upload_file(
     path: Path,
     s3_endpoint: Optional[str] = None,
     new_version: bool = False,
+    parent_id: Optional[UUID] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
 ) -> Tuple[UploadState, int]:
@@ -222,6 +231,9 @@ def upload_file(
 
     if `new_version` is set, a file that already exists is uploaded as a new
     version of it instead of being skipped
+
+    `parent_id` records the file this one was derived from, e.g. the corrupted
+    file a recovered one was rebuilt from
     """
     if s3_endpoint is None:
         s3_endpoint = get_config().endpoint.s3
@@ -240,6 +252,7 @@ def upload_file(
                 mission_id=mission_id,
                 file_size=total_size,
                 new_version=new_version,
+                parent_id=parent_id,
             )
         except FileExistsError:
             return UploadState.EXISTS, 0
@@ -524,6 +537,7 @@ def upload_files(
     *,
     n_workers: int = 2,
     new_version: bool = False,
+    parent_id: Optional[UUID] = None,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
@@ -552,6 +566,7 @@ def upload_files(
                 filename=name,
                 path=path,
                 new_version=new_version,
+                parent_id=parent_id,
                 on_file_start_cb=on_file_start_cb,
                 on_file_progress_cb=on_file_progress_cb,
             )

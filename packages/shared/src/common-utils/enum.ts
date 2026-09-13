@@ -188,6 +188,7 @@ export enum FileEventType {
     DOWNLOADED = 'DOWNLOADED',
     RENAMED = 'RENAMED',
     MOVED = 'MOVED',
+    RECOVERY_TRIGGERED = 'RECOVERY_TRIGGERED',
 
     /**
      * A new version of the file finished uploading and became the version the
@@ -218,6 +219,7 @@ export enum TriggerType {
     WEBHOOK = 'WEBHOOK',
     TIME = 'TIME',
     FILE = 'FILE',
+    CORRUPTED_FILE = 'CORRUPTED_FILE',
 }
 
 export enum TriggerEvent {
@@ -225,6 +227,7 @@ export enum TriggerEvent {
     RENAME = 'RENAME',
     MOVE = 'MOVE',
     DELETE = 'DELETE',
+    CORRUPTED = 'CORRUPTED',
 }
 
 export enum ActionTriggerSource {

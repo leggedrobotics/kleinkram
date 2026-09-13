@@ -59,4 +59,12 @@ export class TemporaryAccessRequestDto {
         default: false,
     })
     newVersion?: boolean;
+
+    @IsUUID()
+    @IsOptional()
+    @ApiProperty({
+        description: 'UUID of the parent file to link uploaded file(s) to',
+        required: false,
+    })
+    parentUuid?: string;
 }

@@ -3,6 +3,7 @@ import { TriggerService } from '@/services/trigger.service';
 import { TemporaryFileAccessesDto, UpdateFile } from '@kleinkram/api-dto';
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
 import { redis } from '@kleinkram/backend-common/consts';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { ApiKeyEntity } from '@kleinkram/backend-common/entities/auth/api-key.entity';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
@@ -12,6 +13,7 @@ import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/inge
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
+import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import {
     IStorageBucket,
     StorageCredentials,
@@ -20,6 +22,7 @@ import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import {
     AccessGroupRights,
+    ActionTriggerSource,
     FileEventType,
     FileOrigin,
     FileState,
@@ -82,6 +85,9 @@ export class FileLifecycleService implements OnModuleInit {
         private readonly auditService: FileAuditService,
         private readonly triggerService: TriggerService,
         private readonly missionGuardService: MissionGuardService,
+        @InjectRepository(ActionTemplateEntity)
+        private actionTemplateRepository: Repository<ActionTemplateEntity>,
+        private readonly actionDispatcher: ActionDispatcherService,
     ) {}
 
     onModuleInit(): void {
@@ -178,6 +184,19 @@ export class FileLifecycleService implements OnModuleInit {
             databaseFile.categories = await this.categoryRepository.find({
                 where: { uuid: In(file.categories) },
             });
+        }
+
+        if (file.parentUuid !== undefined) {
+            if (file.parentUuid === null) {
+                databaseFile.parent = undefined;
+            } else {
+                const parent = await this.fileRepository.findOne({
+                    where: { uuid: file.parentUuid },
+                });
+                if (parent) {
+                    databaseFile.parent = parent;
+                }
+            }
         }
 
         await this.dataSource
@@ -362,6 +381,81 @@ export class FileLifecycleService implements OnModuleInit {
         logger.debug(`File with uuid ${uuid} deleted`);
     }
 
+    async recoverMcap(uuid: string, user: UserEntity): Promise<string> {
+        const file = await this.fileRepository.findOneOrFail({
+            where: [{ uuid }, { activeVersionUuid: uuid }],
+            relations: {
+                mission: true,
+            },
+        });
+
+        if (!file.mission) {
+            throw new BadRequestException(
+                'File is not associated with a mission',
+            );
+        }
+
+        if (file.type !== FileType.MCAP && !file.filename.endsWith('.mcap')) {
+            throw new BadRequestException(
+                'Recovery is only supported for MCAP files',
+            );
+        }
+
+        let template = await this.actionTemplateRepository.findOne({
+            where: { name: 'recover-mcap', version: 1 },
+        });
+
+        if (!template) {
+            template = this.actionTemplateRepository.create({
+                uuid: 'b12a87c1-0000-4000-a000-000000000001',
+                name: 'recover-mcap',
+                version: 1,
+                description:
+                    'Automatically recover corrupted MCAP files using mcap doctor and mcap recover',
+                image_name: 'rslethz/action:recover-mcap-latest',
+                accessRights: AccessGroupRights.WRITE,
+                cpuCores: 1,
+                cpuMemory: 1024,
+                gpuMemory: -1,
+                maxRuntime: 1,
+            });
+            await this.actionTemplateRepository.save(template);
+        }
+
+        const actionUUID = await this.actionDispatcher.dispatch(
+            template.uuid,
+            file.mission,
+            user,
+            { fileUuid: file.uuid },
+            ActionTriggerSource.MANUAL,
+        );
+
+        const action = await this.dataSource
+            .getRepository(ActionEntity)
+            .findOne({
+                where: { uuid: actionUUID },
+            });
+
+        await this.auditService.log(
+            FileEventType.RECOVERY_TRIGGERED,
+            {
+                fileUuid: file.uuid,
+                filename: file.filename,
+                missionUuid: file.mission.uuid,
+                actor: user,
+                ...(action ? { action } : {}),
+                details: {
+                    triggeredBy: 'MANUAL',
+                    actionUuid: actionUUID,
+                    templateName: template.name,
+                },
+            },
+            true,
+        );
+
+        return actionUUID;
+    }
+
     async isUploading(userUUID: string): Promise<boolean> {
         return this.fileRepository
             .findOne({
@@ -423,6 +517,7 @@ export class FileLifecycleService implements OnModuleInit {
         uploadSource = 'Web Interface',
         fileSizes?: number[],
         asNewVersion = false,
+        parentUuid?: string,
     ): Promise<TemporaryFileAccessesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
@@ -552,6 +647,14 @@ export class FileLifecycleService implements OnModuleInit {
                 try {
                     // Use a nested transaction (savepoint) for each file
                     await manager.transaction(async (nestedManager) => {
+                        let parentFile: FileEntity | undefined;
+                        if (parentUuid) {
+                            parentFile =
+                                (await nestedManager.findOne(FileEntity, {
+                                    where: { uuid: parentUuid },
+                                })) ?? undefined;
+                        }
+
                         let file: FileEntity;
                         if (wantsNewVersion) {
                             file = await this.startNewVersion(
@@ -590,6 +693,9 @@ export class FileLifecycleService implements OnModuleInit {
                                     type: fileType,
                                     state: FileState.UPLOADING,
                                     origin: FileOrigin.UPLOAD,
+                                    ...(parentFile
+                                        ? { parent: parentFile }
+                                        : {}),
                                 }),
                             );
                             file.activeVersion = version;

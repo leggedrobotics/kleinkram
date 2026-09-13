@@ -83,14 +83,16 @@ export async function addActionQueue(
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     logger.debug('Worker found');
+    action.state = ActionState.PENDING;
+    action.state_cause = undefined;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await actionRepository
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         .createQueryBuilder()
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         .update()
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        .set({ worker })
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/naming-convention
+        .set({ worker, state: ActionState.PENDING, state_cause: null })
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         .where('uuid = :uuid', { uuid: action.uuid })
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

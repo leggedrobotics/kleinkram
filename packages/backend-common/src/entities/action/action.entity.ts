@@ -2,6 +2,7 @@ import { ActionTemplateEntity } from '@backend-common/entities/action/action-tem
 import { ActionTriggerEntity } from '@backend-common/entities/action/action-trigger.entity';
 import { ApiKeyEntity } from '@backend-common/entities/auth/api-key.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { FileEntity } from '@backend-common/entities/file/file.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
@@ -89,10 +90,13 @@ export class ActionEntity extends BaseEntity {
     mission?: MissionEntity;
 
     @Column({ type: 'json', nullable: true, default: [] })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    container_logs?: ContainerLog[];
+
+    @Column({ type: 'json', nullable: true, default: [] })
     auditLogs?: unknown[];
 
     @Column({ nullable: true })
-
     // eslint-disable-next-line @typescript-eslint/naming-convention
     exit_code?: number;
 
@@ -154,6 +158,16 @@ export class ActionEntity extends BaseEntity {
 
     @Column({ nullable: true })
     triggerUuid?: string;
+
+    @ManyToOne(() => FileEntity, {
+        nullable: true,
+        onDelete: 'SET NULL',
+    })
+    @JoinColumn({ name: 'fileUuid' })
+    file?: FileEntity;
+
+    @Column({ nullable: true })
+    fileUuid?: string;
 
     @Column({
         type: 'enum',
