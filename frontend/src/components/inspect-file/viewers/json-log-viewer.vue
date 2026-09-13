@@ -6,7 +6,10 @@
                 :key="idx"
                 class="q-py-md items-start"
             >
-                <q-item-section side style="min-width: 150px">
+                <q-item-section
+                    side
+                    :style="{ minWidth: $q.screen.xs ? '0' : '150px' }"
+                >
                     <div class="text-caption text-weight-bold text-primary">
                         {{ formatTime(msg.logTime) }}
                     </div>
@@ -79,8 +82,10 @@
 </template>
 
 <script setup lang="ts">
-import { Notify, copyToClipboard as quasarCopy } from 'quasar';
+import { Notify, copyToClipboard as quasarCopy, useQuasar } from 'quasar';
 import { onMounted } from 'vue';
+
+const $q = useQuasar();
 
 const properties = defineProps<{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

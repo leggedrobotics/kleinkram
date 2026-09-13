@@ -5,6 +5,7 @@ export * from './files/google-drive.validator';
 export * from './is-not-undefined';
 export * from './metadata-applier';
 export * from './property-decorator';
+export * from './query-transform';
 export * from './record-validation';
 export * from './skip-validation';
 export * from './take-validation';

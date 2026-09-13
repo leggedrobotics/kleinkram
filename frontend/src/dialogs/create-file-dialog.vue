@@ -1,6 +1,6 @@
 <template>
     <base-dialog ref="dialogRef">
-        <template #title> Create File</template>
+        <template #title> Upload Files</template>
 
         <template #content>
             <create-file
@@ -16,7 +16,7 @@
         <template #actions>
             <q-btn
                 flat
-                label="Create File"
+                label="Upload"
                 class="bg-button-primary"
                 :disable="!ready"
                 @click="createFileAction"

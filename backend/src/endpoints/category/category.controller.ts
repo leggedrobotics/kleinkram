@@ -14,6 +14,7 @@ import {
     CanCreateInProjectByBody,
     CanReadProject,
     CanWriteMissionByBody,
+    fromQuery,
 } from '../auth/roles.decorator';
 
 @Controller('categories')
@@ -21,7 +22,7 @@ export class CategoryController {
     constructor(private readonly categoryService: CategoryService) {}
 
     @Get()
-    @CanReadProject()
+    @CanReadProject(fromQuery('projectUuid'))
     @ApiOkResponse({
         description: 'Get all categories in a project',
         type: CategoriesDto,

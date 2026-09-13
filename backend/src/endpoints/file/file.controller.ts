@@ -13,6 +13,7 @@ import {
     QueryUUID,
 } from '@/validation/query-decorators';
 import {
+    BackfillRecordingTimesResponseDto,
     CancelFileUploadDto,
     CancelProcessingResponseDto,
     CancelUploadResponseDto,
@@ -68,10 +69,13 @@ import {
     CanCreateInMissionByBody,
     CanDeleteFile,
     CanDeleteMission,
+    CanDeleteQueueItem,
     CanMoveFiles,
     CanReadFile,
     CanReadMission,
     CanWriteFile,
+    fromBody,
+    fromQuery,
     LoggedIn,
     UserOnly,
 } from '../auth/roles.decorator';
@@ -99,16 +103,18 @@ export class FileController {
         @Query() query: FileQueryDto,
         @AddUser() auth: AuthHeader,
     ): Promise<FilesDto> {
-        let _missionUUID = query.missionUUID;
-        if (auth.apiKey) {
-            _missionUUID = auth.apiKey.mission.uuid;
-        }
+        // A mission scoped API key may only ever list files of its own mission.
+        // `resolveMissionScope` is the single place where that is enforced, so
+        // this pre-check and `findMany` below cannot drift apart.
+        const apiKeyMissionUuid = auth.apiKey?.mission.uuid;
 
         const projectUuids =
             query.projectUuids ??
             (query.projectUUID ? [query.projectUUID] : []);
-        const missionUuids =
-            query.missionUuids ?? (_missionUUID ? [_missionUUID] : []);
+        const { missionUuids } = this.fileQueryService.resolveMissionScope(
+            query,
+            apiKeyMissionUuid,
+        );
 
         // we pre-check the access to give a proper error message
         // the actual findMany method will check access again per file
@@ -129,7 +135,7 @@ export class FileController {
         return await this.fileQueryService.findMany(
             query,
             auth.user.uuid,
-            _missionUUID,
+            apiKeyMissionUuid,
         );
     }
 
@@ -181,6 +187,7 @@ export class FileController {
             dto,
             auth.user,
             auth.apiKey?.action,
+            auth.apiKey,
         );
         return plainToInstance(FileDto, file, {
             excludeExtraneousValues: true,
@@ -209,7 +216,7 @@ export class FileController {
     }
 
     @Get('oneByName')
-    @CanReadMission()
+    @CanReadMission(fromQuery('uuid'))
     @ApiOkResponse({
         description: 'File',
         type: FileDto,
@@ -313,7 +320,7 @@ export class FileController {
     }
 
     @Delete()
-    @CanDeleteMission()
+    @CanDeleteMission(fromBody('missionUUID'))
     @ApiOkResponse({
         description: 'Delete Files Response',
         type: DeleteFileResponseDto,
@@ -328,7 +335,7 @@ export class FileController {
     }
 
     @Get('exists')
-    @CanReadFile()
+    @CanReadFile(fromQuery('uuid'))
     @ApiOkResponse({
         description: 'File exists',
         type: FileExistsResponseDto,
@@ -459,6 +466,17 @@ export class FileController {
         return await this.queueService.recalculateHashes();
     }
 
+    @Post('maintenance/backfill-recording-times')
+    @AdminOnly()
+    @ApiCreatedResponse({
+        description: 'Recording time backfill scheduled',
+        type: BackfillRecordingTimesResponseDto,
+    })
+    async backfillRecordingTimes(): Promise<BackfillRecordingTimesResponseDto> {
+        logger.debug('Triggering manual recording time backfill');
+        return await this.queueService.backfillRecordingTimes();
+    }
+
     @Get('queue')
     @LoggedIn()
     @ApiOkResponse({
@@ -502,7 +520,7 @@ export class FileController {
     }
 
     @Delete('queue/:uuid')
-    @CanDeleteMission()
+    @CanDeleteQueueItem()
     @ApiOkResponse({
         type: DeleteMissionResponseDto,
     })
@@ -514,7 +532,7 @@ export class FileController {
     }
 
     @Post('queue/:uuid/cancel')
-    @CanDeleteMission()
+    @CanDeleteQueueItem()
     @ApiCreatedResponse({
         type: CancelProcessingResponseDto,
     })
@@ -526,7 +544,7 @@ export class FileController {
     }
 
     @Post('queue/:uuid/stop')
-    @CanDeleteMission()
+    @CanDeleteQueueItem()
     @ApiCreatedResponse({
         type: StopJobResponseDto,
     })

@@ -210,11 +210,9 @@ export class S3StorageBucket implements IStorageBucket {
         const raw = await this.metricsService.getSystemMetrics();
 
         const totalRaw = raw.seaweedfs_master_disk_total_bytes as
-            | MetricPoint[]
-            | undefined;
+            MetricPoint[] | undefined;
         const volRecord = raw.SeaweedFS_volumeServer_resource as
-            | MetricPoint[]
-            | undefined;
+            MetricPoint[] | undefined;
 
         const totalValue =
             totalRaw?.[0]?.value ??
@@ -222,8 +220,7 @@ export class S3StorageBucket implements IStorageBucket {
         const total = totalValue ?? 0;
 
         const freeRaw = raw.seaweedfs_master_disk_free_bytes as
-            | MetricPoint[]
-            | undefined;
+            MetricPoint[] | undefined;
         const freeValue =
             freeRaw?.[0]?.value ??
             volRecord?.find((m) => m.labels.type === 'free')?.value;

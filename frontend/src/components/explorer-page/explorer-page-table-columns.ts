@@ -11,7 +11,8 @@ export interface ProjectColumnType {
     required?: boolean;
     label: string;
     align: string;
-    field?: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    field?:
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithMissionCountDto) => any)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithAccessRightsDto) => any)
@@ -78,6 +79,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         style: 'min-width: 100px',
         field: (row: ProjectWithMissionCountDto) => row.missionCount,
         format: (value: number) => value.toString(),
+        sortable: true,
     },
     {
         name: 'size',
@@ -86,6 +88,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         align: 'left',
         field: (row: ProjectWithMissionCountDto) => row.size,
         format: formatSize,
+        sortable: true,
     },
     {
         name: 'project-action',

@@ -8,6 +8,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import * as pg from 'pg';
 import accessConfig from './access_config.json';
 import { appVersion } from './app-version';
 import { AccessModule } from './endpoints/access/access.module';
@@ -54,6 +55,10 @@ import { DBDumper } from './services/dbdumper.service';
             imports: [ConfigModule],
             useFactory: (configService: ConfigService) => ({
                 type: 'postgres',
+                // TypeORM v1 loads its driver package through a dynamic
+                // `require()` that webpack cannot resolve when the app is
+                // bundled, so hand it the already bundled `pg` module.
+                driver: pg,
                 host: configService.getOrThrow<string>('database.host'),
                 port: configService.getOrThrow<number>('database.port'),
                 username: configService.getOrThrow<string>('database.username'),

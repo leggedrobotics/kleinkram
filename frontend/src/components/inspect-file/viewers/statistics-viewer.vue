@@ -107,8 +107,10 @@ watch(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const logStartTime = properties.messages[0].logTime;
         const data = properties.messages.map((message) => ({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            time: (message.logTime - logStartTime) / 1_000_000_000,
+            time:
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                Number((message.logTime as bigint) - (logStartTime as bigint)) /
+                1_000_000_000,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             value: message.data.pointcloud_process_fps ?? 0,
         }));

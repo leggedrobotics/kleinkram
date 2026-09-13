@@ -16,11 +16,17 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
+import {
+    DataSource,
+    EntityManager,
+    ILike,
+    Not,
+    Repository,
+    SelectQueryBuilder,
+} from 'typeorm';
 import { UserService } from './user.service';
 
 import {
-    addMissionCount,
     addProjectCreatorFilter,
     addProjectFilters,
     addSort,
@@ -50,6 +56,21 @@ import {
 } from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
 
+/**
+ * Alias of the computed column holding the total file size of a project, see
+ * {@link ProjectService._addProjectSizeForSorting}. The ORDER BY refers to the
+ * column by this alias, which is what makes TypeORM carry the sort over into
+ * the distinct-ids query it runs for paginated queries with joins.
+ */
+const PROJECT_SIZE_SORT_ALIAS = 'project_total_size';
+
+/**
+ * Alias of the computed column holding the number of missions of a project, see
+ * {@link ProjectService._addMissionCountForSorting}. Same reasoning as
+ * {@link PROJECT_SIZE_SORT_ALIAS}.
+ */
+const PROJECT_MISSION_COUNT_SORT_ALIAS = 'project_mission_count';
+
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',
     description: 'project.description',
@@ -58,6 +79,8 @@ const FIND_MANY_SORT_KEYS = {
     updatedAt: 'project.updatedAt',
     creator: 'creator.name',
     rights: 'projectAccessView.rights',
+    size: PROJECT_SIZE_SORT_ALIAS,
+    nrOfMissions: PROJECT_MISSION_COUNT_SORT_ALIAS,
 };
 
 @Injectable()
@@ -113,6 +136,101 @@ export class ProjectService {
         return sizeMap;
     }
 
+    /**
+     * Counts the (non-deleted) missions of the given projects.
+     *
+     * TypeORM v1 removed `QueryBuilder.loadRelationCountAndMap()`, so the counts
+     * are fetched with a dedicated aggregate query (the same shape as
+     * `_getProjectSizes`) instead of being mapped onto the entity.
+     */
+    private async _getMissionCounts(
+        projectUuids: string[],
+    ): Promise<Map<string, number>> {
+        if (projectUuids.length === 0) {
+            return new Map();
+        }
+
+        const rawResults = await this.projectRepository
+            .createQueryBuilder('project')
+            .select('project.uuid', 'projectUuid')
+            .addSelect('COUNT(mission.uuid)', 'missionCount')
+            .leftJoin(
+                'project.missions',
+                'mission',
+                'mission.deletedAt IS NULL',
+            )
+            .where('project.uuid IN (:...projectUuids)', { projectUuids })
+            .groupBy('project.uuid')
+            .getRawMany<{ projectUuid: string; missionCount: string }>();
+
+        const countMap = new Map<string, number>();
+        for (const raw of rawResults) {
+            countMap.set(
+                raw.projectUuid,
+                Number.parseInt(raw.missionCount) || 0,
+            );
+        }
+        return countMap;
+    }
+
+    /**
+     * Adds the total size of a project (the summed size of all files of all its
+     * non-deleted missions) as a computed column, so that the database can sort
+     * by it.
+     *
+     * The size is not stored on the project and `_getProjectSizes` only fetches
+     * it for the rows of the current page, which is too late for sorting.
+     */
+    private _addProjectSizeForSorting(
+        query: SelectQueryBuilder<ProjectEntity>,
+    ): SelectQueryBuilder<ProjectEntity> {
+        // Correlated on purpose: the aggregate is evaluated for the projects
+        // that survive the access constraints and filters of the outer query,
+        // and not at all for the count query, which drops the select list.
+        const totalSize = this.projectRepository.manager
+            .createQueryBuilder()
+            .select('COALESCE(SUM(sizeFile.size), 0)')
+            .from(MissionEntity, 'sizeMission')
+            .leftJoin(
+                'sizeMission.files',
+                'sizeFile',
+                'sizeFile.deletedAt IS NULL',
+            )
+            .where('"sizeMission"."projectUuid" = "project"."uuid"')
+            .andWhere('sizeMission.deletedAt IS NULL');
+
+        return query.addSelect(
+            `(${totalSize.getQuery()})`,
+            PROJECT_SIZE_SORT_ALIAS,
+        );
+    }
+
+    /**
+     * Adds the number of (non-deleted) missions of a project as a computed
+     * column, so that the database can sort by it.
+     *
+     * The count is not stored on the project and `_getMissionCounts` only
+     * fetches it for the rows of the current page, which is too late for
+     * sorting.
+     */
+    private _addMissionCountForSorting(
+        query: SelectQueryBuilder<ProjectEntity>,
+    ): SelectQueryBuilder<ProjectEntity> {
+        // Correlated for the same reason as the size aggregate, see
+        // `_addProjectSizeForSorting`.
+        const missionCount = this.projectRepository.manager
+            .createQueryBuilder()
+            .select('COUNT(countMission.uuid)')
+            .from(MissionEntity, 'countMission')
+            .where('"countMission"."projectUuid" = "project"."uuid"')
+            .andWhere('countMission.deletedAt IS NULL');
+
+        return query.addSelect(
+            `(${missionCount.getQuery()})`,
+            PROJECT_MISSION_COUNT_SORT_ALIAS,
+        );
+    }
+
     async findMany(
         projectUuids: string[],
         projectPatterns: string[],
@@ -148,23 +266,41 @@ export class ProjectService {
             );
         }
 
+        if (sortBy === 'size') {
+            query = this._addProjectSizeForSorting(query);
+        }
+
+        if (sortBy === 'nrOfMissions') {
+            query = this._addMissionCountForSorting(query);
+        }
+
         if (sortBy !== undefined) {
             query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+
+            // Stable tie-breaker: rows that compare equal on the sort column
+            // (projects of the same size or mission count, most notably the
+            // empty ones) would otherwise be free to swap places between two
+            // requests, which duplicates and drops rows across LIMIT/OFFSET
+            // pages.
+            query.addOrderBy('project.uuid', 'ASC');
         }
 
         query = addProjectCreatorFilter(query, creatorUuid);
-        query = addMissionCount(query);
 
         query.skip(skip).take(take);
         const [projects, count] = await query.getManyAndCount();
 
         const foundProjectUuids = projects.map((p) => p.uuid);
-        const sizes = await this._getProjectSizes(foundProjectUuids);
+        const [sizes, missionCounts] = await Promise.all([
+            this._getProjectSizes(foundProjectUuids),
+            this._getMissionCounts(foundProjectUuids),
+        ]);
 
         return {
             data: projects.map((element) => {
                 const dto = projectEntityToDtoWithMissionCountAndTags(element);
                 dto.size = sizes.get(element.uuid) ?? 0;
+                dto.missionCount = missionCounts.get(element.uuid) ?? 0;
                 return dto;
             }),
             count,
@@ -482,7 +618,9 @@ export class ProjectService {
     async updateTagTypes(uuid: string, tagTypeUUIDs: string[]): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
-            relations: ['requiredTags'],
+            relations: {
+                requiredTags: true,
+            },
         });
         project.requiredTags = await Promise.all(
             tagTypeUUIDs.map((tag) => {

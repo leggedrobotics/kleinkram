@@ -3,7 +3,11 @@ import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { AccessGroupRights, ActionState, UserRole } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    isTerminalActionState,
+    UserRole,
+} from '@kleinkram/shared';
 import {
     BadRequestException,
     ExecutionContext,
@@ -12,7 +16,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import { BaseGuard } from './base.guards';
 
 interface ActionBody {
@@ -75,7 +79,7 @@ export class CanReadTriggerGuard extends BaseGuard {
 
         const trigger = await this.actionTriggerRepository.findOne({
             where: { uuid: triggerUUID },
-            select: ['uuid', 'creatorUuid', 'missionUuid'],
+            select: { uuid: true, creatorUuid: true, missionUuid: true },
         });
 
         if (!trigger) {
@@ -119,12 +123,10 @@ export class ReadActionGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
+        // Every route using this guard addresses the action through the route
+        // parameter (`/actions/:uuid/...`); query and body are never consulted.
         const params = request.params as { uuid?: string } | undefined;
-        const body = request.body as ActionBody | undefined;
-        const actionUUID =
-            (request.query.uuid as string | undefined) ??
-            params?.uuid ??
-            body?.actionUUID;
+        const actionUUID = params?.uuid;
 
         if (!actionUUID) {
             return false; // Deny access if UUID not provided
@@ -183,6 +185,11 @@ export class CreateActionGuard extends BaseGuard {
     }
 }
 
+const DEFAULT_ACTION_RELATIONS: FindOptionsRelations<ActionEntity> = {
+    mission: true,
+    creator: true,
+};
+
 export abstract class BaseActionModificationGuard extends BaseGuard {
     constructor(
         protected missionGuardService: MissionGuardService,
@@ -193,13 +200,16 @@ export abstract class BaseActionModificationGuard extends BaseGuard {
 
     protected async validateAndGetAction(
         context: ExecutionContext,
-        relations: string[] = ['mission', 'creator'],
+        relations: FindOptionsRelations<ActionEntity> = DEFAULT_ACTION_RELATIONS,
     ) {
         const { user, apiKey, request } = await this.getUser(context);
 
+        // `DELETE /actions/:uuid` and `POST /actions/:uuid/cancel` address the
+        // action through the route parameter. The body is only honoured when the
+        // route has no parameter, so a body value can never override the path.
         const body = request.body as ActionBody | undefined;
         const params = request.params as { uuid?: string } | undefined;
-        const actionUUID = body?.actionUUID ?? params?.uuid;
+        const actionUUID = params?.uuid ?? body?.actionUUID;
 
         if (!actionUUID) {
             return null;
@@ -250,15 +260,9 @@ export class DeleteActionGuard extends BaseActionModificationGuard {
 
         const { user, action } = validationResult;
 
-        if (
-            !(
-                action.state === ActionState.DONE ||
-                action.state === ActionState.FAILED ||
-                action.state === ActionState.UNPROCESSABLE
-            )
-        ) {
+        if (!isTerminalActionState(action.state)) {
             throw new BadRequestException(
-                "can't delete action unless its DONE, FAILED or UNPROCESSABLE",
+                "can't delete action unless its DONE, FAILED, UNPROCESSABLE or CANCELLED",
             );
         }
         if (action.creator.uuid === user.uuid) {
@@ -285,11 +289,11 @@ export class CancelActionGuard extends BaseActionModificationGuard {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const validationResult = await this.validateAndGetAction(context, [
-            'mission',
-            'creator',
-            'template',
-        ]);
+        const validationResult = await this.validateAndGetAction(context, {
+            mission: true,
+            creator: true,
+            template: true,
+        });
         if (!validationResult) {
             return false;
         }

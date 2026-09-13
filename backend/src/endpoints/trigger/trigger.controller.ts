@@ -21,6 +21,7 @@ import {
     CanCreateInMissionByBody,
     CanModifyTrigger,
     CanReadTrigger,
+    fromBody,
     LoggedIn,
 } from '../auth/roles.decorator';
 
@@ -56,7 +57,7 @@ export class TriggerController {
     }
 
     @Post()
-    @CanCreateInMissionByBody()
+    @CanCreateInMissionByBody(fromBody('missionUuid'))
     @ApiCreatedResponse({ type: ActionTriggerDto })
     async create(
         @Body() dto: CreateActionTriggerDto,

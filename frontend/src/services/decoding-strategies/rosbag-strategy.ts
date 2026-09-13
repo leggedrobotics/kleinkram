@@ -1,9 +1,24 @@
 import { Bag } from '@foxglove/rosbag';
+import { parse as parseMessageDefinition } from '@foxglove/rosmsg';
+import { MessageReader } from '@foxglove/rosmsg-serialization';
 import { UniversalHttpReader } from '@kleinkram/shared';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { DecodingStrategy } from './index';
-import { LogMessage } from './utilities';
+import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
+
+const decompress = {
+    zstd: (buffer: Uint8Array): Uint8Array => fzstd.decompress(buffer),
+    lz4: (buffer: Uint8Array): Uint8Array => lz4js.decompress(buffer),
+};
+
+const toNano = (t: { sec: number; nsec: number }): bigint =>
+    BigInt(t.sec) * 1_000_000_000n + BigInt(t.nsec);
+
+const compareTime = (
+    a: { sec: number; nsec: number },
+    b: { sec: number; nsec: number },
+): number => (a.sec === b.sec ? a.nsec - b.nsec : a.sec - b.sec);
 
 export class RosbagStrategy extends DecodingStrategy {
     private bag: Bag | undefined = undefined;
@@ -17,14 +32,134 @@ export class RosbagStrategy extends DecodingStrategy {
                     httpReader.read(BigInt(offset), BigInt(length)),
                 size: (): number => httpReader.sizeBytes,
             },
-            {
-                decompress: {
-                    zstd: (buffer): Uint8Array => fzstd.decompress(buffer),
-                    lz4: (buffer): Uint8Array => lz4js.decompress(buffer),
-                },
-            },
+            { decompress },
         );
         await this.bag.open();
+    }
+
+    /**
+     * Byte length of a chunk record, derived from the position of the next
+     * chunk (or of the index section for the last chunk).
+     */
+    private chunkByteLength(chunkIndex: number): bigint {
+        if (!this.bag) return 0n;
+        const chunkInfos = this.bag.chunkInfos;
+        const chunk = chunkInfos[chunkIndex];
+        if (!chunk) return 0n;
+        const next = chunkInfos[chunkIndex + 1];
+        if (next) return BigInt(next.chunkPosition - chunk.chunkPosition);
+        if (this.bag.header) {
+            return BigInt(this.bag.header.indexPosition - chunk.chunkPosition);
+        }
+        return 0n;
+    }
+
+    private prefetchChunk(chunkIndex: number): void {
+        if (!this.bag || !this.httpReader) return;
+        const chunk = this.bag.chunkInfos[chunkIndex];
+        const size = this.chunkByteLength(chunkIndex);
+        if (chunk && size > 0n) {
+            this.httpReader.prefetch(BigInt(chunk.chunkPosition), size);
+        }
+    }
+
+    /**
+     * Reads the chunks containing `topic` coarse-to-fine (first, last,
+     * middle, ...) directly through the bag reader, one chunk per request,
+     * so a preview covering the whole recording appears early.
+     */
+    private async getMessagesProgressive(
+        topic: string,
+        keepEvery: number,
+        limit: number,
+        onMessage?: (message: LogMessage) => void,
+        signal?: AbortSignal,
+        skip?: (logTime: bigint) => boolean,
+    ): Promise<LogMessage[]> {
+        if (!this.bag || !this.httpReader) return [];
+        const bag = this.bag;
+        const hardLimit = Math.ceil(limit * 1.1) + 1;
+        const msgs: LogMessage[] = [];
+
+        const connections = [...bag.connections.values()].filter(
+            (connection) => connection.topic === topic,
+        );
+        const connectionIds = new Set(connections.map((c) => c.conn));
+        if (connectionIds.size === 0) return [];
+
+        // Lazily create one decoder per connection (same as the bag does)
+        for (const connection of connections) {
+            connection.reader ??= new MessageReader(
+                parseMessageDefinition(connection.messageDefinition),
+            );
+        }
+        const readers = new Map(
+            connections.map((connection) => [
+                connection.conn,
+                connection.reader,
+            ]),
+        );
+
+        const chunkIndexes = bag.chunkInfos
+            .map((chunk, index) => ({ chunk, index }))
+            .filter(({ chunk }) =>
+                chunk.connections.some((c) => connectionIds.has(c.conn)),
+            );
+        const order = coarseToFineOrder(chunkIndexes.length);
+
+        // Exact global position of each chunk's first message of the topic,
+        // so that sampling stays uniform across chunks of any size.
+        const chunkOffsets: number[] = [];
+        let cumulative = 0;
+        for (const { chunk } of chunkIndexes) {
+            chunkOffsets.push(cumulative);
+            for (const c of chunk.connections) {
+                if (connectionIds.has(c.conn)) cumulative += c.count;
+            }
+        }
+
+        const PREFETCH_AHEAD = 3;
+        for (const [position, entryIndex] of order.entries()) {
+            if (signal?.aborted) break;
+            if (msgs.length >= hardLimit) break;
+            const entry = chunkIndexes[entryIndex];
+            if (!entry) continue;
+
+            for (let ahead = 0; ahead < PREFETCH_AHEAD; ahead++) {
+                const upcoming = chunkIndexes[order[position + ahead] ?? -1];
+                if (upcoming) this.prefetchChunk(upcoming.index);
+            }
+
+            const records = await bag.reader.readChunkMessages(
+                entry.chunk,
+                [...connectionIds],
+                entry.chunk.startTime,
+                entry.chunk.endTime,
+                decompress,
+            );
+
+            let seen = 0;
+            const chunkOffset = chunkOffsets[entryIndex] ?? 0;
+            for (const record of records) {
+                if (signal?.aborted) break;
+                if (msgs.length >= hardLimit) break;
+                if ((chunkOffset + seen++) % keepEvery !== 0) continue;
+                if (!record.data) continue;
+                const logTime = toNano(record.time);
+                if (skip?.(logTime)) continue;
+                const reader = readers.get(record.conn);
+                const messageObject: LogMessage = {
+                    logTime,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    data: reader
+                        ? reader.readMessage(record.data)
+                        : record.data,
+                };
+                if (onMessage) onMessage(messageObject);
+                msgs.push(messageObject);
+            }
+        }
+        return msgs;
     }
 
     async getMessages(
@@ -33,13 +168,24 @@ export class RosbagStrategy extends DecodingStrategy {
         onMessage?: (message: LogMessage) => void,
         signal?: AbortSignal,
         startTime?: bigint,
+        options: ReadOptions = {},
     ): Promise<LogMessage[]> {
         if (!this.bag || !this.httpReader) return [];
-        const msgs: LogMessage[] = [];
+        const keepEvery = Math.max(1, Math.floor(options.stride ?? 1));
 
-        // eslint-disable-next-line unicorn/consistent-function-scoping
-        const toNano = (t: { sec: number; nsec: number }) =>
-            BigInt(t.sec) * 1_000_000_000n + BigInt(t.nsec);
+        if (options.progressive && startTime === undefined) {
+            return this.getMessagesProgressive(
+                topic,
+                keepEvery,
+                limit,
+                onMessage,
+                signal,
+                options.skip,
+            );
+        }
+
+        const msgs: LogMessage[] = [];
+        let seen = 0;
 
         let start: { sec: number; nsec: number } | undefined;
         if (startTime !== undefined) {
@@ -48,68 +194,30 @@ export class RosbagStrategy extends DecodingStrategy {
             start = { sec, nsec };
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const options: any = { topics: [topic] };
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (start) options.startTime = start;
+        const iteratorOptions: {
+            topics: string[];
+            start?: { sec: number; nsec: number };
+        } = { topics: [topic] };
+        if (start) iteratorOptions.start = start;
 
-        // Prefetch chunks
+        // Prefetch the first few chunks that can contain messages of interest
         const chunkInfos = this.bag.chunkInfos;
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (chunkInfos) {
-            // Helper to compare ros times
-            const compareTime = (
-                a: { sec: number; nsec: number },
-                b: { sec: number; nsec: number },
-            ) => {
-                if (a.sec !== b.sec) return a.sec - b.sec;
-                return a.nsec - b.nsec;
-            };
-
-            const relevantChunks = chunkInfos.filter(
-                (c) =>
-                    // Check if chunk overlaps with our interest
-                    // If start is set, chunk must end after it
-                    start === undefined || compareTime(c.endTime, start) >= 0,
-            );
-
-            // Prefetch the first few chunks
-            const chunksToPrefetch = relevantChunks.slice(0, 5);
-
-            for (const chunk of chunksToPrefetch) {
-                let size = 0n;
-                const index = chunkInfos.indexOf(chunk);
-
-                if (index !== -1 && index < chunkInfos.length - 1) {
-                    const nextChunk = chunkInfos[index + 1];
-                    if (nextChunk) {
-                        size = BigInt(
-                            nextChunk.chunkPosition - chunk.chunkPosition,
-                        );
-                    }
-                } else if (this.bag.header) {
-                    // Last chunk, ends at indexPosition
-                    size = BigInt(
-                        this.bag.header.indexPosition - chunk.chunkPosition,
-                    );
-                }
-
-                // If we couldn't determine size or it's suspiciously small/large, maybe default to something?
-                // But usually the above logic covers it.
-                // Note: chunkPosition includes the header, so fetching from chunkPosition with size
-                // should cover the whole chunk record + data.
-                if (size > 0n) {
-                    this.httpReader.prefetch(BigInt(chunk.chunkPosition), size);
-                }
+        let prefetched = 0;
+        for (const [index, chunk] of chunkInfos.entries()) {
+            if (prefetched >= 5) break;
+            if (start !== undefined && compareTime(chunk.endTime, start) < 0) {
+                continue;
             }
+            this.prefetchChunk(index);
+            prefetched++;
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const iterator = this.bag.messageIterator(options);
+        const iterator = this.bag.messageIterator(iteratorOptions);
 
         for await (const result of iterator) {
             if (signal?.aborted) break;
             if (msgs.length >= limit) break;
+            if (seen++ % keepEvery !== 0) continue;
             const messageObject = {
                 logTime: toNano(result.timestamp),
                 data: result.message,

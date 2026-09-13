@@ -10,7 +10,7 @@ import * as fsPromises from 'node:fs/promises';
 import { Repository } from 'typeorm';
 import { AbstractMetadataService } from './abstract-metadata.service';
 import { ExtractedTopicInfo } from './file-handler.interface';
-import { getDurationSeconds } from './time';
+import { getDurationSeconds, RecordingTimes, toRecordingTimes } from './time';
 
 class LocalFileReader implements IReadable {
     constructor(
@@ -74,6 +74,29 @@ export class McapMetadataService extends AbstractMetadataService {
         }
     }
 
+    /**
+     * Reads only the recording window of a stored MCAP.
+     *
+     * The indexed reader fetches the summary section instead of the message
+     * data, so this stays cheap enough to run over every existing file during
+     * a backfill.
+     */
+    async probeRecordingTimesFromUrl(
+        presignedUrl: string,
+        headers: Record<string, string> = {},
+    ): Promise<RecordingTimes> {
+        const fileReader = new UniversalHttpReader(presignedUrl, headers);
+        await fileReader.init();
+        const reader = await McapIndexedReader.Initialize({
+            readable: fileReader,
+        });
+
+        return toRecordingTimes(
+            reader.statistics?.messageStartTime,
+            reader.statistics?.messageEndTime,
+        );
+    }
+
     private async processReader(
         readable: IReadable,
         targetEntity: FileEntity,
@@ -118,18 +141,19 @@ export class McapMetadataService extends AbstractMetadataService {
             }
         }
 
-        let fileDate: Date | undefined;
-        // @ts-expect-error profileTime may not be in type definition
-        const profileTime = reader.header.profileTime as bigint | undefined;
-        if (profileTime) {
-            fileDate = new Date(Number(profileTime / 1_000_000n));
-        }
+        // The MCAP header only carries the profile and the writing library,
+        // never a timestamp; the recording window lives in the statistics
+        // record of the summary section.
+        const recordingTimes = toRecordingTimes(
+            reader.statistics?.messageStartTime,
+            reader.statistics?.messageEndTime,
+        );
 
         await this.finishExtraction(
             targetEntity,
             rawTopics,
             Number(await readable.size()),
-            fileDate,
+            recordingTimes,
             'mcap_indexed_reader',
             startTime,
             actor,

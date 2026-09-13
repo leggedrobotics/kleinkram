@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
@@ -54,8 +54,7 @@ const properties = defineProps<{
 const queryClient = useQueryClient();
 
 const selectedProjectUuid = ref<string | undefined>(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-    properties.mission?.project?.uuid,
+    properties.mission?.project.uuid,
 );
 
 const { selectedProject } = useScopeSelection(selectedProjectUuid);
@@ -73,7 +72,6 @@ async function onOk(): Promise<void> {
 
     const creating = Notify.create({
         group: false,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
         message: `Moving mission ${properties.mission.name} to project ${targetProjectName}`,
         color: 'grey',
         spinner: true,
@@ -82,11 +80,9 @@ async function onOk(): Promise<void> {
     });
 
     try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         await moveMission(properties.mission.uuid, selectedProjectUuid.value);
 
         creating({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
             message: `Mission ${properties.mission.name} moved to project ${targetProjectName}`,
             color: 'positive',
             spinner: false,
@@ -113,7 +109,6 @@ async function onOk(): Promise<void> {
         onDialogOK(selectedProjectUuid.value);
     } catch (error: unknown) {
         creating({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
             message: `Error moving mission ${properties.mission.name} to project ${targetProjectName}`,
             color: 'negative',
             spinner: false,

@@ -1,6 +1,7 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
+import { RECORDING_TIMES_BACKFILL_JOB } from '@kleinkram/backend-common/services/recording-times-backfill';
 import { FileLocation, FileState, QueueState } from '@kleinkram/shared';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Inject, Injectable } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { Job, Queue } from 'bull';
 import { Repository } from 'typeorm';
 import logger from '../logger';
 import { FileIngestionService } from './file-ingestion.service';
+import { RecordingTimesBackfillService } from './recording-times-backfill.service';
 import { GoogleDriveStrategy } from './strategies/google-drive.strategy';
 import { S3Strategy } from './strategies/s3.strategy';
 
@@ -28,6 +30,7 @@ export class FileQueueProcessorProvider {
         private readonly driveStrategy: GoogleDriveStrategy,
         private readonly s3Strategy: S3Strategy,
         @InjectQueue('file-queue') private fileQueue: Queue,
+        private readonly recordingTimesBackfillService: RecordingTimesBackfillService,
     ) {}
 
     @Process({ name: 'processDriveFile', concurrency: 1 })
@@ -36,7 +39,13 @@ export class FileQueueProcessorProvider {
 
         const queueItem = await this.queueRepo.findOneOrFail({
             where: { uuid: job.data.queueUuid },
-            relations: ['mission', 'creator', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                creator: true,
+            },
         });
 
         // Check if it is a folder (recursive ingestion)
@@ -62,7 +71,13 @@ export class FileQueueProcessorProvider {
         logger.debug(`Processing S3 File Job: ${job.data.queueUuid}`);
         const queueItem = await this.queueRepo.findOneOrFail({
             where: { uuid: job.data.queueUuid },
-            relations: ['mission', 'creator', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                creator: true,
+            },
         });
         return this.runPipeline(queueItem);
     }
@@ -115,6 +130,19 @@ export class FileQueueProcessorProvider {
             );
             throw error;
         }
+    }
+
+    /**
+     * Recovers the recording window of an already ingested file. Scheduled
+     * by the periodic backfill and by the maintenance endpoint.
+     */
+    @Process({ name: RECORDING_TIMES_BACKFILL_JOB, concurrency: 2 })
+    async extractRecordingTimesFromS3(
+        job: Job<{ fileUuid: string }>,
+    ): Promise<void> {
+        await this.recordingTimesBackfillService.backfillFile(
+            job.data.fileUuid,
+        );
     }
 
     private calculateHash(stream: NodeJS.ReadableStream): Promise<string> {

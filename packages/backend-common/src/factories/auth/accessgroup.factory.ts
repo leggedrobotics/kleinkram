@@ -2,7 +2,6 @@ import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.en
 import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
-import { type Faker } from '@faker-js/faker';
 import { AccessGroupType } from '@kleinkram/shared';
 import { setSeederFactory } from 'typeorm-extension';
 
@@ -14,7 +13,13 @@ export interface AccessGroupFactoryContext {
 
 setSeederFactory(
     AccessGroupEntity,
-    (faker: Faker, context: AccessGroupFactoryContext) => {
+    (context: AccessGroupFactoryContext | undefined) => {
+        if (context === undefined) {
+            throw new Error(
+                'The AccessGroupEntity factory requires a context, set it via setMeta()',
+            );
+        }
+
         const accessGroup = new AccessGroupEntity();
 
         if (context.isPersonal) {
@@ -41,7 +46,9 @@ setSeederFactory(
             );
             accessGroup.name = `Group: ${extendedFaker.company.name()}`;
             accessGroup.type = AccessGroupType.CUSTOM;
-            accessGroup.creator = faker.helpers.arrayElement(context.allUsers);
+            accessGroup.creator = extendedFaker.helpers.arrayElement(
+                context.allUsers,
+            );
 
             // add members to group
             accessGroup.memberships = context.allUsers.map(

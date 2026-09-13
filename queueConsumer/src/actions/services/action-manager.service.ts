@@ -403,7 +403,10 @@ export class ActionManagerService implements OnModuleInit {
             // update action state based on container exit code
             action = await this.actionRepository.findOneOrFail({
                 where: { uuid: action.uuid },
-                relations: ['worker', 'template'],
+                relations: {
+                    worker: true,
+                    template: true,
+                },
             });
 
             if (!this.cancellationService.isCancelled(action.uuid)) {

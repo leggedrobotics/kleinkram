@@ -41,6 +41,7 @@ import {
     CanDeleteProject,
     CanEditGroup,
     CanWriteProject,
+    fromParameter,
     UserOnly,
 } from '../auth/roles.decorator';
 
@@ -249,7 +250,7 @@ export class AccessController {
         type: ProjectDto,
     })
     @Post(':uuid/projects/:projectUuid')
-    @CanWriteProject()
+    @CanWriteProject(fromParameter('projectUuid'))
     async addAccessGroupToProject(
         @ParameterUID('uuid', 'UUID of AccessGroup') uuid: string,
         @ParameterUID('projectUuid', 'UUID of Project') projectUuid: string,
@@ -265,7 +266,7 @@ export class AccessController {
     }
 
     @Delete(':uuid/projects/:projectUuid')
-    @CanDeleteProject()
+    @CanDeleteProject(fromParameter('projectUuid'))
     @ApiResponse({
         status: 200,
         type: RemoveAccessGroupFromProjectResponseDto,
