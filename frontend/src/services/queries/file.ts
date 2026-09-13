@@ -107,12 +107,17 @@ export const fetchFile = async (uuid: string): Promise<FileWithTopicDto> => {
         throw error; // Rethrow or handle as appropriate
     }
 };
+/**
+ * Resolves a download url for a file. `versionUuid` picks a specific - possibly
+ * superseded - version; without it the active version is served.
+ */
 export const downloadFile = async (
     uuid: string,
     expires: boolean,
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
     preview_only = false,
+    versionUuid?: string,
 ): Promise<string> => {
     const response = await axios.get<DownloadResponseDto>(
         `/files/${uuid}/download`,
@@ -121,6 +126,7 @@ export const downloadFile = async (
                 expires,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 preview_only,
+                ...(versionUuid ? { versionUuid } : {}),
             },
         },
     );

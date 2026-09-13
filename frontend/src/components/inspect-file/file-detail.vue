@@ -114,6 +114,8 @@
             <FileErrorState :file="file" />
         </div>
 
+        <FileVersions v-if="hasMultipleVersions" :file="file" />
+
         <FileHistory v-if="events !== undefined" :events="events" />
 
         <div
@@ -147,6 +149,7 @@ import FileErrorState from './file-error-state.vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
 import FileTopicTable from './file-topic-table.vue';
+import FileVersions from './file-versions.vue';
 import Svo2Viewer from './viewers/svo2-viewer.vue';
 import TumViewer from './viewers/tum-viewer.vue';
 
@@ -188,6 +191,12 @@ const isSupportedBinary = computed(() => {
         file.value.type === FileType.DB3
     );
 });
+// A single version is already spelled out by the chip in the header, so the
+// list only earns its space once the file actually has a history.
+const hasMultipleVersions = computed(
+    () => (file.value?.versions?.length ?? 0) > 1,
+);
+
 const displayTopics = computed(
     () => file.value?.state === FileState.OK && isSupportedBinary.value,
 );

@@ -437,6 +437,7 @@ export class FileQueryService {
                 activeVersion: {
                     topics: true,
                 },
+                versions: true,
                 creator: true,
                 categories: true,
 
@@ -471,6 +472,9 @@ export class FileQueryService {
                 file.activeVersion.state_cause = job.errorMessage;
             }
         }
+
+        // Newest first, so the frontend can render the version list as-is.
+        file.versions?.sort((a, b) => b.versionNumber - a.versionNumber);
 
         return fileEntityToDtoWithTopic(file);
     }

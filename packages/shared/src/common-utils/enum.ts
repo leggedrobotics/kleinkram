@@ -188,6 +188,12 @@ export enum FileEventType {
     DOWNLOADED = 'DOWNLOADED',
     RENAMED = 'RENAMED',
     MOVED = 'MOVED',
+
+    /**
+     * A new version of the file finished uploading and became the version the
+     * file resolves to. The previous versions stay downloadable.
+     */
+    VERSION_UPLOADED = 'VERSION_UPLOADED',
 }
 
 export enum FileSource {

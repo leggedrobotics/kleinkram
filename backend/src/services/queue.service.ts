@@ -216,12 +216,20 @@ export class QueueService implements OnModuleInit {
             throw new ConflictException('Cannot confirm a canceled upload');
         }
 
+        // The first version's job is keyed by the file uuid, which every later
+        // version would otherwise reuse - and find already completed, silently
+        // skipping ingestion of the bytes just uploaded. Versions past the
+        // first therefore get a job of their own, keyed by the version uuid.
+        const isFirstVersion = (file.activeVersion?.versionNumber ?? 1) === 1;
+
         let job = await this.queueRepository.findOne({
-            where: [
-                { identifier: file.uuid },
-                { identifier: file.storageUuid },
-                { identifier: uuid },
-            ],
+            where: isFirstVersion
+                ? [
+                      { identifier: file.uuid },
+                      { identifier: file.storageUuid },
+                      { identifier: uuid },
+                  ]
+                : [{ identifier: file.storageUuid }],
             relations: {
                 mission: {
                     project: true,
@@ -231,7 +239,7 @@ export class QueueService implements OnModuleInit {
 
         job ??= await this.queueRepository.save(
             this.queueRepository.create({
-                identifier: file.uuid,
+                identifier: isFirstVersion ? file.uuid : file.storageUuid,
                 displayName: file.filename,
                 state: QueueState.AWAITING_UPLOAD,
                 location: FileLocation.S3,
@@ -286,6 +294,8 @@ export class QueueService implements OnModuleInit {
 
         logger.debug(`Confirmed upload for ${uuid}, job ${job.uuid} queued.`);
 
+        const versionNumber = file.activeVersion?.versionNumber ?? 1;
+
         await this.auditService.log(
             FileEventType.UPLOAD_COMPLETED,
             {
@@ -294,10 +304,34 @@ export class QueueService implements OnModuleInit {
                 ...(job.mission?.uuid ? { missionUuid: job.mission.uuid } : {}),
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 ...(actor ? { actor } : {}),
-                details: { origin: FileOrigin.UPLOAD, source },
+                details: { origin: FileOrigin.UPLOAD, source, versionNumber },
             },
             true,
         );
+
+        // The very first upload is the file being created, not a new version
+        // superseding an earlier one, so only follow-ups are recorded here.
+        if (versionNumber > 1) {
+            await this.auditService.log(
+                FileEventType.VERSION_UPLOADED,
+                {
+                    fileUuid: file.uuid,
+                    filename: file.filename,
+                    ...(job.mission?.uuid
+                        ? { missionUuid: job.mission.uuid }
+                        : {}),
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    ...(actor ? { actor } : {}),
+                    details: {
+                        source,
+                        versionNumber,
+                        versionUuid: file.activeVersionUuid,
+                        size: file.size,
+                    },
+                },
+                true,
+            );
+        }
 
         await this.triggerService.addFileEvent(file.uuid, TriggerEvent.UPLOAD);
     }

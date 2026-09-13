@@ -79,6 +79,11 @@ def upload(
     ),
     experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
     ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
+    new_version: bool = typer.Option(
+        False,
+        "--new-version",
+        help="upload files that already exist as a new version instead of skipping them",
+    ),
 ) -> None:
     original_file_paths = [Path(file) for file in files]
     mission_query = _build_mission_query(mission, project)
@@ -107,6 +112,7 @@ def upload(
                     create=create,
                     metadata=load_metadata(Path(metadata)) if metadata else None,
                     ignore_missing_metadata=ignore_missing_tags,
+                    new_version=new_version,
                     on_overall_progress_cb=cbs.on_overall_progress,
                     on_file_start_cb=cbs.on_file_start,
                     on_file_progress_cb=cbs.on_file_progress,
@@ -137,6 +143,7 @@ def upload(
                 create=create,
                 metadata=load_metadata(Path(metadata)) if metadata else None,
                 ignore_missing_metadata=ignore_missing_tags,
+                new_version=new_version,
             )
             if result.failed > 0:
                 typer.echo(

@@ -219,6 +219,7 @@ def upload(
     create: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
+    new_version: bool = False,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
@@ -229,6 +230,9 @@ def upload(
 
     create a mission if it does not exist if `create` is True
     in that case you can also specify `metadata` and `ignore_missing_metadata`
+
+    set `new_version` to upload files that already exist as a new version
+    instead of skipping them
     """
     # check that file paths are for valid files and have valid suffixes
     check_file_paths(file_paths)
@@ -263,6 +267,7 @@ def upload(
         client,
         filename_map,
         mission.id,
+        new_version=new_version,
         on_overall_progress_cb=on_overall_progress_cb,
         on_file_start_cb=on_file_start_cb,
         on_file_progress_cb=on_file_progress_cb,

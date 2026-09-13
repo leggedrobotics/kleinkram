@@ -12,14 +12,29 @@ export interface TopicContext {
     messageEncoding?: string;
 }
 
+/**
+ * Topics belong to a concrete file version, so the seeded file has to have an
+ * active version by the time its topics are created.
+ */
+const fileVersionUuidOf = (file: FileEntity): string => {
+    const versionUuid = file.activeVersion?.uuid ?? file.activeVersionUuid;
+    if (!versionUuid) {
+        throw new Error(
+            `Cannot seed a topic for "${file.filename}": the file has no active version`,
+        );
+    }
+    return versionUuid;
+};
+
 setSeederFactory(TopicEntity, (context: Partial<TopicContext> = {}) => {
     const topic = new TopicEntity();
     topic.name = context.name ?? extendedFaker.ros.topic();
     topic.uuid = extendedFaker.string.uuid();
     topic.frequency =
         context.frequency ?? extendedFaker.number.int({ min: 0, max: 100 });
-    // @ts-ignore
-    topic.file = context.file;
+    if (context.file) {
+        topic.fileVersionUuid = fileVersionUuidOf(context.file);
+    }
     topic.nrMessages =
         context.nrMessages ??
         extendedFaker.number.bigInt({

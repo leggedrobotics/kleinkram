@@ -76,7 +76,6 @@ export abstract class AbstractMetadataService {
                         frequency: this.normalizeFrequency(t.frequency),
                         fileVersionUuid: versionUuid,
                         fileVersion: targetEntity.activeVersion ?? undefined,
-                        file: targetEntity,
                     }),
                 );
                 await this.topicRepo.save(topicEntities, { chunk: 100 });

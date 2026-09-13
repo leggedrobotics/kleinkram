@@ -165,8 +165,12 @@ export function getDetailedFileState(state: QueueState) {
     }
 }
 
-export async function _downloadFile(fileUUID: string, filename: string) {
-    const response = await downloadFile(fileUUID, true);
+export async function _downloadFile(
+    fileUUID: string,
+    filename: string,
+    versionUuid?: string,
+) {
+    const response = await downloadFile(fileUUID, true, false, versionUuid);
     const a = document.createElement('a');
     a.href = response;
     a.download = filename;

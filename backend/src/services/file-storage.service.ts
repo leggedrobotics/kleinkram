@@ -1,6 +1,7 @@
 import { StorageOverviewDto } from '@kleinkram/api-dto';
 import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.service';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
+import { FileVersionEntity } from '@kleinkram/backend-common/entities/file/file-version.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
@@ -18,6 +19,24 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import logger from '../logger';
 
+/**
+ * Superseded versions are downloaded under a suffixed name so that several
+ * versions of the same file do not overwrite each other on disk.
+ */
+const downloadFilename = (
+    file: FileEntity,
+    version?: FileVersionEntity,
+): string => {
+    if (!version || version.uuid === file.activeVersionUuid)
+        return file.filename;
+
+    const extensionAt = file.filename.lastIndexOf('.');
+    const suffix = `.v${version.versionNumber.toString()}`;
+    return extensionAt <= 0
+        ? `${file.filename}${suffix}`
+        : `${file.filename.slice(0, extensionAt)}${suffix}${file.filename.slice(extensionAt)}`;
+};
+
 @Injectable()
 export class FileStorageService {
     constructor(
@@ -28,6 +47,14 @@ export class FileStorageService {
         private readonly auditService: FileAuditService,
     ) {}
 
+    /**
+     * Builds a presigned download url for a file.
+     *
+     * Without `versionUuid` the active version is served. `versionUuid` picks
+     * one specific - possibly superseded - version of the *same* file; it is
+     * checked against the file so that an access check on the file uuid cannot
+     * be sidestepped by naming a version of some other file.
+     */
     async generateDownload(
         uuid: string,
         expires: boolean,
@@ -35,6 +62,7 @@ export class FileStorageService {
         preview_only: boolean,
         actor?: UserEntity,
         action?: ActionEntity,
+        versionUuid?: string,
     ): Promise<string> {
         // verify that an uuid is provided
         if (!uuid || uuid === '')
@@ -52,7 +80,12 @@ export class FileStorageService {
         if (!file || (file.uuid !== uuid && file.activeVersionUuid !== uuid))
             throw new BadRequestException('File not found');
 
-        const stats = await this.dataStorage.getFileInfo(file.storageUuid);
+        const version = versionUuid
+            ? await this.resolveVersion(file, versionUuid)
+            : undefined;
+        const storageUuid = version?.uuid ?? file.storageUuid;
+
+        const stats = await this.dataStorage.getFileInfo(storageUuid);
 
         // verify that the file exists in storage
         if (!stats) throw new NotFoundException('File not found');
@@ -66,7 +99,13 @@ export class FileStorageService {
                     fileUuid: file.uuid,
                     filename: file.filename,
                     missionUuid: file.mission?.uuid ?? '',
-                    details: { expiresIn: expires ? '4 hours' : '1 week' },
+                    details: {
+                        expiresIn: expires ? '4 hours' : '1 week',
+                        versionNumber:
+                            version?.versionNumber ??
+                            file.activeVersion?.versionNumber ??
+                            1,
+                    },
                     ...(actor ? { actor } : {}),
                     ...(action ? { action } : {}),
                 },
@@ -77,14 +116,31 @@ export class FileStorageService {
         const disposition = preview_only
             ? undefined
             : {
-                  'response-content-disposition': `attachment; filename="${file.filename}"`,
+                  'response-content-disposition': `attachment; filename="${downloadFilename(file, version)}"`,
               };
 
         return await this.dataStorage.getPresignedDownloadUrl(
-            file.storageUuid,
+            storageUuid,
             expires ? 4 * 60 * 60 : 604_800,
             disposition,
         );
+    }
+
+    private async resolveVersion(
+        file: FileEntity,
+        versionUuid: string,
+    ): Promise<FileVersionEntity> {
+        const version = await this.fileRepository.manager.findOne(
+            FileVersionEntity,
+            { where: { uuid: versionUuid, fileUuid: file.uuid } },
+        );
+
+        if (!version)
+            throw new NotFoundException(
+                `File ${file.uuid} has no version ${versionUuid}`,
+            );
+
+        return version;
     }
 
     async getStorage(): Promise<StorageOverviewDto> {

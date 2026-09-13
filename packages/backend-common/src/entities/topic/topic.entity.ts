@@ -1,6 +1,5 @@
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { FileVersionEntity } from '@backend-common/entities/file/file-version.entity';
-import { FileEntity } from '@backend-common/entities/file/file.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'topic' })
@@ -28,6 +27,11 @@ export class TopicEntity extends BaseEntity {
     @Column('float')
     frequency!: number;
 
+    /**
+     * Topics are extracted from the bytes of one concrete file version, so
+     * they hang off {@link FileVersionEntity} rather than off the logical
+     * file. Set `fileVersionUuid` explicitly when creating a topic.
+     */
     @ManyToOne(
         () => FileVersionEntity,
         (fileVersion: FileVersionEntity) => fileVersion.topics,
@@ -40,22 +44,4 @@ export class TopicEntity extends BaseEntity {
 
     @Column({ type: 'uuid', nullable: true })
     fileVersionUuid?: string;
-
-    // Backwards-compatibility getter and setter
-    get file(): FileEntity | undefined {
-        return this.fileVersion?.file;
-    }
-
-    set file(f: FileEntity | undefined) {
-        if (f) {
-            const versionUuid =
-                f.activeVersion?.uuid ?? f.activeVersionUuid ?? f.storageUuid;
-            if (versionUuid) {
-                this.fileVersionUuid = versionUuid;
-            }
-            if (f.activeVersion) {
-                this.fileVersion = f.activeVersion;
-            }
-        }
-    }
 }

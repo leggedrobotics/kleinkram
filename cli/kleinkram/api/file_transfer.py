@@ -99,13 +99,14 @@ BUCKET_FIELD = "bucket"
 
 @retry(max_attempts=5, exceptions=(httpx.TransportError,), exclude_exceptions=(FileExistsError, InsufficientStorageError))
 def _get_upload_creditials(
-    client: AuthenticatedClient, internal_filename: str, mission_id: UUID, file_size: int
+    client: AuthenticatedClient, internal_filename: str, mission_id: UUID, file_size: int, new_version: bool = False
 ) -> UploadCredentials:
     dct = {
         "filenames": [internal_filename],
         "missionUUID": str(mission_id),
         "source": "CLI",
         "fileSizes": [file_size],
+        "newVersion": new_version,
     }
     resp = client.post(UPLOAD_CREDS, json=dct)
     if resp.status_code == 409:
@@ -211,12 +212,16 @@ def upload_file(
     filename: str,
     path: Path,
     s3_endpoint: Optional[str] = None,
+    new_version: bool = False,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
 ) -> Tuple[UploadState, int]:
     """
     returns UploadState and bytes uploaded (0 if not uploaded)
     Retries up to 3 times on failure.
+
+    if `new_version` is set, a file that already exists is uploaded as a new
+    version of it instead of being skipped
     """
     if s3_endpoint is None:
         s3_endpoint = get_config().endpoint.s3
@@ -229,7 +234,13 @@ def upload_file(
 
         # get per file upload credentials
         try:
-            creds = _get_upload_creditials(client, internal_filename=filename, mission_id=mission_id, file_size=total_size)
+            creds = _get_upload_creditials(
+                client,
+                internal_filename=filename,
+                mission_id=mission_id,
+                file_size=total_size,
+                new_version=new_version,
+            )
         except FileExistsError:
             return UploadState.EXISTS, 0
 
@@ -512,6 +523,7 @@ def upload_files(
     mission_id: UUID,
     *,
     n_workers: int = 2,
+    new_version: bool = False,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
@@ -539,6 +551,7 @@ def upload_files(
                 mission_id=mission_id,
                 filename=name,
                 path=path,
+                new_version=new_version,
                 on_file_start_cb=on_file_start_cb,
                 on_file_progress_cb=on_file_progress_cb,
             )

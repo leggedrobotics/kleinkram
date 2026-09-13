@@ -3,6 +3,7 @@ import { IsNoValidUUID, IsValidFileName } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
 import {
     IsArray,
+    IsBoolean,
     IsEnum,
     IsNotEmpty,
     IsNumber,
@@ -47,4 +48,15 @@ export class TemporaryAccessRequestDto {
         type: [Number],
     })
     fileSizes?: number[];
+
+    @IsBoolean()
+    @IsOptional()
+    @ApiProperty({
+        description:
+            'Upload the files as a new version of the existing files with the ' +
+            'same name instead of rejecting them as duplicates',
+        required: false,
+        default: false,
+    })
+    newVersion?: boolean;
 }

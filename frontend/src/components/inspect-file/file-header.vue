@@ -1,13 +1,28 @@
 <template>
     <title-section :title="`File: ${file?.filename ?? 'Loading...'}`">
         <template #title>
-            <h1 class="text-h5 text-md-h3 q-ma-none file-header__title">
-                <span v-if="!$q.screen.xs">File: </span>
-                {{ file?.filename ?? 'Loading...' }}
-                <q-tooltip v-if="file?.filename">
-                    {{ file.filename }}
-                </q-tooltip>
-            </h1>
+            <div
+                class="row items-center no-wrap q-gutter-sm file-header__heading"
+            >
+                <h1 class="text-h5 text-md-h3 q-ma-none file-header__title">
+                    <span v-if="!$q.screen.xs">File: </span>
+                    {{ file?.filename ?? 'Loading...' }}
+                    <q-tooltip v-if="file?.filename">
+                        {{ file.filename }}
+                    </q-tooltip>
+                </h1>
+                <q-chip
+                    v-if="file"
+                    dense
+                    square
+                    outline
+                    color="primary"
+                    :label="`v${versionNumber}`"
+                    class="q-ma-none col-auto file-header__version"
+                >
+                    <q-tooltip>{{ versionTooltip }}</q-tooltip>
+                </q-chip>
+            </div>
         </template>
 
         <template #buttons>
@@ -270,6 +285,26 @@ const duration = computed(() => {
     return seconds === undefined ? undefined : formatDuration(seconds);
 });
 
+/**
+ * Files created before versioning have no version rows yet, so both fall back
+ * to "v1" rather than rendering an empty slot.
+ */
+const versionNumber = computed(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    () => properties.file?.versionNumber ?? 1,
+);
+
+const versionCount = computed(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    () => properties.file?.versions?.length ?? 1,
+);
+
+const versionTooltip = computed(() =>
+    versionCount.value > 1
+        ? `Version ${versionNumber.value.toString()} of ${versionCount.value.toString()}, the one this page shows. Older versions stay downloadable.`
+        : 'The only version of this file',
+);
+
 const isDownloadDisabled = computed(() =>
     [FileState.LOST, FileState.UPLOADING].includes(
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -312,6 +347,15 @@ const handleCopyFoxglove = (): void => {
 }
 .button-border {
     border: 1px solid #ddd;
+}
+
+/* The chip keeps its width, the name takes what is left and ellipsises */
+.file-header__heading {
+    min-width: 0;
+}
+
+.file-header__version {
+    flex: 0 0 auto;
 }
 
 /* Matches the default title of title-section (ellipsis on one line) */
