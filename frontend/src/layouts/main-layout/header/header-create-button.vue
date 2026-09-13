@@ -5,7 +5,8 @@
             class="q-mx-xs"
             style="height: 36px; display: inline-flex"
         />
-        <span class="q-mr-md"> New </span>
+        <span v-if="$q.screen.gt.xs" class="q-mr-md"> New </span>
+        <span v-else class="q-mr-xs" />
     </div>
     <q-separator vertical class="separator" />
     <q-icon
@@ -19,6 +20,12 @@
         class="q-my-sm"
     />
 </template>
+
+<script setup lang="ts">
+import { useQuasar } from 'quasar';
+
+const $q = useQuasar();
+</script>
 
 <style scoped>
 .separator {

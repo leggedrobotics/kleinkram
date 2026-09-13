@@ -1,55 +1,16 @@
 <template>
-    <div class="flex flex-center bg-grey-2" style="height: calc(100vh - 50px)">
-        <div
-            style="
-                border-radius: 0;
-                display: grid;
-                grid-template-columns: 48px 460px 48px;
-                grid-template-rows: 48px 460px 48px;
-            "
-        >
-            <div
-                style="
-                    border-bottom: 1px solid #e0e0e0;
-                    border-right: 1px solid #e0e0e0;
-                "
-            />
-            <div style="border-bottom: 1px solid #e0e0e0" />
-            <div
-                style="
-                    border-bottom: 1px solid #e0e0e0;
-                    border-left: 1px solid #e0e0e0;
-                "
-            />
+    <div class="login-page flex flex-center bg-grey-2">
+        <div class="login-frame">
+            <div class="login-frame-cell login-frame-cell--top-left" />
+            <div class="login-frame-cell login-frame-cell--top-center" />
+            <div class="login-frame-cell login-frame-cell--top-right" />
 
-            <div style="border-right: 1px solid #e0e0e0" />
-            <div
-                style="
-                    background: white;
-                    display: flex;
-                    padding: 48px;
-                    justify-content: center;
-                    align-items: center;
-                    text-align: center;
-                "
-            >
+            <div class="login-frame-cell login-frame-cell--middle-left" />
+            <div class="login-card">
                 <div style="width: 100%">
-                    <img
-                        src="/logoRSL.png"
-                        style="height: 28px; margin-bottom: 48px"
-                    />
+                    <img src="/logoRSL.png" class="login-logo" />
 
-                    <h1
-                        style="
-                            font-size: 28px;
-                            font-weight: 400;
-                            margin-bottom: 48px;
-                            margin-top: 0;
-                            line-height: 36px;
-                        "
-                    >
-                        Login to Kleinkram
-                    </h1>
+                    <h1 class="login-title">Login to Kleinkram</h1>
 
                     <!-- Loading state -->
                     <div
@@ -83,7 +44,7 @@
                             label="Retry Connection"
                             color="warning"
                             flat
-                            class="q-mt-sm full-width"
+                            class="q-mt-sm full-width login-button"
                             @click="handleRefetchProviders"
                         />
                     </div>
@@ -92,7 +53,7 @@
                     <template v-else>
                         <template v-if="availableProviders?.fakeOauth">
                             <q-btn
-                                class="button-border full-width"
+                                class="button-border full-width login-button"
                                 flat
                                 outline
                                 size="md"
@@ -103,7 +64,7 @@
 
                         <q-btn
                             v-if="availableProviders?.google"
-                            class="button-border full-width"
+                            class="button-border full-width login-button"
                             flat
                             outline
                             size="md"
@@ -113,7 +74,7 @@
 
                         <q-btn
                             v-if="availableProviders?.github"
-                            class="button-border full-width q-mt-md"
+                            class="button-border full-width q-mt-md login-button"
                             flat
                             outline
                             size="md"
@@ -129,21 +90,11 @@
                     </div>
                 </div>
             </div>
-            <div style="border-left: 1px solid #e0e0e0" />
+            <div class="login-frame-cell login-frame-cell--middle-right" />
 
-            <div
-                style="
-                    border-top: 1px solid #e0e0e0;
-                    border-right: 1px solid #e0e0e0;
-                "
-            />
-            <div style="border-top: 1px solid #e0e0e0" />
-            <div
-                style="
-                    border-top: 1px solid #e0e0e0;
-                    border-left: 1px solid #e0e0e0;
-                "
-            />
+            <div class="login-frame-cell login-frame-cell--bottom-left" />
+            <div class="login-frame-cell login-frame-cell--bottom-center" />
+            <div class="login-frame-cell login-frame-cell--bottom-right" />
         </div>
     </div>
 </template>
@@ -211,3 +162,116 @@ const handleRefetchProviders = () => {
     void refetchProviders();
 };
 </script>
+
+<style scoped>
+/*
+ * The login card sits inside a decorative 3x3 frame. On desktop the frame is
+ * exactly 48px + 460px + 48px wide (unchanged); on narrow viewports the middle
+ * column shrinks so the page never scrolls horizontally.
+ */
+.login-page {
+    height: calc(100vh - 50px);
+}
+
+.login-frame {
+    border-radius: 0;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 460px) 48px;
+    grid-template-rows: 48px minmax(460px, auto) 48px;
+    width: 100%;
+    max-width: 556px;
+}
+
+.login-frame-cell--top-left {
+    border-bottom: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+}
+
+.login-frame-cell--top-center {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.login-frame-cell--top-right {
+    border-bottom: 1px solid #e0e0e0;
+    border-left: 1px solid #e0e0e0;
+}
+
+.login-frame-cell--middle-left {
+    border-right: 1px solid #e0e0e0;
+}
+
+.login-frame-cell--middle-right {
+    border-left: 1px solid #e0e0e0;
+}
+
+.login-frame-cell--bottom-left {
+    border-top: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+}
+
+.login-frame-cell--bottom-center {
+    border-top: 1px solid #e0e0e0;
+}
+
+.login-frame-cell--bottom-right {
+    border-top: 1px solid #e0e0e0;
+    border-left: 1px solid #e0e0e0;
+}
+
+.login-card {
+    align-items: center;
+    background: white;
+    display: flex;
+    justify-content: center;
+    padding: 48px;
+    text-align: center;
+}
+
+.login-logo {
+    height: 28px;
+    margin-bottom: 48px;
+    max-width: 100%;
+}
+
+.login-title {
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 36px;
+    margin-bottom: 48px;
+    margin-top: 0;
+}
+
+/* Comfortable touch targets on touch-sized viewports */
+@media (max-width: 1023px) {
+    .login-button {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 599px) {
+    .login-page {
+        height: auto;
+        min-height: calc(100vh - 50px);
+        padding: 24px 0;
+    }
+
+    .login-frame {
+        grid-template-columns: 16px minmax(0, 1fr) 16px;
+        grid-template-rows: 16px auto 16px;
+    }
+
+    .login-card {
+        padding: 32px 20px;
+    }
+
+    .login-logo {
+        margin-bottom: 32px;
+    }
+
+    .login-title {
+        font-size: 24px;
+        line-height: 32px;
+        margin-bottom: 32px;
+    }
+}
+</style>

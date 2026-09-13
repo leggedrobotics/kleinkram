@@ -3,8 +3,11 @@
         class="q-pa-md q-mt-md bg-grey-1 rounded-borders q-mb-md border-grey-3"
         style="border: 1px solid #e0e0e0"
     >
-        <div class="row items-start no-wrap q-gutter-x-sm">
-            <div class="col">
+        <div
+            class="row items-start"
+            :class="isPhone ? 'q-col-gutter-sm' : 'no-wrap q-gutter-x-sm'"
+        >
+            <div :class="isPhone ? 'col-12' : 'col'">
                 <SmartSearchInput
                     :model-value="filterText"
                     :provider="provider"
@@ -17,10 +20,11 @@
                     @toggle-advanced="toggleAdvanced"
                 />
             </div>
-            <div class="col-auto">
+            <div :class="isPhone ? 'col-12' : 'col-auto'">
                 <q-btn
                     flat
                     class="bg-button-secondary text-on-color"
+                    :class="{ 'full-width': isPhone }"
                     icon="sym_o_search"
                     label="Search"
                     @click="refresh"
@@ -45,6 +49,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import SmartSearchInput from 'src/components/common/smart-search-input.vue';
 import ComposableFilterPopup from 'src/components/files/filter/composable-filter-popup.vue';
 import { DEFAULT_STATE, useFileFilter } from 'src/composables/use-file-filter';
@@ -63,6 +68,14 @@ const props = defineProps({
 defineEmits(['update:model-value']);
 
 const { state } = props.useFilter;
+
+const $q = useQuasar();
+
+/**
+ * On phones the search field and its button do not fit next to each other,
+ * so they are stacked and both span the full width.
+ */
+const isPhone = computed(() => $q.screen.xs);
 
 const handler = useHandler();
 const showAdvanced = ref(false);

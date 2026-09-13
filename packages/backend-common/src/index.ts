@@ -36,6 +36,7 @@ export * from './modules/storage/storage.module';
 export * from './scheduling-logic';
 export * from './seeds/user/seed-users';
 export * from './services/affiliation-group.service';
+export * from './services/recording-times-backfill';
 export * from './typeorm-config';
 export * from './types';
 export * from './viewEntities/mission-access-view.entity';

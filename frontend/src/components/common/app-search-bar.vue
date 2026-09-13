@@ -61,4 +61,13 @@ defineExpose({
     height: 36px;
     min-height: 36px;
 }
+
+/* Touch target on small screens */
+@media (max-width: 1023px) {
+    :deep(.q-field__control),
+    :deep(.q-field__marginal) {
+        height: 40px;
+        min-height: 40px;
+    }
+}
 </style>

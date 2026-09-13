@@ -1,5 +1,5 @@
 <template>
-    <div class="q-pa-md">
+    <div :class="$q.screen.xs ? 'q-py-md' : 'q-pa-md'">
         <div class="row q-col-gutter-md">
             <!-- Summary Cards -->
             <div class="col-12 col-md-4">
@@ -332,6 +332,13 @@ const cpuChartOption = computed(() => {
 .chart {
     height: 300px;
     width: 100%;
+}
+
+/* Charts are unreadable when they keep their desktop height on a phone */
+@media (max-width: 599px) {
+    .chart {
+        height: 220px;
+    }
 }
 .my-card {
     height: 100%;

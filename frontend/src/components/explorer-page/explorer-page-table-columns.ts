@@ -79,6 +79,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         style: 'min-width: 100px',
         field: (row: ProjectWithMissionCountDto) => row.missionCount,
         format: (value: number) => value.toString(),
+        sortable: true,
     },
     {
         name: 'size',
@@ -87,6 +88,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         align: 'left',
         field: (row: ProjectWithMissionCountDto) => row.size,
         format: formatSize,
+        sortable: true,
     },
     {
         name: 'project-action',

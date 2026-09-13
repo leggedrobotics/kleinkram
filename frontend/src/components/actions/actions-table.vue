@@ -4,6 +4,8 @@
         v-model:pagination="pagination"
         :rows="data"
         :columns="columns as any"
+        :visible-columns="visibleColumns"
+        :grid="$q.screen.xs"
         :rows-per-page-options="[10, 20, 50, 100]"
         row-key="uuid"
         :loading="isLoading"
@@ -13,6 +15,172 @@
         @row-click="handleRowClick"
         @request="setPagination"
     >
+        <!--
+            In card (grid) mode the column headers are gone, so sorting gets
+            its own control on top of the list.
+        -->
+        <template v-if="$q.screen.xs" #top>
+            <div class="row full-width items-center no-wrap q-gutter-x-sm">
+                <q-select
+                    v-model="mobileSortBy"
+                    :options="sortOptions"
+                    dense
+                    outlined
+                    emit-value
+                    map-options
+                    label="Sort by"
+                    class="col"
+                />
+                <q-btn
+                    flat
+                    round
+                    color="primary"
+                    :icon="
+                        pagination.descending
+                            ? 'sym_o_arrow_downward'
+                            : 'sym_o_arrow_upward'
+                    "
+                    :aria-label="
+                        pagination.descending
+                            ? 'Sorted descending, switch to ascending'
+                            : 'Sorted ascending, switch to descending'
+                    "
+                    @click="toggleSortDirection"
+                >
+                    <q-tooltip>
+                        {{ pagination.descending ? 'Descending' : 'Ascending' }}
+                    </q-tooltip>
+                </q-btn>
+            </div>
+        </template>
+
+        <template #item="itemProps">
+            <div class="col-12 q-pa-xs">
+                <q-card
+                    flat
+                    bordered
+                    class="cursor-pointer"
+                    @click="() => openAction(itemProps.row.uuid)"
+                >
+                    <q-card-section class="row items-start no-wrap q-pb-xs">
+                        <div class="col" style="min-width: 0">
+                            <div class="text-weight-medium ellipsis">
+                                {{ itemProps.row.template.name || 'N/A' }}
+                            </div>
+                            <div class="text-caption text-grey-7 ellipsis">
+                                {{ itemProps.row.mission.name || 'N/A' }}
+                            </div>
+                        </div>
+
+                        <div class="col-auto row items-center no-wrap">
+                            <template
+                                v-if="
+                                    itemProps.row.state ===
+                                        ActionState.PROCESSING ||
+                                    itemProps.row.state === ActionState.PENDING
+                                "
+                            >
+                                <q-skeleton
+                                    class="q-pa-none q-ma-none"
+                                    style="background: none"
+                                >
+                                    <q-badge
+                                        :color="
+                                            getActionColor(itemProps.row.state)
+                                        "
+                                        class="q-pa-sm"
+                                    >
+                                        {{ itemProps.row.state }}
+                                    </q-badge>
+                                </q-skeleton>
+                            </template>
+                            <template v-else>
+                                <ActionBadge :action="itemProps.row" />
+                            </template>
+
+                            <q-btn
+                                flat
+                                round
+                                icon="sym_o_more_vert"
+                                unelevated
+                                color="primary"
+                                aria-label="Action options"
+                                class="cursor-pointer q-ml-xs"
+                                @click.stop
+                            >
+                                <q-menu auto-close>
+                                    <q-list>
+                                        <q-item
+                                            v-ripple
+                                            clickable
+                                            @click="
+                                                () =>
+                                                    openAction(
+                                                        itemProps.row.uuid,
+                                                    )
+                                            "
+                                        >
+                                            <q-item-section>
+                                                View Details
+                                            </q-item-section>
+                                        </q-item>
+
+                                        <q-item
+                                            v-ripple
+                                            clickable
+                                            :disabled="
+                                                !canCancel(itemProps.row.state)
+                                            "
+                                            @click="
+                                                () =>
+                                                    handleCancel(
+                                                        itemProps.row.uuid,
+                                                    )
+                                            "
+                                        >
+                                            <q-item-section>
+                                                Cancel Action
+                                            </q-item-section>
+                                        </q-item>
+                                        <DeleteActionDialogOpener
+                                            :action="itemProps.row"
+                                        >
+                                            <q-item v-ripple clickable>
+                                                <q-item-section>
+                                                    Delete Action
+                                                </q-item-section>
+                                            </q-item>
+                                        </DeleteActionDialogOpener>
+                                    </q-list>
+                                </q-menu>
+                            </q-btn>
+                        </div>
+                    </q-card-section>
+
+                    <q-card-section class="q-pt-none text-caption text-grey-7">
+                        <div class="row items-center q-gutter-x-sm">
+                            <span>
+                                {{
+                                    itemProps.row.createdAt
+                                        ? formatDate(
+                                              itemProps.row.createdAt,
+                                              true,
+                                          )
+                                        : 'N/A'
+                                }}
+                            </span>
+                            <span v-if="itemProps.row.runtime">
+                                · {{ formatDuration(itemProps.row.runtime) }}
+                            </span>
+                        </div>
+                        <div v-if="itemProps.row.stateCause" class="ellipsis">
+                            {{ itemProps.row.stateCause }}
+                        </div>
+                    </q-card-section>
+                </q-card>
+            </div>
+        </template>
+
         <template #body-cell-state="props">
             <q-td :props="props" class="truncate-cell">
                 <template
@@ -305,13 +473,58 @@ const columns = [
     },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const handleRowClick = async (_: Event, row: any): Promise<void> => {
+/**
+ * Columns shown below `md`. The remaining ones (docker image, state reason,
+ * creation date, submitted by) do not fit on a small screen and are dropped;
+ * the essentials stay visible.
+ */
+const COMPACT_COLUMNS = [
+    'state',
+    'template.name',
+    'mission.name',
+    'updatedAt',
+    'Details',
+];
+
+const visibleColumns = computed(() =>
+    $q.screen.lt.md ? COMPACT_COLUMNS : columns.map((column) => column.name),
+);
+
+/**
+ * In card mode (phones) the sortable column headers are not rendered, so the
+ * sort field and direction are offered as a select plus a toggle button.
+ */
+const sortOptions = [
+    { label: 'Creation Date', value: 'createdAt' },
+    { label: 'Last Update', value: 'updatedAt' },
+    { label: 'Status', value: 'state' },
+    { label: 'Action Name', value: 'template.name' },
+    { label: 'Mission', value: 'mission.name' },
+    { label: 'Duration', value: 'runtime' },
+];
+
+const mobileSortBy = computed({
+    get: () => properties.handler.sortBy,
+    set: (value: string) => {
+        properties.handler.setSort(value);
+    },
+});
+
+const toggleSortDirection = (): void => {
+    properties.handler.setDescending(!properties.handler.descending);
+};
+
+const openAction = async (uuid: string): Promise<void> => {
     await router.push({
         name: ROUTES.ANALYSIS_DETAILS.routeName,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        params: { id: row.uuid },
+        params: { id: uuid },
     });
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const handleRowClick = async (_: Event, row: any): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+    await openAction(row.uuid);
 };
 </script>
 

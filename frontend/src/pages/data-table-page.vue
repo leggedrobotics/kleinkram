@@ -3,6 +3,49 @@
 
     <FilesFilter :use-filter="filterHook" />
 
+    <!--
+        The card list has no column headers, so phones get an explicit sort
+        control and a hint about how many rows are currently selected.
+    -->
+    <div v-if="isPhone" class="row items-center justify-between q-mb-sm">
+        <q-btn-dropdown
+            flat
+            dense
+            no-caps
+            class="text-grey-8"
+            icon="sym_o_swap_vert"
+            :label="`Sort: ${activeSortLabel}`"
+            aria-label="Change sorting"
+        >
+            <q-list>
+                <q-item
+                    v-for="option in sortOptions"
+                    :key="option.value"
+                    v-close-popup
+                    clickable
+                    @click="() => toggleSort(option.value)"
+                >
+                    <q-item-section>{{ option.label }}</q-item-section>
+                    <q-item-section side>
+                        <q-icon
+                            v-if="pagination.sortBy === option.value"
+                            :name="
+                                pagination.descending
+                                    ? 'sym_o_arrow_downward'
+                                    : 'sym_o_arrow_upward'
+                            "
+                            size="18px"
+                        />
+                    </q-item-section>
+                </q-item>
+            </q-list>
+        </q-btn-dropdown>
+
+        <span v-if="selected.length > 0" class="text-caption text-grey-7">
+            {{ selected.length }} selected
+        </span>
+    </div>
+
     <q-table
         ref="tableReference"
         v-model:pagination="pagination"
@@ -12,11 +55,15 @@
         separator="none"
         :rows-per-page-options="[5, 10, 20, 50, 100]"
         :rows="data"
-        :columns="columns as QTableColumn<FileWithTopicDto>[]"
+        :columns="visibleColumns as QTableColumn<FileWithTopicDto>[]"
         row-key="uuid"
         :loading="loading"
         selection="multiple"
         binary-state-sort
+        :grid="isPhone"
+        :wrap-cells="isCompact"
+        :rows-per-page-label="isPhone ? 'Rows' : undefined"
+        :class="{ 'files-table--grid': isPhone }"
         @row-click="onRowClick"
         @request="setPagination"
     >
@@ -79,6 +126,107 @@
                 </q-btn>
             </q-td>
         </template>
+        <template #item="props">
+            <div class="col-12 file-card-wrapper">
+                <q-card
+                    flat
+                    bordered
+                    class="file-card"
+                    :class="{ 'file-card--selected': props.selected }"
+                    @click="() => onRowClick(undefined, props.row)"
+                >
+                    <div class="q-pa-sm">
+                        <div class="row items-center no-wrap">
+                            <q-checkbox
+                                v-model="props.selected"
+                                dense
+                                color="grey-8"
+                                class="q-mr-sm"
+                                :aria-label="`Select ${props.row.filename}`"
+                                @click.stop
+                            />
+                            <q-icon
+                                :name="getIcon(props.row.state)"
+                                :color="getColorFileState(props.row.state)"
+                                size="20px"
+                                class="q-mr-sm"
+                                :aria-label="getTooltip(props.row.state)"
+                            >
+                                <q-tooltip>
+                                    {{ getTooltip(props.row.state) }}
+                                </q-tooltip>
+                            </q-icon>
+                            <div class="col file-card__name">
+                                {{ props.row.filename }}
+                            </div>
+                            <q-btn
+                                flat
+                                round
+                                dense
+                                icon="sym_o_more_vert"
+                                unelevated
+                                color="primary"
+                                class="cursor-pointer"
+                                aria-label="File actions"
+                                @click.stop
+                            >
+                                <q-menu auto-close>
+                                    <q-list>
+                                        <edit-file-dialog-opener
+                                            :file="props.row"
+                                        >
+                                            <q-item v-ripple clickable>
+                                                <q-item-section>
+                                                    Edit File
+                                                </q-item-section>
+                                            </q-item>
+                                        </edit-file-dialog-opener>
+                                        <q-item
+                                            v-ripple
+                                            clickable
+                                            @click="
+                                                () =>
+                                                    onRowClick(
+                                                        undefined,
+                                                        props.row,
+                                                    )
+                                            "
+                                        >
+                                            <q-item-section>
+                                                View File
+                                            </q-item-section>
+                                        </q-item>
+                                        <q-item v-ripple clickable>
+                                            <q-item-section>
+                                                <DeleteFileDialogOpener
+                                                    :file="props.row"
+                                                >
+                                                    Delete File
+                                                </DeleteFileDialogOpener>
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </q-menu>
+                            </q-btn>
+                        </div>
+
+                        <div class="file-card__meta text-caption text-grey-7">
+                            {{ props.row.mission.project.name }} /
+                            {{ props.row.mission.name }}
+                        </div>
+                        <div
+                            class="row items-center q-gutter-x-sm text-caption text-grey-7"
+                        >
+                            <span>{{ formatSize(props.row.size) }}</span>
+                            <span aria-hidden="true">&middot;</span>
+                            <span>
+                                {{ formatDate(new Date(props.row.createdAt)) }}
+                            </span>
+                        </div>
+                    </div>
+                </q-card>
+            </div>
+        </template>
         <template #no-data>
             <TableEmptyState
                 :is-empty="
@@ -110,7 +258,7 @@ import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-ope
 import TableEmptyState from 'components/common/table-empty-state.vue';
 import FilesFilter from 'components/files/files-filter.vue';
 import TitleSection from 'components/title-section.vue';
-import { QTable, QTableColumn } from 'quasar';
+import { QTable, QTableColumn, useQuasar } from 'quasar';
 import { useFileFilter } from 'src/composables/use-file-filter';
 import { useHandler } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
@@ -122,12 +270,42 @@ import { computed, Ref, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 const $router = useRouter();
+const $q = useQuasar();
 const tableReference: Ref<QTable | undefined> = ref(undefined);
 const handler = useHandler();
 handler.value.sortBy = 'file.createdAt';
 handler.value.descending = true;
 const loading = ref(false);
-const selected = ref([]);
+const selected = ref<FileWithTopicDto[]>([]);
+
+/**
+ * Phones render the files as tappable cards, tablets keep the table but drop
+ * the secondary columns so that it fits without horizontal scrolling.
+ */
+const isPhone = computed(() => $q.screen.xs);
+const isCompact = computed(() => $q.screen.lt.md);
+
+const sortOptions = [
+    { label: 'File name', value: 'file.filename' },
+    { label: 'Health', value: 'state' },
+    { label: 'Recording date', value: 'file.date' },
+    { label: 'Creation date', value: 'file.createdAt' },
+    { label: 'Size', value: 'file.size' },
+];
+
+const activeSortLabel = computed(
+    () =>
+        sortOptions.find((option) => option.value === handler.value.sortBy)
+            ?.label ?? 'Creation date',
+);
+
+function toggleSort(name: string): void {
+    handler.value.setDescending(
+        handler.value.sortBy === name ? !handler.value.descending : false,
+    );
+    handler.value.setSort(name);
+    handler.value.setPage(1);
+}
 
 const filterHook = useFileFilter();
 const {
@@ -313,6 +491,25 @@ const columns = [
     },
 ];
 
+/**
+ * Below 1024px only the essentials are shown: project, recording date and
+ * creator are dropped so that the remaining columns fit the viewport.
+ */
+const COMPACT_COLUMN_NAMES = new Set([
+    'state',
+    'mission.name',
+    'file.filename',
+    'file.createdAt',
+    'file.size',
+    'action',
+]);
+
+const visibleColumns = computed(() =>
+    isCompact.value
+        ? columns.filter((column) => COMPACT_COLUMN_NAMES.has(column.name))
+        : columns,
+);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onRowClick = async (_: any, row: FileWithTopicDto): Promise<void> => {
     await $router.push({
@@ -326,3 +523,57 @@ const onRowClick = async (_: any, row: FileWithTopicDto): Promise<void> => {
     });
 };
 </script>
+
+<style scoped>
+.file-card-wrapper {
+    padding: 4px 0;
+}
+
+.file-card {
+    border-radius: 4px;
+}
+
+.file-card--selected {
+    background-color: #e7efff;
+}
+
+.file-card__name {
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    overflow: hidden;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.file-card__meta {
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The card list is a plain column, no inner scroll container */
+.files-table--grid :deep(.q-table__grid-content) {
+    margin: 0;
+}
+
+/*
+ * The global stylesheet already lets the pagination bar wrap on phones; it
+ * only needs slightly smaller text and finger-sized page buttons here.
+ */
+@media (max-width: 599px) {
+    :deep(.q-table__bottom) {
+        column-gap: 8px;
+        font-size: 12px;
+    }
+
+    :deep(.q-table__bottom .q-btn) {
+        min-height: 36px;
+        min-width: 36px;
+    }
+}
+</style>
