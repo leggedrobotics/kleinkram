@@ -90,3 +90,9 @@ class TriggerNotFound(Exception): ...
 
 
 class InsufficientStorageError(Exception): ...
+
+
+class TransferCancelledError(Exception):
+    """Raised inside worker threads when the cancel_event is set."""
+
+    pass
