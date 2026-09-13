@@ -36,6 +36,8 @@ export class McapHandler implements FileHandler {
             );
         } catch (error) {
             primaryFile.state = FileState.CORRUPTED;
+            primaryFile.state_cause =
+                error instanceof Error ? error.message : String(error);
             await this.fileRepo.save(primaryFile);
             throw error;
         }

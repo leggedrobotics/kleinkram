@@ -14,6 +14,7 @@ import {
 } from '@kleinkram/api-dto';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
@@ -452,6 +453,24 @@ export class FileQueryService {
                 },
             },
         });
+
+        if (
+            file.activeVersion?.state === FileState.CORRUPTED &&
+            !file.activeVersion.state_cause
+        ) {
+            const job = await this.fileRepository.manager
+                .getRepository(IngestionJobEntity)
+                .findOne({
+                    where: [
+                        { identifier: file.uuid },
+                        { identifier: file.storageUuid },
+                    ],
+                    order: { createdAt: 'DESC' },
+                });
+            if (job?.errorMessage) {
+                file.activeVersion.state_cause = job.errorMessage;
+            }
+        }
 
         return fileEntityToDtoWithTopic(file);
     }

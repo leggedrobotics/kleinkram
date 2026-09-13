@@ -78,6 +78,9 @@ export class FileVersionEntity extends BaseEntity {
     @Column({ type: 'enum', enum: FileState, default: FileState.OK })
     state!: FileState;
 
+    @Column({ type: 'varchar', nullable: true })
+    state_cause?: string | null;
+
     @Column({ nullable: true })
     hash?: string;
 

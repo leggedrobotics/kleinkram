@@ -29,6 +29,17 @@ export abstract class AbstractMetadataService {
         actor?: UserEntity,
     ): Promise<void> {
         try {
+            // Ensure activeVersion is loaded if we only have the file
+            if (!targetEntity.activeVersion && targetEntity.activeVersionUuid) {
+                const reloaded = await this.fileRepo.findOne({
+                    where: { uuid: targetEntity.uuid },
+                    relations: { activeVersion: true },
+                });
+                if (reloaded?.activeVersion) {
+                    targetEntity.activeVersion = reloaded.activeVersion;
+                }
+            }
+
             // Deduplicate topics and sum counts
             const uniqueTopicsMap = new Map<string, ExtractedTopicInfo>();
 
@@ -50,6 +61,11 @@ export abstract class AbstractMetadataService {
 
             const uniqueTopics = [...uniqueTopicsMap.values()];
 
+            const versionUuid =
+                targetEntity.activeVersion?.uuid ??
+                targetEntity.activeVersionUuid ??
+                targetEntity.storageUuid;
+
             // Save Topics
             if (uniqueTopics.length > 0) {
                 const topicEntities = uniqueTopics.map((t) =>
@@ -58,6 +74,8 @@ export abstract class AbstractMetadataService {
                         type: t.type,
                         nrMessages: t.nrMessages,
                         frequency: this.normalizeFrequency(t.frequency),
+                        fileVersionUuid: versionUuid,
+                        fileVersion: targetEntity.activeVersion ?? undefined,
                         file: targetEntity,
                     }),
                 );
@@ -108,6 +126,8 @@ export abstract class AbstractMetadataService {
                 `Metadata extraction finalize failed for ${targetEntity.filename}: ${String(error)}`,
             );
             targetEntity.state = FileState.CONVERSION_ERROR;
+            targetEntity.state_cause =
+                error instanceof Error ? error.message : String(error);
             await this.fileRepo.save(targetEntity);
             throw error;
         }
@@ -121,7 +141,7 @@ export abstract class AbstractMetadataService {
 }
 
 /**
- * The columns the extracted recording bounds are written to.
+ * Maps recording bounds to the column updates needed on `FileEntity`.
  *
  * `date` is what the API sorts and filters by, so it follows the recording
  * start as soon as we know it; without a start it keeps the upload time the

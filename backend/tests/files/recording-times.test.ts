@@ -88,7 +88,10 @@ describe('Recording Times', () => {
         await waitForRecordingTimes('test.bag');
 
         const converted = await database.getRepository(FileEntity).findOne({
-            where: { filename: 'test.mcap', type: FileType.MCAP },
+            where: {
+                filename: 'test.mcap',
+                activeVersion: { type: FileType.MCAP },
+            },
         });
 
         // conversion is opt-out per project; skip when it did not run

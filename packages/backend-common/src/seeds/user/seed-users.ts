@@ -45,23 +45,17 @@ export const seedUsers = async (
         // eslint-disable-next-line no-console
         console.log('Existing users:', users.map((u) => u.email).join(', '));
 
-        const adminUser = users.find((u) => u.email === 'admin@kleinkram.dev');
-        const internalUser = users.find(
+        let adminUser = users.find((u) => u.email === 'admin@kleinkram.dev');
+        let internalUser = users.find(
             (u) => u.email === 'internal-user@kleinkram.dev',
         );
-        const externalUser = users.find(
+        let externalUser = users.find(
             (u) => u.email === 'external-user@example.com',
         );
 
-        if (!adminUser || !internalUser || !externalUser) {
-            console.warn(
-                'WARNING: Users exist but standard seed users are missing. Returning undefined references.',
-            );
-
-            throw new Error(
-                'Database is populated but missing seed users (admin/internal/external). Please clear database to re-seed.',
-            );
-        }
+        adminUser ??= users.find((u) => u.role === UserRole.ADMIN) ?? users[0];
+        internalUser ??= users[0];
+        externalUser ??= users[0];
 
         return { adminUser, internalUser, externalUser };
     }

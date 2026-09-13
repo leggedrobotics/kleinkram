@@ -32,6 +32,7 @@ export class AddFileVersions1789238000000 implements MigrationInterface {
                 "size" bigint NOT NULL,
                 "type" "public"."file_version_entity_type_enum" NOT NULL,
                 "state" "public"."file_version_entity_state_enum" NOT NULL DEFAULT 'OK',
+                "state_cause" character varying,
                 "hash" character varying,
                 "origin" "public"."file_version_entity_origin_enum",
                 "recordingStartDate" TIMESTAMP,

@@ -48,9 +48,13 @@ export class TopicEntity extends BaseEntity {
 
     set file(f: FileEntity | undefined) {
         if (f) {
-            this.fileVersion = f.activeVersion ?? f.versions?.[0];
-            if (this.fileVersion) {
-                this.fileVersionUuid = this.fileVersion.uuid;
+            const versionUuid =
+                f.activeVersion?.uuid ?? f.activeVersionUuid ?? f.storageUuid;
+            if (versionUuid) {
+                this.fileVersionUuid = versionUuid;
+            }
+            if (f.activeVersion) {
+                this.fileVersion = f.activeVersion;
             }
         }
     }

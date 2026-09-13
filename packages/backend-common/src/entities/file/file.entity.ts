@@ -123,6 +123,17 @@ export class FileEntity extends BaseEntity {
         }
     }
 
+    get state_cause(): string | null | undefined {
+        return this.activeVersion?.state_cause;
+    }
+
+    set state_cause(value: string | null | undefined) {
+        this.ensureActiveVersion();
+        if (this.activeVersion) {
+            this.activeVersion.state_cause = value;
+        }
+    }
+
     get type(): FileType {
         return this.activeVersion?.type ?? FileType.BAG;
     }

@@ -48,6 +48,7 @@ export class FileIngestionService {
         queueItem: IngestionJobEntity,
         strategy: FileSourceStrategy,
     ): Promise<void> {
+        let primaryFile: FileEntity | undefined;
         await this.runWithWorkspace(
             async (workDirectory: string): Promise<void> => {
                 try {
@@ -57,7 +58,7 @@ export class FileIngestionService {
                         workDirectory,
                     );
 
-                    const primaryFile = await this.createAndSaveFileEntity(
+                    primaryFile = await this.createAndSaveFileEntity(
                         queueItem,
                         fileData,
                     );
@@ -74,14 +75,15 @@ export class FileIngestionService {
                     );
 
                     if (!isValid) {
-                        logger.warn(
-                            `Magic number validation failed for ${primaryFile.filename} (${primaryFile.type})`,
-                        );
+                        const cause = `Magic number validation failed for ${primaryFile.filename} (${primaryFile.type})`;
+                        logger.warn(cause);
                         primaryFile.state = FileState.CORRUPTED;
+                        primaryFile.state_cause = cause;
                         await this.fileRepo.save(primaryFile);
                         await this.updateQueueState(
                             queueItem,
                             QueueState.CORRUPTED,
+                            cause,
                         );
                         return;
                     }
@@ -100,6 +102,17 @@ export class FileIngestionService {
                 } catch (error: unknown) {
                     const errorMessage = String(error);
                     logger.error(`Failed to ingest file: ${errorMessage}`);
+                    if (primaryFile) {
+                        if (primaryFile.state === FileState.OK) {
+                            primaryFile.state = FileState.ERROR;
+                        }
+                        primaryFile.state_cause ??= errorMessage;
+                        try {
+                            await this.fileRepo.save(primaryFile);
+                        } catch {
+                            // ignore save failure during error handling
+                        }
+                    }
                     await this.updateQueueState(
                         queueItem,
                         QueueState.ERROR,
@@ -175,6 +188,7 @@ export class FileIngestionService {
                     { uuid: queueItem.identifier },
                     { activeVersionUuid: queueItem.identifier },
                 ],
+                relations: { activeVersion: true },
             });
         }
 
