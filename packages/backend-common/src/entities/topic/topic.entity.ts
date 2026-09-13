@@ -1,6 +1,6 @@
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
-import { FileEntity } from '@backend-common/entities/file/file.entity';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { FileVersionEntity } from '@backend-common/entities/file/file-version.entity';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'topic' })
 export class TopicEntity extends BaseEntity {
@@ -27,8 +27,21 @@ export class TopicEntity extends BaseEntity {
     @Column('float')
     frequency!: number;
 
-    @ManyToOne(() => FileEntity, (file: FileEntity) => file.topics, {
-        onDelete: 'CASCADE',
-    })
-    file?: FileEntity;
+    /**
+     * Topics are extracted from the bytes of one concrete file version, so
+     * they hang off {@link FileVersionEntity} rather than off the logical
+     * file. Set `fileVersionUuid` explicitly when creating a topic.
+     */
+    @ManyToOne(
+        () => FileVersionEntity,
+        (fileVersion: FileVersionEntity) => fileVersion.topics,
+        {
+            onDelete: 'CASCADE',
+        },
+    )
+    @JoinColumn({ name: 'fileVersionUuid' })
+    fileVersion?: FileVersionEntity;
+
+    @Column({ type: 'uuid', nullable: true })
+    fileVersionUuid?: string;
 }

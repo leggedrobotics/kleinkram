@@ -1,3 +1,4 @@
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { FileState } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
@@ -27,7 +28,9 @@ export class Db3Handler implements FileHandler {
             );
         } catch (error) {
             primaryFile.state = FileState.CORRUPTED;
-            await this.fileRepo.save(primaryFile);
+            primaryFile.state_cause =
+                error instanceof Error ? error.message : String(error);
+            await saveActiveVersion(this.fileRepo.manager, primaryFile);
             throw error;
         }
     }

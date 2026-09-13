@@ -6,6 +6,7 @@ import { redis } from '@kleinkram/backend-common/consts';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { ApiKeyEntity } from '@kleinkram/backend-common/entities/auth/api-key.entity';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
+import { FileVersionEntity } from '@kleinkram/backend-common/entities/file/file-version.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
@@ -42,7 +43,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Queue from 'bull';
 import {
     DataSource,
+    EntityManager,
     In,
+    LessThan,
     MoreThan,
     MoreThanOrEqual,
     QueryFailedError,
@@ -229,7 +232,7 @@ export class FileLifecycleService implements OnModuleInit {
             );
         }
 
-        await this.dataStorage.addTags(databaseFile.uuid, {
+        await this.dataStorage.addTags(databaseFile.storageUuid, {
             // @ts-expect-error
             projectUuid: databaseFile.mission.project.uuid,
             missionUuid: databaseFile.mission.uuid,
@@ -255,7 +258,7 @@ export class FileLifecycleService implements OnModuleInit {
             fileUUIDs.map(async (uuid) => {
                 try {
                     const file = await this.fileRepository.findOneOrFail({
-                        where: { uuid },
+                        where: [{ uuid }, { activeVersionUuid: uuid }],
                         relations: {
                             mission: true,
                         },
@@ -289,14 +292,14 @@ export class FileLifecycleService implements OnModuleInit {
 
                     // ... [Existing Tag Update Logic] ...
                     const newFile = await this.fileRepository.findOneOrFail({
-                        where: { uuid },
+                        where: [{ uuid }, { activeVersionUuid: uuid }],
                         relations: {
                             mission: {
                                 project: true,
                             },
                         },
                     });
-                    await this.dataStorage.addTags(file.uuid, {
+                    await this.dataStorage.addTags(file.storageUuid, {
                         filename: file.filename,
                         missionUuid: missionUUID,
                         projectUuid: newFile.mission?.project?.uuid ?? '',
@@ -319,7 +322,7 @@ export class FileLifecycleService implements OnModuleInit {
         logger.debug(`Deleting file with uuid: ${uuid}`);
 
         const file = await this.fileRepository.findOne({
-            where: { uuid },
+            where: [{ uuid }, { activeVersionUuid: uuid }],
             relations: {
                 mission: true,
             },
@@ -345,15 +348,12 @@ export class FileLifecycleService implements OnModuleInit {
                 // [Existing Deletion Logic]
                 const fileToDelete =
                     await transactionalEntityManager.findOneOrFail(FileEntity, {
-                        where: { uuid },
+                        where: [{ uuid }, { activeVersionUuid: uuid }],
                     });
-                await this.dataStorage
-                    .deleteFile(fileToDelete.uuid)
-                    .catch(() => {
-                        logger.error(
-                            `File ${fileToDelete.uuid} not found in storage, deleting from database only!`,
-                        );
-                    });
+                await this.deleteVersionsFromStorage(
+                    transactionalEntityManager,
+                    [fileToDelete],
+                );
 
                 await transactionalEntityManager.softRemove(fileToDelete);
             },
@@ -366,7 +366,9 @@ export class FileLifecycleService implements OnModuleInit {
         return this.fileRepository
             .findOne({
                 where: {
-                    state: FileState.UPLOADING,
+                    activeVersion: {
+                        state: FileState.UPLOADING,
+                    },
                     createdAt: MoreThan(
                         new Date(Date.now() - 12 * 60 * 60 * 1000),
                     ),
@@ -376,6 +378,43 @@ export class FileLifecycleService implements OnModuleInit {
             .then((r) => !!r);
     }
 
+    /**
+     * Starts a new version of an existing file and makes it the active one.
+     *
+     * The version uuid doubles as the storage key, so the bytes of the new
+     * version are uploaded next to - never over - the previous ones and every
+     * earlier version stays downloadable.
+     */
+    private async startNewVersion(
+        manager: EntityManager,
+        file: FileEntity,
+        fileType: FileType,
+    ): Promise<FileEntity> {
+        const latestVersion = await manager.findOne(FileVersionEntity, {
+            where: { fileUuid: file.uuid },
+            order: { versionNumber: 'DESC' },
+            withDeleted: true,
+        });
+
+        const version = await manager.save(
+            FileVersionEntity,
+            manager.create(FileVersionEntity, {
+                file,
+                fileUuid: file.uuid,
+                versionNumber: (latestVersion?.versionNumber ?? 0) + 1,
+                date: new Date(),
+                size: 0,
+                type: fileType,
+                state: FileState.UPLOADING,
+                origin: FileOrigin.UPLOAD,
+            }),
+        );
+
+        file.activeVersion = version;
+        file.activeVersionUuid = version.uuid;
+        return await manager.save(FileEntity, file);
+    }
+
     async getTemporaryAccess(
         filenames: string[],
         missionUUID: string,
@@ -383,6 +422,7 @@ export class FileLifecycleService implements OnModuleInit {
         action?: ActionEntity,
         uploadSource = 'Web Interface',
         fileSizes?: number[],
+        asNewVersion = false,
     ): Promise<TemporaryFileAccessesDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
@@ -483,10 +523,25 @@ export class FileLifecycleService implements OnModuleInit {
                 const existingFile = existingFiles.find(
                     (f) => f.filename === filename,
                 );
-                const isConflict =
-                    existingFile && existingFile.state !== FileState.CANCELED;
 
-                if (isConflict) {
+                // A canceled upload is resumed in place: the same version is
+                // reused, so no extra version is piled up by CLI retries.
+                const isRetry = existingFile?.state === FileState.CANCELED;
+                const wantsNewVersion =
+                    asNewVersion && existingFile !== undefined && !isRetry;
+
+                if (
+                    wantsNewVersion &&
+                    existingFile.state === FileState.UPLOADING
+                ) {
+                    invalidFiles.push({
+                        filename,
+                        error: 'An upload for this file is already in progress',
+                    });
+                    continue;
+                }
+
+                if (existingFile && !isRetry && !wantsNewVersion) {
                     invalidFiles.push({
                         filename,
                         error: 'File already exists',
@@ -498,7 +553,13 @@ export class FileLifecycleService implements OnModuleInit {
                     // Use a nested transaction (savepoint) for each file
                     await manager.transaction(async (nestedManager) => {
                         let file: FileEntity;
-                        if (existingFile?.state === FileState.CANCELED) {
+                        if (wantsNewVersion) {
+                            file = await this.startNewVersion(
+                                nestedManager,
+                                existingFile,
+                                fileType,
+                            );
+                        } else if (isRetry) {
                             existingFile.state = FileState.UPLOADING;
                             existingFile.creator = user;
                             existingFile.date = new Date();
@@ -513,16 +574,27 @@ export class FileLifecycleService implements OnModuleInit {
                             file = await nestedManager.save(
                                 FileEntity,
                                 nestedManager.create(FileEntity, {
-                                    date: new Date(),
-                                    size: 0,
                                     filename,
                                     mission,
                                     creator: user,
+                                }),
+                            );
+                            const version = await nestedManager.save(
+                                FileVersionEntity,
+                                nestedManager.create(FileVersionEntity, {
+                                    file,
+                                    fileUuid: file.uuid,
+                                    versionNumber: 1,
+                                    date: new Date(),
+                                    size: 0,
                                     type: fileType,
                                     state: FileState.UPLOADING,
                                     origin: FileOrigin.UPLOAD,
                                 }),
                             );
+                            file.activeVersion = version;
+                            file.activeVersionUuid = version.uuid;
+                            file = await nestedManager.save(FileEntity, file);
                         }
 
                         await this.auditService.log(
@@ -536,6 +608,8 @@ export class FileLifecycleService implements OnModuleInit {
                                 details: {
                                     origin: FileOrigin.UPLOAD,
                                     source: uploadSource,
+                                    versionNumber:
+                                        file.activeVersion?.versionNumber ?? 1,
                                 },
                             },
                             true,
@@ -543,11 +617,11 @@ export class FileLifecycleService implements OnModuleInit {
 
                         credentials.push({
                             bucket: env.S3_DATA_BUCKET_NAME,
-                            fileUUID: file.uuid,
+                            fileUUID: file.storageUuid,
                             fileName: filename,
                             accessCredentials:
                                 await this.dataStorage.generateTemporaryCredential(
-                                    file.uuid,
+                                    file.storageUuid,
                                 ),
                         });
                     });
@@ -606,8 +680,17 @@ export class FileLifecycleService implements OnModuleInit {
 
         await Promise.all(
             uuids.map(async (uuid) => {
+                // The upload credentials hand out the *version* uuid as the
+                // storage id, so a cancel may name either the file or the
+                // version it was started for.
                 const file = await this.fileRepository.findOne({
-                    where: { uuid, mission: { uuid: missionUUID } },
+                    where: [
+                        { uuid, mission: { uuid: missionUUID } },
+                        {
+                            activeVersionUuid: uuid,
+                            mission: { uuid: missionUUID },
+                        },
+                    ],
                     relations: {
                         mission: true,
                     },
@@ -626,11 +709,56 @@ export class FileLifecycleService implements OnModuleInit {
                     return;
                 }
 
+                const canceledVersion = file.activeVersion;
+                if (canceledVersion && canceledVersion.versionNumber > 1) {
+                    // Only the new version failed - drop it and let the file
+                    // fall back to the version that was active before, so a
+                    // failed re-upload never takes a healthy file offline.
+                    await this.rollBackToPreviousVersion(file, canceledVersion);
+                    return;
+                }
+
                 file.state = FileState.CANCELED;
                 await this.fileRepository.save(file);
                 return;
             }),
         );
+    }
+
+    /**
+     * Discards `canceledVersion` and re-activates the newest remaining version
+     * of `file`, removing the partially uploaded bytes from storage.
+     */
+    private async rollBackToPreviousVersion(
+        file: FileEntity,
+        canceledVersion: FileVersionEntity,
+    ): Promise<void> {
+        await this.fileRepository.manager.transaction(async (manager) => {
+            const previousVersion = await manager.findOne(FileVersionEntity, {
+                where: {
+                    fileUuid: file.uuid,
+                    versionNumber: LessThan(canceledVersion.versionNumber),
+                },
+                order: { versionNumber: 'DESC' },
+            });
+
+            if (!previousVersion) {
+                file.state = FileState.CANCELED;
+                await manager.save(FileEntity, file);
+                return;
+            }
+
+            file.activeVersion = previousVersion;
+            file.activeVersionUuid = previousVersion.uuid;
+            await manager.save(FileEntity, file);
+            await manager.softRemove(FileVersionEntity, canceledVersion);
+        });
+
+        await this.dataStorage.deleteFile(canceledVersion.uuid).catch(() => {
+            logger.warn(
+                `Canceled version ${canceledVersion.uuid} of file ${file.uuid} was not in storage`,
+            );
+        });
     }
 
     private async canCancelUpload(
@@ -679,6 +807,38 @@ export class FileLifecycleService implements OnModuleInit {
         });
     }
 
+    /**
+     * Removes the stored bytes of every version of the given files. Each
+     * version owns its own storage object, so deleting only the active one
+     * would orphan the bytes of the superseded versions.
+     */
+    private async deleteVersionsFromStorage(
+        manager: EntityManager,
+        files: FileEntity[],
+    ): Promise<void> {
+        if (files.length === 0) return;
+
+        const versions = await manager.find(FileVersionEntity, {
+            where: { fileUuid: In(files.map((file) => file.uuid)) },
+            withDeleted: true,
+        });
+
+        const storageUuids = new Set([
+            ...files.map((file) => file.storageUuid),
+            ...versions.map((version) => version.uuid),
+        ]);
+
+        await Promise.all(
+            [...storageUuids].map(async (storageUuid) => {
+                await this.dataStorage.deleteFile(storageUuid).catch(() => {
+                    logger.error(
+                        `File ${storageUuid} not found in storage, deleting from database only!`,
+                    );
+                });
+            }),
+        );
+    }
+
     async deleteMultiple(
         fileUUIDs: string[],
         missionUUID: string,
@@ -710,24 +870,32 @@ export class FileLifecycleService implements OnModuleInit {
                     );
                 }
 
-                // Delete potentially running ingestion jobs
+                // Delete potentially running ingestion jobs. Jobs for versions
+                // past the first are keyed by the version uuid, so those have
+                // to be collected as well.
+                const versions = await transactionalEntityManager.find(
+                    FileVersionEntity,
+                    {
+                        where: { fileUuid: In(uniqueDatabaseFilesUuids) },
+                        withDeleted: true,
+                        select: { uuid: true },
+                    },
+                );
+                const versionUuids = versions.map((version) => version.uuid);
+
                 await transactionalEntityManager.softDelete(
                     IngestionJobEntity,
                     {
-                        identifier: In(uniqueDatabaseFilesUuids),
+                        identifier: In([
+                            ...uniqueDatabaseFilesUuids,
+                            ...versionUuids,
+                        ]),
                     },
                 );
 
-                await Promise.all(
-                    files.map(async (file) => {
-                        await this.dataStorage
-                            .deleteFile(file.uuid)
-                            .catch(() => {
-                                logger.error(
-                                    `File ${file.uuid} not found in storage, deleting from database only!`,
-                                );
-                            });
-                    }),
+                await this.deleteVersionsFromStorage(
+                    transactionalEntityManager,
+                    files,
                 );
 
                 await transactionalEntityManager.softDelete(
@@ -741,9 +909,10 @@ export class FileLifecycleService implements OnModuleInit {
     async reextractMissingTopics(): Promise<number> {
         const filesToFix = await this.fileRepository
             .createQueryBuilder('file')
-            .leftJoin('file.topics', 'topic')
-            .where('file.type = :type', { type: FileType.BAG })
-            .andWhere('file.state = :state', { state: FileState.OK })
+            .leftJoin('file.activeVersion', 'activeVersion')
+            .leftJoin('activeVersion.topics', 'topic')
+            .where('activeVersion.type = :type', { type: FileType.BAG })
+            .andWhere('activeVersion.state = :state', { state: FileState.OK })
             .andWhere('topic.uuid IS NULL')
             .select(['file.uuid', 'file.filename'])
             .getMany();

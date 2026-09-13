@@ -32,7 +32,8 @@ export class TopicService {
                 ? baseQuery
                 : addAccessConstraints(
                       baseQuery
-                          .leftJoin('topic.file', 'file')
+                          .leftJoin('topic.fileVersion', 'version')
+                          .leftJoin('version.file', 'file')
                           .leftJoin('file.mission', 'mission')
                           .leftJoin('mission.project', 'project'),
                       userUuid,
@@ -66,7 +67,8 @@ export class TopicService {
                 ? baseQuery
                 : addAccessConstraints(
                       baseQuery
-                          .leftJoin('topic.file', 'file')
+                          .leftJoin('topic.fileVersion', 'version')
+                          .leftJoin('version.file', 'file')
                           .leftJoin('file.mission', 'mission')
                           .leftJoin('mission.project', 'project'),
                       userUuid,
@@ -106,7 +108,8 @@ export class TopicService {
         const [topics, count] = await addAccessConstraints(
             this.topicRepository
                 .createQueryBuilder('topic')
-                .leftJoin('topic.file', 'file')
+                .leftJoin('topic.fileVersion', 'version')
+                .leftJoin('version.file', 'file')
                 .leftJoin('file.mission', 'mission')
                 .leftJoin('mission.project', 'project')
                 .take(take)

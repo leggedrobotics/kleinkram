@@ -2,10 +2,12 @@ import { appVersion } from '@/app-version';
 import {
     ApiKeyEntity,
     FileEntity,
+    FileVersionEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import {
     AccessGroupRights,
+    FileState,
     FileType,
     KeyTypes,
     UserRole,
@@ -142,16 +144,27 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             ]);
 
         const fileRepository = database.getRepository(FileEntity);
+        const versionRepository = database.getRepository(FileVersionEntity);
         const file = await fileRepository.save(
             fileRepository.create({
                 filename: 'not_yours.bag',
                 mission: { uuid: sourceMissionUuid },
                 creator: { uuid: owner.uuid },
+            }),
+        );
+        const version = await versionRepository.save(
+            versionRepository.create({
+                file,
+                versionNumber: 1,
                 date: new Date(),
                 type: FileType.BAG,
                 size: 1024,
+                state: FileState.OK,
             }),
         );
+        file.activeVersion = version;
+        file.activeVersionUuid = version.uuid;
+        await fileRepository.save(file);
 
         const response = await fetch(`${DEFAULT_URL}/files/${file.uuid}`, {
             method: 'PUT',
@@ -189,16 +202,27 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             await createProjectWithMission(owner, 'key_target');
 
         const fileRepository = database.getRepository(FileEntity);
+        const versionRepository = database.getRepository(FileVersionEntity);
         const file = await fileRepository.save(
             fileRepository.create({
                 filename: 'scoped.bag',
                 mission: { uuid: sourceMissionUuid },
                 creator: { uuid: owner.uuid },
+            }),
+        );
+        const version = await versionRepository.save(
+            versionRepository.create({
+                file,
+                versionNumber: 1,
                 date: new Date(),
                 type: FileType.BAG,
                 size: 1024,
+                state: FileState.OK,
             }),
         );
+        file.activeVersion = version;
+        file.activeVersionUuid = version.uuid;
+        await fileRepository.save(file);
 
         const apiKeyRepository = database.getRepository(ApiKeyEntity);
         const apiKey = apiKeyRepository.create({

@@ -1,3 +1,4 @@
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
@@ -96,7 +97,7 @@ export class FileQueueProcessorProvider {
         }
 
         try {
-            const stat = await this.dataStorage.getFileInfo(file.uuid);
+            const stat = await this.dataStorage.getFileInfo(file.storageUuid);
             // ETag is often surrounded by quotes in S3, e.g. "5b3...c6"
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             let hash = stat?.etag?.replaceAll('"', '');
@@ -114,14 +115,16 @@ export class FileQueueProcessorProvider {
                 logger.debug(
                     `Calculating hash for ${fileUuid} (ETag: ${String(hash)})`,
                 );
-                const stream = await this.dataStorage.getFileStream(file.uuid);
+                const stream = await this.dataStorage.getFileStream(
+                    file.storageUuid,
+                );
                 hash = await this.calculateHash(stream);
             }
 
             file.hash = hash;
             // Ensure state is OK if it was somehow different
             file.state = FileState.OK;
-            await this.fileRepo.save(file);
+            await saveActiveVersion(this.fileRepo.manager, file);
             logger.debug(`Updated hash for ${fileUuid}`);
         } catch (error) {
             logger.error(

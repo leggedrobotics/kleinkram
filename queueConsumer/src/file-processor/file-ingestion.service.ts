@@ -6,6 +6,8 @@ import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Repository } from 'typeorm';
 
+import { FileVersionEntity } from '@kleinkram/backend-common/entities/file/file-version.entity';
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
@@ -48,6 +50,7 @@ export class FileIngestionService {
         queueItem: IngestionJobEntity,
         strategy: FileSourceStrategy,
     ): Promise<void> {
+        let primaryFile: FileEntity | undefined;
         await this.runWithWorkspace(
             async (workDirectory: string): Promise<void> => {
                 try {
@@ -57,7 +60,7 @@ export class FileIngestionService {
                         workDirectory,
                     );
 
-                    const primaryFile = await this.createAndSaveFileEntity(
+                    primaryFile = await this.createAndSaveFileEntity(
                         queueItem,
                         fileData,
                     );
@@ -74,14 +77,18 @@ export class FileIngestionService {
                     );
 
                     if (!isValid) {
-                        logger.warn(
-                            `Magic number validation failed for ${primaryFile.filename} (${primaryFile.type})`,
-                        );
+                        const cause = `Magic number validation failed for ${primaryFile.filename} (${primaryFile.type})`;
+                        logger.warn(cause);
                         primaryFile.state = FileState.CORRUPTED;
-                        await this.fileRepo.save(primaryFile);
+                        primaryFile.state_cause = cause;
+                        await saveActiveVersion(
+                            this.fileRepo.manager,
+                            primaryFile,
+                        );
                         await this.updateQueueState(
                             queueItem,
                             QueueState.CORRUPTED,
+                            cause,
                         );
                         return;
                     }
@@ -100,6 +107,20 @@ export class FileIngestionService {
                 } catch (error: unknown) {
                     const errorMessage = String(error);
                     logger.error(`Failed to ingest file: ${errorMessage}`);
+                    if (primaryFile) {
+                        if (primaryFile.state === FileState.OK) {
+                            primaryFile.state = FileState.ERROR;
+                        }
+                        primaryFile.state_cause ??= errorMessage;
+                        try {
+                            await saveActiveVersion(
+                                this.fileRepo.manager,
+                                primaryFile,
+                            );
+                        } catch {
+                            // ignore save failure during error handling
+                        }
+                    }
                     await this.updateQueueState(
                         queueItem,
                         QueueState.ERROR,
@@ -125,16 +146,15 @@ export class FileIngestionService {
 
         const downloadPath = path.join(workDirectory, source.filename);
 
+        const taggingKey = source.storageUuid ?? queueItem.identifier;
         // Start Tagging in the Background
         const taggingPromise = this.dataStorage
-            .addTags(queueItem.identifier, {
+            .addTags(taggingKey, {
                 missionUuid: queueItem.mission?.uuid ?? '',
                 projectUuid: queueItem.mission?.project?.uuid ?? '',
                 filename: source.filename,
             })
-            .then(() =>
-                logger.debug(`File Tags added for ${queueItem.identifier}`),
-            )
+            .then(() => logger.debug(`File Tags added for ${taggingKey}`))
             .catch((error: unknown) =>
                 logger.warn(
                     `Failed to add tags during download: ${String(error)}`,
@@ -172,7 +192,11 @@ export class FileIngestionService {
         // For standard uploads, the identifier IS the UUID.
         if (queueItem.location !== FileLocation.DRIVE) {
             existingFile = await this.fileRepo.findOne({
-                where: { uuid: queueItem.identifier },
+                where: [
+                    { uuid: queueItem.identifier },
+                    { activeVersionUuid: queueItem.identifier },
+                ],
+                relations: { activeVersion: true },
             });
         }
 
@@ -196,12 +220,19 @@ export class FileIngestionService {
         if (isTum) type = FileType.TUM;
         if (isYaml) type = FileType.YAML;
 
+        // `create()` only copies mapped columns, and everything below the
+        // filename now lives on the version, so the version is built by hand
+        // and saved along with the file through the `activeVersion` cascade.
         const entity = this.fileRepo.create({
-            date: new Date(),
             mission: queueItem.mission,
-            size: data.size,
             filename: data.filename,
             creator: queueItem.creator,
+        } as FileEntity);
+
+        entity.activeVersion = this.fileRepo.manager.create(FileVersionEntity, {
+            versionNumber: 1,
+            date: new Date(),
+            size: data.size,
             type,
             state: FileState.UPLOADING,
             hash: data.hash,
@@ -209,7 +240,7 @@ export class FileIngestionService {
                 queueItem.location === FileLocation.DRIVE
                     ? FileOrigin.GOOGLE_DRIVE
                     : FileOrigin.UPLOAD,
-        } as FileEntity);
+        });
 
         return await this.fileRepo.save(entity);
     }
@@ -220,7 +251,7 @@ export class FileIngestionService {
         filePath: string,
     ): Promise<void> {
         if (queueItem.location === FileLocation.DRIVE) {
-            await this.dataStorage.uploadFile(file.uuid, filePath);
+            await this.dataStorage.uploadFile(file.storageUuid, filePath);
         }
     }
 

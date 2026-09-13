@@ -421,11 +421,13 @@ export class ActionService {
 
                 if (fileUuid) {
                     try {
+                        // the size lives on the active version, which is
+                        // eager-loaded with the file
                         const file = await manager.findOne(FileEntity, {
-                            where: { uuid: fileUuid },
-                            select: {
-                                size: true,
-                            },
+                            where: [
+                                { uuid: fileUuid },
+                                { activeVersionUuid: fileUuid },
+                            ],
                         });
                         if (file?.size && file.size > 0) {
                             auditLog.message = `Downloaded ${file.size.toString()}`;

@@ -33,7 +33,7 @@ describe('File topic match mode', () => {
             topicRepository.create({
                 name: '/present/topic',
                 type: 'std_msgs/String',
-                file: file,
+                fileVersionUuid: file.activeVersionUuid ?? undefined,
                 nrMessages: 10n,
                 frequency: 1,
                 messageEncoding: 'none',

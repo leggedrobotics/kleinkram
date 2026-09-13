@@ -141,6 +141,7 @@ export async function uploadFile(
     user: UserEntity,
     filename: string,
     missionUuid: string,
+    options: { newVersion?: boolean; fixture?: string } = {},
 ): Promise<ArrayBuffer> {
     const response = await fetch(`${DEFAULT_URL}/files/temporaryAccess`, {
         method: 'POST',
@@ -157,6 +158,7 @@ export async function uploadFile(
         body: JSON.stringify({
             filenames: [filename],
             missionUUID: missionUuid,
+            newVersion: options.newVersion ?? false,
         }),
     });
 
@@ -175,7 +177,7 @@ export async function uploadFile(
     expect(fileresponseponse.fileUUID).toBeDefined();
 
     // open file from fixtures
-    const filePath = `./tests/fixtures/${filename}`;
+    const filePath = `./tests/fixtures/${options.fixture ?? filename}`;
     if (!fs.existsSync(filePath)) {
         throw new Error(
             `Test data file '${filename}' not found at '${filePath}'. ` +

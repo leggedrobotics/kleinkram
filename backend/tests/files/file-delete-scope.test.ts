@@ -1,5 +1,9 @@
-import { FileEntity, UserEntity } from '@kleinkram/backend-common';
-import { AccessGroupRights, FileType } from '@kleinkram/shared';
+import {
+    FileEntity,
+    FileVersionEntity,
+    UserEntity,
+} from '@kleinkram/backend-common';
+import { AccessGroupRights, FileState, FileType } from '@kleinkram/shared';
 import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -48,16 +52,27 @@ async function createTestFile(
     creator: UserEntity,
 ): Promise<FileEntity> {
     const fileRepository = database.getRepository(FileEntity);
-    return fileRepository.save(
+    const versionRepository = database.getRepository(FileVersionEntity);
+    const file = await fileRepository.save(
         fileRepository.create({
             filename,
             mission: { uuid: missionUuid },
             creator: { uuid: creator.uuid },
+        }),
+    );
+    const version = await versionRepository.save(
+        versionRepository.create({
+            file,
+            versionNumber: 1,
             date: new Date(),
             type: FileType.BAG,
             size: 1024,
+            state: FileState.OK,
         }),
     );
+    file.activeVersion = version;
+    file.activeVersionUuid = version.uuid;
+    return fileRepository.save(file);
 }
 
 const jsonHeaders = (user: UserEntity): Record<string, string> => ({

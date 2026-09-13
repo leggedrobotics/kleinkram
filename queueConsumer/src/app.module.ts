@@ -15,6 +15,7 @@ import { MissionAccessEntity } from '@kleinkram/backend-common/entities/auth/mis
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { FileVersionEntity } from '@kleinkram/backend-common/entities/file/file-version.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
@@ -82,6 +83,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                     FileEventEntity,
                     MissionEntity,
                     FileEntity,
+                    FileVersionEntity,
                     ProjectEntity,
                     TopicEntity,
                     ActionEntity,
@@ -111,6 +113,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
             IngestionJobEntity,
             MissionEntity,
             FileEntity,
+            FileVersionEntity,
             UserEntity,
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
@@ -120,7 +123,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         StorageModule,
         AccessControlModule,
     ],
-    providers: [FileCleanupQueueProcessorProvider, AccessGroupExpiryProvider],
+    providers: [AccessGroupExpiryProvider, FileCleanupQueueProcessorProvider],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}

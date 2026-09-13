@@ -33,7 +33,7 @@ describe('Topic Extraction Tests', () => {
         const topic = topicRepo.create({
             name: '/test/topic',
             type: 'std_msgs/String',
-            file: file,
+            fileVersionUuid: file.activeVersionUuid ?? undefined,
             nrMessages: 100n,
             frequency: 10,
             messageEncoding: 'none',

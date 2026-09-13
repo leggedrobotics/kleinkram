@@ -98,6 +98,7 @@ export class QueueService implements OnModuleInit {
         const { id: fileId, isFolder } = getGoogleDriveInfo(
             driveCreate.driveURL,
         );
+
         if (fileId === null) throw new ConflictException('Invalid Drive URL');
 
         if (
@@ -136,8 +137,8 @@ export class QueueService implements OnModuleInit {
     }> {
         const files = await this.fileRepository.find({
             where: [
-                { hash: IsNull(), state: FileState.OK },
-                { hash: '', state: FileState.OK },
+                { activeVersion: { hash: IsNull(), state: FileState.OK } },
+                { activeVersion: { hash: '', state: FileState.OK } },
             ],
             relations: {
                 mission: {
@@ -203,7 +204,7 @@ export class QueueService implements OnModuleInit {
         source: FileSource | string = FileSource.WEB_INTERFACE,
     ): Promise<void> {
         const file = await this.fileRepository.findOneOrFail({
-            where: { uuid },
+            where: [{ uuid }, { activeVersionUuid: uuid }],
             relations: {
                 mission: {
                     project: true,
@@ -215,8 +216,20 @@ export class QueueService implements OnModuleInit {
             throw new ConflictException('Cannot confirm a canceled upload');
         }
 
+        // The first version's job is keyed by the file uuid, which every later
+        // version would otherwise reuse - and find already completed, silently
+        // skipping ingestion of the bytes just uploaded. Versions past the
+        // first therefore get a job of their own, keyed by the version uuid.
+        const isFirstVersion = (file.activeVersion?.versionNumber ?? 1) === 1;
+
         let job = await this.queueRepository.findOne({
-            where: { identifier: uuid },
+            where: isFirstVersion
+                ? [
+                      { identifier: file.uuid },
+                      { identifier: file.storageUuid },
+                      { identifier: uuid },
+                  ]
+                : [{ identifier: file.storageUuid }],
             relations: {
                 mission: {
                     project: true,
@@ -226,7 +239,7 @@ export class QueueService implements OnModuleInit {
 
         job ??= await this.queueRepository.save(
             this.queueRepository.create({
-                identifier: file.uuid,
+                identifier: isFirstVersion ? file.uuid : file.storageUuid,
                 displayName: file.filename,
                 state: QueueState.AWAITING_UPLOAD,
                 location: FileLocation.S3,
@@ -247,7 +260,7 @@ export class QueueService implements OnModuleInit {
         }
 
         const fileInfo = await this.dataStorage
-            .getFileInfo(file.uuid)
+            .getFileInfo(file.storageUuid)
             .catch((error: unknown): void => {
                 logger.error(
                     `Error in getFileInfo for ${file.uuid}: ${error instanceof Error ? error.message : String(error)}`,
@@ -264,6 +277,11 @@ export class QueueService implements OnModuleInit {
         if (file.state === FileState.UPLOADING) file.state = FileState.OK;
         file.size = fileInfo.size;
         file.hash = md5;
+        if (file.activeVersion) {
+            file.activeVersion.state = file.state;
+            file.activeVersion.size = file.size;
+            file.activeVersion.hash = file.hash;
+        }
         await this.fileRepository.save(file);
 
         job.state = QueueState.AWAITING_PROCESSING;
@@ -276,6 +294,8 @@ export class QueueService implements OnModuleInit {
 
         logger.debug(`Confirmed upload for ${uuid}, job ${job.uuid} queued.`);
 
+        const versionNumber = file.activeVersion?.versionNumber ?? 1;
+
         await this.auditService.log(
             FileEventType.UPLOAD_COMPLETED,
             {
@@ -284,10 +304,34 @@ export class QueueService implements OnModuleInit {
                 ...(job.mission?.uuid ? { missionUuid: job.mission.uuid } : {}),
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 ...(actor ? { actor } : {}),
-                details: { origin: FileOrigin.UPLOAD, source },
+                details: { origin: FileOrigin.UPLOAD, source, versionNumber },
             },
             true,
         );
+
+        // The very first upload is the file being created, not a new version
+        // superseding an earlier one, so only follow-ups are recorded here.
+        if (versionNumber > 1) {
+            await this.auditService.log(
+                FileEventType.VERSION_UPLOADED,
+                {
+                    fileUuid: file.uuid,
+                    filename: file.filename,
+                    ...(job.mission?.uuid
+                        ? { missionUuid: job.mission.uuid }
+                        : {}),
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    ...(actor ? { actor } : {}),
+                    details: {
+                        source,
+                        versionNumber,
+                        versionUuid: file.activeVersionUuid,
+                        size: file.size,
+                    },
+                },
+                true,
+            );
+        }
 
         await this.triggerService.addFileEvent(file.uuid, TriggerEvent.UPLOAD);
     }
@@ -379,11 +423,19 @@ export class QueueService implements OnModuleInit {
         await this.queueRepository.remove(queue);
 
         const file = await this.fileRepository.findOne({
-            where: { uuid: queue.identifier, mission: { uuid: missionUUID } },
+            where: [
+                { uuid: queue.identifier, mission: { uuid: missionUUID } },
+                {
+                    activeVersionUuid: queue.identifier,
+                    mission: { uuid: missionUUID },
+                },
+            ],
         });
 
         if (file) {
-            await this.dataStorage.deleteFile(file.uuid).catch(logger.log);
+            await this.dataStorage
+                .deleteFile(file.storageUuid)
+                .catch(logger.log);
             await this.fileRepository.remove(file);
 
             if (file.type === FileType.BAG) {
@@ -395,7 +447,7 @@ export class QueueService implements OnModuleInit {
                 });
                 if (mcap) {
                     await this.dataStorage
-                        .deleteFile(mcap.uuid)
+                        .deleteFile(mcap.storageUuid)
                         .catch(logger.log);
                     await this.fileRepository.remove(mcap);
                 }

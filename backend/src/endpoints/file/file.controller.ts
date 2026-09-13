@@ -7,6 +7,7 @@ import {
     QueryBoolean,
     QueryDate,
     QueryOptionalString,
+    QueryOptionalUUID,
     QuerySkip,
     QueryString,
     QueryTake,
@@ -158,6 +159,11 @@ export class FileController {
             'Whether the download link is for preview only (true) or full download (false)',
         )
         previewOnly = false,
+        @QueryOptionalUUID(
+            'versionUuid',
+            'UUID of the file version to download, defaults to the active version',
+        )
+        versionUuid: string | undefined,
         @AddUser() auth: AuthHeader,
     ): Promise<DownloadResponseDto> {
         logger.debug(`download ${uuid}: expires=${expires.toString()}`);
@@ -167,6 +173,7 @@ export class FileController {
             previewOnly,
             auth.user,
             auth.apiKey?.action,
+            versionUuid,
         );
         return { url };
     }
@@ -316,6 +323,7 @@ export class FileController {
             auth.apiKey?.action,
             source,
             body.fileSizes,
+            body.newVersion ?? false,
         );
     }
 

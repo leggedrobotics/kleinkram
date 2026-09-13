@@ -12,12 +12,14 @@ export function formatEventType(type: FileEventType): string {
         [FileEventType.TOPICS_EXTRACTED]: 'Topics Extracted',
         [FileEventType.FILE_CONVERTED]: 'Auto Converted To',
         [FileEventType.FILE_CONVERTED_FROM]: 'Auto Converted From',
+        [FileEventType.VERSION_UPLOADED]: 'New Version Uploaded',
     };
     return map[type] ?? type;
 }
 
 export function getEventIcon(type: FileEventType): string {
     if (type.includes('FAILED') || type.includes('ERROR')) return 'sym_o_error';
+    if (type === FileEventType.VERSION_UPLOADED) return 'sym_o_history_2';
     if (type.includes('COMPLETED') || type.includes('CREATED'))
         return 'sym_o_check_circle';
     if (type.includes('DOWNLOAD')) return 'sym_o_download';
@@ -34,6 +36,8 @@ export function getEventIcon(type: FileEventType): string {
 
 export function getEventColor(type: string): string {
     if (type.includes('FAILED') || type.includes('ERROR')) return 'negative';
+    if ((type as FileEventType) === FileEventType.VERSION_UPLOADED)
+        return 'positive';
     if (type.includes(FileEventType.FOXGLOVE_URL_GENERATED)) return 'secondary';
     if (type.includes('COMPLETED') || type.includes('CREATED'))
         return 'positive';

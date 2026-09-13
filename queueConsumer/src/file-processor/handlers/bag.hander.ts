@@ -5,6 +5,8 @@ import * as fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import { Repository } from 'typeorm';
 
+import { FileVersionEntity } from '@kleinkram/backend-common/entities/file/file-version.entity';
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import {
@@ -79,7 +81,9 @@ export class RosBagHandler implements FileHandler {
             } catch (error: unknown) {
                 logger.error(`RosBag Conversion failed: ${String(error)}`);
                 primaryFile.state = FileState.CONVERSION_ERROR;
-                await this.fileRepo.save(primaryFile);
+                primaryFile.state_cause =
+                    error instanceof Error ? error.message : String(error);
+                await saveActiveVersion(this.fileRepo.manager, primaryFile);
                 throw error;
             }
         } else {
@@ -89,7 +93,9 @@ export class RosBagHandler implements FileHandler {
             } catch (error: unknown) {
                 logger.error(`RosBag Extraction failed: ${String(error)}`);
                 primaryFile.state = FileState.CORRUPTED;
-                await this.fileRepo.save(primaryFile);
+                primaryFile.state_cause =
+                    error instanceof Error ? error.message : String(error);
+                await saveActiveVersion(this.fileRepo.manager, primaryFile);
                 throw error;
             }
         }
@@ -120,17 +126,26 @@ export class RosBagHandler implements FileHandler {
         mcapPath: string,
         mcapFilename: string,
     ): Promise<void> {
+        // `create()` only copies mapped columns, so everything that moved to
+        // the version has to be set on a version of its own.
         const mcapEntity = this.fileRepo.create({
-            date: new Date(),
             mission: job.mission,
-            size: 0,
             filename: mcapFilename,
             creator: job.creator,
-            type: FileType.MCAP,
-            state: FileState.CONVERTING,
-            origin: FileOrigin.CONVERTED,
             parent: primaryFile,
         } as FileEntity);
+
+        mcapEntity.activeVersion = this.fileRepo.manager.create(
+            FileVersionEntity,
+            {
+                versionNumber: 1,
+                date: new Date(),
+                size: 0,
+                type: FileType.MCAP,
+                state: FileState.CONVERTING,
+                origin: FileOrigin.CONVERTED,
+            },
+        );
 
         const savedMcapEntity = await this.fileRepo.save(mcapEntity);
 
@@ -142,16 +157,19 @@ export class RosBagHandler implements FileHandler {
             );
 
             savedMcapEntity.hash = await calculateFileHash(mcapPath);
-            await this.fileRepo.save(savedMcapEntity);
+            await saveActiveVersion(this.fileRepo.manager, savedMcapEntity);
 
             job.state = QueueState.UPLOADING;
             await this.jobRepo.save(job);
 
-            await this.dataStorage.uploadFile(savedMcapEntity.uuid, mcapPath);
+            await this.dataStorage.uploadFile(
+                savedMcapEntity.storageUuid,
+                mcapPath,
+            );
 
             // Add Tags logic...
             await this.dataStorage
-                .addTags(savedMcapEntity.uuid, {
+                .addTags(savedMcapEntity.storageUuid, {
                     missionUuid: job.mission?.uuid ?? '',
                     filename: mcapFilename,
                 })
@@ -165,7 +183,7 @@ export class RosBagHandler implements FileHandler {
             primaryFile.recordingStartDate = savedMcapEntity.recordingStartDate;
             primaryFile.recordingEndDate = savedMcapEntity.recordingEndDate;
             primaryFile.state = FileState.OK;
-            await this.fileRepo.save(primaryFile);
+            await saveActiveVersion(this.fileRepo.manager, primaryFile);
 
             // Cleanup local converted file
             await fsPromises.unlink(mcapPath);
@@ -198,7 +216,9 @@ export class RosBagHandler implements FileHandler {
             );
         } catch (error: unknown) {
             savedMcapEntity.state = FileState.CONVERSION_ERROR;
-            await this.fileRepo.save(savedMcapEntity);
+            savedMcapEntity.state_cause =
+                error instanceof Error ? error.message : String(error);
+            await saveActiveVersion(this.fileRepo.manager, savedMcapEntity);
 
             // Ensure cleanup on failure
             if (fs.existsSync(mcapPath)) {

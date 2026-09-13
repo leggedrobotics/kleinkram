@@ -1,3 +1,4 @@
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileState } from '@kleinkram/shared';
@@ -26,7 +27,7 @@ export class McapHandler implements FileHandler {
         try {
             const presignedUrl =
                 await this.dataStorage.getInternalPresignedDownloadUrl(
-                    primaryFile.uuid,
+                    primaryFile.storageUuid,
                     15 * 60,
                 );
 
@@ -36,7 +37,9 @@ export class McapHandler implements FileHandler {
             );
         } catch (error) {
             primaryFile.state = FileState.CORRUPTED;
-            await this.fileRepo.save(primaryFile);
+            primaryFile.state_cause =
+                error instanceof Error ? error.message : String(error);
+            await saveActiveVersion(this.fileRepo.manager, primaryFile);
             throw error;
         }
     }

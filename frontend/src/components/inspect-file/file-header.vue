@@ -114,7 +114,7 @@
         <template #subtitle>
             <div class="q-gutter-md q-mt-xs file-header__body">
                 <div class="row items-start q-gutter-y-sm file-header__meta">
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Project</div>
                             <div class="text-subtitle1 text-primary ellipsis">
@@ -125,7 +125,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Mission</div>
                             <div class="text-subtitle1 text-primary ellipsis">
@@ -134,7 +134,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md-auto">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Start Date</div>
                             <div class="text-subtitle1 text-primary">
@@ -156,7 +156,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md-auto">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Uploaded</div>
                             <div class="text-subtitle1 text-primary">
@@ -168,7 +168,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md">
                         <div
                             v-if="file?.creator"
                             class="file-header__meta-item"
@@ -180,7 +180,21 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-1">
+                    <div class="col-12 col-md-auto">
+                        <div class="file-header__meta-item">
+                            <div class="text-placeholder">Version</div>
+                            <div class="text-subtitle1 text-primary">
+                                v{{ versionNumber }}
+                            </div>
+                            <div
+                                v-if="versionCount > 1"
+                                class="text-caption text-placeholder"
+                            >
+                                of {{ versionCount }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-auto">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">File State</div>
                             <q-icon
@@ -198,7 +212,7 @@
                             </q-icon>
                         </div>
                     </div>
-                    <div class="col-12 col-md-1">
+                    <div class="col-12 col-md-auto">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Size</div>
                             <div class="text-subtitle1 text-primary">
@@ -270,6 +284,20 @@ const duration = computed(() => {
     return seconds === undefined ? undefined : formatDuration(seconds);
 });
 
+/**
+ * Files created before versioning have no version rows yet, so both fall back
+ * to "v1" rather than rendering an empty slot.
+ */
+const versionNumber = computed(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    () => properties.file?.versionNumber ?? 1,
+);
+
+const versionCount = computed(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    () => properties.file?.versions?.length ?? 1,
+);
+
 const isDownloadDisabled = computed(() =>
     [FileState.LOST, FileState.UPLOADING].includes(
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -312,6 +340,12 @@ const handleCopyFoxglove = (): void => {
 }
 .button-border {
     border: 1px solid #ddd;
+}
+
+/* Content-width cells no longer get spacing from the old column widths, so
+   the row spaces them itself */
+.file-header__meta {
+    column-gap: 28px;
 }
 
 /* Matches the default title of title-section (ellipsis on one line) */

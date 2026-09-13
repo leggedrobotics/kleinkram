@@ -16,6 +16,9 @@
             <q-item-label v-if="event.details?.sourceFilename" caption>
                 &larr; {{ event.details.sourceFilename }}
             </q-item-label>
+            <q-item-label v-if="versionLabel" caption>
+                {{ versionLabel }}
+            </q-item-label>
             <q-item-label v-if="$q.screen.xs" caption class="text-grey-6">
                 {{ formatDate(event.createdAt) }}
             </q-item-label>
@@ -32,15 +35,28 @@
 import type { FileEventDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import { useQuasar } from 'quasar';
 import { formatDate } from 'src/services/date-formating';
+import { computed } from 'vue';
 import FileEventAttribution from './file-event-attribution.vue';
 import FileEventFileInfo from './file-event-file-info.vue';
 import FileEventIcon from './file-event-icon.vue';
 import { formatEventType } from './utilities';
 
-defineProps<{
+const properties = defineProps<{
     event: FileEventDto;
     hideActionAttribution?: boolean;
 }>();
 
 const $q = useQuasar();
+
+/**
+ * Files that only ever had one version would show "Version 1" on every single
+ * event, so the version is only called out once it tells the reader something.
+ */
+const versionLabel = computed(() => {
+    const versionNumber = properties.event.details.versionNumber as
+        number | undefined;
+    return typeof versionNumber === 'number' && versionNumber > 1
+        ? `Version ${versionNumber.toString()}`
+        : undefined;
+});
 </script>

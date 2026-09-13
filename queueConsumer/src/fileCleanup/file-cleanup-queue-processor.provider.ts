@@ -1,4 +1,5 @@
 import { redis } from '@kleinkram/backend-common/consts';
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 
@@ -45,7 +46,12 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 logger.debug('Fixing file hashes');
 
                 const files = await this.fileRepository.find({
-                    where: { hash: IsNull(), state: Not(FileState.LOST) },
+                    where: {
+                        activeVersion: {
+                            hash: IsNull(),
+                            state: Not(FileState.LOST),
+                        },
+                    },
                     relations: {
                         mission: {
                             project: true,
@@ -69,9 +75,10 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         continue;
                     }
 
-                    // Use DataStorageBucket to get stream (files are stored by UUID)
+                    // Each version owns its storage object, so the bytes to
+                    // hash are the ones of the active version.
                     const datastream = await this.dataStorage.getFileStream(
-                        file.uuid,
+                        file.storageUuid,
                     );
                     await new Promise((resolve, reject) => {
                         datastream.on('error', (error) => {
@@ -83,8 +90,7 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         });
                         datastream.on('end', () => {
                             file.hash = hash.digest('base64');
-                            this.fileRepository
-                                .save(file)
+                            saveActiveVersion(this.fileRepository.manager, file)
                                 .then(resolve)
                                 .catch((error: unknown) => {
                                     reject(
@@ -109,16 +115,22 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 logger.debug('Cleaning up failed uploads');
                 const failedUploads = await this.fileRepository.find({
                     where: {
-                        state: FileState.UPLOADING,
-                        updatedAt: LessThanOrEqual(
-                            new Date(Date.now() - 1000 * 60 * 60 * 12),
-                        ),
+                        activeVersion: {
+                            state: FileState.UPLOADING,
+                            updatedAt: LessThanOrEqual(
+                                new Date(Date.now() - 1000 * 60 * 60 * 12),
+                            ),
+                        },
                     },
+                    relations: { mission: true },
                 });
                 await Promise.all(
                     failedUploads.map(async (file) => {
                         file.state = FileState.ERROR;
-                        await this.fileRepository.save(file);
+                        await saveActiveVersion(
+                            this.fileRepository.manager,
+                            file,
+                        );
 
                         if (file.mission === undefined) {
                             logger.error(
@@ -159,17 +171,24 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 // Clean up canceled uploads older than 24 hours
                 const canceledUploads = await this.fileRepository.find({
                     where: {
-                        state: FileState.CANCELED,
-                        updatedAt: LessThanOrEqual(
-                            new Date(Date.now() - 1000 * 60 * 60 * 24),
-                        ),
+                        activeVersion: {
+                            state: FileState.CANCELED,
+                            updatedAt: LessThanOrEqual(
+                                new Date(Date.now() - 1000 * 60 * 60 * 24),
+                            ),
+                        },
                     },
                 });
                 if (canceledUploads.length > 0) {
                     logger.debug(
                         `Cleaning up ${String(canceledUploads.length)} canceled uploads`,
                     );
-                    const canceledUuids = canceledUploads.map((f) => f.uuid);
+                    // Jobs of versions past the first are keyed by the version
+                    // uuid rather than by the file uuid.
+                    const canceledUuids = canceledUploads.flatMap((f) => [
+                        f.uuid,
+                        f.storageUuid,
+                    ]);
                     await this.queueRepository
                         .softDelete({
                             identifier: In(canceledUuids),
@@ -184,15 +203,18 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                         canceledUploads.map(async (file) => {
                             try {
                                 await this.dataStorage
-                                    .deleteFile(file.uuid)
+                                    .deleteFile(file.storageUuid)
                                     .catch((error: unknown) => {
                                         logger.error(
                                             `Failed to delete S3 object for ${file.uuid}: ${String(error)}`,
                                         );
                                     });
+                                // The query above already restricted this to
+                                // canceled uploads, which the delete can no
+                                // longer re-state now that the state lives on
+                                // the version.
                                 await this.fileRepository.softDelete({
                                     uuid: file.uuid,
-                                    state: FileState.CANCELED,
                                 });
                             } catch (error: unknown) {
                                 logger.error(
