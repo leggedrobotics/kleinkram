@@ -1,28 +1,13 @@
 <template>
     <title-section :title="`File: ${file?.filename ?? 'Loading...'}`">
         <template #title>
-            <div
-                class="row items-center no-wrap q-gutter-sm file-header__heading"
-            >
-                <h1 class="text-h5 text-md-h3 q-ma-none file-header__title">
-                    <span v-if="!$q.screen.xs">File: </span>
-                    {{ file?.filename ?? 'Loading...' }}
-                    <q-tooltip v-if="file?.filename">
-                        {{ file.filename }}
-                    </q-tooltip>
-                </h1>
-                <q-chip
-                    v-if="file"
-                    dense
-                    square
-                    outline
-                    color="primary"
-                    :label="`v${versionNumber}`"
-                    class="q-ma-none col-auto file-header__version"
-                >
-                    <q-tooltip>{{ versionTooltip }}</q-tooltip>
-                </q-chip>
-            </div>
+            <h1 class="text-h5 text-md-h3 q-ma-none file-header__title">
+                <span v-if="!$q.screen.xs">File: </span>
+                {{ file?.filename ?? 'Loading...' }}
+                <q-tooltip v-if="file?.filename">
+                    {{ file.filename }}
+                </q-tooltip>
+            </h1>
         </template>
 
         <template #buttons>
@@ -129,7 +114,7 @@
         <template #subtitle>
             <div class="q-gutter-md q-mt-xs file-header__body">
                 <div class="row items-start q-gutter-y-sm file-header__meta">
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Project</div>
                             <div class="text-subtitle1 text-primary ellipsis">
@@ -140,7 +125,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Mission</div>
                             <div class="text-subtitle1 text-primary ellipsis">
@@ -149,7 +134,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Start Date</div>
                             <div class="text-subtitle1 text-primary">
@@ -171,7 +156,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Uploaded</div>
                             <div class="text-subtitle1 text-primary">
@@ -183,7 +168,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-2">
+                    <div class="col-12 col-md">
                         <div
                             v-if="file?.creator"
                             class="file-header__meta-item"
@@ -195,7 +180,21 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-1">
+                    <div class="col-12 col-md-auto">
+                        <div class="file-header__meta-item">
+                            <div class="text-placeholder">Version</div>
+                            <div class="text-subtitle1 text-primary">
+                                v{{ versionNumber }}
+                            </div>
+                            <div
+                                v-if="versionCount > 1"
+                                class="text-caption text-placeholder"
+                            >
+                                of {{ versionCount }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-auto">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">File State</div>
                             <q-icon
@@ -213,7 +212,7 @@
                             </q-icon>
                         </div>
                     </div>
-                    <div class="col-12 col-md-1">
+                    <div class="col-12 col-md-auto">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Size</div>
                             <div class="text-subtitle1 text-primary">
@@ -299,12 +298,6 @@ const versionCount = computed(
     () => properties.file?.versions?.length ?? 1,
 );
 
-const versionTooltip = computed(() =>
-    versionCount.value > 1
-        ? `Version ${versionNumber.value.toString()} of ${versionCount.value.toString()}, the one this page shows. Older versions stay downloadable.`
-        : 'The only version of this file',
-);
-
 const isDownloadDisabled = computed(() =>
     [FileState.LOST, FileState.UPLOADING].includes(
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -347,15 +340,6 @@ const handleCopyFoxglove = (): void => {
 }
 .button-border {
     border: 1px solid #ddd;
-}
-
-/* The chip keeps its width, the name takes what is left and ellipsises */
-.file-header__heading {
-    min-width: 0;
-}
-
-.file-header__version {
-    flex: 0 0 auto;
 }
 
 /* Matches the default title of title-section (ellipsis on one line) */

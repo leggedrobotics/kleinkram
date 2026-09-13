@@ -1,3 +1,4 @@
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileState } from '@kleinkram/shared';
@@ -38,7 +39,7 @@ export class McapHandler implements FileHandler {
             primaryFile.state = FileState.CORRUPTED;
             primaryFile.state_cause =
                 error instanceof Error ? error.message : String(error);
-            await this.fileRepo.save(primaryFile);
+            await saveActiveVersion(this.fileRepo.manager, primaryFile);
             throw error;
         }
     }

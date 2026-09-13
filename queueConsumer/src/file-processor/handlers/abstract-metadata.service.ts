@@ -1,4 +1,5 @@
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
@@ -81,11 +82,13 @@ export abstract class AbstractMetadataService {
                 await this.topicRepo.save(topicEntities, { chunk: 100 });
             }
 
-            // Update File Entity
+            // The extraction result describes the version that was read, and
+            // writing the file row here would undo a version uploaded while
+            // this job was running.
             applyRecordingTimes(targetEntity, recordingTimes);
             targetEntity.state = FileState.OK;
             targetEntity.size = fileSize;
-            await this.fileRepo.save(targetEntity);
+            await saveActiveVersion(this.fileRepo.manager, targetEntity);
 
             // Calculate Duration
             const durationMs = Date.now() - startTime;
@@ -127,7 +130,7 @@ export abstract class AbstractMetadataService {
             targetEntity.state = FileState.CONVERSION_ERROR;
             targetEntity.state_cause =
                 error instanceof Error ? error.message : String(error);
-            await this.fileRepo.save(targetEntity);
+            await saveActiveVersion(this.fileRepo.manager, targetEntity);
             throw error;
         }
     }

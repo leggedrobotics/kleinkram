@@ -1,3 +1,4 @@
+import { FileVersionEntity } from '@kleinkram/backend-common/entities/file/file-version.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileType } from '@kleinkram/shared';
@@ -57,9 +58,12 @@ export class RecordingTimesBackfillService {
         // Reading the object takes long enough for the file to be renamed,
         // moved or rehashed in the meantime, so only the columns this job owns
         // are written rather than the entity we loaded before the read. The
-        // `IsNull` guard makes that a no-op if another worker got there first.
-        await this.fileRepo.update(
-            { uuid: file.uuid, recordingStartDate: IsNull() },
+        // `IsNull` guard makes that a no-op if another worker got there first,
+        // and scoping the update to the version we probed makes it a no-op if
+        // a new version was uploaded instead.
+        await this.fileRepo.manager.update(
+            FileVersionEntity,
+            { uuid: file.storageUuid, recordingStartDate: IsNull() },
             {
                 ...recordingTimeColumns(recordingTimes ?? {}),
                 recordingTimesCheckedAt: new Date(),
@@ -88,21 +92,16 @@ export class RecordingTimesBackfillService {
         file: FileEntity,
     ): Promise<RecordingTimes | undefined> {
         const related = await this.fileRepo.findOne({
-            select: {
-                uuid: true,
-                recordingStartDate: true,
-                recordingEndDate: true,
-            },
             where: [
                 // the file this one was converted from
                 {
                     derivedFiles: { uuid: file.uuid },
-                    recordingStartDate: Not(IsNull()),
+                    activeVersion: { recordingStartDate: Not(IsNull()) },
                 },
                 // a file that was converted from this one
                 {
                     parent: { uuid: file.uuid },
-                    recordingStartDate: Not(IsNull()),
+                    activeVersion: { recordingStartDate: Not(IsNull()) },
                 },
             ],
         });
@@ -158,7 +157,7 @@ export class RecordingTimesBackfillService {
         const localPath = path.join(workDirectory, `${file.uuid}.db3`);
 
         try {
-            await this.dataStorage.downloadFile(file.uuid, localPath);
+            await this.dataStorage.downloadFile(file.storageUuid, localPath);
             return this.db3MetadataService.probeRecordingTimesFromLocalFile(
                 localPath,
             );
@@ -172,7 +171,7 @@ export class RecordingTimesBackfillService {
 
     private async presignedUrl(file: FileEntity): Promise<string> {
         return this.dataStorage.getInternalPresignedDownloadUrl(
-            file.uuid,
+            file.storageUuid,
             PRESIGNED_URL_TTL_SECONDS,
         );
     }

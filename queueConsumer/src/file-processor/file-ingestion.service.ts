@@ -6,6 +6,8 @@ import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Repository } from 'typeorm';
 
+import { FileVersionEntity } from '@kleinkram/backend-common/entities/file/file-version.entity';
+import { saveActiveVersion } from '@kleinkram/backend-common/entities/file/file-version.helpers';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
@@ -79,7 +81,10 @@ export class FileIngestionService {
                         logger.warn(cause);
                         primaryFile.state = FileState.CORRUPTED;
                         primaryFile.state_cause = cause;
-                        await this.fileRepo.save(primaryFile);
+                        await saveActiveVersion(
+                            this.fileRepo.manager,
+                            primaryFile,
+                        );
                         await this.updateQueueState(
                             queueItem,
                             QueueState.CORRUPTED,
@@ -108,7 +113,10 @@ export class FileIngestionService {
                         }
                         primaryFile.state_cause ??= errorMessage;
                         try {
-                            await this.fileRepo.save(primaryFile);
+                            await saveActiveVersion(
+                                this.fileRepo.manager,
+                                primaryFile,
+                            );
                         } catch {
                             // ignore save failure during error handling
                         }
@@ -212,12 +220,19 @@ export class FileIngestionService {
         if (isTum) type = FileType.TUM;
         if (isYaml) type = FileType.YAML;
 
+        // `create()` only copies mapped columns, and everything below the
+        // filename now lives on the version, so the version is built by hand
+        // and saved along with the file through the `activeVersion` cascade.
         const entity = this.fileRepo.create({
-            date: new Date(),
             mission: queueItem.mission,
-            size: data.size,
             filename: data.filename,
             creator: queueItem.creator,
+        } as FileEntity);
+
+        entity.activeVersion = this.fileRepo.manager.create(FileVersionEntity, {
+            versionNumber: 1,
+            date: new Date(),
+            size: data.size,
             type,
             state: FileState.UPLOADING,
             hash: data.hash,
@@ -225,7 +240,7 @@ export class FileIngestionService {
                 queueItem.location === FileLocation.DRIVE
                     ? FileOrigin.GOOGLE_DRIVE
                     : FileOrigin.UPLOAD,
-        } as FileEntity);
+        });
 
         return await this.fileRepo.save(entity);
     }

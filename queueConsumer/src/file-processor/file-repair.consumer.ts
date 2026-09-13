@@ -43,10 +43,11 @@ export class FileRepairProcessor {
                 return;
             }
 
-            // Get an internal presigned URL (valid for 60 minutes)
+            // Get an internal presigned URL (valid for 60 minutes). The bytes
+            // live under the version's uuid, which is not the file's.
             const presignedUrl =
                 await this.dataStorage.getInternalPresignedDownloadUrl(
-                    fileUuid,
+                    fileEntity.storageUuid,
                     60 * 60,
                 );
 

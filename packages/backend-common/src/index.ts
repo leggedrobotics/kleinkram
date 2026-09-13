@@ -16,6 +16,7 @@ export * from './entities/base-entity.entity';
 export * from './entities/category/category.entity';
 export * from './entities/file/file-event.entity';
 export * from './entities/file/file-version.entity';
+export * from './entities/file/file-version.helpers';
 export * from './entities/file/file.entity';
 export * from './entities/file/ingestion-job.entity';
 export * from './entities/metadata/metadata.entity';
