@@ -166,7 +166,14 @@ describe('Action Scheduling Logic Unit Tests', () => {
 
             // DB was updated
             expect(mockActionRepository.execute).toHaveBeenCalled();
-            expect(mockActionRepository.set).toHaveBeenCalledWith({ worker });
+            // Claiming a worker also clears the outcome of a previous run, so
+            // a re-dispatched action does not keep showing the old failure.
+            expect(mockActionRepository.set).toHaveBeenCalledWith({
+                worker,
+                state: ActionState.PENDING,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                state_cause: null,
+            });
             expect(mockActionRepository.where).toHaveBeenCalledWith(
                 'uuid = :uuid',
                 { uuid: action.uuid },
