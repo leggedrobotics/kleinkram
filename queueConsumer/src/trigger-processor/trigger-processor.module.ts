@@ -1,7 +1,9 @@
 import {
+    ActionEntity,
     ActionTemplateEntity,
     ActionTriggerEntity,
     FileEntity,
+    FileEventEntity,
     MissionEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
@@ -18,6 +20,8 @@ import { TriggerQueueProcessorProvider } from './trigger-queue-processor.provide
             MissionEntity,
             UserEntity,
             FileEntity,
+            FileEventEntity,
+            ActionEntity,
         ]),
         ActionDispatcherModule,
     ],

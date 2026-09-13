@@ -77,6 +77,20 @@
                         autofocus
                         @update:model-value="verifyInput"
                     />
+
+                    <div class="flex column q-mt-sm">
+                        <label for="autoRecoverMcap"
+                            >Auto-recover broken MCAP files</label
+                        >
+                        <q-toggle
+                            v-model="autoRecoverMcap"
+                            name="autoRecoverMcap"
+                            label="Automatically recover corrupted MCAP files"
+                            color="primary"
+                            dense
+                            style="margin: 6px 0"
+                        />
+                    </div>
                 </q-tab-panel>
 
                 <q-tab-panel name="tags">
@@ -134,6 +148,7 @@ const queryClient = useQueryClient();
 const projectNameInput = ref<QInput>();
 const newProjectName = ref('');
 const newProjectDescription = ref('');
+const autoRecoverMcap = ref(true);
 const invalidProjectNames = ref<string[]>([]);
 
 const tab = ref('meta_data');
@@ -199,6 +214,7 @@ const submitNewProject = async () => {
         defaultRights.value?.data
             .filter((r) => !accessGroups.value.some((a) => a.uuid === r.uuid))
             .map((r) => r.uuid),
+        autoRecoverMcap.value,
     )
         .then(async () => {
             await queryClient.invalidateQueries({ queryKey: ['projects'] });

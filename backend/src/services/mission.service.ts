@@ -18,7 +18,12 @@ import { ProjectEntity } from '@kleinkram/backend-common/entities/project/projec
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { UserRole } from '@kleinkram/shared';
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+    ConflictException,
+    ForbiddenException,
+    Inject,
+    Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
 import logger from '../logger';
@@ -171,10 +176,27 @@ export class MissionService {
     async findMany(
         query: MissionQueryDto,
         userUuid: string,
+        apiKeyMissionUuid?: string,
     ): Promise<MissionsDto | MinimumMissionsDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: userUuid },
         });
+
+        const requestedMissionUuids =
+            query.missionUuids ?? (query.uuid ? [query.uuid] : []);
+
+        if (apiKeyMissionUuid !== undefined) {
+            const foreignMissionUuids = requestedMissionUuids.filter(
+                (missionUuid) => missionUuid !== apiKeyMissionUuid,
+            );
+
+            if (foreignMissionUuids.length > 0) {
+                throw new ForbiddenException(
+                    `API key is scoped to mission ${apiKeyMissionUuid} and cannot access ` +
+                        `the following missions: ${foreignMissionUuids.join(', ')}`,
+                );
+            }
+        }
 
         let idQuery = this.missionRepository
             .createQueryBuilder('mission')
@@ -183,6 +205,12 @@ export class MissionService {
             .leftJoin('mission.creator', 'creator')
             .leftJoin('mission.tags', 'tag')
             .leftJoin('tag.tagType', 'tagType');
+
+        if (apiKeyMissionUuid !== undefined) {
+            idQuery.andWhere('mission.uuid = :apiKeyMissionUuid', {
+                apiKeyMissionUuid,
+            });
+        }
 
         if (user.role !== UserRole.ADMIN) {
             idQuery = addAccessConstraintsToMissionQuery(idQuery, userUuid);

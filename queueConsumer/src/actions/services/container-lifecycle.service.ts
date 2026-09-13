@@ -1,4 +1,8 @@
-import { ActionEntity, environment } from '@kleinkram/backend-common';
+import {
+    ActionEntity,
+    environment,
+    externalS3Endpoint,
+} from '@kleinkram/backend-common';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { ActionState, ImageSource } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
@@ -72,7 +76,10 @@ export class ContainerLifecycleService {
             KLEINKRAM_MISSION_UUID: action.mission.uuid,
             KLEINKRAM_ACTION_UUID: action.uuid,
             KLEINKRAM_API_ENDPOINT: environment.BACKEND_URL,
-            KLEINKRAM_S3_ENDPOINT: `https://${environment.S3_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+            KLEINKRAM_S3_ENDPOINT: externalS3Endpoint(),
+            ...(action.fileUuid
+                ? { KLEINKRAM_FILE_UUID: action.fileUuid }
+                : {}),
         };
 
         const labels: Record<string, string> = {

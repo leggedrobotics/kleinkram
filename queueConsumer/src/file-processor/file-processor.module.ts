@@ -43,6 +43,7 @@ import { Db3Handler } from './handlers/db3.handler';
             ApiKeyEntity,
         ]),
         BullModule.registerQueue({ name: 'file-queue' }),
+        BullModule.registerQueue({ name: 'trigger-queue' }),
         StorageModule,
         ActionDispatcherModule,
     ],

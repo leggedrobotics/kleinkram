@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsBoolean, IsDate, IsString, IsUUID } from 'class-validator';
+import {
+    IsBoolean,
+    IsDate,
+    IsOptional,
+    IsString,
+    IsUUID,
+} from 'class-validator';
 
 @Expose()
 export class ProjectDto {
@@ -33,4 +39,10 @@ export class ProjectDto {
     @IsBoolean()
     @Expose()
     autoConvert!: boolean;
+
+    @ApiProperty({ required: false })
+    @IsBoolean()
+    @IsOptional()
+    @Expose()
+    autoRecoverMcap?: boolean;
 }

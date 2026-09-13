@@ -82,7 +82,7 @@ export class ActionService {
             data.templateUUID,
             mission,
             creator,
-            {},
+            data.fileUUID ? { fileUuid: data.fileUUID } : {},
         );
 
         return { actionUUID };

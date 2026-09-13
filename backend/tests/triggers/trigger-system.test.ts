@@ -194,7 +194,7 @@ describe('Trigger System API Tests', () => {
                 actionRepo.create({
                     state: ActionState.PENDING,
                     template: trigger.template,
-                    mission: trigger.mission,
+                    mission: trigger.mission ?? undefined,
                     creator: user,
                 }),
             );

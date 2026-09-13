@@ -10,6 +10,7 @@ export const createProject = async (
         | { userUUID: string; rights: AccessGroupRights }
     )[],
     removedDefaultGroups: string[],
+    autoRecoverMcap = true,
 ) => {
     const response = await axios.post('/projects', {
         name,
@@ -17,6 +18,7 @@ export const createProject = async (
         requiredTags,
         accessGroups,
         removedDefaultGroups,
+        autoRecoverMcap,
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;
@@ -27,11 +29,13 @@ export const updateProject = async (
     name: string,
     description: string,
     autoConvert: boolean,
+    autoRecoverMcap?: boolean,
 ) => {
     const response = await axios.put(`/projects/${projectUUID}`, {
         name,
         description,
         autoConvert,
+        ...(autoRecoverMcap === undefined ? {} : { autoRecoverMcap }),
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.data;

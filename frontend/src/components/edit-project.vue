@@ -62,6 +62,24 @@
                 https://github.com/leggedrobotics/kleinkram/issues/1250.
             </span>
         </div>
+
+        <div class="flex column q-mt-md">
+            <label for="autoRecoverMcap"
+                >Enable Auto-Recovery for corrupted MCAP files</label
+            >
+            <q-toggle
+                v-model="autoRecoverMcap"
+                name="autoRecoverMcap"
+                label="auto-recover broken MCAP files"
+                color="primary"
+                dense
+                style="margin: 10px 0"
+            />
+            <span class="text-grey-8">
+                Automatically runs MCAP doctor and recovery on corrupted MCAP
+                files uploaded to this project.
+            </span>
+        </div>
     </div>
     <div v-else>
         <q-spinner />
@@ -83,6 +101,7 @@ const queryClient = useQueryClient();
 
 const projectName = ref('');
 const autoConvert = ref(true);
+const autoRecoverMcap = ref(true);
 const projectDescription = ref('');
 const hasValidInput = ref(false);
 
@@ -97,6 +116,7 @@ watch(
             projectName.value = newVale.name;
             projectDescription.value = newVale.description;
             autoConvert.value = newVale.autoConvert;
+            autoRecoverMcap.value = newVale.autoRecoverMcap ?? true;
         }
     },
     { immediate: true },
@@ -108,7 +128,8 @@ async function save_changes(): Promise<void> {
     if (
         projectName.value === project.value?.name &&
         projectDescription.value === project.value.description &&
-        autoConvert.value === project.value.autoConvert
+        autoConvert.value === project.value.autoConvert &&
+        autoRecoverMcap.value === project.value.autoRecoverMcap
     )
         return;
 
@@ -128,6 +149,7 @@ async function save_changes(): Promise<void> {
         projectName.value.trim(),
         projectDescription.value,
         autoConvert.value,
+        autoRecoverMcap.value,
     ).catch((error: unknown) => {
         Notify.create({
             message: `Error updating project: ${getErrorMessage(error)}`,

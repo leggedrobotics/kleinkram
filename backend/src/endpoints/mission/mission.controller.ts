@@ -37,7 +37,7 @@ import {
     CanReadMission,
     CanWriteMissionByBody,
     fromParameter,
-    UserOnly,
+    LoggedIn,
 } from '../auth/roles.decorator';
 
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
@@ -80,7 +80,7 @@ export class MissionController {
     }
 
     @Get()
-    @UserOnly()
+    @LoggedIn()
     @ApiOkResponse({
         description: 'Returns all missions',
         type: MissionsDto,
@@ -95,7 +95,12 @@ export class MissionController {
         @Query() query: MissionQueryDto,
         @AddUser() user: AuthHeader,
     ): Promise<MissionsDto | MinimumMissionsDto> {
-        return await this.missionService.findMany(query, user.user.uuid);
+        const apiKeyMissionUuid = user.apiKey?.mission.uuid;
+        return await this.missionService.findMany(
+            query,
+            user.user.uuid,
+            apiKeyMissionUuid,
+        );
     }
 
     @Get(':uuid')

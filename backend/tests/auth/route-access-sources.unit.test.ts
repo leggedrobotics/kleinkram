@@ -59,6 +59,7 @@ const EXPECTED_ACCESS_SOURCES = new Map<string, AccessSource>([
     ['FileController.getFoxgloveLink', fromParameter('uuid')],
     ['FileController.importFromDrive', fromBody('missionUUID')],
     ['FileController.getFileById', fromParameter('uuid')],
+    ['FileController.recover', fromParameter('uuid')],
 
     // --- missions --------------------------------------------------------
     ['MissionController.createMission', fromBody('projectUUID')],
