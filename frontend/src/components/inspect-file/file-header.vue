@@ -134,7 +134,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md">
+                    <div class="col-12 col-md-auto">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Start Date</div>
                             <div class="text-subtitle1 text-primary">
@@ -156,7 +156,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md">
+                    <div class="col-12 col-md-auto">
                         <div class="file-header__meta-item">
                             <div class="text-placeholder">Uploaded</div>
                             <div class="text-subtitle1 text-primary">
@@ -340,6 +340,12 @@ const handleCopyFoxglove = (): void => {
 }
 .button-border {
     border: 1px solid #ddd;
+}
+
+/* Content-width cells no longer get spacing from the old column widths, so
+   the row spaces them itself */
+.file-header__meta {
+    column-gap: 28px;
 }
 
 /* Matches the default title of title-section (ellipsis on one line) */
