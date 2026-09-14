@@ -62,6 +62,18 @@ export class FileIngestionService {
                         fileData,
                     );
 
+                    if (primaryFile === null) {
+                        logger.warn(
+                            `File ${queueItem.identifier} was deleted while job ` +
+                                `${queueItem.uuid} was still ingesting, discarding it`,
+                        );
+                        await this.updateQueueState(
+                            queueItem,
+                            QueueState.CANCELED,
+                        );
+                        return;
+                    }
+
                     await this.ensureFileIsInS3(
                         queueItem,
                         primaryFile,
@@ -162,22 +174,26 @@ export class FileIngestionService {
         };
     }
 
+    /**
+     * Resolves the file entity a job writes its results to. Returns `null` when
+     * the upload it belongs to has been deleted in the meantime, in which case
+     * the job has nothing left to ingest.
+     */
     private async createAndSaveFileEntity(
         queueItem: IngestionJobEntity,
         data: DownloadResult,
-    ): Promise<FileEntity> {
-        let existingFile;
-
+    ): Promise<FileEntity | null> {
         // Drive Files do not have a UUID identifier, so we cannot verify existence by UUID.
         // For standard uploads, the identifier IS the UUID.
         if (queueItem.location !== FileLocation.DRIVE) {
-            existingFile = await this.fileRepo.findOne({
+            // The row is created up front and resolved again by the source
+            // strategy, so it existed when the download started. A miss here
+            // means it was soft-deleted while we were downloading; re-creating
+            // it would resurrect the deleted upload as a new row whose object
+            // is already gone from storage.
+            return await this.fileRepo.findOne({
                 where: { uuid: queueItem.identifier },
             });
-        }
-
-        if (existingFile) {
-            return existingFile;
         }
 
         const isBag = data.filename.endsWith('.bag');
@@ -205,10 +221,8 @@ export class FileIngestionService {
             type,
             state: FileState.UPLOADING,
             hash: data.hash,
-            origin:
-                queueItem.location === FileLocation.DRIVE
-                    ? FileOrigin.GOOGLE_DRIVE
-                    : FileOrigin.UPLOAD,
+            // only Drive jobs reach this point, uploads return above
+            origin: FileOrigin.GOOGLE_DRIVE,
         } as FileEntity);
 
         return await this.fileRepo.save(entity);
