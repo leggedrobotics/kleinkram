@@ -273,11 +273,14 @@ export const tagEntityToDto = (tag: MetadataEntity): TagDto => {
  * `undefined` fields.
  */
 export const projectAccessesToProjectDtos = (
-    projectAccesses: ProjectAccessEntity[] | undefined,
+    projectAccesses: ProjectAccessEntity[] | undefined | null,
 ): ProjectWithAccessRightsDto[] =>
     (projectAccesses ?? []).flatMap((access) => {
-        const project = access.project;
-        if (project === undefined) {
+        // TypeORM types a joined relation as optional, but hands back `null`
+        // (not `undefined`) when the join matches no row — which is the case
+        // for an access pointing at a soft-deleted project.
+        const project = access.project as ProjectEntity | null | undefined;
+        if (project === undefined || project === null) {
             return [];
         }
         return [
