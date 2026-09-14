@@ -321,11 +321,10 @@ export class ProjectService {
             .leftJoinAndSelect('memberships.user', 'user')
             .getOneOrFail();
 
-        const missionCountPromise = this.projectRepository
-            .createQueryBuilder('project')
-            .leftJoin('project.missions', 'missions')
-            .where('project.uuid = :uuid', { uuid })
-            .getCount();
+        const missionCountPromise = this.projectRepository.manager.count(
+            MissionEntity,
+            { where: { project: { uuid } } },
+        );
 
         const [mission, missionCount] = await Promise.all([
             missionPromise,
