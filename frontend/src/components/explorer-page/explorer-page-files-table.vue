@@ -102,6 +102,17 @@
                 </q-icon>
             </q-td>
         </template>
+        <template #body-cell-filename="props">
+            <q-td :props="props">
+                <router-link
+                    :to="fileRoute(props.row)"
+                    class="kk-row-link"
+                    @click.stop
+                >
+                    {{ props.row.filename }}
+                </router-link>
+            </q-td>
+        </template>
         <template #body-cell-cats="props">
             <q-td :props="props">
                 <q-chip
@@ -450,7 +461,7 @@ import {
 import { filesOfMission } from 'src/services/queries/file';
 import { TableRequest } from 'src/services/query-handler';
 import { computed, ref, unref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouteLocationRaw, useRouter } from 'vue-router';
 
 const selected = defineModel('selected', { required: true, type: Array });
 
@@ -739,6 +750,21 @@ watch(
     },
     { immediate: true },
 );
+
+/**
+ * Route to a file, shared by the row click and the name link.
+ */
+function fileRoute(row: FileWithTopicDto): RouteLocationRaw {
+    return {
+        name: ROUTES.FILE.routeName,
+        params: {
+            projectUuid: projectUuid.value ?? '',
+            missionUuid: missionUuid.value ?? '',
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            file_uuid: row.uuid,
+        },
+    };
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const openFile = async (row: any): Promise<void> => {

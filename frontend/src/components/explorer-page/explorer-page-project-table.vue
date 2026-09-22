@@ -234,6 +234,18 @@
             </div>
         </template>
 
+        <template #body-cell-name="props">
+            <q-td :props="props">
+                <router-link
+                    :to="projectRoute(props.row)"
+                    class="kk-row-link"
+                    @click.stop
+                >
+                    {{ props.row.name }}
+                </router-link>
+            </q-td>
+        </template>
+
         <template #body-cell-star="props">
             <q-td :props="props">
                 <project-star-button
@@ -319,6 +331,7 @@
 </template>
 
 <script setup lang="ts">
+import type { ProjectWithMissionCountDto } from '@kleinkram/api-dto/types/project/project-with-mission-count.dto';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
@@ -338,7 +351,7 @@ import { formatSize } from 'src/services/general-formatting';
 import { TableRequest } from 'src/services/query-handler';
 import type { ProjectScope } from 'src/types/project-scope';
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouteLocationRaw, useRouter } from 'vue-router';
 
 const urlHandler = useHandler();
 const $q = useQuasar();
@@ -457,6 +470,16 @@ watch(
 );
 
 const $router = useRouter();
+
+/**
+ * Route to a project's missions, shared by the row click and the name link.
+ */
+function projectRoute(row: ProjectWithMissionCountDto): RouteLocationRaw {
+    return {
+        name: ROUTES.MISSIONS.routeName,
+        params: { projectUuid: row.uuid },
+    };
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onRowClick = async (_: Event, row: any): Promise<void> => {
