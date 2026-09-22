@@ -15,7 +15,9 @@ import {
     KeyTypes,
     maxActionSeverity,
     resolveActionOutcome,
+    resolveFinalVerdict,
     ResourceUsage,
+    TERMINAL_ACTION_STATES,
     UserRole,
 } from '@kleinkram/shared';
 import { Injectable, OnModuleInit } from '@nestjs/common';
@@ -414,10 +416,19 @@ export class ActionManagerService implements OnModuleInit {
             });
 
             if (!this.cancellationService.isCancelled(action.uuid)) {
-                await this.actionRepository.update(
-                    { uuid: action.uuid },
-                    { state: ActionState.STOPPING },
-                );
+                // Conditional, because the janitor may have already failed this
+                // action - it is what killed the container we just stopped
+                // waiting on. Writing STOPPING unconditionally would erase that
+                // verdict before setActionState can read it back.
+                await this.actionRepository
+                    .createQueryBuilder()
+                    .update(ActionEntity)
+                    .set({ state: ActionState.STOPPING })
+                    .where('uuid = :uuid', { uuid: action.uuid })
+                    .andWhere('state NOT IN (:...terminal)', {
+                        terminal: TERMINAL_ACTION_STATES,
+                    })
+                    .execute();
             }
 
             this.containerLifecycleService.removeContainer(container.id, true);
@@ -633,39 +644,57 @@ export class ActionManagerService implements OnModuleInit {
         // only ever raise it further, never talk it back down - so an outcome
         // of OK leaves the column alone rather than writing a value read
         // before the last diagnostic may have landed.
-        const reported = await this.actionRepository.findOne({
+        const stored = await this.actionRepository.findOne({
             where: { uuid: action.uuid },
-            select: { uuid: true, severity: true },
+            select: {
+                uuid: true,
+                severity: true,
+                state: true,
+                failureOrigin: true,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                state_cause: true,
+            },
         });
         const severity = maxActionSeverity(
-            reported?.severity ?? ActionSeverity.OK,
+            stored?.severity ?? ActionSeverity.OK,
             outcome.severity,
         );
         const raisesSeverity = outcome.severity !== ActionSeverity.OK;
+
+        // A verdict the janitor already recorded wins over anything the exit
+        // code implies - see resolveFinalVerdict.
+        const verdict = resolveFinalVerdict(
+            stored && {
+                state: stored.state,
+                failureOrigin: stored.failureOrigin,
+                stateCause: stored.state_cause,
+            },
+            outcome,
+        );
 
         wideLog.add({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             exit_code: exitCode,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            final_state: outcome.state,
+            final_state: verdict.state,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             final_severity: severity,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            failure_origin: outcome.failureOrigin ?? '',
+            failure_origin: verdict.failureOrigin ?? '',
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            state_cause: outcome.stateCause,
+            state_cause: verdict.stateCause,
         });
 
         await this.actionRepository.update(
             { uuid: action.uuid },
             {
-                state: outcome.state,
+                state: verdict.state,
+                failureOrigin: verdict.failureOrigin,
                 ...(raisesSeverity && { severity }),
-                failureOrigin: outcome.failureOrigin,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 exit_code: exitCode,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause: outcome.stateCause,
+                state_cause: verdict.stateCause,
             },
         );
     }

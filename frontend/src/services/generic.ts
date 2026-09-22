@@ -285,14 +285,27 @@ export function getActionBadge(
         failureOrigin?: ActionFailureOrigin | undefined;
     } = {},
 ): { color: string; label: string } {
-    if (state === ActionState.DONE && severity === ActionSeverity.WARNING) {
+    // A finished run is described by its verdict, not by the fact that it
+    // finished. An action that reported a fatal finding and still exited 0 is
+    // `DONE` with severity `ERROR`, and showing that as a green success is the
+    // exact thing this feature exists to prevent - so every non-OK verdict is
+    // handled here, not just `WARNING`.
+    if (state === ActionState.DONE && severity !== ActionSeverity.OK) {
+        const isError = severity === ActionSeverity.ERROR;
         const count = options.diagnosticCount ?? 0;
+        // `diagnosticCount` counts every diagnostic, including `INFO` notes
+        // that did not raise the verdict, so it cannot be called a count of
+        // warnings. The colour carries the severity; the number is findings.
+        const detail =
+            count > 0
+                ? `${count.toString()} ${count === 1 ? 'finding' : 'findings'}`
+                : isError
+                  ? 'errors'
+                  : 'warnings';
+
         return {
-            color: 'amber-8',
-            label:
-                count > 0
-                    ? `DONE · ${count.toString()} ${count === 1 ? 'warning' : 'warnings'}`
-                    : 'DONE · warnings',
+            color: isError ? 'red' : 'amber-8',
+            label: `DONE · ${detail}`,
         };
     }
 

@@ -8,6 +8,7 @@ conversion to the internal representation
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 from typing import Collection
@@ -53,6 +54,8 @@ from kleinkram.types import PathLike
 from kleinkram.utils import parse_path_like
 from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import singleton_list
+
+logger = logging.getLogger(__name__)
 
 
 def _args_to_project_query(
@@ -712,16 +715,25 @@ def _report(
     if resolved is None:
         raise NotInsideAction("no action to report on: set KLEINKRAM_ACTION_UUID or pass execution_id explicitly")
 
-    client = client or AuthenticatedClient()
-    kleinkram.core.report_diagnostic(
-        client=client,
-        execution_id=parse_uuid_like(resolved),
-        severity=severity,
-        message=message,
-        code=code,
-        file=file,
-        details=details,
-    )
+    # Reporting must never be the thing that fails the run. The caller is in the
+    # middle of the work the user actually asked for, so a network blip while
+    # recording a warning would otherwise turn a `DONE`/`WARNING` into a
+    # `FAILED` - the exact inversion these functions exist to avoid. Only
+    # NotInsideAction above escapes, because that is a programming error the
+    # caller can fix rather than a transport failure they cannot.
+    try:
+        client = client or AuthenticatedClient()
+        kleinkram.core.report_diagnostic(
+            client=client,
+            execution_id=parse_uuid_like(resolved),
+            severity=severity,
+            message=message,
+            code=code,
+            file=file,
+            details=details,
+        )
+    except Exception:
+        logger.warning("could not report %s: %s", severity.lower(), message, exc_info=True)
 
 
 def warn(

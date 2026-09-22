@@ -86,7 +86,7 @@ steps occur behind the scenes:
 An execution carries a state and a severity, and they answer different questions. The state says whether the run
 reached the end; the severity says what it found on the way.
 
-An action that completes its work but notices something worth flagging shows up in amber as **DONE · 3 warnings**, not
+An action that completes its work but notices something worth flagging shows up in amber as **DONE · 3 findings**, not
 in red. Open the execution to see a **What this action reported** panel listing every finding, grouped by message, with
 the file each one is about.
 

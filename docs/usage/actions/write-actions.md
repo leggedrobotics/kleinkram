@@ -86,12 +86,13 @@ Every finished action carries two independent pieces of information.
 Keeping these apart matters: an action that completes its work and finds three bags with a missing `/tf` topic did not
 fail. It is `DONE` with severity `WARNING`, and Kleinkram shows it as such, in amber rather than red or green.
 
-| State       | Severity  | Shown as                  | Means                        |
-| ----------- | --------- | ------------------------- | ---------------------------- |
-| `DONE`      | `OK`      | green "DONE"              | Exited 0, reported nothing.  |
-| `DONE`      | `WARNING` | amber "DONE · N warnings" | Exited 0, reported warnings. |
-| `FAILED`    | `ERROR`   | red "FAILED"              | Exited non-zero.             |
-| `CANCELLED` | `OK`      | grey "CANCELLED"          | Someone stopped the run.     |
+| State       | Severity  | Shown as                  | Means                                                  |
+| ----------- | --------- | ------------------------- | ------------------------------------------------------ |
+| `DONE`      | `OK`      | green "DONE"              | Exited 0, reported nothing.                            |
+| `DONE`      | `WARNING` | amber "DONE · N findings" | Exited 0, reported warnings.                           |
+| `DONE`      | `ERROR`   | red "DONE · N findings"   | Exited 0, but reported an error — a swallowed failure. |
+| `FAILED`    | `ERROR`   | red "FAILED"              | Exited non-zero.                                       |
+| `CANCELLED` | `OK`      | grey "CANCELLED"          | Someone stopped the run.                               |
 
 #### Raising Warnings
 

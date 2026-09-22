@@ -1,25 +1,20 @@
 import { EXIT_CODE_WARNING } from './action-severity';
+import { isTerminalActionState } from './action-state';
 import { ActionFailureOrigin, ActionSeverity, ActionState } from './enum';
 
 /**
  * What the runner observed when the action container stopped.
  *
- * Only `exitCode` is always known. The remaining facts are available on the
- * paths that produce them: `oomKilled` comes from `container.inspect()`, while
- * the interrupt and timeout flags are set by the janitor, which is the only
- * component that knows it killed the container and why.
+ * Only what Docker reports is available here. When the janitor killed the
+ * container it has already recorded why, and the caller keeps that verdict
+ * rather than asking this function to re-derive it - what we would see is the
+ * consequence of the kill (a 137 or a 143), not its reason.
  */
 export interface ContainerExitFacts {
     exitCode: number;
 
     /** Docker reported the container was killed by the OOM killer. */
     oomKilled?: boolean;
-
-    /** The runner terminated the container because it took over from an older instance. */
-    interruptedByRunner?: boolean;
-
-    /** The container was terminated for running past the template's `maxRuntime`. */
-    runtimeLimitExceeded?: boolean;
 }
 
 /**
@@ -55,7 +50,8 @@ const failure = (
  * Note that the verdict returned here is only the part the exit code implies.
  * Diagnostics reported by the container during the run are merged on top of it
  * by the caller, so a run that exits 0 after reporting warnings still ends up
- * with severity `WARNING`.
+ * with severity `WARNING`. A verdict the janitor already recorded is likewise
+ * preserved by the caller, and never recomputed from the exit code here.
  *
  * @param facts what the runner observed when the container stopped
  * @returns the state, severity, blame and cause to persist
@@ -63,22 +59,7 @@ const failure = (
 export const resolveActionOutcome = (
     facts: ContainerExitFacts,
 ): ActionOutcome => {
-    const { exitCode, oomKilled, interruptedByRunner, runtimeLimitExceeded } =
-        facts;
-
-    if (interruptedByRunner) {
-        return failure(
-            'Interrupted by new Runner Instance.',
-            ActionFailureOrigin.SYSTEM,
-        );
-    }
-
-    if (runtimeLimitExceeded) {
-        return failure(
-            'Time limit exceeded. The action ran longer than its template allows.',
-            ActionFailureOrigin.USER,
-        );
-    }
+    const { exitCode, oomKilled } = facts;
 
     switch (exitCode) {
         case 0: {
@@ -142,3 +123,42 @@ export const resolveActionOutcome = (
         }
     }
 };
+
+/**
+ * A verdict already stored for the action when the container stopped.
+ */
+export interface RecordedVerdict {
+    state: ActionState;
+    failureOrigin?: ActionFailureOrigin;
+    stateCause?: string;
+}
+
+/**
+ * Chooses between a verdict already recorded for the action and the one the
+ * exit code implies.
+ *
+ * The janitor kills containers - for running past `maxRuntime`, or because a
+ * newer runner took over - and records why before the runner ever inspects the
+ * corpse. By then the exit code only describes *how* the container died, a 137
+ * or a 143, so re-deriving from it would overwrite "Time limit exceeded" with a
+ * guess about memory limits, and would pin a runner interrupt on the user. A
+ * state that is already final therefore wins.
+ *
+ * Kept pure, and separate from the runner, so the precedence can be tested
+ * directly rather than through a container lifecycle.
+ *
+ * @param recorded what the action row says, or null if it could not be read
+ * @param outcome what the exit code implies
+ * @returns the state, blame and cause to persist
+ */
+export const resolveFinalVerdict = (
+    recorded: RecordedVerdict | null | undefined,
+    outcome: ActionOutcome,
+): Omit<ActionOutcome, 'severity'> =>
+    recorded && isTerminalActionState(recorded.state)
+        ? {
+              state: recorded.state,
+              failureOrigin: recorded.failureOrigin,
+              stateCause: recorded.stateCause ?? outcome.stateCause,
+          }
+        : outcome;

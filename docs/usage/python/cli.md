@@ -93,7 +93,7 @@ credentials and the action id. Use them to tell the reader of the action what it
 exit code.
 
 ```bash
-# the action still succeeds; it is shown as "DONE · 1 warning"
+# the action still succeeds; it is shown as "DONE · 1 finding"
 klein action warn "no /tf topic in this recording" --file run_1.bag --code MISSING_TF
 
 # record an error without stopping the run
