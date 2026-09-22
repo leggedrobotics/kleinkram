@@ -1,5 +1,6 @@
 import type { ActionDiagnosticsDto } from '@kleinkram/api-dto/types/actions/action-diagnostic.dto';
 import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
+import type { ActionScriptDto } from '@kleinkram/api-dto/types/actions/action-script.dto';
 import type { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto/types/actions/action-template-availability.dto';
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
@@ -153,6 +154,19 @@ export const ActionService = {
             {
                 params: { skip, take, search, level },
             },
+        );
+        return data;
+    },
+
+    /**
+     * Read back the Python file a script action ran.
+     *
+     * 404 for actions that ran a Docker image; callers gate on
+     * `action.hasScript` rather than treating that as an error.
+     */
+    async getScript(uuid: string): Promise<ActionScriptDto> {
+        const { data } = await axios.get<ActionScriptDto>(
+            `/actions/${uuid}/script`,
         );
         return data;
     },

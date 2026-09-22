@@ -8,6 +8,7 @@ import {
     ActionDto,
     ActionLogsDto,
     ActionQuery,
+    ActionScriptDto,
     ActionsDto,
     ActionSubmitResponseDto,
     CreateActionDiagnosticDto,
@@ -104,6 +105,21 @@ export class ActionsController {
     @ApiOkResponse({ type: ActionDto })
     async findOne(@ParameterUuid('uuid') uuid: string): Promise<ActionDto> {
         return this.actionService.details(uuid);
+    }
+
+    @Get(':uuid/script')
+    @CanReadAction()
+    @ApiOperation({
+        summary: 'Get the Python file a script action ran',
+        description:
+            'Only set for actions submitted through `klein action run-script`. ' +
+            'Returns 404 for actions that ran a Docker image instead.',
+    })
+    @ApiOkResponse({ type: ActionScriptDto })
+    async getScript(
+        @ParameterUuid('uuid') uuid: string,
+    ): Promise<ActionScriptDto> {
+        return this.actionService.getScript(uuid);
     }
 
     @Get(':uuid/logs')

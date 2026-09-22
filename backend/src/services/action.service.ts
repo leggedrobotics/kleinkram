@@ -4,6 +4,7 @@ import { actionEntityToDto } from '@/serialization/action';
 import {
     ActionDto,
     ActionLogsDto,
+    ActionScriptDto,
     ActionQuery,
     ActionsDto,
     ActionSubmitResponseDto,
@@ -34,11 +35,16 @@ import {
     SCRIPT_RUNNER_TEMPLATE_NAME,
     UserRole,
 } from '@kleinkram/shared';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    Inject,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import { randomUUID } from 'node:crypto';
-import { rm, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
@@ -168,6 +174,51 @@ export class ActionService {
         );
 
         return { actionUUID };
+    }
+
+    /**
+     * Read back the script a script action ran.
+     *
+     * Returned inline rather than behind a presigned link: scripts are capped
+     * at 1 MiB on submit, and the point of storing them is that the exact
+     * source behind an artifact stays readable afterwards.
+     */
+    async getScript(uuid: string): Promise<ActionScriptDto> {
+        const action = await this.actionRepository.findOneOrFail({
+            where: { uuid },
+        });
+
+        if (!action.scriptObject) {
+            throw new NotFoundException(
+                'This action did not run a submitted script.',
+            );
+        }
+
+        const temporaryPath = path.join(
+            tmpdir(),
+            `kleinkram-script-read-${randomUUID()}`,
+        );
+
+        try {
+            await this.scriptStorage.downloadFile(
+                action.scriptObject,
+                temporaryPath,
+            );
+            const content = await readFile(temporaryPath, 'utf8');
+
+            // `storeScript` records the submitted name as user metadata, not as
+            // an object tag; S3 keeps those in separate namespaces.
+            const info = await this.scriptStorage
+                .getFileInfo(action.scriptObject)
+                .catch(() => undefined);
+
+            return {
+                filename: info?.metaData['filename'] ?? 'script.py',
+                content,
+            };
+        } finally {
+            await rm(temporaryPath, { force: true });
+        }
     }
 
     /**
