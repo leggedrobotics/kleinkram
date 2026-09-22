@@ -178,6 +178,7 @@ def download(
     allow_corrupt_files: bool = False,
     nested: bool = False,
     overwrite: bool = False,
+    mcap_slice: Optional[kleinkram.api.file_transfer.McapSlice] = None,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
@@ -186,6 +187,10 @@ def download(
     """\
     downloads files, asserts that the destination dir exists
     returns a DownloadResult with counts and metrics
+
+    if `mcap_slice` is given, `.mcap` files are fetched partially, using their
+    index to transfer only the chunks holding the selected messages; files of
+    any other type are skipped
     """
 
     if not base_dir.exists():
@@ -206,6 +211,7 @@ def download(
         allow_corrupt_files=allow_corrupt_files,
         overwrite=overwrite,
         create_parents=nested,
+        mcap_slice=mcap_slice,
         on_overall_progress_cb=on_overall_progress_cb,
         on_file_start_cb=on_file_start_cb,
         on_file_progress_cb=on_file_progress_cb,

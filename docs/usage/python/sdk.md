@@ -45,6 +45,24 @@ files = kleinkram.list_files(
 triggers = kleinkram.list_triggers(mission_uuid="...")
 ```
 
+### Downloading Part of a Recording
+
+`download` takes the same MCAP filters as the CLI. Passing any of them fetches
+only the matching chunks and skips files that are not `.mcap`.
+
+```python
+kleinkram.download(
+    file_ids=["38d7e53e-64d6-434e-a21a-f02017dc6290"],
+    dest="./slice",
+    topics=["/imu/data_raw"],
+    start_time=1789718908373212789,   # nanoseconds, as in MCAP log times
+    end_time=1789718918373212789,
+)
+```
+
+See [Partial Download](../files/partial-download.md) for what actually saves
+bandwidth.
+
 ### Getting Resources by ID
 
 If you already know the unique identifier for a resource, you can fetch it directly.

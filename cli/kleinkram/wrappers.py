@@ -27,6 +27,7 @@ import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import DownloadResult
+from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.file_transfer import OnFileProgressCb
 from kleinkram.api.file_transfer import OnFileStartCb
 from kleinkram.api.file_transfer import OnMessageCb
@@ -153,12 +154,36 @@ def download(
     nested: bool = False,
     overwrite: bool = False,
     allow_corrupt_files: bool = False,
+    topics: Optional[Sequence[str]] = None,
+    start_time: Optional[int] = None,
+    end_time: Optional[int] = None,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
     on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
 ) -> DownloadResult:
+    """Download files, optionally fetching only part of each `.mcap`.
+
+    Passing any of `topics`, `start_time` or `end_time` turns this into a
+    partial download: each `.mcap` is read through its own index over HTTP range
+    requests, and only the chunks holding the selected messages are transferred.
+    Files that are not `.mcap` cannot be sliced and are skipped.
+
+    `start_time` and `end_time` are nanoseconds since the epoch, matching MCAP
+    log times; `end_time` is exclusive.
+
+    Narrowing by time is what saves bandwidth, because MCAP chunks are ordered
+    by log time. Narrowing by `topics` shrinks the written file but usually not
+    the transfer, since a chunk normally holds several topics and is the
+    smallest unit that can be fetched.
+    """
+    mcap_slice = McapSlice(
+        topics=tuple(topics) if topics else None,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
     query = _args_to_file_query(
         file_names=file_names,
         file_ids=file_ids,
@@ -175,6 +200,7 @@ def download(
         nested=nested,
         overwrite=overwrite,
         allow_corrupt_files=allow_corrupt_files,
+        mcap_slice=mcap_slice if mcap_slice else None,
         on_overall_progress_cb=on_overall_progress_cb,
         on_file_start_cb=on_file_start_cb,
         on_file_progress_cb=on_file_progress_cb,

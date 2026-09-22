@@ -24,6 +24,8 @@ import httpx
 from botocore.exceptions import ClientError
 
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.mcap_filter import filter_mcap_from_url
+from kleinkram.api.mcap_filter import is_mcap
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
 from kleinkram.errors import InsufficientStorageError
@@ -352,6 +354,22 @@ def _url_download(
             sleep(RETRY_BACKOFF_BASE**attempt)
 
 
+@dataclass(frozen=True)
+class McapSlice:
+    """A request for part of an MCAP file rather than the whole of it.
+
+    Only `.mcap` can be sliced: it carries an index that maps topics and log
+    times onto byte ranges, so the client can fetch just the chunks it needs.
+    """
+
+    topics: Optional[Tuple[str, ...]] = None
+    start_time: Optional[int] = None
+    end_time: Optional[int] = None
+
+    def __bool__(self) -> bool:
+        return bool(self.topics or self.start_time is not None or self.end_time is not None)
+
+
 class DownloadState(Enum):
     DOWNLOADED_OK = 1
     SKIPPED_OK = 2
@@ -364,6 +382,8 @@ class DownloadState(Enum):
     SKIPPED_CORRUPTED_LOCAL_OK = 9
     OVERWRITTEN_OK = 10
     OVERWRITTEN_CORRUPTED = 11
+    DOWNLOADED_PARTIAL = 12
+    SKIPPED_NOT_SLICEABLE = 13
 
 
 def download_file(
@@ -374,6 +394,7 @@ def download_file(
     overwrite: bool = False,
     allow_corrupt_files: bool = False,
     create_parents: bool = False,
+    mcap_slice: Optional[McapSlice] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
 ) -> Tuple[DownloadState, int]:
@@ -381,6 +402,20 @@ def download_file(
     Returns DownloadState and bytes downloaded (file.size if successful or skipped ok, 0 otherwise)
     """
     is_corrupted = file.state == FileState.CORRUPTED
+
+    if mcap_slice:
+        # Only MCAP carries the index this needs; anything else would have to be
+        # downloaded whole and filtered locally, which defeats the purpose.
+        if not is_mcap(path):
+            return DownloadState.SKIPPED_NOT_SLICEABLE, 0
+        return _download_mcap_slice(
+            client,
+            file=file,
+            path=path,
+            mcap_slice=mcap_slice,
+            create_parents=create_parents,
+            on_file_start_cb=on_file_start_cb,
+        )
 
     if file.state not in (FileState.OK, FileState.CORRUPTED):
         return DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0
@@ -494,6 +529,14 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
             f"skipped {path}, remote file has invalid state ({file.state.value})",
             False,
         ),
+        DownloadState.DOWNLOADED_PARTIAL: (
+            f"downloaded a filtered slice of {path}",
+            False,
+        ),
+        DownloadState.SKIPPED_NOT_SLICEABLE: (
+            f"skipped {path}, only .mcap files can be downloaded partially",
+            False,
+        ),
         DownloadState.SKIPPED_CORRUPTED: (
             f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt to override)",
             False,
@@ -585,6 +628,46 @@ def upload_files(
     return result
 
 
+def _download_mcap_slice(
+    client: AuthenticatedClient,
+    *,
+    file: File,
+    path: Path,
+    mcap_slice: McapSlice,
+    create_parents: bool = False,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+) -> Tuple[DownloadState, int]:
+    """Write a filtered copy of a remote MCAP, fetching only the chunks it needs."""
+    download_url = _get_file_download(client, file.id)
+
+    if create_parents:
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    if on_file_start_cb is not None:
+        on_file_start_cb(path, file.size or 0)
+
+    try:
+        result = filter_mcap_from_url(
+            download_url,
+            path,
+            topics=mcap_slice.topics,
+            start_time=mcap_slice.start_time,
+            end_time=mcap_slice.end_time,
+        )
+    except Exception as e:
+        logger.error(f"Error during partial download of {path}: {e}")
+        if path.exists():
+            try:
+                path.unlink()
+            except OSError as unlink_e:
+                logger.error(f"Could not remove partial file {path}: {unlink_e}")
+        raise
+
+    # A slice is a different file from the remote one, so the remote hash and
+    # size deliberately are not checked here.
+    return DownloadState.DOWNLOADED_PARTIAL, result.bytes_fetched
+
+
 def download_files(
     client: AuthenticatedClient,
     files: Dict[Path, File],
@@ -592,6 +675,7 @@ def download_files(
     overwrite: bool = False,
     allow_corrupt_files: bool = False,
     create_parents: bool = False,
+    mcap_slice: Optional[McapSlice] = None,
     n_workers: int = 2,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
@@ -612,6 +696,7 @@ def download_files(
                 overwrite=overwrite,
                 allow_corrupt_files=allow_corrupt_files,
                 create_parents=create_parents,
+                mcap_slice=mcap_slice,
                 on_file_start_cb=on_file_start_cb,
                 on_file_progress_cb=on_file_progress_cb,
             )
@@ -634,6 +719,7 @@ def download_files(
             result.state_counts[state] = result.state_counts.get(state, 0) + 1
 
             if state in (
+                DownloadState.DOWNLOADED_PARTIAL,
                 DownloadState.DOWNLOADED_OK,
                 DownloadState.DOWNLOADED_CORRUPTED,
                 DownloadState.SKIPPED_OK,
