@@ -53,6 +53,13 @@ import { UserService } from './user.service';
  */
 const RECORDING_TIMES_BACKFILL_BATCH_SIZE = 2000;
 
+/**
+ * How long a staged upload may sit around before it is treated as abandoned.
+ * Comfortably longer than the longest upload credential, so an upload that is
+ * still in flight can never be collected.
+ */
+const STAGED_UPLOAD_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class QueueService implements OnModuleInit {
     private fileQueue!: Queue.Queue;
@@ -196,6 +203,84 @@ export class QueueService implements OnModuleInit {
         return { success: true, fileCount: files.length };
     }
 
+    /**
+     * Moves a confirmed upload off the key the uploader has credentials for
+     * and onto the key the file is served from.
+     *
+     * The credentials handed to a client allow `PutObject` on the staging key
+     * for as long as they are valid, and SeaweedFS issues them as stateless
+     * JWTs that cannot be revoked. Promoting the object is therefore what ends
+     * the client's write access: everything downstream - the hash stored here,
+     * the magic number check and the metadata extracted by the queue consumer
+     * - describes bytes that can no longer change.
+     *
+     * @param file - the file whose upload was confirmed
+     */
+    private async promoteUpload(file: FileEntity): Promise<void> {
+        const storageKey = file.storageUuid;
+        const staged = await this.dataStorage.getStagedFileInfo(storageKey);
+
+        if (!staged) {
+            // Nothing staged: either this confirm is a retry of one that
+            // already promoted the object, or the upload came from a client
+            // old enough to write straight to the served key.
+            return;
+        }
+
+        const alreadyPromoted = await this.dataStorage.getFileInfo(storageKey);
+        if (alreadyPromoted) {
+            // The object was promoted by an earlier confirm, so these bytes
+            // were written to the staging key afterwards - which is exactly
+            // the overwrite the promotion exists to prevent. They are
+            // discarded, and loudly: a client has no reason to do this.
+            logger.error(
+                `SECURITY: discarding ${staged.size.toString()} bytes written to the staging key ` +
+                    `of ${storageKey} after its upload was already confirmed`,
+            );
+            await this.dataStorage
+                .deleteStagedFile(storageKey)
+                .catch(logger.log);
+            return;
+        }
+
+        await this.dataStorage.promoteStagedFile(storageKey);
+        logger.debug(`Promoted upload ${storageKey} out of the staging prefix`);
+    }
+
+    /**
+     * Deletes uploads that were staged but never confirmed.
+     *
+     * Upload credentials live for at most four hours, so anything that has
+     * sat in the staging prefix for a day belongs to an upload that can no
+     * longer be completed - either abandoned, or written by a client trying
+     * to replace a file that was already promoted.
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_4AM)
+    async cleanupStagedUploads(): Promise<void> {
+        const cutoff = new Date(Date.now() - STAGED_UPLOAD_MAX_AGE_MS);
+        const abandoned = await this.dataStorage
+            .listStagedFiles(cutoff)
+            .catch((error: unknown) => {
+                logger.error(`Failed to list staged uploads: ${String(error)}`);
+                return [];
+            });
+
+        for (const storageKey of abandoned) {
+            await this.dataStorage
+                .deleteStagedFile(storageKey)
+                .catch((error: unknown) => {
+                    logger.error(
+                        `Failed to delete staged upload ${storageKey}: ${String(error)}`,
+                    );
+                });
+        }
+
+        if (abandoned.length > 0)
+            logger.debug(
+                `Removed ${abandoned.length.toString()} abandoned staged upload(s)`,
+            );
+    }
+
     async confirmUpload(
         uuid: string,
         md5: string,
@@ -246,8 +331,10 @@ export class QueueService implements OnModuleInit {
             );
         }
 
+        await this.promoteUpload(file);
+
         const fileInfo = await this.dataStorage
-            .getFileInfo(file.uuid)
+            .getFileInfo(file.storageUuid)
             .catch((error: unknown): void => {
                 logger.error(
                     `Error in getFileInfo for ${file.uuid}: ${error instanceof Error ? error.message : String(error)}`,
@@ -383,7 +470,15 @@ export class QueueService implements OnModuleInit {
         });
 
         if (file) {
-            await this.dataStorage.deleteFile(file.uuid).catch(logger.log);
+            await this.dataStorage
+                .deleteFile(file.storageUuid)
+                .catch(logger.log);
+            // An upload that was never confirmed still sits in the staging
+            // prefix; the nightly cleanup would collect it eventually, but a
+            // deleted file should not keep occupying space until then.
+            await this.dataStorage
+                .deleteStagedFile(file.storageUuid)
+                .catch(logger.log);
             await this.fileRepository.remove(file);
 
             if (file.type === FileType.BAG) {

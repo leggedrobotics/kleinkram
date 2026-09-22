@@ -93,9 +93,6 @@ describe('StorageAuthService - STS Security Enforcement (Integration)', () => {
             );
 
             // 5. Negative Test: Putting a completely unrelated object should FAIL
-            //    (does not match the Resource ARN wildcard `${filename}*`)
-            //    Note: The wildcard is intentional to support multipart upload part keys.
-            //    The "filename" is actually a server-generated UUID, so prefix abuse is not possible.
             const putOtherCommand = new PutObjectCommand({
                 Bucket: bucket,
                 Key: 'some-other-filename.txt',
@@ -103,6 +100,19 @@ describe('StorageAuthService - STS Security Enforcement (Integration)', () => {
             });
 
             await expect(s3Client.send(putOtherCommand)).rejects.toThrow(
+                /Access ?Denied|Forbidden/i,
+            );
+
+            // 5b. Negative Test: The policy names one key exactly, so a key
+            //     that merely starts with it is denied too. Without this, the
+            //     credentials for one upload could write objects next to it.
+            const putSiblingCommand = new PutObjectCommand({
+                Bucket: bucket,
+                Key: `${filename}-sibling.txt`,
+                Body: Buffer.from('Should fail'),
+            });
+
+            await expect(s3Client.send(putSiblingCommand)).rejects.toThrow(
                 /Access ?Denied|Forbidden/i,
             );
 

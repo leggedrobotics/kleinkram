@@ -11,6 +11,7 @@ import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/inge
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
+import { uploadCredentialLifetimeSeconds } from '@kleinkram/backend-common/modules/storage/storage-auth.service';
 import {
     IStorageBucket,
     StorageCredentials,
@@ -229,7 +230,7 @@ export class FileLifecycleService implements OnModuleInit {
             );
         }
 
-        await this.dataStorage.addTags(databaseFile.uuid, {
+        await this.dataStorage.addTags(databaseFile.storageUuid, {
             // @ts-expect-error
             projectUuid: databaseFile.mission.project.uuid,
             missionUuid: databaseFile.mission.uuid,
@@ -296,7 +297,7 @@ export class FileLifecycleService implements OnModuleInit {
                             },
                         },
                     });
-                    await this.dataStorage.addTags(file.uuid, {
+                    await this.dataStorage.addTags(file.storageUuid, {
                         filename: file.filename,
                         missionUuid: missionUUID,
                         projectUuid: newFile.mission?.project?.uuid ?? '',
@@ -413,6 +414,14 @@ export class FileLifecycleService implements OnModuleInit {
             }
         }
 
+        // Kept before deduplication, where a filename still lines up with the
+        // size the client reported for it.
+        const sizeByFilename = new Map<string, number>();
+        for (const [index, filename] of filenames.entries()) {
+            const size = fileSizes?.[index];
+            if (size !== undefined) sizeByFilename.set(filename, size);
+        }
+
         return await this.dataSource.transaction(async (manager) => {
             // Deduplicate filenames to avoid self-collisions
             const uniqueFilenames = [...new Set(filenames)];
@@ -420,6 +429,7 @@ export class FileLifecycleService implements OnModuleInit {
                 bucket: string | null;
                 fileName: string;
                 fileUUID: string | null;
+                objectKey?: string | null;
                 accessCredentials: StorageCredentials | null;
                 error?: string | null;
             }[] = [];
@@ -441,6 +451,7 @@ export class FileLifecycleService implements OnModuleInit {
                     bucket: string | null;
                     fileName: string;
                     fileUUID: string | null;
+                    objectKey: string | null;
                     accessCredentials: StorageCredentials | null;
                     error: string | null;
                     queueUUID?: string;
@@ -449,6 +460,8 @@ export class FileLifecycleService implements OnModuleInit {
                     fileName: filename,
 
                     fileUUID: null,
+
+                    objectKey: null,
 
                     accessCredentials: null,
 
@@ -543,11 +556,20 @@ export class FileLifecycleService implements OnModuleInit {
 
                         credentials.push({
                             bucket: env.S3_DATA_BUCKET_NAME,
-                            fileUUID: file.uuid,
+                            fileUUID: file.storageUuid,
+                            // Clients upload to the staging key and never hold
+                            // credentials for the key the file is served from;
+                            // confirming the upload moves the object there.
+                            objectKey: this.dataStorage.stagingKey(
+                                file.storageUuid,
+                            ),
                             fileName: filename,
                             accessCredentials:
                                 await this.dataStorage.generateTemporaryCredential(
-                                    file.uuid,
+                                    file.storageUuid,
+                                    uploadCredentialLifetimeSeconds(
+                                        sizeByFilename.get(filename),
+                                    ),
                                 ),
                         });
                     });

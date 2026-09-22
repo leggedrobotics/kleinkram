@@ -15,6 +15,10 @@ import { Logger } from '@nestjs/common';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import {
+    ObjectPromotionService,
+    UPLOAD_STAGING_PREFIX,
+} from './object-promotion.service';
 import { StorageAuthService } from './storage-auth.service';
 import { S3ClientContainer } from './storage-config.factory';
 import { MetricPoint, StorageMetricsService } from './storage-metrics.service';
@@ -32,6 +36,7 @@ export class S3StorageBucket implements IStorageBucket {
         private readonly clients: S3ClientContainer,
         private readonly authService: StorageAuthService,
         private readonly metricsService?: StorageMetricsService,
+        private readonly promotionService?: ObjectPromotionService,
     ) {}
 
     private async generatePresignedUrl(
@@ -126,8 +131,24 @@ export class S3StorageBucket implements IStorageBucket {
     async getFileInfo(
         objectName: string,
     ): Promise<StorageItemStat | undefined> {
+        return this.getFileInfoIn(this.bucketName, objectName);
+    }
+
+    /**
+     * Same as {@link getFileInfo}, but for an explicit bucket and key, so
+     * that an upload can be inspected while it still sits in the staging
+     * prefix.
+     *
+     * @param bucket - bucket to look in
+     * @param objectName - object key
+     * @returns the object's stats, or undefined when it does not exist
+     */
+    private async getFileInfoIn(
+        bucket: string,
+        objectName: string,
+    ): Promise<StorageItemStat | undefined> {
         const command = new HeadObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: bucket,
             Key: objectName,
         });
         try {
@@ -285,10 +306,75 @@ export class S3StorageBucket implements IStorageBucket {
 
     async generateTemporaryCredential(
         filename: string, // This is usually the UUID/object name used for the ARN
+        durationSeconds?: number,
     ): Promise<StorageCredentials> {
         return this.authService.generateTemporaryCredential(
-            filename,
+            this.stagingKey(filename),
             this.bucketName,
+            durationSeconds,
+        );
+    }
+
+    stagingKey(objectName: string): string {
+        return `${UPLOAD_STAGING_PREFIX}${objectName}`;
+    }
+
+    async getStagedFileInfo(
+        objectName: string,
+    ): Promise<StorageItemStat | undefined> {
+        return this.getFileInfoIn(this.bucketName, this.stagingKey(objectName));
+    }
+
+    async deleteStagedFile(objectName: string): Promise<void> {
+        await this.clients.internal.send(
+            new DeleteObjectCommand({
+                Bucket: this.bucketName,
+                Key: this.stagingKey(objectName),
+            }),
+        );
+    }
+
+    async listStagedFiles(olderThan: Date): Promise<string[]> {
+        const staged: string[] = [];
+        let continuationToken: string | undefined;
+
+        do {
+            const response = await this.clients.internal.send(
+                new ListObjectsV2Command({
+                    Bucket: this.bucketName,
+                    Prefix: UPLOAD_STAGING_PREFIX,
+                    ContinuationToken: continuationToken,
+                }),
+            );
+            for (const item of response.Contents ?? []) {
+                if (item.Key === undefined) continue;
+                if ((item.LastModified ?? new Date()) >= olderThan) continue;
+                staged.push(item.Key.slice(UPLOAD_STAGING_PREFIX.length));
+            }
+            continuationToken = response.NextContinuationToken;
+        } while (continuationToken !== undefined);
+
+        return staged;
+    }
+
+    async promoteStagedFile(objectName: string): Promise<void> {
+        if (this.promotionService === undefined)
+            throw new Error(
+                `Bucket ${this.bucketName} was created without a promotion service`,
+            );
+
+        const staged = await this.getStagedFileInfo(objectName);
+        if (staged === undefined)
+            throw new Error(
+                `Cannot promote ${objectName}: nothing staged under ${this.stagingKey(objectName)}`,
+            );
+
+        await this.promotionService.promote(
+            this.clients.internal,
+            this.bucketName,
+            this.stagingKey(objectName),
+            objectName,
+            staged.size,
         );
     }
 }

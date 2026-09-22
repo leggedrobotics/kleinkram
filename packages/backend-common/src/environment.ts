@@ -146,6 +146,19 @@ export default {
         return asOptionalString('S3_ENDPOINT_INTERNAL');
     },
 
+    /**
+     * SeaweedFS filer endpoint used to promote an uploaded object by renaming
+     * it out of the staging prefix, which is a metadata operation and
+     * therefore independent of the file size. Defaults to the filer of the
+     * internal S3 endpoint; when the filer cannot be reached the promotion
+     * falls back to a server-side S3 copy.
+     *
+     * @returns filer endpoint or undefined to derive it
+     */
+    get S3_FILER_ENDPOINT(): string | undefined {
+        return asOptionalString('S3_FILER_ENDPOINT');
+    },
+
     get S3_USER(): string {
         return asString('S3_USER');
     },

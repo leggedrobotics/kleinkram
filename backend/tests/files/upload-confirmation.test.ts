@@ -33,6 +33,12 @@ import {
 // Mock dependencies
 const mockDataStorage = {
     getFileInfo: jest.fn().mockResolvedValue({ size: 1024 }),
+    // Nothing staged, so confirming behaves like a client that uploaded
+    // straight to the served key; promotion is covered in
+    // upload-promotion.test.ts.
+    getStagedFileInfo: jest.fn().mockResolvedValue(undefined),
+    promoteStagedFile: jest.fn().mockResolvedValue(undefined),
+    deleteStagedFile: jest.fn().mockResolvedValue(undefined),
 };
 
 const mockFileAuditService = {
@@ -44,7 +50,6 @@ const mockGauge = {
 };
 
 const mockTriggerService = {
-    // eslint-disable-next-line unicorn/no-useless-undefined
     addFileEvent: jest.fn().mockResolvedValue(undefined),
 };
 

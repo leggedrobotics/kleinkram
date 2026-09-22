@@ -5,6 +5,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import environment from '@backend-common/environment';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ObjectPromotionService } from './object-promotion.service';
 import { S3StorageBucket } from './s3-storage-bucket';
 import { StorageAuthService } from './storage-auth.service';
 import { S3ClientContainer, S3ClientFactory } from './storage-config.factory';
@@ -20,6 +21,7 @@ import { StorageService } from './storage.service';
         S3ClientFactory,
         StorageMetricsService,
         StorageAuthService,
+        ObjectPromotionService,
         StorageService,
         {
             provide: 'DataStorageBucket',
@@ -27,14 +29,21 @@ import { StorageService } from './storage.service';
                 clients: S3ClientContainer,
                 auth: StorageAuthService,
                 metrics: StorageMetricsService,
+                promotion: ObjectPromotionService,
             ) =>
                 new S3StorageBucket(
                     environment.S3_DATA_BUCKET_NAME,
                     clients,
                     auth,
                     metrics,
+                    promotion,
                 ),
-            inject: ['S3_CLIENTS', StorageAuthService, StorageMetricsService],
+            inject: [
+                'S3_CLIENTS',
+                StorageAuthService,
+                StorageMetricsService,
+                ObjectPromotionService,
+            ],
         },
         {
             provide: 'ArtifactStorageBucket',

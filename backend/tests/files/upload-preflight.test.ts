@@ -46,6 +46,7 @@ describe('File Upload Pre-Flight Capacity Check', () => {
 
         const mockDataStorage = {
             getSystemMetrics: mockGetSystemMetrics,
+            stagingKey: (key: string) => `uploads/${key}`,
             generateTemporaryCredential: jest.fn().mockResolvedValue({}),
         } as unknown as jest.Mocked<IStorageBucket>;
 
@@ -187,6 +188,7 @@ describe('File Upload Pre-Flight Capacity Check', () => {
     it('should skip capacity check if getSystemMetrics is not implemented on the storage bucket', async () => {
         // Create a custom service instance where the storage bucket does not have getSystemMetrics
         const mockDataStorageNoMetrics = {
+            stagingKey: (key: string) => `uploads/${key}`,
             generateTemporaryCredential: jest.fn().mockResolvedValue({}),
         } as unknown as jest.Mocked<IStorageBucket>;
 
