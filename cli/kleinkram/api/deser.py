@@ -61,6 +61,7 @@ class FileObjectKeys(str, Enum):
     HASH = "hash"
     TYPE = "type"
     CATEGORIES = "categories"
+    TOPICS = "topics"
 
 
 class MissionObjectKeys(str, Enum):
@@ -259,6 +260,14 @@ def _parse_mission(mission: MissionObject) -> Mission:
     return parsed
 
 
+def _parse_names(objects: List[Any]) -> List[str]:
+    """\
+    extract the names of a list of named objects (e.g. categories or topics)
+    as returned by the api; plain strings are passed through
+    """
+    return [obj["name"] if isinstance(obj, dict) and "name" in obj else str(obj) for obj in objects]
+
+
 def _parse_file(file: FileObject) -> File:
     try:
         name = file[FileObjectKeys.FILENAME]
@@ -270,8 +279,10 @@ def _parse_file(file: FileObject) -> File:
         created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
         state = _parse_file_state(file[FileObjectKeys.STATE])
-        categories_raw = file.get(FileObjectKeys.CATEGORIES) or []
-        categories = [c["name"] if isinstance(c, dict) and "name" in c else str(c) for c in categories_raw]
+        categories = _parse_names(file.get(FileObjectKeys.CATEGORIES) or [])
+
+        # only the single file endpoint returns topics, listing files does not
+        topics = _parse_names(file.get(FileObjectKeys.TOPICS) or [])
 
         mission_id, mission_name = _get_nested_info(file, MISSION)
         project_id, project_name = _get_nested_info(file[MISSION], PROJECT)
@@ -284,6 +295,7 @@ def _parse_file(file: FileObject) -> File:
             type_=ftype,
             date=fdate,
             categories=categories,
+            topics=topics,
             state=state,
             created_at=created_at,
             updated_at=updated_at,
