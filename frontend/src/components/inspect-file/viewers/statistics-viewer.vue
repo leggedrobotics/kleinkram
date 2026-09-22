@@ -83,9 +83,15 @@ const averageFps = computed(() => {
 // Show loading until we have all messages (or close to it, e.g. 99%)
 // The totalCount might be slightly off due to estimation in some readers,
 // but usually exact for ROS bags if indexed.
-const isLoading = computed(() => {
-    return properties.messages.length < properties.totalCount;
-});
+// Render as soon as there is something to draw, then keep filling in.
+// Waiting for the last message means watching a skeleton while the data is
+// already on screen-worthy scale: the loaded count in the header shows
+// progress, so there is nothing to gain by withholding the plot.
+const MIN_RENDERABLE_MESSAGES = 2;
+
+const isLoading = computed(
+    () => properties.messages.length < MIN_RENDERABLE_MESSAGES,
+);
 
 const startTime = computed(() => {
     if (properties.messages.length === 0) return;

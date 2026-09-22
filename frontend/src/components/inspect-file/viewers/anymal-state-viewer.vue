@@ -173,8 +173,14 @@ const properties = defineProps<{
     topicName: string;
 }>();
 
+// Render as soon as there is something to draw, then keep filling in.
+// Waiting for the last message means watching a skeleton while the data is
+// already on screen-worthy scale: the loaded count in the header shows
+// progress, so there is nothing to gain by withholding the plot.
+const MIN_RENDERABLE_MESSAGES = 2;
+
 const isLoading = computed(
-    () => properties.messages.length < properties.totalCount,
+    () => properties.messages.length < MIN_RENDERABLE_MESSAGES,
 );
 
 const latestMessage = computed(() => {

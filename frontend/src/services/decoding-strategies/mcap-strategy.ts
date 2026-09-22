@@ -48,6 +48,18 @@ interface McapChunkIndex {
 const PREVIEW_COALESCE_GAP = 256 * 1024;
 
 /**
+ * Coalesce gap once a stride has been applied.
+ *
+ * Merging across a gap re-fetches whatever lies inside it -- which, after
+ * sampling, is exactly the records the stride just skipped. The full gap is
+ * therefore wrong here: on a 2.15 GB recording sampled at every 18th message
+ * it pulled 107 MB where a smaller gap pulls 28 MB for the same result and
+ * the same wall-clock. Not zero, because one request per record is worse
+ * still: that costs 5600 requests against 2500.
+ */
+const SAMPLED_COALESCE_GAP = 16 * 1024;
+
+/**
  * Range reads in flight at once.
  *
  * These reads are latency-bound: a sampled preview of a dense topic plans
@@ -552,8 +564,13 @@ export class McapStrategy extends DecodingStrategy {
         }
 
         const out: ParsedChunkMessage[] = [];
+        const gap =
+            sampling && sampling.keepEvery > 1
+                ? SAMPLED_COALESCE_GAP
+                : PREVIEW_COALESCE_GAP;
+
         for await (const { item: range, result: buffer } of mapInOrder(
-            coalesce(extents, PREVIEW_COALESCE_GAP),
+            coalesce(extents, gap),
             FETCH_CONCURRENCY,
             async (range) =>
                 httpReader.readExact(
