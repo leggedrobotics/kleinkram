@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from collections import OrderedDict
 from typing import Dict
 from typing import List
@@ -17,6 +18,12 @@ logger = logging.getLogger(__name__)
 # cached; the small reads then hit memory.
 DEFAULT_BLOCK_SIZE = 1024 * 1024
 DEFAULT_MAX_CACHED_BLOCKS = 32
+
+# Range requests against object storage are latency-bound: a selective read
+# issues thousands of small requests, and serialising them means the round
+# trips dominate. Eight in flight is enough to hide that without looking like
+# a burst of abuse to the storage backend.
+DEFAULT_CONCURRENCY = 8
 
 RANGE_READ_TIMEOUT = 60.0
 
@@ -57,6 +64,9 @@ class HttpRangeReader:
         self._pos = 0
         self._bytes_fetched = 0
         self._requests = 0
+        # `read_exact` is called from several threads at once; the counters and
+        # the block cache are the only shared mutable state.
+        self._lock = threading.Lock()
         self._size = self._probe_size()
 
     @property
@@ -109,8 +119,9 @@ class HttpRangeReader:
             )
 
         data = response.content
-        self._bytes_fetched += len(data)
-        self._requests += 1
+        with self._lock:
+            self._bytes_fetched += len(data)
+            self._requests += 1
         return data
 
     def _cache_block(self, index: int, data: bytes) -> None:
@@ -144,6 +155,17 @@ class HttpRangeReader:
             for offset in range(0, len(data), self._block_size):
                 block_end = offset + self._block_size
                 self._cache_block(run_first + offset // self._block_size, data[offset:block_end])
+
+    def read_exact(self, offset: int, length: int) -> bytes:
+        """Fetch exactly [offset, offset+length) without block alignment or caching.
+
+        The block cache is tuned for streaming reads. Index structures are tiny
+        and scattered across the whole file, so aligning them to blocks would
+        pull a megabyte to read a few kilobytes, hundreds of times over.
+        """
+        if length <= 0:
+            return b""
+        return self._fetch(offset, length)
 
     def read(self, n: int = -1) -> bytes:
         if n is None or n < 0:

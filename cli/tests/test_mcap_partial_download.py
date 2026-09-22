@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+import random
 import re
 import threading
 from http.server import BaseHTTPRequestHandler
@@ -27,9 +27,16 @@ MESSAGES_PER_TOPIC = 400
 INTERVAL_NS = 10_000_000  # 100 Hz
 
 
-def _write_mcap(path: Path) -> None:
+def _payload(topic: str, index: int) -> bytes:
+    """Deterministic pseudo-random bytes, so two fixtures agree byte for byte."""
+    rng = random.Random(f"{topic}:{index}")
+    return bytes(rng.getrandbits(8) for _ in range(PAYLOAD_SIZES[topic]))
+
+
+def _write_mcap(path: Path, *, compression=None) -> None:
+    kwargs = {} if compression is None else {"compression": compression}
     with path.open("wb") as handle:
-        writer = mcap_writer.Writer(handle, chunk_size=64 * 1024)
+        writer = mcap_writer.Writer(handle, chunk_size=64 * 1024, **kwargs)
         writer.start(profile="ros2", library="test")
         schema_id = writer.register_schema(name="test/Dummy", encoding="jsonschema", data=b"{}")
         channels = {
@@ -41,7 +48,7 @@ def _write_mcap(path: Path) -> None:
                 writer.add_message(
                     channel_id=channel_id,
                     log_time=log_time,
-                    data=os.urandom(PAYLOAD_SIZES[topic]),
+                    data=_payload(topic, index),
                     publish_time=log_time,
                 )
         writer.finish()
@@ -95,9 +102,40 @@ class _RangeHandler(BaseHTTPRequestHandler):
 
 @pytest.fixture
 def mcap_file(tmp_path: Path) -> Path:
+    """An uncompressed recording, as produced by our own recorders.
+
+    Uncompressed chunks are what make individual messages addressable, which is
+    the case worth testing hardest.
+    """
     path = tmp_path / "recording.mcap"
-    _write_mcap(path)
+    _write_mcap(path, compression=mcap_writer.CompressionType.NONE)
     return path
+
+
+@pytest.fixture
+def compressed_mcap_file(tmp_path: Path) -> Path:
+    path = tmp_path / "compressed.mcap"
+    _write_mcap(path, compression=mcap_writer.CompressionType.ZSTD)
+    return path
+
+
+def _serve(path: Path):
+    """Start a range-capable server for one file; returns (url, requests, stop)."""
+    requests: List[Tuple[int, int]] = []
+    handler = type(
+        "BoundHandler",
+        (_RangeHandler,),
+        {"served_path": path, "requests": requests, "honour_range": True},
+    )
+    server = HTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    def stop() -> None:
+        server.shutdown()
+        server.server_close()
+
+    return f"http://127.0.0.1:{server.server_port}/recording.mcap", requests, stop
 
 
 @pytest.fixture
@@ -247,3 +285,77 @@ def test_filter_writes_a_readable_file_with_no_matches(served: Tuple[str, List[T
     assert dest.exists()
     with dest.open("rb") as handle:
         assert mcap_reader.make_reader(handle).get_summary() is not None
+
+
+def test_single_topic_costs_a_fraction_of_the_file(
+    served: Tuple[str, List[Tuple[int, int]]], tmp_path: Path, mcap_file: Path
+) -> None:
+    """The point of the whole feature: one low-rate topic must not cost the file.
+
+    `/tf` is 64 byte payloads and `/camera` is 4096, so `/tf` is a few percent of
+    the bytes. Fetching whole chunks would transfer essentially all of it.
+    """
+    url, _ = served
+    total = mcap_file.stat().st_size
+
+    # The gap must be smaller than the spacing between consecutive /tf records,
+    # or every range merges and the whole file comes down. Messages here sit
+    # roughly 4 KB apart.
+    # Both knobs have to suit the file. The gap must be under the spacing
+    # between consecutive /tf records (~4 KB here) or every range merges; the
+    # block size governs the one-off summary read, which on a fixture this small
+    # would otherwise pull the whole file by itself.
+    result = filter_mcap_from_url(
+        url,
+        tmp_path / "tf.mcap",
+        topics=["/tf"],
+        coalesce_gap=512,
+        block_size=32 * 1024,
+    )
+
+    assert result.indexed is True
+    assert result.messages_written == MESSAGES_PER_TOPIC
+    assert result.topics_written == ["/tf"]
+    # Generous bound: the measured share is far below this, but the exact figure
+    # depends on record framing and index size.
+    assert result.bytes_fetched < total * 0.35, (
+        f"fetched {result.bytes_fetched} of {total} bytes for a topic that is a " "few percent of the payload"
+    )
+
+
+def test_compressed_chunks_fall_back_but_stay_correct(compressed_mcap_file: Path, tmp_path: Path) -> None:
+    """Compressed chunks cannot be addressed per message; the result must still be right."""
+    url, _requests, stop = _serve(compressed_mcap_file)
+    try:
+        result = filter_mcap_from_url(url, tmp_path / "out.mcap", topics=["/tf"])
+    finally:
+        stop()
+
+    assert result.indexed is False
+    assert result.messages_written == MESSAGES_PER_TOPIC
+    assert result.topics_written == ["/tf"]
+
+
+def test_indexed_and_fallback_agree(
+    served: Tuple[str, List[Tuple[int, int]]],
+    compressed_mcap_file: Path,
+    tmp_path: Path,
+) -> None:
+    """The fast path must produce the same messages as the library reader."""
+    url, _ = served
+    fast = tmp_path / "fast.mcap"
+    filter_mcap_from_url(url, fast, topics=["/odom"], start_time=50 * INTERVAL_NS, end_time=150 * INTERVAL_NS)
+
+    slow_url, _requests, stop = _serve(compressed_mcap_file)
+    try:
+        slow = tmp_path / "slow.mcap"
+        filter_mcap_from_url(slow_url, slow, topics=["/odom"], start_time=50 * INTERVAL_NS, end_time=150 * INTERVAL_NS)
+    finally:
+        stop()
+
+    def messages(path: Path):
+        with path.open("rb") as handle:
+            reader = mcap_reader.make_reader(handle)
+            return [(c.topic, m.log_time, m.data) for _s, c, m in reader.iter_messages()]
+
+    assert messages(fast) == messages(slow)
