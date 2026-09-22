@@ -41,6 +41,17 @@
         <template #loading>
             <q-inner-loading showing color="primary" />
         </template>
+        <template #body-cell-name="props">
+            <q-td :props="props">
+                <router-link
+                    :to="missionRoute(props.row)"
+                    class="kk-row-link"
+                    @click.stop
+                >
+                    {{ props.row.name }}
+                </router-link>
+            </q-td>
+        </template>
         <template #body-cell-tagverification="props">
             <q-td :props="props" style="width: 150px">
                 <div
@@ -314,7 +325,7 @@ import { formatSize } from 'src/services/general-formatting';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { TableRequest } from 'src/services/query-handler';
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouteLocationRaw, useRouter } from 'vue-router';
 
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import CreateMissionDialogOpener from 'components/button-wrapper/dialog-opener-create-mission.vue';
@@ -503,6 +514,19 @@ function clearSelection(): void {
 }
 
 const $router = useRouter();
+
+/**
+ * Route to a mission's files, shared by the row click and the name link.
+ */
+function missionRoute(row: FlatMissionDto): RouteLocationRaw {
+    return {
+        name: ROUTES.FILES.routeName,
+        params: {
+            projectUuid: projectUuid.value ?? '',
+            missionUuid: row.uuid,
+        },
+    };
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onRowClick = async (_: Event, row: any) => {

@@ -74,6 +74,18 @@
                 class="checkbox-with-hitbox"
             />
         </template>
+        <template #body-cell-filename="props">
+            <q-td :props="props">
+                <router-link
+                    :to="fileRoute(props.row)"
+                    class="kk-row-link"
+                    @click.stop
+                >
+                    {{ props.row.filename }}
+                </router-link>
+            </q-td>
+        </template>
+
         <template #body-cell-state="props">
             <q-td :props="props">
                 <q-icon
@@ -267,7 +279,7 @@ import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
 import { computed, Ref, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 
 const $router = useRouter();
 const $route = useRoute();
@@ -520,6 +532,21 @@ const visibleColumns = computed(() =>
         ? columns.filter((column) => COMPACT_COLUMN_NAMES.has(column.name))
         : columns,
 );
+
+/**
+ * Route to a file, shared by the row click and the name link.
+ */
+function fileRoute(row: FileWithTopicDto): RouteLocationRaw {
+    return {
+        name: ROUTES.FILE.routeName,
+        params: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            file_uuid: row.uuid,
+            missionUuid: row.mission.uuid,
+            projectUuid: row.mission.project.uuid,
+        },
+    };
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onRowClick = async (_: any, row: FileWithTopicDto): Promise<void> => {
