@@ -167,17 +167,23 @@ def download(
 
     Passing any of `topics`, `start_time` or `end_time` turns this into a
     partial download: each `.mcap` is read through its own index over HTTP range
-    requests, and only the chunks holding the selected messages are transferred.
-    Files that are not `.mcap` cannot be sliced and are skipped.
+    requests, and only the selected messages are transferred. Files that are
+    not `.mcap` cannot be sliced and are skipped, and an existing local file is
+    only replaced by a slice when `overwrite` is set.
 
     `start_time` and `end_time` are nanoseconds since the epoch, matching MCAP
-    log times; `end_time` is exclusive.
+    log times; `start_time` is inclusive and `end_time` exclusive.
 
-    Narrowing by time is what saves bandwidth, because MCAP chunks are ordered
-    by log time. Narrowing by `topics` shrinks the written file but usually not
-    the transfer, since a chunk normally holds several topics and is the
-    smallest unit that can be fetched.
+    In uncompressed chunks each message is fetched on its own, so both filters
+    cut the transfer. Compressed chunks can only be fetched whole: there a time
+    window still saves bandwidth, because chunks are ordered by log time, but
+    `topics` alone usually does not, since a chunk normally holds several
+    topics.
     """
+    if isinstance(topics, str):
+        # A bare string is a sequence too; without this, "/tf" would become
+        # the topics "/", "t" and "f".
+        topics = [topics]
     mcap_slice = McapSlice(
         topics=tuple(topics) if topics else None,
         start_time=start_time,

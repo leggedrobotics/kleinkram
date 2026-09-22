@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
+from datetime import timedelta
 from datetime import timezone
 from pathlib import Path
 from typing import List
@@ -22,6 +24,8 @@ from kleinkram.utils import format_bytes
 from kleinkram.utils import split_args
 
 logger = logging.getLogger(__name__)
+
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 def _parse_log_time(value: Optional[str], flag: str) -> Optional[int]:
@@ -46,15 +50,18 @@ def _parse_log_time(value: Optional[str], flag: str) -> Optional[int]:
 
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
-    return int(parsed.timestamp() * 1_000_000_000)
+    # Integer arithmetic: a float timestamp cannot hold nanoseconds since the
+    # epoch exactly, and would shift a bound by a few hundred nanoseconds.
+    return (parsed - _EPOCH) // timedelta(microseconds=1) * 1_000
 
 
 HELP = """\
 Download files from kleinkram.
 
-Passing --topics, --start-time or --end-time downloads only part of each .mcap,
-using the file's own index to fetch just the chunks that hold the selected
-messages. Files that are not .mcap cannot be sliced and are skipped.
+Passing --topics, --start-time or --end-time downloads only part of each .mcap, \
+using the file's own index to fetch only the selected messages (or, for \
+compressed chunks, only the chunks holding them). Files that are not .mcap \
+cannot be sliced and are skipped.
 """
 
 
@@ -100,12 +107,12 @@ def download(
     start_time: Optional[str] = typer.Option(
         None,
         "--start-time",
-        help="drop messages logged before this ISO 8601 time (.mcap only)",
+        help="drop messages logged before this time: ISO 8601 (UTC if no zone) or epoch nanoseconds (.mcap only)",
     ),
     end_time: Optional[str] = typer.Option(
         None,
         "--end-time",
-        help="drop messages logged at or after this ISO 8601 time (.mcap only)",
+        help="drop messages logged at or after this time: ISO 8601 (UTC if no zone) or epoch nanoseconds (.mcap only)",
     ),
 ) -> None:
     if include_corrupt_files:
@@ -118,24 +125,26 @@ def download(
         if not (yes or allow_corrupt):
             typer.confirm("Do you want to continue? You can use --yes or --allow-corrupt to skip this prompt.", abort=True)
 
+    parsed_start = _parse_log_time(start_time, "--start-time")
+    parsed_end = _parse_log_time(end_time, "--end-time")
+    if parsed_start is not None and parsed_end is not None and parsed_end <= parsed_start:
+        raise typer.BadParameter("--end-time must be after --start-time")
+
     mcap_slice = McapSlice(
         topics=tuple(topics) if topics else None,
-        start_time=_parse_log_time(start_time, "--start-time"),
-        end_time=_parse_log_time(end_time, "--end-time"),
+        start_time=parsed_start,
+        end_time=parsed_end,
     )
 
     if mcap_slice:
-        if mcap_slice.start_time is not None and mcap_slice.end_time is not None:
-            if mcap_slice.end_time <= mcap_slice.start_time:
-                raise typer.BadParameter("--end-time must be after --start-time")
-
-        # Worth saying plainly: a topic filter shrinks the written file but
-        # normally not the transfer, because an MCAP chunk holds several topics
-        # and is the smallest unit that can be fetched.
+        # Messages can only be addressed one by one in uncompressed chunks. In a
+        # compressed file every chunk holding a wanted topic is fetched whole,
+        # which without a time window is usually most of the file.
         if mcap_slice.topics and mcap_slice.start_time is None and mcap_slice.end_time is None:
             typer.secho(
-                "Note: --topics alone rarely reduces how much is transferred, only the size of "
-                "the written file. Add --start-time/--end-time to transfer less.",
+                "Note: --topics without a time window only transfers less for .mcap files with "
+                "uncompressed chunks; compressed chunks are fetched whole. "
+                "Add --start-time/--end-time to bound the transfer.",
                 fg=typer.colors.YELLOW,
                 err=True,
             )
@@ -200,6 +209,7 @@ def download(
             f"{result.state_counts.get(DownloadState.DOWNLOADED_OK, 0)} downloaded OK, "
             f"{result.state_counts.get(DownloadState.DOWNLOADED_PARTIAL, 0)} downloaded partially, "
             f"{result.state_counts.get(DownloadState.SKIPPED_NOT_SLICEABLE, 0)} skipped not sliceable, "
+            f"{result.state_counts.get(DownloadState.SKIPPED_SLICE_EXISTS, 0)} skipped slice target exists, "
             f"{result.state_counts.get(DownloadState.DOWNLOADED_CORRUPTED, 0)} downloaded corrupted, "
             f"{result.state_counts.get(DownloadState.OVERWRITTEN_OK, 0)} overwritten OK, "
             f"{result.state_counts.get(DownloadState.OVERWRITTEN_CORRUPTED, 0)} overwritten corrupted, "

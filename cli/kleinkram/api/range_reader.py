@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 from collections import OrderedDict
-from typing import Dict
+from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -67,6 +67,9 @@ class HttpRangeReader:
         # `read_exact` is called from several threads at once; the counters and
         # the block cache are the only shared mutable state.
         self._lock = threading.Lock()
+        # Called with the byte count of every completed request, from whichever
+        # thread made it; used for progress reporting.
+        self.on_fetch: Optional[Callable[[int], None]] = None
         self._size = self._probe_size()
 
     @property
@@ -83,24 +86,30 @@ class HttpRangeReader:
         return self._requests
 
     def _probe_size(self) -> int:
-        """Determine the object size, preferring HEAD and falling back to a one byte range."""
-        response = self._client.head(self._url)
-        if response.status_code < 400:
-            length = response.headers.get("content-length")
-            if length is not None:
-                return int(length)
+        """Learn the object size from a one byte range request.
 
-        # Some presigned URLs are signed for GET only, so HEAD is rejected. A
-        # single byte range still reports the full size in Content-Range.
-        response = self._client.get(self._url, headers={"Range": "bytes=0-0"})
-        response.raise_for_status()
-        content_range = response.headers.get("content-range")
-        if content_range is None or "/" not in content_range:
-            raise RangeRequestsUnsupported(
-                f"{self._url.split('?')[0]} did not answer a range request with Content-Range; "
-                "partial download is not possible against this storage backend"
-            )
+        Presigned storage URLs are signed for GET only, so HEAD is rejected. A
+        single byte range reports the full size in Content-Range, and doubles as
+        a check that the server honours ranges at all -- better to find out here
+        than after the destination file has been opened.
+        """
+        with self._client.stream("GET", self._url, headers={"Range": "bytes=0-0"}) as response:
+            response.raise_for_status()
+            content_range = response.headers.get("content-range")
+            if response.status_code != 206 or content_range is None or "/" not in content_range:
+                # Deliberately not reading the body: a server that ignores the
+                # range is about to send the whole object.
+                raise RangeRequestsUnsupported(
+                    f"{self._redacted_url} answered a range request with status "
+                    f"{response.status_code}; partial download is not possible against this storage backend"
+                )
+            response.read()
         return int(content_range.rsplit("/", 1)[1])
+
+    @property
+    def _redacted_url(self) -> str:
+        # The query string carries the presigned credentials.
+        return self._url.split("?")[0]
 
     def _fetch(self, start: int, length: int) -> bytes:
         """Fetch [start, start+length) in one request."""
@@ -108,20 +117,32 @@ class HttpRangeReader:
         if end < start:
             return b""
 
-        response = self._client.get(self._url, headers={"Range": f"bytes={start}-{end}"})
-        response.raise_for_status()
+        with self._client.stream("GET", self._url, headers={"Range": f"bytes={start}-{end}"}) as response:
+            response.raise_for_status()
 
-        # 200 means the range was ignored and the whole object is coming back.
-        if response.status_code != 206:
-            raise RangeRequestsUnsupported(
-                f"{self._url.split('?')[0]} answered a range request with "
-                f"status {response.status_code}; expected 206 Partial Content"
-            )
+            # 200 means the range was ignored and the whole object is coming
+            # back; stop before downloading it.
+            if response.status_code != 206:
+                raise RangeRequestsUnsupported(
+                    f"{self._redacted_url} answered a range request with "
+                    f"status {response.status_code}; expected 206 Partial Content"
+                )
+            # A proxy answering with a different interval would otherwise shift
+            # every offset derived from this read.
+            served = response.headers.get("content-range", "")
+            if not served.startswith(f"bytes {start}-{end}/"):
+                raise IOError(f"asked for bytes {start}-{end} but the server sent {served or 'no Content-Range'}")
+            data = response.read()
 
-        data = response.content
+        expected = end - start + 1
+        if len(data) != expected:
+            raise IOError(f"range request for bytes {start}-{end} returned {len(data)} bytes, expected {expected}")
+
         with self._lock:
             self._bytes_fetched += len(data)
             self._requests += 1
+        if self.on_fetch is not None:
+            self.on_fetch(len(data))
         return data
 
     def _cache_block(self, index: int, data: bytes) -> None:

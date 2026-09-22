@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
+from typing import Callable
 from typing import Deque
 from typing import Dict
 from typing import Iterator
@@ -36,6 +37,12 @@ from kleinkram.api.range_reader import HttpRangeReader
 logger = logging.getLogger(__name__)
 
 MCAP_SUFFIX = ".mcap"
+# The slice is assembled under this suffix and renamed into place when complete.
+PARTIAL_SUFFIX = ".part"
+
+
+class McapIndexMismatch(RuntimeError):
+    """The file's message index points at bytes that are not the indexed message."""
 
 
 @dataclass
@@ -75,6 +82,8 @@ def filter_mcap_from_url(
     block_size: int = DEFAULT_BLOCK_SIZE,
     coalesce_gap: int = DEFAULT_COALESCE_GAP,
     concurrency: int = DEFAULT_CONCURRENCY,
+    on_start: Optional[Callable[[int], None]] = None,
+    on_progress: Optional[Callable[[int], None]] = None,
 ) -> McapFilterResult:
     """Write a new MCAP at `dest` holding only the selected messages of a remote MCAP.
 
@@ -87,12 +96,19 @@ def filter_mcap_from_url(
     those fall back to reading whole chunks.
 
     `start_time` and `end_time` are nanoseconds since the epoch, matching MCAP
-    log times. `end_time` is exclusive.
+    log times. `start_time` is inclusive and `end_time` exclusive, as in
+    `mcap.reader`.
+
+    `on_start` is called with the number of bytes about to be transferred once
+    that is known, and `on_progress` with each increment as it arrives.
+
+    The output is written to a temporary file next to `dest` and moved into
+    place only once complete, so a failure never leaves a truncated MCAP -- or
+    destroys a file that was already at `dest`.
     """
     # Imported lazily so that `klein` starts without paying for the mcap import
     # on every invocation.
     from mcap.reader import SeekingReader
-    from mcap.writer import Writer
 
     wanted_topics = set(topics) if topics else None
 
@@ -100,6 +116,7 @@ def filter_mcap_from_url(
     result = McapFilterResult(remote_size=stream.size)
 
     dest.parent.mkdir(parents=True, exist_ok=True)
+    partial = dest.with_name(dest.name + PARTIAL_SUFFIX)
 
     try:
         reader = SeekingReader(stream)
@@ -107,51 +124,45 @@ def filter_mcap_from_url(
         header = reader.get_header()
         profile = header.profile if header is not None else ""
 
-        if summary is None or not summary.chunk_indexes:
-            # Nothing indexed to exploit; fall back to the library reader.
-            result.indexed = False
-            _write_with_reader(reader, dest, profile, wanted_topics, start_time, end_time, result)
-            return result
-
-        channels = summary.channels
-        schemas = summary.schemas
+        extents: Optional[List[MessageExtent]] = None
         wanted_channel_ids: Optional[Set[int]] = None
-        if wanted_topics is not None:
-            wanted_channel_ids = {cid for cid, ch in channels.items() if ch.topic in wanted_topics}
-            if not wanted_channel_ids:
+        if summary is not None and summary.chunk_indexes:
+            if wanted_topics is not None:
+                wanted_channel_ids = {cid for cid, ch in summary.channels.items() if ch.topic in wanted_topics}
+            if wanted_channel_ids is not None and not wanted_channel_ids:
                 # Nothing to fetch, but still produce a valid, empty file.
-                _write_empty(dest, profile)
-                return result
-
-        extents = _plan(
-            stream,
-            summary.chunk_indexes,
-            wanted_channel_ids,
-            start_time,
-            end_time,
-            result,
-        )
+                extents = []
+            else:
+                extents = _plan(stream, summary.chunk_indexes, wanted_channel_ids, start_time, end_time, result)
 
         if extents is None:
+            # Compressed or unindexed: let the library read whole chunks. Only
+            # an upper bound on the transfer is known up front.
             result.indexed = False
-            _write_with_reader(reader, dest, profile, wanted_topics, start_time, end_time, result)
-            return result
-
-        _write_from_extents(
-            stream,
-            dest,
-            profile,
-            extents,
-            channels,
-            schemas,
-            coalesce_gap,
-            concurrency,
-            result,
-        )
+            if on_start is not None:
+                on_start(stream.size)
+            stream.on_fetch = on_progress
+            _write_with_reader(reader, partial, profile, wanted_topics, start_time, end_time, result)
+        else:
+            _write_from_extents(
+                stream,
+                partial,
+                profile,
+                extents,
+                summary.channels,
+                summary.schemas,
+                coalesce_gap,
+                concurrency,
+                result,
+                on_start,
+                on_progress,
+            )
+        partial.replace(dest)
     finally:
         result.bytes_fetched = stream.bytes_fetched
         result.requests = stream.requests
         stream.close()
+        partial.unlink(missing_ok=True)
 
     logger.info(
         "partial mcap download: wrote %d messages, fetched %d of %d bytes in %d requests (indexed=%s)",
@@ -182,14 +193,17 @@ def _plan(
             continue
         if start_time is not None and chunk_index.message_end_time < start_time:
             continue
+        # Without message indexes the chunk's topics are unknown until it is
+        # read, so it cannot be skipped -- and cannot be addressed per message.
+        if not chunk_index.message_index_offsets:
+            logger.info("chunk at %d has no message index, falling back to whole-chunk reads", chunk_index.chunk_start_offset)
+            return None
+
         if wanted_channel_ids is not None and not (wanted_channel_ids & set(chunk_index.message_index_offsets)):
             continue
 
         if chunk_index.compression:
             logger.info("chunk is %s compressed, falling back to whole-chunk reads", chunk_index.compression)
-            return None
-
-        if not chunk_index.message_index_offsets:
             return None
 
         # The chunk header is derived rather than read: with hundreds of chunks,
@@ -230,8 +244,8 @@ def _fetch_ranges(
     done one at a time the round trips dominate everything else. Yielding in
     order keeps the writer's messages sorted by log time.
 
-    Only `concurrency` extra ranges are ever in flight, so memory stays bounded
-    no matter how many ranges the selection produced.
+    At most `2 * concurrency` ranges are fetched ahead of the consumer, so
+    memory stays bounded no matter how many ranges the selection produced.
     """
     ordered = sorted(ranges, key=lambda r: r.start)
 
@@ -277,28 +291,45 @@ def _write_from_extents(
     coalesce_gap: int,
     concurrency: int,
     result: McapFilterResult,
+    on_start: Optional[Callable[[int], None]] = None,
+    on_progress: Optional[Callable[[int], None]] = None,
 ) -> None:
     schema_ids: Dict[int, int] = {}
     channel_ids: Dict[int, int] = {}
     written_topics: Dict[str, None] = {}
 
-    ranges = coalesce(extents, gap=coalesce_gap)
+    ordered = sorted(extents, key=lambda e: e.start)
+    ranges = coalesce(ordered, gap=coalesce_gap)
+    if on_start is not None:
+        on_start(sum(r.length for r in ranges))
 
     with dest.open("wb") as handle:
         writer = Writer_factory(handle)
         writer.start(profile=profile, library=f"kleinkram {__version__}")
 
+        # Ranges and extents are both in file order, and every extent lies in
+        # exactly one range, so a single cursor pairs them up. (Filtering all
+        # extents per range is quadratic, and a busy topic has tens of
+        # thousands of each.)
+        cursor = 0
         for byte_range, buffer in _fetch_ranges(stream, ranges, concurrency):
+            if on_progress is not None:
+                on_progress(len(buffer))
 
-            # Walk only the extents that fall inside this fetched range.
-            for extent in sorted(
-                (e for e in extents if byte_range.start <= e.start < byte_range.end),
-                key=lambda e: e.start,
-            ):
+            first = cursor
+            while cursor < len(ordered) and ordered[cursor].start < byte_range.end:
+                cursor += 1
+
+            for extent in ordered[first:cursor]:
                 parsed = parse_message_record(buffer, extent.start - byte_range.start)
-                if parsed is None:
-                    logger.warning("could not parse a message record at %d, skipping", extent.start)
-                    continue
+                # The index said a message of this channel and time starts here.
+                # If the record disagrees, the offsets are wrong, and carrying on
+                # would quietly write an incomplete file.
+                if parsed is None or parsed[0] != extent.channel_id or parsed[2] != extent.log_time:
+                    raise McapIndexMismatch(
+                        f"no message record for channel {extent.channel_id} at offset {extent.start}, "
+                        "where the file's message index points"
+                    )
                 channel_id, sequence, log_time, publish_time, data = parsed
 
                 channel = channels.get(channel_id)
@@ -339,13 +370,6 @@ def Writer_factory(handle):  # noqa: N802 - thin indirection to keep the import 
     from mcap.writer import Writer
 
     return Writer(handle)
-
-
-def _write_empty(dest: Path, profile: str) -> None:
-    with dest.open("wb") as handle:
-        writer = Writer_factory(handle)
-        writer.start(profile=profile, library=f"kleinkram {__version__}")
-        writer.finish()
 
 
 def _write_with_reader(

@@ -366,6 +366,10 @@ class McapSlice:
     start_time: Optional[int] = None
     end_time: Optional[int] = None
 
+    def __post_init__(self) -> None:
+        if self.start_time is not None and self.end_time is not None and self.end_time <= self.start_time:
+            raise ValueError("end_time must be after start_time")
+
     def __bool__(self) -> bool:
         return bool(self.topics or self.start_time is not None or self.end_time is not None)
 
@@ -384,6 +388,7 @@ class DownloadState(Enum):
     OVERWRITTEN_CORRUPTED = 11
     DOWNLOADED_PARTIAL = 12
     SKIPPED_NOT_SLICEABLE = 13
+    SKIPPED_SLICE_EXISTS = 14
 
 
 def download_file(
@@ -403,11 +408,23 @@ def download_file(
     """
     is_corrupted = file.state == FileState.CORRUPTED
 
-    if mcap_slice:
+    if mcap_slice and not is_mcap(path):
         # Only MCAP carries the index this needs; anything else would have to be
         # downloaded whole and filtered locally, which defeats the purpose.
-        if not is_mcap(path):
-            return DownloadState.SKIPPED_NOT_SLICEABLE, 0
+        return DownloadState.SKIPPED_NOT_SLICEABLE, 0
+
+    if file.state not in (FileState.OK, FileState.CORRUPTED):
+        return DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0
+
+    if is_corrupted and not allow_corrupt_files:
+        return DownloadState.SKIPPED_CORRUPTED, 0
+
+    if mcap_slice:
+        # A slice never matches the remote hash, so an existing file cannot be
+        # checked the way a full download is. It may even be the full recording;
+        # replacing it with a slice needs to be asked for.
+        if path.exists() and not overwrite:
+            return DownloadState.SKIPPED_SLICE_EXISTS, 0
         return _download_mcap_slice(
             client,
             file=file,
@@ -415,13 +432,8 @@ def download_file(
             mcap_slice=mcap_slice,
             create_parents=create_parents,
             on_file_start_cb=on_file_start_cb,
+            on_file_progress_cb=on_file_progress_cb,
         )
-
-    if file.state not in (FileState.OK, FileState.CORRUPTED):
-        return DownloadState.SKIPPED_INVALID_REMOTE_STATE, 0
-
-    if is_corrupted and not allow_corrupt_files:
-        return DownloadState.SKIPPED_CORRUPTED, 0
 
     was_overwritten = False
     if path.exists():
@@ -537,6 +549,10 @@ def _download_state_message(state: DownloadState, path: Path, file: File) -> Opt
             f"skipped {path}, only .mcap files can be downloaded partially",
             False,
         ),
+        DownloadState.SKIPPED_SLICE_EXISTS: (
+            f"skipped {path}, already exists (use --overwrite to replace it with the slice)",
+            False,
+        ),
         DownloadState.SKIPPED_CORRUPTED: (
             f"skipped {path}, remote file is CORRUPTED (use --allow-corrupt to override)",
             False,
@@ -636,15 +652,20 @@ def _download_mcap_slice(
     mcap_slice: McapSlice,
     create_parents: bool = False,
     on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
 ) -> Tuple[DownloadState, int]:
-    """Write a filtered copy of a remote MCAP, fetching only the chunks it needs."""
+    """Write a filtered copy of a remote MCAP, fetching only the bytes it needs.
+
+    `filter_mcap_from_url` only replaces `path` once the slice is complete, so
+    a failure leaves whatever was there before untouched.
+    """
     download_url = _get_file_download(client, file.id)
 
     if create_parents:
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    if on_file_start_cb is not None:
-        on_file_start_cb(path, file.size or 0)
+    on_start = None if on_file_start_cb is None else (lambda total: on_file_start_cb(path, total))
+    on_progress = None if on_file_progress_cb is None else (lambda n: on_file_progress_cb(path, n))
 
     try:
         result = filter_mcap_from_url(
@@ -653,14 +674,11 @@ def _download_mcap_slice(
             topics=mcap_slice.topics,
             start_time=mcap_slice.start_time,
             end_time=mcap_slice.end_time,
+            on_start=on_start,
+            on_progress=on_progress,
         )
     except Exception as e:
         logger.error(f"Error during partial download of {path}: {e}")
-        if path.exists():
-            try:
-                path.unlink()
-            except OSError as unlink_e:
-                logger.error(f"Could not remove partial file {path}: {unlink_e}")
         raise
 
     # A slice is a different file from the remote one, so the remote hash and
