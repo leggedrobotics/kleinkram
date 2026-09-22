@@ -4,6 +4,7 @@ import { AccessGroupRights } from '@kleinkram/shared';
 import {
     applyDecorators,
     ForbiddenException,
+    NotFoundException,
     SetMetadata,
     UseGuards,
 } from '@nestjs/common';
@@ -499,6 +500,14 @@ export function CanModifyTrigger() {
     );
 }
 
+/**
+ * Requires READ rights on the trigger's mission, or authorship of the trigger.
+ *
+ * The mission uuid is read off the trigger addressed by the `uuid` route
+ * parameter, so the caller never supplies it. Requests authenticated with an
+ * API key are held to the key's own mission scope and get neither the author
+ * nor the admin shortcut.
+ */
 export function CanReadTrigger() {
     return applyDecorators(
         SetMetadata('CanReadTrigger', true),
@@ -507,6 +516,11 @@ export function CanReadTrigger() {
             status: 403,
             type: ForbiddenException,
             description: 'User does not have Read permissions on this trigger.',
+        }),
+        ApiResponse({
+            status: 404,
+            type: NotFoundException,
+            description: 'No trigger exists with the given uuid.',
         }),
     );
 }

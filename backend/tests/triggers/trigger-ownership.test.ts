@@ -90,9 +90,10 @@ describe('Trigger Ownership API Tests', () => {
         return (await response.json()) as { uuid: string };
     }
 
-    async function grantProjectReadAccess(
+    async function grantProjectAccess(
         user: UserEntity,
         projUuid: string,
+        rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<void> {
         const userWithGroups = await database
             .getRepository(UserEntity)
@@ -112,7 +113,7 @@ describe('Trigger Ownership API Tests', () => {
             .create({
                 project: { uuid: projUuid } as ProjectEntity,
                 accessGroup: primaryGroup,
-                rights: AccessGroupRights.READ,
+                rights,
             });
         await database.getRepository(ProjectAccessEntity).save(projectAccess);
     }
@@ -280,7 +281,7 @@ describe('Trigger Ownership API Tests', () => {
             config: {},
         });
 
-        await grantProjectReadAccess(userB, projectUuid);
+        await grantProjectAccess(userB, projectUuid);
 
         const headersBuilder = new HeaderCreator(userB);
         const response = await fetch(
@@ -327,7 +328,7 @@ describe('Trigger Ownership API Tests', () => {
             config: {},
         });
 
-        await grantProjectReadAccess(userB, projectUuid);
+        await grantProjectAccess(userB, projectUuid);
 
         const headersBuilder = new HeaderCreator(userB);
         const response = await fetch(`${DEFAULT_URL}/triggers`, {
@@ -351,7 +352,7 @@ describe('Trigger Ownership API Tests', () => {
             config: {},
         });
 
-        await grantProjectReadAccess(userB, projectUuid);
+        await grantProjectAccess(userB, projectUuid);
 
         const headersBuilder = new HeaderCreator(userB);
         const response = await fetch(
@@ -495,6 +496,96 @@ describe('Trigger Ownership API Tests', () => {
         // API key must only see triggers from its scoped mission, not mission2
         expect(body).toHaveLength(1);
         expect(body[0].uuid).toBe(triggerInScopedMission.uuid);
+    });
+
+    test('API key cannot read a trigger its own owner created in another mission', async () => {
+        // userB may create triggers anywhere in the project ...
+        await grantProjectAccess(userB, projectUuid, AccessGroupRights.CREATE);
+
+        const missionUuid2 = await createMissionUsingPost(
+            {
+                name: 'test_mission_2',
+                projectUUID: projectUuid,
+                tags: {},
+                ignoreTags: true,
+            },
+            userA,
+        );
+
+        // ... and creates one in the mission the key is NOT scoped to.
+        const triggerInOtherMission = await createTrigger(userB, {
+            name: 'Other Mission Trigger',
+            description: 'Created by the key owner',
+            type: TriggerType.WEBHOOK,
+            missionUuid: missionUuid2,
+            templateUuid: templateUuid,
+            config: {},
+        });
+
+        const apiKey = await createMissionApiKey(
+            userB,
+            missionUuid,
+            AccessGroupRights.READ,
+        );
+
+        const response = await fetch(
+            `${DEFAULT_URL}/triggers/${triggerInOtherMission.uuid}`,
+            {
+                method: 'GET',
+                headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'x-api-key': apiKey,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'kleinkram-client-version': appVersion,
+                },
+            },
+        );
+
+        // Authoring the trigger must not widen the key past its own mission.
+        expect(response.status).toBe(403);
+    });
+
+    test('Admin API key cannot read a trigger outside the key mission', async () => {
+        const missionUuid2 = await createMissionUsingPost(
+            {
+                name: 'test_mission_2',
+                projectUUID: projectUuid,
+                tags: {},
+                ignoreTags: true,
+            },
+            userA,
+        );
+
+        const triggerInOtherMission = await createTrigger(userA, {
+            name: 'Other Mission Trigger',
+            description: 'desc',
+            type: TriggerType.WEBHOOK,
+            missionUuid: missionUuid2,
+            templateUuid: templateUuid,
+            config: {},
+        });
+
+        // userA is an admin, but a key is a key: 'CLI Keys are never admins'.
+        const apiKey = await createMissionApiKey(
+            userA,
+            missionUuid,
+            AccessGroupRights.READ,
+        );
+
+        const response = await fetch(
+            `${DEFAULT_URL}/triggers/${triggerInOtherMission.uuid}`,
+            {
+                method: 'GET',
+                headers: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'x-api-key': apiKey,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'kleinkram-client-version': appVersion,
+                },
+            },
+        );
+
+        expect(response.status).toBe(403);
     });
 
     test('findAll: API key cannot escape its mission scope via missionUuid query param', async () => {

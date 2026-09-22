@@ -86,20 +86,30 @@ export class CanReadTriggerGuard extends BaseGuard {
             throw new NotFoundException('Trigger not found');
         }
 
+        // An API key is scoped to exactly one mission, so it is resolved before
+        // anything else: neither the key owner's authorship of the trigger nor
+        // their admin role may widen the key beyond that mission. `GET /triggers`
+        // scopes keys the same way, and `AdminOnlyGuard` states the invariant
+        // outright ('CLI Keys are never admins').
+        if (apiKey) {
+            if (
+                !this.missionGuardService.canKeyAccessMission(
+                    apiKey,
+                    trigger.missionUuid,
+                    AccessGroupRights.READ,
+                )
+            ) {
+                throw new ForbiddenException('Forbidden resource');
+            }
+            return true;
+        }
+
         if (trigger.creatorUuid === user.uuid) {
             return true;
         }
 
         if (user.role === UserRole.ADMIN) {
             return true;
-        }
-
-        if (apiKey) {
-            return this.missionGuardService.canKeyAccessMission(
-                apiKey,
-                trigger.missionUuid,
-                AccessGroupRights.READ,
-            );
         }
 
         const hasAccess = await this.missionGuardService.canAccessMission(
