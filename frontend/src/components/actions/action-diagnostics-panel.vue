@@ -96,7 +96,7 @@ const groups = computed<DiagnosticGroup[]>(() => {
         }
     }
 
-    return [...byMessage.values()].sort(
+    return [...byMessage.values()].toSorted(
         (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
     );
 });
