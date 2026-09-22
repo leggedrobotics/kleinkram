@@ -60,7 +60,7 @@ export default {
         },
     },
     emits: [...useDialogPluginComponent.emits],
-    setup(properties): ReturnType<useDialogPluginComponent> & {
+    setup(properties): ReturnType<typeof useDialogPluginComponent> & {
         contentStyle: ComputedRef<CSSProperties>;
     } {
         const contentStyle = computed<CSSProperties>(() => ({
