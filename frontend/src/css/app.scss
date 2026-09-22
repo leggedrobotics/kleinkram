@@ -221,6 +221,17 @@ label {
     font-size: 32px;
 }
 
+/*
+ * Numeric table cells. Right alignment only pays off if the digits are also
+ * fixed-width: with the default proportional figures a "1" is narrower than an
+ * "8", so the decimal points drift from row to row and the column reads ragged
+ * even though its right edge is flush.
+ */
+.kk-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+}
+
 .q-table .selected {
     background-color: #e7efff;
 }
