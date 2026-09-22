@@ -179,7 +179,19 @@ export class UniversalHttpReader implements IReadable {
             );
         }
 
-        return this.fetchRange(offset, length);
+        // One retry for a transient failure. Storage answers a cancelled or
+        // overlapping request with a 5xx under load, and these reads are both
+        // numerous and concurrent, so a single blip should not become a
+        // visible error. An aborted request is not retried -- the caller
+        // meant it.
+        try {
+            return await this.fetchRange(offset, length);
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                throw error;
+            }
+            return this.fetchRange(offset, length);
+        }
     }
 
     async read(offset: bigint, length: bigint): Promise<Uint8Array> {

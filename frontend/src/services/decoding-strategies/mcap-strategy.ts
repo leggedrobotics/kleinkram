@@ -229,6 +229,30 @@ export class McapStrategy extends DecodingStrategy {
         signal?: AbortSignal,
         startTime?: bigint,
     ): Promise<LogMessage[] | undefined> {
+        // As in the progressive path: a failed read falls back rather than
+        // failing the topic.
+        try {
+            return await this.getMessagesByMessageIndexUnsafe(
+                topic,
+                keepEvery,
+                limit,
+                onMessage,
+                signal,
+                startTime,
+            );
+        } catch {
+            return undefined;
+        }
+    }
+
+    private async getMessagesByMessageIndexUnsafe(
+        topic: string,
+        keepEvery: number,
+        limit: number,
+        onMessage?: (message: LogMessage) => void,
+        signal?: AbortSignal,
+        startTime?: bigint,
+    ): Promise<LogMessage[] | undefined> {
         const reader = this.reader;
         const httpReader = this.httpReader;
         if (!reader || !httpReader) return undefined;
@@ -511,6 +535,27 @@ export class McapStrategy extends DecodingStrategy {
      * telemetry, that is the entire difference.
      */
     private async readChunkByMessageIndex(
+        chunk: McapChunkIndex,
+        channelIds: Set<number>,
+        sampling?: { chunkOffset: number; keepEvery: number },
+    ): Promise<ParsedChunkMessage[] | undefined> {
+        // A failed range read must not take the topic down with it. Storage
+        // answers a cancelled request with a 500, and a preview cancels
+        // constantly -- collapsed panels, navigation, a re-login mid-load --
+        // so returning undefined here hands the chunk back to the ordinary
+        // reader instead of surfacing "Error reading <topic>".
+        try {
+            return await this.readChunkByMessageIndexUnsafe(
+                chunk,
+                channelIds,
+                sampling,
+            );
+        } catch {
+            return undefined;
+        }
+    }
+
+    private async readChunkByMessageIndexUnsafe(
         chunk: McapChunkIndex,
         channelIds: Set<number>,
         sampling?: { chunkOffset: number; keepEvery: number },
