@@ -179,13 +179,15 @@ export class ActionService {
             );
             return { actionUUID };
         } catch (error) {
-            // No action references the object yet, and nothing ever will:
-            // remove it so a failed submit does not leave an orphan behind.
-            await this.scriptStorage.deleteFile(scriptObject).catch(() => {
-                logger.warn(
-                    `Could not remove script ${scriptObject} after a failed submit`,
-                );
+            // The dispatcher may already have saved the action, and keeps it
+            // as UNPROCESSABLE when no worker takes it; that row still shows
+            // its script. Only an object nothing points at is an orphan.
+            const referenced = await this.actionRepository.exists({
+                where: { scriptObject },
             });
+            if (!referenced) {
+                await this.deleteScript(scriptObject);
+            }
             throw error;
         }
     }
@@ -556,8 +558,29 @@ export class ActionService {
     }
 
     async delete(actionUUID: string): Promise<boolean> {
+        const action = await this.actionRepository.findOne({
+            where: { uuid: actionUUID },
+            select: { uuid: true, scriptObject: true },
+        });
         await this.actionRepository.delete(actionUUID);
+
+        // Every script object belongs to exactly one action, so once the
+        // action is gone nothing can reach the source any more.
+        if (action?.scriptObject) {
+            await this.deleteScript(action.scriptObject);
+        }
         return true;
+    }
+
+    /**
+     * Best-effort removal of a stored script. A failure is logged rather than
+     * raised: the caller's own operation has already succeeded or failed, and
+     * a leftover object is only wasted space.
+     */
+    private async deleteScript(scriptObject: string): Promise<void> {
+        await this.scriptStorage.deleteFile(scriptObject).catch(() => {
+            logger.warn(`Could not remove stored script ${scriptObject}`);
+        });
     }
 
     async cancel(actionUUID: string): Promise<void> {

@@ -117,6 +117,33 @@ describe('Script actions', () => {
         });
     }, 30_000);
 
+    test('keeps the script of an action that could not be queued', async () => {
+        const { user, missionUuid } = await setupTestEnvironment(
+            'script-no-worker@kleinkram.dev',
+            'Script User',
+        );
+        // More cores than any worker has, so queueing fails whichever workers
+        // happen to be registered. The dispatcher then keeps the action as
+        // UNPROCESSABLE and answers 409; that action must still show its script.
+        await seedScriptRunner(user, { cpuCores: 10_000 });
+        await createMockWorker('script-worker-too-small');
+        const response = await submitScript(user, {
+            missionUUID: missionUuid,
+            script: SCRIPT,
+            filename: 'analyse.py',
+        });
+        expect(response.status).toBe(409);
+
+        const action = await database
+            .getRepository(ActionEntity)
+            .findOneOrFail({ where: { mission: { uuid: missionUuid } } });
+        const script = await fetch(
+            `${DEFAULT_URL}/actions/${action.uuid}/script`,
+            { headers: getAuthHeaders(user) },
+        );
+        expect(script.status).toBe(200);
+    }, 30_000);
+
     test('rejects a runtime above the template budget', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
             'script-runtime@kleinkram.dev',

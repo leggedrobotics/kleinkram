@@ -8,9 +8,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * admin to create, and marked `isSystem` so the update and delete paths refuse
  * to touch it.
  *
- * The uuid is fixed so every deployment refers to the same template, and so a
- * deployment where someone already created one by hand converges on it rather
- * than ending up with two.
+ * The uuid is fixed so every deployment refers to the same template, and so
+ * running the migration again cannot insert a second one.
  */
 export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface {
     name = 'SeedScriptRunnerTemplate1790081400000';
@@ -33,17 +32,13 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
              ADD COLUMN IF NOT EXISTS "isSystem" boolean NOT NULL DEFAULT false`,
         );
 
-        // Adopt a template an admin made by hand before this shipped: existing
-        // actions point at it, and the unique (name, version) index would
-        // reject a second one anyway.
-        await queryRunner.query(
-            `UPDATE "action_template"
-                SET "isSystem" = true
-              WHERE "name" = $1
-                AND "deletedAt" IS NULL`,
-            [SeedScriptRunnerTemplate1790081400000.TEMPLATE_NAME],
-        );
-
+        // Always insert the platform's own row, never adopt an existing one:
+        // a `script-runner` template made by hand before this shipped points at
+        // whatever image its author chose, and flagging it as system would run
+        // every submitted script on it. Such a template keeps working for the
+        // actions that reference it, but stays an ordinary user template; the
+        // seeded row takes the next free version so the (name, version) index
+        // cannot collide with it.
         await queryRunner.query(
             `INSERT INTO "action_template" (
                  "uuid", "name", "description", "image_name",
@@ -53,12 +48,15 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
              )
              SELECT $1, $2, $3, $4,
                     2, 4, -1, 0.25,
-                    '20'::action_template_accessrights_enum, 1, false, true,
+                    '20'::action_template_accessrights_enum,
+                    COALESCE((
+                        SELECT MAX(t."version") FROM "action_template" t
+                         WHERE t."name" = $2
+                    ), 0) + 1,
+                    false, true,
                     $5
              WHERE NOT EXISTS (
-                 SELECT 1 FROM "action_template" t
-                  WHERE t."name" = $2
-                    AND t."deletedAt" IS NULL
+                 SELECT 1 FROM "action_template" t WHERE t."uuid" = $1
              )`,
             [
                 SeedScriptRunnerTemplate1790081400000.TEMPLATE_UUID,
