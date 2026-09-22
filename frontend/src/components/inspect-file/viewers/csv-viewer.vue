@@ -110,6 +110,9 @@ const mode = ref<'table' | 'source'>('table');
  * Splits CSV text into records of fields, honouring quoted fields (which may
  * contain the delimiter, newlines, and `""` escapes).
  */
+const isBlankRecord = (record: string[]): boolean =>
+    record.length <= 1 && (record[0] ?? '').length === 0;
+
 interface ParseOptions {
     /** False when `text` is a prefix, so the trailing partial record is dropped. */
     complete: boolean;
@@ -133,7 +136,10 @@ function parseCsv(
     };
     const endRecord = (): void => {
         endField();
-        records.push(record);
+        // A blank line is not a row. Dropping it here rather than after parsing
+        // stops it from consuming the record budget, which would otherwise let
+        // rows fall off the end without the truncation notice appearing.
+        if (!isBlankRecord(record)) records.push(record);
         record = [];
     };
 
@@ -189,9 +195,7 @@ function parseCsv(
     )
         endRecord();
 
-    return records.filter(
-        (parsed) => parsed.length > 1 || (parsed[0] ?? '').length > 0,
-    );
+    return records;
 }
 
 /** Picks the delimiter that yields the most consistent field count. */
