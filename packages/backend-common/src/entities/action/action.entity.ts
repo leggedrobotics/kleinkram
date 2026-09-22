@@ -180,6 +180,28 @@ export class ActionEntity extends BaseEntity {
     @Column({ type: 'json', nullable: true })
     image?: Image;
 
+    /**
+     * Object key of the single-file Python script this action runs, inside the
+     * scripts bucket.
+     *
+     * Null for ordinary actions, which carry their code in their image. When
+     * set, the runner hands the container a presigned URL for this object
+     * through `KLEINKRAM_SCRIPT_URL`, and the shared `script-runner` image
+     * fetches and executes it.
+     */
+    @Column({ nullable: true })
+    scriptObject?: string;
+
+    /**
+     * Per-run runtime budget in hours, overriding the template's.
+     *
+     * Null means "use the template's `maxRuntime`". It can only lower the
+     * budget, never raise it, so a caller cannot use it to buy more runtime
+     * than the template allows.
+     */
+    @Column({ type: 'float', nullable: true })
+    maxRuntimeHours?: number;
+
     @ManyToOne(() => WorkerEntity, (worker) => worker.actions, {
         nullable: true,
     })

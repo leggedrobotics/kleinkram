@@ -16,6 +16,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+    IsBoolean,
     IsDate,
     IsEnum,
     IsInt,
@@ -121,6 +122,14 @@ export class ActionDto {
     @ValidateNested()
     @Type(() => ActionWorkerDto)
     worker!: ActionWorkerDto | null;
+
+    @ApiProperty({
+        description:
+            'True when this action ran a submitted Python file rather than a ' +
+            'Docker image. The source is readable at GET /actions/:uuid/script.',
+    })
+    @IsBoolean()
+    hasScript!: boolean;
 
     @ApiProperty()
     @IsEnum(ActionTriggerSource)

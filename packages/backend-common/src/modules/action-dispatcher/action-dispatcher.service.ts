@@ -33,6 +33,19 @@ import {
     LokiHealthService,
 } from '../loki-health/loki-health.service';
 
+/**
+ * Per-run values that are not derivable from the template.
+ *
+ * Only single-file script actions use these today; an ordinary action leaves
+ * them unset and inherits everything from its template.
+ */
+export interface ActionDispatchOverrides {
+    /** Object key of the script to run, see {@link ActionEntity.scriptObject}. */
+    scriptObject?: string;
+    /** Runtime budget in hours; must not exceed the template's. */
+    maxRuntimeHours?: number;
+}
+
 @Injectable()
 export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(ActionDispatcherService.name);
@@ -104,6 +117,7 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
         parameters: Record<string, any>,
         triggerSource: ActionTriggerSource = ActionTriggerSource.MANUAL,
         triggerUuid?: string,
+        overrides: ActionDispatchOverrides = {},
     ): Promise<string> {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: templateUuid },
@@ -152,6 +166,8 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             template,
             triggerSource,
             triggerUuid,
+            scriptObject: overrides.scriptObject,
+            maxRuntimeHours: overrides.maxRuntimeHours,
         });
 
         action = await this.actionRepository.save(action);
@@ -161,7 +177,7 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
                 cpuCores: template.cpuCores,
                 cpuMemory: template.cpuMemory,
                 gpuMemory: template.gpuMemory,
-                maxRuntime: template.maxRuntime,
+                maxRuntime: overrides.maxRuntimeHours ?? template.maxRuntime,
                 ...parameters,
             };
 
@@ -315,7 +331,9 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
                                         action.template?.cpuMemory ?? 512,
                                     gpuMemory: action.template?.gpuMemory ?? -1,
                                     maxRuntime:
-                                        action.template?.maxRuntime ?? 4,
+                                        action.maxRuntimeHours ??
+                                        action.template?.maxRuntime ??
+                                        4,
                                 };
 
                                 this.logger.log(

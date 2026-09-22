@@ -193,6 +193,18 @@ export default {
         return asString('S3_ARTIFACTS_BUCKET_NAME');
     },
 
+    /**
+     * Bucket holding the single-file scripts submitted through
+     * `klein action run-script`.
+     *
+     * Unlike the other three buckets this one falls back to a default instead
+     * of throwing, so that an existing deployment keeps booting after an
+     * upgrade without first adding the variable to its environment.
+     */
+    get S3_SCRIPTS_BUCKET_NAME(): string {
+        return asOptionalString('S3_SCRIPTS_BUCKET_NAME') ?? 'action-scripts';
+    },
+
     get DOCS_URL(): string {
         return asString('DOCS_URL');
     },

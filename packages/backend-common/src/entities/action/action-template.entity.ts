@@ -36,6 +36,17 @@ export class ActionTemplateEntity extends BaseEntity {
     @Column({ default: false })
     isArchived!: boolean;
 
+    /**
+     * True for templates the platform owns rather than a user.
+     *
+     * The `script-runner` template is infrastructure: every `run-script`
+     * execution points at it, so letting one person edit or delete it would
+     * break the feature for the whole deployment. System templates are seeded
+     * by migration and rejected by the update and delete paths.
+     */
+    @Column({ default: false })
+    isSystem!: boolean;
+
     @Column({ type: 'float' })
     cpuCores!: number;
 

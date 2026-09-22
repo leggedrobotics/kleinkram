@@ -19,6 +19,12 @@
                     style="color: #222"
                 />
                 <q-tab
+                    v-if="action?.hasScript"
+                    name="script"
+                    label="Script"
+                    style="color: #222"
+                />
+                <q-tab
                     name="resources"
                     label="Resource Consumption"
                     style="color: #222"
@@ -149,6 +155,13 @@
             <ActionDetailsTemplateTab
                 v-if="action"
                 :template="action.template"
+            />
+        </q-tab-panel>
+
+        <q-tab-panel name="script">
+            <ActionDetailsScriptTab
+                v-if="action?.hasScript"
+                :action-uuid="action.uuid"
             />
         </q-tab-panel>
 
@@ -369,6 +382,7 @@
 import { ActionState } from '@kleinkram/shared';
 import ActionDetailsExecutionTab from 'components/actions/action-details-execution-tab.vue';
 import ActionDetailsResourcesTab from 'components/actions/action-details-resources-tab.vue';
+import ActionDetailsScriptTab from 'components/actions/action-details-script-tab.vue';
 import ActionDetailsTemplateTab from 'components/actions/action-details-template-tab.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import InfoBanner from 'components/info-banner.vue';
