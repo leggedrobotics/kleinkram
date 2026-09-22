@@ -33,6 +33,13 @@ export interface ProjectColumnType {
 
 export const explorerPageTableColumns: ProjectColumnType[] = [
     {
+        name: 'star',
+        required: true,
+        label: '',
+        align: 'center',
+        style: 'width: 10px',
+    },
+    {
         name: 'name',
         required: true,
         label: 'Project Name',

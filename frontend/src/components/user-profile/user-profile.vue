@@ -46,7 +46,7 @@
             <q-tab-panel name="Projects">
                 <explorer-page-project-table
                     :url-handler="handler"
-                    :my-projects="true"
+                    scope="mine"
                 />
             </q-tab-panel>
             <q-tab-panel name="Admin">

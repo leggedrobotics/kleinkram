@@ -22,6 +22,7 @@ import {
     ProjectDto,
     ProjectQueryDto,
     ProjectsDto,
+    ProjectStarDto,
     ProjectWithRequiredTagsDto,
     RemoveTagTypeDto,
     ResentProjectsDto,
@@ -124,8 +125,9 @@ export class ProjectController {
     })
     async getProjectById(
         @ParameterUID('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
     ): Promise<ProjectWithRequiredTagsDto> {
-        return this.projectService.findOne(uuid);
+        return this.projectService.findOne(uuid, user.user.uuid);
     }
 
     @Put(':uuid')
@@ -165,6 +167,7 @@ export class ProjectController {
     ): Promise<ProjectsDto> {
         // Convert string 'true'/'false' to boolean
         const exactMatch = query.exactMatch === 'true';
+        const starredOnly = query.starred === 'true';
 
         return await this.projectService.findMany(
             query.projectUuids ?? [],
@@ -176,7 +179,50 @@ export class ProjectController {
             query.creatorUuid,
             user.user.uuid,
             exactMatch,
+            starredOnly,
         );
+    }
+
+    @Post(':uuid/star')
+    @UserOnly()
+    @CanReadProject()
+    @ApiOperation({
+        summary: 'Star a project',
+        description:
+            'Marks the project as a favorite of the current user. Stars are ' +
+            'private to the user and do not change who can access the ' +
+            'project. Starring an already starred project succeeds without ' +
+            'creating a second star.',
+    })
+    @ApiCreatedResponse({
+        description: 'Returns the resulting star state',
+        type: ProjectStarDto,
+    })
+    async starProject(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectStarDto> {
+        return this.projectService.starProject(uuid, user.user.uuid);
+    }
+
+    @Delete(':uuid/star')
+    @UserOnly()
+    @CanReadProject()
+    @ApiOperation({
+        summary: 'Remove the star from a project',
+        description:
+            "Removes the current user's star from the project. Un-starring " +
+            'a project that is not starred succeeds without doing anything.',
+    })
+    @ApiOkResponse({
+        description: 'Returns the resulting star state',
+        type: ProjectStarDto,
+    })
+    async unstarProject(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectStarDto> {
+        return this.projectService.unstarProject(uuid, user.user.uuid);
     }
 
     @ApiOperation({

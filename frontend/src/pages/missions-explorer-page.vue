@@ -9,6 +9,14 @@
 
             <template #buttons>
                 <button-group>
+                    <project-star-button
+                        v-if="projectUuid && project"
+                        :project-uuid="projectUuid"
+                        :starred="project.isStarred"
+                        class="button-border"
+                        style="height: 100%; min-height: 40px; min-width: 40px"
+                    />
+
                     <ConfigureTagsDialogOpener
                         v-if="projectUuid"
                         :project-uuid="projectUuid"
@@ -276,6 +284,7 @@ import KleinDownloadMissions from 'components/cli-links/klein-download-missions.
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
+import ProjectStarButton from 'components/common/project-star-button.vue';
 import ExplorerPageMissionTable from 'components/explorer-page/explorer-page-mission-table.vue';
 import TitleSection from 'components/title-section.vue';
 import UploadMissionFolder from 'components/upload-mission-folder.vue';

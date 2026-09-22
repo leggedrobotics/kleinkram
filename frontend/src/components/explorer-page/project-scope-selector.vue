@@ -2,35 +2,41 @@
     <q-btn-dropdown
         dense
         flat
-        class="button-border q-px-sm my-projects-selector"
-        aria-label="Filter the project list by owner"
+        class="button-border q-px-sm project-scope-selector"
+        aria-label="Filter the project list"
     >
         <template #label>
-            {{ myProjects ? 'My Projects' : 'All Projects' }}
+            {{ PROJECT_SCOPE_LABELS[scope ?? 'all'] }}
         </template>
         <q-list>
             <q-item
-                v-for="(item, index) in ['All Projects', 'My Projects']"
-                :key="index"
+                v-for="option in PROJECT_SCOPES"
+                :key="option"
                 v-close-popup
                 clickable
-                @click="() => (myProjects = item === 'My Projects')"
+                @click="() => (scope = option)"
             >
                 <q-item-section>
-                    {{ item }}
+                    {{ PROJECT_SCOPE_LABELS[option] }}
                 </q-item-section>
             </q-item>
         </q-list>
     </q-btn-dropdown>
 </template>
 <script setup lang="ts">
-const myProjects = defineModel<boolean>();
+import {
+    PROJECT_SCOPE_LABELS,
+    PROJECT_SCOPES,
+    type ProjectScope,
+} from 'src/types/project-scope';
+
+const scope = defineModel<ProjectScope>();
 </script>
 
 <style scoped>
 /* Comfortable touch target on phones and tablets */
 @media (max-width: 1023px) {
-    .my-projects-selector {
+    .project-scope-selector {
         min-height: 40px;
     }
 }

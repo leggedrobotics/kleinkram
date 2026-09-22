@@ -1,9 +1,9 @@
 <template>
     <div class="project-filter-options">
         <div class="project-filter-options__scope">
-            <my-projects-selector
-                v-if="myProjects !== undefined"
-                v-model="myProjects"
+            <project-scope-selector
+                v-if="scope !== undefined"
+                v-model="scope"
                 class="self-stretch"
             />
         </div>
@@ -34,11 +34,12 @@ import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-c
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
-import MyProjectsSelector from 'components/explorer-page/my-projects-selector.vue';
+import ProjectScopeSelector from 'components/explorer-page/project-scope-selector.vue';
 import { useHandler } from 'src/hooks/query-hooks';
+import type { ProjectScope } from 'src/types/project-scope';
 import { ref, watch } from 'vue';
 
-const myProjects = defineModel<boolean>();
+const scope = defineModel<ProjectScope>();
 const queryClient = useQueryClient();
 const handler = useHandler();
 
@@ -48,7 +49,7 @@ async function resetCache(): Promise<void> {
     await queryClient.invalidateQueries({ queryKey: ['projects'] });
 }
 
-watch([myProjects, search], () => {
+watch([scope, search], () => {
     handler.value.setSearch({ name: search.value ?? '' });
     // TODO: fix that we need a timeout here!!!
     setTimeout(() => {

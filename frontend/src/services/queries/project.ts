@@ -26,6 +26,10 @@ export const filteredProjects = async (
         parameters.creatorUuid = searchParameters['creator.uuid'];
     }
 
+    if (searchParameters?.starred === 'true') {
+        parameters.starred = 'true';
+    }
+
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
         '/projects',
         {
@@ -56,5 +60,21 @@ export const recentProjects = async (
     const response = await axios.get<ResentProjectsDto>('/projects/recent', {
         params: { take },
     });
+    return response.data;
+};
+
+export const starredProjects = async (take: number): Promise<ProjectsDto> => {
+    const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
+        '/projects',
+        {
+            params: {
+                take: take.toString(),
+                skip: '0',
+                sortBy: 'name',
+                sortOrder: 'ASC',
+                starred: 'true',
+            },
+        },
+    );
     return response.data;
 };

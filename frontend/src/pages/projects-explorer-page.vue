@@ -2,10 +2,10 @@
     <title-section title="Projects" />
 
     <div :class="$q.screen.xs ? 'q-my-md' : 'q-my-lg'">
-        <project-list-filter-options v-model="myProjects" />
+        <project-list-filter-options v-model="scope" />
 
         <div style="padding-top: 10px">
-            <explorer-page-project-table :my-projects="myProjects" />
+            <explorer-page-project-table :scope="scope" />
         </div>
     </div>
 </template>
@@ -13,7 +13,8 @@
 import ExplorerPageProjectTable from 'components/explorer-page/explorer-page-project-table.vue';
 import ProjectListFilterOptions from 'components/explorer-page/project-list-filter-options.vue';
 import TitleSection from 'components/title-section.vue';
+import type { ProjectScope } from 'src/types/project-scope';
 import { ref } from 'vue';
 
-const myProjects = ref(false);
+const scope = ref<ProjectScope>('all');
 </script>
