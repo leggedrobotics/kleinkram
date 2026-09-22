@@ -14,6 +14,7 @@ import { McapIndexedReader } from '@mcap/core';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { DecodingStrategy } from './index';
+import { mapInOrder } from './fetch-pool';
 import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
 
 /** Identity of a message record, used to drop duplicates from overlapping chunks */
@@ -45,6 +46,16 @@ interface McapChunkIndex {
  * sits at the lean end of that basin.
  */
 const PREVIEW_COALESCE_GAP = 256 * 1024;
+
+/**
+ * Range reads in flight at once.
+ *
+ * These reads are latency-bound: a sampled preview of a dense topic plans
+ * around 800 chunk indexes and fetches roughly a thousand small ranges, so
+ * issuing them one at a time makes round trips the whole cost. Browsers cap
+ * connections per host around six, so going much beyond this buys nothing.
+ */
+const FETCH_CONCURRENCY = 12;
 
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;
@@ -202,21 +213,18 @@ export class McapStrategy extends DecodingStrategy {
         }
         if (channelIds.size === 0) return [];
 
-        // A preview wants the first `limit` messages after striding, so the
-        // planner stops as soon as it has that many rather than reading the
-        // message index of every chunk in the file. On a 2 GB recording that
-        // is the difference between one or two index reads and eight hundred.
+        // A preview of the first messages needs only the chunks that hold
+        // them; a sampled preview of a dense topic needs all of them, because
+        // striding runs across the whole recording. Plan only as far as the
+        // request actually reaches.
         const needExtents = limit * keepEvery;
 
-        const extents: MessageExtent[] = [];
+        const candidates: McapChunkIndex[] = [];
         for (const chunk of chunkIndexes) {
-            if (extents.length >= needExtents) break;
             if (chunk.compression !== '') return undefined;
-            if (signal?.aborted) return undefined;
             if (startTime !== undefined && chunk.messageEndTime < startTime) {
                 continue;
             }
-
             const offsets = chunk.messageIndexOffsets;
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (!offsets || offsets.size === 0) return undefined;
@@ -225,26 +233,46 @@ export class McapStrategy extends DecodingStrategy {
             for (const id of channelIds) {
                 if (offsets.has(id)) wanted = true;
             }
-            if (!wanted) continue;
+            if (wanted) candidates.push(chunk);
+        }
+        if (candidates.length === 0) return [];
 
-            let indexStart: bigint | undefined;
-            for (const offset of offsets.values()) {
-                if (indexStart === undefined || offset < indexStart) {
-                    indexStart = offset;
+        // Index reads are small, independent and numerous -- hundreds of them
+        // for a sampled preview -- so they go through the pool rather than one
+        // round trip at a time.
+        const extents: MessageExtent[] = [];
+        let planningFailed = false;
+
+        for await (const { item: chunk, result: blob } of mapInOrder(
+            candidates,
+            FETCH_CONCURRENCY,
+            async (chunk) => {
+                let indexStart: bigint | undefined;
+                for (const offset of chunk.messageIndexOffsets.values()) {
+                    if (indexStart === undefined || offset < indexStart) {
+                        indexStart = offset;
+                    }
                 }
+                // readExact, not read: `read` inflates every request to its
+                // minimum streaming size, which would pull hundreds of kB to
+                // get an 8 kB index.
+                return indexStart === undefined
+                    ? undefined
+                    : httpReader.readExact(
+                          indexStart,
+                          chunk.messageIndexLength,
+                      );
+            },
+        )) {
+            if (signal?.aborted || blob === undefined) {
+                planningFailed = true;
+                break;
             }
-            if (indexStart === undefined) return undefined;
-
-            // readExact, not read: `read` inflates every request to its
-            // minimum streaming size, which would pull hundreds of kB to get
-            // an 8 kB index.
-            const blob = await httpReader.readExact(
-                indexStart,
-                chunk.messageIndexLength,
-            );
             const indexes = parseMessageIndexes(blob);
-            if (indexes.size === 0) return undefined;
-
+            if (indexes.size === 0) {
+                planningFailed = true;
+                break;
+            }
             extents.push(
                 ...planChunk(
                     chunkDataStart(
@@ -257,7 +285,9 @@ export class McapStrategy extends DecodingStrategy {
                     startTime,
                 ),
             );
+            if (extents.length >= needExtents) break;
         }
+        if (planningFailed) return undefined;
 
         extents.sort((a, b) =>
             a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
@@ -273,12 +303,16 @@ export class McapStrategy extends DecodingStrategy {
         const wantedStarts = new Set(needed.map((extent) => extent.start));
         const msgs: LogMessage[] = [];
 
-        for (const range of coalesce(needed, PREVIEW_COALESCE_GAP)) {
+        for await (const { item: range, result: buffer } of mapInOrder(
+            coalesce(needed, PREVIEW_COALESCE_GAP),
+            FETCH_CONCURRENCY,
+            async (range) =>
+                httpReader.readExact(
+                    BigInt(range.start),
+                    BigInt(range.end - range.start),
+                ),
+        )) {
             if (signal?.aborted) break;
-            const buffer = await httpReader.readExact(
-                BigInt(range.start),
-                BigInt(range.end - range.start),
-            );
 
             for (const extent of needed) {
                 if (extent.start < range.start || extent.start >= range.end) {
