@@ -2,11 +2,13 @@ import {
     AccessControlService,
     ActionEntity,
     ActionTemplateEntity,
+    DependencyUnavailableException,
     MissionEntity,
     UserEntity,
     WorkerEntity,
 } from '@kleinkram/backend-common';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
+import { LokiHealthService } from '@kleinkram/backend-common/modules/loki-health/loki-health.service';
 import * as schedulingLogic from '@kleinkram/backend-common/scheduling-logic';
 import {
     ActionFailureOrigin,
@@ -21,11 +23,6 @@ import { EntityManager, Repository } from 'typeorm';
 // Mock scheduling logic
 jest.mock('@kleinkram/backend-common/scheduling-logic', () => ({
     addActionQueue: jest.fn(),
-}));
-
-// Mock axios for Loki health check
-jest.mock('axios', () => ({
-    get: jest.fn().mockResolvedValue({ status: 200 }),
 }));
 
 // Mock ioredis
@@ -44,6 +41,7 @@ describe('ActionDispatcherService Unit Tests', () => {
     let templateRepo: Repository<ActionTemplateEntity>;
     let workerRepo: Repository<WorkerEntity>;
     let accessControlService: AccessControlService;
+    let lokiHealthService: LokiHealthService;
     let gauge: Gauge;
 
     beforeEach(() => {
@@ -68,6 +66,10 @@ describe('ActionDispatcherService Unit Tests', () => {
             canAccessMission: jest.fn(),
         } as unknown as AccessControlService;
 
+        lokiHealthService = {
+            waitUntilReady: jest.fn().mockResolvedValue(true),
+        } as unknown as LokiHealthService;
+
         gauge = {
             set: jest.fn(),
         } as unknown as Gauge;
@@ -82,6 +84,7 @@ describe('ActionDispatcherService Unit Tests', () => {
             gauge,
             gauge,
             accessControlService,
+            lokiHealthService,
         );
     });
 
@@ -147,6 +150,48 @@ describe('ActionDispatcherService Unit Tests', () => {
         expect(saveSpy).toHaveBeenCalled();
         expect(healthCheckSpy).toHaveBeenCalled();
         expect(addActionQueueSpy).toHaveBeenCalledTimes(2);
+    });
+
+    test('dispatch should fail with a 503 and not create an action when Loki is unavailable', async () => {
+        const mission = { uuid: 'mission-uuid' } as MissionEntity;
+        const creator = {
+            uuid: 'user-uuid',
+            role: UserRole.USER,
+        } as UserEntity;
+
+        (templateRepo.findOneOrFail as jest.Mock).mockResolvedValue({
+            uuid: 'template-uuid',
+            accessRights: 0,
+        });
+        (accessControlService.canAccessMission as jest.Mock).mockResolvedValue(
+            true,
+        );
+        (lokiHealthService.waitUntilReady as jest.Mock).mockResolvedValue(
+            false,
+        );
+        const saveSpy = (actionRepo.save as jest.Mock).mockResolvedValue({});
+
+        let caught: unknown;
+        try {
+            await service.dispatch(
+                'template-uuid',
+                mission,
+                creator,
+                {},
+                ActionTriggerSource.MANUAL,
+            );
+        } catch (error) {
+            caught = error;
+        }
+
+        expect(caught).toBeInstanceOf(DependencyUnavailableException);
+        const failure = caught as DependencyUnavailableException;
+        expect(failure.getStatus()).toBe(503);
+        expect(failure.retryAfterSeconds).toBeGreaterThan(0);
+        expect(failure.message).toMatch(/Loki/);
+
+        // the submission is rejected outright, no half-created run is left behind
+        expect(saveSpy).not.toHaveBeenCalled();
     });
 
     describe('stopAction', () => {

@@ -86,6 +86,33 @@ def display_error(
             print(text, file=sys.stderr)
 
 
+def _server_message(response: httpx.Response) -> Optional[str]:
+    """\
+    extract the explanation the backend sent along with an error
+
+    the backend answers errors with a json body such as
+    ``{"statusCode": 503, "message": "..."}``; without this the user only ever
+    sees the status code and has to go read the server logs to find out what
+    actually went wrong
+    """
+    try:
+        body = response.json()
+    except Exception:
+        return None
+
+    if isinstance(body, str):
+        return body.strip() or None
+    if not isinstance(body, dict):
+        return None
+
+    message = body.get("message") or body.get("error")
+    if isinstance(message, list):
+        message = "; ".join(str(item) for item in message)
+    if not isinstance(message, str):
+        return None
+    return message.strip() or None
+
+
 def handle_request_error(exc: httpx.RequestError) -> int:
     shared_state = get_shared_state()
     config = get_config()
@@ -156,7 +183,24 @@ def handle_http_status_error(exc: httpx.HTTPStatusError) -> int:
     config = get_config()
     endpoint_url = config.endpoint.api
 
-    if exc.response.status_code in (502, 504):
+    server_message = _server_message(exc.response)
+
+    if exc.response.status_code == 503:
+        retry_after = exc.response.headers.get("retry-after")
+        detail = server_message or "The server is temporarily unavailable."
+        retry_hint = (
+            f"\n\nThis is temporary, please retry in {retry_after} seconds."
+            if retry_after
+            else "\n\nThis is temporary, please retry in a moment."
+        )
+        title = "Service Unavailable"
+        msg = (
+            f"The Kleinkram backend server at:\n"
+            f"  [bold cyan]{endpoint_url}[/bold cyan] could not serve this request.\n\n"
+            f"{detail}{retry_hint}"
+        )
+        quiet_msg = f"Error: {detail}"
+    elif exc.response.status_code in (502, 504):
         title = "Server Timeout"
         msg = (
             f"The request to the Kleinkram backend server at:\n"
@@ -177,12 +221,15 @@ def handle_http_status_error(exc: httpx.HTTPStatusError) -> int:
         quiet_msg = f"Error: Internal server error on {endpoint_url} (HTTP 500)"
     else:
         title = f"HTTP Error {exc.response.status_code}"
+        details = server_message or str(exc)
         msg = (
             f"The Kleinkram backend server at:\n"
             f"  [bold cyan]{endpoint_url}[/bold cyan] returned an error.\n\n"
-            f"Details: {exc}"
+            f"Details: {details}"
         )
         quiet_msg = f"Error: HTTP {exc.response.status_code} on {endpoint_url}"
+        if server_message:
+            quiet_msg += f": {server_message}"
 
     display_error(
         exc=exc,

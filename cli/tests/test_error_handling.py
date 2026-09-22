@@ -211,3 +211,55 @@ def test_handle_http_status_error_parameterized(
     response = httpx.Response(status_code, request=request)
     exc = httpx.HTTPStatusError("error", request=request, response=response)
     _run_handle_http_status_error(capsys, exc, verbose, debug, expected_title, expected_texts, should_raise)
+
+
+def _http_status_error(status_code, json=None, headers=None):
+    request = httpx.Request("POST", "http://my-api-url.com/actions")
+    response = httpx.Response(status_code, request=request, json=json, headers=headers)
+    return httpx.HTTPStatusError("error", request=request, response=response)
+
+
+@pytest.mark.parametrize("verbose", [True, False])
+def test_handle_http_status_error_surfaces_server_message(capsys, verbose):
+    """the backend explanation must reach the user, not just the status code"""
+    exc = _http_status_error(409, json={"statusCode": 409, "message": "Creator no longer has access to this mission"})
+    _run_handle_http_status_error(
+        capsys,
+        exc,
+        verbose,
+        False,
+        "HTTP Error 409" if verbose else None,
+        ["Creator no longer has access to this mission"],
+        False,
+    )
+
+
+@pytest.mark.parametrize(
+    "verbose, expected_texts",
+    [
+        (True, ["Service Unavailable", "action log store (Loki) is not ready", "retry in 15 seconds"]),
+        (False, ["action log store (Loki) is not ready"]),
+    ],
+)
+def test_handle_http_status_error_reports_service_unavailable(capsys, verbose, expected_texts):
+    exc = _http_status_error(
+        503,
+        json={"statusCode": 503, "message": "The action log store (Loki) is not ready yet."},
+        headers={"Retry-After": "15"},
+    )
+    _run_handle_http_status_error(capsys, exc, verbose, False, None, expected_texts, False)
+
+
+def test_handle_http_status_error_joins_validation_message_lists(capsys):
+    exc = _http_status_error(400, json={"statusCode": 400, "message": ["name must be a string", "name is required"]})
+    _run_handle_http_status_error(
+        capsys, exc, True, False, "HTTP Error 400", ["name must be a string; name is required"], False
+    )
+
+
+def test_handle_http_status_error_without_json_body(capsys):
+    """a non-json error body must not break the handler"""
+    request = httpx.Request("GET", "http://my-api-url.com")
+    response = httpx.Response(502, request=request, content=b"<html>bad gateway</html>")
+    exc = httpx.HTTPStatusError("error", request=request, response=response)
+    _run_handle_http_status_error(capsys, exc, True, False, "Server Timeout", ["http://my-api-url.com"], False)
