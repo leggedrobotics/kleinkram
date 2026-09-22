@@ -4,6 +4,7 @@
 
         <div class="q-mt-lg q-mb-lg dashboard-grid">
             <DashboardRecentProjects />
+            <DashboardStarredProjects />
             <DashboardStorageIndicator />
             <DashboardWorkerLists />
             <RunningActions />
@@ -14,6 +15,7 @@
 <script setup lang="ts">
 import RunningActions from 'components/actions/running-actions.vue';
 import DashboardRecentProjects from 'components/dashboard/dashboard-recent-projects.vue';
+import DashboardStarredProjects from 'components/dashboard/dashboard-starred-projects.vue';
 import DashboardStorageIndicator from 'components/dashboard/dashboard-storage-indicator.vue';
 import DashboardWorkerLists from 'components/dashboard/dashboard-worker-list.vue';
 import TitleSection from 'components/title-section.vue';

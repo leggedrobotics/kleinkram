@@ -3,7 +3,7 @@ import { ProjectWithCreator } from '@api-dto/project/project-with-creator.dto';
 import { TagTypeDto } from '@api-dto/tags/tags.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
-import { IsNumber, ValidateNested } from 'class-validator';
+import { IsBoolean, IsNumber, ValidateNested } from 'class-validator';
 
 @Expose()
 export class ProjectWithRequiredTagsDto extends ProjectWithCreator {
@@ -22,6 +22,16 @@ export class ProjectWithRequiredTagsDto extends ProjectWithCreator {
     @Expose()
     @Transform(({ obj }) => obj.size ?? 0)
     size!: number;
+
+    @ApiProperty({
+        description:
+            'Whether the requesting user has starred this project. Always ' +
+            'false for requests that are not made on behalf of a user.',
+    })
+    @IsBoolean()
+    @Expose()
+    @Transform(({ obj }) => obj.isStarred ?? false)
+    isStarred!: boolean;
 
     @ApiProperty({
         type: () => [TagTypeDto],

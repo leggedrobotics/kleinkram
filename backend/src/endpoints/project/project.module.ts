@@ -4,6 +4,7 @@ import {
     AccessGroupEventEntity,
     GroupMembershipEntity,
     ProjectEntity,
+    ProjectStarEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
@@ -18,6 +19,7 @@ import { ProjectController } from './project.controller';
     imports: [
         TypeOrmModule.forFeature([
             ProjectEntity,
+            ProjectStarEntity,
             AccountEntity,
             AccessGroupEntity,
             AccessGroupEventEntity,
