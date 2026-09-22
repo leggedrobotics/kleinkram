@@ -267,14 +267,20 @@ import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
 import { computed, Ref, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const $router = useRouter();
+const $route = useRoute();
 const $q = useQuasar();
 const tableReference: Ref<QTable | undefined> = ref(undefined);
 const handler = useHandler();
-handler.value.sortBy = 'file.createdAt';
-handler.value.descending = true;
+
+// Files are listed newest recording first. A sort pinned in the URL (a shared
+// deep link, a reload after clicking a column header) takes precedence.
+if (!$route.query.sortBy) {
+    handler.value.sortBy = 'file.date';
+    handler.value.descending = true;
+}
 const loading = ref(false);
 const selected = ref<FileWithTopicDto[]>([]);
 
@@ -288,6 +294,9 @@ const isCompact = computed(() => $q.screen.lt.md);
 const sortOptions = [
     { label: 'File name', value: 'file.filename' },
     { label: 'Health', value: 'state' },
+    { label: 'Project', value: 'project.name' },
+    { label: 'Mission', value: 'mission.name' },
+    { label: 'Creator', value: 'creator.name' },
     { label: 'Recording date', value: 'file.date' },
     { label: 'Creation date', value: 'file.createdAt' },
     { label: 'Size', value: 'file.size' },
@@ -296,7 +305,7 @@ const sortOptions = [
 const activeSortLabel = computed(
     () =>
         sortOptions.find((option) => option.value === handler.value.sortBy)
-            ?.label ?? 'Creation date',
+            ?.label ?? 'Recording date',
 );
 
 function toggleSort(name: string): void {
@@ -422,7 +431,7 @@ const columns = [
         align: 'left',
         field: (row: FileWithTopicDto): string => row.mission.project.name,
         format: (value: string): string => value,
-        sortable: false,
+        sortable: true,
         style: 'width:  10%; max-width:  10%; min-width: 10%;',
     },
     {
@@ -432,7 +441,7 @@ const columns = [
         align: 'left',
         field: (row: FileWithTopicDto): string => row.mission.name,
         format: (value: string): string => value,
-        sortable: false,
+        sortable: true,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
     {
@@ -448,7 +457,7 @@ const columns = [
     {
         name: 'file.date',
         required: true,
-        label: 'Recoring Date',
+        label: 'Recording Date',
         align: 'left',
         field: (row: FileWithTopicDto): Date => row.date,
         format: (value: string): string => formatDate(new Date(value)),
@@ -464,13 +473,13 @@ const columns = [
         sortable: true,
     },
     {
-        name: 'Creator',
+        name: 'creator.name',
         required: true,
         label: 'Creator',
         align: 'left',
         field: (row: FileWithTopicDto): string => row.creator.name,
         format: (value: string): string => value,
-        sortable: false,
+        sortable: true,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
     {
