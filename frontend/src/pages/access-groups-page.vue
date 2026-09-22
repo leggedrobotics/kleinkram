@@ -51,30 +51,13 @@
             </button-group>
         </div>
 
-        <div
-            v-if="selectedAccessGroups.length > 0"
-            class="q-py-lg"
-            style="background: #0f62fe; margin-top: 24px"
-        >
-            <ButtonGroupOverlay>
-                <template #start>
-                    <div style="margin: 0; font-size: 14pt; color: white">
-                        {{ selectedAccessGroups.length }} items selected
-                    </div>
-                </template>
-                <template #end>
-                    <!-- TODO: bulk actions -->
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_close"
-                        color="white"
-                        @click="deselectAccessGroups"
-                    />
-                </template>
-            </ButtonGroupOverlay>
-        </div>
+        <!-- TODO: bulk actions go in the default slot as they arrive -->
+        <table-selection-bar
+            style="margin-top: 24px"
+            :noun="tab === 'groups' ? 'group' : 'user'"
+            :count="selectedAccessGroups.length"
+            @clear="deselectAccessGroups"
+        />
 
         <q-table
             v-model:pagination="pagination"
@@ -332,13 +315,14 @@ import type { ProjectWithMissionsDto } from '@kleinkram/api-dto/types/project/pr
 import { AccessGroupType } from '@kleinkram/shared';
 import DeleteAccessGroup from 'components/button-wrapper/delete-access-group.vue';
 import CreateAccessGroupDialogOpener from 'components/button-wrapper/dialog-opener-create-access-group.vue';
-import ButtonGroupOverlay from 'components/buttons/button-group-overlay.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import AppStatusChip from 'components/common/app-status-chip.vue';
+import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable, useQuasar } from 'quasar';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import ROUTES from 'src/router/routes';
 import { searchAccessGroups } from 'src/services/queries/access';
 import { useRoute, useRouter } from 'vue-router';
@@ -467,13 +451,21 @@ const accessGroupsTable = computed(() =>
     foundAccessGroups.value ? foundAccessGroups.value.data : [],
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function rowClick(event: any, row: AccessGroupDto) {
+async function openAccessGroup(row: AccessGroupDto): Promise<void> {
     await $router.push({
         name: ROUTES.ACCESS_GROUP.routeName,
         params: { uuid: row.uuid },
     });
 }
+
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick: rowClick } = useRowActivation(
+    selectedAccessGroups as unknown as Ref<AccessGroupDto[]>,
+    openAccessGroup,
+);
 
 const usersColumns: AccessGroupColumn[] = [
     {
