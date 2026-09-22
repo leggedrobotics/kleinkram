@@ -90,6 +90,7 @@ const EXPECTED_ACCESS_SOURCES = new Map<string, AccessSource>([
     // --- categories ------------------------------------------------------
     ['CategoryController.getAll', fromQuery('projectUuid')],
     ['CategoryController.createCategory', fromBody('projectUUID')],
+    ['CategoryController.updateCategoryDescription', fromBody('projectUUID')],
     ['CategoryController.addManyCategories', fromBody('missionUUID')],
 
     // --- triggers --------------------------------------------------------
