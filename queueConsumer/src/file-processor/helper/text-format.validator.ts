@@ -6,37 +6,13 @@
  * and (for CSV) text without a consistent delimited structure.
  */
 
+import { decodeTextSample, decodeUtf8Sample } from '@kleinkram/shared';
+
 /** Number of leading bytes inspected; enough to judge a file without reading it all. */
 export const TEXT_SAMPLE_BYTES = 8192;
 
-const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
-
 /** Delimiters we recognise, in the order they are preferred on a tie. */
 const CSV_DELIMITERS = [',', ';', '\t'] as const;
-
-/**
- * Decodes a prefix of a UTF-8 file. The sample may cut a multi-byte character
- * in half, so up to three trailing bytes are dropped before giving up.
- *
- * @returns the decoded text, or `undefined` if the sample is not valid UTF-8.
- */
-export const decodeUtf8Sample = (sample: Buffer): string | undefined => {
-    const withoutBom = sample.subarray(0, UTF8_BOM.length).equals(UTF8_BOM)
-        ? sample.subarray(UTF8_BOM.length)
-        : sample;
-
-    const decoder = new TextDecoder('utf-8', { fatal: true });
-    for (let dropped = 0; dropped <= 3; dropped++) {
-        const end = withoutBom.length - dropped;
-        if (end < 0) break;
-        try {
-            return decoder.decode(withoutBom.subarray(0, end));
-        } catch {
-            // truncated multi-byte sequence at the end of the sample, retry shorter
-        }
-    }
-    return undefined;
-};
 
 /** C0 control bytes that legitimately occur in text files. */
 const ALLOWED_CONTROL_BYTES = new Set([0x09, 0x0a, 0x0c, 0x0d]);
@@ -49,7 +25,10 @@ const ALLOWED_CONTROL_BYTES = new Set([0x09, 0x0a, 0x0c, 0x0d]);
  * encoding such as latin-1 are still accepted: those decode as invalid UTF-8
  * yet stay far below the share of high bytes that binary data produces.
  */
-export const isPlainTextSample = (sample: Buffer): boolean => {
+export const isPlainTextSample = (
+    sample: Buffer,
+    sampleIsCompleteFile: boolean,
+): boolean => {
     if (sample.length === 0) return false;
     if (sample.includes(0)) return false;
 
@@ -61,7 +40,8 @@ export const isPlainTextSample = (sample: Buffer): boolean => {
     }
     if (controlBytes > sample.length * 0.01) return false;
 
-    if (decodeUtf8Sample(sample) !== undefined) return true;
+    if (decodeUtf8Sample(sample, !sampleIsCompleteFile) !== undefined)
+        return true;
     return highBytes <= sample.length * 0.1;
 };
 
@@ -134,10 +114,11 @@ const recordFieldCounts = (
  * number of fields, and there is more than one field per record.
  */
 export const looksLikeCsv = (
-    text: string,
+    sample: Buffer,
     sampleIsCompleteFile: boolean,
-): boolean =>
-    CSV_DELIMITERS.some((delimiter) => {
+): boolean => {
+    const text = decodeTextSample(sample, !sampleIsCompleteFile);
+    return CSV_DELIMITERS.some((delimiter) => {
         const counts = recordFieldCounts(text, delimiter, sampleIsCompleteFile);
         if (counts.length === 0) return false;
 
@@ -145,3 +126,4 @@ export const looksLikeCsv = (
         if (fieldCount < 2) return false;
         return counts.every((count) => count === fieldCount);
     });
+};

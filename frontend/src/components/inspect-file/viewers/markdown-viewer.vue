@@ -27,6 +27,18 @@
             </q-btn>
         </div>
 
+        <q-banner
+            v-if="truncated"
+            dense
+            class="bg-orange-1 text-orange-9 q-mb-md rounded-borders"
+        >
+            <template #avatar>
+                <q-icon name="sym_o_info" />
+            </template>
+            Only the beginning of this file is previewed. Download it to read
+            the rest.
+        </q-banner>
+
         <!-- Markdown is rendered with raw HTML disabled and sanitized by DOMPurify. -->
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div
@@ -46,9 +58,14 @@ import MarkdownIt from 'markdown-it';
 import { Notify, copyToClipboard } from 'quasar';
 import { computed, ref } from 'vue';
 
-const properties = defineProps<{
-    content: string;
-}>();
+const properties = withDefaults(
+    defineProps<{
+        content: string;
+        /** Set when `content` is only the leading slice of a larger file. */
+        truncated?: boolean;
+    }>(),
+    { truncated: false },
+);
 
 const mode = ref<'rendered' | 'source'>('rendered');
 

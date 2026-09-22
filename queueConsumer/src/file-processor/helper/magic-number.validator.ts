@@ -3,7 +3,6 @@ import * as fs from 'node:fs/promises';
 import logger from '../../logger';
 import {
     TEXT_SAMPLE_BYTES,
-    decodeUtf8Sample,
     isPlainTextSample,
     looksLikeCsv,
 } from './text-format.validator';
@@ -54,15 +53,14 @@ export const MagicNumberValidator = {
                         0,
                     );
                     const sample = buffer.subarray(0, bytesRead);
+                    const { size } = await handle.stat();
+                    const sampleIsCompleteFile = size <= bytesRead;
 
-                    if (!isPlainTextSample(sample)) return false;
+                    if (!isPlainTextSample(sample, sampleIsCompleteFile))
+                        return false;
                     if (fileType === FileType.MD) return true;
 
-                    const { size } = await handle.stat();
-                    return looksLikeCsv(
-                        decodeUtf8Sample(sample) ?? sample.toString('latin1'),
-                        size <= bytesRead,
-                    );
+                    return looksLikeCsv(sample, sampleIsCompleteFile);
                 }
 
                 if (fileType === FileType.TUM) {

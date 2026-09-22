@@ -58,7 +58,10 @@
         <div v-else-if="isMarkdown" class="q-mb-lg">
             <h2 class="text-h5 text-md-h4 q-mb-md">Content Preview</h2>
             <div v-if="textContent">
-                <MarkdownViewer :content="textContent" />
+                <MarkdownViewer
+                    :content="textContent"
+                    :truncated="textTruncated"
+                />
             </div>
             <div v-else class="row items-center q-gutter-sm text-grey-7">
                 <q-spinner-dots size="1.5em" /> <span>Loading content...</span>
@@ -69,7 +72,7 @@
         <div v-else-if="isCsv" class="q-mb-lg">
             <h2 class="text-h5 text-md-h4 q-mb-md">Table Preview</h2>
             <div v-if="textContent">
-                <CsvViewer :content="textContent" />
+                <CsvViewer :content="textContent" :truncated="textTruncated" />
             </div>
             <div v-else class="row items-center q-gutter-sm text-grey-7">
                 <q-spinner-dots size="1.5em" /> <span>Loading content...</span>
@@ -153,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileState, FileType } from '@kleinkram/shared';
+import { decodeTextSample, FileState, FileType } from '@kleinkram/shared';
 import { copyToClipboard, Notify } from 'quasar';
 import { useRosmsgPreview } from 'src/composables/use-rosmsg-preview';
 import {
@@ -183,7 +186,11 @@ const preview = useRosmsgPreview();
 const yamlContent = ref<string | undefined>(undefined);
 const tumContent = ref<string | undefined>(undefined);
 const textContent = ref<string | undefined>(undefined);
+const textTruncated = ref(false);
 const svo2Url = ref<string | undefined>(undefined);
+// Tracks which file the loaded preview belongs to, so navigating to another
+// file clears it instead of showing the previous file's content.
+const loadedFileUuid = ref<string | undefined>(undefined);
 
 const fileExtension = computed(
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -227,31 +234,98 @@ const displayTopics = computed(
     () => file.value?.state === FileState.OK && isSupportedBinary.value,
 );
 
+/**
+ * Uploads can be tens of gigabytes, so a text preview never pulls the whole
+ * object: it asks for a range and stops reading at the cap even if the storage
+ * backend ignores the header.
+ */
+const TEXT_PREVIEW_MAX_BYTES = 2 * 1024 * 1024;
+
+interface TextPreview {
+    text: string;
+    truncated: boolean;
+}
+
+async function fetchTextPreview(url: string): Promise<TextPreview | undefined> {
+    const response = await fetch(url, {
+        headers: { Range: `bytes=0-${String(TEXT_PREVIEW_MAX_BYTES - 1)}` },
+    });
+    // 206 for an honoured range, 200 when the backend serves the whole object.
+    if (!response.ok) return undefined;
+
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+    const reader = response.body?.getReader();
+
+    if (reader) {
+        while (received < TEXT_PREVIEW_MAX_BYTES) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+        }
+        await reader.cancel();
+    } else {
+        const whole = new Uint8Array(await response.arrayBuffer());
+        chunks.push(whole);
+        received = whole.length;
+    }
+
+    const bytes = new Uint8Array(received);
+    let offset = 0;
+    for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.length;
+    }
+
+    const capped = bytes.subarray(0, TEXT_PREVIEW_MAX_BYTES);
+    const truncated = received >= TEXT_PREVIEW_MAX_BYTES;
+    return {
+        // Ingestion accepts latin-1 alongside UTF-8, so decode the same way it
+        // validated rather than forcing UTF-8 and showing replacement chars.
+        text: decodeTextSample(capped, truncated),
+        truncated,
+    };
+}
+
 // --- Init ---
 watch(
     () => file.value,
     async (currentFile) => {
+        if (currentFile?.uuid !== loadedFileUuid.value) {
+            loadedFileUuid.value = currentFile?.uuid;
+            yamlContent.value = undefined;
+            tumContent.value = undefined;
+            textContent.value = undefined;
+            textTruncated.value = false;
+            svo2Url.value = undefined;
+        }
+
         if (currentFile?.state !== FileState.OK || preview.isReaderReady.value)
             return;
 
+        // Navigating away mid-request must not let a late response overwrite
+        // the preview of the file now on screen.
+        const requestedUuid = currentFile.uuid;
+        const isStale = (): boolean => file.value?.uuid !== requestedUuid;
+
         try {
             const url = await downloadFile(currentFile.uuid, false, true);
+            if (isStale()) return;
 
             if (isYaml.value) {
-                const results = await fetch(url);
-                yamlContent.value = results.ok
-                    ? await results.text()
-                    : 'Error loading content';
+                const preview_ = await fetchTextPreview(url);
+                if (isStale()) return;
+                yamlContent.value = preview_?.text ?? 'Error loading content';
             } else if (isTum.value) {
-                const results = await fetch(url);
-                tumContent.value = results.ok
-                    ? await results.text()
-                    : 'Error loading content';
+                const preview_ = await fetchTextPreview(url);
+                if (isStale()) return;
+                tumContent.value = preview_?.text ?? 'Error loading content';
             } else if (isMarkdown.value || isCsv.value) {
-                const results = await fetch(url);
-                textContent.value = results.ok
-                    ? await results.text()
-                    : 'Error loading content';
+                const preview_ = await fetchTextPreview(url);
+                if (isStale()) return;
+                textContent.value = preview_?.text ?? 'Error loading content';
+                textTruncated.value = preview_?.truncated ?? false;
             } else if (isSvo2.value) {
                 // For SVO2, we just need the URL to be available for the viewer
                 // The viewer will handle the range requests
@@ -261,6 +335,7 @@ watch(
                 if (currentFile.type === FileType.BAG) type = 'rosbag';
                 else if (currentFile.type === FileType.MCAP) type = 'mcap';
                 else type = 'db3';
+                if (isStale()) return;
                 await preview.init(url, type);
             }
         } catch (error_) {

@@ -48,9 +48,9 @@
             <template #avatar>
                 <q-icon name="sym_o_info" />
             </template>
-            Only the first
-            {{ MAX_PREVIEW_ROWS.toLocaleString() }} rows are previewed. Download
-            the file to see all of it.
+            Showing the first
+            {{ rows.length.toLocaleString() }} rows. Download the file to see
+            all of it.
         </q-banner>
 
         <div v-if="mode === 'source'" class="code-block bg-grey-1 q-pa-md">
@@ -78,12 +78,21 @@
 import { Notify, QTableColumn, copyToClipboard } from 'quasar';
 import { computed, ref } from 'vue';
 
-const properties = defineProps<{
-    content: string;
-}>();
+const properties = withDefaults(
+    defineProps<{
+        content: string;
+        /** Set when `content` is only the leading slice of a larger file. */
+        truncated?: boolean;
+    }>(),
+    { truncated: false },
+);
 
 /** Rendering more than this in the browser is slower than downloading the file. */
 const MAX_PREVIEW_ROWS = 5000;
+
+/** Characters scanned to pick the delimiter; a header plus a few rows is plenty. */
+const DETECTION_SAMPLE_CHARS = 64 * 1024;
+const DETECTION_SAMPLE_RECORDS = 20;
 
 const CANDIDATE_DELIMITERS = [',', ';', '\t', '|'] as const;
 type Delimiter = (typeof CANDIDATE_DELIMITERS)[number];
@@ -101,7 +110,18 @@ const mode = ref<'table' | 'source'>('table');
  * Splits CSV text into records of fields, honouring quoted fields (which may
  * contain the delimiter, newlines, and `""` escapes).
  */
-function parseCsv(text: string, delimiter: string): string[][] {
+interface ParseOptions {
+    /** False when `text` is a prefix, so the trailing partial record is dropped. */
+    complete: boolean;
+    /** Stop once this many records are parsed, bounding work on huge inputs. */
+    maxRecords: number;
+}
+
+function parseCsv(
+    text: string,
+    delimiter: string,
+    options: ParseOptions,
+): string[][] {
     const records: string[][] = [];
     let record: string[] = [];
     let field = '';
@@ -117,7 +137,11 @@ function parseCsv(text: string, delimiter: string): string[][] {
         record = [];
     };
 
-    for (let index = 0; index < text.length; index++) {
+    for (
+        let index = 0;
+        index < text.length && records.length < options.maxRecords;
+        index++
+    ) {
         const character = text.charAt(index);
 
         if (inQuotes) {
@@ -155,8 +179,15 @@ function parseCsv(text: string, delimiter: string): string[][] {
         }
     }
 
-    // A file without a trailing newline still ends on a real record.
-    if (field.length > 0 || record.length > 0) endRecord();
+    // A complete file without a trailing newline still ends on a real record;
+    // a prefix almost always ends mid-row, so that fragment is discarded.
+    const hasPendingRecord = field.length > 0 || record.length > 0;
+    if (
+        options.complete &&
+        hasPendingRecord &&
+        records.length < options.maxRecords
+    )
+        endRecord();
 
     return records.filter(
         (parsed) => parsed.length > 1 || (parsed[0] ?? '').length > 0,
@@ -165,12 +196,21 @@ function parseCsv(text: string, delimiter: string): string[][] {
 
 /** Picks the delimiter that yields the most consistent field count. */
 const delimiter = computed<Delimiter>(() => {
-    const sample = properties.content.slice(0, 64 * 1024);
+    const sample = properties.content.slice(0, DETECTION_SAMPLE_CHARS);
+    // A sample that stops short of the end cuts the last row in half, which
+    // would otherwise look like an inconsistent field count and reject the
+    // real delimiter.
+    const complete =
+        !properties.truncated && sample.length === properties.content.length;
+
     let best: Delimiter = ',';
     let bestFields = 0;
 
     for (const candidate of CANDIDATE_DELIMITERS) {
-        const records = parseCsv(sample, candidate).slice(0, 20);
+        const records = parseCsv(sample, candidate, {
+            complete,
+            maxRecords: DETECTION_SAMPLE_RECORDS,
+        });
         const first = records[0];
         if (first === undefined || first.length < 2) continue;
         if (!records.every((record) => record.length === first.length))
@@ -185,9 +225,17 @@ const delimiter = computed<Delimiter>(() => {
 
 const delimiterLabel = computed(() => DELIMITER_LABELS.get(delimiter.value));
 
-const records = computed(() => parseCsv(properties.content, delimiter.value));
+// Parsing stops at the preview cap, so a huge CSV never materialises in full.
+const records = computed(() =>
+    parseCsv(properties.content, delimiter.value, {
+        complete: !properties.truncated,
+        maxRecords: MAX_PREVIEW_ROWS + 1,
+    }),
+);
 
-const truncated = computed(() => records.value.length - 1 > MAX_PREVIEW_ROWS);
+const truncated = computed(
+    () => properties.truncated || records.value.length > MAX_PREVIEW_ROWS,
+);
 
 const columns = computed<QTableColumn[]>(() => {
     const header = records.value[0];
@@ -203,7 +251,7 @@ const columns = computed<QTableColumn[]>(() => {
 });
 
 const rows = computed(() =>
-    records.value.slice(1, MAX_PREVIEW_ROWS + 1).map((record, rowIndex) => {
+    records.value.slice(1).map((record, rowIndex) => {
         const row: Record<string, number | string> = { rowIndex };
         for (const [index, value] of record.entries())
             row[`c${String(index)}`] = value;
