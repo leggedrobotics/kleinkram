@@ -22,16 +22,17 @@ These URLs are used for communication between services and for generating links.
 
 Configuration for SeaweedFS (or S3-compatible storage), which is used for object storage.
 
-| Variable                   | Description                                   | Default                                    |
-| :------------------------- | :-------------------------------------------- | :----------------------------------------- |
-| `S3_USER`                  | The username for S3 access.                   | `seaweed`                                  |
-| `S3_PASSWORD`              | The password for S3 access.                   | `seaweed`                                  |
-| `S3_ACCESS_KEY`            | The access key for S3 clients.                | `pMEKIOCnYJhmssiKZDGU`                     |
-| `S3_SECRET_KEY`            | The secret key for S3 clients.                | `ECnXGyUR5ZrPsxeD5JEWxtI1CMZFMJ8kTJMMAQ5B` |
-| `S3_DATA_BUCKET_NAME`      | The bucket name for main data storage.        | `data`                                     |
-| `S3_DB_BUCKET_NAME`        | The bucket name for database dumps/backups.   | `dbdumps`                                  |
-| `S3_ARTIFACTS_BUCKET_NAME` | The bucket name for build artifacts.          | `artifacts`                                |
-| `S3_ENDPOINT`              | The hostname or IP address of the S3 service. | `localhost`                                |
+| Variable                   | Description                                                                                                                                                                                                                                         | Default                                    |
+| :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------- |
+| `S3_USER`                  | The username for S3 access.                                                                                                                                                                                                                         | `seaweed`                                  |
+| `S3_PASSWORD`              | The password for S3 access.                                                                                                                                                                                                                         | `seaweed`                                  |
+| `S3_ACCESS_KEY`            | The access key for S3 clients.                                                                                                                                                                                                                      | `pMEKIOCnYJhmssiKZDGU`                     |
+| `S3_SECRET_KEY`            | The secret key for S3 clients.                                                                                                                                                                                                                      | `ECnXGyUR5ZrPsxeD5JEWxtI1CMZFMJ8kTJMMAQ5B` |
+| `S3_DATA_BUCKET_NAME`      | The bucket name for main data storage.                                                                                                                                                                                                              | `data`                                     |
+| `S3_DB_BUCKET_NAME`        | The bucket name for database dumps/backups.                                                                                                                                                                                                         | `dbdumps`                                  |
+| `S3_ARTIFACTS_BUCKET_NAME` | The bucket name for build artifacts.                                                                                                                                                                                                                | `artifacts`                                |
+| `S3_ENDPOINT`              | The hostname or IP address of the S3 service.                                                                                                                                                                                                       | `localhost`                                |
+| `S3_FILER_ENDPOINT`        | SeaweedFS filer used to promote uploads by renaming them out of the staging prefix, which is independent of file size. Derived from the internal S3 endpoint when unset; promotion falls back to a server-side copy if the filer cannot be reached. | _derived_                                  |
 
 ## Database Configuration
 

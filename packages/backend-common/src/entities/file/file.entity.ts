@@ -117,4 +117,16 @@ export class FileEntity extends BaseEntity {
 
     @Column({ type: 'enum', enum: FileOrigin, nullable: true })
     origin?: FileOrigin;
+
+    /**
+     * The UUID used for underlying storage (SeaweedFS / S3).
+     *
+     * Every storage access goes through this getter rather than through
+     * {@link uuid} directly, so that the key a file is stored under can change
+     * without every caller having to know: file versioning (#2424) resolves it
+     * to the active version instead.
+     */
+    get storageUuid(): string {
+        return this.uuid;
+    }
 }

@@ -20,6 +20,8 @@ import axios from 'src/api/axios';
 export type GenerateTemporaryCredentialsResponse = {
     bucket: string;
     fileUUID: string;
+    /** Key to upload to; absent on servers that predate staged uploads. */
+    objectKey?: string;
     accessCredentials: {
         accessKey: string;
         secretKey: string;

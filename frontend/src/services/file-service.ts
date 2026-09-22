@@ -440,10 +440,15 @@ async function _createFileAction(
                             file,
                             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                             accessResp.bucket,
+                            // The credentials only cover this key; confirming
+                            // the upload moves the object off it so that they
+                            // cannot reach the file afterwards.
                             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-                            accessResp.fileUUID,
+                            accessResp.objectKey ?? accessResp.fileUUID,
                             s3Client,
                             newFileUploadReference,
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                            accessResp.fileUUID,
                         );
 
                         if (md5Hash === undefined) {
@@ -560,6 +565,7 @@ async function uploadFileMultipart(
     key: string,
     s3Client: S3Client,
     newFileUpload: Ref<FileWithTopicDto>,
+    fileUuid: string,
 ): Promise<string | undefined> {
     let uploadId: string | undefined;
     try {
@@ -581,7 +587,9 @@ async function uploadFileMultipart(
             partNumber++, start += partSize
         ) {
             if ((partNumber - 1) % 20 === 0) {
-                const queueExists = await existsFile(key);
+                // Checked by file uuid, which the upload key is only
+                // derived from.
+                const queueExists = await existsFile(fileUuid);
                 if (!queueExists) {
                     throw new Error('Upload was cancelled');
                 }

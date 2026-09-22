@@ -4,6 +4,47 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'node:crypto';
 import { StorageCredentials } from './types';
 
+/** Upper bound of an upload credential's lifetime. */
+export const MAX_UPLOAD_CREDENTIAL_SECONDS = 4 * 60 * 60;
+
+/** Lower bound, so that a small file still survives a slow connection. */
+export const MIN_UPLOAD_CREDENTIAL_SECONDS = 30 * 60;
+
+/**
+ * Throughput a client is assumed to manage at worst, used to give large
+ * uploads the time they need without granting every upload the maximum.
+ */
+const ASSUMED_UPLOAD_BYTES_PER_SECOND = 1024 * 1024;
+
+/**
+ * @param seconds - requested lifetime
+ * @returns the lifetime clamped into the allowed range
+ */
+function clampCredentialLifetime(seconds: number): number {
+    return Math.min(
+        MAX_UPLOAD_CREDENTIAL_SECONDS,
+        Math.max(MIN_UPLOAD_CREDENTIAL_SECONDS, Math.ceil(seconds)),
+    );
+}
+
+/**
+ * Derives how long the credentials for an upload should live.
+ *
+ * Credentials outlive the upload they were issued for and cannot be revoked,
+ * so the window is kept as small as the upload allows instead of handing every
+ * upload the maximum.
+ *
+ * @param sizeBytes - size of the upload, when the client reported one
+ * @returns lifetime in seconds
+ */
+export function uploadCredentialLifetimeSeconds(
+    sizeBytes: number | undefined,
+): number {
+    if (sizeBytes === undefined || Number.isNaN(sizeBytes))
+        return MAX_UPLOAD_CREDENTIAL_SECONDS;
+    return clampCredentialLifetime(sizeBytes / ASSUMED_UPLOAD_BYTES_PER_SECOND);
+}
+
 @Injectable()
 export class StorageAuthService {
     private readonly stsClient: STSClient;
@@ -35,9 +76,24 @@ export class StorageAuthService {
         });
     }
 
+    /**
+     * Issues credentials for uploading a single object.
+     *
+     * SeaweedFS issues these as stateless JWTs, which means they cannot be
+     * revoked once handed out - they stay usable for their full lifetime, also
+     * after the upload has been confirmed. Two things keep that from mattering:
+     * the policy names exactly one key in the ingest bucket, and the object is
+     * promoted out of that bucket once it is confirmed.
+     *
+     * @param filename - object key the credentials may write
+     * @param bucketName - bucket the credentials are scoped to
+     * @param durationSeconds - lifetime of the credentials
+     * @returns credentials for a single object
+     */
     async generateTemporaryCredential(
         filename: string,
         bucketName: string,
+        durationSeconds: number = MAX_UPLOAD_CREDENTIAL_SECONDS,
     ): Promise<StorageCredentials> {
         const policy = {
             Version: '2012-10-17',
@@ -54,7 +110,10 @@ export class StorageAuthService {
                         's3:AbortMultipartUpload',
                         's3:ListMultipartUploadParts',
                     ],
-                    Resource: [`arn:aws:s3:::${bucketName}/${filename}*`],
+                    // No trailing wildcard: the credentials are for this one
+                    // object, not for everything that happens to share its
+                    // prefix.
+                    Resource: [`arn:aws:s3:::${bucketName}/${filename}`],
                 },
             ],
         };
@@ -64,7 +123,7 @@ export class StorageAuthService {
         const command = new AssumeRoleCommand({
             RoleSessionName: sessionName,
             Policy: JSON.stringify(policy),
-            DurationSeconds: 60 * 60 * 4, // 4 hours
+            DurationSeconds: clampCredentialLifetime(durationSeconds),
         });
 
         try {

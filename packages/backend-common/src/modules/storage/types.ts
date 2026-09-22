@@ -75,7 +75,44 @@ export interface IStorageBucket {
 
     removeTags(objectName: string): Promise<void>;
 
+    /**
+     * Issues credentials for uploading a single object. The credentials are
+     * scoped to the object's staging key, never to the key it is served from.
+     */
     generateTemporaryCredential(
         filename: string, // This is usually the UUID/object name used for the ARN
+        durationSeconds?: number,
     ): Promise<StorageCredentials>;
+
+    /**
+     * @param objectName - the object's final key
+     * @returns the key a client uploads this object to
+     */
+    stagingKey(objectName: string): string;
+
+    /**
+     * Stats an object that has not been promoted yet.
+     */
+    getStagedFileInfo(objectName: string): Promise<StorageItemStat | undefined>;
+
+    /**
+     * Removes an upload that was never promoted.
+     */
+    deleteStagedFile(objectName: string): Promise<void>;
+
+    /**
+     * @param olderThan - only report uploads last written before this
+     * @returns final keys of uploads still sitting in the staging prefix
+     */
+    listStagedFiles(olderThan: Date): Promise<string[]>;
+
+    /**
+     * Moves an upload out of the staging prefix and onto the key it is served
+     * from.
+     *
+     * This is what stops uploaded bytes from changing after they were hashed
+     * and validated: the credentials a client holds only cover the staging
+     * key, so once the object is no longer there they reach nothing.
+     */
+    promoteStagedFile(objectName: string): Promise<void>;
 }

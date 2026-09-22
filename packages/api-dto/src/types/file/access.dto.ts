@@ -37,6 +37,19 @@ export class TemporaryFileAccessDto {
     @IsOptional()
     fileUUID!: string | null;
 
+    /**
+     * Object key the upload has to be written to.
+     *
+     * It is not the key the file is served from: the credentials are scoped
+     * to this key alone, and confirming the upload moves the object off it so
+     * that they can no longer reach the validated bytes. Clients that predate
+     * this field upload to `fileUUID` instead and are not protected that way.
+     */
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    objectKey?: string | null;
+
     @ApiProperty()
     @IsString()
     fileName!: string;

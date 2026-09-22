@@ -62,6 +62,10 @@ class UploadCredentials(NamedTuple):
     session_token: str
     file_id: UUID
     bucket: str
+    # Key the upload has to be written to. The credentials are scoped to this
+    # key alone and the server moves the object off it once the upload is
+    # confirmed, so that they cannot reach the file afterwards.
+    object_key: str
 
 
 @retry(max_attempts=3, exceptions=(httpx.TransportError,))
@@ -94,6 +98,7 @@ SECRET_KEY_FIELD = "secretKey"
 SESSION_TOKEN_FIELD = "sessionToken"
 CREDENTIALS_FIELD = "accessCredentials"
 FILE_ID_FIELD = "fileUUID"
+OBJECT_KEY_FIELD = "objectKey"
 BUCKET_FIELD = "bucket"
 
 
@@ -124,12 +129,17 @@ def _get_upload_creditials(
     secret_key = creds[SECRET_KEY_FIELD]
     session_token = creds[SESSION_TOKEN_FIELD]
 
+    # Servers that predate the staged upload flow do not send a key; there the
+    # file id is the key, as it used to be.
+    object_key = data.get(OBJECT_KEY_FIELD) or str(file_id)
+
     return UploadCredentials(
         access_key=access_key,
         secret_key=secret_key,
         session_token=session_token,
         file_id=file_id,
         bucket=bucket,
+        object_key=object_key,
     )
 
 
@@ -156,7 +166,7 @@ def _s3_upload(
     client.upload_file(
         str(local_path),
         credentials.bucket,
-        str(credentials.file_id),
+        credentials.object_key,
         Callback=callback,
     )
 
