@@ -248,6 +248,7 @@ import {
     copyToClipboard as quasarCopy,
     useQuasar,
 } from 'quasar';
+import { formatDate } from 'src/services/date-formating';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import SmoothLoading from '../../common/smooth-loading.vue';
 
@@ -401,6 +402,12 @@ const levelOptions = computed(() => [
     })),
 ]);
 
+// A level that is no longer in the stream must not leave the list filtered
+// down to nothing, the same way a node cannot.
+watch(levelCounts, (counts) => {
+    if (level.value !== 'all' && !counts.has(level.value)) level.value = 'all';
+});
+
 const nodeCounts = computed(() => {
     const counts = new Map<string, number>();
     for (const message of properties.messages) {
@@ -533,8 +540,11 @@ watch([wrapLines, showSource], () => {
 });
 
 // --- Helpers ---
+const toDate = (nano: bigint): Date => new Date(Number(nano / 1_000_000n));
+
+/** Time of day, which is what a reader follows down a single recording. */
 const formatTime = (nano: bigint): string => {
-    const date = new Date(Number(nano / 1_000_000n));
+    const date = toDate(nano);
     if (Number.isNaN(date.getTime())) return 'Invalid Time';
 
     const hours = String(date.getHours()).padStart(2, '0');
@@ -544,10 +554,17 @@ const formatTime = (nano: bigint): string => {
     return `${hours}:${minutes}:${seconds}.${milliseconds}`;
 };
 
+// Copied and downloaded lines carry the date as well: they outlive the view
+// they came from, and a recording can cross midnight. Same shape as the
+// action log download.
 const asPlainText = (): string =>
     filteredMessages.value
         .map(({ logTime, data }) => {
-            const line = `[${formatTime(logTime)}] [${levelLabel(data.level)}] [${data.name}] ${data.msg}`;
+            const date = toDate(logTime);
+            const when = Number.isNaN(date.getTime())
+                ? 'Invalid Time'
+                : formatDate(date, true);
+            const line = `[${when}] [${levelLabel(data.level)}] [${data.name}] ${data.msg}`;
             const where = showSource.value ? originPath(data) : '';
             return where === '' ? line : `${line}  (${where})`;
         })
