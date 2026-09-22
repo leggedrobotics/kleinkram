@@ -217,7 +217,11 @@
                         :style="{ backgroundColor: hashUUIDtoColor(cat.uuid) }"
                         text-color="white"
                         size="sm"
-                    />
+                    >
+                        <q-tooltip v-if="cat.description">
+                            {{ cat.description }}
+                        </q-tooltip>
+                    </q-chip>
                 </div>
             </div>
         </template>

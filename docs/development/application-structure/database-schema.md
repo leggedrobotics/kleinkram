@@ -186,12 +186,13 @@ Defined in: `category/category.entity.ts`
 
 ### Columns
 
-| Column    | Type                                    | Constraints  | Description |
-| :-------- | :-------------------------------------- | :----------- | :---------- |
-| `name`    | `string`                                | Not Null     |             |
-| `project` | [ProjectEntity](#projectentity-project) | FK, Nullable |             |
-| `files`   | [FileEntity](#fileentity-file_entity)[] | ManyToMany   |             |
-| `creator` | [UserEntity](#userentity-user)          | FK, Nullable |             |
+| Column        | Type                                    | Constraints  | Description                                                                                          |
+| :------------ | :-------------------------------------- | :----------- | :--------------------------------------------------------------------------------------------------- |
+| `name`        | `string`                                | Not Null     |                                                                                                      |
+| `description` | `string`                                | Not Null     | Optional, human readable explanation of what the category is used for. Empty string if not provided. |
+| `project`     | [ProjectEntity](#projectentity-project) | FK, Nullable |                                                                                                      |
+| `files`       | [FileEntity](#fileentity-file_entity)[] | ManyToMany   |                                                                                                      |
+| `creator`     | [UserEntity](#userentity-user)          | FK, Nullable |                                                                                                      |
 
 ---
 
