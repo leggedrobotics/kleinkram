@@ -19,6 +19,21 @@ const UNSAFE_IN_QUOTED_STRING = /["\\]|[\u0000-\u001F\u007F]/g;
 const NON_ASCII = /[^\u0020-\u007E]/g;
 
 /**
+ * `encodeURIComponent` leaves these four unescaped, but RFC 8187 keeps them out
+ * of `attr-char`, so a strict client drops the whole extended parameter and
+ * falls back to the lossy ASCII name. `!` and `~` survive encoding too and are
+ * deliberately left alone: both are `attr-char`.
+ */
+const NOT_ATTR_CHAR = /['()*]/g;
+
+const encodeExtendedValue = (value: string): string =>
+    encodeURIComponent(value).replaceAll(
+        NOT_ATTR_CHAR,
+        (character) =>
+            `%${(character.codePointAt(0) ?? 0).toString(16).toUpperCase()}`,
+    );
+
+/**
  * Builds an RFC 6266 `Content-Disposition` value.
  *
  * The plain `filename` parameter may only carry ASCII, so a name with umlauts
@@ -31,7 +46,7 @@ export const contentDisposition = (
 ): string => {
     const sanitized = filename.replaceAll(UNSAFE_IN_QUOTED_STRING, '_');
     const asciiFallback = sanitized.replaceAll(NON_ASCII, '_');
-    const encoded = encodeURIComponent(filename);
+    const encoded = encodeExtendedValue(filename);
 
     return (
         `${disposition}; filename="${asciiFallback}"; ` +
