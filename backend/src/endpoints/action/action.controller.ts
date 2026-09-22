@@ -123,6 +123,9 @@ export class ActionsController {
     @Post(':uuid/diagnostics')
     @IsRunningAction()
     @HttpCode(204)
+    // The route answers with no body, so response validation has nothing to
+    // check; without this the global interceptor rejects it as undeclared.
+    @OutputDto(null)
     @Throttle({ default: { limit: 600, ttl: 60_000 } })
     @ApiOperation({
         summary: 'Report a diagnostic from inside the running action container',

@@ -2,6 +2,7 @@ import { DiagnosticSeverity } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+    IsBoolean,
     IsDate,
     IsEnum,
     IsInt,
@@ -117,5 +118,6 @@ export class ActionDiagnosticsDto {
         description:
             'True when the action hit the per-action diagnostic cap and later reports were dropped.',
     })
+    @IsBoolean()
     truncated!: boolean;
 }

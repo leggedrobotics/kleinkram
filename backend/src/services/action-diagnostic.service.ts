@@ -7,9 +7,10 @@ import { ActionDiagnosticEntity } from '@kleinkram/backend-common/entities/actio
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import {
     ACTION_DIAGNOSTIC_LIMIT,
+    ActionSeverity,
     actionSeverityFromDiagnostic,
     isTerminalActionState,
-    maxActionSeverity,
+    severitiesBelow,
 } from '@kleinkram/shared';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -41,9 +42,11 @@ export class ActionDiagnosticService {
      * Records one diagnostic reported by a running action container and raises
      * the action's severity to match.
      *
-     * Identical reports are folded into a single row with a count, and the
-     * whole thing runs under a row lock on the action because a container is
-     * free to report from several processes at once.
+     * Identical reports are folded into a single row with a count. Both writes
+     * to the action itself are expressed as conditional SQL rather than a
+     * read-modify-write: a container is free to report from several processes
+     * at once, and a lost update there would silently undercount findings or
+     * talk an ERROR verdict back down to WARNING.
      *
      * @param actionUuid the action the container is running for
      * @param dto the finding the container reported
@@ -108,22 +111,31 @@ export class ActionDiagnosticService {
                         count: 1,
                     }),
                 );
-                await actionRepository.update(
+                // SET "diagnosticCount" = "diagnosticCount" + 1, so two
+                // concurrent reports cannot read the same value and both
+                // write it back.
+                await actionRepository.increment(
                     { uuid: actionUuid },
-                    { diagnosticCount: action.diagnosticCount + 1 },
+                    'diagnosticCount',
+                    1,
                 );
             }
 
-            const severity = maxActionSeverity(
-                action.severity,
-                actionSeverityFromDiagnostic(dto.severity),
-            );
+            const severity = actionSeverityFromDiagnostic(dto.severity);
+            const overwritable = severitiesBelow(severity);
 
-            if (severity !== action.severity) {
-                await actionRepository.update(
-                    { uuid: actionUuid },
-                    { severity },
-                );
+            if (overwritable.length > 0 && severity !== ActionSeverity.OK) {
+                // Only ever raises: the WHERE clause refuses to overwrite a
+                // verdict that is already at least this severe.
+                await actionRepository
+                    .createQueryBuilder()
+                    .update(ActionEntity)
+                    .set({ severity })
+                    .where('uuid = :uuid', { uuid: actionUuid })
+                    .andWhere('severity IN (:...overwritable)', {
+                        overwritable,
+                    })
+                    .execute();
             }
         });
     }

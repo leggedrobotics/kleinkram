@@ -44,6 +44,21 @@ export const maxActionSeverity = (
     ACTION_SEVERITY_RANK[a] >= ACTION_SEVERITY_RANK[b] ? a : b;
 
 /**
+ * The severities strictly less severe than the given one.
+ *
+ * Used to raise an action's verdict with a conditional UPDATE, so that a
+ * concurrent report can never talk a higher verdict back down.
+ *
+ * @param severity the verdict being written
+ * @returns the verdicts it is allowed to overwrite
+ */
+export const severitiesBelow = (severity: ActionSeverity): ActionSeverity[] =>
+    Object.values(ActionSeverity).filter(
+        (candidate) =>
+            ACTION_SEVERITY_RANK[candidate] < ACTION_SEVERITY_RANK[severity],
+    );
+
+/**
  * Maps a single diagnostic's severity onto the verdict it implies for the
  * action as a whole.
  *

@@ -19,6 +19,9 @@ interface Harness {
     actionUpdate: jest.Mock;
     diagnosticUpdate: jest.Mock;
     diagnosticSave: jest.Mock;
+    actionIncrement: jest.Mock;
+    severitySet: jest.Mock;
+    severityWhereIn: jest.Mock;
 }
 
 const buildHarness = (
@@ -28,6 +31,26 @@ const buildHarness = (
     const actionUpdate = jest.fn().mockResolvedValue({ affected: 1 });
     const diagnosticUpdate = jest.fn().mockResolvedValue({ affected: 1 });
     const diagnosticSave = jest.fn().mockResolvedValue({});
+    const actionIncrement = jest.fn().mockResolvedValue({ affected: 1 });
+
+    // The severity write is a conditional UPDATE built through the query
+    // builder, so the spies capture what it set and what it refused to
+    // overwrite.
+    const severitySet = jest.fn();
+    const severityWhereIn = jest.fn();
+    const queryBuilder = {
+        update: () => queryBuilder,
+        set: (values: unknown) => {
+            severitySet(values);
+            return queryBuilder;
+        },
+        where: () => queryBuilder,
+        andWhere: (_clause: string, parameters: unknown) => {
+            severityWhereIn(parameters);
+            return queryBuilder;
+        },
+        execute: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
 
     const actionRepositoryInTransaction = {
         findOne: jest.fn().mockResolvedValue({
@@ -39,6 +62,8 @@ const buildHarness = (
             ...action,
         }),
         update: actionUpdate,
+        increment: actionIncrement,
+        createQueryBuilder: () => queryBuilder,
     };
 
     const diagnosticRepositoryInTransaction = {
@@ -70,6 +95,9 @@ const buildHarness = (
         actionUpdate,
         diagnosticUpdate,
         diagnosticSave,
+        actionIncrement,
+        severitySet,
+        severityWhereIn,
     };
 };
 
@@ -86,10 +114,22 @@ describe('ActionDiagnosticService.record', () => {
 
         await harness.service.record('action-uuid', warning);
 
-        expect(harness.actionUpdate).toHaveBeenCalledWith(
-            { uuid: 'action-uuid' },
-            { severity: ActionSeverity.WARNING },
-        );
+        expect(harness.severitySet).toHaveBeenCalledWith({
+            severity: ActionSeverity.WARNING,
+        });
+    });
+
+    test('the severity write refuses to overwrite an equal or higher verdict', async () => {
+        const harness = buildHarness({});
+
+        await harness.service.record('action-uuid', warning);
+
+        // A conditional UPDATE rather than a read-modify-write: only a
+        // strictly lower verdict may be overwritten, so a concurrent ERROR
+        // cannot be talked back down to WARNING.
+        expect(harness.severityWhereIn).toHaveBeenCalledWith({
+            overwritable: [ActionSeverity.OK],
+        });
     });
 
     test('an INFO diagnostic leaves the action reading as clean', async () => {
@@ -100,11 +140,7 @@ describe('ActionDiagnosticService.record', () => {
             message: 'processed 12 bags',
         });
 
-        const severityUpdates = harness.actionUpdate.mock.calls.filter(
-            ([, values]: [unknown, Record<string, unknown>]) =>
-                'severity' in values,
-        );
-        expect(severityUpdates).toHaveLength(0);
+        expect(harness.severitySet).not.toHaveBeenCalled();
     });
 
     test('a warning does not talk an existing ERROR verdict back down', async () => {
@@ -112,10 +148,9 @@ describe('ActionDiagnosticService.record', () => {
 
         await harness.service.record('action-uuid', warning);
 
-        expect(harness.actionUpdate).not.toHaveBeenCalledWith(
-            { uuid: 'action-uuid' },
-            expect.objectContaining({ severity: ActionSeverity.WARNING }),
-        );
+        expect(harness.severityWhereIn).toHaveBeenCalledWith({
+            overwritable: [ActionSeverity.OK],
+        });
     });
 
     test('an identical report bumps the count instead of adding a row', async () => {
@@ -142,9 +177,11 @@ describe('ActionDiagnosticService.record', () => {
         await harness.service.record('action-uuid', warning);
 
         expect(harness.diagnosticSave).toHaveBeenCalled();
-        expect(harness.actionUpdate).toHaveBeenCalledWith(
+        // An atomic SET col = col + 1, never a value read and written back.
+        expect(harness.actionIncrement).toHaveBeenCalledWith(
             { uuid: 'action-uuid' },
-            { diagnosticCount: 8 },
+            'diagnosticCount',
+            1,
         );
     });
 
@@ -156,6 +193,7 @@ describe('ActionDiagnosticService.record', () => {
         await harness.service.record('action-uuid', warning);
 
         expect(harness.diagnosticSave).not.toHaveBeenCalled();
+        expect(harness.actionIncrement).not.toHaveBeenCalled();
         expect(harness.actionUpdate).toHaveBeenCalledWith(
             { uuid: 'action-uuid' },
             { diagnosticsTruncated: true },
@@ -169,10 +207,20 @@ describe('ActionDiagnosticService.record', () => {
 
         await harness.service.record('action-uuid', warning);
 
-        expect(harness.actionUpdate).toHaveBeenCalledWith(
-            { uuid: 'action-uuid' },
-            { severity: ActionSeverity.WARNING },
+        expect(harness.severitySet).toHaveBeenCalledWith({
+            severity: ActionSeverity.WARNING,
+        });
+    });
+
+    test('an identical report does not increment the action count', async () => {
+        const harness = buildHarness(
+            { diagnosticCount: 1 },
+            { uuid: 'diagnostic-uuid', count: 1 },
         );
+
+        await harness.service.record('action-uuid', warning);
+
+        expect(harness.actionIncrement).not.toHaveBeenCalled();
     });
 
     test.each([

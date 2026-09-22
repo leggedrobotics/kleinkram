@@ -5,6 +5,7 @@ import {
     StorageModule,
 } from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
+import { ActionDiagnosticEntity } from '@kleinkram/backend-common/entities/action/action-diagnostic.entity';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
@@ -85,6 +86,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                     ProjectEntity,
                     TopicEntity,
                     ActionEntity,
+                    ActionDiagnosticEntity,
                     ActionRunnerEntity,
                     ActionTemplateEntity,
                     ActionTriggerEntity,
