@@ -79,7 +79,7 @@ export class CanReadTriggerGuard extends BaseGuard {
 
         const trigger = await this.actionTriggerRepository.findOne({
             where: { uuid: triggerUUID },
-            select: ['uuid', 'creatorUuid', 'missionUuid'],
+            select: { uuid: true, creatorUuid: true, missionUuid: true },
         });
 
         if (!trigger) {
