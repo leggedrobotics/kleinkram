@@ -198,7 +198,7 @@
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="(e) => onRowClick(e, props.row)"
+                                @click="() => openFile(props.row)"
                             >
                                 <q-item-section>View</q-item-section>
                             </q-item>
@@ -255,7 +255,7 @@
                     bordered
                     class="file-card"
                     :class="{ 'file-card--selected': props.selected }"
-                    @click="() => openFile(props.row)"
+                    @click="() => onRowClick(undefined, props.row)"
                 >
                     <div class="q-pa-sm">
                         <div class="row items-center no-wrap">
@@ -442,6 +442,7 @@ import MoveFileDialogOpener from 'components/button-wrapper/move-file-dialog-ope
 import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
 import { fileColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { Notify, QTable, useQuasar } from 'quasar';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import {
     useHandler,
     useMission,
@@ -460,7 +461,7 @@ import {
 } from 'src/services/generic';
 import { filesOfMission } from 'src/services/queries/file';
 import { TableRequest } from 'src/services/query-handler';
-import { computed, ref, unref, watch } from 'vue';
+import { computed, Ref, ref, unref, watch } from 'vue';
 import { RouteLocationRaw, useRouter } from 'vue-router';
 
 const selected = defineModel('selected', { required: true, type: Array });
@@ -766,26 +767,18 @@ function fileRoute(row: FileWithTopicDto): RouteLocationRaw {
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const openFile = async (row: any): Promise<void> => {
-    await $router.push({
-        path: '',
-        // @ts-ignore
-        name: ROUTES.FILE.routeName,
-        params: {
-            projectUuid: projectUuid.value,
-            missionUuid: missionUuid.value,
-
-            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            file_uuid: row.uuid,
-        },
-    });
+const openFile = async (row: FileWithTopicDto): Promise<void> => {
+    await $router.push(fileRoute(row));
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: Event, row: any): Promise<void> => {
-    await openFile(row);
-};
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick } = useRowActivation(
+    selected as Ref<FileWithTopicDto[]>,
+    openFile,
+);
 
 /**
  * Sorting control used by the card layout on phones, where the sortable

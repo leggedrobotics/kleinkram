@@ -202,10 +202,7 @@
                                     <q-item
                                         v-ripple
                                         clickable
-                                        @click="
-                                            (event) =>
-                                                onRowClick(event, props.row)
-                                        "
+                                        @click="() => openMission(props.row)"
                                     >
                                         <q-item-section>
                                             View Files
@@ -271,7 +268,7 @@
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="(event) => onRowClick(event, props.row)"
+                                @click="() => openMission(props.row)"
                             >
                                 <q-item-section>View Files</q-item-section>
                             </q-item>
@@ -318,6 +315,7 @@ import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
 import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { Notify, QTable, useQuasar } from 'quasar';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import { useHandler, useProjectQuery } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
@@ -528,17 +526,15 @@ function missionRoute(row: FlatMissionDto): RouteLocationRaw {
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: Event, row: any) => {
-    await $router.push({
-        name: ROUTES.FILES.routeName,
-        params: {
-            projectUuid: projectUuid.value,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            missionUuid: row.uuid as string,
-        },
-    });
+const openMission = async (row: FlatMissionDto): Promise<void> => {
+    await $router.push(missionRoute(row));
 };
+
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick } = useRowActivation(selected, openMission);
 
 const missingTags = (row: MissionWithFilesDto): TagDto[] => {
     const mapped = project.value?.requiredTags.map((tagType) => {
