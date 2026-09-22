@@ -46,7 +46,7 @@ const FIND_MANY_SORT_KEYS = {
     filename: 'file.filename',
     createdAt: 'file.createdAt',
     updatedAt: 'file.updatedAt',
-    creator: 'user.name',
+    creator: 'creator.name',
     size: 'file.size',
     state: 'file.state',
     date: 'file.date',
@@ -65,6 +65,13 @@ const FIND_MANY_SORT_KEYS = {
     'file.state': 'file.state',
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.date': 'file.date',
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'creator.name': 'creator.name',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'mission.name': 'mission.name',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'project.name': 'project.name',
 };
 
 @Injectable()
@@ -376,6 +383,19 @@ export class FileQueryService {
         }
 
         idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortField, order);
+
+        // The id query groups by file.uuid, which only makes the file's own
+        // columns available to ORDER BY. Sorting by a joined relation therefore
+        // has to add that column to the GROUP BY; all of the joined relations
+        // used for sorting are many-to-one, so this does not change the number
+        // of groups (and thus neither the page nor the count).
+        // `addSort` already rejected anything that is not a known sort key
+        const sortColumn = (FIND_MANY_SORT_KEYS as Record<string, string>)[
+            sortField
+        ];
+        if (!sortColumn.startsWith('file.')) {
+            idQuery.addGroupBy(sortColumn);
+        }
 
         const take = query.take;
         const skip = query.skip;
