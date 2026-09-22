@@ -219,6 +219,7 @@ def upload(
     query: MissionQuery,
     file_paths: Sequence[Path],
     create: bool = False,
+    fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
@@ -231,9 +232,12 @@ def upload(
 
     create a mission if it does not exist if `create` is True
     in that case you can also specify `metadata` and `ignore_missing_metadata`
+
+    if `fix_filenames` is True, badly named files are accepted and uploaded
+    under a sanitized name instead of raising, see `get_filename`
     """
     # check that file paths are for valid files and have valid suffixes
-    check_file_paths(file_paths)
+    check_file_paths(file_paths, check_filename=not fix_filenames)
 
     try:
         mission = kleinkram.api.routes.get_mission(client, query=query)

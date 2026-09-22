@@ -406,6 +406,7 @@ def upload(
         query=query,
         file_paths=parsed_file_paths,
         create=create,
+        fix_filenames=fix_filenames,
         metadata=metadata,
         ignore_missing_metadata=ignore_missing_metadata,
         on_overall_progress_cb=on_overall_progress_cb,
