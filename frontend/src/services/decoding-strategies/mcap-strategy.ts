@@ -1,7 +1,15 @@
 import { parse as parseMessageDefer } from '@foxglove/rosmsg';
 import { MessageReader as Ros1Reader } from '@foxglove/rosmsg-serialization';
 import { MessageReader as CdrReader } from '@foxglove/rosmsg2-serialization';
-import { UniversalHttpReader } from '@kleinkram/shared';
+import {
+    chunkDataStart,
+    coalesce,
+    MessageExtent,
+    parseMessageIndexes,
+    parseMessageRecord,
+    planChunk,
+    UniversalHttpReader,
+} from '@kleinkram/shared';
 import { McapIndexedReader } from '@mcap/core';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
@@ -16,6 +24,27 @@ const messageIdentity = (message: {
     sequence: number;
 }): string =>
     `${String(message.channelId)}:${String(message.logTime)}:${String(message.publishTime)}:${String(message.sequence)}`;
+
+/** The subset of `@mcap/core`'s ChunkIndex this strategy relies on. */
+interface McapChunkIndex {
+    chunkStartOffset: bigint;
+    chunkLength: bigint;
+    uncompressedSize: bigint;
+    compression: string;
+    messageIndexOffsets: Map<number, bigint>;
+    messageIndexLength: bigint;
+    messageStartTime: bigint;
+    messageEndTime: bigint;
+}
+
+/**
+ * Merge message ranges closer together than this into one request.
+ *
+ * Smaller fetches less and costs more round trips. Measured against object
+ * storage, total time is flat between roughly 256 kB and 1 MB, so the default
+ * sits at the lean end of that basin.
+ */
+const PREVIEW_COALESCE_GAP = 256 * 1024;
 
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;
@@ -62,6 +91,20 @@ export class McapStrategy extends DecodingStrategy {
 
         const msgs: LogMessage[] = [];
         let seen = 0;
+
+        // Chunks hold every topic interleaved, so reading one low-rate topic
+        // chunk-by-chunk transfers almost the whole recording. When the chunks
+        // are uncompressed their message indexes address individual records,
+        // which is dramatically less to fetch for exactly the same result.
+        const indexed = await this.getMessagesByMessageIndex(
+            topic,
+            keepEvery,
+            limit,
+            onMessage,
+            signal,
+            startTime,
+        );
+        if (indexed) return indexed;
 
         const readArguments: { topics: string[]; startTime?: bigint } = {
             topics: [topic],
@@ -128,6 +171,139 @@ export class McapStrategy extends DecodingStrategy {
      * recording is covered early. Within each chunk only every
      * `keepEvery`-th message is decoded.
      */
+    /**
+     * Read one topic by addressing its messages directly, or undefined when
+     * that is not possible for this recording.
+     *
+     * Returns undefined -- rather than throwing or returning [] -- when any
+     * relevant chunk is compressed or unindexed, so the caller falls back to
+     * the ordinary reader and the result is identical either way.
+     */
+    private async getMessagesByMessageIndex(
+        topic: string,
+        keepEvery: number,
+        limit: number,
+        onMessage?: (message: LogMessage) => void,
+        signal?: AbortSignal,
+        startTime?: bigint,
+    ): Promise<LogMessage[] | undefined> {
+        const reader = this.reader;
+        const httpReader = this.httpReader;
+        if (!reader || !httpReader) return undefined;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+        const chunkIndexes = (reader as any).chunkIndexes as
+            McapChunkIndex[] | undefined;
+        if (!chunkIndexes || chunkIndexes.length === 0) return undefined;
+
+        const channelIds = new Set<number>();
+        for (const [id, channel] of reader.channelsById) {
+            if (channel.topic === topic) channelIds.add(id);
+        }
+        if (channelIds.size === 0) return [];
+
+        const extents: MessageExtent[] = [];
+        for (const chunk of chunkIndexes) {
+            if (chunk.compression !== '') return undefined;
+            if (signal?.aborted) return undefined;
+            if (startTime !== undefined && chunk.messageEndTime < startTime) {
+                continue;
+            }
+
+            const offsets = chunk.messageIndexOffsets;
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            if (!offsets || offsets.size === 0) return undefined;
+
+            let wanted = false;
+            for (const id of channelIds) {
+                if (offsets.has(id)) wanted = true;
+            }
+            if (!wanted) continue;
+
+            let indexStart: bigint | undefined;
+            for (const offset of offsets.values()) {
+                if (indexStart === undefined || offset < indexStart) {
+                    indexStart = offset;
+                }
+            }
+            if (indexStart === undefined) return undefined;
+
+            const blob = await httpReader.read(
+                indexStart,
+                chunk.messageIndexLength,
+            );
+            const indexes = parseMessageIndexes(blob);
+            if (indexes.size === 0) return undefined;
+
+            extents.push(
+                ...planChunk(
+                    chunkDataStart(
+                        Number(chunk.chunkStartOffset),
+                        chunk.compression,
+                    ),
+                    Number(chunk.uncompressedSize),
+                    indexes,
+                    channelIds,
+                    startTime,
+                ),
+            );
+        }
+
+        extents.sort((a, b) =>
+            a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
+        );
+
+        // Only the records that survive striding are worth fetching, and the
+        // preview stops at `limit`.
+        const selected = extents.filter(
+            (_extent, index) => index % keepEvery === 0,
+        );
+        const needed = selected.slice(0, limit);
+        if (needed.length === 0) return [];
+
+        const wantedStarts = new Set(needed.map((extent) => extent.start));
+        const msgs: LogMessage[] = [];
+
+        for (const range of coalesce(needed, PREVIEW_COALESCE_GAP)) {
+            if (signal?.aborted) break;
+            const buffer = await httpReader.read(
+                BigInt(range.start),
+                BigInt(range.end - range.start),
+            );
+
+            for (const extent of needed) {
+                if (extent.start < range.start || extent.start >= range.end) {
+                    continue;
+                }
+                if (!wantedStarts.has(extent.start)) continue;
+
+                const parsed = parseMessageRecord(
+                    buffer,
+                    extent.start - range.start,
+                );
+                if (!parsed) return undefined; // bail to the safe path
+
+                const channel = reader.channelsById.get(parsed.channelId);
+                let data: unknown = parsed.data;
+                if (channel) {
+                    data =
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                        (await this.tryDecode(channel.schemaId, parsed.data)) ??
+                        parsed.data;
+                }
+
+                const messageObject = { logTime: parsed.logTime, data };
+                if (onMessage) onMessage(messageObject);
+                msgs.push(messageObject);
+            }
+        }
+
+        msgs.sort((a, b) =>
+            a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
+        );
+        return msgs;
+    }
+
     private async getMessagesProgressive(
         topic: string,
         keepEvery: number,
