@@ -5,7 +5,12 @@ import { UniversalHttpReader } from '@kleinkram/shared';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { DecodingStrategy } from './index';
-import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
+import {
+    coarseToFineOrder,
+    LogMessage,
+    MainThreadBudget,
+    ReadOptions,
+} from './utilities';
 
 const decompress = {
     zstd: (buffer: Uint8Array): Uint8Array => fzstd.decompress(buffer),
@@ -80,6 +85,7 @@ export class RosbagStrategy extends DecodingStrategy {
         const bag = this.bag;
         const hardLimit = Math.ceil(limit * 1.1) + 1;
         const msgs: LogMessage[] = [];
+        const budget = new MainThreadBudget();
 
         const connections = [...bag.connections.values()].filter(
             (connection) => connection.topic === topic,
@@ -157,6 +163,7 @@ export class RosbagStrategy extends DecodingStrategy {
                 };
                 if (onMessage) onMessage(messageObject);
                 msgs.push(messageObject);
+                await budget.yieldIfNeeded();
             }
         }
         return msgs;
@@ -185,6 +192,7 @@ export class RosbagStrategy extends DecodingStrategy {
         }
 
         const msgs: LogMessage[] = [];
+        const budget = new MainThreadBudget();
         let seen = 0;
 
         let start: { sec: number; nsec: number } | undefined;
@@ -224,6 +232,7 @@ export class RosbagStrategy extends DecodingStrategy {
             };
             if (onMessage) onMessage(messageObject);
             msgs.push(messageObject);
+            await budget.yieldIfNeeded();
         }
         return msgs;
     }
