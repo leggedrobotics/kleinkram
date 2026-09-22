@@ -28,7 +28,17 @@ export async function* mapInOrder<T, R>(
         const index = next++;
         // Guarded by the bound above; `noUncheckedIndexedAccess` cannot see it.
         const item = items[index] as T;
-        pending.push({ item, promise: run(item, index) });
+        const promise = run(item, index);
+        // Give every promise a handler at the moment it starts, not when it
+        // reaches the front of the queue. A rejection ends this generator, and
+        // a consumer that has seen enough messages abandons it -- either way
+        // the requests still in flight are never awaited, and without this
+        // their failures surface as unhandled rejections in the console. The
+        // real result is still delivered, and still rethrown, below.
+        promise.catch(() => {
+            // Rethrown where the result is awaited; this only marks it seen.
+        });
+        pending.push({ item, promise });
     };
 
     for (let index = 0; index < limit; index++) submit();

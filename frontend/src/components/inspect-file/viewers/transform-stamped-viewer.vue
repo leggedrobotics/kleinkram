@@ -141,8 +141,13 @@ onMounted(() => {
 // progress, so there is nothing to gain by withholding the plot.
 const MIN_RENDERABLE_MESSAGES = 2;
 
+// Capped at what the topic actually holds: a topic of a single message would
+// otherwise never reach the floor, and sit on its skeleton after loading has
+// finished.
 const isLoading = computed(
-    () => properties.messages.length < MIN_RENDERABLE_MESSAGES,
+    () =>
+        properties.messages.length <
+        Math.min(MIN_RENDERABLE_MESSAGES, properties.totalCount),
 );
 
 const { startTime, getNormalizedTime, duration } = useViewer(

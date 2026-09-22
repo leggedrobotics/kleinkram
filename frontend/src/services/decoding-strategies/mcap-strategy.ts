@@ -59,7 +59,7 @@ const PREVIEW_COALESCE_GAP = 256 * 1024;
 const SAMPLED_COALESCE_GAP = 16 * 1024;
 
 /**
- * Range reads in flight at once.
+ * Range reads in flight at once, across every chunk being read.
  *
  * These reads are latency-bound: a sampled preview of a dense topic plans
  * around 800 chunk indexes and fetches roughly a thousand small ranges, so
@@ -77,6 +77,21 @@ const FETCH_CONCURRENCY = 12;
  * each chunk fans out into range reads of its own.
  */
 const CHUNK_CONCURRENCY = 6;
+
+/**
+ * A single chunk's share of FETCH_CONCURRENCY.
+ *
+ * Chunks are read through a pool of their own, so a per-chunk cap equal to the
+ * global one would multiply: six chunks fetching twelve ranges each is
+ * seventy-two requests in flight, not twelve. Over HTTP/2 those all reach
+ * storage at once, which is how a preview turns into the 500s it then has to
+ * retry. Dividing keeps the product at the budget, and costs nothing in
+ * practice because the outer pool keeps the full twelve busy anyway.
+ */
+const RANGE_CONCURRENCY = Math.max(
+    1,
+    Math.floor(FETCH_CONCURRENCY / CHUNK_CONCURRENCY),
+);
 
 /** What `parseMessageRecord` yields, shaped like `@mcap/core`'s message. */
 interface ParsedChunkMessage {
@@ -168,7 +183,6 @@ export class McapStrategy extends DecodingStrategy {
                         c.messageEndTime >= startTime) &&
                     // We don't have an endTime limit usually, but if we did:
                     // (endTime === undefined || c.messageStartTime <= endTime)
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     true,
             );
 
@@ -295,27 +309,55 @@ export class McapStrategy extends DecodingStrategy {
         const msgs: LogMessage[] = [];
         let seen = 0;
 
-        for await (const { result: parsed } of mapInOrder(
+        // A chunk read through the ordinary reader is bounded by time rather
+        // than by chunk, and adjacent chunks can overlap, so it can yield a
+        // message a neighbour already produced.
+        const emitted = new Set<string>();
+
+        for await (const { item: chunk, result: parsed } of mapInOrder(
             candidates,
             CHUNK_CONCURRENCY,
-            async (chunk) =>
+            async (candidate) =>
                 signal?.aborted
                     ? undefined
-                    : this.readChunkByMessageIndex(chunk, channelIds),
+                    : this.readChunkByMessageIndex(
+                          candidate,
+                          channelIds,
+                          undefined,
+                          startTime,
+                      ),
         )) {
             if (signal?.aborted) break;
             if (msgs.length >= limit) break;
-            if (parsed === undefined) return undefined; // hand back to the reader
 
-            for (const message of parsed) {
+            // Fall back for the chunk that failed, not for the topic. Earlier
+            // chunks have already reached the viewer by now -- that is the
+            // point of emitting as they arrive -- so re-reading the topic from
+            // the start would show all of those messages a second time.
+            const source =
+                parsed ??
+                reader.readMessages({
+                    topics: [topic],
+                    startTime:
+                        startTime !== undefined &&
+                        startTime > chunk.messageStartTime
+                            ? startTime
+                            : chunk.messageStartTime,
+                    endTime: chunk.messageEndTime,
+                });
+
+            for await (const message of source) {
+                if (signal?.aborted) break;
                 if (msgs.length >= limit) break;
+                const key = messageIdentity(message);
+                if (emitted.has(key)) continue;
+                emitted.add(key);
                 if (seen++ % keepEvery !== 0) continue;
 
                 const channel = reader.channelsById.get(message.channelId);
                 let data: unknown = message.data;
                 if (channel) {
                     data =
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                         (await this.tryDecode(
                             channel.schemaId,
                             message.data,
@@ -466,6 +508,7 @@ export class McapStrategy extends DecodingStrategy {
         chunk: McapChunkIndex,
         channelIds: Set<number>,
         sampling?: { chunkOffset: number; keepEvery: number },
+        startTime?: bigint,
     ): Promise<ParsedChunkMessage[] | undefined> {
         // A failed range read must not take the topic down with it. Storage
         // answers a cancelled request with a 500, and a preview cancels
@@ -477,6 +520,7 @@ export class McapStrategy extends DecodingStrategy {
                 chunk,
                 channelIds,
                 sampling,
+                startTime,
             );
         } catch {
             return undefined;
@@ -487,6 +531,7 @@ export class McapStrategy extends DecodingStrategy {
         chunk: McapChunkIndex,
         channelIds: Set<number>,
         sampling?: { chunkOffset: number; keepEvery: number },
+        startTime?: bigint,
     ): Promise<ParsedChunkMessage[] | undefined> {
         const httpReader = this.httpReader;
         if (!httpReader) return undefined;
@@ -508,11 +553,17 @@ export class McapStrategy extends DecodingStrategy {
         const indexes = parseMessageIndexes(blob);
         if (indexes.size === 0) return undefined;
 
+        // `startTime` matters here, not only when choosing chunks: an append
+        // asks for everything after the last message it holds, and the chunk
+        // straddling that boundary also holds the messages before it. Without
+        // this the boundary chunk replays them, and an append has nowhere to
+        // notice the duplicates.
         let extents = planChunk(
             chunkDataStart(Number(chunk.chunkStartOffset), chunk.compression),
             Number(chunk.uncompressedSize),
             indexes,
             channelIds,
+            startTime,
         );
         if (extents.length === 0) return [];
 
@@ -544,7 +595,7 @@ export class McapStrategy extends DecodingStrategy {
 
         for await (const { item: range, result: buffer } of mapInOrder(
             coalesce(extents, gap),
-            FETCH_CONCURRENCY,
+            RANGE_CONCURRENCY,
             async (range) =>
                 httpReader.readExact(
                     BigInt(range.start),
