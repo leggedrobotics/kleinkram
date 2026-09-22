@@ -25,27 +25,30 @@ describe('LokiHealthService Unit Tests', () => {
         process.env.NODE_ENV = previousNodeEnvironment;
     });
 
-    test('probes Loki once and serves later calls from the cache', async () => {
+    test('waitUntilReady probes Loki instead of trusting the last result', async () => {
         mockedGet.mockResolvedValue({ status: 200 });
 
-        await expect(service.isReady()).resolves.toBe(true);
-        await expect(service.isReady()).resolves.toBe(true);
+        await expect(service.waitUntilReady()).resolves.toBe(true);
+        await expect(service.waitUntilReady()).resolves.toBe(true);
 
-        expect(mockedGet).toHaveBeenCalledTimes(1);
+        expect(mockedGet).toHaveBeenCalledTimes(2);
         expect(mockedGet).toHaveBeenCalledWith(
             expect.stringMatching(/\/ready$/),
             expect.anything(),
         );
     });
 
-    test('re-probes once the cached result is stale', async () => {
-        mockedGet.mockResolvedValue({ status: 200 });
+    test('waitUntilReady rejects once Loki goes down, even right after a success', async () => {
+        mockedGet.mockResolvedValueOnce({ status: 200 });
+        await expect(service.waitUntilReady()).resolves.toBe(true);
 
-        await expect(service.isReady()).resolves.toBe(true);
-        jest.advanceTimersByTime(10_000);
-        await expect(service.isReady()).resolves.toBe(true);
+        // Loki dies a moment later: a cached success must not let this through
+        mockedGet.mockRejectedValue(new Error('connection refused'));
 
-        expect(mockedGet).toHaveBeenCalledTimes(2);
+        const readyPromise = service.waitUntilReady();
+        await jest.advanceTimersByTimeAsync(3500);
+
+        await expect(readyPromise).resolves.toBe(false);
     });
 
     test('waitUntilReady rides out a Loki that is still starting up', async () => {
@@ -74,20 +77,32 @@ describe('LokiHealthService Unit Tests', () => {
         mockedGet.mockResolvedValue({ status: 200 });
 
         const results = await Promise.all([
-            service.isReady(),
-            service.isReady(),
-            service.isReady(),
+            service.waitUntilReady(),
+            service.waitUntilReady(),
+            service.waitUntilReady(),
         ]);
 
         expect(results).toEqual([true, true, true]);
         expect(mockedGet).toHaveBeenCalledTimes(1);
     });
 
+    test('isReady reports the state seen by the last probe', async () => {
+        expect(service.isReady()).toBe(false);
+
+        mockedGet.mockResolvedValue({ status: 200 });
+        await service.refresh();
+        expect(service.isReady()).toBe(true);
+
+        mockedGet.mockRejectedValue(new Error('connection refused'));
+        await service.refresh();
+        expect(service.isReady()).toBe(false);
+    });
+
     test('is a no-op under NODE_ENV=test', async () => {
         process.env.NODE_ENV = 'test';
         const disabledService = new LokiHealthService();
 
-        await expect(disabledService.isReady()).resolves.toBe(true);
+        expect(disabledService.isReady()).toBe(true);
         await expect(disabledService.waitUntilReady()).resolves.toBe(true);
         expect(mockedGet).not.toHaveBeenCalled();
     });

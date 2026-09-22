@@ -234,20 +234,36 @@ def test_handle_http_status_error_surfaces_server_message(capsys, verbose):
     )
 
 
-@pytest.mark.parametrize(
-    "verbose, expected_texts",
-    [
-        (True, ["Service Unavailable", "action log store (Loki) is not ready", "retry in 15 seconds"]),
-        (False, ["action log store (Loki) is not ready"]),
-    ],
-)
-def test_handle_http_status_error_reports_service_unavailable(capsys, verbose, expected_texts):
+@pytest.mark.parametrize("verbose", [True, False])
+def test_handle_http_status_error_reports_service_unavailable(capsys, verbose):
+    """both output modes must carry the explanation and the retry delay"""
     exc = _http_status_error(
         503,
         json={"statusCode": 503, "message": "The action log store (Loki) is not ready yet."},
         headers={"Retry-After": "15"},
     )
-    _run_handle_http_status_error(capsys, exc, verbose, False, None, expected_texts, False)
+    _run_handle_http_status_error(
+        capsys,
+        exc,
+        verbose,
+        False,
+        "Service Unavailable" if verbose else None,
+        ["action log store (Loki) is not ready", "retry in 15 seconds"],
+        False,
+    )
+
+
+@pytest.mark.parametrize("verbose", [True, False])
+def test_handle_http_status_error_service_unavailable_without_retry_after(capsys, verbose):
+    exc = _http_status_error(503, json={"statusCode": 503, "message": "Database is failing over."})
+    _run_handle_http_status_error(capsys, exc, verbose, False, None, ["Database is failing over.", "retry in a moment"], False)
+
+
+@pytest.mark.parametrize("verbose", [True, False])
+def test_handle_http_status_error_surfaces_server_message_on_500(capsys, verbose):
+    """a 500 with a specific backend message must not be flattened to boilerplate"""
+    exc = _http_status_error(500, json={"statusCode": 500, "message": "Storage backend rejected the write"})
+    _run_handle_http_status_error(capsys, exc, verbose, False, None, ["Storage backend rejected the write"], False)
 
 
 def test_handle_http_status_error_joins_validation_message_lists(capsys):

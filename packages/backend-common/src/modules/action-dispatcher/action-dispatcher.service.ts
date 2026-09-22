@@ -134,11 +134,13 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             this.logger.error(
                 'Refusing to dispatch action: Loki is not reachable',
             );
+            // The retry delay is not spelled out here: it travels in
+            // `Retry-After` and each client renders it in its own words.
             throw new DependencyUnavailableException(
                 'Loki',
                 'The action log store (Loki) is not ready yet, so this action ' +
                     'would run without retrievable logs. Nothing is wrong with ' +
-                    `the action itself; retry in ${LOKI_RETRY_AFTER_SECONDS.toString()} seconds.`,
+                    'the action itself.',
                 LOKI_RETRY_AFTER_SECONDS,
             );
         }

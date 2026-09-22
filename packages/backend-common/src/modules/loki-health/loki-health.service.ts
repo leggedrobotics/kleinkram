@@ -3,13 +3,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import axios from 'axios';
 
-/**
- * How long a probe result stays valid before we consider it stale.
- *
- * Also the interval of the background probe, so in steady state the cached
- * value is refreshed before it ever expires and no request path ever waits
- * for an HTTP round-trip to Loki.
- */
+/** Interval of the background probe that keeps {@link LokiHealthService.isReady} current. */
 const PROBE_INTERVAL_MS = 10_000;
 
 /** Timeout of a single `GET /ready` call. */
@@ -39,9 +33,7 @@ const sleep = async (ms: number): Promise<void> =>
  * Tracks whether Loki is able to accept and serve logs.
  *
  * Action logs are only retrievable through Loki, so dispatching an action
- * while Loki is down produces a run whose logs are lost. Rather than probing
- * Loki inline on every dispatch, this service keeps a cached readiness flag
- * that is refreshed in the background.
+ * while Loki is down produces a run whose logs are lost.
  */
 @Injectable()
 export class LokiHealthService implements OnModuleInit {
@@ -54,7 +46,6 @@ export class LokiHealthService implements OnModuleInit {
     private readonly enabled = process.env.NODE_ENV !== 'test';
 
     private ready = false;
-    private lastProbedAt = 0;
 
     /**
      * Deduplicates concurrent probes: when Loki is down, every in-flight
@@ -72,26 +63,27 @@ export class LokiHealthService implements OnModuleInit {
     }
 
     /**
-     * Readiness as of the last probe, re-probing only if that result is stale.
+     * Loki's state as of the last probe.
+     *
+     * Cheap but up to {@link PROBE_INTERVAL_MS} stale, so this answers
+     * "how is Loki doing?" (dashboards, health endpoints) rather than
+     * "may I dispatch right now?". For the latter use {@link waitUntilReady}.
      */
-    async isReady(): Promise<boolean> {
-        if (!this.enabled) return true;
-        if (Date.now() - this.lastProbedAt < PROBE_INTERVAL_MS) {
-            return this.ready;
-        }
-        return this.probe();
+    isReady(): boolean {
+        return this.enabled ? this.ready : true;
     }
 
     /**
-     * Readiness, retrying with back-off before giving up.
+     * Probes Loki now, retrying with back-off before giving up.
      *
-     * Use this on request paths that must reject when Loki is unavailable: it
-     * rides out a short blip (a restart, a slow ring join) instead of failing
-     * a submission that would have worked a moment later. The total wait is
-     * bounded by {@link RETRY_DELAYS_MS} so callers stay responsive.
+     * Deliberately never answers from the cached flag: a success cached
+     * moments ago would let an action through after Loki has gone down, and
+     * that action would run with no retrievable logs. Concurrent callers
+     * share a single probe, and the total wait is bounded by
+     * {@link RETRY_DELAYS_MS} so a request never hangs on a dead Loki.
      */
     async waitUntilReady(): Promise<boolean> {
-        if (await this.isReady()) return true;
+        if (await this.probe()) return true;
 
         for (const delay of RETRY_DELAYS_MS) {
             await sleep(delay);
@@ -125,8 +117,6 @@ export class LokiHealthService implements OnModuleInit {
                 );
             }
         }
-
-        this.lastProbedAt = Date.now();
 
         if (this.ready && !wasReady) {
             this.logger.log(`Loki at ${environment.LOKI_URL} is ready`);

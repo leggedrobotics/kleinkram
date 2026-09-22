@@ -189,17 +189,17 @@ def handle_http_status_error(exc: httpx.HTTPStatusError) -> int:
         retry_after = exc.response.headers.get("retry-after")
         detail = server_message or "The server is temporarily unavailable."
         retry_hint = (
-            f"\n\nThis is temporary, please retry in {retry_after} seconds."
+            f"This is temporary, please retry in {retry_after} seconds."
             if retry_after
-            else "\n\nThis is temporary, please retry in a moment."
+            else "This is temporary, please retry in a moment."
         )
         title = "Service Unavailable"
         msg = (
             f"The Kleinkram backend server at:\n"
             f"  [bold cyan]{endpoint_url}[/bold cyan] could not serve this request.\n\n"
-            f"{detail}{retry_hint}"
+            f"{detail}\n\n{retry_hint}"
         )
-        quiet_msg = f"Error: {detail}"
+        quiet_msg = f"Error: {detail} {retry_hint}"
     elif exc.response.status_code in (502, 504):
         title = "Server Timeout"
         msg = (
@@ -213,12 +213,15 @@ def handle_http_status_error(exc: httpx.HTTPStatusError) -> int:
         quiet_msg = f"Error: Server at {endpoint_url} timed out (HTTP {exc.response.status_code})"
     elif exc.response.status_code == 500:
         title = "Internal Server Error"
+        detail = server_message or "Please try again later or contact the administrator."
         msg = (
             f"The Kleinkram backend server at:\n"
             f"  [bold cyan]{endpoint_url}[/bold cyan] encountered an internal error.\n\n"
-            f"Please try again later or contact the administrator."
+            f"{detail}"
         )
         quiet_msg = f"Error: Internal server error on {endpoint_url} (HTTP 500)"
+        if server_message:
+            quiet_msg += f": {server_message}"
     else:
         title = f"HTTP Error {exc.response.status_code}"
         details = server_message or str(exc)
