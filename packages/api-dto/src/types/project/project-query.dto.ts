@@ -30,4 +30,14 @@ export class ProjectQueryDto extends SortablePaginatedQueryDto {
     @IsIn(['true', 'false'])
     @ApiProperty({ required: false, default: 'false', enum: ['true', 'false'] })
     exactMatch?: string;
+
+    /**
+     * When `'true'`, only projects the requesting user has starred are
+     * returned.
+     */
+    @IsOptional()
+    @IsString()
+    @IsIn(['true', 'false'])
+    @ApiProperty({ required: false, default: 'false', enum: ['true', 'false'] })
+    starred?: string;
 }

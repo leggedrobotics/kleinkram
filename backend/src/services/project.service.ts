@@ -5,6 +5,7 @@ import {
     DefaultRights,
     ProjectDto,
     ProjectsDto,
+    ProjectStarDto,
     ProjectWithRequiredTagsDto,
     ResentProjectDto,
     SortOrder,
@@ -45,6 +46,7 @@ import {
     ProjectAccessEntity,
     ProjectAccessViewEntity,
     ProjectEntity,
+    ProjectStarEntity,
     TagTypeEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
@@ -97,6 +99,8 @@ export class ProjectService {
         private tagTypeRepository: Repository<TagTypeEntity>,
         @InjectRepository(AccessGroupEntity)
         private accessGroupRepository: Repository<AccessGroupEntity>,
+        @InjectRepository(ProjectStarEntity)
+        private projectStarRepository: Repository<ProjectStarEntity>,
         private configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {
@@ -174,6 +178,54 @@ export class ProjectService {
     }
 
     /**
+     * Returns the subset of `projectUuids` that `userUuid` has starred.
+     *
+     * Stars are per user, so they cannot be joined onto the project rows of a
+     * shared query without duplicating them; they are fetched for the rows of
+     * the current page instead, the same way sizes and mission counts are.
+     */
+    private async _getStarredProjectUuids(
+        projectUuids: string[],
+        userUuid: string,
+    ): Promise<Set<string>> {
+        if (projectUuids.length === 0) {
+            return new Set();
+        }
+
+        const stars = await this.projectStarRepository
+            .createQueryBuilder('star')
+            .select('star.projectUuid', 'projectUuid')
+            .where('star.userUuid = :userUuid', { userUuid })
+            .andWhere('star.projectUuid IN (:...projectUuids)', {
+                projectUuids,
+            })
+            .getRawMany<{ projectUuid: string }>();
+
+        return new Set(stars.map((star) => star.projectUuid));
+    }
+
+    /**
+     * Restricts the query to the projects `userUuid` has starred.
+     *
+     * Implemented as a semi-join (`IN (...)`) rather than a join so that the
+     * row count of the outer query — and with it the pagination — is not
+     * affected.
+     */
+    private _addStarredFilter(
+        query: SelectQueryBuilder<ProjectEntity>,
+        userUuid: string,
+    ): SelectQueryBuilder<ProjectEntity> {
+        const starredUuids = this.projectStarRepository
+            .createQueryBuilder('starFilter')
+            .select('starFilter.projectUuid')
+            .where('starFilter.userUuid = :starredByUserUuid');
+
+        return query
+            .andWhere(`project.uuid IN (${starredUuids.getQuery()})`)
+            .setParameter('starredByUserUuid', userUuid);
+    }
+
+    /**
      * Adds the total size of a project (the summed size of all files of all its
      * non-deleted missions) as a computed column, so that the database can sort
      * by it.
@@ -241,6 +293,7 @@ export class ProjectService {
         creatorUuid: string | undefined,
         userUuid: string,
         exactMatch = false,
+        starredOnly = false,
     ): Promise<ProjectsDto> {
         let query = this.projectRepository
             .createQueryBuilder('project')
@@ -256,6 +309,10 @@ export class ProjectService {
             projectPatterns,
             exactMatch,
         );
+
+        if (starredOnly) {
+            query = this._addStarredFilter(query, userUuid);
+        }
 
         if (sortBy === 'rights') {
             query = query.leftJoinAndSelect(
@@ -291,9 +348,10 @@ export class ProjectService {
         const [projects, count] = await query.getManyAndCount();
 
         const foundProjectUuids = projects.map((p) => p.uuid);
-        const [sizes, missionCounts] = await Promise.all([
+        const [sizes, missionCounts, starredUuids] = await Promise.all([
             this._getProjectSizes(foundProjectUuids),
             this._getMissionCounts(foundProjectUuids),
+            this._getStarredProjectUuids(foundProjectUuids, userUuid),
         ]);
 
         return {
@@ -301,6 +359,7 @@ export class ProjectService {
                 const dto = projectEntityToDtoWithMissionCountAndTags(element);
                 dto.size = sizes.get(element.uuid) ?? 0;
                 dto.missionCount = missionCounts.get(element.uuid) ?? 0;
+                dto.isStarred = starredUuids.has(element.uuid);
                 return dto;
             }),
             count,
@@ -309,7 +368,10 @@ export class ProjectService {
         };
     }
 
-    async findOne(uuid: string): Promise<ProjectWithRequiredTagsDto> {
+    async findOne(
+        uuid: string,
+        userUuid?: string,
+    ): Promise<ProjectWithRequiredTagsDto> {
         const missionPromise = this.projectRepository
             .createQueryBuilder('project')
             .where('project.uuid = :uuid', { uuid })
@@ -331,9 +393,67 @@ export class ProjectService {
             missionCountPromise,
         ]);
         const sizes = await this._getProjectSizes([uuid]);
+        const starredUuids =
+            userUuid === undefined
+                ? new Set<string>()
+                : await this._getStarredProjectUuids([uuid], userUuid);
+
         const dto = projectEntityToDtoWithRequiredTags(mission, missionCount);
         dto.size = sizes.get(uuid) ?? 0;
+        dto.isStarred = starredUuids.has(uuid);
         return dto;
+    }
+
+    /**
+     * Stars a project for a user. Starring an already starred project is a
+     * no-op, so that a client that lost the response of an earlier request can
+     * safely retry.
+     */
+    async starProject(
+        projectUuid: string,
+        userUuid: string,
+    ): Promise<ProjectStarDto> {
+        const project = await this.projectRepository.findOne({
+            where: { uuid: projectUuid },
+        });
+        if (project === null) {
+            throw new NotFoundException('Project not found');
+        }
+
+        // The unique index on (user, project) is what actually rules out
+        // duplicates; two concurrent requests can both pass the check above.
+        await this.projectStarRepository
+            .createQueryBuilder()
+            .insert()
+            .into(ProjectStarEntity)
+            .values({
+                user: { uuid: userUuid },
+                project: { uuid: projectUuid },
+            })
+            .orIgnore()
+            .execute();
+
+        return { projectUuid, isStarred: true };
+    }
+
+    /**
+     * Removes a user's star from a project. Un-starring a project that is not
+     * starred is a no-op, for the same reason as in {@link starProject}.
+     *
+     * The star is deleted for good rather than soft-deleted: it carries no
+     * history worth keeping, and leaving tombstones around would collide with
+     * the partial unique index the next time the project is starred.
+     */
+    async unstarProject(
+        projectUuid: string,
+        userUuid: string,
+    ): Promise<ProjectStarDto> {
+        await this.projectStarRepository.delete({
+            user: { uuid: userUuid },
+            project: { uuid: projectUuid },
+        });
+
+        return { projectUuid, isStarred: false };
     }
 
     async getRecentProjects(

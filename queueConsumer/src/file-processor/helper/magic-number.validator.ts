@@ -1,6 +1,11 @@
 import { FileType } from '@kleinkram/shared';
 import * as fs from 'node:fs/promises';
 import logger from '../../logger';
+import {
+    TEXT_SAMPLE_BYTES,
+    isPlainTextSample,
+    looksLikeCsv,
+} from './text-format.validator';
 
 const MAGIC_NUMBERS: Partial<Record<FileType, Buffer>> = {
     [FileType.MCAP]: Buffer.from([
@@ -35,6 +40,27 @@ export const MagicNumberValidator = {
                         .subarray(0, bytesRead)
                         .filter((b) => b === 0).length;
                     return nullCount < bytesRead * 0.1; // Less than 10% null bytes
+                }
+
+                if (fileType === FileType.MD || fileType === FileType.CSV) {
+                    // Neither format has a magic number, so we check that the
+                    // content is text and, for CSV, that it is tabular.
+                    const buffer = Buffer.alloc(TEXT_SAMPLE_BYTES);
+                    const { bytesRead } = await handle.read(
+                        buffer,
+                        0,
+                        TEXT_SAMPLE_BYTES,
+                        0,
+                    );
+                    const sample = buffer.subarray(0, bytesRead);
+                    const { size } = await handle.stat();
+                    const sampleIsCompleteFile = size <= bytesRead;
+
+                    if (!isPlainTextSample(sample, sampleIsCompleteFile))
+                        return false;
+                    if (fileType === FileType.MD) return true;
+
+                    return looksLikeCsv(sample, sampleIsCompleteFile);
                 }
 
                 if (fileType === FileType.TUM) {

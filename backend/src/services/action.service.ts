@@ -18,6 +18,10 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
+import {
+    contentDisposition,
+    OPAQUE_CONTENT_TYPE,
+} from '@kleinkram/backend-common/modules/storage/response-headers';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
     ArtifactState,
@@ -490,8 +494,8 @@ export class ActionService {
                 `${action.uuid}.tar.gz`,
                 4 * 60 * 60,
                 {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'response-content-disposition': `attachment; filename="${friendlyFilename}"`,
+                    contentType: OPAQUE_CONTENT_TYPE,
+                    contentDisposition: contentDisposition(friendlyFilename),
                 },
             );
         } catch (error) {

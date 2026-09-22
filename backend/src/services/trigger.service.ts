@@ -1,3 +1,5 @@
+import { addAccessConstraintsToTriggerQuery } from '@/endpoints/auth/auth-helper';
+import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import {
     ActionTriggerDto,
     CreateActionTriggerDto,
@@ -6,19 +8,23 @@ import {
 import {
     ActionTemplateEntity,
     ActionTriggerEntity,
+    ApiKeyEntity,
     MissionEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import {
+    AccessGroupRights,
     ActionTriggerSource,
     isValidCron,
     TriggerEvent,
     TriggerType,
+    UserRole,
 } from '@kleinkram/shared';
 import {
     BadRequestException,
+    ForbiddenException,
     Injectable,
     NotFoundException,
     OnModuleInit,
@@ -43,23 +49,69 @@ export class TriggerService implements OnModuleInit {
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
         private readonly actionDispatcher: ActionDispatcherService,
+        private readonly missionGuardService: MissionGuardService,
     ) {}
 
     onModuleInit(): void {
         this.triggerQueue = new Queue('trigger-queue', { redis });
     }
 
-    async findAll(missionUuid?: string): Promise<ActionTriggerDto[]> {
+    async findAll(
+        user: UserEntity,
+        missionUuid?: string,
+        apiKey?: ApiKeyEntity,
+    ): Promise<ActionTriggerDto[]> {
+        if (missionUuid && user.role !== UserRole.ADMIN) {
+            const hasAccess = apiKey
+                ? this.missionGuardService.canKeyAccessMission(
+                      apiKey,
+                      missionUuid,
+                      AccessGroupRights.READ,
+                  )
+                : await this.missionGuardService.canAccessMission(
+                      user,
+                      missionUuid,
+                      AccessGroupRights.READ,
+                  );
+            if (!hasAccess) {
+                throw new ForbiddenException('Forbidden resource');
+            }
+        }
+
         const query = this.triggerRepository
             .createQueryBuilder('trigger')
             .leftJoinAndSelect('trigger.template', 'template')
-            .leftJoinAndSelect('trigger.creator', 'creator');
+            .leftJoinAndSelect('trigger.creator', 'creator')
+            .leftJoin('trigger.mission', 'mission')
+            .leftJoin('mission.project', 'project');
 
         if (missionUuid) {
-            query.where('trigger.missionUuid = :missionUuid', { missionUuid });
+            query.andWhere('trigger.missionUuid = :missionUuid', {
+                missionUuid,
+            });
         }
+
+        // API keys are scoped to their mission (verified above); skip user-level
+        // access constraints for them. Session users get SQL-level filtering.
+        if (user.role !== UserRole.ADMIN && !apiKey) {
+            addAccessConstraintsToTriggerQuery(query, user.uuid);
+        }
+
         const entities = await query.getMany();
         return entities.map((entity) => this.toDto(entity));
+    }
+
+    async findOne(uuid: string): Promise<ActionTriggerDto> {
+        const trigger = await this.triggerRepository.findOne({
+            where: { uuid },
+            relations: { template: true, creator: true },
+        });
+
+        if (!trigger) {
+            throw new NotFoundException('Trigger not found');
+        }
+
+        return this.toDto(trigger);
     }
 
     async create(

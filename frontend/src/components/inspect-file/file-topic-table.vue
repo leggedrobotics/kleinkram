@@ -187,6 +187,8 @@ const allColumns: QTableColumn[] = [
         label: 'Messages',
         field: 'nrMessages',
         align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         sortable: true,
     },
     {
@@ -195,6 +197,8 @@ const allColumns: QTableColumn[] = [
         field: 'frequency',
         format: (v: number): string => (v ? v.toFixed(1) : '-'),
         align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
     },
 ];
 

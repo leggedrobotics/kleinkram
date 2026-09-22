@@ -58,6 +58,8 @@ const FILE_EXTENSION_TO_FILE_TYPE_MAP: ReadonlyMap<string, FileType> = new Map([
     ['.svo2', FileType.SVO2],
     ['.tum', FileType.TUM],
     ['.db3', FileType.DB3],
+    ['.md', FileType.MD],
+    ['.csv', FileType.CSV],
 ]);
 
 @Injectable()

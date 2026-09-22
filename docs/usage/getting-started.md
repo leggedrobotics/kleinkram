@@ -43,6 +43,7 @@ The GrandTourDataset uses a Metadata Tag `Short Name` to identify the mission in
 At the file level, you can use **Category Tags** to label specific files.
 
 - **Usage**: Tag files as `Raw Data`, `Processed`, `Calibration`, or `Validated`. This helps in distinguishing between different types of data within the same mission.
+- **Description**: Each category can carry an optional description explaining which files belong into it. Descriptions are shown when selecting categories and as a tooltip on the category chips, and can be edited at any time in the _Manage Categories_ tab of the category dialog.
 
 ## Next Steps: Uploading Data
 

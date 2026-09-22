@@ -103,6 +103,10 @@ export function useRosmsgPreview(): {
     }
 
     function reset(): void {
+        // Readiness belongs to the file that was loaded, so it has to clear
+        // too: callers use it to decide whether a preview still needs loading.
+        isReaderReady.value = false;
+        readerError.value = null;
         dbSchema.value = null;
         for (const controller of abortControllers.values()) {
             controller.abort();
@@ -121,8 +125,6 @@ export function useRosmsgPreview(): {
         url: string,
         type: 'mcap' | 'rosbag' | 'db3',
     ): Promise<void> {
-        isReaderReady.value = false;
-        readerError.value = null;
         reset();
         // Clear previous errors on new file load
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete

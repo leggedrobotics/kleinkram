@@ -1,3 +1,4 @@
+import type { ProjectStarDto } from '@kleinkram/api-dto/types/project/project-star.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 
@@ -52,5 +53,23 @@ export const updateTagTypes = async (
         { tagTypeUUIDs },
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return response.data;
+};
+
+export const starProject = async (
+    projectUUID: string,
+): Promise<ProjectStarDto> => {
+    const response = await axios.post<ProjectStarDto>(
+        `/projects/${projectUUID}/star`,
+    );
+    return response.data;
+};
+
+export const unstarProject = async (
+    projectUUID: string,
+): Promise<ProjectStarDto> => {
+    const response = await axios.delete<ProjectStarDto>(
+        `/projects/${projectUUID}/star`,
+    );
     return response.data;
 };

@@ -348,6 +348,8 @@ interface AccessGroupColumn {
     required?: boolean;
     label: string;
     align: string;
+    classes?: string;
+    headerClasses?: string;
     field?: (row: AccessGroupDto) => string;
     format?: (value: string) => string;
     sortable?: boolean;
@@ -514,7 +516,9 @@ const usersColumns: AccessGroupColumn[] = [
         name: 'Projects',
         required: true,
         label: '# Projects',
-        align: 'center',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         field: (row: AccessGroupDto): string =>
             row.projectAccesses.length.toString(),
         format: (value: string): string => value,
@@ -564,7 +568,9 @@ const accessGroupsColumns: AccessGroupColumn[] = [
         name: 'NrOfUsers',
         required: true,
         label: '# Members',
-        align: 'center',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         field: (row: AccessGroupDto): string =>
             row.memberships.length.toString(),
         format: (value: string): string => value,
@@ -575,7 +581,9 @@ const accessGroupsColumns: AccessGroupColumn[] = [
         name: 'NrOfProjects',
         required: true,
         label: '# Projects',
-        align: 'center',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         field: (row: AccessGroupDto): string =>
             row.projectAccesses.length.toString(),
         format: (value: string): string => value,

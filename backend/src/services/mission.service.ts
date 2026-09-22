@@ -32,6 +32,10 @@ import {
 } from './utilities';
 
 import { SortOrder } from '@kleinkram/api-dto';
+import {
+    contentDisposition,
+    OPAQUE_CONTENT_TYPE,
+} from '@kleinkram/backend-common/modules/storage/response-headers';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 
 const FIND_MANY_SORT_KEYS = {
@@ -479,9 +483,8 @@ export class MissionService {
                     f.uuid,
                     4 * 60 * 60,
                     {
-                        // set filename in response headers
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        'response-content-disposition': `attachment; filename ="${f.filename}"`,
+                        contentType: OPAQUE_CONTENT_TYPE,
+                        contentDisposition: contentDisposition(f.filename),
                     },
                 ),
             })),

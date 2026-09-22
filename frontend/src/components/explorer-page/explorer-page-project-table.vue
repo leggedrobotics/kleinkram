@@ -89,9 +89,9 @@
                     class="q-pa-md flex flex-center column q-gutter-md"
                     style="min-height: 200px"
                 >
-                    <span class="text-subtitle1"> No Projects Found </span>
+                    <span class="text-subtitle1">{{ emptyStateLabel }}</span>
 
-                    <dialog-opener-create-project>
+                    <dialog-opener-create-project v-if="scope !== 'starred'">
                         <q-btn
                             flat
                             dense
@@ -153,6 +153,11 @@
                                 {{ formatDate(new Date(props.row.createdAt)) }}
                             </div>
                         </div>
+
+                        <project-star-button
+                            :project-uuid="props.row.uuid"
+                            :starred="props.row.isStarred"
+                        />
 
                         <q-btn
                             flat
@@ -227,6 +232,15 @@
                     </div>
                 </q-card>
             </div>
+        </template>
+
+        <template #body-cell-star="props">
+            <q-td :props="props">
+                <project-star-button
+                    :project-uuid="props.row.uuid"
+                    :starred="props.row.isStarred"
+                />
+            </q-td>
         </template>
 
         <template #body-cell-project-action="props">
@@ -310,6 +324,7 @@ import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-op
 import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
+import ProjectStarButton from 'components/common/project-star-button.vue';
 import { QTable, useQuasar } from 'quasar';
 import { explorerPageTableColumns } from 'src/components/explorer-page/explorer-page-table-columns';
 import {
@@ -321,13 +336,14 @@ import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 import { TableRequest } from 'src/services/query-handler';
+import type { ProjectScope } from 'src/types/project-scope';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 const urlHandler = useHandler();
 const $q = useQuasar();
 
-const { myProjects } = defineProps<{ myProjects: boolean }>();
+const { scope } = defineProps<{ scope: ProjectScope | undefined }>();
 const { data: user } = useUser();
 
 /**
@@ -349,8 +365,14 @@ const tableColumns = computed(() =>
 
 const visibleColumns = computed(() =>
     isCompact.value
-        ? ['name', 'description', 'nrOfMissions', 'project-action']
+        ? ['star', 'name', 'description', 'nrOfMissions', 'project-action']
         : undefined,
+);
+
+const emptyStateLabel = computed(() =>
+    scope === 'starred'
+        ? 'No starred projects yet — star a project to find it here'
+        : 'No Projects Found',
 );
 
 const sortOptions = explorerPageTableColumns
@@ -412,10 +434,11 @@ const {
     computed(() => urlHandler.value.descending),
     computed(() => ({
         ...urlHandler.value.searchParams,
-        ...(myProjects
+        ...(scope === 'mine'
             ? // eslint-disable-next-line @typescript-eslint/naming-convention
               { 'creator.uuid': user.value?.uuid ?? '' }
             : {}),
+        ...(scope === 'starred' ? { starred: 'true' } : {}),
     })),
 );
 

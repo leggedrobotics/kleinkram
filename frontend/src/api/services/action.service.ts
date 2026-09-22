@@ -178,6 +178,11 @@ export const ActionService = {
         return data;
     },
 
+    async getTrigger(uuid: string): Promise<ActionTriggerDto> {
+        const { data } = await axios.get<ActionTriggerDto>(`/triggers/${uuid}`);
+        return data;
+    },
+
     async createTrigger(
         payload: CreateActionTriggerDto,
     ): Promise<ActionTriggerDto> {

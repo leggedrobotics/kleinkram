@@ -103,7 +103,11 @@
                     clickable
                     class="q-mr-sm"
                     @click.stop="() => chipClicked(cat)"
-                />
+                >
+                    <q-tooltip v-if="cat.description">
+                        {{ cat.description }}
+                    </q-tooltip>
+                </q-chip>
             </q-td>
         </template>
 
@@ -348,7 +352,11 @@
                                 clickable
                                 class="q-mr-xs q-ml-none"
                                 @click.stop="() => chipClicked(cat)"
-                            />
+                            >
+                                <q-tooltip v-if="cat.description">
+                                    {{ cat.description }}
+                                </q-tooltip>
+                            </q-chip>
                         </div>
                     </div>
                 </q-card>

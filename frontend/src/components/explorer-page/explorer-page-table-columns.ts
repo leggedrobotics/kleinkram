@@ -11,6 +11,8 @@ export interface ProjectColumnType {
     required?: boolean;
     label: string;
     align: string;
+    classes?: string;
+    headerClasses?: string;
     field?:
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithMissionCountDto) => any)
@@ -32,6 +34,13 @@ export interface ProjectColumnType {
 }
 
 export const explorerPageTableColumns: ProjectColumnType[] = [
+    {
+        name: 'star',
+        required: true,
+        label: '',
+        align: 'center',
+        style: 'width: 10px',
+    },
     {
         name: 'name',
         required: true,
@@ -76,6 +85,8 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         required: true,
         label: '# Missions',
         align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         style: 'min-width: 100px',
         field: (row: ProjectWithMissionCountDto) => row.missionCount,
         format: (value: number) => value.toString(),
@@ -85,7 +96,9 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
         name: 'size',
         required: true,
         label: 'Size',
-        align: 'left',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         field: (row: ProjectWithMissionCountDto) => row.size,
         format: formatSize,
         sortable: true,
@@ -148,7 +161,9 @@ export const missionColumns: ProjectColumnType[] = [
         name: 'NrOfFiles',
         required: true,
         label: '# Files',
-        align: 'left',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         field: (row: FlatMissionDto) => row.filesCount,
         format: (value: number) => value.toString(),
     },
@@ -182,7 +197,9 @@ export const missionColumns: ProjectColumnType[] = [
         name: 'Size',
         required: true,
         label: 'Size',
-        align: 'left',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         field: (row: FlatMissionDto) => row.size,
         format: formatSize,
     },
@@ -232,7 +249,9 @@ export const fileColumns: ProjectColumnType[] = [
         name: 'size',
         required: true,
         label: 'Size',
-        align: 'left',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         field: (row: FileWithTopicDto) => row.size,
         format: formatSize,
         sort: (

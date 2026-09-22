@@ -12,7 +12,9 @@ import {
 import {
     BadRequestException,
     ExecutionContext,
+    ForbiddenException,
     Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, Repository } from 'typeorm';
@@ -97,6 +99,73 @@ export class ReportActionDiagnosticGuard extends BaseGuard {
         });
 
         return action?.key?.uuid === apiKey.uuid;
+    }
+}
+
+@Injectable()
+export class CanReadTriggerGuard extends BaseGuard {
+    constructor(
+        @InjectRepository(ActionTriggerEntity)
+        private actionTriggerRepository: Repository<ActionTriggerEntity>,
+        private missionGuardService: MissionGuardService,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+
+        const params = request.params as { uuid?: string } | undefined;
+        const triggerUUID = params?.uuid;
+
+        if (!triggerUUID) {
+            return false;
+        }
+
+        const trigger = await this.actionTriggerRepository.findOne({
+            where: { uuid: triggerUUID },
+            select: { uuid: true, creatorUuid: true, missionUuid: true },
+        });
+
+        if (!trigger) {
+            throw new NotFoundException('Trigger not found');
+        }
+
+        // An API key is scoped to exactly one mission, so it is resolved before
+        // anything else: neither the key owner's authorship of the trigger nor
+        // their admin role may widen the key beyond that mission. `GET /triggers`
+        // scopes keys the same way, and `AdminOnlyGuard` states the invariant
+        // outright ('CLI Keys are never admins').
+        if (apiKey) {
+            if (
+                !this.missionGuardService.canKeyAccessMission(
+                    apiKey,
+                    trigger.missionUuid,
+                    AccessGroupRights.READ,
+                )
+            ) {
+                throw new ForbiddenException('Forbidden resource');
+            }
+            return true;
+        }
+
+        if (trigger.creatorUuid === user.uuid) {
+            return true;
+        }
+
+        if (user.role === UserRole.ADMIN) {
+            return true;
+        }
+
+        const hasAccess = await this.missionGuardService.canAccessMission(
+            user,
+            trigger.missionUuid,
+            AccessGroupRights.READ,
+        );
+        if (!hasAccess) {
+            throw new ForbiddenException('Forbidden resource');
+        }
+        return true;
     }
 }
 

@@ -7,6 +7,16 @@ body {
     overflow-y: scroll;
 }
 
+// Phones: clip horizontal overflow on the viewport rather than on
+// `.q-page-container`. Clipping on the container would also cut off the
+// full-bleed sections that break out of the gutter with a negative margin
+// (title-section, footer), leaving a grey strip along both edges.
+@media (max-width: 599px) {
+    body {
+        overflow-x: hidden;
+    }
+}
+
 .q-layout--standard,
 thead,
 .q-footer {
@@ -44,10 +54,6 @@ q-page {
 }
 
 @media (max-width: 599px) {
-    .q-page-container {
-        overflow-x: hidden;
-    }
-
     // Quasar's default table cell padding is generous; tighten on phones
     .q-table th,
     .q-table td {
@@ -213,6 +219,17 @@ label {
 
 .q-table .q-checkbox__inner {
     font-size: 32px;
+}
+
+/*
+ * Numeric table cells. Right alignment only pays off if the digits are also
+ * fixed-width: with the default proportional figures a "1" is narrower than an
+ * "8", so the decimal points drift from row to row and the column reads ragged
+ * even though its right edge is flush.
+ */
+.kk-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
 }
 
 .q-table .selected {

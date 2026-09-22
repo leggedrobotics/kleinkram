@@ -375,6 +375,12 @@ const fileIcon = (extension: string): string => {
         case '.yml': {
             return 'sym_o_data_object';
         }
+        case '.csv': {
+            return 'sym_o_table';
+        }
+        case '.md': {
+            return 'sym_o_article';
+        }
         default: {
             return 'sym_o_draft';
         }

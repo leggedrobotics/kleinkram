@@ -24,6 +24,7 @@ from kleinkram.wrappers import get_mission
 from kleinkram.wrappers import get_project
 from kleinkram.wrappers import get_template
 from kleinkram.wrappers import get_template_revisions
+from kleinkram.wrappers import get_trigger
 from kleinkram.wrappers import info
 from kleinkram.wrappers import launch_execution
 from kleinkram.wrappers import list_diagnostics
@@ -56,6 +57,7 @@ __all__ = [
     "get_project",
     "get_template",
     "get_template_revisions",
+    "get_trigger",
     "list_files",
     "list_missions",
     "list_projects",

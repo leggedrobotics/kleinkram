@@ -20,6 +20,7 @@ export * from './entities/file/file.entity';
 export * from './entities/file/ingestion-job.entity';
 export * from './entities/metadata/metadata.entity';
 export * from './entities/mission/mission.entity';
+export * from './entities/project/project-star.entity';
 export * from './entities/project/project.entity';
 export * from './entities/tagType/tag-type.entity';
 export * from './entities/topic/topic.entity';
@@ -60,6 +61,7 @@ import { FileEntity } from './entities/file/file.entity';
 import { IngestionJobEntity } from './entities/file/ingestion-job.entity';
 import { MetadataEntity } from './entities/metadata/metadata.entity';
 import { MissionEntity } from './entities/mission/mission.entity';
+import { ProjectStarEntity } from './entities/project/project-star.entity';
 import { ProjectEntity } from './entities/project/project.entity';
 import { TagTypeEntity } from './entities/tagType/tag-type.entity';
 import { TopicEntity } from './entities/topic/topic.entity';
@@ -87,6 +89,7 @@ export const ALL_ENTITIES = [
     MetadataEntity,
     MissionEntity,
     ProjectEntity,
+    ProjectStarEntity,
     TagTypeEntity,
     TopicEntity,
     UserEntity,
