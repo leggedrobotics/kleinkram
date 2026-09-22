@@ -2,110 +2,128 @@
     <div :class="$q.screen.xs ? 'q-py-md' : 'q-pa-md'">
         <p class="help-text q-mb-lg" style="max-width: 650px">
             While an action runs we sample the CPU and memory usage of its
-            container about once per second. The values below compare those
-            samples against the limits configured on the action template.
+            container about once per second. Those samples are compared against
+            the limits configured on the action template.
         </p>
 
-        <div class="row q-col-gutter-md">
-            <div
-                v-for="stat in stats"
-                :key="stat.label"
-                class="col-12 col-md-4"
-            >
-                <div class="metric-tile">
-                    <div class="metric-tile__header">
-                        <q-icon
-                            :name="stat.icon"
-                            size="18px"
-                            class="text-icon-secondary"
-                        />
-                        <span class="metric-tile__label">{{ stat.label }}</span>
-                        <q-icon
-                            name="sym_o_help"
-                            size="16px"
-                            class="metric-tile__help"
-                        >
-                            <q-tooltip>{{ stat.hint }}</q-tooltip>
-                        </q-icon>
-                    </div>
+        <!--
+            An action whose container produced no stats event at all is stored
+            with an empty sample list and zeroed aggregates. Those zeros are
+            "not measured", not "measured as zero", so the whole read-out is
+            replaced by an empty state rather than showing them as figures.
+        -->
+        <template v-if="hasSamples">
+            <div class="row q-col-gutter-md">
+                <div
+                    v-for="stat in stats"
+                    :key="stat.label"
+                    class="col-12 col-md-4"
+                >
+                    <div class="metric-tile">
+                        <div class="metric-tile__header">
+                            <q-icon
+                                :name="stat.icon"
+                                size="18px"
+                                class="text-icon-secondary"
+                            />
+                            <span class="metric-tile__label">{{
+                                stat.label
+                            }}</span>
+                            <q-icon
+                                name="sym_o_help"
+                                size="16px"
+                                class="metric-tile__help"
+                            >
+                                <q-tooltip>{{ stat.hint }}</q-tooltip>
+                            </q-icon>
+                        </div>
 
-                    <div class="metric-tile__value">
-                        <span class="metric-tile__number">{{
-                            stat.value
-                        }}</span>
-                        <span class="metric-tile__unit">{{ stat.unit }}</span>
-                        <span class="metric-tile__limit"
-                            >of {{ stat.limit }}</span
-                        >
-                    </div>
+                        <div class="metric-tile__value">
+                            <span class="metric-tile__number">{{
+                                stat.value
+                            }}</span>
+                            <span class="metric-tile__unit">{{
+                                stat.unit
+                            }}</span>
+                            <span class="metric-tile__limit"
+                                >of {{ stat.limit }}</span
+                            >
+                        </div>
 
-                    <div
-                        class="metric-tile__meter"
-                        role="progressbar"
-                        :aria-label="stat.label"
-                        :aria-valuenow="Math.round(stat.ratio * 100)"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                    >
                         <div
-                            class="metric-tile__meter-fill"
-                            :style="{
-                                width: `${Math.min(stat.ratio, 1) * 100}%`,
-                                backgroundColor: statusColor(stat.ratio),
-                            }"
-                        />
-                    </div>
+                            class="metric-tile__meter"
+                            role="progressbar"
+                            :aria-label="stat.label"
+                            :aria-valuenow="
+                                Math.round(Math.min(stat.ratio, 1) * 100)
+                            "
+                            :aria-valuetext="`${formatPercent(stat.ratio * 100)} of limit`"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                        >
+                            <div
+                                class="metric-tile__meter-fill"
+                                :style="{
+                                    width: `${Math.min(stat.ratio, 1) * 100}%`,
+                                    backgroundColor: statusColor(stat.ratio),
+                                }"
+                            />
+                        </div>
 
-                    <div
-                        class="metric-tile__status"
-                        :style="{ color: statusTextColor(stat.ratio) }"
-                    >
-                        <span
-                            class="metric-tile__dot"
-                            :style="{
-                                backgroundColor: statusColor(stat.ratio),
-                            }"
-                        />
-                        {{ formatPercent(stat.ratio * 100) }} of limit ·
-                        {{ statusLabel(stat.ratio) }}
+                        <div
+                            class="metric-tile__status"
+                            :style="{ color: statusTextColor(stat.ratio) }"
+                        >
+                            <span
+                                class="metric-tile__dot"
+                                :style="{
+                                    backgroundColor: statusColor(stat.ratio),
+                                }"
+                            />
+                            {{ formatPercent(stat.ratio * 100) }} of limit ·
+                            {{ statusLabel(stat.ratio) }}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="section-heading">
-            <h2 class="text-h5 q-ma-none text-grey-9">Usage Over Time</h2>
-            <span v-if="hasSamples" class="help-text">
-                {{ samples.length }} samples over {{ formatDuration(duration) }}
-            </span>
-        </div>
+            <div class="section-heading">
+                <h2 class="text-h5 q-ma-none text-grey-9">Usage Over Time</h2>
+                <span class="help-text">
+                    {{ samples.length }} samples over
+                    {{ formatDuration(duration) }}
+                </span>
+            </div>
 
-        <div v-if="hasSamples" class="row q-col-gutter-md">
-            <div
-                v-for="chart in charts"
-                :key="chart.title"
-                class="col-12 col-md-6"
-            >
-                <div class="chart-panel">
-                    <div class="chart-panel__header">
-                        <span
-                            class="chart-panel__swatch"
-                            :style="{ backgroundColor: chart.color }"
+            <div class="row q-col-gutter-md">
+                <div
+                    v-for="chart in charts"
+                    :key="chart.title"
+                    class="col-12 col-md-6"
+                >
+                    <div class="chart-panel">
+                        <div class="chart-panel__header">
+                            <span
+                                class="chart-panel__swatch"
+                                :style="{ backgroundColor: chart.color }"
+                            />
+                            <span class="chart-panel__title">{{
+                                chart.title
+                            }}</span>
+                            <span class="chart-panel__meta">{{
+                                chart.meta
+                            }}</span>
+                        </div>
+                        <v-chart
+                            class="chart"
+                            :option="chart.option"
+                            :aria-label="chart.title"
+                            autoresize
                         />
-                        <span class="chart-panel__title">{{
-                            chart.title
-                        }}</span>
-                        <span class="chart-panel__meta">{{ chart.meta }}</span>
                     </div>
-                    <v-chart
-                        class="chart"
-                        :option="chart.option"
-                        :aria-label="chart.title"
-                        autoresize
-                    />
                 </div>
             </div>
-        </div>
+        </template>
 
         <div v-else class="chart-panel chart-panel--empty">
             <q-icon
@@ -116,7 +134,7 @@
             <div class="text-body2">No samples were recorded</div>
             <div class="help-text q-mt-xs" style="max-width: 420px">
                 The action finished before the first sample was taken, so there
-                is no usage curve to show.
+                are no figures to show for this run.
             </div>
         </div>
     </div>
