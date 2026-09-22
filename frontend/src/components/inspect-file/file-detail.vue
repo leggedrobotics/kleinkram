@@ -54,6 +54,28 @@
             </div>
         </div>
 
+        <!-- Markdown Preview -->
+        <div v-else-if="isMarkdown" class="q-mb-lg">
+            <h2 class="text-h5 text-md-h4 q-mb-md">Content Preview</h2>
+            <div v-if="textContent">
+                <MarkdownViewer :content="textContent" />
+            </div>
+            <div v-else class="row items-center q-gutter-sm text-grey-7">
+                <q-spinner-dots size="1.5em" /> <span>Loading content...</span>
+            </div>
+        </div>
+
+        <!-- CSV Preview -->
+        <div v-else-if="isCsv" class="q-mb-lg">
+            <h2 class="text-h5 text-md-h4 q-mb-md">Table Preview</h2>
+            <div v-if="textContent">
+                <CsvViewer :content="textContent" />
+            </div>
+            <div v-else class="row items-center q-gutter-sm text-grey-7">
+                <q-spinner-dots size="1.5em" /> <span>Loading content...</span>
+            </div>
+        </div>
+
         <!-- SVO2 Preview -->
         <div v-else-if="isSvo2" class="q-mb-lg">
             <Svo2Viewer :url="svo2Url" @download="handleDownload" />
@@ -147,6 +169,8 @@ import FileErrorState from './file-error-state.vue';
 import FileHeader from './file-header.vue';
 import FileHistory from './file-history.vue';
 import FileTopicTable from './file-topic-table.vue';
+import CsvViewer from './viewers/csv-viewer.vue';
+import MarkdownViewer from './viewers/markdown-viewer.vue';
 import Svo2Viewer from './viewers/svo2-viewer.vue';
 import TumViewer from './viewers/tum-viewer.vue';
 
@@ -158,6 +182,7 @@ const { data: events } = useFileEvents(fileUuid);
 const preview = useRosmsgPreview();
 const yamlContent = ref<string | undefined>(undefined);
 const tumContent = ref<string | undefined>(undefined);
+const textContent = ref<string | undefined>(undefined);
 const svo2Url = ref<string | undefined>(undefined);
 
 const fileExtension = computed(
@@ -173,6 +198,16 @@ const isTum = computed(
     () =>
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         file.value?.type === FileType.TUM && file.value?.state === FileState.OK,
+);
+const isMarkdown = computed(
+    () =>
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        file.value?.type === FileType.MD && file.value?.state === FileState.OK,
+);
+const isCsv = computed(
+    () =>
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        file.value?.type === FileType.CSV && file.value?.state === FileState.OK,
 );
 const isSvo2 = computed(
     () =>
@@ -210,6 +245,11 @@ watch(
             } else if (isTum.value) {
                 const results = await fetch(url);
                 tumContent.value = results.ok
+                    ? await results.text()
+                    : 'Error loading content';
+            } else if (isMarkdown.value || isCsv.value) {
+                const results = await fetch(url);
+                textContent.value = results.ok
                     ? await results.text()
                     : 'Error loading content';
             } else if (isSvo2.value) {

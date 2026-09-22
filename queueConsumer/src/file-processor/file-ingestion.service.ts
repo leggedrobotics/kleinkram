@@ -203,6 +203,8 @@ export class FileIngestionService {
         const isTum = data.filename.endsWith('.tum');
         const isYaml =
             data.filename.endsWith('.yaml') || data.filename.endsWith('.yml');
+        const isMarkdown = data.filename.endsWith('.md');
+        const isCsv = data.filename.endsWith('.csv');
 
         let type = FileType.MCAP;
         if (isBag) type = FileType.BAG;
@@ -211,6 +213,8 @@ export class FileIngestionService {
         if (isSvo2) type = FileType.SVO2;
         if (isTum) type = FileType.TUM;
         if (isYaml) type = FileType.YAML;
+        if (isMarkdown) type = FileType.MD;
+        if (isCsv) type = FileType.CSV;
 
         const entity = this.fileRepo.create({
             date: new Date(),
