@@ -89,7 +89,7 @@
                                     itemProps.row.creatorUuid !==
                                     currentUser?.uuid
                                 "
-                                @click="() => editTrigger(itemProps.row)"
+                                @click="() => void editTrigger(itemProps.row)"
                             >
                                 <q-tooltip
                                     v-if="
@@ -178,7 +178,7 @@
                                 :disable="
                                     props.row.creatorUuid !== currentUser?.uuid
                                 "
-                                @click="() => editTrigger(props.row)"
+                                @click="() => void editTrigger(props.row)"
                             >
                                 <q-tooltip
                                     v-if="
@@ -344,8 +344,16 @@ const openCreateDrawer = () => {
     isDrawerOpen.value = true;
 };
 
-const editTrigger = (trigger: ActionTriggerDto) => {
-    selectedTrigger.value = trigger;
+const editTrigger = async (trigger: ActionTriggerDto) => {
+    // The drawer snapshots `triggerToEdit` the moment it opens, so the fresh
+    // copy has to be in place beforehand. The row we were handed comes from a
+    // listing that may have gone stale since it loaded. If the refetch fails we
+    // still open the drawer on the row rather than stranding the user.
+    try {
+        selectedTrigger.value = await ActionService.getTrigger(trigger.uuid);
+    } catch {
+        selectedTrigger.value = trigger;
+    }
     isDrawerOpen.value = true;
 };
 
