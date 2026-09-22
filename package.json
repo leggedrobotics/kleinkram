@@ -29,8 +29,8 @@
     "devDependencies": {
         "@eslint/compat": "^2.1.1",
         "@eslint/js": "^10.0.1",
-        "@typescript-eslint/eslint-plugin": "^8.69.0",
-        "@typescript-eslint/parser": "^8.69.0",
+        "@typescript-eslint/eslint-plugin": "^8.70.0",
+        "@typescript-eslint/parser": "^8.70.0",
         "@vue/eslint-config-typescript": "^14.9.0",
         "eslint": "^10.10.0",
         "eslint-config-prettier": "^10.1.8",
@@ -44,14 +44,14 @@
         "prettier": "^3.9.6",
         "prettier-plugin-organize-imports": "^4.3.0",
         "typescript": "5.9.3",
-        "typescript-eslint": "^8.69.0",
+        "typescript-eslint": "^8.70.0",
         "vue-eslint-parser": "^10.4.1",
         "vue-tsc": "^3.3.11"
     },
     "dependencies": {
-        "@mcap/core": "^2.2.1",
+        "@mcap/core": "^2.2.2",
         "class-transformer": "^0.5.1",
-        "cron-parser": "^5.10.0",
+        "cron-parser": "^5.10.1",
         "fs-extra": "^11.4.0",
         "minimatch": "^10.2.6",
         "vite-plugin-top-level-await": "^1.6.0",
