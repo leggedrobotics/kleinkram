@@ -27,6 +27,7 @@ import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import DownloadResult
+from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.file_transfer import OnFileProgressCb
 from kleinkram.api.file_transfer import OnFileStartCb
 from kleinkram.api.file_transfer import OnMessageCb
@@ -153,12 +154,42 @@ def download(
     nested: bool = False,
     overwrite: bool = False,
     allow_corrupt_files: bool = False,
+    topics: Optional[Sequence[str]] = None,
+    start_time: Optional[int] = None,
+    end_time: Optional[int] = None,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
     on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
 ) -> DownloadResult:
+    """Download files, optionally fetching only part of each `.mcap`.
+
+    Passing any of `topics`, `start_time` or `end_time` turns this into a
+    partial download: each `.mcap` is read through its own index over HTTP range
+    requests, and only the selected messages are transferred. Files that are
+    not `.mcap` cannot be sliced and are skipped, and an existing local file is
+    only replaced by a slice when `overwrite` is set.
+
+    `start_time` and `end_time` are nanoseconds since the epoch, matching MCAP
+    log times; `start_time` is inclusive and `end_time` exclusive.
+
+    In uncompressed chunks each message is fetched on its own, so both filters
+    cut the transfer. Compressed chunks can only be fetched whole: there a time
+    window still saves bandwidth, because chunks are ordered by log time, but
+    `topics` alone usually does not, since a chunk normally holds several
+    topics.
+    """
+    if isinstance(topics, str):
+        # A bare string is a sequence too; without this, "/tf" would become
+        # the topics "/", "t" and "f".
+        topics = [topics]
+    mcap_slice = McapSlice(
+        topics=tuple(topics) if topics else None,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
     query = _args_to_file_query(
         file_names=file_names,
         file_ids=file_ids,
@@ -175,6 +206,7 @@ def download(
         nested=nested,
         overwrite=overwrite,
         allow_corrupt_files=allow_corrupt_files,
+        mcap_slice=mcap_slice if mcap_slice else None,
         on_overall_progress_cb=on_overall_progress_cb,
         on_file_start_cb=on_file_start_cb,
         on_file_progress_cb=on_file_progress_cb,

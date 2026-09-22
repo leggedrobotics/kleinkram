@@ -100,6 +100,10 @@ export default withMermaid({
                             link: '/usage/files/files',
                         },
                         {
+                            text: 'Partial Download',
+                            link: '/usage/files/partial-download',
+                        },
+                        {
                             text: 'Access Control',
                             link: '/usage/access-control/base-concepts',
                             items: [

@@ -107,7 +107,7 @@
                 <klein-download-files
                     v-if="$q.screen.gt.xs"
                     :files="selectedFiles"
-                    style="max-width: 300px"
+                    class="files-selection__cli"
                 />
                 <OpenMultCategoryAdd
                     :mission="missionData"
@@ -584,6 +584,18 @@ const openUploadDialogWithFiles = (files: File[]) => {
     display: flex;
     flex: 0 0 auto;
     gap: 8px;
+}
+
+.files-selection__cli {
+    max-width: 300px;
+}
+
+/* Below 1024px the actions wrap: the CLI command gets a row of its own */
+@media (max-width: 1023px) {
+    .files-selection__cli {
+        flex: 1 0 100%;
+        max-width: 100%;
+    }
 }
 
 /* Mobile: search input on its own row, the buttons on a second one */

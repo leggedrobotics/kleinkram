@@ -310,13 +310,22 @@ const imageStrideForLevel = (row: TopicRow, level: number): number => {
         bytesPerFrame > 0
             ? Math.floor(IMAGE_BYTE_BUDGET / bytesPerFrame)
             : MAX_IMAGE_FRAMES;
+
+    // Once the frame size is known, what the data actually costs decides the
+    // stride rather than a fixed starting count: a compressed stream of a few
+    // hundred frames fits the budget many times over and is shown whole, while
+    // a raw stream of multi-megabyte frames is still sampled.
+    //
+    // Before the first frame arrives the size is unknown, and guessing
+    // generously there could mean asking for gigabytes, so that pass stays
+    // deliberately small and the next one widens on real numbers.
+    const sizeKnown = bytesPerFrame > 0;
+    const affordable = Math.min(MAX_IMAGE_FRAMES, framesWithinBudget);
     const targetFrames = Math.max(
         1,
-        Math.min(
-            MAX_IMAGE_FRAMES,
-            framesWithinBudget,
-            INITIAL_IMAGE_FRAMES * 2 ** level,
-        ),
+        sizeKnown
+            ? affordable
+            : Math.min(affordable, INITIAL_IMAGE_FRAMES * 2 ** level),
     );
     return Math.max(1, Math.ceil(row.nrMessages / targetFrames));
 };
@@ -498,6 +507,14 @@ const loadMore = (topicName: string): void => {
 /* Long topic names wrap instead of widening the table */
 .topic-name {
     overflow-wrap: anywhere;
+}
+
+/* QTable keeps every cell on one line (its `wrap-cells` prop is off). The
+   expanded viewer is a cell too, so without this its long values — the
+   NavSatFix service list, for instance — run past the card instead of
+   wrapping. Viewers that need unwrapped text set it on their own elements. */
+.topic-expanded {
+    white-space: normal;
 }
 
 @media (max-width: 599px) {

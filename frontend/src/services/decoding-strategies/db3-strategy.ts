@@ -8,6 +8,7 @@ import initSqlJs, { Database } from 'sql.js';
 import { DecodingStrategy } from './index';
 import {
     LogMessage,
+    MainThreadBudget,
     ReadOptions,
     STANDARD_ROS2_DEFINITIONS,
 } from './utilities';
@@ -129,6 +130,7 @@ export class Db3Strategy extends DecodingStrategy {
 
         const stmt = this.db.prepare(query);
         const msgs: LogMessage[] = [];
+        const budget = new MainThreadBudget();
         let seen = 0;
 
         while (stmt.step()) {
@@ -165,6 +167,7 @@ export class Db3Strategy extends DecodingStrategy {
             const messageObject = { logTime: timestamp, data: decoded };
             if (onMessage) onMessage(messageObject);
             msgs.push(messageObject);
+            await budget.yieldIfNeeded();
         }
         stmt.free();
         return msgs;

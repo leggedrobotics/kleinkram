@@ -38,6 +38,21 @@ klein list missions --project testProject
 klein list files --project testProject --mission testMission
 ```
 
+### Downloading Part of a Recording
+
+`.mcap` files carry an index, so the CLI can fetch only the messages you ask for
+instead of the whole file:
+
+```bash
+klein download --dest ./slice --topics /rosout \
+  --start-time 2026-09-18T08:08:28Z --end-time 2026-09-18T08:08:38Z <file>
+```
+
+For recordings with uncompressed chunks both `--topics` and the time window cut
+the transfer; with compressed chunks only the time window does. See
+[Partial Download](../files/partial-download.md) for the numbers and the
+caveats.
+
 ### Uploading Resources
 
 Use the `upload` command to send local files to a mission.
