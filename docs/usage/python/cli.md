@@ -13,10 +13,10 @@ echo "123" > test.yml
 klein upload --project testProject --mission testMission --create test.yml
 
 # 2. List Existing Kleinkram Action Templates
-klein action list
+klein templates list
 
 # (Assuming an action template named "extract-metadata" exists)
-klein action run extract-metadata --project testProject --mission testMission
+klein executions launch extract-metadata testMission --project testProject
 ```
 
 ## Core Workflows
