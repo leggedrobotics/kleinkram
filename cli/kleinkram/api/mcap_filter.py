@@ -133,7 +133,7 @@ def filter_mcap_from_url(
                 # Nothing to fetch, but still produce a valid, empty file.
                 extents = []
             else:
-                extents = _plan(stream, summary.chunk_indexes, wanted_channel_ids, start_time, end_time, result)
+                extents = _plan(stream, summary.chunk_indexes, wanted_channel_ids, start_time, end_time, result, concurrency)
 
         if extents is None:
             # Compressed or unindexed: let the library read whole chunks. Only
@@ -182,10 +182,10 @@ def _plan(
     start_time: Optional[int],
     end_time: Optional[int],
     result: McapFilterResult,
+    concurrency: int = DEFAULT_CONCURRENCY,
 ) -> Optional[List[MessageExtent]]:
     """Collect the extents of every wanted message, or None if a chunk is compressed."""
-    extents: List[MessageExtent] = []
-
+    selected = []
     for chunk_index in chunk_indexes:
         result.chunks_considered += 1
 
@@ -206,6 +206,20 @@ def _plan(
             logger.info("chunk is %s compressed, falling back to whole-chunk reads", chunk_index.compression)
             return None
 
+        selected.append(chunk_index)
+
+    # One index read per chunk, hundreds of them: like the message reads they
+    # are latency-bound, so they go through the same bounded parallel fetch.
+    by_index_start = {min(c.message_index_offsets.values()): c for c in selected}
+    index_ranges = [ByteRange(start, start + c.message_index_length) for start, c in by_index_start.items()]
+
+    extents: List[MessageExtent] = []
+    for byte_range, blob in _fetch_ranges(stream, index_ranges, concurrency):
+        chunk_index = by_index_start[byte_range.start]
+        indexes = parse_message_indexes(blob)
+        if not indexes:
+            return None
+
         # The chunk header is derived rather than read: with hundreds of chunks,
         # a read per chunk would cost more than the messages themselves.
         layout = ChunkLayout(
@@ -213,13 +227,6 @@ def _plan(
             uncompressed_size=chunk_index.uncompressed_size,
             compression=chunk_index.compression,
         )
-
-        index_start = min(chunk_index.message_index_offsets.values())
-        blob = stream.read_exact(index_start, chunk_index.message_index_length)
-        indexes = parse_message_indexes(blob)
-        if not indexes:
-            return None
-
         try:
             chunk_extents = plan_chunk(layout, indexes, wanted_channel_ids, start_time, end_time)
         except UnsupportedChunkEncoding:

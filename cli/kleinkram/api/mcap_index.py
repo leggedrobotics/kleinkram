@@ -23,9 +23,10 @@ RECORD_HEADER_LEN = 9  # opcode (1) + record length (8)
 # Message record: channel_id (2) + sequence (4) + log_time (8) + publish_time (8)
 MESSAGE_FIELDS_LEN = 22
 
-# Two runs closer than this are fetched as one request. Issuing a separate
-# request per message is far more expensive than pulling the bytes between them.
-DEFAULT_COALESCE_GAP = 64 * 1024
+# Two runs closer than this are fetched as one request, trading bytes for round
+# trips. Measured on a 2.15 GB production recording (/rosout, 8 in flight):
+# 4 KB -> 16.4 MB in 76 s, 16 KB -> 19.3 MB in 59 s, 64 KB -> 38.9 MB in 58 s.
+DEFAULT_COALESCE_GAP = 16 * 1024
 
 
 class UnsupportedChunkEncoding(RuntimeError):
