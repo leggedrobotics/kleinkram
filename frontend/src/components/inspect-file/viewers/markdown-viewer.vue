@@ -39,13 +39,16 @@
             the rest.
         </q-banner>
 
-        <!-- Markdown is rendered with raw HTML disabled and sanitized by DOMPurify. -->
-        <!-- eslint-disable-next-line vue/no-v-html -->
+        <!-- Markdown is rendered with raw HTML disabled and sanitized by
+             DOMPurify. The rule reports on the attribute, several lines below
+             the tag, so the directive has to bracket the element. -->
+        <!-- eslint-disable vue/no-v-html -->
         <div
             v-if="mode === 'rendered'"
             class="markdown-body"
             v-html="renderedHtml"
         ></div>
+        <!-- eslint-enable vue/no-v-html -->
         <div v-else class="code-block bg-grey-1 q-pa-md rounded-borders">
             <pre class="q-ma-none text-code">{{ content }}</pre>
         </div>
