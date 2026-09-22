@@ -51,11 +51,11 @@
 </template>
 
 <script setup lang="ts">
-import { ActionService } from 'src/api/services/action.service';
 import { useQuery } from '@tanstack/vue-query';
 import { useQuasar } from 'quasar';
-import { computed } from 'vue';
+import { ActionService } from 'src/api/services/action.service';
 import { highlightPython } from 'src/services/highlight-python';
+import { computed } from 'vue';
 
 const properties = defineProps<{ actionUuid: string }>();
 
@@ -68,7 +68,7 @@ const {
 } = useQuery({
     queryKey: ['action', 'script', properties.actionUuid],
     queryFn: () => ActionService.getScript(properties.actionUuid),
-    staleTime: Number.POSITIVE_INFINITY, // a stored script never changes
+    staleTime: Infinity, // a stored script never changes
 });
 
 const lineCount = computed(() => script.value?.content.split('\n').length ?? 0);

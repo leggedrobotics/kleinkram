@@ -4,8 +4,8 @@ import { actionEntityToDto } from '@/serialization/action';
 import {
     ActionDto,
     ActionLogsDto,
-    ActionScriptDto,
     ActionQuery,
+    ActionScriptDto,
     ActionsDto,
     ActionSubmitResponseDto,
     PaginatedQueryDto,
@@ -210,10 +210,12 @@ export class ActionService {
             // an object tag; S3 keeps those in separate namespaces.
             const info = await this.scriptStorage
                 .getFileInfo(action.scriptObject)
-                .catch(() => undefined);
+                .catch(() => {
+                    return;
+                });
 
             return {
-                filename: info?.metaData['filename'] ?? 'script.py',
+                filename: info?.metaData.filename ?? 'script.py',
                 content,
             };
         } finally {

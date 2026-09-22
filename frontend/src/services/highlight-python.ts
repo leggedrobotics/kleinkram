@@ -128,20 +128,20 @@ export function highlightPython(source: string): string {
 
     for (const match of source.matchAll(TOKEN)) {
         const groups = match.groups ?? {};
-        const index = match.index ?? 0;
+        const index = match.index;
 
         out += escapeHtml(source.slice(last, index));
         last = index + match[0].length;
 
-        if (groups['comment'] !== undefined) {
+        if (groups.comment !== undefined) {
             out += wrap('tok-comment', match[0]);
             continue;
         }
-        if (groups['string'] !== undefined) {
+        if (groups.string !== undefined) {
             out += wrap('tok-string', match[0]);
             continue;
         }
-        if (groups['decorator'] !== undefined) {
+        if (groups.decorator !== undefined) {
             // The match includes the leading indentation; keep it unstyled.
             const text = match[0];
             const at = text.indexOf('@');
@@ -150,7 +150,7 @@ export function highlightPython(source: string): string {
                 wrap('tok-decorator', text.slice(at));
             continue;
         }
-        if (groups['number'] !== undefined) {
+        if (groups.number !== undefined) {
             out += wrap('tok-number', match[0]);
             continue;
         }
