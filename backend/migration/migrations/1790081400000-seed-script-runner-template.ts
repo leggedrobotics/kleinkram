@@ -15,7 +15,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface {
     name = 'SeedScriptRunnerTemplate1790081400000';
 
-    /** Matches SCRIPT_RUNNER_TEMPLATE_UUID in @kleinkram/shared. */
+    /** Matches SCRIPT_RUNNER_TEMPLATE_UUID in @kleinkram/shared; frozen here. */
     private static readonly TEMPLATE_UUID =
         '00000000-0000-4000-8000-00000000c0de';
     private static readonly TEMPLATE_NAME = 'script-runner';

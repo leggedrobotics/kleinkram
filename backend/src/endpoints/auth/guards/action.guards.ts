@@ -269,8 +269,12 @@ export class CreateScriptActionGuard extends BaseGuard {
         }
 
         const actionTemplate = await this.actionTemplateRepository.findOne({
+            // Only the platform-owned template qualifies. Matching the name alone
+            // would hand every submitted script to whatever image a same-named,
+            // user-made template happens to point at.
             where: {
                 name: SCRIPT_RUNNER_TEMPLATE_NAME,
+                isSystem: true,
                 isArchived: false,
             },
             order: { version: 'DESC' },

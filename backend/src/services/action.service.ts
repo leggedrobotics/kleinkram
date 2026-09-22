@@ -44,7 +44,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import { randomUUID } from 'node:crypto';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
@@ -131,8 +131,12 @@ export class ActionService {
         }
 
         const template = await this.actionTemplateRepository.findOne({
+            // Only the platform-owned template qualifies. Matching the name alone
+            // would hand every submitted script to whatever image a same-named,
+            // user-made template happens to point at.
             where: {
                 name: SCRIPT_RUNNER_TEMPLATE_NAME,
+                isSystem: true,
                 isArchived: false,
             },
             order: { version: 'DESC' },
@@ -163,17 +167,27 @@ export class ActionService {
 
         const scriptObject = await this.storeScript(data, mission, creator);
 
-        const actionUUID = await this.actionDispatcher.dispatch(
-            template.uuid,
-            mission,
-            creator,
-            {},
-            ActionTriggerSource.MANUAL,
-            undefined,
-            { scriptObject, maxRuntimeHours: data.maxRuntimeHours },
-        );
-
-        return { actionUUID };
+        try {
+            const actionUUID = await this.actionDispatcher.dispatch(
+                template.uuid,
+                mission,
+                creator,
+                {},
+                ActionTriggerSource.MANUAL,
+                undefined,
+                { scriptObject, maxRuntimeHours: data.maxRuntimeHours },
+            );
+            return { actionUUID };
+        } catch (error) {
+            // No action references the object yet, and nothing ever will:
+            // remove it so a failed submit does not leave an orphan behind.
+            await this.scriptStorage.deleteFile(scriptObject).catch(() => {
+                logger.warn(
+                    `Could not remove script ${scriptObject} after a failed submit`,
+                );
+            });
+            throw error;
+        }
     }
 
     /**
@@ -194,33 +208,28 @@ export class ActionService {
             );
         }
 
-        const temporaryPath = path.join(
-            tmpdir(),
-            `kleinkram-script-read-${randomUUID()}`,
+        // Streamed straight into memory: scripts are capped at 1 MiB, so there
+        // is nothing to gain from a round trip through a temporary file.
+        const stream = await this.scriptStorage.getFileStream(
+            action.scriptObject,
         );
-
-        try {
-            await this.scriptStorage.downloadFile(
-                action.scriptObject,
-                temporaryPath,
-            );
-            const content = await readFile(temporaryPath, 'utf8');
-
-            // `storeScript` records the submitted name as user metadata, not as
-            // an object tag; S3 keeps those in separate namespaces.
-            const info = await this.scriptStorage
-                .getFileInfo(action.scriptObject)
-                .catch(() => {
-                    return;
-                });
-
-            return {
-                filename: info?.metaData.filename ?? 'script.py',
-                content,
-            };
-        } finally {
-            await rm(temporaryPath, { force: true });
+        const chunks: Buffer[] = [];
+        for await (const chunk of stream) {
+            chunks.push(Buffer.from(chunk as Uint8Array));
         }
+
+        // `storeScript` records the submitted name as user metadata, not as an
+        // object tag; S3 keeps those in separate namespaces.
+        const info = await this.scriptStorage
+            .getFileInfo(action.scriptObject)
+            .catch(() => {
+                return;
+            });
+
+        return {
+            filename: info?.metaData.filename ?? 'script.py',
+            content: Buffer.concat(chunks).toString('utf8'),
+        };
     }
 
     /**

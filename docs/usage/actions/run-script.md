@@ -4,8 +4,8 @@ Most of the time you do not want to build an action, you want to answer a questi
 tree complete, how far did the robot drive, what do the IMU rates look like. Writing a Dockerfile, pushing an image and
 registering a template for that is a lot of ceremony for twenty lines of Python.
 
-`klein action run-script` skips all of it. You hand Kleinkram a `.py` file; it stores the file, runs it on a shared,
-pinned runner image, streams the logs back, and exits non-zero if the run did not finish cleanly.
+`klein action run-script` skips all of it. You hand Kleinkram a `.py` file; it stores the file, runs it on a shared
+runner image, streams the logs back, and exits non-zero if the run did not finish cleanly.
 
 ```bash
 klein action run-script ./analyse.py -p my-project -m my-mission
@@ -73,8 +73,8 @@ If your script imports anything else, it fails at import time. That is the signa
 | :--------------- | :---------------------------------------------------------------------------------- |
 | Script size      | 1 MiB                                                                               |
 | Language         | Python 3.11, one file, no local imports                                             |
-| CPU, memory, GPU | Whatever the `script-runner` template is configured with; GPUs are not available    |
-| Runtime          | The `script-runner` template's budget; `--timeout <minutes>` can only lower it      |
+| CPU, memory, GPU | 2 cores and 4 GB by default, set by the `script-runner` template; no GPU            |
+| Runtime          | 15 minutes by default; `--timeout <minutes>` can only lower it                      |
 | Permissions      | The same rights on the project that launching the `script-runner` template requires |
 
 ```bash
@@ -100,6 +100,8 @@ Reach for a [custom Docker action](write-actions.md) when:
 ::: tip The Runner Image
 The runner is an ordinary Kleinkram action image, built from
 [`examples/kleinkram-actions/script-runner`](https://github.com/leggedrobotics/kleinkram/tree/main/examples/kleinkram-actions/script-runner).
-Your Kleinkram instance needs a `script-runner` action template installed for `run-script` to work; if it does not have
-one, the command tells you to ask an administrator.
+Every instance gets the `script-runner` template from a database migration. It is managed by Kleinkram: it shows up in
+the template list, but it cannot be edited or deleted, because every `run-script` execution on the instance depends on
+it. By default it grants 2 CPU cores, 4 GB of memory and 15 minutes of runtime, and requires write access to the
+project.
 :::

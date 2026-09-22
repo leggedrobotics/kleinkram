@@ -96,7 +96,11 @@ export class ContainerLifecycleService {
         // on the `bridge` network (see `NetworkMode`) and reach storage the
         // same way the artifact uploader does, through `S3_ENDPOINT`. An
         // internally signed URL would name a host they cannot resolve.
-        if (action.scriptObject !== undefined) {
+        //
+        // A truthiness check, not `!== undefined`: TypeORM loads an unset
+        // nullable column as `null`, and presigning a null key throws, which
+        // would fail every ordinary action before its container starts.
+        if (action.scriptObject) {
             environmentVariables.KLEINKRAM_SCRIPT_URL =
                 await this.scriptStorage.getPresignedDownloadUrl(
                     action.scriptObject,

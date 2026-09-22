@@ -41,6 +41,6 @@ README; versions are whatever the image tag was built with, so pin the image tag
 ## Limits
 
 - Scripts are capped at 1 MiB.
-- Resources (CPU, memory, GPU) and the maximum runtime come from the `script-runner` template, which an administrator
-  owns. `--timeout` can lower the runtime budget for a single run, never raise it.
+- Resources (CPU, memory, GPU) and the maximum runtime come from the `script-runner` template, which Kleinkram
+  seeds by migration and does not let anyone edit. `--timeout` can lower the runtime budget for a single run, never raise it.
 - There is no GPU variant: `script-runner` is a CPU image.

@@ -1,5 +1,9 @@
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { SCRIPT_RUNNER_TEMPLATE_NAME } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    SCRIPT_RUNNER_TEMPLATE_NAME,
+    SCRIPT_RUNNER_TEMPLATE_UUID,
+} from '@kleinkram/shared';
 import { DataSource } from 'typeorm';
 
 export const seedActionTemplates = async (
@@ -34,7 +38,17 @@ export const seedActionTemplates = async (
         {
             name: SCRIPT_RUNNER_TEMPLATE_NAME,
             description:
-                'Runs a single Python file submitted with `klein action run-script`',
+                'Runs a single Python file submitted with `klein action run-script`. Managed by Kleinkram.',
+            // Same row SeedScriptRunnerTemplate1790081400000 writes, so a
+            // database built by synchronize + seed matches a migrated one.
+            overrides: {
+                uuid: SCRIPT_RUNNER_TEMPLATE_UUID,
+                isSystem: true,
+                cpuCores: 2,
+                cpuMemory: 4,
+                maxRuntime: 0.25,
+                accessRights: AccessGroupRights.WRITE,
+            },
         },
     ];
 
@@ -62,6 +76,9 @@ export const seedActionTemplates = async (
                 gpuMemory: -1,
                 maxRuntime: 1,
                 accessRights: 0,
+                ...('overrides' in templateDefinition
+                    ? templateDefinition.overrides
+                    : {}),
             });
             await ActionTemplateRepo.save(template);
         }

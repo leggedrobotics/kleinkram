@@ -103,7 +103,7 @@ Docker action instead.
 
 ### Reporting from Inside an Action
 
-The `klein action` commands only work from within a running Kleinkram action container, where Kleinkram provides the
+`klein action warn`, `fail` and `info` only work from within a running Kleinkram action container, where Kleinkram provides the
 credentials and the action id. Use them to tell the reader of the action what it found, rather than encoding it in the
 exit code.
 

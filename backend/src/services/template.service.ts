@@ -168,13 +168,6 @@ export class TemplateService {
     }
 
     /**
-     * Delete or archive a template based on its usage.
-     *
-     * This will target all versions of the template with the same name.
-     *
-     * @param uuid
-     */
-    /**
      * Refuse to change or remove a template the platform owns.
      *
      * `script-runner` is shared by every `run-script` execution across the
@@ -194,6 +187,13 @@ export class TemplateService {
         }
     }
 
+    /**
+     * Delete or archive a template based on its usage.
+     *
+     * This will target all versions of the template with the same name.
+     *
+     * @param uuid
+     */
     async delete(uuid: string): Promise<DeleteTemplateResponseDto> {
         const template = await this.actionTemplateRepository.findOne({
             where: { uuid },
