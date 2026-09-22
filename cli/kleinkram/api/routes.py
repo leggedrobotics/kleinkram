@@ -86,6 +86,7 @@ __all__ = [
     "get_project",
     "get_mission",
     "get_file",
+    "get_file_by_id",
 ]
 
 
@@ -100,6 +101,9 @@ CREATE_PROJECT = "/projects"
 FILE_ENDPOINT = "/files"
 MISSION_ENDPOINT = "/missions"
 PROJECT_ENDPOINT = "/projects"
+
+# the single file route, the only one returning the topics of a file
+FILE_BY_ID_ENDPOINT = "/files/{}"
 
 TAG_TYPE_BY_NAME = "/metadata-types/filtered"
 
@@ -328,6 +332,17 @@ def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
         raise MissionNotFound(f"Mission not found: {query}")
 
 
+def get_file_by_id(client: AuthenticatedClient, file_id: UUID) -> File:
+    """\
+    get a single file by its id, including its topics
+    """
+    resp = client.get(FILE_BY_ID_ENDPOINT.format(file_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.FileNotFound(f"File not found: {file_id}")
+    resp.raise_for_status()
+    return _parse_file(FileObject(resp.json()))
+
+
 def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
     """\
     get a unique file by specifying a file query
@@ -335,9 +350,14 @@ def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
     if not file_query_is_unique(query):
         raise InvalidFileQuery(f"File query does not uniquely determine file: {query}")
     try:
-        return next(get_files(client, query))
+        file = next(get_files(client, query))
     except StopIteration:
         raise kleinkram.errors.FileNotFound(f"File not found: {query}")
+
+    # listing files does not return topics; the query is resolved against the
+    # list route (it is the only one accepting patterns and it reports missing
+    # files as "not found" rather than "forbidden"), then completed here
+    return get_file_by_id(client, file.id)
 
 
 def _create_trigger(
