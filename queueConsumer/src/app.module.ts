@@ -19,6 +19,7 @@ import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity'
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectStarEntity } from '@kleinkram/backend-common/entities/project/project-star.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
@@ -83,6 +84,10 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                     MissionEntity,
                     FileEntity,
                     ProjectEntity,
+                    // Not used here, but `ProjectEntity.stars` points at it:
+                    // TypeORM refuses to build the metadata of a relation
+                    // whose target is missing from the connection.
+                    ProjectStarEntity,
                     TopicEntity,
                     ActionEntity,
                     ActionRunnerEntity,
