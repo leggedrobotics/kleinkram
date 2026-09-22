@@ -211,7 +211,14 @@
                                 v-if="showSource && origin(item.data)"
                                 class="log-line__source"
                                 :title="originPath(item.data)"
-                                >{{ origin(item.data) }}</span
+                                ><span
+                                    v-for="(part, at) in highlight(
+                                        origin(item.data),
+                                    )"
+                                    :key="at"
+                                    :class="{ 'log-line__match': part.match }"
+                                    >{{ part.text }}</span
+                                ></span
                             >
                         </span>
                     </div>
@@ -470,6 +477,28 @@ const highlight = (text: string): Segment[] => {
     return segments;
 };
 
+// --- Source annotation ---
+// Off by default: the source location matters while debugging one node, not
+// while reading the stream, and it costs a chunk of every line.
+const LOG_SOURCE_STORAGE_KEY = 'kleinkram.rosLogs.showSource';
+const showSource = ref(
+    (() => {
+        try {
+            return localStorage.getItem(LOG_SOURCE_STORAGE_KEY) === 'true';
+        } catch {
+            return false;
+        }
+    })(),
+);
+
+watch(showSource, (show) => {
+    try {
+        localStorage.setItem(LOG_SOURCE_STORAGE_KEY, String(show));
+    } catch {
+        // Preference cannot be persisted; keep it for this view only
+    }
+});
+
 const filteredMessages = computed(() => {
     if (!isFiltered.value) return properties.messages;
     const needle = search.value.toLowerCase();
@@ -479,12 +508,15 @@ const filteredMessages = computed(() => {
             return false;
         if (node.value !== 'all' && data.name !== node.value) return false;
         if (needle === '') return true;
-        return (
+        if (
             data.msg.toLowerCase().includes(needle) ||
-            data.name.toLowerCase().includes(needle) ||
-            (data.file ?? '').toLowerCase().includes(needle) ||
-            (data.function ?? '').toLowerCase().includes(needle)
-        );
+            data.name.toLowerCase().includes(needle)
+        )
+            return true;
+        // The source location is searchable only while it is on screen.
+        // Matching it while hidden would list rows with nothing in them to
+        // show why they are there.
+        return showSource.value && origin(data).toLowerCase().includes(needle);
     });
 });
 
@@ -503,28 +535,6 @@ const wrapLines = ref(readLogWrapPreference());
 watch(wrapLines, (wrap) => {
     try {
         localStorage.setItem(LOG_WRAP_STORAGE_KEY, String(wrap));
-    } catch {
-        // Preference cannot be persisted; keep it for this view only
-    }
-});
-
-// --- Source annotation ---
-// Off by default: the source location matters while debugging one node, not
-// while reading the stream, and it costs a chunk of every line.
-const LOG_SOURCE_STORAGE_KEY = 'kleinkram.rosLogs.showSource';
-const showSource = ref(
-    (() => {
-        try {
-            return localStorage.getItem(LOG_SOURCE_STORAGE_KEY) === 'true';
-        } catch {
-            return false;
-        }
-    })(),
-);
-
-watch(showSource, (show) => {
-    try {
-        localStorage.setItem(LOG_SOURCE_STORAGE_KEY, String(show));
     } catch {
         // Preference cannot be persisted; keep it for this view only
     }
