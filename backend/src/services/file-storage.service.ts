@@ -4,6 +4,10 @@ import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.e
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
+    OPAQUE_CONTENT_TYPE,
+    contentDisposition,
+} from '@kleinkram/backend-common/modules/storage/response-headers';
+import {
     IStorageBucket,
     StorageItem,
 } from '@kleinkram/backend-common/modules/storage/types';
@@ -74,16 +78,19 @@ export class FileStorageService {
             );
         }
 
-        const disposition = preview_only
-            ? undefined
-            : {
-                  'response-content-disposition': `attachment; filename="${file.filename}"`,
-              };
-
+        // A link that pins no content type leaves the storage to sniff one from
+        // the object's first bytes, so a file that happens to start with
+        // `<!DOCTYPE html>` comes back as text/html and renders — scripts and
+        // all — on the storage origin. Both headers are therefore set for
+        // previews too: the frontend reads a preview through `fetch()`, which
+        // neither of them affects, and nothing else should render these bytes.
         return await this.dataStorage.getPresignedDownloadUrl(
             file.uuid,
             expires ? 4 * 60 * 60 : 604_800,
-            disposition,
+            {
+                contentType: OPAQUE_CONTENT_TYPE,
+                contentDisposition: contentDisposition(file.filename),
+            },
         );
     }
 
