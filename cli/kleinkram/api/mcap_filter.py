@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from collections import deque
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -37,7 +38,7 @@ from kleinkram.api.range_reader import HttpRangeReader
 logger = logging.getLogger(__name__)
 
 MCAP_SUFFIX = ".mcap"
-# The slice is assembled under this suffix and renamed into place when complete.
+# The slice is assembled in `<name>.<random>.part` and renamed into place when complete.
 PARTIAL_SUFFIX = ".part"
 
 
@@ -116,7 +117,10 @@ def filter_mcap_from_url(
     result = McapFilterResult(remote_size=stream.size)
 
     dest.parent.mkdir(parents=True, exist_ok=True)
-    partial = dest.with_name(dest.name + PARTIAL_SUFFIX)
+    # Unique per call, so two downloads to the same destination cannot
+    # truncate or delete each other's work in progress. (Not mkstemp: its 0600
+    # mode would carry over to the finished file.)
+    partial = dest.with_name(f"{dest.name}.{secrets.token_hex(6)}{PARTIAL_SUFFIX}")
 
     try:
         reader = SeekingReader(stream)

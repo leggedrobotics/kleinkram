@@ -37,7 +37,7 @@ The result is a valid MCAP, with the source profile and the schemas of the kept
 topics preserved, so it opens in Foxglove or `ros2 bag` like any other
 recording. It is saved under the original file name, so an existing file of
 that name is left alone unless you pass `--overwrite`. The slice is written to
-`<name>.part` first and only renamed once complete, so a failed download never
+a temporary `.part` file first and only renamed once complete, so a failed download never
 leaves a truncated file behind.
 
 ## What actually saves bandwidth

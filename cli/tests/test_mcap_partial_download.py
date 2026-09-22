@@ -569,6 +569,28 @@ def test_failure_mid_download_leaves_no_file(mcap_file: Path, tmp_path: Path) ->
     assert list(out_dir.iterdir()) == []
 
 
+def test_concurrent_downloads_to_one_destination_do_not_collide(served, mcap_file: Path, tmp_path: Path) -> None:
+    url, _ = served
+    dest = tmp_path / "out" / "slice.mcap"
+    errors: List[BaseException] = []
+
+    def run() -> None:
+        try:
+            filter_mcap_from_url(url, dest, topics=["/tf"], coalesce_gap=512, block_size=8192)
+        except BaseException as e:  # reported through the assertion below
+            errors.append(e)
+
+    threads = [threading.Thread(target=run) for _ in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert errors == []
+    assert _messages(dest) == _library_filter(mcap_file, topics=["/tf"])
+    assert list(dest.parent.iterdir()) == [dest]
+
+
 def test_server_without_range_support_is_rejected_before_writing(mcap_file: Path, tmp_path: Path) -> None:
     dest = tmp_path / "out.mcap"
 
