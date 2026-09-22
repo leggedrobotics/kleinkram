@@ -12,6 +12,7 @@ import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.e
 import { validateDockerImageName } from '@kleinkram/validation';
 import {
     ConflictException,
+    ForbiddenException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
@@ -74,6 +75,8 @@ export class TemplateService {
         data: UpdateTemplateDto,
         auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
+        await this.assertNotSystemTemplate(data.name);
+
         const nextVersion = await this.calculateNextVersion(data.name);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
@@ -171,6 +174,26 @@ export class TemplateService {
      *
      * @param uuid
      */
+    /**
+     * Refuse to change or remove a template the platform owns.
+     *
+     * `script-runner` is shared by every `run-script` execution across the
+     * deployment, so one person editing or deleting it would break the feature
+     * for everyone. It is seeded by migration and changed the same way.
+     */
+    private async assertNotSystemTemplate(name: string): Promise<void> {
+        const system = await this.actionTemplateRepository.findOne({
+            where: { name, isSystem: true },
+            select: { uuid: true },
+        });
+
+        if (system) {
+            throw new ForbiddenException(
+                `"${name}" is managed by Kleinkram and cannot be modified or deleted.`,
+            );
+        }
+    }
+
     async delete(uuid: string): Promise<DeleteTemplateResponseDto> {
         const template = await this.actionTemplateRepository.findOne({
             where: { uuid },
@@ -184,6 +207,8 @@ export class TemplateService {
         }
 
         const { name } = template;
+
+        await this.assertNotSystemTemplate(name);
 
         const totalExecutionCount = await this.actionRepository
             .createQueryBuilder('action')

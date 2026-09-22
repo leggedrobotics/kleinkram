@@ -34,6 +34,14 @@ export class ActionTemplateDto {
     @IsBoolean()
     archived!: boolean;
 
+    @ApiProperty({
+        description:
+            'True for templates Kleinkram manages itself. They are seeded by ' +
+            'migration and cannot be edited or deleted.',
+    })
+    @IsBoolean()
+    isSystem!: boolean;
+
     @ApiProperty()
     @IsString()
     imageName!: string;
