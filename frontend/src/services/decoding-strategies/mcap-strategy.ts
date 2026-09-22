@@ -4,7 +4,6 @@ import { MessageReader as CdrReader } from '@foxglove/rosmsg2-serialization';
 import {
     chunkDataStart,
     coalesce,
-    MessageExtent,
     parseMessageIndexes,
     parseMessageRecord,
     planChunk,
@@ -268,12 +267,6 @@ export class McapStrategy extends DecodingStrategy {
         }
         if (channelIds.size === 0) return [];
 
-        // A preview of the first messages needs only the chunks that hold
-        // them; a sampled preview of a dense topic needs all of them, because
-        // striding runs across the whole recording. Plan only as far as the
-        // request actually reaches.
-        const needExtents = limit * keepEvery;
-
         const candidates: McapChunkIndex[] = [];
         for (const chunk of chunkIndexes) {
             if (chunk.compression !== '') return undefined;
@@ -292,116 +285,51 @@ export class McapStrategy extends DecodingStrategy {
         }
         if (candidates.length === 0) return [];
 
-        // Index reads are small, independent and numerous -- hundreds of them
-        // for a sampled preview -- so they go through the pool rather than one
-        // round trip at a time.
-        const extents: MessageExtent[] = [];
-        let planningFailed = false;
-
-        for await (const { item: chunk, result: blob } of mapInOrder(
-            candidates,
-            FETCH_CONCURRENCY,
-            async (chunk) => {
-                let indexStart: bigint | undefined;
-                for (const offset of chunk.messageIndexOffsets.values()) {
-                    if (indexStart === undefined || offset < indexStart) {
-                        indexStart = offset;
-                    }
-                }
-                // readExact, not read: `read` inflates every request to its
-                // minimum streaming size, which would pull hundreds of kB to
-                // get an 8 kB index.
-                return indexStart === undefined
-                    ? undefined
-                    : httpReader.readExact(
-                          indexStart,
-                          chunk.messageIndexLength,
-                      );
-            },
-        )) {
-            if (signal?.aborted || blob === undefined) {
-                planningFailed = true;
-                break;
-            }
-            const indexes = parseMessageIndexes(blob);
-            if (indexes.size === 0) {
-                planningFailed = true;
-                break;
-            }
-            extents.push(
-                ...planChunk(
-                    chunkDataStart(
-                        Number(chunk.chunkStartOffset),
-                        chunk.compression,
-                    ),
-                    Number(chunk.uncompressedSize),
-                    indexes,
-                    channelIds,
-                    startTime,
-                ),
-            );
-            if (extents.length >= needExtents) break;
-        }
-        if (planningFailed) return undefined;
-
-        extents.sort((a, b) =>
-            a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
-        );
-
-        // Only the records that survive striding are worth fetching, and the
-        // preview stops at `limit`.
-        const needed = extents
-            .filter((_extent, index) => index % keepEvery === 0)
-            .slice(0, limit);
-        if (needed.length === 0) return [];
-
-        const wantedStarts = new Set(needed.map((extent) => extent.start));
+        // Emit per chunk rather than planning the whole topic first.
+        //
+        // Reading every chunk's index before fetching anything meant a log
+        // topic of several thousand messages sat at "0 loaded" for as long as
+        // the planning took -- hundreds of round trips -- even though the
+        // first chunk's messages were ready almost immediately. Chunks are in
+        // file order, so emitting as they arrive is also the right order.
         const msgs: LogMessage[] = [];
+        let seen = 0;
 
-        for await (const { item: range, result: buffer } of mapInOrder(
-            coalesce(needed, PREVIEW_COALESCE_GAP),
-            FETCH_CONCURRENCY,
-            async (range) =>
-                httpReader.readExact(
-                    BigInt(range.start),
-                    BigInt(range.end - range.start),
-                ),
+        for await (const { result: parsed } of mapInOrder(
+            candidates,
+            CHUNK_CONCURRENCY,
+            async (chunk) =>
+                signal?.aborted
+                    ? undefined
+                    : this.readChunkByMessageIndex(chunk, channelIds),
         )) {
             if (signal?.aborted) break;
+            if (msgs.length >= limit) break;
+            if (parsed === undefined) return undefined; // hand back to the reader
 
-            for (const extent of needed) {
-                if (extent.start < range.start || extent.start >= range.end) {
-                    continue;
-                }
-                if (!wantedStarts.has(extent.start)) continue;
+            for (const message of parsed) {
+                if (msgs.length >= limit) break;
+                if (seen++ % keepEvery !== 0) continue;
 
-                const parsed = parseMessageRecord(
-                    buffer,
-                    extent.start - range.start,
-                );
-                if (!parsed) return undefined; // bail to the safe path
-
-                const channel = reader.channelsById.get(parsed.channelId);
-                let data: unknown = parsed.data;
+                const channel = reader.channelsById.get(message.channelId);
+                let data: unknown = message.data;
                 if (channel) {
                     data =
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                        (await this.tryDecode(channel.schemaId, parsed.data)) ??
-                        parsed.data;
+                        (await this.tryDecode(
+                            channel.schemaId,
+                            message.data,
+                        )) ?? message.data;
                 }
 
-                const messageObject = { logTime: parsed.logTime, data };
+                const messageObject = { logTime: message.logTime, data };
                 if (onMessage) onMessage(messageObject);
                 msgs.push(messageObject);
             }
         }
 
-        msgs.sort((a, b) =>
-            a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
-        );
         return msgs;
     }
-
     private async getMessagesProgressive(
         topic: string,
         keepEvery: number,
