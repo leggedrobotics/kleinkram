@@ -57,6 +57,25 @@ const PREVIEW_COALESCE_GAP = 256 * 1024;
  */
 const FETCH_CONCURRENCY = 12;
 
+/**
+ * Chunks read at once in the progressive path.
+ *
+ * Each chunk costs an index read plus a few small range reads, and a sampled
+ * preview visits hundreds of them, so reading one chunk at a time leaves the
+ * connection idle between round trips. Kept below FETCH_CONCURRENCY because
+ * each chunk fans out into range reads of its own.
+ */
+const CHUNK_CONCURRENCY = 6;
+
+/** What `parseMessageRecord` yields, shaped like `@mcap/core`'s message. */
+interface ParsedChunkMessage {
+    channelId: number;
+    sequence: number;
+    logTime: bigint;
+    publishTime: bigint;
+    data: Uint8Array;
+}
+
 export class McapStrategy extends DecodingStrategy {
     private reader: McapIndexedReader | null = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -361,7 +380,6 @@ export class McapStrategy extends DecodingStrategy {
         // Sampling positions are estimated for MCAP, so allow a little
         // headroom before stopping hard at the requested count.
         const hardLimit = Math.ceil(limit * 1.1) + 1;
-        const httpReader = this.httpReader;
         const msgs: LogMessage[] = [];
 
         const channelIds = new Set(
@@ -391,30 +409,48 @@ export class McapStrategy extends DecodingStrategy {
         // true duplicates.
         const emitted = new Set<string>();
 
-        const PREFETCH_AHEAD = 3;
-        for (const [position, chunkIndex] of order.entries()) {
+        // Chunks are read through a pool rather than one at a time, and by
+        // addressing their messages rather than pulling them whole. Each chunk
+        // costs an index read plus a few small ranges, and a sampled preview
+        // visits hundreds of them, so the round trips are what the user waits
+        // for. Results still arrive in coarse-to-fine order, so the preview
+        // fills in across the whole recording as before.
+        const visits: { chunkIndex: number; chunk: (typeof chunks)[number] }[] =
+            [];
+        for (const chunkIndex of order) {
+            const chunk = chunks[chunkIndex];
+            if (chunk) visits.push({ chunkIndex, chunk });
+        }
+
+        for await (const { item: visit, result: indexed } of mapInOrder(
+            visits,
+            CHUNK_CONCURRENCY,
+            async ({ chunk }) =>
+                signal?.aborted
+                    ? undefined
+                    : // The core ChunkIndex carries every field this needs;
+                      // McapChunkIndex is the local mirror of that shape.
+                      this.readChunkByMessageIndex(
+                          chunk as unknown as McapChunkIndex,
+                          channelIds,
+                      ),
+        )) {
             if (signal?.aborted) break;
             if (msgs.length >= hardLimit) break;
-            const chunk = chunks[chunkIndex];
-            if (!chunk) continue;
-
-            for (let ahead = 0; ahead < PREFETCH_AHEAD; ahead++) {
-                const upcoming = chunks[order[position + ahead] ?? -1];
-                if (upcoming) {
-                    httpReader.prefetch(
-                        upcoming.chunkStartOffset,
-                        upcoming.chunkLength,
-                    );
-                }
-            }
+            const { chunkIndex, chunk } = visit;
 
             let seen = 0;
             const chunkOffset = Math.round(chunkIndex * averagePerChunk);
-            for await (const message of reader.readMessages({
-                topics: [topic],
-                startTime: chunk.messageStartTime,
-                endTime: chunk.messageEndTime,
-            })) {
+
+            const source =
+                indexed ??
+                reader.readMessages({
+                    topics: [topic],
+                    startTime: chunk.messageStartTime,
+                    endTime: chunk.messageEndTime,
+                });
+
+            for await (const message of source) {
                 if (signal?.aborted) break;
                 if (msgs.length >= hardLimit) break;
                 if ((chunkOffset + seen++) % keepEvery !== 0) continue;
@@ -439,6 +475,76 @@ export class McapStrategy extends DecodingStrategy {
             }
         }
         return msgs;
+    }
+
+    /**
+     * Read one chunk's messages for the wanted channels by addressing them
+     * individually, or undefined when that is not possible for this chunk.
+     *
+     * The progressive reader visits a chunk at a time, and reading a chunk
+     * whole costs its full size however little of it belongs to the topic --
+     * on a recording that interleaves 60 kB camera frames with 200 byte
+     * telemetry, that is the entire difference.
+     */
+    private async readChunkByMessageIndex(
+        chunk: McapChunkIndex,
+        channelIds: Set<number>,
+    ): Promise<ParsedChunkMessage[] | undefined> {
+        const httpReader = this.httpReader;
+        if (!httpReader) return undefined;
+        if (chunk.compression !== '') return undefined;
+        if (chunk.messageIndexOffsets.size === 0) return undefined;
+
+        let indexStart: bigint | undefined;
+        for (const offset of chunk.messageIndexOffsets.values()) {
+            if (indexStart === undefined || offset < indexStart) {
+                indexStart = offset;
+            }
+        }
+        if (indexStart === undefined) return undefined;
+
+        const blob = await httpReader.readExact(
+            indexStart,
+            chunk.messageIndexLength,
+        );
+        const indexes = parseMessageIndexes(blob);
+        if (indexes.size === 0) return undefined;
+
+        const extents = planChunk(
+            chunkDataStart(Number(chunk.chunkStartOffset), chunk.compression),
+            Number(chunk.uncompressedSize),
+            indexes,
+            channelIds,
+        );
+        if (extents.length === 0) return [];
+
+        const out: ParsedChunkMessage[] = [];
+        for await (const { item: range, result: buffer } of mapInOrder(
+            coalesce(extents, PREVIEW_COALESCE_GAP),
+            FETCH_CONCURRENCY,
+            async (range) =>
+                httpReader.readExact(
+                    BigInt(range.start),
+                    BigInt(range.end - range.start),
+                ),
+        )) {
+            for (const extent of extents) {
+                if (extent.start < range.start || extent.start >= range.end) {
+                    continue;
+                }
+                const parsed = parseMessageRecord(
+                    buffer,
+                    extent.start - range.start,
+                );
+                if (!parsed) return undefined; // bail to the safe path
+                out.push(parsed);
+            }
+        }
+
+        out.sort((a, b) =>
+            a.logTime === b.logTime ? 0 : a.logTime < b.logTime ? -1 : 1,
+        );
+        return out;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
