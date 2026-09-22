@@ -29,6 +29,52 @@ export interface ReadOptions {
 }
 
 /**
+ * Hands the thread back to the browser for one task.
+ *
+ * `await`ing a plain value only queues a microtask, and microtasks are
+ * drained before the browser gets to paint or to handle input. A decode
+ * loop built from those never releases the main thread. A `MessageChannel`
+ * message is a real task, and unlike `setTimeout(0)` it is not clamped to
+ * 4ms once the loop nests, so yielding stays cheap.
+ */
+const yieldToBrowser = (): Promise<void> => {
+    const scheduling = (
+        globalThis as {
+            scheduler?: { yield?: () => Promise<void> };
+        }
+    ).scheduler;
+    if (scheduling?.yield) return scheduling.yield();
+    return new Promise((resolve) => {
+        const channel = new MessageChannel();
+        channel.port1.addEventListener('message', () => {
+            channel.port1.close();
+            resolve();
+        });
+        channel.port1.start();
+        channel.port2.postMessage(undefined);
+    });
+};
+
+/** How long a decode loop may hold the main thread between two yields. */
+const BUDGET_MS = 8;
+
+/**
+ * Time budget for a decode loop running on the main thread. Call
+ * `yieldIfNeeded()` once per decoded message: it is a clock read in the
+ * common case and only gives up the thread once the budget is spent, so
+ * the page keeps painting and responding while a topic loads.
+ */
+export class MainThreadBudget {
+    private deadline = performance.now() + BUDGET_MS;
+
+    async yieldIfNeeded(): Promise<void> {
+        if (performance.now() < this.deadline) return;
+        await yieldToBrowser();
+        this.deadline = performance.now() + BUDGET_MS;
+    }
+}
+
+/**
  * Returns the indices 0..count-1 in a coarse-to-fine order: the two ends
  * first, then the middle, then the quarter points, and so on. Reading
  * chunks in this order makes partial data cover the whole time range.

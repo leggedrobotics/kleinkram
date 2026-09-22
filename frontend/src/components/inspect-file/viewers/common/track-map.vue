@@ -11,6 +11,11 @@
         @wheel.prevent="onWheel"
     >
         <template v-if="hasPoints">
+            <!-- Backdrop when the tiles are hidden. It has to stay the first
+                 layer so that the track and the controls keep painting on
+                 top of it. -->
+            <div v-if="!showTiles" class="absolute-full tile-placeholder" />
+
             <img
                 v-for="tile in showTiles ? tiles : []"
                 :key="tile.key"
@@ -150,8 +155,6 @@
                     </q-tooltip>
                 </q-btn>
             </div>
-
-            <div v-if="!showTiles" class="absolute-full tile-placeholder" />
 
             <div class="map-legend row items-center q-gutter-x-sm text-caption">
                 <span class="legend-dot" style="background: #4caf50"></span>

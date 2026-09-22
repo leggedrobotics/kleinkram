@@ -6,7 +6,12 @@ import { McapIndexedReader } from '@mcap/core';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { DecodingStrategy } from './index';
-import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
+import {
+    coarseToFineOrder,
+    LogMessage,
+    MainThreadBudget,
+    ReadOptions,
+} from './utilities';
 
 /** Identity of a message record, used to drop duplicates from overlapping chunks */
 const messageIdentity = (message: {
@@ -61,6 +66,7 @@ export class McapStrategy extends DecodingStrategy {
         }
 
         const msgs: LogMessage[] = [];
+        const budget = new MainThreadBudget();
         let seen = 0;
 
         const readArguments: { topics: string[]; startTime?: bigint } = {
@@ -84,7 +90,6 @@ export class McapStrategy extends DecodingStrategy {
                         c.messageEndTime >= startTime) &&
                     // We don't have an endTime limit usually, but if we did:
                     // (endTime === undefined || c.messageStartTime <= endTime)
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     true,
             );
 
@@ -119,6 +124,7 @@ export class McapStrategy extends DecodingStrategy {
             const messageObject = { logTime: message.logTime, data };
             if (onMessage) onMessage(messageObject);
             msgs.push(messageObject);
+            await budget.yieldIfNeeded();
         }
         return msgs;
     }
@@ -144,6 +150,7 @@ export class McapStrategy extends DecodingStrategy {
         const hardLimit = Math.ceil(limit * 1.1) + 1;
         const httpReader = this.httpReader;
         const msgs: LogMessage[] = [];
+        const budget = new MainThreadBudget();
 
         const channelIds = new Set(
             [...reader.channelsById.values()]
@@ -217,6 +224,7 @@ export class McapStrategy extends DecodingStrategy {
                 const messageObject = { logTime: message.logTime, data };
                 if (onMessage) onMessage(messageObject);
                 msgs.push(messageObject);
+                await budget.yieldIfNeeded();
             }
         }
         return msgs;
