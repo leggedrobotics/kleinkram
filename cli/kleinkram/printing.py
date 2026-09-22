@@ -34,6 +34,7 @@ from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
 from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
+from kleinkram.models import Diagnostic
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import FileConfig
@@ -396,6 +397,23 @@ def print_project_info(project: Project, *, pprint: bool) -> None:
         print(json.dumps(asdict(project), default=kleinkram_json_default))
 
 
+def _execution_status_text(execution: Execution) -> Text:
+    """
+    The status as a reader should see it: the lifecycle state, plus the verdict
+    when the verdict says something the state does not.
+    """
+    if execution.severity == "WARNING":
+        label = execution.state
+        if execution.diagnostic_count:
+            label = f"{execution.state} ({execution.diagnostic_count} warnings)"
+        return Text(label, style="yellow")
+    if execution.severity == "ERROR" or execution.state in ("FAILED", "UNPROCESSABLE"):
+        if execution.failure_origin == "SYSTEM":
+            return Text(f"{execution.state} (system)", style="red")
+        return Text(execution.state, style="red")
+    return Text(execution.state)
+
+
 def executions_to_table(executions: Sequence[Execution]) -> Table:
     table = Table(title="executions", expand=True)
     table.add_column("project", overflow="fold")
@@ -416,7 +434,7 @@ def executions_to_table(executions: Sequence[Execution]) -> Table:
             execution.mission_name,
             execution.template_name,
             Text(str(execution.uuid), style="green"),
-            execution.state,
+            _execution_status_text(execution),
             execution.created_at.strftime("%Y-%m-%d %H:%M"),
         )
 
@@ -430,7 +448,13 @@ def execution_info_table(execution: Execution) -> Table:
 
     table.add_row("uuid", Text(str(execution.uuid), style="green"))
     table.add_row("template", execution.template_name)
-    table.add_row("status", execution.state)
+    table.add_row("status", _execution_status_text(execution))
+    if execution.state_cause:
+        table.add_row("cause", execution.state_cause)
+    if execution.failure_origin is not None:
+        table.add_row("failed by", execution.failure_origin.lower())
+    if execution.diagnostic_count:
+        table.add_row("diagnostics", str(execution.diagnostic_count))
     table.add_row("project", execution.project_name)
     table.add_row("mission", execution.mission_name)
     table.add_row("created", str(execution.created_at))
@@ -463,6 +487,50 @@ def print_execution_info(execution: Execution, *, pprint: bool) -> None:
         Console().print(execution_info_table(execution))
     else:
         print(json.dumps(asdict(execution), default=kleinkram_json_default))
+
+
+def diagnostics_to_table(diagnostics: Sequence[Diagnostic], *, truncated: bool) -> Table:
+    table = Table(title="diagnostics", expand=True)
+    table.add_column("severity")
+    table.add_column("code", overflow="fold")
+    table.add_column("file", overflow="fold")
+    table.add_column("message", overflow="fold")
+    table.add_column("count", justify="right")
+
+    styles = {"ERROR": "red", "WARNING": "yellow", "INFO": "cyan"}
+    for diagnostic in diagnostics:
+        table.add_row(
+            Text(diagnostic.severity, style=styles.get(diagnostic.severity, "")),
+            diagnostic.code or "",
+            diagnostic.file or "",
+            diagnostic.message,
+            str(diagnostic.count),
+        )
+
+    if truncated:
+        table.add_row(*["..." for _ in range(len(table.columns))])
+    return table
+
+
+def print_diagnostics(diagnostics: Sequence[Diagnostic], *, truncated: bool, pprint: bool) -> None:
+    """
+    Prints the diagnostics an execution reported, either as a table or as JSON
+    for piping.
+    """
+    if pprint:
+        Console().print(diagnostics_to_table(diagnostics, truncated=truncated))
+        if truncated:
+            print(
+                "this action reported more diagnostics than are kept; the list is truncated",
+                file=sys.stderr,
+            )
+    else:
+        print(
+            json.dumps(
+                [asdict(diagnostic) for diagnostic in diagnostics],
+                default=kleinkram_json_default,
+            )
+        )
 
 
 def triggers_to_table(triggers: Sequence[ActionTrigger]) -> Table:

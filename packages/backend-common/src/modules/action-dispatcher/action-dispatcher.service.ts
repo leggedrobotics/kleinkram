@@ -5,7 +5,13 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { addActionQueue } from '@backend-common/scheduling-logic';
-import { ActionState, ActionTriggerSource, UserRole } from '@kleinkram/shared';
+import {
+    ActionFailureOrigin,
+    ActionSeverity,
+    ActionState,
+    ActionTriggerSource,
+    UserRole,
+} from '@kleinkram/shared';
 import {
     ConflictException,
     Injectable,
@@ -186,6 +192,8 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             this.logger.error(`Failed to queue action ${action.uuid}`, error);
             await this.actionRepository.update(action.uuid, {
                 state: ActionState.UNPROCESSABLE,
+                severity: ActionSeverity.ERROR,
+                failureOrigin: ActionFailureOrigin.SYSTEM,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 state_cause: 'Resources unavailable or queue error',
             });

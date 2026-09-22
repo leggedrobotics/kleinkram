@@ -27,6 +27,7 @@ from kleinkram.api.deser import TemplateObject
 from kleinkram.api.deser import TriggerObject
 from kleinkram.api.deser import _parse_action_template
 from kleinkram.api.deser import _parse_action_trigger
+from kleinkram.api.deser import _parse_diagnostic
 from kleinkram.api.deser import _parse_execution
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
@@ -57,6 +58,7 @@ from kleinkram.errors import TemplateNotFound
 from kleinkram.errors import TemplateValidationError
 from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
+from kleinkram.models import Diagnostic
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import MetadataPayloadValue
@@ -635,6 +637,54 @@ EXECUTION_DELETE_ONE = "/actions/{}"
 
 def _delete_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp = client.delete(EXECUTION_DELETE_ONE.format(execution_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
+    resp.raise_for_status()
+
+
+REPORT_DIAGNOSTIC_ENDPOINT = "/actions/{}/diagnostics"
+
+
+def _get_diagnostics(client: AuthenticatedClient, execution_id: UUID) -> Tuple[List[Diagnostic], bool]:
+    """
+    Returns the diagnostics an execution reported and whether the list was
+    truncated because the action reported more than Kleinkram keeps.
+    """
+    resp = client.get(REPORT_DIAGNOSTIC_ENDPOINT.format(execution_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
+    resp.raise_for_status()
+
+    payload = resp.json()
+    diagnostics = [_parse_diagnostic(entry) for entry in payload.get("data", [])]
+    return diagnostics, bool(payload.get("truncated", False))
+
+
+def _report_diagnostic(
+    client: AuthenticatedClient,
+    execution_id: UUID,
+    *,
+    severity: str,
+    message: str,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    """
+    Reports a single diagnostic on a running action.
+
+    Only the disposable API key Kleinkram injects into the action container is
+    accepted by this endpoint, so this only works from inside a running action.
+    """
+    payload: Dict[str, Any] = {"severity": severity, "message": message}
+    if code is not None:
+        payload["code"] = code
+    if file is not None:
+        payload["file"] = file
+    if details is not None:
+        payload["details"] = details
+
+    resp = client.post(REPORT_DIAGNOSTIC_ENDPOINT.format(execution_id), json=payload)
     if resp.status_code == 404:
         raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
     resp.raise_for_status()

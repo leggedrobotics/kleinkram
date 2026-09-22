@@ -1,3 +1,4 @@
+import { ActionDiagnosticEntity } from '@backend-common/entities/action/action-diagnostic.entity';
 import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@backend-common/entities/action/action-trigger.entity';
 import { ApiKeyEntity } from '@backend-common/entities/auth/api-key.entity';
@@ -8,6 +9,8 @@ import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { RuntimeDescription } from '@backend-common/types';
 import {
     ActionErrorHint,
+    ActionFailureOrigin,
+    ActionSeverity,
     ActionState,
     ActionTriggerSource,
     ArtifactState,
@@ -21,6 +24,7 @@ import {
     Index,
     JoinColumn,
     ManyToOne,
+    OneToMany,
     OneToOne,
 } from 'typeorm';
 
@@ -57,6 +61,49 @@ export class ActionEntity extends BaseEntity {
     @Index()
     @Column({ type: 'enum', enum: ActionState })
     state!: ActionState;
+
+    /**
+     * The verdict of the run, orthogonal to {@link state}.
+     *
+     * `state` says whether the container reached the end; `severity` says what
+     * it found. It is raised by diagnostics reported during the run and by an
+     * exit code of 75, and never lowered.
+     */
+    @Index()
+    @Column({
+        type: 'enum',
+        enum: ActionSeverity,
+        nullable: false,
+        default: ActionSeverity.OK,
+    })
+    severity!: ActionSeverity;
+
+    /**
+     * Who is responsible for a failure. Null unless {@link state} is `FAILED`,
+     * and null for actions that ran before this was recorded.
+     */
+    @Index()
+    @Column({ type: 'enum', enum: ActionFailureOrigin, nullable: true })
+    failureOrigin?: ActionFailureOrigin;
+
+    @OneToMany(() => ActionDiagnosticEntity, (diagnostic) => diagnostic.action)
+    diagnostics?: ActionDiagnosticEntity[];
+
+    /**
+     * Number of distinct diagnostics stored for this action.
+     *
+     * Denormalised so that the action list can show "3 warnings" without
+     * joining the diagnostics table for every row.
+     */
+    @Column({ type: 'int', nullable: false, default: 0 })
+    diagnosticCount!: number;
+
+    /**
+     * True when the action reported more distinct diagnostics than are kept
+     * and later ones were dropped.
+     */
+    @Column({ type: 'boolean', nullable: false, default: false })
+    diagnosticsTruncated!: boolean;
 
     @Column({ type: 'json', nullable: true })
     container?: Container;

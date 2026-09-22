@@ -19,6 +19,7 @@ import re
 import tarfile
 import tempfile
 from pathlib import Path
+from typing import Any
 from typing import Collection
 from typing import Dict
 from typing import List
@@ -50,6 +51,7 @@ from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import TemplateNotFound
 from kleinkram.models import ArtifactState
+from kleinkram.models import Diagnostic
 from kleinkram.models import FileConfig
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
@@ -594,6 +596,35 @@ def delete_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None
     if not is_valid_uuid4(str(execution_id)):
         raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
     kleinkram.api.routes._delete_execution(client, execution_id)
+
+
+def report_diagnostic(
+    *,
+    client: AuthenticatedClient,
+    execution_id: UUID,
+    severity: str,
+    message: str,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    if not is_valid_uuid4(str(execution_id)):
+        raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
+    kleinkram.api.routes._report_diagnostic(
+        client,
+        execution_id,
+        severity=severity,
+        message=message,
+        code=code,
+        file=file,
+        details=details,
+    )
+
+
+def get_diagnostics(*, client: AuthenticatedClient, execution_id: UUID) -> Tuple[List[Diagnostic], bool]:
+    if not is_valid_uuid4(str(execution_id)):
+        raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
+    return kleinkram.api.routes._get_diagnostics(client, execution_id)
 
 
 def cancel_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None:

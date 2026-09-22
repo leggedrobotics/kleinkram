@@ -36,9 +36,12 @@ from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.api.query import TriggerQuery
+from kleinkram.config import get_running_action_uuid
 from kleinkram.errors import FileNameNotSupported
+from kleinkram.errors import NotInsideAction
 from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
+from kleinkram.models import Diagnostic
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import Mission
@@ -681,6 +684,119 @@ def delete_template(
     """
     client = client or AuthenticatedClient()
     return kleinkram.core.delete_template(client=client, template_id=parse_uuid_like(template_id))
+
+
+def _report(
+    severity: str,
+    message: str,
+    *,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    execution_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    resolved = execution_id or get_running_action_uuid()
+    if resolved is None:
+        raise NotInsideAction("no action to report on: set KLEINKRAM_ACTION_UUID or pass execution_id explicitly")
+
+    client = client or AuthenticatedClient()
+    kleinkram.core.report_diagnostic(
+        client=client,
+        execution_id=parse_uuid_like(resolved),
+        severity=severity,
+        message=message,
+        code=code,
+        file=file,
+        details=details,
+    )
+
+
+def warn(
+    message: str,
+    *,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    execution_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    """\
+    report a warning on the action this process is running inside
+
+    the action still finishes successfully; it is shown as done with warnings.
+    """
+    _report(
+        "WARNING",
+        message,
+        code=code,
+        file=file,
+        details=details,
+        execution_id=execution_id,
+        client=client,
+    )
+
+
+def fail(
+    message: str,
+    *,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    execution_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    """\
+    report an error on the action this process is running inside
+
+    this records the finding, it does not stop the action; exit non-zero to
+    make the action itself fail.
+    """
+    _report(
+        "ERROR",
+        message,
+        code=code,
+        file=file,
+        details=details,
+        execution_id=execution_id,
+        client=client,
+    )
+
+
+def info(
+    message: str,
+    *,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    execution_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    """\
+    record a note on the action without changing how the action is reported
+    """
+    _report(
+        "INFO",
+        message,
+        code=code,
+        file=file,
+        details=details,
+        execution_id=execution_id,
+        client=client,
+    )
+
+
+def list_diagnostics(
+    execution_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> List[Diagnostic]:
+    """\
+    the diagnostics an execution reported while it ran
+    """
+    client = client or AuthenticatedClient()
+    diagnostics, _ = kleinkram.core.get_diagnostics(client=client, execution_id=parse_uuid_like(execution_id))
+    return diagnostics
 
 
 def delete_execution(

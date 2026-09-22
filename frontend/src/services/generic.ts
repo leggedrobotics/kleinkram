@@ -1,5 +1,7 @@
 import {
     AccessGroupRights,
+    ActionFailureOrigin,
+    ActionSeverity,
     ActionState,
     DataType,
     FileState,
@@ -259,6 +261,49 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
     } catch (error) {
         console.error('Error during file download:', error);
     }
+}
+
+/**
+ * How an action should read at a glance: the colour of its badge and the words
+ * on it.
+ *
+ * State alone is no longer enough. A run that finished and reported warnings is
+ * `DONE` but must not be green, and a failure we caused should not look like
+ * one the user caused, so the verdict and the blame are folded in here rather
+ * than at every call site.
+ *
+ * @param state the lifecycle state of the action
+ * @param severity the verdict of the run, defaulting to OK for actions
+ * recorded before severity existed
+ * @param options extra context used only for the label
+ */
+export function getActionBadge(
+    state: ActionState,
+    severity: ActionSeverity = ActionSeverity.OK,
+    options: {
+        diagnosticCount?: number;
+        failureOrigin?: ActionFailureOrigin | undefined;
+    } = {},
+): { color: string; label: string } {
+    if (state === ActionState.DONE && severity === ActionSeverity.WARNING) {
+        const count = options.diagnosticCount ?? 0;
+        return {
+            color: 'amber-8',
+            label:
+                count > 0
+                    ? `DONE · ${count.toString()} ${count === 1 ? 'warning' : 'warnings'}`
+                    : 'DONE · warnings',
+        };
+    }
+
+    if (
+        state === ActionState.FAILED &&
+        options.failureOrigin === ActionFailureOrigin.SYSTEM
+    ) {
+        return { color: 'red', label: 'FAILED · system' };
+    }
+
+    return { color: getActionColor(state), label: state };
 }
 
 export function getActionColor(state: ActionState) {

@@ -11,6 +11,7 @@ export * from '@api-dto/access-control/project-access.dto';
 export * from '@api-dto/access-control/remove-access-group-project-response.dto';
 export * from '@api-dto/access-control/remove-users-access-group.dto';
 export * from '@api-dto/action-workers.dto';
+export * from '@api-dto/actions/action-diagnostic.dto';
 export * from '@api-dto/actions/action-logs.dto';
 export * from '@api-dto/actions/action-template-availability.dto';
 export * from '@api-dto/actions/action-template.dto';

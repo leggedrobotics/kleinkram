@@ -17,6 +17,7 @@ from kleinkram.errors import ParsingError
 from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
 from kleinkram.models import ArtifactState
+from kleinkram.models import Diagnostic
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import FileConfig
@@ -85,6 +86,9 @@ class ProjectObjectKeys(str, Enum):
 class ExecutionObjectKeys(str, Enum):
     UUID = "uuid"
     STATE = "state"
+    SEVERITY = "severity"
+    FAILURE_ORIGIN = "failureOrigin"
+    DIAGNOSTIC_COUNT = "diagnosticCount"
     STATE_CAUSE = "stateCause"
     CREATED_AT = "createdAt"
     MISSION = "mission"
@@ -329,10 +333,29 @@ def _parse_action_template(template_object: TemplateObject) -> ActionTemplate:
     )
 
 
+def _parse_diagnostic(diagnostic_object: Dict[str, Any]) -> Diagnostic:
+    try:
+        return Diagnostic(
+            uuid=UUID(diagnostic_object["uuid"], version=4),
+            severity=diagnostic_object["severity"],
+            message=diagnostic_object["message"],
+            code=diagnostic_object.get("code"),
+            file=diagnostic_object.get("file"),
+            count=diagnostic_object.get("count", 1),
+            created_at=_parse_datetime(diagnostic_object["createdAt"]),
+        )
+    except Exception as e:
+        raise ParsingError(f"error parsing diagnostic: {diagnostic_object}") from e
+
+
 def _parse_execution(execution_object: ExecutionObject) -> Execution:
     try:
         uuid = UUID(execution_object[ExecutionObjectKeys.UUID], version=4)
         state = execution_object[ExecutionObjectKeys.STATE]
+        # Optional: a backend older than the severity feature omits these.
+        severity = execution_object.get(ExecutionObjectKeys.SEVERITY)
+        failure_origin = execution_object.get(ExecutionObjectKeys.FAILURE_ORIGIN)
+        diagnostic_count = execution_object.get(ExecutionObjectKeys.DIAGNOSTIC_COUNT) or 0
         state_cause = execution_object[ExecutionObjectKeys.STATE_CAUSE]
         artifact_url = execution_object.get(ExecutionObjectKeys.ARTIFACT_URL)
         raw_state = execution_object.get(ExecutionObjectKeys.ARTIFACT_STATE)
@@ -374,6 +397,9 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
     return Execution(
         uuid=uuid,
         state=state,
+        severity=severity,
+        failure_origin=failure_origin,
+        diagnostic_count=diagnostic_count,
         state_cause=state_cause,
         artifact_url=artifact_url,
         artifact_state=artifact_state,
