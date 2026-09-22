@@ -314,18 +314,18 @@ watch(
             if (isStale()) return;
 
             if (isYaml.value) {
-                const preview_ = await fetchTextPreview(url);
+                const loaded = await fetchTextPreview(url);
                 if (isStale()) return;
-                yamlContent.value = preview_?.text ?? 'Error loading content';
+                yamlContent.value = loaded?.text ?? 'Error loading content';
             } else if (isTum.value) {
-                const preview_ = await fetchTextPreview(url);
+                const loaded = await fetchTextPreview(url);
                 if (isStale()) return;
-                tumContent.value = preview_?.text ?? 'Error loading content';
+                tumContent.value = loaded?.text ?? 'Error loading content';
             } else if (isMarkdown.value || isCsv.value) {
-                const preview_ = await fetchTextPreview(url);
+                const loaded = await fetchTextPreview(url);
                 if (isStale()) return;
-                textContent.value = preview_?.text ?? 'Error loading content';
-                textTruncated.value = preview_?.truncated ?? false;
+                textContent.value = loaded?.text ?? 'Error loading content';
+                textTruncated.value = loaded?.truncated ?? false;
             } else if (isSvo2.value) {
                 // For SVO2, we just need the URL to be available for the viewer
                 // The viewer will handle the range requests
