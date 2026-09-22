@@ -20,6 +20,7 @@ import { S3ClientContainer } from './storage-config.factory';
 import { MetricPoint, StorageMetricsService } from './storage-metrics.service';
 import {
     IStorageBucket,
+    PresignedResponseHeaders,
     StorageCredentials,
     StorageItem,
     StorageItemStat,
@@ -38,13 +39,13 @@ export class S3StorageBucket implements IStorageBucket {
         objectName: string,
         expirySeconds: number,
         isInternal: boolean,
-        responseDisposition?: Record<string, string>,
+        responseHeaders?: PresignedResponseHeaders,
     ): Promise<string> {
         const command = new GetObjectCommand({
             Bucket: this.bucketName,
             Key: objectName,
-            ResponseContentDisposition:
-                responseDisposition?.['response-content-disposition'],
+            ResponseContentType: responseHeaders?.contentType,
+            ResponseContentDisposition: responseHeaders?.contentDisposition,
         });
         const client = isInternal
             ? this.clients.internal
@@ -57,26 +58,26 @@ export class S3StorageBucket implements IStorageBucket {
     async getPresignedDownloadUrl(
         objectName: string,
         expirySeconds: number,
-        responseDisposition?: Record<string, string>,
+        responseHeaders?: PresignedResponseHeaders,
     ): Promise<string> {
         return this.generatePresignedUrl(
             objectName,
             expirySeconds,
             false,
-            responseDisposition,
+            responseHeaders,
         );
     }
 
     async getInternalPresignedDownloadUrl(
         objectName: string,
         expirySeconds: number,
-        responseDisposition?: Record<string, string>,
+        responseHeaders?: PresignedResponseHeaders,
     ): Promise<string> {
         return this.generatePresignedUrl(
             objectName,
             expirySeconds,
             true,
-            responseDisposition,
+            responseHeaders,
         );
     }
 
