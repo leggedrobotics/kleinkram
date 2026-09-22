@@ -278,6 +278,9 @@ def get_templates(
 
 LIST_ACTIONTRIGGERS_ENDPOINT = "/triggers"
 
+# every single-trigger operation (get / update / delete) addresses the same route
+TRIGGER_ENDPOINT = "/triggers/{}"
+
 
 def get_triggers(client: AuthenticatedClient, query: Optional[TriggerQuery] = None) -> List[ActionTrigger]:
     params = {"missionUuid": str(query.mission_uuid)} if query and query.mission_uuid else None
@@ -288,14 +291,11 @@ def get_triggers(client: AuthenticatedClient, query: Optional[TriggerQuery] = No
     return list(map(lambda p: _parse_action_trigger(TriggerObject(p)), payload))
 
 
-GET_TRIGGER_ENDPOINT = "/triggers/{}"
-
-
 def get_trigger(
     client: AuthenticatedClient,
     trigger_uuid: UUID,
 ) -> ActionTrigger:
-    resp = client.get(GET_TRIGGER_ENDPOINT.format(trigger_uuid))
+    resp = client.get(TRIGGER_ENDPOINT.format(trigger_uuid))
     if resp.status_code == 404:
         raise kleinkram.errors.TriggerNotFound(f"Trigger not found: {trigger_uuid}")
     resp.raise_for_status()
@@ -528,9 +528,6 @@ def _update_project(
     resp.raise_for_status()
 
 
-UPDATE_TRIGGER = "/triggers/{}"
-
-
 def _update_trigger(
     client: AuthenticatedClient,
     trigger_uuid: UUID,
@@ -560,7 +557,7 @@ def _update_trigger(
     if config is not None:
         body["config"] = config.__dict__
 
-    resp = client.patch(f"{UPDATE_TRIGGER.format(trigger_uuid)}", json=body)
+    resp = client.patch(TRIGGER_ENDPOINT.format(trigger_uuid), json=body)
     resp.raise_for_status()
 
 
@@ -650,11 +647,8 @@ def _cancel_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp.raise_for_status()
 
 
-DELETE_TRIGGER_ONE = "/triggers/{}"
-
-
 def _delete_trigger(client: AuthenticatedClient, trigger_uuid: UUID) -> None:
-    resp = client.delete(DELETE_TRIGGER_ONE.format(trigger_uuid))
+    resp = client.delete(TRIGGER_ENDPOINT.format(trigger_uuid))
     if resp.status_code == 404:
         raise kleinkram.errors.TriggerNotFound(f"Trigger not found: {trigger_uuid}")
     resp.raise_for_status()
