@@ -263,6 +263,22 @@ def load_metadata(path: Path) -> Dict[str, str]:
         raise ValueError(f"could not parse metadata file: {e}")
 
 
+MINUTES_PER_HOUR = 60
+
+
+def minutes_to_hours(minutes: float) -> float:
+    """\
+    the backend stores action template runtime limits in hours,
+    whereas the CLI and the SDK express them in minutes
+    """
+    return minutes / MINUTES_PER_HOUR
+
+
+def hours_to_minutes(hours: float) -> int:
+    """inverse of `minutes_to_hours`, see the note there"""
+    return round(hours * MINUTES_PER_HOUR)
+
+
 def get_supported_api_version() -> Tuple[int, int, int]:
     vers = __version__.split(".")
     return tuple(map(int, vers[:3]))  # type: ignore

@@ -67,6 +67,7 @@ from kleinkram.models import Project
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import minutes_to_hours
 from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import split_args
 
@@ -430,7 +431,8 @@ def _create_template_version(
         "cpuCores": cpu_cores,
         "cpuMemory": cpu_memory_gb,
         "gpuMemory": gpu_memory_gb,
-        "maxRuntime": max_runtime_minutes,
+        # the backend expects the runtime limit in hours
+        "maxRuntime": minutes_to_hours(max_runtime_minutes),
         "accessRights": access_rights,
     }
 
@@ -465,7 +467,8 @@ def _create_template(
         "cpuCores": cpu_cores,
         "cpuMemory": cpu_memory_gb,
         "gpuMemory": gpu_memory_gb,
-        "maxRuntime": max_runtime_minutes,
+        # the backend expects the runtime limit in hours
+        "maxRuntime": minutes_to_hours(max_runtime_minutes),
         "accessRights": access_rights,
     }
 

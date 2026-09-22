@@ -31,6 +31,7 @@ from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
 from kleinkram.models import WebhookConfig
+from kleinkram.utils import hours_to_minutes
 
 __all__ = [
     "_parse_project",
@@ -112,7 +113,7 @@ class TemplateObjectKeys(str, Enum):
     ENTRYPOINT = "entrypoint"
     GPU_MEMORY_GB = "gpuMemory"
     IMAGE_NAME = "imageName"
-    MAX_RUNTIME_MINUTES = "maxRuntime"
+    MAX_RUNTIME_HOURS = "maxRuntime"
     CREATED_AT = "createdAt"
     VERSION = "version"
 
@@ -320,7 +321,8 @@ def _parse_action_template(template_object: TemplateObject) -> ActionTemplate:
         entrypoint = template_object[TemplateObjectKeys.ENTRYPOINT]
         gpu_memory_gb = template_object[TemplateObjectKeys.GPU_MEMORY_GB]
         image_name = template_object[TemplateObjectKeys.IMAGE_NAME]
-        max_runtime_minutes = template_object[TemplateObjectKeys.MAX_RUNTIME_MINUTES]
+        # the backend reports the runtime limit in hours
+        max_runtime_minutes = hours_to_minutes(template_object[TemplateObjectKeys.MAX_RUNTIME_HOURS])
         created_at = _parse_datetime(template_object[TemplateObjectKeys.CREATED_AT])
         name = template_object[TemplateObjectKeys.NAME]
         version = template_object[TemplateObjectKeys.VERSION]
