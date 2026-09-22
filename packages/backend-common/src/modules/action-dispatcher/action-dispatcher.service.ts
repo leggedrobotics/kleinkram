@@ -4,6 +4,7 @@ import { ActionEntity } from '@backend-common/entities/action/action.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
+import { DependencyUnavailableException } from '@backend-common/exceptions/dependency-unavailable.exception';
 import { addActionQueue } from '@backend-common/scheduling-logic';
 import {
     ActionFailureOrigin,
@@ -27,6 +28,10 @@ import { Redis } from 'ioredis';
 import { Gauge } from 'prom-client';
 import { EntityManager, LessThan, Repository } from 'typeorm';
 import { AccessControlService } from '../access-control/access-control.service';
+import {
+    LOKI_RETRY_AFTER_SECONDS,
+    LokiHealthService,
+} from '../loki-health/loki-health.service';
 
 @Injectable()
 export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
@@ -52,6 +57,7 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
         @InjectMetric('backend_failed_jobs')
         private failedJobs: Gauge,
         private accessControlService: AccessControlService,
+        private lokiHealthService: LokiHealthService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -121,16 +127,21 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             );
         }
 
-        try {
-            if (process.env.NODE_ENV !== 'test') {
-                const lokiUrl = process.env.LOKI_URL ?? 'http://loki:3100';
-                const { default: axios } = await import('axios');
-                await axios.get(`${lokiUrl}/ready`, { timeout: 2000 });
-            }
-        } catch {
-            this.logger.error('Loki logging system is down or unreachable');
-            throw new ConflictException(
-                'Logging system (Loki) is not available. Please try again later.',
+        // Action logs are only readable through Loki, so a run dispatched while
+        // Loki is down would lose its logs. Reject up front rather than
+        // producing a run nobody can debug.
+        if (!(await this.lokiHealthService.waitUntilReady())) {
+            this.logger.error(
+                'Refusing to dispatch action: Loki is not reachable',
+            );
+            // The retry delay is not spelled out here: it travels in
+            // `Retry-After` and each client renders it in its own words.
+            throw new DependencyUnavailableException(
+                'Loki',
+                'The action log store (Loki) is not ready yet, so this action ' +
+                    'would run without retrievable logs. Nothing is wrong with ' +
+                    'the action itself.',
+                LOKI_RETRY_AFTER_SECONDS,
             );
         }
 

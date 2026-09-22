@@ -237,7 +237,7 @@ export class ActionService {
 
         try {
             let response;
-            const lokiUrl = process.env.LOKI_URL ?? 'http://loki:3100';
+            const lokiUrl = environment.LOKI_URL;
             try {
                 response = await axios.get<LokiResponse>(
                     `${lokiUrl}/loki/api/v1/query_range`,

@@ -197,6 +197,14 @@ export default {
         return asString('DOCS_URL');
     },
 
+    /**
+     * @returns base URL of the Loki instance storing action logs
+     * @example http://loki:3100
+     */
+    get LOKI_URL(): string {
+        return asOptionalString('LOKI_URL') ?? 'http://loki:3100';
+    },
+
     get VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT(): boolean {
         return asBoolean('VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT');
     },
