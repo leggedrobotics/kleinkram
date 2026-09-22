@@ -34,6 +34,7 @@ from kleinkram.wrappers import list_missions
 from kleinkram.wrappers import list_projects
 from kleinkram.wrappers import list_templates
 from kleinkram.wrappers import list_triggers
+from kleinkram.wrappers import run_script
 from kleinkram.wrappers import update_file
 from kleinkram.wrappers import update_mission
 from kleinkram.wrappers import update_project
@@ -78,6 +79,7 @@ __all__ = [
     "create_template",
     "create_template_version",
     "launch_execution",
+    "run_script",
     "create_trigger",
     "update_trigger",
     "list_triggers",

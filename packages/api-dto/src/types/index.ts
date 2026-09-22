@@ -26,6 +26,7 @@ export * from '@api-dto/actions/create-template.dto';
 export * from '@api-dto/actions/delete-template-response.dto';
 export * from '@api-dto/actions/docker-image.dto';
 export * from '@api-dto/actions/logs.dto';
+export * from '@api-dto/actions/submit-script-action.dto';
 export * from '@api-dto/actions/update-action-trigger.dto';
 export * from '@api-dto/actions/update-template.dto';
 export * from '@api-dto/actions/webhook-trigger-response.dto';

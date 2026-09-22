@@ -1,4 +1,5 @@
 import { UserEntity } from '@backend-common/entities/user/user.entity';
+import { SCRIPT_RUNNER_TEMPLATE_NAME } from '@kleinkram/shared';
 import { DataSource } from 'typeorm';
 
 export const seedActionTemplates = async (
@@ -29,6 +30,11 @@ export const seedActionTemplates = async (
         {
             name: 'gpu-example',
             description: 'Example action utilizing GPU resources',
+        },
+        {
+            name: SCRIPT_RUNNER_TEMPLATE_NAME,
+            description:
+                'Runs a single Python file submitted with `klein action run-script`',
         },
     ];
 

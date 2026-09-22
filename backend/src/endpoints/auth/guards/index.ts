@@ -31,6 +31,7 @@ export {
     CancelActionGuard,
     CreateActionGuard,
     CreateActionsGuard,
+    CreateScriptActionGuard,
     DeleteActionGuard,
     ReadActionGuard,
     ReportActionDiagnosticGuard,

@@ -388,6 +388,45 @@ def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_
     return parse_uuid_like(execution_uuid_str)
 
 
+SUBMIT_SCRIPT_ACTION_ENDPOINT = "/actions/script"
+
+
+def _submit_script_action(
+    client: AuthenticatedClient,
+    mission_uuid: UUID,
+    *,
+    script: str,
+    filename: str,
+    max_runtime_hours: Optional[float] = None,
+) -> UUID:
+    """
+    Submits a single Python file as an action and returns the action UUID.
+
+    The script travels in the request body; the backend stores it and runs it on
+    the shared `script-runner` template, so there is no template to pick here.
+
+    Raises:
+        httpx.HTTPStatusError: If the API returns an error.
+        KeyError: If the response is missing 'actionUUID'.
+    """
+    payload: Dict[str, Any] = {
+        "missionUUID": str(mission_uuid),
+        "script": script,
+        "filename": filename,
+    }
+    if max_runtime_hours is not None:
+        payload["maxRuntimeHours"] = max_runtime_hours
+
+    resp = client.post(SUBMIT_SCRIPT_ACTION_ENDPOINT, json=payload)
+    resp.raise_for_status()
+
+    action_uuid = resp.json().get("actionUUID")
+    if not action_uuid:
+        raise KeyError("API response missing 'actionUUID'")
+
+    return parse_uuid_like(action_uuid)
+
+
 def _create_template_version(
     client: AuthenticatedClient,
     template_id: UUID,

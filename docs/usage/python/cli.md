@@ -86,6 +86,21 @@ Use the `verify` command to double-check if your local files were successfully u
 klein verify --project testProject --mission testMission data.bag
 ```
 
+### Running a Python Script as an Action
+
+Use `klein action run-script` to run a single `.py` file on a mission without building or pushing a Docker image. The
+logs are streamed and the command exits non-zero if the run did not finish cleanly.
+
+```bash
+klein action run-script ./analyse.py -p testProject -m testMission
+
+# what the runner image ships; a script may not import anything else
+klein action deps
+```
+
+See [Run a Single Python File](../actions/run-script.md) for the dependency set, the limits, and when to write a real
+Docker action instead.
+
 ### Reporting from Inside an Action
 
 The `klein action` commands only work from within a running Kleinkram action container, where Kleinkram provides the

@@ -1,12 +1,13 @@
 import { ActionEntity, environment } from '@kleinkram/backend-common';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
+import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
     ActionFailureOrigin,
     ActionSeverity,
     ActionState,
     ImageSource,
 } from '@kleinkram/shared';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
 import si from 'systeminformation';
@@ -30,6 +31,11 @@ export const LABEL_EXPIRES_AT = `${LABEL_PREFIX}.expires_at`;
 // How long before a runner is considered inactive (5 minutes)
 const RUNNER_INACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 
+// How long the presigned script URL handed to a container stays valid. The
+// container only needs it once, at startup, but the image may still have to be
+// pulled first, so this is generous rather than tight.
+const SCRIPT_URL_EXPIRY_SECONDS = 60 * 60;
+
 /**
  * Service for managing container lifecycle with Docker Labels.
  * Implements the "Safe Janitor" reconciliation loop to prevent friendly fire.
@@ -42,6 +48,8 @@ export class ContainerLifecycleService {
         private actionRunnerRepository: Repository<ActionRunnerEntity>,
         @InjectRepository(ActionEntity)
         private actionRepository: Repository<ActionEntity>,
+        @Inject('ScriptStorageBucket')
+        private readonly scriptStorage: IStorageBucket,
     ) {}
 
     /**
@@ -80,6 +88,30 @@ export class ContainerLifecycleService {
             KLEINKRAM_S3_ENDPOINT: `https://${environment.S3_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
         };
 
+        // Single-file script actions carry their code in the scripts bucket
+        // rather than in their image; the shared runner image fetches it from
+        // this URL on startup.
+        //
+        // The URL is signed for the *external* endpoint: action containers run
+        // on the `bridge` network (see `NetworkMode`) and reach storage the
+        // same way the artifact uploader does, through `S3_ENDPOINT`. An
+        // internally signed URL would name a host they cannot resolve.
+        if (action.scriptObject !== undefined) {
+            environmentVariables.KLEINKRAM_SCRIPT_URL =
+                await this.scriptStorage.getPresignedDownloadUrl(
+                    action.scriptObject,
+                    SCRIPT_URL_EXPIRY_SECONDS,
+                );
+        }
+
+        // A run may ask for less runtime than the template allows, never more;
+        // the API rejects anything larger before the action is queued.
+        const maxRuntimeMs =
+            (action.maxRuntimeHours ?? action.template.maxRuntime) *
+            60 *
+            60 *
+            1000;
+
         const labels: Record<string, string> = {
             [LABEL_RUNNER_ID]: runnerId,
             [LABEL_ACTION_UUID]: action.uuid,
@@ -94,7 +126,7 @@ export class ContainerLifecycleService {
             name: `${runnerId}-${action.uuid}`,
             limits: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                max_runtime: action.template.maxRuntime * 60 * 60 * 1000,
+                max_runtime: maxRuntimeMs,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 n_cpu: action.template.cpuCores || 1,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -109,14 +141,9 @@ export class ContainerLifecycleService {
             entrypoint: action.template.entrypoint ?? '',
             labels: {
                 ...labels,
-                [LABEL_MAX_RUNTIME]: (
-                    action.template.maxRuntime *
-                    60 *
-                    60 *
-                    1000
-                ).toString(),
+                [LABEL_MAX_RUNTIME]: maxRuntimeMs.toString(),
                 [LABEL_EXPIRES_AT]: new Date(
-                    Date.now() + action.template.maxRuntime * 60 * 60 * 1000,
+                    Date.now() + maxRuntimeMs,
                 ).toISOString(),
             },
         };

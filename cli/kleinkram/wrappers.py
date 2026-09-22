@@ -954,3 +954,68 @@ def launch_execution(
         mission_query=query,
         template=template,
     )
+
+
+@overload
+def run_script(
+    script: Union[str, Path],
+    *,
+    mission_name: str,
+    project_name: str,
+    max_runtime_hours: Optional[float] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+@overload
+def run_script(
+    script: Union[str, Path],
+    *,
+    mission_id: IdLike,
+    max_runtime_hours: Optional[float] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+@overload
+def run_script(
+    script: Union[str, Path],
+    *,
+    mission_name: str,
+    project_id: IdLike,
+    max_runtime_hours: Optional[float] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+def run_script(
+    script: Union[str, Path],
+    *,
+    mission_name: Optional[str] = None,
+    mission_id: Optional[IdLike] = None,
+    project_name: Optional[str] = None,
+    project_id: Optional[IdLike] = None,
+    max_runtime_hours: Optional[float] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID:
+    """
+    Run a single Python file as an action, without building an image.
+
+    The file is stored by Kleinkram and executed by the shared script runner image,
+    which ships a fixed dependency set. `max_runtime_hours` may only lower the runtime
+    budget the script runner template allows, never raise it.
+    """
+    query = _args_to_mission_query(
+        mission_names=singleton_list(mission_name),
+        mission_ids=singleton_list(mission_id),
+        project_names=singleton_list(project_name),
+        project_ids=singleton_list(project_id),
+    )
+
+    client = client or AuthenticatedClient()
+    return kleinkram.core.run_script(
+        client=client,
+        mission_query=query,
+        script_path=Path(script),
+        max_runtime_hours=max_runtime_hours,
+    )

@@ -10,8 +10,10 @@ import {
     PaginatedQueryDto,
     SubmitActionDto,
     SubmitActionMulti,
+    SubmitScriptActionDto,
 } from '@kleinkram/api-dto';
 import { ApiKeyEntity } from '@kleinkram/backend-common';
+import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
@@ -24,14 +26,21 @@ import {
 } from '@kleinkram/backend-common/modules/storage/response-headers';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
+    ActionTriggerSource,
     ArtifactState,
     isCancellableActionState,
     LogType,
+    MAX_ACTION_SCRIPT_BYTES,
+    SCRIPT_RUNNER_TEMPLATE_NAME,
     UserRole,
 } from '@kleinkram/shared';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
+import { randomUUID } from 'node:crypto';
+import { rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import {
     Brackets,
     EntityManager,
@@ -65,9 +74,14 @@ export class ActionService {
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
 
+        @InjectRepository(ActionTemplateEntity)
+        private actionTemplateRepository: Repository<ActionTemplateEntity>,
+
         private readonly actionDispatcher: ActionDispatcherService,
         @Inject('ArtifactStorageBucket')
         private readonly artifactStorage: IStorageBucket,
+        @Inject('ScriptStorageBucket')
+        private readonly scriptStorage: IStorageBucket,
     ) {}
 
     async submit(
@@ -90,6 +104,101 @@ export class ActionService {
         );
 
         return { actionUUID };
+    }
+
+    /**
+     * Submits a single-file Python script as an action.
+     *
+     * The script is stored in the scripts bucket and the action is dispatched
+     * against the shared `script-runner` template, which fetches the object at
+     * runtime. Nothing is built, and no image is pushed.
+     */
+    async submitScript(
+        data: SubmitScriptActionDto,
+        auth: AuthHeader,
+    ): Promise<ActionSubmitResponseDto> {
+        const scriptBytes = Buffer.byteLength(data.script, 'utf8');
+        if (scriptBytes > MAX_ACTION_SCRIPT_BYTES) {
+            throw new BadRequestException(
+                `Script is ${scriptBytes.toString()} bytes, the limit is ${MAX_ACTION_SCRIPT_BYTES.toString()} bytes. Build a Docker action for anything larger.`,
+            );
+        }
+
+        const template = await this.actionTemplateRepository.findOne({
+            where: {
+                name: SCRIPT_RUNNER_TEMPLATE_NAME,
+                isArchived: false,
+            },
+            order: { version: 'DESC' },
+        });
+
+        if (!template) {
+            throw new BadRequestException(
+                `This deployment has no \`${SCRIPT_RUNNER_TEMPLATE_NAME}\` action template. Ask an administrator to install it.`,
+            );
+        }
+
+        if (
+            data.maxRuntimeHours !== undefined &&
+            data.maxRuntimeHours > template.maxRuntime
+        ) {
+            throw new BadRequestException(
+                `The requested runtime of ${data.maxRuntimeHours.toString()}h exceeds the ${template.maxRuntime.toString()}h the \`${SCRIPT_RUNNER_TEMPLATE_NAME}\` template allows.`,
+            );
+        }
+
+        const creator = await this.userRepository.findOneOrFail({
+            where: { uuid: auth.user.uuid },
+        });
+
+        const mission = await this.missionRepository.findOneOrFail({
+            where: { uuid: data.missionUUID },
+        });
+
+        const scriptObject = await this.storeScript(data, mission, creator);
+
+        const actionUUID = await this.actionDispatcher.dispatch(
+            template.uuid,
+            mission,
+            creator,
+            {},
+            ActionTriggerSource.MANUAL,
+            undefined,
+            { scriptObject, maxRuntimeHours: data.maxRuntimeHours },
+        );
+
+        return { actionUUID };
+    }
+
+    /**
+     * Writes the submitted script to the scripts bucket and returns its key.
+     *
+     * The bucket only takes files, so the body goes through a temporary file
+     * that is removed again whether or not the upload succeeds.
+     */
+    private async storeScript(
+        data: SubmitScriptActionDto,
+        mission: MissionEntity,
+        creator: UserEntity,
+    ): Promise<string> {
+        const scriptObject = `${mission.uuid}/${randomUUID()}.py`;
+        const temporaryPath = path.join(
+            tmpdir(),
+            `kleinkram-script-${randomUUID()}`,
+        );
+
+        try {
+            await writeFile(temporaryPath, data.script, 'utf8');
+            await this.scriptStorage.uploadFile(scriptObject, temporaryPath, {
+                filename: data.filename,
+                missionUuid: mission.uuid,
+                creatorUuid: creator.uuid,
+            });
+        } finally {
+            await rm(temporaryPath, { force: true });
+        }
+
+        return scriptObject;
     }
 
     async multiSubmit(

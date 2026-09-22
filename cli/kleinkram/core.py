@@ -673,6 +673,62 @@ def launch_execution(
     return execution_id
 
 
+MAX_SCRIPT_BYTES = 1024 * 1024
+SCRIPT_FILENAME_PATTERN = re.compile(r"^[\w.-]{1,96}\.py$")
+
+
+def run_script(
+    client: AuthenticatedClient,
+    mission_query: MissionQuery,
+    script_path: Path,
+    *,
+    max_runtime_hours: Optional[float] = None,
+) -> UUID:
+    """
+    business logic to resolve a mission and submit a single Python file as an action.
+    """
+    script = _read_script(script_path)
+
+    mission_obj = kleinkram.api.routes.get_mission(client, mission_query)
+
+    return kleinkram.api.routes._submit_script_action(
+        client,
+        mission_obj.id,
+        script=script,
+        filename=script_path.name,
+        max_runtime_hours=max_runtime_hours,
+    )
+
+
+def _read_script(script_path: Path) -> str:
+    """
+    Reads a script and rejects what the API would reject anyway, so that an
+    obvious mistake fails locally instead of after a round trip.
+    """
+    if script_path.suffix != ".py":
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not a Python file (expected a `.py` suffix).")
+
+    if not SCRIPT_FILENAME_PATTERN.match(script_path.name):
+        raise kleinkram.errors.ExecutionValidationError(
+            f"`{script_path.name}` is not a usable script name; use letters, digits, `.`, `-` and `_` only."
+        )
+
+    raw = script_path.read_bytes()
+    if not raw:
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is empty.")
+
+    if len(raw) > MAX_SCRIPT_BYTES:
+        raise kleinkram.errors.ExecutionValidationError(
+            f"`{script_path}` is {len(raw)} bytes, the limit is {MAX_SCRIPT_BYTES} bytes. "
+            "Build a Docker action for anything larger."
+        )
+
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not valid UTF-8 text.") from e
+
+
 def create_mission(
     client: AuthenticatedClient,
     project_id: UUID,

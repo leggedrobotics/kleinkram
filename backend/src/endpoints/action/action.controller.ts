@@ -15,6 +15,7 @@ import {
     PaginatedQueryDto,
     SubmitActionDto,
     SubmitActionMulti,
+    SubmitScriptActionDto,
     SuccessResponseDto,
 } from '@kleinkram/api-dto';
 import {
@@ -33,6 +34,7 @@ import {
     CanCancelAction,
     CanCreateAction,
     CanCreateActions,
+    CanCreateScriptAction,
     CanDeleteAction,
     CanReadAction,
     IsRunningAction,
@@ -57,6 +59,21 @@ export class ActionsController {
         @AddUser() user: AuthHeader,
     ): Promise<ActionSubmitResponseDto> {
         return this.actionService.submit(dto, user);
+    }
+
+    @Post('script')
+    @CanCreateScriptAction()
+    @ApiOperation({
+        summary: 'Submit a single-file Python script as an action',
+        description:
+            'Called by `klein action run-script`. Stores the script and dispatches it on the shared `script-runner` template, so no image has to be built or pushed.',
+    })
+    @ApiCreatedResponse({ type: ActionSubmitResponseDto })
+    async createFromScript(
+        @Body() dto: SubmitScriptActionDto,
+        @AddUser() user: AuthHeader,
+    ): Promise<ActionSubmitResponseDto> {
+        return this.actionService.submitScript(dto, user);
     }
 
     @Post('batch')

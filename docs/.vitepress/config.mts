@@ -122,6 +122,10 @@ export default withMermaid({
                             link: '/usage/actions/use-actions.md',
                         },
                         {
+                            text: 'Run a Python Script',
+                            link: '/usage/actions/run-script.md',
+                        },
+                        {
                             text: 'Action Triggers',
                             link: '/usage/actions/triggers.md',
                         },

@@ -24,6 +24,7 @@ import {
     CreateActionGuard,
     CreateActionsGuard,
     CreateGuard,
+    CreateScriptActionGuard,
     DeleteActionGuard,
     DeleteTagGuard,
     FileAccessGuard,
@@ -400,6 +401,19 @@ export function CanCreateAction() {
             type: ForbiddenException,
             description:
                 'User does not have Create permissions on the specified project.',
+        }),
+    );
+}
+
+export function CanCreateScriptAction() {
+    return applyDecorators(
+        SetMetadata('CanCreateActions', true),
+        UseGuards(CreateScriptActionGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User does not have the permissions the script runner template requires on the specified project.',
         }),
     );
 }
