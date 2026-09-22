@@ -1,6 +1,11 @@
 import { ActionEntity, environment } from '@kleinkram/backend-common';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
-import { ActionState, ImageSource } from '@kleinkram/shared';
+import {
+    ActionFailureOrigin,
+    ActionSeverity,
+    ActionState,
+    ImageSource,
+} from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
@@ -201,6 +206,7 @@ export class ContainerLifecycleService {
                         await this.markActionAsFailed(
                             containerActionUuid,
                             'Time limit exceeded',
+                            ActionFailureOrigin.USER,
                             143, // SIGTERM equivalent or custom exit code for timeout
                         );
                         continue;
@@ -213,6 +219,7 @@ export class ContainerLifecycleService {
                     const affected = await this.markActionAsFailed(
                         containerActionUuid,
                         'Container killed by Janitor: action no longer active',
+                        ActionFailureOrigin.SYSTEM,
                         undefined,
                         {
                             state: Not(
@@ -257,6 +264,7 @@ export class ContainerLifecycleService {
                     await this.markActionAsFailed(
                         containerActionUuid,
                         'Interrupted by new Runner Instance (old runner inactive)',
+                        ActionFailureOrigin.SYSTEM,
                         137,
                     );
                 } else {
@@ -293,6 +301,7 @@ export class ContainerLifecycleService {
                 await this.markActionAsFailed(
                     action.uuid,
                     'Container crashed, no container found',
+                    ActionFailureOrigin.SYSTEM,
                 );
             }
         }
@@ -325,10 +334,17 @@ export class ContainerLifecycleService {
 
     /**
      * Mark an action as failed in the database.
+     *
+     * @param origin who is responsible. The janitor is the only component that
+     * knows whether it killed a container because we restarted the runner
+     * (`SYSTEM`) or because the action outstayed its own limits (`USER`), so it
+     * has to record that verdict here rather than leave it to be guessed from
+     * the exit code later.
      */
     private async markActionAsFailed(
         actionUuid: string,
         cause: string,
+        origin: ActionFailureOrigin,
         exitCode?: number,
         extraCriteria: object = {},
     ): Promise<number> {
@@ -336,6 +352,8 @@ export class ContainerLifecycleService {
             { uuid: actionUuid, ...extraCriteria },
             {
                 state: ActionState.FAILED,
+                severity: ActionSeverity.ERROR,
+                failureOrigin: origin,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 state_cause: cause,
                 ...(exitCode !== undefined && {

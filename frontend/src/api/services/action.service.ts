@@ -1,3 +1,4 @@
+import type { ActionDiagnosticsDto } from '@kleinkram/api-dto/types/actions/action-diagnostic.dto';
 import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
 import type { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto/types/actions/action-template-availability.dto';
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
@@ -152,6 +153,13 @@ export const ActionService = {
             {
                 params: { skip, take, search, level },
             },
+        );
+        return data;
+    },
+
+    async getDiagnostics(uuid: string): Promise<ActionDiagnosticsDto> {
+        const { data } = await axios.get<ActionDiagnosticsDto>(
+            `/actions/${uuid}/diagnostics`,
         );
         return data;
     },

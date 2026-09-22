@@ -34,6 +34,7 @@ import {
     ProjectAccessGuard,
     QueueItemAccessGuard,
     ReadActionGuard,
+    ReportActionDiagnosticGuard,
     UserGuard,
 } from './guards';
 
@@ -367,6 +368,25 @@ export function CanReadAction() {
             type: ForbiddenException,
             description:
                 'User does not have Read permissions on the specified project.',
+        }),
+    );
+}
+
+/**
+ * Restricts a route to the running action container itself.
+ *
+ * Only the disposable action key the runner minted for the action named in the
+ * route parameter is accepted; user sessions and ordinary CLI keys are not.
+ */
+export function IsRunningAction() {
+    return applyDecorators(
+        SetMetadata('IsRunningAction', true),
+        UseGuards(ReportActionDiagnosticGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'This endpoint can only be called by the action container itself, using the API key Kleinkram injected into it.',
         }),
     );
 }

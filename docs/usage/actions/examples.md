@@ -10,6 +10,13 @@ Kleinkram comes with a set of example actions that cover common use cases:
 | **Python Script**     | `rslethz/action:python-template-latest`  | Run a custom Python script on your data.                   | Any             | Any                |
 | **GPU Python Script** | `rslethz/action:gpu-example-latest`      | Run a custom Python script with GPU acceleration.          | Any             | Any                |
 
+::: tip Validate Data Reports Warnings
+**Validate Data** is also the worked example of [action findings](./write-actions.md#action-outcome). It flags empty
+files and duplicated content with `klein action warn` rather than failing, so a mission with a recording uploaded twice
+finishes as `DONE` in amber with the offending filenames listed, instead of either going green or failing a run that
+produced its checksums.
+:::
+
 ::: tip Source Code for Example Actions
 The source code of these example actions is available in the
 [Kleinkram GitHub Repository](https://github.com/leggedrobotics/kleinkram/tree/main/examples/kleinkram-actions). You can

@@ -33,6 +33,7 @@ export {
     CreateActionsGuard,
     DeleteActionGuard,
     ReadActionGuard,
+    ReportActionDiagnosticGuard,
 } from './action.guards';
 
 // Access group guards

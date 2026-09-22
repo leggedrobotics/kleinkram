@@ -118,6 +118,19 @@ class LogEntry:
 
 
 @dataclass(frozen=True)
+class Diagnostic:
+    """A single finding an action reported about itself while running."""
+
+    uuid: UUID
+    severity: str
+    message: str
+    code: str | None
+    file: str | None
+    count: int
+    created_at: datetime
+
+
+@dataclass(frozen=True)
 class Execution:
     uuid: UUID
     state: str
@@ -133,6 +146,11 @@ class Execution:
     template_id: UUID
     template_name: str
     logs: List[LogEntry] = field(default_factory=list)
+
+    # Reported by backends that support action severity; None against older ones.
+    severity: str | None = None
+    failure_origin: str | None = None
+    diagnostic_count: int = 0
 
 
 @dataclass(frozen=True)

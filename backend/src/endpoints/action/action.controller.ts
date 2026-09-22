@@ -1,21 +1,33 @@
 import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
+import { ActionDiagnosticService } from '@/services/action-diagnostic.service';
 import { ActionService } from '@/services/action.service';
 import { FileQueryService } from '@/services/file-query.service';
 import { ParameterUuid } from '@/validation/parameter-decorators';
 import {
+    ActionDiagnosticsDto,
     ActionDto,
     ActionLogsDto,
     ActionQuery,
     ActionsDto,
     ActionSubmitResponseDto,
+    CreateActionDiagnosticDto,
     FileEventsDto,
     PaginatedQueryDto,
     SubmitActionDto,
     SubmitActionMulti,
     SuccessResponseDto,
 } from '@kleinkram/api-dto';
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCancelAction,
@@ -23,6 +35,7 @@ import {
     CanCreateActions,
     CanDeleteAction,
     CanReadAction,
+    IsRunningAction,
     LoggedIn,
 } from '../auth/roles.decorator';
 
@@ -31,6 +44,7 @@ import {
 export class ActionsController {
     constructor(
         private readonly actionService: ActionService,
+        private readonly actionDiagnosticService: ActionDiagnosticService,
         private readonly fileQueryService: FileQueryService,
     ) {}
 
@@ -94,6 +108,35 @@ export class ActionsController {
         @ParameterUuid('uuid') uuid: string,
     ): Promise<FileEventsDto> {
         return this.fileQueryService.getActionFileEvents(uuid);
+    }
+
+    @Get(':uuid/diagnostics')
+    @CanReadAction()
+    @ApiOperation({ summary: 'Get the diagnostics an action reported' })
+    @ApiOkResponse({ type: ActionDiagnosticsDto })
+    async getDiagnostics(
+        @ParameterUuid('uuid') uuid: string,
+    ): Promise<ActionDiagnosticsDto> {
+        return this.actionDiagnosticService.findAll(uuid);
+    }
+
+    @Post(':uuid/diagnostics')
+    @IsRunningAction()
+    @HttpCode(204)
+    // The route answers with no body, so response validation has nothing to
+    // check; without this the global interceptor rejects it as undeclared.
+    @OutputDto(null)
+    @Throttle({ default: { limit: 600, ttl: 60_000 } })
+    @ApiOperation({
+        summary: 'Report a diagnostic from inside the running action container',
+        description:
+            'Called by `klein action warn` / `klein action fail`. Raises the severity of the action without changing its state.',
+    })
+    async reportDiagnostic(
+        @ParameterUuid('uuid') uuid: string,
+        @Body() dto: CreateActionDiagnosticDto,
+    ): Promise<void> {
+        return this.actionDiagnosticService.record(uuid, dto);
     }
 
     @Delete(':uuid')

@@ -8,7 +8,13 @@ import {
 } from '@kleinkram/backend-common';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import * as schedulingLogic from '@kleinkram/backend-common/scheduling-logic';
-import { ActionState, ActionTriggerSource, UserRole } from '@kleinkram/shared';
+import {
+    ActionFailureOrigin,
+    ActionSeverity,
+    ActionState,
+    ActionTriggerSource,
+    UserRole,
+} from '@kleinkram/shared';
 import { Gauge } from 'prom-client';
 import { EntityManager, Repository } from 'typeorm';
 
@@ -131,6 +137,9 @@ describe('ActionDispatcherService Unit Tests', () => {
 
         expect(updateSpy).toHaveBeenCalledWith('action-uuid', {
             state: ActionState.UNPROCESSABLE,
+            severity: ActionSeverity.ERROR,
+            // A queue rejection is ours, not the action author's.
+            failureOrigin: ActionFailureOrigin.SYSTEM,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             state_cause: 'Resources unavailable or queue error',
         });

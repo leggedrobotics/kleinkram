@@ -86,6 +86,38 @@ Use the `verify` command to double-check if your local files were successfully u
 klein verify --project testProject --mission testMission data.bag
 ```
 
+### Reporting from Inside an Action
+
+The `klein action` commands only work from within a running Kleinkram action container, where Kleinkram provides the
+credentials and the action id. Use them to tell the reader of the action what it found, rather than encoding it in the
+exit code.
+
+```bash
+# the action still succeeds; it is shown as "DONE · 1 finding"
+klein action warn "no /tf topic in this recording" --file run_1.bag --code MISSING_TF
+
+# record an error without stopping the run
+klein action fail "bag header is truncated" --file run_2.bag
+
+# a note that leaves the action reading as clean
+klein action info "checked 42 recordings"
+```
+
+See [Write Custom Action Templates](../actions/write-actions.md#raising-warnings) for the full description.
+
+### Inspecting Action Runs
+
+```bash
+# the status column shows e.g. "DONE (3 warnings)"
+klein executions list --mission testMission
+
+# state, cause, who failed it, and how many findings it reported
+klein executions info <execution-id>
+
+# every warning and error the action reported about itself
+klein executions diagnostics <execution-id>
+```
+
 ## Supported File Types
 
 The Kleinkram CLI supports uploading and verifying all standard file types. See the detailed [Files documentation](../files/files.md) for a comprehensive list of supported data formats and sizes.

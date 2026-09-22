@@ -131,6 +131,30 @@ kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
 kleinkram.update_file(file_id="...")
 ```
 
+### Reporting from Inside an Action
+
+When your code runs inside a Kleinkram action, it can report what it found. Warnings do not fail the action: the run
+still completes, and is shown as done with warnings.
+
+```python
+import kleinkram
+
+for bag in bags:
+    if "/tf" not in bag.topics:
+        kleinkram.warn("no /tf topic in this recording", file=bag.name, code="MISSING_TF")
+
+# record an error without stopping the run; exit non-zero to fail the action itself
+kleinkram.fail("bag header is truncated", file="run_2.bag")
+
+# a note that leaves the action reading as clean
+kleinkram.info("checked 42 recordings")
+```
+
+These read `KLEINKRAM_ACTION_UUID` from the environment, so they raise `NotInsideAction` when called outside an action
+container. Pass `execution_id=` explicitly if you need to target a specific run.
+
+Read them back with `kleinkram.list_diagnostics(execution_id)`.
+
 ### Deleting Resources
 
 Clean up your workspace by programmatically deleting files, missions, or projects.

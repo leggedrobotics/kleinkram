@@ -2,6 +2,7 @@ export * from './audit/access-group-audit.service';
 export * from './audit/audit.types';
 export * from './audit/file-audit.service';
 export * from './consts';
+export * from './entities/action/action-diagnostic.entity';
 export * from './entities/action/action-template.entity';
 export * from './entities/action/action-trigger.entity';
 export * from './entities/action/action.entity';
@@ -43,6 +44,7 @@ export * from './types';
 export * from './viewEntities/mission-access-view.entity';
 export * from './viewEntities/project-access-view.entity';
 
+import { ActionDiagnosticEntity } from './entities/action/action-diagnostic.entity';
 import { ActionTemplateEntity } from './entities/action/action-template.entity';
 import { ActionTriggerEntity } from './entities/action/action-trigger.entity';
 import { ActionEntity } from './entities/action/action.entity';
@@ -69,6 +71,7 @@ import { MissionAccessViewEntity } from './viewEntities/mission-access-view.enti
 import { ProjectAccessViewEntity } from './viewEntities/project-access-view.entity';
 
 export const ALL_ENTITIES = [
+    ActionDiagnosticEntity,
     ActionTemplateEntity,
     ActionTriggerEntity,
     ActionEntity,

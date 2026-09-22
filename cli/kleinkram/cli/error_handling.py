@@ -17,6 +17,7 @@ from rich.panel import Panel
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.errors import InsufficientStorageError
+from kleinkram.errors import NotInsideAction
 from kleinkram.utils import format_traceback
 from kleinkram.utils import upper_camel_case_to_words
 
@@ -224,6 +225,31 @@ def handle_insufficient_storage_error(exc: InsufficientStorageError) -> int:
     return 1
 
 
+def handle_not_inside_action(exc: NotInsideAction) -> int:
+    shared_state = get_shared_state()
+
+    title = "Not Inside an Action"
+    msg = (
+        "This command reports on the action it is running inside, so it only works\n"
+        "within a Kleinkram action container.\n\n"
+        "Kleinkram sets [bold cyan]KLEINKRAM_ACTION_UUID[/bold cyan] and "
+        "[bold cyan]KLEINKRAM_API_KEY[/bold cyan] in every action container;\n"
+        "neither is set here."
+    )
+    quiet_msg = "Error: `klein action` only works inside a running action container"
+
+    display_error(
+        exc=exc,
+        verbose=shared_state.verbose,
+        title=title,
+        message=msg if shared_state.verbose else quiet_msg,
+    )
+
+    if shared_state.debug:
+        raise exc
+    return 1
+
+
 def register_error_handlers(app: ErrorHandledTyper) -> None:
     """Register all CLI error handlers. Note: since ErrorHandledTyper dispatches
     handlers in reverse order of registration, the most generic Exception handler
@@ -231,5 +257,6 @@ def register_error_handlers(app: ErrorHandledTyper) -> None:
     """
     app.error_handler(Exception)(handle_generic_exception)
     app.error_handler(InsufficientStorageError)(handle_insufficient_storage_error)
+    app.error_handler(NotInsideAction)(handle_not_inside_action)
     app.error_handler(httpx.RequestError)(handle_request_error)
     app.error_handler(httpx.HTTPStatusError)(handle_http_status_error)

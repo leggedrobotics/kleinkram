@@ -100,6 +100,44 @@ export enum ActionState {
     CANCELLED = 'CANCELLED',
 }
 
+/**
+ * The verdict an action reached, orthogonal to its lifecycle {@link ActionState}.
+ *
+ * `state` answers whether the run reached the end, `severity` answers what it
+ * found on the way. A run that completes and reports warnings is `DONE` with
+ * severity `WARNING`; it is not a failure and must not be rendered as one.
+ */
+export enum ActionSeverity {
+    OK = 'OK',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR',
+}
+
+/**
+ * Who is responsible for a failed action.
+ *
+ * `USER` failures are fixable by whoever wrote the action or its template
+ * (bad image, crashed script, exceeded the quota they configured). `SYSTEM`
+ * failures are ours (runner restarts, image pulls, storage) and are the ones
+ * that are safe to retry automatically.
+ */
+export enum ActionFailureOrigin {
+    USER = 'USER',
+    SYSTEM = 'SYSTEM',
+}
+
+/**
+ * The severity of a single diagnostic reported by a running action container.
+ *
+ * Unlike {@link ActionSeverity} there is no `OK`: a diagnostic always says
+ * something. `INFO` records a note without colouring the action's verdict.
+ */
+export enum DiagnosticSeverity {
+    INFO = 'INFO',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR',
+}
+
 export enum KeyTypes {
     ACTION = 'ACTION',
 }

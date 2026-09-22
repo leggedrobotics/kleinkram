@@ -6,6 +6,7 @@ import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.e
 import {
     AccessGroupRights,
     isTerminalActionState,
+    KeyTypes,
     UserRole,
 } from '@kleinkram/shared';
 import {
@@ -54,6 +55,50 @@ export class CanModifyTriggerGuard extends BaseGuard {
         }
 
         return trigger.creatorUuid === user.uuid;
+    }
+}
+
+/**
+ * Allows a running action container to report on itself.
+ *
+ * The only credential accepted is the disposable action key the runner minted
+ * for this exact action, so an action can never write diagnostics onto another
+ * action, and no human token works here at all. The key is revoked when the
+ * container exits, which closes the route for that action automatically.
+ */
+@Injectable()
+export class ReportActionDiagnosticGuard extends BaseGuard {
+    constructor(
+        @InjectRepository(ActionEntity)
+        private actionRepository: Repository<ActionEntity>,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { apiKey, request } = await this.getUser(context);
+
+        // KeyTypes currently has a single member, so this reads as redundant to
+        // the type checker. It is not: it is what keeps this route closed to
+        // any future key type that is not an action key.
+        if (apiKey?.key_type !== KeyTypes.ACTION) {
+            return false;
+        }
+
+        const params = request.params as { uuid?: string } | undefined;
+        const actionUUID = params?.uuid;
+
+        if (!actionUUID) {
+            return false;
+        }
+
+        const action = await this.actionRepository.findOne({
+            where: { uuid: actionUUID },
+            relations: { key: true },
+            select: { uuid: true },
+        });
+
+        return action?.key?.uuid === apiKey.uuid;
     }
 }
 
