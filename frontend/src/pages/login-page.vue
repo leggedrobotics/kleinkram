@@ -168,9 +168,14 @@ const handleRefetchProviders = () => {
  * The login card sits inside a decorative 3x3 frame. On desktop the frame is
  * exactly 48px + 460px + 48px wide (unchanged); on narrow viewports the middle
  * column shrinks so the page never scrolls horizontally.
+ *
+ * The page fills whatever the layout leaves above the footer instead of
+ * claiming a fixed slice of the viewport, so the footer never pushes the
+ * content past 100vh.
  */
 .login-page {
-    height: calc(100vh - 50px);
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .login-frame {
@@ -250,8 +255,6 @@ const handleRefetchProviders = () => {
 
 @media (max-width: 599px) {
     .login-page {
-        height: auto;
-        min-height: calc(100vh - 50px);
         padding: 24px 0;
     }
 
