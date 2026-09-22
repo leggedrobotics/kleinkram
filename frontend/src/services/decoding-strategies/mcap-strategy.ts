@@ -425,7 +425,7 @@ export class McapStrategy extends DecodingStrategy {
         for await (const { item: visit, result: indexed } of mapInOrder(
             visits,
             CHUNK_CONCURRENCY,
-            async ({ chunk }) =>
+            async ({ chunk, chunkIndex }) =>
                 signal?.aborted
                     ? undefined
                     : // The core ChunkIndex carries every field this needs;
@@ -433,6 +433,12 @@ export class McapStrategy extends DecodingStrategy {
                       this.readChunkByMessageIndex(
                           chunk as unknown as McapChunkIndex,
                           channelIds,
+                          {
+                              chunkOffset: Math.round(
+                                  chunkIndex * averagePerChunk,
+                              ),
+                              keepEvery,
+                          },
                       ),
         )) {
             if (signal?.aborted) break;
@@ -450,10 +456,16 @@ export class McapStrategy extends DecodingStrategy {
                     endTime: chunk.messageEndTime,
                 });
 
+            // The indexed reader already applied the stride from the index,
+            // so re-applying it here would sample the samples.
+            const preSampled = indexed !== undefined;
+
             for await (const message of source) {
                 if (signal?.aborted) break;
                 if (msgs.length >= hardLimit) break;
-                if ((chunkOffset + seen++) % keepEvery !== 0) continue;
+                if (!preSampled && (chunkOffset + seen++) % keepEvery !== 0) {
+                    continue;
+                }
                 const key = messageIdentity(message);
                 if (emitted.has(key)) continue;
                 emitted.add(key);
@@ -489,6 +501,7 @@ export class McapStrategy extends DecodingStrategy {
     private async readChunkByMessageIndex(
         chunk: McapChunkIndex,
         channelIds: Set<number>,
+        sampling?: { chunkOffset: number; keepEvery: number },
     ): Promise<ParsedChunkMessage[] | undefined> {
         const httpReader = this.httpReader;
         if (!httpReader) return undefined;
@@ -510,13 +523,33 @@ export class McapStrategy extends DecodingStrategy {
         const indexes = parseMessageIndexes(blob);
         if (indexes.size === 0) return undefined;
 
-        const extents = planChunk(
+        let extents = planChunk(
             chunkDataStart(Number(chunk.chunkStartOffset), chunk.compression),
             Number(chunk.uncompressedSize),
             indexes,
             channelIds,
         );
         if (extents.length === 0) return [];
+
+        // Sample before fetching, not after. A preview showing every 18th
+        // message only needs every 18th record, and deciding that from the
+        // index costs nothing -- fetching all of them and discarding the rest
+        // costs eighteen times the bytes and requests.
+        if (sampling && sampling.keepEvery > 1) {
+            const { chunkOffset, keepEvery } = sampling;
+            extents = extents
+                .toSorted((a, b) =>
+                    a.logTime === b.logTime
+                        ? 0
+                        : a.logTime < b.logTime
+                          ? -1
+                          : 1,
+                )
+                .filter(
+                    (_extent, index) => (chunkOffset + index) % keepEvery === 0,
+                );
+            if (extents.length === 0) return [];
+        }
 
         const out: ParsedChunkMessage[] = [];
         for await (const { item: range, result: buffer } of mapInOrder(
