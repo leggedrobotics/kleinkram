@@ -101,6 +101,13 @@
         </div>
     </div>
 
+    <!-- TODO: bulk actions go in the default slot as they arrive -->
+    <table-selection-bar
+        noun="entry"
+        :count="selected.length"
+        @clear="clearRowSelection"
+    />
+
     <q-table
         ref="tableReference"
         v-model:pagination="pagination"
@@ -259,6 +266,7 @@ import type { FileQueueEntryDto } from '@kleinkram/api-dto/types/file/file-queue
 import { FileLocation, QueueState } from '@kleinkram/shared';
 import { useQueryClient } from '@tanstack/vue-query';
 import { QTable, useQuasar } from 'quasar';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import ConfirmDeleteFile from 'src/dialogs/confirm-delete-file-dialog.vue';
 import ROUTES from 'src/router/routes';
 import { dateMask, formatDate, parseDate } from 'src/services/date-formating';
@@ -274,6 +282,7 @@ import { useRouter } from 'vue-router';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
+import TableSelectionBar from 'components/common/table-selection-bar.vue';
 
 import {
     useCancelProcessing,
@@ -383,9 +392,14 @@ async function refresh(): Promise<void> {
     });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function rowClick(event: any, row: FileQueueEntryDto): Promise<void> {
-    await openRow(row);
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick: rowClick } = useRowActivation(selected, openRow);
+
+function clearRowSelection(): void {
+    selected.value = [];
 }
 
 async function openRow(row: FileQueueEntryDto): Promise<void> {

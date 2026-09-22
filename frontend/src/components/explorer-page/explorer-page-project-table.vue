@@ -1,4 +1,10 @@
 <template>
+    <table-selection-bar
+        noun="project"
+        :count="selected.length"
+        @clear="clearSelection"
+    />
+
     <q-table
         v-if="!isLoading"
         v-model:pagination="pagination"
@@ -338,8 +344,10 @@ import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-c
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
 import ProjectStarButton from 'components/common/project-star-button.vue';
+import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import { QTable, useQuasar } from 'quasar';
 import { explorerPageTableColumns } from 'src/components/explorer-page/explorer-page-table-columns';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import {
     useFilteredProjects,
     useHandler,
@@ -434,7 +442,7 @@ const pagination = computed({
     }),
 });
 
-const selected = ref([]);
+const selected = ref<ProjectWithMissionCountDto[]>([]);
 
 const {
     data: rawData,
@@ -481,16 +489,19 @@ function projectRoute(row: ProjectWithMissionCountDto): RouteLocationRaw {
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: Event, row: any): Promise<void> => {
-    await $router.push({
-        name: ROUTES.MISSIONS.routeName,
-        params: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            projectUuid: row.uuid,
-        },
-    });
+const openProject = async (row: ProjectWithMissionCountDto): Promise<void> => {
+    await $router.push(projectRoute(row));
 };
+
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick } = useRowActivation(selected, openProject);
+
+function clearSelection(): void {
+    selected.value = [];
+}
 </script>
 
 <style scoped>

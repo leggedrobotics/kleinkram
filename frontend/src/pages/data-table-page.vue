@@ -3,9 +3,15 @@
 
     <FilesFilter :use-filter="filterHook" />
 
+    <table-selection-bar
+        noun="file"
+        :count="selected.length"
+        @clear="clearSelection"
+    />
+
     <!--
         The card list has no column headers, so phones get an explicit sort
-        control and a hint about how many rows are currently selected.
+        control.
     -->
     <div v-if="isPhone" class="row items-center justify-between q-mb-sm">
         <q-btn-dropdown
@@ -40,10 +46,6 @@
                 </q-item>
             </q-list>
         </q-btn-dropdown>
-
-        <span v-if="selected.length > 0" class="text-caption text-grey-7">
-            {{ selected.length }} selected
-        </span>
     </div>
 
     <q-table
@@ -119,7 +121,7 @@
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="() => onRowClick(undefined, props.row)"
+                                @click="() => openFile(props.row)"
                             >
                                 <q-item-section>View File</q-item-section>
                             </q-item>
@@ -196,13 +198,7 @@
                                         <q-item
                                             v-ripple
                                             clickable
-                                            @click="
-                                                () =>
-                                                    onRowClick(
-                                                        undefined,
-                                                        props.row,
-                                                    )
-                                            "
+                                            @click="() => openFile(props.row)"
                                         >
                                             <q-item-section>
                                                 View File
@@ -268,10 +264,12 @@ import {
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 import TableEmptyState from 'components/common/table-empty-state.vue';
+import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import FilesFilter from 'components/files/files-filter.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable, QTableColumn, useQuasar } from 'quasar';
 import { useFileFilter } from 'src/composables/use-file-filter';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import { useHandler } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
@@ -548,18 +546,19 @@ function fileRoute(row: FileWithTopicDto): RouteLocationRaw {
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: any, row: FileWithTopicDto): Promise<void> => {
-    await $router.push({
-        name: ROUTES.FILE.routeName,
-        params: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            file_uuid: row.uuid,
-            missionUuid: row.mission.uuid,
-            projectUuid: row.mission.project.uuid,
-        },
-    });
+const openFile = async (row: FileWithTopicDto): Promise<void> => {
+    await $router.push(fileRoute(row));
 };
+
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick } = useRowActivation(selected, openFile);
+
+function clearSelection(): void {
+    selected.value = [];
+}
 </script>
 
 <style scoped>
