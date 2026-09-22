@@ -787,6 +787,16 @@ def test_sdk_download_without_filters_is_a_normal_download(tmp_path: Path, monke
     assert captured["mcap_slice"] is None
 
 
+def _plain(output: str) -> str:
+    """CLI output without colour codes or the error panel's frame and wrapping.
+
+    Rich colours its output on CI (and not locally), and wraps error panels.
+    """
+    output = re.sub(r"\x1b\[[0-9;]*m", "", output)
+    output = re.sub(r"[│╭╮╰╯─]", " ", output)
+    return " ".join(output.split())
+
+
 @pytest.fixture
 def cli_app(remote_mcap: File, monkeypatch):
     """The real `klein` app, with the API and config layers stubbed out."""
@@ -829,7 +839,7 @@ def test_cli_download_slices(cli_app, remote_mcap: File, mcap_file: Path, tmp_pa
         mcap_file, topics=["/tf", "/odom"], start_time=100 * INTERVAL_NS, end_time=150 * INTERVAL_NS
     )
     if verbose:
-        assert "1 downloaded partially" in outcome.output
+        assert "1 downloaded partially" in _plain(outcome.output)
 
 
 def test_cli_download_rejects_an_inverted_window(cli_app, remote_mcap: File, tmp_path: Path) -> None:
@@ -839,14 +849,14 @@ def test_cli_download_rejects_an_inverted_window(cli_app, remote_mcap: File, tmp
         ["download", "--dest", str(dest), "--start-time", "200", "--end-time", "100", str(remote_mcap.id)],
     )
     assert outcome.exit_code != 0
-    assert "--end-time must be after --start-time" in outcome.output
+    assert "--end-time must be after --start-time" in _plain(outcome.output)
     assert not dest.exists()
 
 
 def test_cli_download_rejects_an_unparseable_time(cli_app, remote_mcap: File, tmp_path: Path) -> None:
     outcome = CliRunner().invoke(cli_app, ["download", "--dest", str(tmp_path), "--start-time", "soon", str(remote_mcap.id)])
     assert outcome.exit_code != 0
-    assert "--start-time must be an ISO 8601 timestamp" in outcome.output
+    assert "--start-time must be an ISO 8601 timestamp" in _plain(outcome.output)
 
 
 @pytest.mark.parametrize(
