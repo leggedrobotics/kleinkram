@@ -13,8 +13,8 @@ import {
 import { McapIndexedReader } from '@mcap/core';
 import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
-import { DecodingStrategy } from './index';
 import { mapInOrder } from './fetch-pool';
+import { DecodingStrategy } from './index';
 import { coarseToFineOrder, LogMessage, ReadOptions } from './utilities';
 
 /** Identity of a message record, used to drop duplicates from overlapping chunks */
