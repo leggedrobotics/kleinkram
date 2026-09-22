@@ -142,12 +142,14 @@ export function planChunk(
     for (const entries of indexes.values()) {
         for (const entry of entries) boundaries.add(entry.offset);
     }
+    // Sorting a fresh copy, so the mutation the rule guards against cannot
+    // reach a caller. `toSorted` is ES2023 and this package targets ES2022.
+    // eslint-disable-next-line unicorn/no-array-sort
     const ordered = [...boundaries].sort((a, b) => a - b);
 
     const nextOffset = new Map<number, number>();
-    for (const [index, offset] of ordered.entries()) {
-        const next = ordered[index + 1];
-        if (next !== undefined) nextOffset.set(offset, next);
+    for (let index = 0; index < ordered.length - 1; index++) {
+        nextOffset.set(ordered[index], ordered[index + 1]);
     }
 
     const extents: MessageExtent[] = [];
@@ -181,9 +183,10 @@ export function coalesce(
 ): ByteRange[] {
     if (extents.length === 0) return [];
 
+    // A fresh copy, as above; `extents` itself is readonly and untouched.
+    // eslint-disable-next-line unicorn/no-array-sort
     const ordered = [...extents].sort((a, b) => a.start - b.start);
     const first = ordered[0];
-    if (!first) return [];
 
     const ranges: ByteRange[] = [{ start: first.start, end: first.end }];
     for (const extent of ordered.slice(1)) {

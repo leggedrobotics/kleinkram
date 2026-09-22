@@ -202,8 +202,15 @@ export class McapStrategy extends DecodingStrategy {
         }
         if (channelIds.size === 0) return [];
 
+        // A preview wants the first `limit` messages after striding, so the
+        // planner stops as soon as it has that many rather than reading the
+        // message index of every chunk in the file. On a 2 GB recording that
+        // is the difference between one or two index reads and eight hundred.
+        const needExtents = limit * keepEvery;
+
         const extents: MessageExtent[] = [];
         for (const chunk of chunkIndexes) {
+            if (extents.length >= needExtents) break;
             if (chunk.compression !== '') return undefined;
             if (signal?.aborted) return undefined;
             if (startTime !== undefined && chunk.messageEndTime < startTime) {
@@ -228,7 +235,10 @@ export class McapStrategy extends DecodingStrategy {
             }
             if (indexStart === undefined) return undefined;
 
-            const blob = await httpReader.read(
+            // readExact, not read: `read` inflates every request to its
+            // minimum streaming size, which would pull hundreds of kB to get
+            // an 8 kB index.
+            const blob = await httpReader.readExact(
                 indexStart,
                 chunk.messageIndexLength,
             );
@@ -255,10 +265,9 @@ export class McapStrategy extends DecodingStrategy {
 
         // Only the records that survive striding are worth fetching, and the
         // preview stops at `limit`.
-        const selected = extents.filter(
-            (_extent, index) => index % keepEvery === 0,
-        );
-        const needed = selected.slice(0, limit);
+        const needed = extents
+            .filter((_extent, index) => index % keepEvery === 0)
+            .slice(0, limit);
         if (needed.length === 0) return [];
 
         const wantedStarts = new Set(needed.map((extent) => extent.start));
@@ -266,7 +275,7 @@ export class McapStrategy extends DecodingStrategy {
 
         for (const range of coalesce(needed, PREVIEW_COALESCE_GAP)) {
             if (signal?.aborted) break;
-            const buffer = await httpReader.read(
+            const buffer = await httpReader.readExact(
                 BigInt(range.start),
                 BigInt(range.end - range.start),
             );
