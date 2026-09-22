@@ -223,6 +223,13 @@ interface LoadPlan {
     stride: number;
     /** Whether the plan covers the whole topic (possibly sampled) */
     full: boolean;
+    /**
+     * Read the file coarse-to-fine instead of front-to-back. Wanted for
+     * plots and image sequences, where a partial load should already span
+     * the whole recording; unwanted for logs, which read top to bottom.
+     * Defaults to `full`.
+     */
+    progressive?: boolean;
 }
 
 /**
@@ -232,6 +239,17 @@ interface LoadPlan {
  * exhaust browser memory.
  */
 const MAX_PLOT_MESSAGES = 5000;
+
+/**
+ * Upper bound of log messages loaded in one go. Log payloads are small, so
+ * this is about keeping the rendered list and the decode time bounded rather
+ * than about memory; beyond it the viewer offers "Load more".
+ */
+const MAX_LOG_MESSAGES = 20_000;
+
+/** Messages added per "Load more" click, per viewer kind. */
+const LOAD_MORE_STEP = 20;
+const LOAD_MORE_STEP_LOGS = 2000;
 
 /**
  * Image streams are shown as a sampled sequence covering the whole
@@ -344,8 +362,22 @@ const getSmartLoad = (row: TopicRow): LoadPlan => {
         };
     }
 
-    // 2. Medium Load (Logs)
-    if (type === PreviewType.ROS_LOG || type === PreviewType.STRING) {
+    // 2. Whole topic, unsampled (ROS logs)
+    // The log viewer filters client-side, so a partial load would silently
+    // hide matches. Log messages are small, so the whole topic fits; very
+    // long streams stop at the cap and are extended with "Load more".
+    if (type === PreviewType.ROS_LOG) {
+        const limit = Math.min(row.nrMessages, MAX_LOG_MESSAGES);
+        return {
+            limit,
+            stride: 1,
+            full: limit === row.nrMessages,
+            progressive: false,
+        };
+    }
+
+    // 3. Medium Load (Strings)
+    if (type === PreviewType.STRING) {
         return { limit: 100, stride: 1, full: false };
     }
 
@@ -416,8 +448,15 @@ const loadData = (
 const loadSmart = (row: TopicRow): void => {
     const plan = getSmartLoad(row);
     // Plot viewers show the whole recording: load it coarse-to-fine so the
-    // full time range is visible early and refines as data streams in.
-    loadData(row.name, plan.limit, false, plan.stride, plan.full);
+    // full time range is visible early and refines as data streams in. Logs
+    // opt out of that and stream in reading order instead.
+    loadData(
+        row.name,
+        plan.limit,
+        false,
+        plan.stride,
+        plan.progressive ?? plan.full,
+    );
 };
 
 // Incremental Load (Load More button)
@@ -443,7 +482,11 @@ const loadMore = (topicName: string): void => {
         return;
     }
 
-    loadData(topicName, 20, true);
+    loadData(
+        topicName,
+        type === PreviewType.ROS_LOG ? LOAD_MORE_STEP_LOGS : LOAD_MORE_STEP,
+        true,
+    );
 };
 </script>
 
