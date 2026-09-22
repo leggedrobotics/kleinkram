@@ -50,6 +50,11 @@ async function resetCache(): Promise<void> {
 }
 
 watch([scope, search], () => {
+    // `setSearch` only resets the pagination when the search text itself
+    // changed, so switching scope on a later page would otherwise keep the old
+    // offset and show an empty list (most visible with the short starred
+    // list).
+    handler.value.setPage(1);
     handler.value.setSearch({ name: search.value ?? '' });
     // TODO: fix that we need a timeout here!!!
     setTimeout(() => {

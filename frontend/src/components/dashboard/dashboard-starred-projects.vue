@@ -7,9 +7,9 @@
                 icon="sym_o_arrow_outward"
                 class="scroll-button"
                 aria-label="Show all starred projects"
-                @click="toProjects"
+                @click="toStarredProjects"
             >
-                <q-tooltip>Show all projects</q-tooltip>
+                <q-tooltip>Show all starred projects</q-tooltip>
             </q-btn>
         </q-card>
 
@@ -58,6 +58,7 @@ import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/projec
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import { useQuery } from '@tanstack/vue-query';
 import ProjectStarButton from 'components/common/project-star-button.vue';
+import ROUTES from 'src/router/routes';
 import { starredProjects } from 'src/services/queries/project';
 import { computed, type ComputedRef } from 'vue';
 import { useRouter } from 'vue-router';
@@ -79,8 +80,11 @@ const projects: ComputedRef<ProjectWithRequiredTagsDto[]> = computed(
     () => data.value?.data ?? [],
 );
 
-const toProjects = async (): Promise<void> => {
-    await router.push('projects');
+const toStarredProjects = async (): Promise<void> => {
+    await router.push({
+        name: ROUTES.PROJECTS.routeName,
+        query: { scope: 'starred' },
+    });
 };
 
 async function goToProject(uuid: string): Promise<void> {
