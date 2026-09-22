@@ -27,6 +27,7 @@ export { QueueItemAccessGuard } from './queue.guards';
 // Action guards
 export {
     CanModifyTriggerGuard,
+    CanReadTriggerGuard,
     CancelActionGuard,
     CreateActionGuard,
     CreateActionsGuard,

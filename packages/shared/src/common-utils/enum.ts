@@ -117,6 +117,8 @@ export enum FileType {
     SVO2 = 'SVO2',
     TUM = 'TUM',
     DB3 = 'DB3',
+    MD = 'MD',
+    CSV = 'CSV',
     ALL = 'ALL',
 }
 

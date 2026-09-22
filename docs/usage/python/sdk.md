@@ -40,6 +40,9 @@ files = kleinkram.list_files(
     mission_names=["testMission"],
     file_names=["*.bag"]
 )
+
+# List the action triggers of a mission
+triggers = kleinkram.list_triggers(mission_uuid="...")
 ```
 
 ### Getting Resources by ID
@@ -50,7 +53,13 @@ If you already know the unique identifier for a resource, you can fetch it direc
 project = kleinkram.get_project(project_id="...")
 mission = kleinkram.get_mission(mission_id="...")
 file = kleinkram.get_file(file_id="...")
+trigger = kleinkram.get_trigger("...")
 ```
+
+`get_trigger` returns the trigger's full configuration, so it needs `Read`
+access on the trigger's mission — or you have to have created the trigger
+yourself. See [Action and Action Template](../access-control/action.md) for the
+access rules, in particular the caveat on webhook trigger uuids.
 
 ### Creating Resources
 

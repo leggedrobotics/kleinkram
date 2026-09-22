@@ -298,6 +298,18 @@ def list_triggers(
     return list(kleinkram.api.routes.get_triggers(client, query=query))
 
 
+def get_trigger(
+    trigger_uuid: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> ActionTrigger:
+    """\
+    get detailed information for a specific trigger by its uuid
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes.get_trigger(client, parse_uuid_like(trigger_uuid))
+
+
 @overload
 def upload(
     *,

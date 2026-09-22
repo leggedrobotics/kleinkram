@@ -1,19 +1,27 @@
 import { ApiCreatedResponse, ApiOkResponse } from '@/decorators';
 import { categoryEntityToDto } from '@/serialization';
 import { CategoryService } from '@/services/category.service';
+import { ParameterUuid } from '@/validation/parameter-decorators';
 import { QueryOptionalString, QueryUUID } from '@/validation/query-decorators';
 import {
     CategoriesDto,
     CategoryDto,
     SuccessResponseDto,
 } from '@kleinkram/api-dto';
-import { BodyString, BodyUUID, BodyUUIDArray } from '@kleinkram/validation';
-import { Controller, Get, Post } from '@nestjs/common';
+import {
+    BodyOptionalString,
+    BodyString,
+    BodyUUID,
+    BodyUUIDArray,
+} from '@kleinkram/validation';
+import { Controller, Get, Post, Put } from '@nestjs/common';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     CanCreateInProjectByBody,
     CanReadProject,
     CanWriteMissionByBody,
+    CanWriteProject,
+    fromBody,
     fromQuery,
 } from '../auth/roles.decorator';
 
@@ -45,11 +53,33 @@ export class CategoryController {
         @BodyString('name', 'Category Name') name: string,
         @AddUser() user: AuthHeader,
         @BodyUUID('projectUUID', 'Project UUID') projectUUID: string,
+        @BodyOptionalString('description', 'Category Description')
+        description?: string,
     ): Promise<CategoryDto> {
         const category = await this.categoryService.create(
             name,
             projectUUID,
             user,
+            description ?? '',
+        );
+        return categoryEntityToDto(category);
+    }
+
+    @Put(':uuid')
+    @CanWriteProject(fromBody('projectUUID'))
+    @ApiOkResponse({
+        description: 'Returns the updated category',
+        type: CategoryDto,
+    })
+    async updateCategoryDescription(
+        @ParameterUuid('uuid', 'Category UUID') uuid: string,
+        @BodyUUID('projectUUID', 'Project UUID') projectUUID: string,
+        @BodyString('description', 'Category Description') description: string,
+    ): Promise<CategoryDto> {
+        const category = await this.categoryService.updateDescription(
+            uuid,
+            projectUUID,
+            description,
         );
         return categoryEntityToDto(category);
     }

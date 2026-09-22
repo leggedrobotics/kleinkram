@@ -7,6 +7,16 @@ body {
     overflow-y: scroll;
 }
 
+// Phones: clip horizontal overflow on the viewport rather than on
+// `.q-page-container`. Clipping on the container would also cut off the
+// full-bleed sections that break out of the gutter with a negative margin
+// (title-section, footer), leaving a grey strip along both edges.
+@media (max-width: 599px) {
+    body {
+        overflow-x: hidden;
+    }
+}
+
 .q-layout--standard,
 thead,
 .q-footer {
@@ -44,10 +54,6 @@ q-page {
 }
 
 @media (max-width: 599px) {
-    .q-page-container {
-        overflow-x: hidden;
-    }
-
     // Quasar's default table cell padding is generous; tighten on phones
     .q-table th,
     .q-table td {
