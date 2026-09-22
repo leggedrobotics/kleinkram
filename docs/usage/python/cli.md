@@ -44,13 +44,14 @@ klein list files --project testProject --mission testMission
 instead of the whole file:
 
 ```bash
-klein download <file> --dest ./slice \
-  --start-time 2026-09-18T08:08:28Z --end-time 2026-09-18T08:08:38Z
+klein download --dest ./slice --topics /rosout \
+  --start-time 2026-09-18T08:08:28Z --end-time 2026-09-18T08:08:38Z <file>
 ```
 
-Narrowing by time is what reduces the transfer; `--topics` mainly shrinks the
-written file. See [Partial Download](../files/partial-download.md) for the
-numbers and the caveats.
+For recordings with uncompressed chunks both `--topics` and the time window cut
+the transfer; with compressed chunks only the time window does. See
+[Partial Download](../files/partial-download.md) for the numbers and the
+caveats.
 
 ### Uploading Resources
 

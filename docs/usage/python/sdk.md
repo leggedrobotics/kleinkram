@@ -48,7 +48,9 @@ triggers = kleinkram.list_triggers(mission_uuid="...")
 ### Downloading Part of a Recording
 
 `download` takes the same MCAP filters as the CLI. Passing any of them fetches
-only the matching chunks and skips files that are not `.mcap`.
+only the selected messages (or, for compressed chunks, the chunks holding them)
+and skips files that are not `.mcap`. `start_time` is inclusive, `end_time`
+exclusive.
 
 ```python
 kleinkram.download(
