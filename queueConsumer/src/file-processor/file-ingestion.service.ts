@@ -105,6 +105,20 @@ export class FileIngestionService {
                         workDirectory,
                     );
 
+                    // Only BAG, MCAP and DB3 have a handler, and only a
+                    // handler promotes the entity out of UPLOADING. Uploads
+                    // are promoted by the upload confirmation, but a Drive
+                    // import of any other type (YAML, TUM, SVO2, MD, CSV)
+                    // would otherwise stay UPLOADING forever: invisible to
+                    // the preview, skipped by `klein download`, and excluded
+                    // from the healthy-state queries. Handlers that fail set
+                    // a terminal state and rethrow, so reaching this point
+                    // still marked UPLOADING means ingestion succeeded.
+                    if (primaryFile.state === FileState.UPLOADING) {
+                        primaryFile.state = FileState.OK;
+                        await this.fileRepo.save(primaryFile);
+                    }
+
                     await this.updateQueueState(
                         queueItem,
                         QueueState.COMPLETED,
@@ -135,7 +149,13 @@ export class FileIngestionService {
         queueItem.displayName = source.filename;
         await this.queueRepo.save(queueItem);
 
-        const downloadPath = path.join(workDirectory, source.filename);
+        // Drive file names are user-controlled and, unlike a filesystem, Drive
+        // allows separators in them, so joining one straight onto the workspace
+        // path lets a name such as `../../x` write outside the workspace.
+        const downloadPath = path.join(
+            workDirectory,
+            path.basename(source.filename),
+        );
 
         // Start Tagging in the Background
         const taggingPromise = this.dataStorage
