@@ -36,14 +36,19 @@
                         type="textarea"
                         autogrow
                         input-style="min-height: 40px"
-                        placeholder="Description (optional)"
+                        :readonly="!canEdit"
+                        :placeholder="
+                            canEdit
+                                ? 'Description (optional)'
+                                : 'No description'
+                        "
                         @update:model-value="
                             (value) =>
                                 setDescription(category, String(value ?? ''))
                         "
                     />
                 </q-item-section>
-                <q-item-section side top>
+                <q-item-section v-if="canEdit" side top>
                     <q-btn
                         flat
                         dense
@@ -57,13 +62,21 @@
                 </q-item-section>
             </q-item>
         </q-list>
+
+        <div v-if="!canEdit" class="q-pa-sm text-caption text-grey">
+            Editing category descriptions requires write access on the project.
+        </div>
     </div>
 </template>
 <script setup lang="ts">
 import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { Notify } from 'quasar';
-import { useCategories } from 'src/hooks/query-hooks';
+import {
+    canModifyProject,
+    useCategories,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 import { hashUUIDtoColor } from 'src/services/generic';
 import { updateCategoryDescription } from 'src/services/mutations/categories';
 import { computed, ref, Ref } from 'vue';
@@ -83,6 +96,15 @@ const savingUuid = ref<string | undefined>();
 const edited = ref<Record<string, string>>({});
 
 const { data: _categories } = useCategories(projectUuid, filter);
+const { data: permissions } = usePermissionsQuery();
+
+/**
+ * Updating a description requires write access on the project, which a user
+ * with mission-only write access does not have.
+ */
+const canEdit = computed(() =>
+    canModifyProject(projectUuid, permissions.value),
+);
 
 const categories: Ref<CategoryDto[]> = computed(
     () => _categories.value?.data ?? [],
@@ -98,16 +120,21 @@ const setDescription = (category: CategoryDto, value: string): void => {
     edited.value[category.uuid] = value;
 };
 
+interface DescriptionUpdate {
+    uuid: string;
+    description: string;
+}
+
 const { mutate } = useMutation({
-    mutationFn: (category: CategoryDto) =>
-        updateCategoryDescription(
-            category.uuid,
-            projectUuid,
-            descriptionOf(category).trim(),
-        ),
-    onSuccess: async (_, category: CategoryDto) => {
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-        delete edited.value[category.uuid];
+    mutationFn: ({ uuid, description }: DescriptionUpdate) =>
+        updateCategoryDescription(uuid, projectUuid, description),
+    onSuccess: async (_, { uuid, description }: DescriptionUpdate) => {
+        // drafts typed while the request was in flight are newer than the
+        // value the server just stored, so only drop the submitted one
+        if (edited.value[uuid]?.trim() === description) {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete edited.value[uuid];
+        }
         await queryClient.invalidateQueries({
             predicate: (query) =>
                 ['categories', 'file', 'files'].includes(
@@ -126,14 +153,17 @@ const { mutate } = useMutation({
             color: 'negative',
             position: 'bottom',
         }),
-    onSettled: () => {
-        savingUuid.value = undefined;
+    onSettled: (_data, _error, { uuid }: DescriptionUpdate) => {
+        if (savingUuid.value === uuid) savingUuid.value = undefined;
     },
 });
 
 const save = (category: CategoryDto): void => {
     savingUuid.value = category.uuid;
-    mutate(category);
+    mutate({
+        uuid: category.uuid,
+        description: descriptionOf(category).trim(),
+    });
 };
 </script>
 <style scoped></style>
