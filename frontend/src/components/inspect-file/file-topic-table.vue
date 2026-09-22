@@ -500,6 +500,14 @@ const loadMore = (topicName: string): void => {
     overflow-wrap: anywhere;
 }
 
+/* QTable keeps every cell on one line (its `wrap-cells` prop is off). The
+   expanded viewer is a cell too, so without this its long values — the
+   NavSatFix service list, for instance — run past the card instead of
+   wrapping. Viewers that need unwrapped text set it on their own elements. */
+.topic-expanded {
+    white-space: normal;
+}
+
 @media (max-width: 599px) {
     /* Title and search bar stack, the search bar takes the full width */
     .file-topic-table__head {
