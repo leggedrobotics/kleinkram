@@ -136,25 +136,28 @@ def split_args(args: Sequence[str]) -> Tuple[List[UUID], List[str]]:
     return uuids, names
 
 
-def check_file_paths(files: Sequence[Path]) -> None:
+def check_file_paths(files: Sequence[Path], *, check_filename: bool = True) -> None:
     """\
     checks that files exist, are files and have a supported file suffix
 
     NOTE: kleinkram treats filesuffixes as filetypes and limits
     the supported suffixes
+
+    set `check_filename` to False to allow filenames that are not sanitized,
+    they are then sanitized on upload, see `get_filename`
     """
     for file in files:
-        check_file_path(file)
+        check_file_path(file, check_filename=check_filename)
 
 
-def check_file_path(file: Path) -> None:
+def check_file_path(file: Path, *, check_filename: bool = True) -> None:
     if file.is_dir():
         raise FileNotFoundError(f"{file} is a directory and not a file")
     if not file.exists():
         raise FileNotFoundError(f"{file} does not exist")
     if file.suffix not in SUPPORT_FILE_TYPES:
         raise FileTypeNotSupported(f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}")
-    if not check_filename_is_sanatized(file.stem):
+    if check_filename and not check_filename_is_sanatized(file.stem):
         raise FileNameNotSupported(
             f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are " f"allowed in filenames and at most 50chars: {file}"
         )

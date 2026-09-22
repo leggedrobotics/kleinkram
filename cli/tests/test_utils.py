@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import pytest
 
+from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import FileTypeNotSupported
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
@@ -55,6 +56,24 @@ def test_check_file_paths():
             check_file_paths([is_dir])
 
         assert check_file_paths([exists_bag, exits_mcap]) is None
+
+
+def test_check_file_paths_without_filename_check():
+    with TemporaryDirectory() as temp_dir:
+        bad_name_bag = Path(temp_dir) / "bad name!.bag"
+        bad_name_txt = Path(temp_dir) / "bad name!.txt"
+
+        bad_name_bag.touch()
+        bad_name_txt.touch()
+
+        with pytest.raises(FileNameNotSupported):
+            check_file_paths([bad_name_bag])
+
+        assert check_file_paths([bad_name_bag], check_filename=False) is None
+
+        # the suffix is still checked
+        with pytest.raises(FileTypeNotSupported):
+            check_file_paths([bad_name_txt], check_filename=False)
 
 
 def test_check_filename_is_sanatized():
