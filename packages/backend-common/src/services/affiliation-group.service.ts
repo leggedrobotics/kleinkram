@@ -53,21 +53,32 @@ export class AffiliationGroupService {
      * user; see `AccessGroupType.PUBLIC`.
      */
     async createPublicAccessGroup(): Promise<void> {
-        const exists = await this.accessGroupRepository.exists({
-            where: { uuid: PUBLIC_ACCESS_GROUP.uuid },
-        });
-        if (exists) return;
-
-        await this.accessGroupRepository.save(
-            this.accessGroupRepository.create({
+        // A single atomic insert, so that several replicas starting at the
+        // same time cannot race each other into a primary key violation.
+        await this.accessGroupRepository
+            .createQueryBuilder()
+            .insert()
+            .values({
                 uuid: PUBLIC_ACCESS_GROUP.uuid,
                 name: PUBLIC_ACCESS_GROUP.name,
                 type: AccessGroupType.PUBLIC,
                 // hidden from searches: the group is offered through the
                 // "General access" setting of a project, not as a group
                 hidden: true,
-            }),
-        );
+            })
+            .orIgnore()
+            .execute();
+
+        // The insert is also skipped when another group already uses the
+        // name; fail loudly then instead of breaking public projects later.
+        const exists = await this.accessGroupRepository.exists({
+            where: { uuid: PUBLIC_ACCESS_GROUP.uuid },
+        });
+        if (!exists) {
+            throw new Error(
+                `Cannot create the public access group: the name "${PUBLIC_ACCESS_GROUP.name}" is already taken by another access group.`,
+            );
+        }
     }
 
     /**
