@@ -11,12 +11,12 @@
                 active-color="primary"
             >
                 <q-tab
-                    name="meta_data"
+                    name="details"
                     label="Project Details*"
                     style="color: #222"
                 />
                 <q-tab
-                    name="tags"
+                    name="metadata"
                     label="Mission Metadata"
                     style="color: #222"
                     :disable="!formIsValid"
@@ -32,7 +32,7 @@
 
         <template #content>
             <q-tab-panels v-model="tab">
-                <q-tab-panel name="meta_data" style="min-height: 280px">
+                <q-tab-panel name="details" style="min-height: 280px">
                     <label for="projectName">Project Name *</label>
                     <q-input
                         ref="projectNameInput"
@@ -79,7 +79,7 @@
                     />
                 </q-tab-panel>
 
-                <q-tab-panel name="tags">
+                <q-tab-panel name="metadata">
                     <ConfigureMetadata v-model:selected="selected" />
                 </q-tab-panel>
 
@@ -113,7 +113,7 @@
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
-import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import AccessRightsManager from 'components/configure-access-rights/access-rights-manager.vue';
 import ConfigureMetadata from 'components/configure-metadata.vue';
@@ -136,9 +136,9 @@ const newProjectName = ref('');
 const newProjectDescription = ref('');
 const invalidProjectNames = ref<string[]>([]);
 
-const tab = ref('meta_data');
+const tab = ref('details');
 
-const selected: Ref<TagTypeDto[]> = ref([]);
+const selected: Ref<MetadataTypeDto[]> = ref([]);
 const $q = useQuasar();
 
 const { data: defaultRights } = useProjectDefaultAccess();
@@ -178,9 +178,9 @@ const verifyInput = () => {
 };
 
 const nextTab = () => {
-    if (tab.value === 'meta_data') {
-        tab.value = 'tags';
-    } else if (tab.value === 'tags') {
+    if (tab.value === 'details') {
+        tab.value = 'metadata';
+    } else if (tab.value === 'metadata') {
         tab.value = 'manage_access';
     }
 };
@@ -189,7 +189,7 @@ const submitNewProject = async () => {
     await createProject(
         newProjectName.value,
         newProjectDescription.value,
-        selected.value.map((tag) => tag.uuid),
+        selected.value.map((metadataType) => metadataType.uuid),
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         accessGroups.value.map((r) => ({
             accessGroupUUID: r.uuid,
@@ -236,7 +236,7 @@ const submitNewProject = async () => {
 
             // abort the close of the dialog
             dialogRef.value?.show();
-            tab.value = 'meta_data';
+            tab.value = 'details';
         });
 };
 </script>

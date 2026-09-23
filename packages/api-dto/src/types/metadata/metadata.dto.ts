@@ -15,7 +15,7 @@ import {
 } from 'class-validator';
 
 @Expose()
-export class TagTypeDto {
+export class MetadataTypeDto {
     @ApiProperty()
     @IsString()
     @Expose()
@@ -37,7 +37,7 @@ export class TagTypeDto {
     updatedAt!: Date;
 
     @ApiProperty({
-        description: 'The data type of the tag',
+        description: 'The data type of values of this metadata type',
         format: 'DataType',
         enum: DataType,
     })
@@ -53,7 +53,7 @@ export class TagTypeDto {
 }
 
 @Expose()
-export class TagDto {
+export class MetadataDto {
     @ApiProperty()
     @IsUUID()
     @Expose()
@@ -72,33 +72,35 @@ export class TagDto {
     @ApiProperty()
     @IsString()
     @Expose()
-    @Transform(({ value, obj }) => obj.tagType?.name ?? value)
+    @Transform(({ value, obj }) => obj.metadataType?.name ?? value)
     name!: string;
 
     @ApiProperty({
-        description: 'The data type of the tag',
+        description: 'The data type of the value',
         format: 'DataType',
         enum: DataType,
     })
     @IsEnum(DataType)
     @Expose()
-    @Transform(({ value, obj }) => obj.tagType?.datatype ?? value)
+    @Transform(({ value, obj }) => obj.metadataType?.datatype ?? value)
     datatype!: DataType;
 
     @ApiProperty({
-        description: 'The type of the tag',
-        type: () => TagTypeDto,
+        description: 'The metadata type of the value',
+        type: () => MetadataTypeDto,
     })
     @ValidateNested()
-    @Type(() => TagTypeDto)
+    @Type(() => MetadataTypeDto)
     @Expose()
     @Transform(({ value, obj }) => {
-        const t = (obj.tagType ?? value) as object | undefined;
+        const t = (obj.metadataType ?? value) as object | undefined;
         return t
-            ? plainToInstance(TagTypeDto, t, { excludeExtraneousValues: true })
+            ? plainToInstance(MetadataTypeDto, t, {
+                  excludeExtraneousValues: true,
+              })
             : undefined;
     })
-    type!: TagTypeDto;
+    type!: MetadataTypeDto;
 
     @ApiProperty()
     @IsDefined()
@@ -120,14 +122,14 @@ export class TagDto {
     }
 }
 
-export class TagsDto {
+export class MetadataListDto {
     @ApiProperty({
-        description: 'List of tags',
-        type: () => [TagDto],
+        description: 'List of metadata values',
+        type: () => [MetadataDto],
     })
     @ValidateNested()
-    @Type(() => TagDto)
-    data!: TagDto[];
+    @Type(() => MetadataDto)
+    data!: MetadataDto[];
 
     @ApiProperty()
     @IsNumber()
@@ -142,14 +144,14 @@ export class TagsDto {
     take!: number;
 }
 
-export class TagTypesDto implements Paginated<TagTypeDto> {
+export class MetadataTypesDto implements Paginated<MetadataTypeDto> {
     @ApiProperty({
-        description: 'List of tag types',
-        type: () => [TagTypeDto],
+        description: 'List of metadata types',
+        type: () => [MetadataTypeDto],
     })
     @ValidateNested()
-    @Type(() => TagTypeDto)
-    data!: TagTypeDto[];
+    @Type(() => MetadataTypeDto)
+    data!: MetadataTypeDto[];
 
     @ApiProperty()
     @IsNumber()

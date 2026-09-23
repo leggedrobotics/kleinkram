@@ -1,9 +1,9 @@
 import { ProjectAccessEntity } from '@backend-common/entities/auth/project-access.entity';
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { CategoryEntity } from '@backend-common/entities/category/category.entity';
+import { MetadataTypeEntity } from '@backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { ProjectStarEntity } from '@backend-common/entities/project/project-star.entity';
-import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import {
     Column,
@@ -50,11 +50,12 @@ export class ProjectEntity extends BaseEntity {
     })
     creator?: UserEntity;
 
-    @ManyToMany(() => TagTypeEntity, (tag: TagTypeEntity) => tag.project, {
-        onDelete: 'CASCADE',
-        nullable: false,
-    })
-    requiredTags!: TagTypeEntity[];
+    @ManyToMany(
+        () => MetadataTypeEntity,
+        (metadataType: MetadataTypeEntity) => metadataType.projects,
+        { onDelete: 'CASCADE', nullable: false },
+    )
+    requiredMetadataTypes!: MetadataTypeEntity[];
 
     @OneToMany(
         () => CategoryEntity,

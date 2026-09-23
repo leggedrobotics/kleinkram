@@ -1,5 +1,5 @@
 <template>
-    <div style="height: 100%" @click="createNewTageType">
+    <div style="height: 100%" @click="openCreateFileDialog">
         <slot />
     </div>
 </template>
@@ -24,7 +24,7 @@ if (!uploads) {
     );
 }
 
-const createNewTageType = (): DialogChainObject =>
+const openCreateFileDialog = (): DialogChainObject =>
     $q.dialog({
         title: 'Create new mission',
         component: CreateFileDialog,

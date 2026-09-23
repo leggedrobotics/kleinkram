@@ -2,13 +2,13 @@ import { DataType } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString } from 'class-validator';
 
-export class CreateTagTypeDto {
-    @ApiProperty({ description: 'Tag name' })
+export class CreateMetadataTypeDto {
+    @ApiProperty({ description: 'Metadata type name' })
     @IsString()
     name!: string;
 
     @ApiProperty({
-        description: 'Tag type',
+        description: 'Data type of the values',
     })
     @IsEnum(DataType)
     type!: DataType;

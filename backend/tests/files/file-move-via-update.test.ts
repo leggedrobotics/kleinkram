@@ -42,7 +42,7 @@ async function createProjectWithMission(
         {
             name: `move_project_${suffix}`,
             description: 'Move test project',
-            requiredTags: [],
+            requiredMetadataTypes: [],
             accessGroups,
         },
         creator,
@@ -52,8 +52,8 @@ async function createProjectWithMission(
         {
             name: `move_mission_${suffix}`,
             projectUUID: projectUuid,
-            tags: {},
-            ignoreTags: true,
+            metadata: {},
+            ignoreMissingMetadata: true,
         },
         creator,
     );
@@ -80,8 +80,8 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
             {
                 name: 'move_via_update_target',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );

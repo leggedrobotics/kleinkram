@@ -1,13 +1,10 @@
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
+import { MetadataTypeEntity } from '@backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
-import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 
-// TODO: rename the SQL table from tag to metadata
-//   in some early version of kleinkram metadata were named
-//   tags, this is a legacy and should be cleaned up at some point
-@Entity({ name: 'tag' })
+@Entity({ name: 'metadata' })
 export class MetadataEntity extends BaseEntity {
     @Column({ nullable: true, name: 'STRING' })
 
@@ -32,17 +29,23 @@ export class MetadataEntity extends BaseEntity {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     value_location?: string;
 
-    @ManyToOne(() => MissionEntity, (mission: MissionEntity) => mission.tags, {
-        onDelete: 'CASCADE',
-    })
+    @ManyToOne(
+        () => MissionEntity,
+        (mission: MissionEntity) => mission.metadata,
+        {
+            onDelete: 'CASCADE',
+        },
+    )
     mission?: MissionEntity;
 
-    @ManyToOne(() => TagTypeEntity, (tagType: TagTypeEntity) => tagType.tags, {
-        eager: true,
-    })
-    tagType?: TagTypeEntity;
+    @ManyToOne(
+        () => MetadataTypeEntity,
+        (metadataType: MetadataTypeEntity) => metadataType.metadata,
+        { eager: true },
+    )
+    metadataType?: MetadataTypeEntity;
 
-    @ManyToOne(() => UserEntity, (user: UserEntity) => user.tags, {
+    @ManyToOne(() => UserEntity, (user: UserEntity) => user.metadata, {
         onDelete: 'SET NULL',
         nullable: true,
     })

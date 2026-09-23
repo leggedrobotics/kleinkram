@@ -42,15 +42,19 @@ export const setupTestEnvironment = async (
     const userId = await mockDatabaseUser(email, username, role);
     const user = await getUserFromDatabase(userId);
     const projectUuid = await createProjectUsingPost(
-        { name: 'test_project', description: 'desc', requiredTags: [] },
+        {
+            name: 'test_project',
+            description: 'desc',
+            requiredMetadataTypes: [],
+        },
         user,
     );
     const missionUuid = await createMissionUsingPost(
         {
             name: 'test_mission',
             projectUUID: projectUuid,
-            tags: {},
-            ignoreTags: true,
+            metadata: {},
+            ignoreMissingMetadata: true,
         },
         user,
     );

@@ -37,7 +37,7 @@ export function IsAtLeastOnePresent(
 }
 
 @IsAtLeastOnePresent(['metadata', 'tags'])
-export class AddTagsRequestDto {
+export class UpdateMissionMetadataRequestDto {
     @ApiProperty({
         description: 'Metadata key-value pairs',
         required: false,
@@ -48,7 +48,9 @@ export class AddTagsRequestDto {
     metadata?: Record<string, string>;
 
     @ApiProperty({
-        description: 'Tags key-value pairs',
+        description:
+            'Deprecated alias for metadata. Ignored when metadata is given.',
+        deprecated: true,
         required: false,
         type: Object,
     })
@@ -57,17 +59,7 @@ export class AddTagsRequestDto {
     tags?: Record<string, string>;
 }
 
-export class AddTagsDto {
-    @ApiProperty({
-        description: 'Indicates the operation was successful',
-        example: true,
-        type: Boolean,
-    })
-    @IsBoolean()
-    success!: boolean;
-}
-
-export class AddTagDto {
+export class UpdateMissionMetadataDto {
     @ApiProperty({
         description: 'Indicates the operation was successful',
         example: true,

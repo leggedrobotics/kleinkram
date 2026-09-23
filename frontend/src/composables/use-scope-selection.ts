@@ -1,5 +1,5 @@
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import {
     useFilteredProjects,
     useHandler,
@@ -10,16 +10,18 @@ import { computed, ComputedRef, Ref } from 'vue';
 export function useScopeSelection(
     localProjectUuid?: Ref<string | undefined>,
     localMissionUuid?: Ref<string | undefined>,
-    customProjects?: Ref<ProjectWithRequiredTagsDto[] | undefined>,
+    customProjects?: Ref<ProjectWithRequiredMetadataTypesDto[] | undefined>,
 ): {
     // Data
-    projects: ComputedRef<ProjectWithRequiredTagsDto[]>;
+    projects: ComputedRef<ProjectWithRequiredMetadataTypesDto[]>;
     missions: ComputedRef<FlatMissionDto[]>;
 
     // Selection State
     selectedProjectUuid: ComputedRef<string | undefined>;
     selectedMissionUuid: ComputedRef<string | undefined>;
-    selectedProject: ComputedRef<ProjectWithRequiredTagsDto | undefined>;
+    selectedProject: ComputedRef<
+        ProjectWithRequiredMetadataTypesDto | undefined
+    >;
     selectedMission: ComputedRef<FlatMissionDto | undefined>;
 
     // Loading States

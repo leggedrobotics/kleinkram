@@ -27,7 +27,7 @@ async function setupProjectWithAccess(
         {
             name: `queue_project_${suffix}`,
             description: 'Queue access test project',
-            requiredTags: [],
+            requiredMetadataTypes: [],
             accessGroups: [{ userUuid: accessUser.uuid, rights }],
         },
         creator,
@@ -37,8 +37,8 @@ async function setupProjectWithAccess(
         {
             name: `queue_mission_${suffix}`,
             projectUUID: projectUuid,
-            tags: {},
-            ignoreTags: true,
+            metadata: {},
+            ignoreMissingMetadata: true,
         },
         creator,
     );

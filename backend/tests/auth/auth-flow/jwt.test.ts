@@ -27,7 +27,7 @@ describe('Verify JWT Handling', () => {
             body: JSON.stringify({
                 name: 'test_project',
                 description: 'This is a test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             }),
         });
 
@@ -52,7 +52,7 @@ describe('Verify JWT Handling', () => {
             body: JSON.stringify({
                 name: 'test_project',
                 description: 'This is a test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             }),
         });
         expect(response.status).toBe(401);

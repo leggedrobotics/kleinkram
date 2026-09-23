@@ -277,7 +277,7 @@ describe('Verify Access Groups Internal', () => {
             {
                 name: 'project_access_listing',
                 description: 'project for access group listing',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -366,7 +366,7 @@ describe('Verify Access Groups Internal', () => {
             {
                 name: 'project_1',
                 description: 'First project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -381,7 +381,7 @@ describe('Verify Access Groups Internal', () => {
             {
                 name: 'project_2',
                 description: 'Second project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -543,7 +543,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'test_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             creator,
         );
@@ -582,7 +582,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'test_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -869,7 +869,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'read_only_project',
                 description: 'Project with READ for readUser',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: readUser.uuid,
@@ -915,7 +915,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'write_access_project',
                 description: 'Project with WRITE for writeUser',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: writeUser.uuid,
@@ -963,7 +963,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'no_remove_project',
                 description: 'Project for remove test',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -1318,7 +1318,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
             {
                 name: 'admin_project',
                 description: 'Admin test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -1354,7 +1354,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
             {
                 name: 'admin_remove_project',
                 description: 'Admin test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,

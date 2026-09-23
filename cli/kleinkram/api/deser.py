@@ -6,6 +6,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Literal
+from typing import Mapping
 from typing import NewType
 from typing import Optional
 from typing import Tuple
@@ -72,7 +73,9 @@ class MissionObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
-    TAGS = "tags"
+    METADATA = "metadata"
+    # deprecated alias of `metadata`, the only key servers before the rename send
+    LEGACY_METADATA = "tags"
     FILESIZE = "size"
     FILECOUNT = "filesCount"
 
@@ -83,7 +86,9 @@ class ProjectObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
-    REQUIRED_TAGS = "requiredTags"
+    REQUIRED_METADATA_TYPES = "requiredMetadataTypes"
+    # deprecated alias of `requiredMetadataTypes`, the only key servers before the rename send
+    LEGACY_REQUIRED_METADATA_TYPES = "requiredTags"
 
 
 class ExecutionObjectKeys(str, Enum):
@@ -160,13 +165,23 @@ def _parse_file_state(state: str) -> FileState:
         raise ParsingError(f"error parsing file state: {state}") from e
 
 
-def _parse_metadata_type_id(tag: Dict) -> Optional[UUID]:
+def _get_with_fallback(data: Mapping[str, Any], key: str, legacy_key: str) -> Any:
+    """\
+    read `key`, falling back to its pre-rename name for older servers
+    """
+    if key in data:
+        return data[key]
+    return data[legacy_key]
+
+
+def _parse_metadata_type_id(metadata: Dict) -> Optional[UUID]:
     """\
     the uuid of the metadata *type*, not of the metadata value itself
 
-    `TagDto` exposes it under `type`; the raw entity uses `tagType`.
+    `MetadataDto` exposes it under `type`; the raw entity uses `metadataType`
+    (`tagType` on servers before the rename).
     """
-    type_object = tag.get("type") or tag.get("tagType")
+    type_object = metadata.get("type") or metadata.get("metadataType") or metadata.get("tagType")
     if not isinstance(type_object, dict):
         return None
 
@@ -180,13 +195,13 @@ def _parse_metadata_type_id(tag: Dict) -> Optional[UUID]:
         raise ParsingError(f"error parsing metadata type uuid: {raw}") from e
 
 
-def _parse_metadata_value(tag: Dict) -> MetadataValue:
-    raw = tag.get("valueAsString")
+def _parse_metadata_value(metadata: Dict) -> MetadataValue:
+    raw = metadata.get("valueAsString")
     if raw is None:
         # `valueAsString` is a plain getter on the API DTO and is therefore not
         # part of the serialized response (see #2360); the value is carried by
         # the `value` key instead.
-        raw = tag.get("value")
+        raw = metadata.get("value")
 
     if isinstance(raw, bool):
         # JSON booleans would stringify to "True"/"False", which neither the
@@ -197,21 +212,21 @@ def _parse_metadata_value(tag: Dict) -> MetadataValue:
     else:
         value = str(raw)
 
-    return MetadataValue(value, tag.get("datatype"), _parse_metadata_type_id(tag))
+    return MetadataValue(value, metadata.get("datatype"), _parse_metadata_type_id(metadata))
 
 
-def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
+def _parse_metadata(metadata: List[Dict]) -> Dict[str, MetadataValue]:
     result = {}
     try:
-        for tag in tags:
-            result[tag.get("name")] = _parse_metadata_value(tag)
+        for entry in metadata:
+            result[entry.get("name")] = _parse_metadata_value(entry)
         return result
     except ValueError as e:
         raise ParsingError(f"error parsing metadata: {e}") from e
 
 
-def _parse_required_tags(tags: List[Dict]) -> list[str]:
-    return list(_parse_metadata(tags).keys())
+def _parse_required_metadata_types(metadata_types: List[Dict]) -> list[str]:
+    return list(_parse_metadata(metadata_types).keys())
 
 
 def _parse_project(project_object: ProjectObject) -> Project:
@@ -221,7 +236,13 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description = project_object[ProjectObjectKeys.DESCRIPTION]
         created_at = _parse_datetime(project_object[ProjectObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(project_object[ProjectObjectKeys.UPDATED_AT])
-        required_tags = _parse_required_tags(project_object[ProjectObjectKeys.REQUIRED_TAGS])
+        required_metadata_types = _parse_required_metadata_types(
+            _get_with_fallback(
+                project_object,
+                ProjectObjectKeys.REQUIRED_METADATA_TYPES,
+                ProjectObjectKeys.LEGACY_REQUIRED_METADATA_TYPES,
+            )
+        )
     except Exception as e:
         raise ParsingError(f"error parsing project: {project_object}") from e
     return Project(
@@ -230,7 +251,7 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description=description,
         created_at=created_at,
         updated_at=updated_at,
-        required_tags=required_tags,
+        required_metadata_types=required_metadata_types,
     )
 
 
@@ -240,7 +261,7 @@ def _parse_mission(mission: MissionObject) -> Mission:
         name = mission[MissionObjectKeys.NAME]
         created_at = _parse_datetime(mission[MissionObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(mission[MissionObjectKeys.UPDATED_AT])
-        metadata = _parse_metadata(mission[MissionObjectKeys.TAGS])
+        metadata = _parse_metadata(_get_with_fallback(mission, MissionObjectKeys.METADATA, MissionObjectKeys.LEGACY_METADATA))
         file_count = mission[MissionObjectKeys.FILECOUNT]
         filesize = mission[MissionObjectKeys.FILESIZE]
 

@@ -11,6 +11,7 @@ import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
 from kleinkram.cli._progress import transfer_progress
@@ -78,8 +79,15 @@ def upload(
         help="skip unsupported file types, badly named files, or directories instead of erroring",
     ),
     experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
-    ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
+    ignore_missing_metadata: bool = typer.Option(False, help="ignore missing required metadata"),
+    ignore_missing_tags: Optional[bool] = typer.Option(None, "--ignore-missing-tags/--no-ignore-missing-tags", hidden=True),
 ) -> None:
+    if ignore_missing_tags is not None:
+        warn_deprecated(
+            "--ignore-missing-tags/--no-ignore-missing-tags", "--ignore-missing-metadata/--no-ignore-missing-metadata"
+        )
+        ignore_missing_metadata = ignore_missing_tags
+
     original_file_paths = [Path(file) for file in files]
     mission_query = _build_mission_query(mission, project)
 
@@ -108,7 +116,7 @@ def upload(
                     create=create,
                     fix_filenames=fix_filenames,
                     metadata=load_metadata(Path(metadata)) if metadata else None,
-                    ignore_missing_metadata=ignore_missing_tags,
+                    ignore_missing_metadata=ignore_missing_metadata,
                     on_overall_progress_cb=cbs.on_overall_progress,
                     on_file_start_cb=cbs.on_file_start,
                     on_file_progress_cb=cbs.on_file_progress,
@@ -139,7 +147,7 @@ def upload(
                 create=create,
                 fix_filenames=fix_filenames,
                 metadata=load_metadata(Path(metadata)) if metadata else None,
-                ignore_missing_metadata=ignore_missing_tags,
+                ignore_missing_metadata=ignore_missing_metadata,
             )
             if result.failed > 0:
                 typer.echo(

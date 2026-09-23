@@ -49,13 +49,13 @@ describe('Action File Events', () => {
                     {
                         name: 'test_project',
                         description: 'desc',
-                        requiredTags: [],
+                        requiredMetadataTypes: [],
                         accessGroups: [],
                     },
                     user,
                 ),
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );

@@ -6,7 +6,7 @@ import {
 import { DataType, FileType, UserRole } from '@kleinkram/shared';
 import { DEFAULT_URL } from '../auth/utilities';
 import {
-    createMetadataUsingPost,
+    createMetadataTypeUsingPost,
     createMissionUsingPost,
     createProjectUsingPost,
     getAuthHeaders,
@@ -38,11 +38,11 @@ const setup = async (): Promise<Fixture> => {
     const user = await getUserFromDatabase(userUuid);
 
     const requiredTypeUuids = [
-        await createMetadataUsingPost(
+        await createMetadataTypeUsingPost(
             { type: DataType.STRING, name: 'required_a' },
             user,
         ),
-        await createMetadataUsingPost(
+        await createMetadataTypeUsingPost(
             { type: DataType.STRING, name: 'required_b' },
             user,
         ),
@@ -52,7 +52,7 @@ const setup = async (): Promise<Fixture> => {
         {
             name: 'mission_sorting_project',
             description: 'missions to sort',
-            requiredTags: requiredTypeUuids,
+            requiredMetadataTypes: requiredTypeUuids,
         },
         user,
     );
@@ -62,8 +62,8 @@ const setup = async (): Promise<Fixture> => {
             {
                 name: 'a_empty',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         ),
@@ -71,8 +71,8 @@ const setup = async (): Promise<Fixture> => {
             {
                 name: 'b_partial',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         ),
@@ -80,8 +80,8 @@ const setup = async (): Promise<Fixture> => {
             {
                 name: 'c_complete',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         ),
@@ -106,7 +106,7 @@ const setup = async (): Promise<Fixture> => {
     }
 
     const metadataRepository = database.getRepository(MetadataEntity);
-    for (const [missionUuid, tagTypeUuid] of [
+    for (const [missionUuid, metadataTypeUuid] of [
         [partial, requiredTypeUuids[0]],
         [complete, requiredTypeUuids[0]],
         [complete, requiredTypeUuids[1]],
@@ -116,7 +116,7 @@ const setup = async (): Promise<Fixture> => {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 value_string: 'value',
                 mission: { uuid: missionUuid },
-                tagType: { uuid: tagTypeUuid },
+                metadataType: { uuid: metadataTypeUuid },
                 creator: { uuid: user.uuid },
             }),
         );
@@ -185,16 +185,16 @@ describe('Mission sorting', () => {
         ]);
     });
 
-    test('sorts missions by missing required metadata (sortBy=missingTags)', async () => {
+    test('sorts missions by missing required metadata (sortBy=missingMetadata)', async () => {
         const fixture = await setup();
         const { empty, partial, complete } = fixture;
 
-        expect(await fetchSorted(fixture, 'missingTags', 'ASC')).toEqual([
+        expect(await fetchSorted(fixture, 'missingMetadata', 'ASC')).toEqual([
             complete,
             partial,
             empty,
         ]);
-        expect(await fetchSorted(fixture, 'missingTags', 'DESC')).toEqual([
+        expect(await fetchSorted(fixture, 'missingMetadata', 'DESC')).toEqual([
             empty,
             partial,
             complete,

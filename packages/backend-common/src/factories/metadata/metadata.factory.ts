@@ -1,12 +1,12 @@
+import { MetadataTypeEntity } from '@backend-common/entities/metadata/metadata-type.entity';
 import { MetadataEntity } from '@backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
-import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { setSeederFactory } from 'typeorm-extension';
 
 export interface MetadataContext {
     mission: MissionEntity;
-    tagType: TagTypeEntity;
+    metadataType: MetadataTypeEntity;
     creator: UserEntity;
 
     // Optional metadata values
@@ -20,7 +20,7 @@ export interface MetadataContext {
 setSeederFactory(MetadataEntity, (context: Partial<MetadataContext> = {}) => {
     const {
         mission,
-        tagType,
+        metadataType,
         creator,
         valueString,
         valueNumber,
@@ -32,8 +32,8 @@ setSeederFactory(MetadataEntity, (context: Partial<MetadataContext> = {}) => {
     if (!mission) {
         throw new Error('Mission is required');
     }
-    if (!tagType) {
-        throw new Error('TagType is required');
+    if (!metadataType) {
+        throw new Error('MetadataType is required');
     }
 
     if (!creator) {
@@ -42,7 +42,7 @@ setSeederFactory(MetadataEntity, (context: Partial<MetadataContext> = {}) => {
 
     const metadata = new MetadataEntity();
     metadata.mission = mission;
-    metadata.tagType = tagType;
+    metadata.metadataType = metadataType;
     metadata.creator = creator;
     if (valueString !== undefined) {
         metadata.value_string = valueString;

@@ -14,9 +14,9 @@ declare global {
     var projectUuid: string;
     var missionUuid: string;
     var templateUuid: string;
-    var metadataUuid: string;
+    var metadataTypeUuid: string;
     var projectUuids: string[];
-    var tagName: string;
+    var metadataTypeName: string;
 }
 
 export {};

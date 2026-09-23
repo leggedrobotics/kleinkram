@@ -4,7 +4,7 @@
         <template #title> Define Metadata Field</template>
 
         <template #content>
-            <create-metadata-type ref="tagType" />
+            <create-metadata-type ref="metadataTypeForm" />
         </template>
 
         <template #actions>
@@ -12,7 +12,7 @@
                 flat
                 label="Create Metadata"
                 class="bg-button-primary"
-                @click="createTagTypeAction"
+                @click="createMetadataTypeAction"
             />
         </template>
     </base-dialog>
@@ -23,13 +23,13 @@ import { useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { ref } from 'vue';
 
-const tagType = ref();
+const metadataTypeForm = ref();
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
-const createTagTypeAction = async (): Promise<void> => {
+const createMetadataTypeAction = async (): Promise<void> => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    if (!(await tagType.value.createTagTypeAction())) {
+    if (!(await metadataTypeForm.value.createMetadataTypeAction())) {
         // eslint-disable-next-line no-console
         console.log('Error creating Metadata');
         return;

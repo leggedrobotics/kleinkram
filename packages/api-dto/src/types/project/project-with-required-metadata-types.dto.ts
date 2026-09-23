@@ -1,12 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+import { MetadataTypeDto } from '@api-dto/metadata/metadata.dto';
 import { ProjectWithCreator } from '@api-dto/project/project-with-creator.dto';
-import { TagTypeDto } from '@api-dto/tags/tags.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
 import { IsBoolean, IsNumber, ValidateNested } from 'class-validator';
 
+const toMetadataTypeDtos = (
+    project: { requiredMetadataTypes?: object[] },
+    value: unknown,
+): MetadataTypeDto[] => {
+    const metadataTypes = (project.requiredMetadataTypes ??
+        value ??
+        []) as object[];
+    return metadataTypes.map((metadataType) =>
+        plainToInstance(MetadataTypeDto, metadataType, {
+            excludeExtraneousValues: true,
+        }),
+    );
+};
+
 @Expose()
-export class ProjectWithRequiredTagsDto extends ProjectWithCreator {
+export class ProjectWithRequiredMetadataTypesDto extends ProjectWithCreator {
     @ApiProperty({
         description: 'Number of missions',
     })
@@ -44,17 +58,23 @@ export class ProjectWithRequiredTagsDto extends ProjectWithCreator {
     isPublic!: boolean;
 
     @ApiProperty({
-        type: () => [TagTypeDto],
-        description: 'List of required tags',
+        type: () => [MetadataTypeDto],
+        description: 'Metadata types every mission of the project must set',
     })
     @ValidateNested()
-    @Type(() => TagTypeDto)
+    @Type(() => MetadataTypeDto)
     @Expose()
-    @Transform(({ value, obj }) => {
-        const tags = (obj.requiredTags ?? value ?? []) as object[];
-        return tags.map((tag) =>
-            plainToInstance(TagTypeDto, tag, { excludeExtraneousValues: true }),
-        );
+    @Transform(({ value, obj }) => toMetadataTypeDtos(obj, value))
+    requiredMetadataTypes!: MetadataTypeDto[];
+
+    @ApiProperty({
+        type: () => [MetadataTypeDto],
+        description: 'Deprecated alias for requiredMetadataTypes.',
+        deprecated: true,
     })
-    requiredTags!: TagTypeDto[];
+    @ValidateNested()
+    @Type(() => MetadataTypeDto)
+    @Expose()
+    @Transform(({ value, obj }) => toMetadataTypeDtos(obj, value))
+    requiredTags!: MetadataTypeDto[];
 }

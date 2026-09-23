@@ -96,7 +96,7 @@ describe('Project stars', () => {
             {
                 name: `stars_project_${String(Date.now())}`,
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -124,7 +124,7 @@ describe('Project stars', () => {
             {
                 name: `stars_twice_project_${String(Date.now())}`,
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -147,7 +147,7 @@ describe('Project stars', () => {
             {
                 name: `unstars_project_${String(Date.now())}`,
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -184,7 +184,7 @@ describe('Project stars', () => {
             {
                 name: `stars_private_project_${String(Date.now())}`,
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             owner,
         );

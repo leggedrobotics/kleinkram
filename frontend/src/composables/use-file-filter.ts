@@ -14,7 +14,7 @@ export interface FilterState {
     selectedDatatypes: string[];
     matchAllTopics: boolean;
     fileTypeFilter: FileTypeOption[] | undefined;
-    tagFilter: Record<string, { name: string; value: string }>;
+    metadataFilter: Record<string, { name: string; value: string }>;
     health: HealthStatus | undefined;
 }
 
@@ -38,7 +38,7 @@ export const DEFAULT_STATE = (): FilterState => {
         selectedDatatypes: [],
         matchAllTopics: false,
         fileTypeFilter: allFileTypes,
-        tagFilter: {},
+        metadataFilter: {},
         health: undefined,
     };
 };
@@ -93,10 +93,10 @@ export function useFileFilter() {
             .map((option) => option.name) as FileType[];
     });
 
-    const tagFilterQuery = computed(() => {
+    const metadataFilterQuery = computed(() => {
         const query: Record<string, string> = {};
-        for (const key of Object.keys(state.tagFilter)) {
-            const value = state.tagFilter[key]?.value;
+        for (const key of Object.keys(state.metadataFilter)) {
+            const value = state.metadataFilter[key]?.value;
 
             if (value === undefined || value === '') continue;
             query[key] = value;
@@ -221,7 +221,7 @@ export function useFileFilter() {
         startDate,
         endDate,
         selectedFileTypesFilter,
-        tagFilterQuery,
+        metadataFilterQuery,
         debouncedFilter,
         allTopics,
         allDatatypes,

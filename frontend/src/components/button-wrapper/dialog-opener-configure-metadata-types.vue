@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import ModifyProjectTagsDialog from 'src/dialogs/modify-project-tags-dialog.vue';
+import ModifyProjectMetadataTypesDialog from 'src/dialogs/modify-project-metadata-types-dialog.vue';
 import { canModifyProject, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
@@ -35,7 +35,7 @@ const clicked = (): void => {
 
     // open the dialog
     $q.dialog({
-        component: ModifyProjectTagsDialog,
+        component: ModifyProjectMetadataTypesDialog,
         componentProps: {
             projectUUID: projectUuid,
         },

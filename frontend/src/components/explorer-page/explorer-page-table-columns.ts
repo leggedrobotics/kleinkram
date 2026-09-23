@@ -189,7 +189,7 @@ export const missionColumns: ProjectColumnType[] = [
         sortable: true,
     },
     {
-        name: 'missingTags',
+        name: 'missingMetadata',
         required: true,
         label: 'Metadata Verification',
         align: 'left',

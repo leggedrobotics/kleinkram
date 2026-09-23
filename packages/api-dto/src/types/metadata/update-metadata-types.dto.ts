@@ -1,6 +1,6 @@
+import { IsAtLeastOnePresent } from '@api-dto/metadata/update-mission-metadata.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsOptional, IsUUID } from 'class-validator';
-import { IsAtLeastOnePresent } from './tags/add-tags.dto';
 
 /**
  * Body of `PUT /projects/:uuid/metadata-types`.

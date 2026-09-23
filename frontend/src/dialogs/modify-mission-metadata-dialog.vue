@@ -2,19 +2,19 @@
     <base-dialog ref="dialogRef">
         <template #title> Modify Metadata</template>
         <template #content>
-            <select-mission-tags
+            <select-mission-metadata
                 v-if="mission?.project?.uuid"
                 :project-uuid="mission.project.uuid"
-                :tag-values="tagValues"
-                @update:tag-values="updateTagValue"
+                :metadata-values="metadataValues"
+                @update:metadata-values="updateMetadataValues"
             />
         </template>
         <template #actions>
             <q-btn
                 class="bg-button-primary"
                 label="Save"
-                :disable="tagValues === undefined"
-                @click="modifyTags"
+                :disable="metadataValues === undefined"
+                @click="saveMetadata"
             />
         </template>
     </base-dialog>
@@ -23,10 +23,10 @@
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import { DataType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import SelectMissionTags from 'components/select-mission-tags.vue';
+import SelectMissionMetadata from 'components/select-mission-metadata.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { updateMissionTags } from 'src/services/mutations/mission';
+import { updateMissionMetadata } from 'src/services/mutations/mission';
 import { ref, Ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -37,22 +37,22 @@ const properties = defineProps<{
 
 const queryClient = useQueryClient();
 
-const tagValues: Ref<Record<string, string>> = ref({});
+const metadataValues: Ref<Record<string, string>> = ref({});
 watch(
     () => properties.mission,
     (newMission) => {
         if (newMission) {
-            tagValues.value = {};
+            metadataValues.value = {};
 
-            for (const tag of newMission.tags) {
-                const tagValue = tag.value;
-                if (tag.type.datatype === DataType.BOOLEAN) {
-                    tagValues.value[tag.type.uuid] =
-                        tagValue as unknown as string;
+            for (const metadata of newMission.metadata) {
+                const value = metadata.value;
+                if (metadata.type.datatype === DataType.BOOLEAN) {
+                    metadataValues.value[metadata.type.uuid] =
+                        value as unknown as string;
                 } else {
-                    const rawValue = tagValue as
+                    const rawValue = value as
                         string | Date | number | boolean | null | undefined;
-                    tagValues.value[tag.type.uuid] =
+                    metadataValues.value[metadata.type.uuid] =
                         rawValue !== undefined && rawValue !== null
                             ? String(rawValue)
                             : '';
@@ -63,16 +63,16 @@ watch(
     { immediate: true },
 );
 
-const { mutate: _updateMissionTags } = useMutation({
+const { mutate: mutateMissionMetadata } = useMutation({
     mutationFn: () => {
-        return updateMissionTags(
+        return updateMissionMetadata(
             properties.mission?.uuid ?? '',
-            tagValues.value,
+            metadataValues.value,
         );
     },
     onSuccess: async () => {
         Notify.create({
-            message: 'Tags updated',
+            message: 'Metadata updated',
             color: 'positive',
             position: 'bottom',
         });
@@ -86,12 +86,12 @@ const { mutate: _updateMissionTags } = useMutation({
     },
 });
 
-const modifyTags = (): void => {
-    _updateMissionTags();
+const saveMetadata = (): void => {
+    mutateMissionMetadata();
 };
 
-const updateTagValue = (update: Record<string, string>): void => {
-    tagValues.value = update;
+const updateMetadataValues = (update: Record<string, string>): void => {
+    metadataValues.value = update;
 };
 </script>
 <style scoped></style>

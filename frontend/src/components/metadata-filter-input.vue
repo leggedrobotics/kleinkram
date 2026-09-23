@@ -2,40 +2,52 @@
     <div class="row items-center q-gutter-x-sm full-width">
         <div class="col-5 row items-center no-wrap">
             <q-icon
-                :name="datatypeIcon(tagLookup[tagTypeUuid]?.datatype)"
+                :name="
+                    datatypeIcon(metadataTypeLookup[metadataTypeUuid]?.datatype)
+                "
                 size="20px"
                 class="datatype-icon q-mr-sm"
             />
             <span class="text-weight-medium ellipsis">
-                {{ tagValues[tagTypeUuid].name }}
+                {{ metadataValues[metadataTypeUuid].name }}
             </span>
         </div>
-        <div v-if="tagLookup[tagTypeUuid]" class="col-grow">
+        <div v-if="metadataTypeLookup[metadataTypeUuid]" class="col-grow">
             <q-input
-                v-if="tagLookup[tagTypeUuid]?.datatype !== DataType.BOOLEAN"
+                v-if="
+                    metadataTypeLookup[metadataTypeUuid]?.datatype !==
+                    DataType.BOOLEAN
+                "
                 v-model="internalValue"
                 :placeholder="
-                    inputPlaceholder(tagLookup[tagTypeUuid]?.datatype)
+                    inputPlaceholder(
+                        metadataTypeLookup[metadataTypeUuid]?.datatype,
+                    )
                 "
                 outlined
                 dense
                 clearable
                 :type="
                     inputFieldTypeMapping(
-                        tagLookup[tagTypeUuid]?.datatype ?? DataType.STRING,
+                        metadataTypeLookup[metadataTypeUuid]?.datatype ??
+                            DataType.STRING,
                     )
                 "
                 @clear="clearValue"
             >
                 <template
-                    v-if="tagLookup[tagTypeUuid]?.datatype === DataType.DATE"
+                    v-if="
+                        metadataTypeLookup[metadataTypeUuid]?.datatype ===
+                        DataType.DATE
+                    "
                     #append
                 >
                     <q-icon name="sym_o_event" class="cursor-pointer" />
                 </template>
                 <template
                     v-else-if="
-                        tagLookup[tagTypeUuid]?.datatype === DataType.NUMBER
+                        metadataTypeLookup[metadataTypeUuid]?.datatype ===
+                        DataType.NUMBER
                     "
                     #append
                 >
@@ -59,7 +71,10 @@
                 </template>
             </q-input>
             <q-toggle
-                v-if="tagLookup[tagTypeUuid]?.datatype === DataType.BOOLEAN"
+                v-if="
+                    metadataTypeLookup[metadataTypeUuid]?.datatype ===
+                    DataType.BOOLEAN
+                "
                 v-model="internalValue"
                 :label="
                     internalValue === undefined
@@ -75,19 +90,21 @@
 </template>
 
 <script setup lang="ts">
-import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import { DataType } from '@kleinkram/shared';
 import { ref, watch } from 'vue';
 
 const properties = defineProps<{
-    tagTypeUuid: string;
-    tagLookup: Record<string, TagTypeDto>;
-    tagValues: Record<string, { value: unknown; name: string }>;
+    metadataTypeUuid: string;
+    metadataTypeLookup: Record<string, MetadataTypeDto>;
+    metadataValues: Record<string, { value: unknown; name: string }>;
 }>();
 
-const emit = defineEmits(['update:tagValues']);
+const emit = defineEmits(['update:metadataValues']);
 
-const internalValue = ref(properties.tagValues[properties.tagTypeUuid]?.value);
+const internalValue = ref(
+    properties.metadataValues[properties.metadataTypeUuid]?.value,
+);
 
 const datatypeIcon = (datatype: DataType | undefined): string => {
     switch (datatype) {
@@ -154,24 +171,24 @@ const decrementValue = (): void => {
 };
 
 watch(internalValue, (newValue) => {
-    const updatedTagValues = {
-        ...properties.tagValues,
-        [properties.tagTypeUuid]: {
-            ...properties.tagValues[properties.tagTypeUuid],
+    const updatedMetadataValues = {
+        ...properties.metadataValues,
+        [properties.metadataTypeUuid]: {
+            ...properties.metadataValues[properties.metadataTypeUuid],
 
             value: newValue,
         },
     };
-    emit('update:tagValues', updatedTagValues);
+    emit('update:metadataValues', updatedMetadataValues);
 });
 
 const clearValue = (): void => {
-    const updatedTagValues = Object.fromEntries(
-        Object.entries(properties.tagValues).filter(
-            ([key]) => key !== properties.tagTypeUuid,
+    const updatedMetadataValues = Object.fromEntries(
+        Object.entries(properties.metadataValues).filter(
+            ([key]) => key !== properties.metadataTypeUuid,
         ),
     );
-    emit('update:tagValues', updatedTagValues);
+    emit('update:metadataValues', updatedMetadataValues);
 };
 </script>
 

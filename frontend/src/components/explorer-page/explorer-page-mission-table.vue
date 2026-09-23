@@ -52,10 +52,10 @@
                 </router-link>
             </q-td>
         </template>
-        <template #body-cell-missingTags="props">
+        <template #body-cell-missingMetadata="props">
             <q-td :props="props" style="width: 150px">
                 <div
-                    v-if="missingTags(props.row).length === 0"
+                    v-if="missingMetadataTypes(props.row).length === 0"
                     class="flex items-center"
                 >
                     <q-icon
@@ -79,14 +79,16 @@
                         size="20px"
                         round
                     />
-                    {{ missingTagsText(props.row) }}
+                    {{ missingMetadataText(props.row) }}
                     <q-tooltip>
                         <div
-                            v-for="tagType in missingTags(props.row)"
-                            :key="tagType.uuid"
+                            v-for="metadataType in missingMetadataTypes(
+                                props.row,
+                            )"
+                            :key="metadataType.uuid"
                             style="font-size: 14px"
                         >
-                            {{ tagType.name }}
+                            {{ metadataType.name }}
                         </div>
                     </q-tooltip>
                 </div>
@@ -163,7 +165,9 @@
                                 {{ formatDate(new Date(props.row.createdAt)) }}
                             </div>
                             <div
-                                v-if="missingTags(props.row).length === 0"
+                                v-if="
+                                    missingMetadataTypes(props.row).length === 0
+                                "
                                 class="text-caption q-mt-xs"
                             >
                                 <q-icon
@@ -185,7 +189,7 @@
                                     size="16px"
                                     class="q-mr-xs"
                                 />
-                                {{ missingTagsText(props.row) }}
+                                {{ missingMetadataText(props.row) }}
                             </div>
                         </div>
 
@@ -326,12 +330,12 @@
 </template>
 
 <script setup lang="ts">
+import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type {
     FlatMissionDto,
     MissionsDto,
 } from '@kleinkram/api-dto/types/mission/mission.dto';
-import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
 import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
@@ -373,7 +377,7 @@ const tableColumns = computed(() =>
 
 const visibleColumns = computed(() =>
     isCompact.value
-        ? ['name', 'filesCount', 'missingTags', 'missionaction']
+        ? ['name', 'filesCount', 'missingMetadata', 'missionaction']
         : undefined,
 );
 
@@ -559,24 +563,24 @@ const openMission = async (row: FlatMissionDto): Promise<void> => {
  */
 const { onRowClick } = useRowActivation(selected, openMission);
 
-const missingTags = (row: MissionWithFilesDto): TagDto[] => {
-    const mapped = project.value?.requiredTags.map((tagType) => {
-        const setTypes = row.tags.map((tag) => tag.type);
+const missingMetadataTypes = (row: MissionWithFilesDto): MetadataTypeDto[] => {
+    const mapped = project.value?.requiredMetadataTypes.map((metadataType) => {
+        const setTypes = row.metadata.map((metadata) => metadata.type);
 
-        if (!setTypes.some((setType) => setType.uuid === tagType.uuid)) {
-            return tagType;
+        if (!setTypes.some((setType) => setType.uuid === metadataType.uuid)) {
+            return metadataType;
         }
         return;
     });
-    return mapped?.filter((value): value is TagDto => !!value) ?? [];
+    return mapped?.filter((value): value is MetadataTypeDto => !!value) ?? [];
 };
 
-const missingTagsText = (row: MissionWithFilesDto): string => {
-    const _missionTags = missingTags(row);
-    if (_missionTags.length === 1) {
+const missingMetadataText = (row: MissionWithFilesDto): string => {
+    const missing = missingMetadataTypes(row);
+    if (missing.length === 1) {
         return `1 Metadata missing`;
     }
-    return `${_missionTags.length.toString()} Metadata missing`;
+    return `${missing.length.toString()} Metadata missing`;
 };
 </script>
 <style scoped>

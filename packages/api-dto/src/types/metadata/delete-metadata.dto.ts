@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean } from 'class-validator';
 
-export class DeleteTagDto {
+export class DeleteMetadataDto {
     @ApiProperty({
         description: 'Indicates the deletion was successful',
         example: true,

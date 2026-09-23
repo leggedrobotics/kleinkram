@@ -8,7 +8,7 @@
 
         <template #actions>
             <ButtonGroup>
-                <CreateTagTypeDialogOpener>
+                <CreateMetadataTypeDialogOpener>
                     <q-btn
                         class="button-border"
                         flat
@@ -16,7 +16,7 @@
                         icon="sym_o_sell"
                         label="Create Metadata"
                     />
-                </CreateTagTypeDialogOpener>
+                </CreateMetadataTypeDialogOpener>
 
                 <q-btn
                     flat
@@ -29,15 +29,15 @@
     </base-dialog>
 </template>
 <script setup lang="ts">
-import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import CreateTagTypeDialogOpener from 'components/button-wrapper/dialog-opener-create-tag-type.vue';
+import CreateMetadataTypeDialogOpener from 'components/button-wrapper/dialog-opener-create-metadata-type.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import ConfigureMetadata from 'components/configure-metadata.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { useProjectQuery } from 'src/hooks/query-hooks';
-import { updateTagTypes } from 'src/services/mutations/project';
+import { updateProjectMetadataTypes } from 'src/services/mutations/project';
 import { ref, watch } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
@@ -47,20 +47,21 @@ const { projectUUID } = defineProps<{ projectUUID: string }>();
 const queryClient = useQueryClient();
 
 const { data: project } = useProjectQuery(projectUUID);
-const selected = ref<TagTypeDto[]>([]);
+const selected = ref<MetadataTypeDto[]>([]);
 
 watch(
     () => project.value,
     (newValue) => {
-        selected.value = newValue?.requiredTags ?? ([] as TagTypeDto[]);
+        selected.value =
+            newValue?.requiredMetadataTypes ?? ([] as MetadataTypeDto[]);
     },
     { immediate: true },
 );
 const { mutate } = useMutation({
     mutationFn: () => {
-        return updateTagTypes(
+        return updateProjectMetadataTypes(
             project.value?.uuid ?? '',
-            selected.value.map((tag) => tag.uuid),
+            selected.value.map((metadataType) => metadataType.uuid),
         );
     },
     async onSuccess() {
@@ -77,7 +78,7 @@ const { mutate } = useMutation({
     },
     onError(error) {
         Notify.create({
-            message: `Error adding TagTypes: ${error.message}`,
+            message: `Error updating enforced metadata: ${error.message}`,
             color: 'negative',
             position: 'bottom',
         });

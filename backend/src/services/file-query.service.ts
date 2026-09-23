@@ -14,9 +14,9 @@ import {
 } from '@kleinkram/api-dto';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     DataType,
@@ -85,8 +85,8 @@ export class FileQueryService {
         private projectRepository: Repository<ProjectEntity>,
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
-        @InjectRepository(TagTypeEntity)
-        private tagTypeRepository: Repository<TagTypeEntity>,
+        @InjectRepository(MetadataTypeEntity)
+        private metadataTypeRepository: Repository<MetadataTypeEntity>,
         @InjectRepository(FileEventEntity)
         private eventRepo: Repository<FileEventEntity>,
     ) {}
@@ -366,13 +366,16 @@ export class FileQueryService {
             );
         }
 
-        // The tag filter is async, so it must be awaited
-        if (query.tags && Object.keys(query.tags).length > 0) {
-            await this._applyTagFilter(idQuery, query.tags);
+        // `tags` is a deprecated alias kept for old clients; the canonical
+        // field wins when both are given. The filter is async, so it must be
+        // awaited.
+        const metadataByTypeUuid = query.metadataByTypeUuid ?? query.tags;
+        if (metadataByTypeUuid && Object.keys(metadataByTypeUuid).length > 0) {
+            await this._applyMetadataFilter(idQuery, metadataByTypeUuid);
         }
 
         // Group by file.uuid to deduplicate results from joins
-        // and allow 'HAVING' clauses for topics and tags
+        // and allow 'HAVING' clauses for topics and metadata
         idQuery.groupBy('file.uuid');
 
         const sortField = query.sort ?? query.sortBy ?? 'createdAt';
@@ -847,89 +850,90 @@ export class FileQueryService {
         });
     }
 
-    private async _applyTagFilter(
+    private async _applyMetadataFilter(
         query: SelectQueryBuilder<FileEntity>,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tags: Record<string, any>,
+        metadataByTypeUuid: Record<string, any>,
     ): Promise<void> {
-        const tagTypeUUIDs = Object.keys(tags);
-        if (tagTypeUUIDs.length === 0) {
+        const metadataTypeUUIDs = Object.keys(metadataByTypeUuid);
+        if (metadataTypeUUIDs.length === 0) {
             return;
         }
 
-        const tagTypes = await this.tagTypeRepository.find({
-            where: { uuid: In(tagTypeUUIDs) },
+        const metadataTypes = await this.metadataTypeRepository.find({
+            where: { uuid: In(metadataTypeUUIDs) },
         });
-        const tagTypeMap = new Map(tagTypes.map((t) => [t.uuid, t]));
+        const metadataTypeMap = new Map(metadataTypes.map((t) => [t.uuid, t]));
 
-        // Add the necessary joins for tag filtering
+        // Add the necessary joins for metadata filtering
         query
-            .leftJoin('mission.tags', 'tag')
-            .leftJoin('tag.tagType', 'tagtype');
+            .leftJoin('mission.metadata', 'metadata')
+            .leftJoin('metadata.metadataType', 'metadataType');
 
-        const tagWhereClauses: string[] = [];
+        const metadataWhereClauses: string[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tagParameters: Record<string, any> = {};
-        const validTagNames = new Set<string>();
-        let validTagCount = 0;
+        const metadataParameters: Record<string, any> = {};
+        const validMetadataTypeNames = new Set<string>();
+        let validMetadataCount = 0;
 
-        for (const uuid of tagTypeUUIDs) {
-            const tagtype = tagTypeMap.get(uuid);
-            if (!tagtype) {
-                logger.warn(`Invalid tag type UUID in filter: ${uuid}`);
+        for (const uuid of metadataTypeUUIDs) {
+            const metadataType = metadataTypeMap.get(uuid);
+            if (!metadataType) {
+                logger.warn(`Invalid metadata type UUID in filter: ${uuid}`);
                 continue;
             }
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const value = tags[uuid];
+            const value = metadataByTypeUuid[uuid];
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const [column, processedValue] = this._getTagColumnAndValue(
-                tagtype.datatype,
+            const [column, processedValue] = this._getMetadataColumnAndValue(
+                metadataType.datatype,
                 value,
             );
 
             if (!column) {
-                logger.warn(`Unknown data type for tag type ${uuid}`);
+                logger.warn(`Unknown data type for metadata type ${uuid}`);
                 continue;
             }
 
             // Create unique parameter names for this condition
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            const uuidParameter = `tagtype${validTagCount}`;
+            const uuidParameter = `metadataType${validMetadataCount}`;
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            const valueParameter = `tagval${validTagCount}`;
+            const valueParameter = `metadataValue${validMetadataCount}`;
 
-            // Build the clause: (tagtype.uuid = :uuid AND tag.VALUE_COLUMN = :value)
-            tagWhereClauses.push(
-                `(tagtype.uuid = :${uuidParameter} AND tag.${column} = :${valueParameter})`,
+            // Build the clause:
+            // (metadataType.uuid = :uuid AND metadata.VALUE_COLUMN = :value)
+            metadataWhereClauses.push(
+                `(metadataType.uuid = :${uuidParameter} AND metadata.${column} = :${valueParameter})`,
             );
-            tagParameters[uuidParameter] = uuid;
+            metadataParameters[uuidParameter] = uuid;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            tagParameters[valueParameter] = processedValue;
+            metadataParameters[valueParameter] = processedValue;
 
-            validTagCount++;
-            validTagNames.add(tagtype.name);
+            validMetadataCount++;
+            validMetadataTypeNames.add(metadataType.name);
         }
 
-        if (validTagCount === 0) {
-            // All provided tag filters were invalid
+        if (validMetadataCount === 0) {
+            // All provided metadata filters were invalid
             query.andWhere('1 = 0'); // Return no results
             return;
         }
 
         query.andWhere(
             new Brackets((qb) => {
-                for (const clause of tagWhereClauses) qb.orWhere(clause);
+                for (const clause of metadataWhereClauses) qb.orWhere(clause);
             }),
-            tagParameters,
+            metadataParameters,
         );
 
-        query.having('COUNT(DISTINCT tagtype.name) = :tagCount', {
-            tagCount: validTagNames.size,
+        query.having('COUNT(DISTINCT metadataType.name) = :metadataTypeCount', {
+            metadataTypeCount: validMetadataTypeNames.size,
         });
     }
 
-    private _getTagColumnAndValue<T>(
+    private _getMetadataColumnAndValue<T>(
         dataType: DataType,
         value: T,
     ): [string | null, T | undefined] {

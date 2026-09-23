@@ -15,6 +15,18 @@ import {
     IsUUID,
 } from 'class-validator';
 
+/** Query parameters carry objects as JSON strings. */
+const parseJsonObject = (value: unknown): unknown => {
+    if (typeof value === 'string') {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return value;
+        }
+    }
+    return value;
+};
+
 export class FileQueryDto extends MissionQueryDto {
     @IsOptional()
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -144,22 +156,26 @@ export class FileQueryDto extends MissionQueryDto {
     matchAllTopics = false;
 
     @IsOptional()
-    @Transform(({ value }) => {
-        if (typeof value === 'string') {
-            try {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-                return JSON.parse(value);
-            } catch {
-                return value;
-            }
-        }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return value;
-    })
+    @Transform(({ value }) => parseJsonObject(value))
     @IsObject()
     @ApiProperty({
         required: false,
-        description: 'Dictionary Tagtype name to Tag value',
+        description:
+            'Metadata type uuid to the value the mission must have. Unlike ' +
+            '`metadata`, which is keyed by type name, all entries must match.',
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadataByTypeUuid?: Record<string, any>;
+
+    @IsOptional()
+    @Transform(({ value }) => parseJsonObject(value))
+    @IsObject()
+    @ApiProperty({
+        required: false,
+        description:
+            'Deprecated alias for metadataByTypeUuid. Ignored when ' +
+            'metadataByTypeUuid is given.',
+        deprecated: true,
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tags?: Record<string, any>;
