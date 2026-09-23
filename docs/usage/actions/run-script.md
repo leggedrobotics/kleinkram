@@ -81,7 +81,7 @@ If your script imports anything else, it fails at import time. That is the signa
 # fail fast instead of burning the full runtime budget on a hung script
 klein action run-script ./analyse.py -p my-project -m my-mission --timeout 10
 
-# submit and walk away; check back with `klein executions logs <id>`
+# submit and walk away; check back with `klein execution logs <id>`
 klein action run-script ./analyse.py -p my-project -m my-mission --no-follow
 ```
 

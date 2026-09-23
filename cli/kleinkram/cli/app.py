@@ -6,6 +6,7 @@ import sys
 import time
 from enum import Enum
 from pathlib import Path
+from typing import Any
 from typing import List
 from typing import Optional
 
@@ -20,15 +21,17 @@ from kleinkram.api.routes import _claim_admin
 from kleinkram.api.routes import _get_api_version
 from kleinkram.auth import login_flow
 from kleinkram.cli._action import action_typer
+from kleinkram.cli._deprecation import prefer_new
+from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.cli._download import download_typer
 from kleinkram.cli._endpoint import endpoint_typer
-from kleinkram.cli._executions import executions_typer
+from kleinkram.cli._executions import execution_typer
 from kleinkram.cli._file import file_typer
 from kleinkram.cli._list import list_typer
 from kleinkram.cli._mission import mission_typer
 from kleinkram.cli._project import project_typer
-from kleinkram.cli._templates import templates_typer
-from kleinkram.cli._triggers import triggers_typer
+from kleinkram.cli._templates import template_typer
+from kleinkram.cli._triggers import trigger_typer
 from kleinkram.cli._upload import upload_typer
 from kleinkram.cli._verify import verify_typer
 from kleinkram.cli.error_handling import ErrorHandledTyper
@@ -92,10 +95,25 @@ class CommandTypes(str, Enum):
     ACTION = "Kleinkram Action Commands"
 
 
+# deprecated command group names, still accepted but hidden from `--help`
+DEPRECATED_COMMAND_ALIASES = {
+    "templates": "template",
+    "executions": "execution",
+    "triggers": "trigger",
+}
+
+
 class OrderCommands(TyperGroup):
     def list_commands(self, ctx: Context) -> List[str]:
         _ = ctx  # suppress unused variable warning
         return list(self.commands)
+
+    def get_command(self, ctx: Context, cmd_name: str) -> Any:
+        if cmd_name in DEPRECATED_COMMAND_ALIASES:
+            new_name = DEPRECATED_COMMAND_ALIASES[cmd_name]
+            warn_deprecated(f"`klein {cmd_name}`", f"`klein {new_name}`")
+            cmd_name = new_name
+        return super().get_command(ctx, cmd_name)
 
 
 app = ErrorHandledTyper(
@@ -118,19 +136,17 @@ app.add_typer(file_typer, name="file", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(mission_typer, name="mission", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(project_typer, name="project", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(action_typer, name="action", rich_help_panel=CommandTypes.ACTION)
-app.add_typer(templates_typer, name="templates", rich_help_panel=CommandTypes.ACTION)
-app.add_typer(executions_typer, name="executions", rich_help_panel=CommandTypes.ACTION)
-app.add_typer(triggers_typer, name="triggers", rich_help_panel=CommandTypes.ACTION)
+app.add_typer(template_typer, name="template", rich_help_panel=CommandTypes.ACTION)
+app.add_typer(execution_typer, name="execution", rich_help_panel=CommandTypes.ACTION)
+app.add_typer(trigger_typer, name="trigger", rich_help_panel=CommandTypes.ACTION)
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)
 def login(
-    oAuthProvider: str = typer.Option(
-        "auto",
+    oAuthProvider: Optional[str] = typer.Option(
+        None,
         "--oauth-provider",
-        "-p",
-        help="OAuth provider to use for login. Supported providers: google, github, fake-oauth.",
-        show_default=True,
+        help="OAuth provider to use for login. Supported providers: google, github, fake-oauth. (default: auto)",
     ),
     key: Optional[str] = typer.Option(None, help="CLI key"),
     headless: bool = typer.Option(False),
@@ -140,7 +156,11 @@ def login(
         "-u",
         help="Auto-select user ID for fake-oauth (e.g., 1, 2, 3). Only works with fake-oauth provider.",
     ),
+    oauth_provider_flag: Optional[str] = typer.Option(None, "-p", hidden=True),
 ) -> None:
+    oAuthProvider = prefer_new(oAuthProvider, oauth_provider_flag, old="-p for --oauth-provider", new="--oauth-provider")
+    if oAuthProvider is None:
+        oAuthProvider = "auto"
 
     # logic to resolve the "auto" default
     if oAuthProvider == "auto":

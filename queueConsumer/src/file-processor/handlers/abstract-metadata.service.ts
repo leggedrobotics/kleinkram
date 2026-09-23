@@ -5,6 +5,7 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import { FileEventType, FileState } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
+import { toStateComment } from '../helper/state-comment';
 import { ExtractedTopicInfo } from './file-handler.interface';
 import { RecordingTimes } from './time';
 
@@ -67,6 +68,7 @@ export abstract class AbstractMetadataService {
             // Update File Entity
             applyRecordingTimes(targetEntity, recordingTimes);
             targetEntity.state = FileState.OK;
+            targetEntity.stateComment = null;
             targetEntity.size = fileSize;
             await this.fileRepo.save(targetEntity);
 
@@ -108,6 +110,10 @@ export abstract class AbstractMetadataService {
                 `Metadata extraction finalize failed for ${targetEntity.filename}: ${String(error)}`,
             );
             targetEntity.state = FileState.CONVERSION_ERROR;
+            targetEntity.stateComment = toStateComment(
+                'Failed to save the extracted metadata',
+                error,
+            );
             await this.fileRepo.save(targetEntity);
             throw error;
         }

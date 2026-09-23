@@ -27,6 +27,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
+import {
+    assertNotPublicAccessGroup,
+    assertValidPublicAccessRights,
+} from './public-access';
 
 @Injectable()
 export class AccessModificationService {
@@ -184,6 +188,8 @@ export class AccessModificationService {
         expireDate?: Date | 'never',
         auth?: AuthHeader,
     ): Promise<AccessGroupEntity> {
+        assertNotPublicAccessGroup(accessGroupUUID);
+
         const result = await this.entityManager.transaction(
             async (transactionalEntityManager) => {
                 const accessGroup =
@@ -281,6 +287,8 @@ export class AccessModificationService {
         userUuids: string[],
         auth?: AuthHeader,
     ): Promise<AccessGroupEntity> {
+        assertNotPublicAccessGroup(accessGroupUUID);
+
         if (userUuids.length === 0) {
             return this.accessGroupRepository.findOneOrFail({
                 where: { uuid: accessGroupUUID },
@@ -364,6 +372,8 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectDto> {
+        assertValidPublicAccessRights(accessGroupUUID, rights);
+
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: {
@@ -499,6 +509,8 @@ export class AccessModificationService {
     }
 
     async deleteAccessGroup(uuid: string): Promise<void> {
+        assertNotPublicAccessGroup(uuid);
+
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid },
         });
@@ -614,6 +626,10 @@ export class AccessModificationService {
         newProjectAccess: ProjectAccessDto[],
         authHeader: AuthHeader,
     ): Promise<ProjectAccessListDto> {
+        for (const access of newProjectAccess) {
+            assertValidPublicAccessRights(access.uuid, access.rights);
+        }
+
         await this.entityManager.transaction(
             async (transactionalEntityManager): Promise<void> => {
                 await this.checkProjectAccessModificationPreConditions(

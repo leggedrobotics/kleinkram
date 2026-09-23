@@ -56,6 +56,7 @@ export class AuthService implements OnModuleInit {
             this.config,
             this.userRepository,
         );
+        await this.affiliationGroupService.createPublicAccessGroup();
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

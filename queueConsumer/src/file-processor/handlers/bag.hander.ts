@@ -19,6 +19,7 @@ import logger from '../../logger';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { calculateFileHash } from '../helper/hash-helper';
+import { toStateComment } from '../helper/state-comment';
 import { FileHandler, FileProcessingContext } from './file-handler.interface';
 import { McapMetadataService } from './mcap-metadata.service';
 import { RosBagConverter } from './rosbag-converter';
@@ -79,6 +80,10 @@ export class RosBagHandler implements FileHandler {
             } catch (error: unknown) {
                 logger.error(`RosBag Conversion failed: ${String(error)}`);
                 primaryFile.state = FileState.CONVERSION_ERROR;
+                primaryFile.stateComment = toStateComment(
+                    'Failed to convert the bag to MCAP',
+                    error,
+                );
                 await this.fileRepo.save(primaryFile);
                 throw error;
             }
@@ -89,6 +94,10 @@ export class RosBagHandler implements FileHandler {
             } catch (error: unknown) {
                 logger.error(`RosBag Extraction failed: ${String(error)}`);
                 primaryFile.state = FileState.CORRUPTED;
+                primaryFile.stateComment = toStateComment(
+                    'Failed to read the bag file',
+                    error,
+                );
                 await this.fileRepo.save(primaryFile);
                 throw error;
             }
@@ -165,6 +174,7 @@ export class RosBagHandler implements FileHandler {
             primaryFile.recordingStartDate = savedMcapEntity.recordingStartDate;
             primaryFile.recordingEndDate = savedMcapEntity.recordingEndDate;
             primaryFile.state = FileState.OK;
+            primaryFile.stateComment = null;
             await this.fileRepo.save(primaryFile);
 
             // Cleanup local converted file
@@ -198,6 +208,10 @@ export class RosBagHandler implements FileHandler {
             );
         } catch (error: unknown) {
             savedMcapEntity.state = FileState.CONVERSION_ERROR;
+            savedMcapEntity.stateComment = toStateComment(
+                'Failed to store the converted MCAP file',
+                error,
+            );
             await this.fileRepo.save(savedMcapEntity);
 
             // Ensure cleanup on failure

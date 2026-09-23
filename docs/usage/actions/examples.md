@@ -62,7 +62,7 @@ klein login --key <API_KEY>
 klein download -m <MISSION_UUID> --dest <DIR>
 
 # List files in a mission
-klein list files -m <MISSION_UUID>
+klein file list -m <MISSION_UUID>
 ```
 
 ## Kleinkram CLI Example

@@ -40,4 +40,14 @@ export class ProjectQueryDto extends SortablePaginatedQueryDto {
     @IsIn(['true', 'false'])
     @ApiProperty({ required: false, default: 'false', enum: ['true', 'false'] })
     starred?: string;
+
+    /**
+     * When `'true'`, only public projects are returned (see
+     * `AccessGroupType.PUBLIC`).
+     */
+    @IsOptional()
+    @IsString()
+    @IsIn(['true', 'false'])
+    @ApiProperty({ required: false, default: 'false', enum: ['true', 'false'] })
+    public?: string;
 }

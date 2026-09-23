@@ -63,6 +63,7 @@ class FileObjectKeys(str, Enum):
     TYPE = "type"
     CATEGORIES = "categories"
     TOPICS = "topics"
+    STATE_COMMENT = "stateComment"
 
 
 class MissionObjectKeys(str, Enum):
@@ -280,6 +281,7 @@ def _parse_file(file: FileObject) -> File:
         created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
         state = _parse_file_state(file[FileObjectKeys.STATE])
+        state_comment = file.get(FileObjectKeys.STATE_COMMENT)
         categories = _parse_names(file.get(FileObjectKeys.CATEGORIES) or [])
 
         # only the single file endpoint returns topics, listing files does not
@@ -298,6 +300,7 @@ def _parse_file(file: FileObject) -> File:
             categories=categories,
             topics=topics,
             state=state,
+            state_comment=state_comment,
             created_at=created_at,
             updated_at=updated_at,
             mission_id=mission_id,

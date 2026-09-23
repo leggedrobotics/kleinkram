@@ -82,6 +82,7 @@ export const mockDatabaseUser = async (
     );
 
     await affiliationGroupService.createAccessGroups(config);
+    await affiliationGroupService.createPublicAccessGroup();
 
     const userRepository = database.getRepository(UserEntity);
     const accountRepository = database.getRepository(AccountEntity);

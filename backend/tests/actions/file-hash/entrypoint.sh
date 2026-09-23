@@ -11,7 +11,7 @@ echo "🚀 Rocket"
 
 klein endpoint set $ENDPOINT
 klein login --key $APIKEY
-klein list files -m $MISSION_UUID
+klein file list -m $MISSION_UUID
 
 mkdir data
 klein download -m $MISSION_UUID --dest ./data
