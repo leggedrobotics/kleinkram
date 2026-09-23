@@ -139,6 +139,7 @@ export class MissionService {
                 relations: {
                     project: true,
                     creator: true,
+                    tags: { tagType: true },
                 },
             })
             .then((m) => missionEntityToFlatDto(m));
@@ -508,6 +509,7 @@ export class MissionService {
             relations: {
                 project: true,
                 creator: true,
+                tags: { tagType: true },
             },
         });
     }

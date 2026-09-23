@@ -577,3 +577,59 @@ describe('Verify tags/metadata type generation', () => {
         ).toBeUndefined();
     });
 });
+
+// #2368: the create and rename endpoints reloaded the mission without its
+// tags, so the returned mission had no `tags` key.
+describe('Verify mission responses include tags', () => {
+    setupDatabaseHooks();
+
+    interface TestMission {
+        uuid: string;
+        tags?: { type: { uuid: string }; value: unknown }[];
+    }
+
+    test('if create and rename return the mission tags', async () => {
+        const { user } = await generateAndFetchDatabaseUser('internal', 'user');
+
+        const tagTypeUuid = await createMetadataUsingPost(
+            { type: DataType.STRING, name: 'response_tag' },
+            user,
+        );
+
+        const projectUuid = await createProjectUsingPost(
+            { name: 'response_tag_project', description: 'Test project' },
+            user,
+        );
+
+        const headers = new HeaderCreator(user);
+        headers.addHeader('Content-Type', 'application/json');
+
+        const createResponse = await fetch(`${DEFAULT_URL}/missions`, {
+            method: 'POST',
+            headers: headers.getHeaders(),
+            body: JSON.stringify({
+                name: 'response_tag_mission',
+                projectUUID: projectUuid,
+                tags: { [tagTypeUuid]: 'tag_value' },
+            }),
+        });
+        expect(createResponse.status).toBeLessThan(300);
+        const created = (await createResponse.json()) as TestMission;
+        expect(created.tags).toHaveLength(1);
+        expect(created.tags?.[0]?.type.uuid).toBe(tagTypeUuid);
+        expect(created.tags?.[0]?.value).toBe('tag_value');
+
+        const renameResponse = await fetch(
+            `${DEFAULT_URL}/missions/${created.uuid}/name`,
+            {
+                method: 'PATCH',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({ name: 'response_tag_renamed' }),
+            },
+        );
+        expect(renameResponse.status).toBeLessThan(300);
+        const renamed = (await renameResponse.json()) as TestMission;
+        expect(renamed.tags).toHaveLength(1);
+        expect(renamed.tags?.[0]?.value).toBe('tag_value');
+    });
+});
