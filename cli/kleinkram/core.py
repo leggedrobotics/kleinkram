@@ -19,6 +19,7 @@ import re
 import sys
 import tarfile
 import tempfile
+import warnings
 from pathlib import Path
 from typing import Any
 from typing import Collection
@@ -743,6 +744,14 @@ def _read_script(script_path: Path) -> str:
         raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not valid UTF-8 text.") from e
 
 
+def _warn_deprecated_kwarg(old: str, new: str) -> None:
+    warnings.warn(
+        f"create_mission(..., {old}=...) is deprecated and will be removed in kleinkram 1.0.0, use {new} instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+
 def create_mission(
     client: AuthenticatedClient,
     project_id: UUID,
@@ -751,7 +760,21 @@ def create_mission(
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
     required_metadata_types: Optional[List[str]] = None,
+    ignore_missing_tags: Optional[bool] = None,
+    required_tags: Optional[List[str]] = None,
 ) -> UUID:
+    """\
+    `ignore_missing_tags` and `required_tags` are deprecated aliases of
+    `ignore_missing_metadata` and `required_metadata_types`, removed in 1.0.0
+    """
+    if ignore_missing_tags is not None:
+        _warn_deprecated_kwarg("ignore_missing_tags", "ignore_missing_metadata")
+        ignore_missing_metadata = ignore_missing_tags
+    if required_tags is not None:
+        _warn_deprecated_kwarg("required_tags", "required_metadata_types")
+        if required_metadata_types is None:
+            required_metadata_types = required_tags
+
     if metadata is None:
         metadata = {}
 

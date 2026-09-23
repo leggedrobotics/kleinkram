@@ -79,14 +79,14 @@ def upload(
         help="skip unsupported file types, badly named files, or directories instead of erroring",
     ),
     experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
-    ignore_missing_metadata: bool = typer.Option(
-        False, "--ignore-missing-metadata", help="create the mission even if metadata required by the project is missing"
-    ),
-    ignore_missing_tags: bool = typer.Option(False, "--ignore-missing-tags", hidden=True),
+    ignore_missing_metadata: bool = typer.Option(False, help="ignore missing required metadata"),
+    ignore_missing_tags: Optional[bool] = typer.Option(None, "--ignore-missing-tags/--no-ignore-missing-tags", hidden=True),
 ) -> None:
-    if ignore_missing_tags:
-        warn_deprecated("--ignore-missing-tags", "--ignore-missing-metadata")
-        ignore_missing_metadata = True
+    if ignore_missing_tags is not None:
+        warn_deprecated(
+            "--ignore-missing-tags/--no-ignore-missing-tags", "--ignore-missing-metadata/--no-ignore-missing-metadata"
+        )
+        ignore_missing_metadata = ignore_missing_tags
 
     original_file_paths = [Path(file) for file in files]
     mission_query = _build_mission_query(mission, project)

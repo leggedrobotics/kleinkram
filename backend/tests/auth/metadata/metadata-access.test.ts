@@ -45,7 +45,6 @@ async function setupMissionWithMetadata(
         creator,
     );
 
-    // createMissionUsingPost ignores metadata values — add them separately
     const missionUuid = await createMissionUsingPost(
         {
             name: `metadata_mission_${String(Date.now())}`,

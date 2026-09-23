@@ -129,3 +129,24 @@ def test_create_mission_sends_the_names_every_server_accepts():
     assert client.payload["ignoreTags"] is True
     assert "metadata" not in client.payload
     assert "ignoreMissingMetadata" not in client.payload
+
+
+def test_core_create_mission_accepts_the_deprecated_keyword_arguments(monkeypatch):
+    import kleinkram.core
+    import kleinkram.errors
+
+    monkeypatch.setattr(kleinkram.core, "_validate_mission_name", lambda *_: None)
+
+    # the deprecated `required_tags` still feeds the required-metadata check
+    with pytest.warns(DeprecationWarning, match="required_metadata_types"):
+        with pytest.raises(kleinkram.errors.InvalidMissionMetadata):
+            kleinkram.core.create_mission(None, uuid4(), "m1", metadata={}, required_tags=["robot"])
+
+    sent = {}
+    monkeypatch.setattr(kleinkram.core, "_get_metadata_map", lambda *_: {})
+    monkeypatch.setattr(kleinkram.core, "_validate_mission_created", lambda *_: None)
+    monkeypatch.setattr(kleinkram.api.routes, "_create_mission", lambda *_, **kwargs: sent.update(kwargs) or uuid4())
+
+    with pytest.warns(DeprecationWarning, match="ignore_missing_metadata"):
+        kleinkram.core.create_mission(None, uuid4(), "m1", ignore_missing_tags=True)
+    assert sent["ignore_missing_metadata"] is True

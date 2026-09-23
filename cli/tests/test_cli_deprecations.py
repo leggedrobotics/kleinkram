@@ -327,17 +327,21 @@ def test_mission_create_ignore_missing_metadata_and_legacy_flag(runner, monkeypa
     new = invoke(runner, ["mission", "create", "m1", "-p", "p1", "--ignore-missing-metadata"])
     old = invoke(runner, ["mission", "create", "m1", "-p", "p1", "--ignore-missing-tags"])
     default = invoke(runner, ["mission", "create", "m1", "-p", "p1"])
+    new_negated = invoke(runner, ["mission", "create", "m1", "-p", "p1", "--no-ignore-missing-metadata"])
+    old_negated = invoke(runner, ["mission", "create", "m1", "-p", "p1", "--no-ignore-missing-tags"])
 
-    assert new.exit_code == 0, new.output
-    assert old.exit_code == 0, old.output
-    assert default.exit_code == 0, default.output
+    for result in (new, old, default, new_negated, old_negated):
+        assert result.exit_code == 0, result.output
     assert DEPRECATED not in new.stderr
-    assert "--ignore-missing-tags is deprecated" in old.stderr
-    first, second, third = kwargs_without_client(create_mission)
+    assert DEPRECATED not in new_negated.stderr
+    assert "--ignore-missing-tags/--no-ignore-missing-tags is deprecated" in old.stderr
+    assert "--ignore-missing-tags/--no-ignore-missing-tags is deprecated" in old_negated.stderr
+    first, second, third, fourth, fifth = kwargs_without_client(create_mission)
     assert first == second
     assert first["ignore_missing_metadata"] is True
     assert first["required_metadata_types"] == ["robot"]
     assert third["ignore_missing_metadata"] is False
+    assert fourth == fifth == third
 
 
 def test_upload_ignore_missing_metadata_and_legacy_flag(runner, monkeypatch, tmp_path):
@@ -353,7 +357,7 @@ def test_upload_ignore_missing_metadata_and_legacy_flag(runner, monkeypatch, tmp
     assert new.exit_code == 0, new.output
     assert old.exit_code == 0, old.output
     assert DEPRECATED not in new.stderr
-    assert "--ignore-missing-tags is deprecated" in old.stderr
+    assert "--ignore-missing-tags/--no-ignore-missing-tags is deprecated" in old.stderr
     first, second = kwargs_without_client(upload)
     assert first == second
     assert first["ignore_missing_metadata"] is True
