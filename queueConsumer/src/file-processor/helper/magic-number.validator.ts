@@ -15,11 +15,52 @@ const MAGIC_NUMBERS: Partial<Record<FileType, Buffer>> = {
     [FileType.DB3]: Buffer.from('SQLite format 3\0'),
 };
 
+const FORMAT_SPEC_URLS: Partial<Record<FileType, string>> = {
+    [FileType.MCAP]: 'https://mcap.dev/spec',
+    [FileType.BAG]: 'https://wiki.ros.org/Bags/Format/2.0',
+};
+
+export interface FileValidationResult {
+    valid: boolean;
+    /** User-facing reason, set when `valid` is false. */
+    error?: string;
+}
+
+/**
+ * Neither MD nor CSV has a magic number, so we check that the content is
+ * text and, for CSV, that it is tabular.
+ */
+const validateTextFormat = async (
+    handle: fs.FileHandle,
+    fileType: FileType.MD | FileType.CSV,
+): Promise<FileValidationResult> => {
+    const buffer = Buffer.alloc(TEXT_SAMPLE_BYTES);
+    const { bytesRead } = await handle.read(buffer, 0, TEXT_SAMPLE_BYTES, 0);
+    if (bytesRead === 0) return { valid: false, error: 'File is empty' };
+
+    const sample = buffer.subarray(0, bytesRead);
+    const { size } = await handle.stat();
+    const sampleIsCompleteFile = size <= bytesRead;
+
+    if (!isPlainTextSample(sample, sampleIsCompleteFile))
+        return {
+            valid: false,
+            error: `${fileType} validation failed: the file is not plain text`,
+        };
+    if (fileType === FileType.MD) return { valid: true };
+
+    if (looksLikeCsv(sample, sampleIsCompleteFile)) return { valid: true };
+    return {
+        valid: false,
+        error: 'CSV validation failed: no consistent column structure found',
+    };
+};
+
 export const MagicNumberValidator = {
     async validate(
         filePath: string,
         fileType: FileType,
-    ): Promise<{ valid: boolean; error?: string }> {
+    ): Promise<FileValidationResult> {
         try {
             const handle = await fs.open(filePath, 'r');
             try {
@@ -51,26 +92,8 @@ export const MagicNumberValidator = {
                     };
                 }
 
-                if (fileType === FileType.MD || fileType === FileType.CSV) {
-                    // Neither format has a magic number, so we check that the
-                    // content is text and, for CSV, that it is tabular.
-                    const buffer = Buffer.alloc(TEXT_SAMPLE_BYTES);
-                    const { bytesRead } = await handle.read(
-                        buffer,
-                        0,
-                        TEXT_SAMPLE_BYTES,
-                        0,
-                    );
-                    const sample = buffer.subarray(0, bytesRead);
-                    const { size } = await handle.stat();
-                    const sampleIsCompleteFile = size <= bytesRead;
-
-                    if (!isPlainTextSample(sample, sampleIsCompleteFile))
-                        return false;
-                    if (fileType === FileType.MD) return true;
-
-                    return looksLikeCsv(sample, sampleIsCompleteFile);
-                }
+                if (fileType === FileType.MD || fileType === FileType.CSV)
+                    return await validateTextFormat(handle, fileType);
 
                 if (fileType === FileType.TUM) {
                     // TUM format: timestamp tx ty tz qx qy qz qw
@@ -127,16 +150,11 @@ export const MagicNumberValidator = {
                     return { valid: true };
                 }
 
-                let specUrl = '';
-                if (fileType === FileType.MCAP) {
-                    specUrl = ' See https://mcap.dev/spec';
-                } else if (fileType === FileType.BAG) {
-                    specUrl = ' See https://wiki.ros.org/Bags/Format/2.0';
-                }
+                const specUrl = FORMAT_SPEC_URLS[fileType];
 
                 return {
                     valid: false,
-                    error: `Invalid magic number: expected ${magic.toString('hex')} but got ${buffer.toString('hex')}. This may be a split/segmented file missing its header.${specUrl}`,
+                    error: `Invalid magic number: expected ${magic.toString('hex')} but got ${buffer.toString('hex')}. This may be a split/segmented file missing its header.${specUrl ? ` See ${specUrl}` : ''}`,
                 };
             } finally {
                 await handle.close();
@@ -145,9 +163,10 @@ export const MagicNumberValidator = {
             logger.error(
                 `Failed to validate magic number for ${filePath}: ${String(error)}`,
             );
+            // The raw error names paths inside the worker, keep it in the log.
             return {
                 valid: false,
-                error: `Validation exception: ${String(error)}`,
+                error: 'Validation failed: the uploaded file could not be read',
             };
         }
     },

@@ -4,6 +4,7 @@ import { FileState } from '@kleinkram/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { toStateComment } from '../helper/state-comment';
 import { FileHandler, FileProcessingContext } from './file-handler.interface';
 import { McapMetadataService } from './mcap-metadata.service';
 
@@ -36,7 +37,10 @@ export class McapHandler implements FileHandler {
             );
         } catch (error) {
             primaryFile.state = FileState.CORRUPTED;
-            primaryFile.stateComment = String(error);
+            primaryFile.stateComment = toStateComment(
+                'Failed to read the MCAP file',
+                error,
+            );
             await this.fileRepo.save(primaryFile);
             throw error;
         }

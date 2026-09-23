@@ -33,6 +33,10 @@ jobs:
             - name: Build workspace packages
               run: pnpm -r run build
 
+            - name: Queue consumer unit tests
+              working-directory: ./queueConsumer
+              run: pnpm test --ci
+
             - name: Set up Python
               uses: actions/setup-python@v7
               with:
