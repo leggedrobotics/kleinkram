@@ -412,6 +412,49 @@ describe('Verify Action (Templates & Runs)', () => {
         expect(response.status).toBe(200);
     });
 
+    test('if a user can sort actions by every column of the actions table', async () => {
+        for (const sortBy of [
+            'createdAt',
+            'updatedAt',
+            'state',
+            'state_cause',
+            'mission.name',
+            'template.name',
+            'template.image_name',
+            'creator.name',
+        ]) {
+            const response = await fetch(
+                `${DEFAULT_URL}/actions?take=10&skip=0&sortBy=${sortBy}&sortDirection=ASC`,
+                {
+                    method: 'GET',
+                    headers: new HeaderCreator(
+                        globalThis.creator as UserEntity,
+                    ).getHeaders(),
+                },
+            );
+            expect(response.status).toBe(200);
+        }
+    });
+
+    test('if sortBy is rejected when it is not a known sort key', async () => {
+        for (const sortBy of [
+            'password',
+            // a SQL expression that would leak data through the sort order
+            "(SELECT CASE WHEN substr(apikey.apikey::text,1,1)='a' THEN action.createdAt END FROM apikey LIMIT 1)",
+        ]) {
+            const response = await fetch(
+                `${DEFAULT_URL}/actions?take=10&skip=0&sortBy=${encodeURIComponent(sortBy)}&sortDirection=ASC`,
+                {
+                    method: 'GET',
+                    headers: new HeaderCreator(
+                        globalThis.creator as UserEntity,
+                    ).getHeaders(),
+                },
+            );
+            expect(response.status).toBe(405);
+        }
+    });
+
     test('if a user with DELETE rights can delete an action run', async () => {
         // 1. Submit Action
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
