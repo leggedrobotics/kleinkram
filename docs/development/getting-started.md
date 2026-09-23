@@ -130,20 +130,20 @@ docker compose up --build --watch
 
 When seeding is enabled, the following entities are created in the database:
 
-| Entity Type          | Name / Identifier             | Details                                                                           |
-| :------------------- | :---------------------------- | :-------------------------------------------------------------------------------- |
-| **Users**            | `admin@kleinkram.dev`         | Role: `ADMIN`. Has access to all projects.                                        |
-|                      | `internal-user@kleinkram.dev` | Role: `USER`. Member of primary access group.                                     |
-|                      | `external-user@example.com`   | Role: `USER`. No default project access.                                          |
-| **Projects**         | Autonomous Driving            | Missions: `Highway Pilot`, `Urban Navigation`                                     |
-|                      | Robotics Manipulation         | Missions: `Pick and Place`, `Assembly`                                            |
-|                      | Drone Surveillance            | Missions: `Perimeter Check`, `Search and Rescue`                                  |
-| **Action Templates** | `validate-data`               | Validates data integrity                                                          |
-|                      | `extract-metadata`            | Extracts metadata from files                                                      |
-|                      | `convert-formats`             | Converts file formats                                                             |
-|                      | `python-template`             | Basic Python action template                                                      |
-|                      | `gpu-example`                 | Python action template with GPU acceleration                                      |
-| **Files**            | Various                       | `.bag`, `.mcap`, and `.yaml` files are generated and distributed across missions. |
+| Entity Type          | Name / Identifier                  | Details                                                                           |
+| :------------------- | :--------------------------------- | :-------------------------------------------------------------------------------- |
+| **Users**            | `admin@leggedrobotics.com`         | Role: `ADMIN`. Has access to all projects.                                        |
+|                      | `internal-user@leggedrobotics.com` | Role: `USER`. Member of primary access group.                                     |
+|                      | `external-user@example.com`        | Role: `USER`. No default project access.                                          |
+| **Projects**         | Autonomous Driving                 | Missions: `Highway Pilot`, `Urban Navigation`                                     |
+|                      | Robotics Manipulation              | Missions: `Pick and Place`, `Assembly`                                            |
+|                      | Drone Surveillance                 | Missions: `Perimeter Check`, `Search and Rescue`                                  |
+| **Action Templates** | `validate-data`                    | Validates data integrity                                                          |
+|                      | `extract-metadata`                 | Extracts metadata from files                                                      |
+|                      | `convert-formats`                  | Converts file formats                                                             |
+|                      | `python-template`                  | Basic Python action template                                                      |
+|                      | `gpu-example`                      | Python action template with GPU acceleration                                      |
+| **Files**            | Various                            | `.bag`, `.mcap`, and `.yaml` files are generated and distributed across missions. |
 
 ::: tip Source Code
 For a complete list of what is seeded, check out the seed files in `common/seeds`.
@@ -188,11 +188,11 @@ klein login --oauth-provider fake-oauth --user 3
 
 **Available fake users:**
 
-| User ID | Email                         | Role          | Description                                                             |
-| ------- | ----------------------------- | ------------- | ----------------------------------------------------------------------- |
-| 1       | `admin@kleinkram.dev`         | Admin         | Has admin access, sees all seeded projects                              |
-| 2       | `internal-user@kleinkram.dev` | Internal User | Part of affiliation group, can create projects, sees no seeded projects |
-| 3       | `external-user@example.com`   | External User | Cannot create projects, sees no projects by default                     |
+| User ID | Email                              | Role          | Description                                                             |
+| ------- | ---------------------------------- | ------------- | ----------------------------------------------------------------------- |
+| 1       | `admin@leggedrobotics.com`         | Admin         | Has admin access, sees all seeded projects                              |
+| 2       | `internal-user@leggedrobotics.com` | Internal User | Part of affiliation group, can create projects, sees no seeded projects |
+| 3       | `external-user@example.com`        | External User | Cannot create projects, sees no projects by default                     |
 
 ::: tip
 The `--user` parameter only works with the `fake-oauth` provider. Using it with other providers (Google, GitHub) will result in an error.

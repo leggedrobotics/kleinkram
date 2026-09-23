@@ -14,7 +14,7 @@ describe('Topic Extraction Tests', () => {
     test('should extract topics from a file', async () => {
         console.log('[DEBUG] Starting test setup');
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-topic@kleinkram.dev',
+            'test-topic@leggedrobotics.com',
             'Topic User',
         );
         console.log('[DEBUG] Test setup complete');

@@ -22,7 +22,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support all project query parameters (take, skip, sortBy, sortOrder, projectUuids, projectPatterns, creatorUuid, exactMatch)', async () => {
         const { user, projectUuid } = await setupTestEnvironment(
-            'proj-params@kleinkram.dev',
+            'proj-params@leggedrobotics.com',
             'Project Params User',
         );
 
@@ -129,7 +129,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should sort projects by size (sortBy=size)', async () => {
         const { user, projectUuid, missionUuid } = await setupTestEnvironment(
-            'proj-size@kleinkram.dev',
+            'proj-size@leggedrobotics.com',
             'Project Size User',
         );
 
@@ -228,7 +228,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
     test('should sort projects by mission count (sortBy=nrOfMissions)', async () => {
         // The setup project holds a single mission
         const { user, projectUuid } = await setupTestEnvironment(
-            'proj-missions@kleinkram.dev',
+            'proj-missions@leggedrobotics.com',
             'Project Mission Count User',
         );
 
@@ -310,7 +310,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support all mission query parameters (take, skip, sortBy, sortDirection, projectUuid, uuid, missionUuids, missionPatterns, minimal)', async () => {
         const { user, projectUuid, missionUuid } = await setupTestEnvironment(
-            'mission-params@kleinkram.dev',
+            'mission-params@leggedrobotics.com',
             'Mission Params User',
         );
 
@@ -395,7 +395,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support all file query parameters (fileUuids, filePatterns, fileExtensions, topicPatterns, categoryPatterns, fileName, projectUUID, missionUUID, startDate, endDate, sort)', async () => {
         const { user, projectUuid, missionUuid } = await setupTestEnvironment(
-            'file-params@kleinkram.dev',
+            'file-params@leggedrobotics.com',
             'File Params User',
         );
 
@@ -504,7 +504,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support file storage/upload/queue endpoints (isUploading, queue, storage)', async () => {
         const { user } = await setupTestEnvironment(
-            'file-endpoints@kleinkram.dev',
+            'file-endpoints@leggedrobotics.com',
             'File Endpoints User',
         );
 
@@ -538,7 +538,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support API keys query parameters (take, skip, sortBy, sortOrder)', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'api-keys-params@kleinkram.dev',
+            'api-keys-params@leggedrobotics.com',
             'API Keys Params User',
         );
 

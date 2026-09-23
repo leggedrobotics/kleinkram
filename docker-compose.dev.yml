@@ -23,12 +23,15 @@ services:
 
         volumes:
             - swagger-spec:/usr/src/app/backend/docs
+            # deployment specific access config (affiliation groups), not part of the image
+            - ${ACCESS_CONFIG_FILE:-./access_config.json}:/app/config/access_config.json:ro
 
         networks:
             - webnet
             - privatenet
 
         environment:
+            ACCESS_CONFIG_PATH: /app/config/access_config.json
             DEVBUILD: 'false'
             REDIS_HOST: redis
 

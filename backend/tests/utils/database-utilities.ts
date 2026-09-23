@@ -4,17 +4,23 @@ import {
     AffiliationGroupService,
     ALL_ENTITIES,
     GroupMembershipEntity,
+    loadAccessConfig,
     UserEntity,
 } from '@kleinkram/backend-common';
 import { Providers, UserRole } from '@kleinkram/shared';
 import jwt from 'jsonwebtoken';
 import * as crypto from 'node:crypto';
-import * as fs from 'node:fs';
 
 import { createNewUser } from '@/services/auth.service';
 import path from 'node:path';
 import process from 'node:process';
 import { DataSource } from 'typeorm';
+
+/** The access config used by local development and the test stack. */
+export const DEV_ACCESS_CONFIG_PATH = path.join(
+    __dirname,
+    '../../access_config.dev.json',
+);
 
 const databasePort = process.env.DB_PORT;
 
@@ -65,11 +71,7 @@ export const mockDatabaseUser = async (
     username = 'Test User',
     role: UserRole = UserRole.USER,
 ): Promise<string> => {
-    // read config from access_config.json
-
-    const configPath = path.join(__dirname, '../../src/access_config.json');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const config = loadAccessConfig(DEV_ACCESS_CONFIG_PATH);
     const accessGroupRepository = database.getRepository(AccessGroupEntity);
     const groupMembershipRepository = database.getRepository(
         GroupMembershipEntity,
@@ -78,7 +80,7 @@ export const mockDatabaseUser = async (
         accessGroupRepository,
         groupMembershipRepository,
     );
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
     await affiliationGroupService.createAccessGroups(config);
     await affiliationGroupService.createPublicAccessGroup();
 
@@ -91,7 +93,6 @@ export const mockDatabaseUser = async (
     const oauthID = hash.digest('hex');
 
     await createNewUser(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         config,
         userRepository,
         accountRepository,

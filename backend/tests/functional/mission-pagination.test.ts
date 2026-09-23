@@ -34,7 +34,7 @@ describe('Mission list pagination', () => {
 
     test('honours take/skip and returns disjoint pages', async () => {
         const { user, projectUuid } = await setupTestEnvironment(
-            'mission-pagination@kleinkram.dev',
+            'mission-pagination@leggedrobotics.com',
             'Mission Pagination User',
         );
 
@@ -100,7 +100,7 @@ describe('Mission list pagination', () => {
 
     test('honours take/skip for the minimal projection', async () => {
         const { user, projectUuid } = await setupTestEnvironment(
-            'mission-pagination-minimal@kleinkram.dev',
+            'mission-pagination-minimal@leggedrobotics.com',
             'Mission Pagination Minimal User',
         );
 
@@ -140,7 +140,7 @@ describe('Mission list pagination', () => {
 
     test('pages stay disjoint when all missions share the same createdAt', async () => {
         const { user, projectUuid } = await setupTestEnvironment(
-            'mission-pagination-ties@kleinkram.dev',
+            'mission-pagination-ties@leggedrobotics.com',
             'Mission Pagination Ties User',
         );
 

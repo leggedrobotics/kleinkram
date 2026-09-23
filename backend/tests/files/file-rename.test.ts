@@ -13,7 +13,7 @@ describe('File Rename Bug Verification', () => {
 
     test('should succeed to rename a .yaml file', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-rename-yaml@kleinkram.dev',
+            'test-rename-yaml@leggedrobotics.com',
             'Rename User',
             UserRole.ADMIN,
         );
@@ -53,7 +53,7 @@ describe('File Rename Bug Verification', () => {
 
     test('should succeed to rename a .yml file', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-rename-yml@kleinkram.dev',
+            'test-rename-yml@leggedrobotics.com',
             'Rename User',
             UserRole.ADMIN,
         );
@@ -90,7 +90,7 @@ describe('File Rename Bug Verification', () => {
 
     test('should fail if changing extension (e.g. .bag to .mcap)', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-rename-invalid@kleinkram.dev',
+            'test-rename-invalid@leggedrobotics.com',
             'Rename User',
             UserRole.ADMIN,
         );
@@ -125,7 +125,7 @@ describe('File Rename Bug Verification', () => {
 
     test('should allow .yaml <-> .yml rename but fail for others', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-yaml-yml-swap@kleinkram.dev',
+            'test-yaml-yml-swap@leggedrobotics.com',
             'Rename User',
             UserRole.ADMIN,
         );

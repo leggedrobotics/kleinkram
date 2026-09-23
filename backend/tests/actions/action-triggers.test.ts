@@ -25,7 +25,7 @@ describe('Action Triggers CRUD Tests', () => {
 
     test('should create, retrieve, update, and delete an action trigger', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'trigger-user@kleinkram.dev',
+            'trigger-user@leggedrobotics.com',
             'Trigger User',
         );
 
@@ -151,7 +151,7 @@ describe('Action Triggers CRUD Tests', () => {
 
     test('should deny access to unauthorized users for triggers', async () => {
         const creatorEnvironment = await setupTestEnvironment(
-            'trigger-creator@kleinkram.dev',
+            'trigger-creator@leggedrobotics.com',
             'Trigger Creator',
         );
 

@@ -1,3 +1,4 @@
+export * from './access-config';
 export * from './audit/access-group-audit.service';
 export * from './audit/audit.types';
 export * from './audit/file-audit.service';

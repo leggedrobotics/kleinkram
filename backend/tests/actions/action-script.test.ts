@@ -69,7 +69,7 @@ describe('Script actions', () => {
 
     test('stores the script, dispatches it on the runner and reads it back', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'script-submit@kleinkram.dev',
+            'script-submit@leggedrobotics.com',
             'Script User',
         );
         await seedScriptRunner(user);
@@ -119,7 +119,7 @@ describe('Script actions', () => {
 
     test('keeps the script of an action that could not be queued', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'script-no-worker@kleinkram.dev',
+            'script-no-worker@leggedrobotics.com',
             'Script User',
         );
         // More cores than any worker has, so queueing fails whichever workers
@@ -146,7 +146,7 @@ describe('Script actions', () => {
 
     test('rejects a runtime above the template budget', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'script-runtime@kleinkram.dev',
+            'script-runtime@leggedrobotics.com',
             'Script User',
         );
         await seedScriptRunner(user);
@@ -164,7 +164,7 @@ describe('Script actions', () => {
 
     test('rejects oversized scripts and unusable filenames', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'script-invalid@kleinkram.dev',
+            'script-invalid@leggedrobotics.com',
             'Script User',
         );
         await seedScriptRunner(user);
@@ -194,7 +194,7 @@ describe('Script actions', () => {
 
     test('ignores a same-named template that is not system-managed', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'script-impostor@kleinkram.dev',
+            'script-impostor@leggedrobotics.com',
             'Script User',
         );
         await seedScriptRunner(user, {
@@ -214,7 +214,7 @@ describe('Script actions', () => {
 
     test('the runner template cannot be versioned or deleted', async () => {
         const { user } = await setupTestEnvironment(
-            'script-immutable@kleinkram.dev',
+            'script-immutable@leggedrobotics.com',
             'Script Admin',
         );
         const template = await seedScriptRunner(user);
