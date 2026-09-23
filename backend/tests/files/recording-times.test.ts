@@ -46,7 +46,7 @@ describe('Recording Times', () => {
      */
     test('stores the first and last message time of an uploaded bag', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-recording-times@kleinkram.dev',
+            'test-recording-times@leggedrobotics.com',
             'Recording Times User',
             UserRole.ADMIN,
         );
@@ -79,7 +79,7 @@ describe('Recording Times', () => {
      */
     test('stores the recording window of the converted mcap as well', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-recording-times-mcap@kleinkram.dev',
+            'test-recording-times-mcap@leggedrobotics.com',
             'Recording Times Mcap User',
             UserRole.ADMIN,
         );

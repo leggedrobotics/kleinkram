@@ -18,7 +18,7 @@ const setup = async (): Promise<{
     metadataTypeUuid: string;
 }> => {
     const userUuid = await mockDatabaseUser(
-        'metadata-types@kleinkram.dev',
+        'metadata-types@leggedrobotics.com',
         'Metadata Types User',
         UserRole.ADMIN,
     );

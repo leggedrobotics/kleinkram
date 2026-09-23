@@ -18,7 +18,7 @@ describe('File topic match mode', () => {
 
     test('matchAllTopics toggles between OR and AND topic search', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'topic-match-mode@kleinkram.dev',
+            'topic-match-mode@leggedrobotics.com',
             'Topic Match Mode User',
         );
 

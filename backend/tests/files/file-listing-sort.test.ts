@@ -63,14 +63,14 @@ describe('File listing sorted by a joined relation', () => {
     beforeEach(async () => {
         admin = await getUserFromDatabase(
             await mockDatabaseUser(
-                'sort-admin@kleinkram.dev',
+                'sort-admin@leggedrobotics.com',
                 'aaa_creator',
                 UserRole.ADMIN,
             ),
         );
         otherCreator = await getUserFromDatabase(
             await mockDatabaseUser(
-                'sort-other@kleinkram.dev',
+                'sort-other@leggedrobotics.com',
                 'zzz_creator',
                 UserRole.ADMIN,
             ),

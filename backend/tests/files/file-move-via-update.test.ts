@@ -71,7 +71,7 @@ describe('PUT /files/:uuid moves a file into the mission of the request', () => 
 
     test('a user changes the mission of a file through the update endpoint', async () => {
         const { user, projectUuid, missionUuid } = await setupTestEnvironment(
-            'test-move-via-update@kleinkram.dev',
+            'test-move-via-update@leggedrobotics.com',
             'Move Via Update User',
             UserRole.ADMIN,
         );

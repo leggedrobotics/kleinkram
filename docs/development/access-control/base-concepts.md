@@ -38,7 +38,7 @@ logged by `AffiliationGroupService`.
 {
     "emails": [
         {
-            "email": "kleinkram.dev",
+            "email": "leggedrobotics.com",
             "access_groups": ["00000000-0000-0000-0000-000000000000"]
         }
     ],

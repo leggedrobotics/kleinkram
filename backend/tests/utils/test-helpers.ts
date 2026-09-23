@@ -35,7 +35,7 @@ export const setupDatabaseHooks = () => {
 };
 
 export const setupTestEnvironment = async (
-    email = 'test@kleinkram.dev',
+    email = 'test@leggedrobotics.com',
     username = 'Test Env User',
     role = UserRole.ADMIN,
 ) => {

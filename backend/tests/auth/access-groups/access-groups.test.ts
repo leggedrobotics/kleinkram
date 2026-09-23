@@ -53,7 +53,7 @@ describe('Verify Access Groups External', () => {
     setupDatabaseHooks();
 
     // user: external
-    test('Non "kleinkram.dev" email is not added to default group', async () => {
+    test('Non "leggedrobotics.com" email is not added to default group', async () => {
         const mockEmail = 'external-user@third-party.com';
         const externalUuid = await mockDatabaseUser(mockEmail, 'external-user');
 
@@ -113,7 +113,7 @@ describe('Verify Access Groups Internal', () => {
 
     // user: internal
     test('if leggedrobotics email is added to default group', async () => {
-        const mockEmail = 'internal-user@kleinkram.dev';
+        const mockEmail = 'internal-user@leggedrobotics.com';
         const internalUuid = await mockDatabaseUser(mockEmail, 'internal-user');
 
         const userRepository = database.getRepository(UserEntity);

@@ -49,7 +49,7 @@ const getMissionTagTypeUuids = async (
 const setup = async (): Promise<Fixture> => {
     const suffix = String(Date.now());
     const userUuid = await mockDatabaseUser(
-        'metadata-replace@kleinkram.dev',
+        'metadata-replace@leggedrobotics.com',
         'Metadata Replace User',
         UserRole.ADMIN,
     );

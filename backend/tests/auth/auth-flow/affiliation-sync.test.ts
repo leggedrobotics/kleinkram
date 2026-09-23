@@ -16,12 +16,12 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
     setupDatabaseHooks();
 
     const TEST_GROUP_UUID = '00000000-1111-2222-3333-444444444444';
-    const email = 'test-sync@kleinkram.dev';
+    const email = 'test-sync@leggedrobotics.com';
 
     const testAccessConfig = {
         emails: [
             {
-                email: 'kleinkram.dev',
+                email: 'leggedrobotics.com',
                 access_groups: [TEST_GROUP_UUID],
             },
         ],
@@ -100,7 +100,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         const userRepository = database.getRepository(UserEntity);
         const accountRepository = database.getRepository(AccountEntity);
 
-        const email2 = 'test-sync-2@kleinkram.dev';
+        const email2 = 'test-sync-2@leggedrobotics.com';
 
         // 1. Create user and fully linked account via createNewUser
         await createNewUser(
@@ -168,7 +168,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         const userRepository = database.getRepository(UserEntity);
         const accountRepository = database.getRepository(AccountEntity);
 
-        const email3 = 'test-sync-3@kleinkram.dev';
+        const email3 = 'test-sync-3@leggedrobotics.com';
 
         // 1. Create user and fully linked account via createNewUser
         await createNewUser(
