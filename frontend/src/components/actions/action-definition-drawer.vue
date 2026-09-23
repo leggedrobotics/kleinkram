@@ -223,6 +223,7 @@ import { AccessGroupRights } from '@kleinkram/shared';
 import {
     isImageInDockerNamespace,
     isValidDockerImageName,
+    normalizeDockerNamespace,
 } from '@kleinkram/validation/frontend';
 import ComputeResourcesSelector from 'components/actions/compute-resources-selector.vue';
 import { debounce, Notify, QForm } from 'quasar';
@@ -396,7 +397,9 @@ async function saveTemplate(): Promise<void> {
         };
 
         // 2. Validate Namespace
-        const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
+        const dockerhubNamespace = normalizeDockerNamespace(
+            import.meta.env.VITE_DOCKER_HUB_NAMESPACE,
+        );
         if (
             !isImageInDockerNamespace(
                 basePayload.dockerImage,

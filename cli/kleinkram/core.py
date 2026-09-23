@@ -73,6 +73,7 @@ from kleinkram.utils import split_args
 NAME_REGEX = re.compile(r"^[\w\-_]{3,50}$")
 DOCKER_IMAGE_REGEX = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._\-/]*(?::[a-zA-Z0-9._\-]+)?(?:@sha256:[a-fA-F0-9]{64})?$")
 DOCKER_IMAGE_MAX_LENGTH = 256
+DOCKER_HUB_NAMESPACE_REGEX = re.compile(r"^[a-z0-9]+(?:[_-]+[a-z0-9]+)*$")
 ALLOWED_ACCESS_RIGHTS = {0, 10, 20, 30}  # READ  # CREATE  # WRITE  # DELETE
 
 
@@ -973,8 +974,15 @@ def _validate_docker_image(image_name: str) -> None:
 
 
 def _validate_docker_namespace(image_name: str) -> None:
+    # keep in sync with isImageInDockerNamespace in packages/validation
     namespace = (os.environ.get("VITE_DOCKER_HUB_NAMESPACE") or "").strip().rstrip("/")
-    if namespace and not image_name.startswith(f"{namespace}/"):
+    if not namespace:
+        return
+    if not DOCKER_HUB_NAMESPACE_REGEX.match(namespace) or namespace == "localhost":
+        raise kleinkram.errors.TemplateValidationError(
+            f"Invalid VITE_DOCKER_HUB_NAMESPACE '{namespace}': must be a single Docker Hub namespace."
+        )
+    if not image_name.startswith(f"{namespace}/"):
         raise kleinkram.errors.TemplateValidationError(f"Image name must start with '{namespace}/'")
 
 

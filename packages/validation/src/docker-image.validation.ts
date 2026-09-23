@@ -18,19 +18,38 @@ export function validateDockerImageName(imageName: string): void {
     }
 }
 
+// A single Docker Hub namespace: lowercase alphanumerics separated by `_` or
+// `-`. No `.`, `:` or `/`, so Docker can't read it as a registry host.
+const DOCKER_HUB_NAMESPACE_REGEX = /^[a-z0-9]+(?:[_-]+[a-z0-9]+)*$/;
+
+/** Trims whitespace and trailing slashes from a configured namespace. */
+export function normalizeDockerNamespace(
+    namespace: string | undefined,
+): string {
+    return namespace?.trim().replace(/\/+$/, '') ?? '';
+}
+
 /**
  * Checks that an image belongs to the given Docker Hub namespace. The image
  * must start with `<namespace>/`, so `rslethz` does not match
  * `rslethzevil/x` or `rslethz.evil.io/x` (a different registry). An empty
- * namespace disables the check.
+ * namespace disables the check. A namespace that is not a single Docker Hub
+ * namespace (e.g. `evil.io/org` or `localhost`) could point to another
+ * registry, so it rejects every image.
  */
 export function isImageInDockerNamespace(
     imageName: string,
     namespace: string | undefined,
 ): boolean {
-    const normalized = namespace?.trim().replace(/\/+$/, '');
+    const normalized = normalizeDockerNamespace(namespace);
     if (!normalized) {
         return true;
+    }
+    if (
+        !DOCKER_HUB_NAMESPACE_REGEX.test(normalized) ||
+        normalized === 'localhost'
+    ) {
+        return false;
     }
     return imageName.startsWith(`${normalized}/`);
 }
