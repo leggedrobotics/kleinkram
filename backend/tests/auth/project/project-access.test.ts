@@ -16,6 +16,7 @@ import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
 /** Creates a project on which a fresh user has WRITE rights. */
 const setupWriteUser = async (): Promise<{
+    creator: UserEntity;
     writer: UserEntity;
     writerGroup: AccessGroupEntity;
     projectUuid: string;
@@ -45,7 +46,7 @@ const setupWriteUser = async (): Promise<{
         },
         creator,
     );
-    return { writer, writerGroup, projectUuid };
+    return { creator, writer, writerGroup, projectUuid };
 };
 
 const expectWriterStillHasWrite = async (
@@ -557,6 +558,72 @@ describe('Verify Project Groups Access', () => {
 
             expect(response.status).toBe(400);
             await expectWriterStillHasWrite(writerGroup, projectUuid);
+        });
+
+        test('the project owner cannot set _ADMIN rights through the bulk update', async () => {
+            const { creator, writerGroup, projectUuid } =
+                await setupWriteUser();
+
+            const headers = new HeaderCreator(creator);
+            headers.addHeader('Content-Type', 'application/json');
+            const response = await fetch(
+                `${DEFAULT_URL}/projects/${projectUuid}/access`,
+                {
+                    method: 'POST',
+                    headers: headers.getHeaders(),
+                    body: JSON.stringify([
+                        {
+                            memberCount: 1,
+                            rights: AccessGroupRights._ADMIN,
+                            type: writerGroup.type,
+                            uuid: writerGroup.uuid,
+                            name: writerGroup.name,
+                        },
+                    ]),
+                },
+            );
+
+            expect(response.status).toBe(400);
+            await expectWriterStillHasWrite(writerGroup, projectUuid);
+        });
+
+        test('a project cannot be created with _ADMIN rights for a group', async () => {
+            const { user: creator } = await generateAndFetchDatabaseUser(
+                'internal',
+                'user',
+            );
+            const { user: otherUser } = await generateAndFetchDatabaseUser(
+                'internal',
+                'user',
+            );
+            const otherUserGroup = await database
+                .getRepository<AccessGroupEntity>(AccessGroupEntity)
+                .findOneOrFail({ where: { name: otherUser.name } });
+
+            const headers = new HeaderCreator(creator);
+            headers.addHeader('Content-Type', 'application/json');
+            const response = await fetch(`${DEFAULT_URL}/projects`, {
+                method: 'POST',
+                headers: headers.getHeaders(),
+                body: JSON.stringify({
+                    name: 'admin_rights_project',
+                    description: 'Project granting _ADMIN rights',
+                    accessGroups: [
+                        {
+                            rights: AccessGroupRights._ADMIN,
+                            accessGroupUUID: otherUserGroup.uuid,
+                        },
+                    ],
+                }),
+            });
+
+            expect(response.status).toBe(400);
+            const accesses = await database
+                .getRepository<ProjectAccessEntity>(ProjectAccessEntity)
+                .find({
+                    where: { accessGroup: { uuid: otherUserGroup.uuid } },
+                });
+            expect(accesses).toHaveLength(0);
         });
     });
 });
