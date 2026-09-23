@@ -56,6 +56,7 @@ export class MissionDto extends MinimumMissionDto {
     @ValidateNested()
     @Type(() => TagDto)
     @Expose()
+    @Transform(({ value }) => value ?? [])
     tags!: TagDto[];
 }
 

@@ -54,14 +54,14 @@ export class AccessGroupDto {
     @ValidateNested()
     @Type(() => UserDto)
     @Expose()
-    @Transform(({ obj }) => obj.creator ?? null)
+    @Transform(({ value }) => value ?? null)
     creator!: UserDto | null;
 
     @ApiProperty({ type: () => [GroupMembershipDto] })
     @ValidateNested({ each: true })
     @Type(() => GroupMembershipDto)
     @Expose()
-    @Transform(({ obj }) => obj.memberships ?? [])
+    @Transform(({ value }) => value ?? [])
     memberships!: GroupMembershipDto[];
 
     @ApiProperty()
