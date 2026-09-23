@@ -147,7 +147,7 @@ def delete(
         )
 
     client = AuthenticatedClient()
-    mission_parsed = get_mission(client, mission_query)
+    mission_parsed = get_mission(client, mission_query, strict=True)
     confirm_deletion(
         f"delete mission {mission_parsed.name} ({mission_parsed.id}) in project {mission_parsed.project_name}",
         yes=yes,

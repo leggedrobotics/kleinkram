@@ -105,7 +105,7 @@ def delete(
     )
 
     client = AuthenticatedClient()
-    project_parsed = get_project(client=client, query=_project_query(project), exact_match=True)
+    project_parsed = get_project(client=client, query=_project_query(project), strict=True)
     confirm_deletion(f"delete project {project_parsed.name} ({project_parsed.id})", yes=yes, legacy_no_prompt=True)
     kleinkram.core.delete_project(client=client, project_id=project_parsed.id)
 

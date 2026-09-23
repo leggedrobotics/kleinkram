@@ -83,8 +83,9 @@ def delete(
         yes = True
 
     client = AuthenticatedClient()
-    # resolve every file on its own so that each one has to match exactly one file
-    files_parsed = [get_file(client, _file_query([file], mission, project)) for file in files]
+    # resolve every file on its own and strictly, so that each argument has to
+    # name exactly one file and can never expand to several
+    files_parsed = [get_file(client, _file_query([file], mission, project), strict=True) for file in files]
 
     names = ", ".join(f"{f.project_name}/{f.mission_name}/{f.name}" for f in files_parsed)
     confirm_deletion(f"delete {len(files_parsed)} file(s): {names}", yes=yes)

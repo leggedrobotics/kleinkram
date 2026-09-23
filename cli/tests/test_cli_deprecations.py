@@ -71,7 +71,7 @@ def mission_calls(monkeypatch) -> List[Any]:
     calls: List[Any] = []
     mission = SimpleNamespace(id=uuid4(), name="m1", project_name="p1")
 
-    def get_mission(_client, query):
+    def get_mission(_client, query, **_):
         calls.append(query)
         return mission
 
@@ -141,7 +141,7 @@ def test_project_delete_keeps_deleting_without_yes_in_scripts_for_now(runner, mo
 def test_file_delete_accepts_several_files(runner, monkeypatch):
     queried: List[Any] = []
 
-    def get_file(_client, query):
+    def get_file(_client, query, **_):
         queried.append(query)
         return SimpleNamespace(id=uuid4(), name=query.patterns[0], mission_name="m1", project_name="p1")
 
@@ -279,3 +279,31 @@ def test_help_hides_deprecated_syntax(runner):
     assert "MISSION" not in launch.stdout.split("Arguments")[0]
     assert "mission info [OPTIONS] MISSION" in info.stdout
     assert "--mission" not in info.stdout
+
+
+def test_only_deletion_resolves_its_target_strictly(runner, monkeypatch):
+    strict_flags = {}
+    entity = SimpleNamespace(id=uuid4(), name="x", project_name="p1", mission_name="m1")
+
+    def recorder(kind):
+        def lookup(*_, strict=False, **__):
+            strict_flags.setdefault(kind, []).append(strict)
+            return entity
+
+        return lookup
+
+    for module in ("_project", "_mission", "_file"):
+        monkeypatch.setattr(f"kleinkram.cli.{module}.AuthenticatedClient", MagicMock)
+    monkeypatch.setattr("kleinkram.cli._project.get_project", recorder("project"))
+    monkeypatch.setattr("kleinkram.cli._mission.get_mission", recorder("mission"))
+    monkeypatch.setattr("kleinkram.cli._file.get_file", recorder("file"))
+    for printer in ("_project.print_project_info", "_mission.print_mission_info", "_file.print_file_info"):
+        monkeypatch.setattr(f"kleinkram.cli.{printer}", MagicMock())
+    for delete in ("delete_project", "delete_mission", "delete_files"):
+        monkeypatch.setattr(f"kleinkram.core.{delete}", MagicMock())
+
+    for kind, extra in (("project", []), ("mission", ["-p", "p1"]), ("file", ["-m", "m1", "-p", "p1"])):
+        assert invoke(runner, [kind, "info", "x", *extra]).exit_code == 0
+        assert invoke(runner, [kind, "delete", "x", *extra, "-y"]).exit_code == 0
+
+    assert strict_flags == {"project": [False, True], "mission": [False, True], "file": [False, True]}

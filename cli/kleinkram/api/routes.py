@@ -12,6 +12,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Type
 from typing import TypeVar
 from uuid import UUID
 
@@ -319,10 +320,6 @@ T = TypeVar("T")
 
 
 def _only_match(matches: Iterator[T], *, not_found: Exception, ambiguous: Exception) -> T:
-    """\
-    the single element of `matches`; a lookup that is meant to identify one
-    entity must never fall back to whichever of several matches comes first
-    """
     first = next(matches, None)
     if first is None:
         raise not_found
@@ -331,30 +328,62 @@ def _only_match(matches: Iterator[T], *, not_found: Exception, ambiguous: Except
     return first
 
 
-def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = True) -> Project:
+def _check_strict_names(query: Any, error: Type[Exception]) -> None:
+    """\
+    a strict lookup must name every entity exactly; blank names do not
+    identify anything (wildcards are already rejected by the uniqueness checks)
+    """
+    while query is not None:
+        if any(not pattern.strip() for pattern in query.patterns):
+            raise error(f"Blank names do not identify anything: {query}")
+        query = getattr(query, "mission_query", None) or getattr(query, "project_query", None)
+
+
+def get_project(
+    client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False, *, strict: bool = False
+) -> Project:
     """\
     get a unique project by specifying a project spec
+
+    `strict` (used before deleting) matches the name exactly and fails
+    instead of returning the first of several matches
     """
     if not project_query_is_unique(query):
         raise InvalidProjectQuery(f"Project query does not uniquely determine project: {query}")
+    if not strict:
+        try:
+            return next(get_projects(client, query, exact_match=exact_match))
+        except StopIteration:
+            raise ProjectNotFound(f"Project not found: {query}")
+
+    _check_strict_names(query, InvalidProjectQuery)
     return _only_match(
-        get_projects(client, query, exact_match=exact_match),
+        get_projects(client, query, exact_match=True),
         not_found=ProjectNotFound(f"Project not found: {query}"),
         ambiguous=InvalidProjectQuery(f"Project query matches more than one project: {query}"),
     )
 
 
-def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
+def get_mission(client: AuthenticatedClient, query: MissionQuery, *, strict: bool = False) -> Mission:
     """\
     get a unique mission by specifying a mission query
+
+    `strict` (used before deleting) matches the project name exactly instead
+    of as a substring and fails instead of returning the first of several matches
     """
     if not mission_query_is_unique(query):
         raise InvalidMissionQuery(f"Mission query does not uniquely determine mission: {query}")
-    # match the project by its full name, not as a substring of other project names
+    if not strict:
+        try:
+            return next(get_missions(client, query))
+        except StopIteration:
+            raise MissionNotFound(f"Mission not found: {query}")
+
+    _check_strict_names(query, InvalidMissionQuery)
     return _only_match(
         get_missions(client, query, exact_match=True),
         not_found=MissionNotFound(f"Mission not found: {query}"),
-        ambiguous=InvalidMissionQuery(f"Mission query matches more than one mission, specify the project: {query}"),
+        ambiguous=InvalidMissionQuery(f"Mission query matches more than one mission: {query}"),
     )
 
 
@@ -369,18 +398,27 @@ def get_file_by_id(client: AuthenticatedClient, file_id: UUID) -> File:
     return _parse_file(FileObject(resp.json()))
 
 
-def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
+def get_file(client: AuthenticatedClient, query: FileQuery, *, strict: bool = False) -> File:
     """\
     get a unique file by specifying a file query
+
+    `strict` (used before deleting) matches the project name exactly instead
+    of as a substring and fails instead of returning the first of several matches
     """
     if not file_query_is_unique(query):
         raise InvalidFileQuery(f"File query does not uniquely determine file: {query}")
-    # match the project by its full name, not as a substring of other project names
-    file = _only_match(
-        get_files(client, query, exact_match=True),
-        not_found=kleinkram.errors.FileNotFound(f"File not found: {query}"),
-        ambiguous=InvalidFileQuery(f"File query matches more than one file: {query}"),
-    )
+    if strict:
+        _check_strict_names(query, InvalidFileQuery)
+        file = _only_match(
+            get_files(client, query, exact_match=True),
+            not_found=kleinkram.errors.FileNotFound(f"File not found: {query}"),
+            ambiguous=InvalidFileQuery(f"File query matches more than one file: {query}"),
+        )
+    else:
+        try:
+            file = next(get_files(client, query))
+        except StopIteration:
+            raise kleinkram.errors.FileNotFound(f"File not found: {query}")
 
     # listing files does not return topics; the query is resolved against the
     # list route (it is the only one accepting patterns and it reports missing
