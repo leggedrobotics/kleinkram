@@ -6,6 +6,7 @@ both reach the backend with the same arguments
 
 from __future__ import annotations
 
+import re
 from types import SimpleNamespace
 from typing import Any
 from typing import Dict
@@ -267,18 +268,23 @@ def test_legacy_list_group_warns(runner, monkeypatch):
     assert "`klein project list`" in result.stderr
 
 
-def test_help_hides_deprecated_syntax(runner):
-    root = invoke(runner, ["--help"])
-    launch = invoke(runner, ["execution", "launch", "--help"])
-    info = invoke(runner, ["mission", "info", "--help"])
+def _help(runner: CliRunner, args: List[str]) -> str:
+    # rich forces colors on CI (GITHUB_ACTIONS), strip them to compare the text
+    return re.sub(r"\x1b\[[0-9;]*m", "", invoke(runner, [*args, "--help"]).stdout)
 
-    commands = [line.split()[1] for line in root.stdout.splitlines() if line.startswith("│ ") and len(line.split()) > 1]
+
+def test_help_hides_deprecated_syntax(runner):
+    root = _help(runner, [])
+    launch = _help(runner, ["execution", "launch"])
+    info = _help(runner, ["mission", "info"])
+
+    commands = [line.split()[1] for line in root.splitlines() if line.startswith("│ ") and len(line.split()) > 1]
     assert {"template", "execution", "trigger"} <= set(commands)
     assert not {"templates", "executions", "triggers"} & set(commands)
-    assert "execution launch [OPTIONS] TEMPLATE" in launch.stdout
-    assert "MISSION" not in launch.stdout.split("Arguments")[0]
-    assert "mission info [OPTIONS] MISSION" in info.stdout
-    assert "--mission" not in info.stdout
+    assert "execution launch [OPTIONS] TEMPLATE" in launch
+    assert "MISSION" not in launch.split("Arguments")[0]
+    assert "mission info [OPTIONS] MISSION" in info
+    assert "--mission" not in info
 
 
 def test_only_deletion_resolves_its_target_strictly(runner, monkeypatch):
