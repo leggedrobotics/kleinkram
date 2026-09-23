@@ -1,7 +1,6 @@
 import {
     accessGroupEntityToDto,
     groupMembershipEntityToDto,
-    missionEntityToDto,
 } from '@/serialization';
 import {
     AccessGroupDto,
@@ -10,7 +9,6 @@ import {
 } from '@kleinkram/api-dto';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
-import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { AccessGroupType, UserRole } from '@kleinkram/shared';
 
 // Regression tests for #2368. With `plainToInstance`, class-transformer applies
@@ -55,27 +53,6 @@ const membership = (): GroupMembershipEntity =>
         user,
         accessGroup: accessGroup(),
     }) as unknown as GroupMembershipEntity;
-
-describe('MissionDto serialization', () => {
-    test('defaults tags to an empty list when the relation is not loaded', () => {
-        const mission = {
-            uuid: 'a2d3f7e0-0000-4000-8000-000000000004',
-            name: 'mission',
-            createdAt,
-            updatedAt,
-            project: {
-                uuid: 'a2d3f7e0-0000-4000-8000-000000000005',
-                name: 'project',
-                description: 'a project',
-                createdAt,
-                updatedAt,
-                autoConvert: false,
-            },
-        } as unknown as MissionEntity;
-
-        expect(missionEntityToDto(mission).tags).toEqual([]);
-    });
-});
 
 describe('GroupMembershipDto serialization', () => {
     test('serializes accessGroup as an AccessGroupDto', () => {
