@@ -92,6 +92,7 @@ class File:
     categories: List[str] = field(default_factory=list)
     topics: List[str] = field(default_factory=list)
     state: FileState = FileState.OK
+    state_comment: Optional[str] = None
 
 
 class ExecutionStatus(str, Enum):

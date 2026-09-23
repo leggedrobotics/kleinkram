@@ -193,7 +193,12 @@
                                 size="sm"
                             >
                                 <q-tooltip>
-                                    {{ getTooltip(file?.state) }}
+                                    {{
+                                        getTooltip(
+                                            file?.state,
+                                            file?.stateComment,
+                                        )
+                                    }}
                                 </q-tooltip>
                             </q-icon>
                         </div>
