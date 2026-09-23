@@ -439,6 +439,9 @@ describe('Verify Action (Templates & Runs)', () => {
     test('if sortBy is rejected when it is not a known sort key', async () => {
         for (const sortBy of [
             'password',
+            // inherited from Object.prototype, not a sort key
+            'constructor',
+            '__proto__',
             // a SQL expression that would leak data through the sort order
             "(SELECT CASE WHEN substr(apikey.apikey::text,1,1)='a' THEN action.createdAt END FROM apikey LIMIT 1)",
         ]) {
