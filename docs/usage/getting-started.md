@@ -63,7 +63,7 @@ The primary way to upload data to Kleinkram is using the **Kleinkram CLI**.
 
 3.  **Upload Data**:
     ```bash
-    klein project create "My Project"
+    klein project create "My Project" --description "Data of my robot"
     klein upload -p "My Project" -m "Mission 1" --create ./data/*.bag
     ```
 

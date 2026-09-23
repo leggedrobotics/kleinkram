@@ -62,7 +62,7 @@ klein file list
 
 # Test with different user permissions
 klein login --oauth-provider fake-oauth --user 2
-klein project create --name "Test Project"
+klein project create "Test Project" --description "Created by user 2"
 ```
 
 This is particularly useful for:

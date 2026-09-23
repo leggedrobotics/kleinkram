@@ -51,9 +51,9 @@ def test_upload_verify_update_download_mission(project, tmp_path, api):
     mission_name = secrets.token_hex(8)
     upload = f"{CLI} upload -p {project.name} -m {mission_name} --create {DATA_PATH.absolute()}/*.bag"
     verify = f"{CLI} verify -p {project.name} -m {mission_name} {DATA_PATH.absolute()}/*.bag"
-    # update = f"{CLI} mission update -p {project.name} -m {mission_name} --metadata {DATA_PATH.absolute()}/metadata.yaml"
+    # update = f"{CLI} mission update {mission_name} -p {project.name} --metadata {DATA_PATH.absolute()}/metadata.yaml"
     download = f"{CLI} download -p {project.name} -m {mission_name} --dest {tmp_path.absolute()}"
-    delete_file = f"{CLI} file delete -p {project.name} -m {mission_name} -f {file_names[0].name} -y"
+    delete_file = f"{CLI} file delete {file_names[0].name} -p {project.name} -m {mission_name} -y"
 
     assert run_cmd(upload) == 0
     assert run_cmd(verify) == 0
@@ -139,8 +139,7 @@ def test_trigger_cli_operations(empty_mission, action_template, api):
 
     trigger_name = f"trig-cli-{secrets.token_hex(6)}"
     create_cmd = (
-        f"{CLI} triggers create "
-        f"--name {trigger_name} "
+        f"{CLI} trigger create {trigger_name} "
         f"--template {action_template.uuid} "
         f"--mission {empty_mission.id} "
         f"--type FILE "
@@ -149,12 +148,11 @@ def test_trigger_cli_operations(empty_mission, action_template, api):
     )
     assert run_cmd(create_cmd) == 0
 
-    list_cmd = f"{CLI} triggers list --mission {empty_mission.id}"
+    list_cmd = f"{CLI} trigger list --mission {empty_mission.id}"
     assert run_cmd(list_cmd) == 0
 
     fail_cmd = (
-        f"{CLI} triggers create "
-        f"--name {trigger_name}-fail "
+        f"{CLI} trigger create {trigger_name}-fail "
         f"--template {action_template.uuid} "
         f"--mission {empty_mission.id} "
         f"--type FILE"
@@ -165,13 +163,13 @@ def test_trigger_cli_operations(empty_mission, action_template, api):
     assert len(triggers) == 1
     trigger_uuid = triggers[0].uuid
 
-    info_cmd = f"{CLI} triggers info {trigger_uuid}"
+    info_cmd = f"{CLI} trigger info {trigger_uuid}"
     assert run_cmd(info_cmd) == 0
 
-    update_cmd = f"{CLI} triggers update {trigger_uuid} --description 'updated via E2E CLI'"
+    update_cmd = f"{CLI} trigger update {trigger_uuid} --description 'updated via E2E CLI'"
     assert run_cmd(update_cmd) == 0
 
-    delete_cmd = f"{CLI} triggers delete {trigger_uuid}"
+    delete_cmd = f"{CLI} trigger delete {trigger_uuid} --yes"
     assert run_cmd(delete_cmd) == 0
 
 
@@ -199,7 +197,7 @@ def test_cancel_execution(api, project, empty_mission):
 
     from kleinkram.api.client import AuthenticatedClient
 
-    launch_cmd = f"{CLI} executions launch {template_name} {empty_mission.id}"
+    launch_cmd = f"{CLI} execution launch {template_name} -m {empty_mission.id}"
     res = subprocess.run(launch_cmd, shell=True, capture_output=True, text=True)
     assert res.returncode == 0, f"Launch failed: {res.stderr}"
 
@@ -210,7 +208,7 @@ def test_cancel_execution(api, project, empty_mission):
     execution_uuid = match.group(1)
 
     # Cancel the action execution using the CLI cancel command.
-    cancel_cmd = f"{CLI} executions cancel {execution_uuid}"
+    cancel_cmd = f"{CLI} execution cancel {execution_uuid}"
     res_cancel = subprocess.run(cancel_cmd, shell=True, capture_output=True, text=True)
     assert res_cancel.returncode == 0, f"Cancel failed: {res_cancel.stderr}"
     assert "cancellation requested" in res_cancel.stdout.lower()
