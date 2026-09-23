@@ -19,8 +19,8 @@
                     <div class="text-caption text-grey-7">
                         Aggregated state up to message
                         {{ messages.length > 0 ? currentIndex + 1 : 0 }} of
-                        {{ messages.length }} loaded
-                        ({{ totalCount }} total) on topic
+                        {{ messages.length }} loaded ({{ totalCount }} total) on
+                        topic
                         <code>{{ topicName }}</code>
                     </div>
                 </div>

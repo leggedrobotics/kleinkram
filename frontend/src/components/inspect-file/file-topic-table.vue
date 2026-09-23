@@ -256,8 +256,10 @@ const MAX_DIAGNOSTICS_MESSAGES = 2000;
 
 /** Messages added per "Load more" click, per viewer kind. */
 const LOAD_MORE_STEP = 20;
-const LOAD_MORE_STEP_LOGS = 2000;
-const LOAD_MORE_STEP_DIAGNOSTICS = 1000;
+const LOAD_MORE_STEPS: Partial<Record<PreviewType, number>> = {
+    [PreviewType.ROS_LOG]: 2000,
+    [PreviewType.DIAGNOSTICS]: 1000,
+};
 
 /**
  * Image streams are shown as a sampled sequence covering the whole
@@ -512,13 +514,7 @@ const loadMore = (topicName: string): void => {
         return;
     }
 
-    const step =
-        type === PreviewType.ROS_LOG
-            ? LOAD_MORE_STEP_LOGS
-            : type === PreviewType.DIAGNOSTICS
-              ? LOAD_MORE_STEP_DIAGNOSTICS
-              : LOAD_MORE_STEP;
-    loadData(topicName, step, true);
+    loadData(topicName, LOAD_MORE_STEPS[type] ?? LOAD_MORE_STEP, true);
 };
 </script>
 
