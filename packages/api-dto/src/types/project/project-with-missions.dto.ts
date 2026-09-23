@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { FlatMissionDto } from '@api-dto/mission/mission.dto';
 import { ProjectWithRequiredTagsDto } from '@api-dto/project/project-with-required-tags.dto';
 import { ApiProperty } from '@nestjs/swagger';
@@ -14,6 +14,6 @@ export class ProjectWithMissionsDto extends ProjectWithRequiredTagsDto {
     @ValidateNested()
     @Type(() => FlatMissionDto)
     @Expose()
-    @Transform(({ obj }) => obj.missions ?? [])
+    @Transform(({ value }) => value ?? [])
     missions!: FlatMissionDto[];
 }
