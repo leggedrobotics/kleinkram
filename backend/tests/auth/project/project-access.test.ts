@@ -1,17 +1,67 @@
 import {
     AccessGroupEntity,
     ProjectAccessEntity,
+    UserEntity,
 } from '@kleinkram/backend-common';
 import { AccessGroupRights } from '@kleinkram/shared';
-import { createProjectUsingPost } from '../../utils/api-calls';
+import { createProjectUsingPost, HeaderCreator } from '../../utils/api-calls';
 import { database } from '../../utils/database-utilities';
 import { setupDatabaseHooks } from '../../utils/test-helpers';
-import { generateAndFetchDatabaseUser } from '../utilities';
+import { DEFAULT_URL, generateAndFetchDatabaseUser } from '../utilities';
 
 /**
  * This test suite tests the access control of the application.
  *
  */
+
+/** Creates a project on which a fresh user has WRITE rights. */
+const setupWriteUser = async (): Promise<{
+    writer: UserEntity;
+    writerGroup: AccessGroupEntity;
+    projectUuid: string;
+}> => {
+    const { user: creator } = await generateAndFetchDatabaseUser(
+        'internal',
+        'user',
+    );
+    const { user: writer } = await generateAndFetchDatabaseUser(
+        'internal',
+        'user',
+    );
+    const writerGroup = await database
+        .getRepository<AccessGroupEntity>(AccessGroupEntity)
+        .findOneOrFail({ where: { name: writer.name } });
+
+    const projectUuid = await createProjectUsingPost(
+        {
+            name: 'admin_escalation_project',
+            description: 'Project with a WRITE user',
+            accessGroups: [
+                {
+                    rights: AccessGroupRights.WRITE,
+                    accessGroupUUID: writerGroup.uuid,
+                },
+            ],
+        },
+        creator,
+    );
+    return { writer, writerGroup, projectUuid };
+};
+
+const expectWriterStillHasWrite = async (
+    writerGroup: AccessGroupEntity,
+    projectUuid: string,
+): Promise<void> => {
+    const access = await database
+        .getRepository<ProjectAccessEntity>(ProjectAccessEntity)
+        .findOneOrFail({
+            where: {
+                accessGroup: { uuid: writerGroup.uuid },
+                project: { uuid: projectUuid },
+            },
+        });
+    expect(access.rights).toBe(AccessGroupRights.WRITE);
+};
 
 describe('Verify Project Groups Access', () => {
     setupDatabaseHooks();
@@ -465,5 +515,48 @@ describe('Verify Project Groups Access', () => {
         for (const access of matchingAccesses) {
             expect(access.rights).toBe(AccessGroupRights.DELETE);
         }
+    });
+
+    describe('granting the internal _ADMIN rights', () => {
+        test('a WRITE user cannot add themselves with _ADMIN rights', async () => {
+            const { writer, writerGroup, projectUuid } = await setupWriteUser();
+
+            const headers = new HeaderCreator(writer);
+            headers.addHeader('Content-Type', 'application/json');
+            const response = await fetch(
+                `${DEFAULT_URL}/projects/${projectUuid}/users`,
+                {
+                    method: 'POST',
+                    headers: headers.getHeaders(),
+                    body: JSON.stringify({
+                        userUuid: writer.uuid,
+                        rights: AccessGroupRights._ADMIN,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(400);
+            await expectWriterStillHasWrite(writerGroup, projectUuid);
+        });
+
+        test('a WRITE user cannot add their group with _ADMIN rights', async () => {
+            const { writer, writerGroup, projectUuid } = await setupWriteUser();
+
+            const headers = new HeaderCreator(writer);
+            headers.addHeader('Content-Type', 'application/json');
+            const response = await fetch(
+                `${DEFAULT_URL}/access-groups/${writerGroup.uuid}/projects/${projectUuid}`,
+                {
+                    method: 'POST',
+                    headers: headers.getHeaders(),
+                    body: JSON.stringify({
+                        rights: AccessGroupRights._ADMIN,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(400);
+            await expectWriterStillHasWrite(writerGroup, projectUuid);
+        });
     });
 });
