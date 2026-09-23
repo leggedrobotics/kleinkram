@@ -216,13 +216,13 @@ From the CLI:
 
 ```bash
 # the status column shows e.g. "DONE (3 warnings)"
-klein executions list --mission <mission>
+klein execution list --mission <mission>
 
 # state, cause, who failed it, and how many findings
-klein executions info <execution-id>
+klein execution info <execution-id>
 
 # every finding the action reported
-klein executions diagnostics <execution-id>
+klein execution diagnostics <execution-id>
 ```
 
 ## Container Termination
