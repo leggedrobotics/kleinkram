@@ -7,10 +7,12 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import Generator
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import TypeVar
 from uuid import UUID
 
 import httpx
@@ -185,9 +187,10 @@ def get_files(
     client: AuthenticatedClient,
     file_query: FileQuery,
     max_entries: Optional[int] = None,
+    exact_match: bool = False,
 ) -> Generator[File, None, None]:
     params = _file_query_to_params(file_query)
-    response_stream = paginated_request(client, FILE_ENDPOINT, params=params, max_entries=max_entries)
+    response_stream = paginated_request(client, FILE_ENDPOINT, params=params, max_entries=max_entries, exact_match=exact_match)
     yield from map(lambda f: _parse_file(FileObject(f)), response_stream)
 
 
@@ -195,9 +198,12 @@ def get_missions(
     client: AuthenticatedClient,
     mission_query: MissionQuery,
     max_entries: Optional[int] = None,
+    exact_match: bool = False,
 ) -> Generator[Mission, None, None]:
     params = _mission_query_to_params(mission_query)
-    response_stream = paginated_request(client, MISSION_ENDPOINT, params=params, max_entries=max_entries)
+    response_stream = paginated_request(
+        client, MISSION_ENDPOINT, params=params, max_entries=max_entries, exact_match=exact_match
+    )
     yield from map(lambda m: _parse_mission(MissionObject(m)), response_stream)
 
 
@@ -309,16 +315,33 @@ def get_trigger(
     return _parse_action_trigger(TriggerObject(resp.json()))
 
 
-def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False) -> Project:
+T = TypeVar("T")
+
+
+def _only_match(matches: Iterator[T], *, not_found: Exception, ambiguous: Exception) -> T:
+    """\
+    the single element of `matches`; a lookup that is meant to identify one
+    entity must never fall back to whichever of several matches comes first
+    """
+    first = next(matches, None)
+    if first is None:
+        raise not_found
+    if next(matches, None) is not None:
+        raise ambiguous
+    return first
+
+
+def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = True) -> Project:
     """\
     get a unique project by specifying a project spec
     """
     if not project_query_is_unique(query):
         raise InvalidProjectQuery(f"Project query does not uniquely determine project: {query}")
-    try:
-        return next(get_projects(client, query, exact_match=exact_match))
-    except StopIteration:
-        raise ProjectNotFound(f"Project not found: {query}")
+    return _only_match(
+        get_projects(client, query, exact_match=exact_match),
+        not_found=ProjectNotFound(f"Project not found: {query}"),
+        ambiguous=InvalidProjectQuery(f"Project query matches more than one project: {query}"),
+    )
 
 
 def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
@@ -327,10 +350,12 @@ def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
     """
     if not mission_query_is_unique(query):
         raise InvalidMissionQuery(f"Mission query does not uniquely determine mission: {query}")
-    try:
-        return next(get_missions(client, query))
-    except StopIteration:
-        raise MissionNotFound(f"Mission not found: {query}")
+    # match the project by its full name, not as a substring of other project names
+    return _only_match(
+        get_missions(client, query, exact_match=True),
+        not_found=MissionNotFound(f"Mission not found: {query}"),
+        ambiguous=InvalidMissionQuery(f"Mission query matches more than one mission, specify the project: {query}"),
+    )
 
 
 def get_file_by_id(client: AuthenticatedClient, file_id: UUID) -> File:
@@ -350,10 +375,12 @@ def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
     """
     if not file_query_is_unique(query):
         raise InvalidFileQuery(f"File query does not uniquely determine file: {query}")
-    try:
-        file = next(get_files(client, query))
-    except StopIteration:
-        raise kleinkram.errors.FileNotFound(f"File not found: {query}")
+    # match the project by its full name, not as a substring of other project names
+    file = _only_match(
+        get_files(client, query, exact_match=True),
+        not_found=kleinkram.errors.FileNotFound(f"File not found: {query}"),
+        ambiguous=InvalidFileQuery(f"File query matches more than one file: {query}"),
+    )
 
     # listing files does not return topics; the query is resolved against the
     # list route (it is the only one accepting patterns and it reports missing

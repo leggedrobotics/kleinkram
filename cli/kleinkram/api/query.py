@@ -91,6 +91,9 @@ def check_project_query_is_creatable(query: ProjectQuery) -> str:
 
 
 def _pattern_is_unique(pattern: str) -> bool:
+    # a blank name is never a way to single out one entity
+    if not pattern.strip():
+        return False
     for char in SPECIAL_PATTERN_CHARS:
         if char in pattern:
             return False

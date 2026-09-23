@@ -20,6 +20,7 @@ import kleinkram.cli.app
 from kleinkram.cli._deprecation import REMOVED_IN
 from kleinkram.cli._deprecation import prefer_new
 from kleinkram.cli.app import app
+from kleinkram.errors import InvalidFileQuery
 from kleinkram.utils import get_supported_api_version
 
 DEPRECATED = "is deprecated"
@@ -158,6 +159,22 @@ def test_file_delete_accepts_several_files(runner, monkeypatch):
     assert old.exit_code == 0, old.output
     assert DEPRECATED in old.stderr
     assert queried[2] == queried[0]
+
+
+@pytest.mark.parametrize("name", ["", "*", "*.bag"])
+def test_file_delete_never_expands_to_several_files(runner, monkeypatch, name):
+    delete_files = MagicMock()
+    list_files = MagicMock(return_value=iter([]))
+    monkeypatch.setattr("kleinkram.cli._file.AuthenticatedClient", MagicMock)
+    monkeypatch.setattr("kleinkram.api.routes.get_files", list_files)
+    monkeypatch.setattr("kleinkram.core.delete_files", delete_files)
+
+    result = invoke(runner, ["file", "delete", name, "-m", "m1", "-p", "p1", "-y"])
+
+    assert result.exit_code != 0
+    assert isinstance(result.exception, InvalidFileQuery)
+    list_files.assert_not_called()
+    delete_files.assert_not_called()
 
 
 def test_execution_launch_takes_mission_as_option(runner, monkeypatch):
