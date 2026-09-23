@@ -195,7 +195,7 @@
                                                 class="row justify-between items-center no-wrap"
                                             >
                                                 <span
-                                                    class="text-xxs text-grey-5 font-mono"
+                                                    class="text-xxs text-grey-7 font-mono"
                                                 >
                                                     {{
                                                         getShortTime(
@@ -349,7 +349,7 @@
                             }}</span>
                         </div>
                         <div
-                            class="column items-end col-12 col-sm-4 text-right text-caption text-grey-5 font-mono"
+                            class="column items-end col-12 col-sm-4 text-right text-caption text-grey-7 font-mono"
                         >
                             <span
                                 >Updated:
@@ -584,7 +584,7 @@
                         </div>
                         <div
                             v-else
-                            class="text-grey-5 italic q-pa-sm text-center"
+                            class="text-grey-7 italic q-pa-sm text-center"
                         >
                             No diagnostics values reported.
                         </div>
@@ -617,7 +617,7 @@
                                         {{ getLevelLabel(event.level) }}
                                     </span>
                                     <span
-                                        class="text-caption text-grey-5 font-mono"
+                                        class="text-caption text-grey-7 font-mono"
                                     >
                                         {{ event.time.toFixed(2) }}s
                                     </span>
@@ -1044,10 +1044,8 @@ const parseNodeMetrics = (
         if (isHz) {
             if (
                 freqData &&
-                (keyLower.includes('actual') ||
-                    keyLower === 'frequency' ||
-                    keyLower === 'rate' ||
-                    keyLower === 'fps')
+                (item.key === freqData.actualKey ||
+                    item.key === freqData.expectedKey)
             )
                 continue;
             type = 'frequency';
@@ -1057,14 +1055,17 @@ const parseNodeMetrics = (
             item.value.includes('%') ||
             keyLower.includes('percent') ||
             keyLower.includes('usage') ||
-            keyLower.includes('load') ||
-            keyLower.includes('fill_level')
+            (keyLower.includes('load') && !keyLower.includes('average')) ||
+            keyLower.includes('fill_level') ||
+            keyLower.includes('charge')
         ) {
             type = 'percentage';
             const maxValue = valueNumber > 1 ? 100 : 1;
             ratio = Math.max(0, Math.min(1, valueNumber / maxValue));
-            if (ratio > 0.9) color = 'negative';
-            else if (ratio > 0.75) color = 'warning';
+            // Usage is bad when high, a charge level when low
+            const pressure = keyLower.includes('charge') ? 1 - ratio : ratio;
+            if (pressure > 0.9) color = 'negative';
+            else if (pressure > 0.75) color = 'warning';
             else color = 'positive';
         } else if (
             keyLower.includes('temp') ||
@@ -1354,7 +1355,7 @@ const getVisualValues = (values: KeyValue[]) => {
         } else if (
             keyLower.includes('usage') ||
             keyLower.includes('percent') ||
-            keyLower.includes('load') ||
+            (keyLower.includes('load') && !keyLower.includes('average')) ||
             keyLower.includes('fill_level')
         ) {
             const parsedValue = Number.parseFloat(valueClean);
