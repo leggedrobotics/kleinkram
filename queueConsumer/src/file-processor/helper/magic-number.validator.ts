@@ -1,6 +1,11 @@
 import { FileType } from '@kleinkram/shared';
 import * as fs from 'node:fs/promises';
 import logger from '../../logger';
+import {
+    TEXT_SAMPLE_BYTES,
+    isPlainTextSample,
+    looksLikeCsv,
+} from './text-format.validator';
 
 const MAGIC_NUMBERS: Partial<Record<FileType, Buffer>> = {
     [FileType.MCAP]: Buffer.from([
@@ -44,6 +49,27 @@ export const MagicNumberValidator = {
                         valid: false,
                         error: `YAML validation failed: excessive null bytes (${String(nullCount)} out of ${String(bytesRead)})`,
                     };
+                }
+
+                if (fileType === FileType.MD || fileType === FileType.CSV) {
+                    // Neither format has a magic number, so we check that the
+                    // content is text and, for CSV, that it is tabular.
+                    const buffer = Buffer.alloc(TEXT_SAMPLE_BYTES);
+                    const { bytesRead } = await handle.read(
+                        buffer,
+                        0,
+                        TEXT_SAMPLE_BYTES,
+                        0,
+                    );
+                    const sample = buffer.subarray(0, bytesRead);
+                    const { size } = await handle.stat();
+                    const sampleIsCompleteFile = size <= bytesRead;
+
+                    if (!isPlainTextSample(sample, sampleIsCompleteFile))
+                        return false;
+                    if (fileType === FileType.MD) return true;
+
+                    return looksLikeCsv(sample, sampleIsCompleteFile);
                 }
 
                 if (fileType === FileType.TUM) {
@@ -105,7 +131,7 @@ export const MagicNumberValidator = {
                 if (fileType === FileType.MCAP) {
                     specUrl = ' See https://mcap.dev/spec';
                 } else if (fileType === FileType.BAG) {
-                    specUrl = ' See http://wiki.ros.org/Bags/Format/2.0';
+                    specUrl = ' See https://wiki.ros.org/Bags/Format/2.0';
                 }
 
                 return {

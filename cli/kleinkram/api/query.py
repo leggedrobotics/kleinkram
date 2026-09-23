@@ -40,6 +40,8 @@ class FileQuery:
     patterns: List[str] = field(default_factory=list)
     ids: List[UUID] = field(default_factory=list)
     mission_query: MissionQuery = field(default_factory=MissionQuery)
+    include_states: List[str] = field(default_factory=list)
+    exclude_states: List[str] = field(default_factory=list)
 
 
 @dataclass

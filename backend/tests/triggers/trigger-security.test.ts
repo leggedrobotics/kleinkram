@@ -10,6 +10,7 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import { AccessControlService } from '@kleinkram/backend-common/modules/access-control/access-control.service';
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
+import { LokiHealthService } from '@kleinkram/backend-common/modules/loki-health/loki-health.service';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
 import { AccessGroupRights, Providers, UserRole } from '@kleinkram/shared';
@@ -60,7 +61,11 @@ const createTestUser = async (username = 'testuser'): Promise<UserEntity> => {
 
     return getRepo<UserEntity>(UserEntity).findOneOrFail({
         where: { uuid: user.uuid },
-        relations: ['memberships', 'memberships.accessGroup'],
+        relations: {
+            memberships: {
+                accessGroup: true,
+            },
+        },
     });
 };
 
@@ -116,6 +121,7 @@ describe('Trigger Security', () => {
             mockGauge, // backend_completed_jobs
             mockGauge, // backend_failed_jobs
             accessControlService,
+            new LokiHealthService(),
         );
     });
 

@@ -10,6 +10,7 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { DataType } from '@kleinkram/shared';
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     UnprocessableEntityException,
@@ -62,7 +63,11 @@ export class MetadataService {
         });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['tags', 'tags.tagType'],
+            relations: {
+                tags: {
+                    tagType: true,
+                },
+            },
         });
 
         if (mission.tags === undefined)
@@ -180,7 +185,10 @@ export class MetadataService {
                 tagType: { uuid: tagTypeUUID },
                 mission: { uuid: missionUUID },
             },
-            relations: ['tagType', 'mission'],
+            relations: {
+                tagType: true,
+                mission: true,
+            },
         });
 
         if (!exsitingTag) {
@@ -257,13 +265,34 @@ export class MetadataService {
         return this.tagRepository.save(exsitingTag);
     }
 
+    /**
+     * Replaces a mission's metadata with the given set.
+     *
+     * This is a *full replace*: any metadata whose tag type is absent from
+     * `tags` (or is present with an empty value) is removed. Metadata whose
+     * tag type is listed in the mission's project `requiredTags` cannot be
+     * removed this way — such a request is rejected rather than silently
+     * dropping the required value.
+     *
+     * @param missionUUID the mission to update
+     * @param tags tag type uuid to value; the complete new metadata set
+     * @throws BadRequestException if the payload would remove metadata that
+     *   the project marks as required
+     */
     async addTags(
         missionUUID: string,
         tags: Record<string, string>,
     ): Promise<AddTagsDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
-            relations: ['tags', 'tags.tagType'],
+            relations: {
+                tags: {
+                    tagType: true,
+                },
+                project: {
+                    requiredTags: true,
+                },
+            },
         });
 
         if (mission.tags === undefined) {
@@ -285,6 +314,29 @@ export class MetadataService {
         const tagsToDelete = mission.tags.filter(
             (tag) => !tagTypeUUIDsToKeep.has(tag.tagType?.uuid ?? ''),
         );
+
+        // A partial payload (e.g. from `klein mission update --metadata`) must
+        // never strip metadata the project requires.
+        const requiredTagTypeUUIDs = new Set(
+            (mission.project?.requiredTags ?? []).map(
+                (tagType) => tagType.uuid,
+            ),
+        );
+        const requiredTagsToDelete = tagsToDelete.filter((tag) =>
+            requiredTagTypeUUIDs.has(tag.tagType?.uuid ?? ''),
+        );
+        if (requiredTagsToDelete.length > 0) {
+            const names = requiredTagsToDelete
+                .map((tag) => tag.tagType?.name ?? tag.tagType?.uuid ?? '?')
+                .join(', ');
+            throw new BadRequestException(
+                `Cannot remove required metadata: ${names}. ` +
+                    'This endpoint replaces the full metadata set, so every ' +
+                    'metadata type required by the project must be included ' +
+                    'in the request.',
+            );
+        }
+
         if (tagsToDelete.length > 0) {
             await this.tagRepository.remove(tagsToDelete);
         }
@@ -315,16 +367,14 @@ export class MetadataService {
         });
 
         return {
-            data: tags.map(
-                (tag: TagTypeEntity): TagTypeDto => ({
-                    uuid: tag.uuid,
-                    updatedAt: tag.updatedAt,
-                    createdAt: tag.createdAt,
-                    name: tag.name,
-                    datatype: tag.datatype,
-                    description: '',
-                }),
-            ),
+            data: tags.map((tag: TagTypeEntity): TagTypeDto => ({
+                uuid: tag.uuid,
+                updatedAt: tag.updatedAt,
+                createdAt: tag.createdAt,
+                name: tag.name,
+                datatype: tag.datatype,
+                description: '',
+            })),
             count,
             take,
             skip,
@@ -356,16 +406,14 @@ export class MetadataService {
         });
 
         return {
-            data: tags.map(
-                (tag: TagTypeEntity): TagTypeDto => ({
-                    uuid: tag.uuid,
-                    updatedAt: tag.updatedAt,
-                    createdAt: tag.createdAt,
-                    name: tag.name,
-                    datatype: tag.datatype,
-                    description: '',
-                }),
-            ),
+            data: tags.map((tag: TagTypeEntity): TagTypeDto => ({
+                uuid: tag.uuid,
+                updatedAt: tag.updatedAt,
+                createdAt: tag.createdAt,
+                name: tag.name,
+                datatype: tag.datatype,
+                description: '',
+            })),
             count,
             take,
             skip,

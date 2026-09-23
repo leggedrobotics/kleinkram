@@ -70,8 +70,19 @@ const properties = defineProps<{
     topicName: string;
 }>();
 
+// Render as soon as there is something to draw, then keep filling in.
+// Waiting for the last message means watching a skeleton while the data is
+// already on screen-worthy scale: the loaded count in the header shows
+// progress, so there is nothing to gain by withholding the plot.
+const MIN_RENDERABLE_MESSAGES = 2;
+
+// Capped at what the topic actually holds: a topic of a single message would
+// otherwise never reach the floor, and sit on its skeleton after loading has
+// finished.
 const isLoading = computed(
-    () => properties.messages.length < properties.totalCount,
+    () =>
+        properties.messages.length <
+        Math.min(MIN_RENDERABLE_MESSAGES, properties.totalCount),
 );
 
 const duration = computed(() => {
@@ -80,7 +91,7 @@ const duration = computed(() => {
     const start = properties.messages[0].logTime;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const end = properties.messages.at(-1).logTime;
-    return (end - start) / 1_000_000_000;
+    return Number((end as bigint) - (start as bigint)) / 1_000_000_000;
 });
 
 const latestMessage = computed(() => {

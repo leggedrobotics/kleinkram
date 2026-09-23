@@ -11,6 +11,7 @@ from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Tuple
+from typing import Union
 from uuid import UUID
 
 
@@ -27,6 +28,16 @@ class MetadataValueType(str, Enum):
 class MetadataValue:
     value: str
     type_: MetadataValueType
+
+    # uuid of the metadata type this value belongs to, as reported by the API;
+    # `None` when the response did not carry it. Metadata type *names* are not
+    # a safe key: resolving one goes through a substring search.
+    type_id: Optional[UUID] = None
+
+
+# a metadata value as it is sent to the API; numbers and booleans are sent as
+# native JSON values so the API does not have to parse them out of a string
+MetadataPayloadValue = Union[str, float, bool]
 
 
 class FileState(str, Enum):
@@ -108,6 +119,19 @@ class LogEntry:
 
 
 @dataclass(frozen=True)
+class Diagnostic:
+    """A single finding an action reported about itself while running."""
+
+    uuid: UUID
+    severity: str
+    message: str
+    code: str | None
+    file: str | None
+    count: int
+    created_at: datetime
+
+
+@dataclass(frozen=True)
 class Execution:
     uuid: UUID
     state: str
@@ -123,6 +147,11 @@ class Execution:
     template_id: UUID
     template_name: str
     logs: List[LogEntry] = field(default_factory=list)
+
+    # Reported by backends that support action severity; None against older ones.
+    severity: str | None = None
+    failure_origin: str | None = None
+    diagnostic_count: int = 0
 
 
 @dataclass(frozen=True)

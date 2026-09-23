@@ -10,7 +10,7 @@
             />
         </div>
         <q-slide-transition>
-            <div v-if="showDateInputs" class="row q-gutter-x-sm">
+            <div v-if="showDateInputs" class="row q-gutter-x-sm date-inputs">
                 <div class="col">
                     <q-input
                         :model-value="startDateProxy"
@@ -252,3 +252,25 @@ function updateEndDateProxy(v: unknown) {
     endDateProxy.value = (v as string) || '';
 }
 </script>
+
+<style scoped>
+/*
+ * Two 150px-wide date fields next to each other are unusable on a phone,
+ * so they are stacked. The gutter's negative margin is reset as well.
+ */
+@media (max-width: 599px) {
+    .date-inputs {
+        flex-direction: column;
+        margin-left: 0;
+    }
+
+    .date-inputs > .col {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .date-inputs > .col + .col {
+        margin-top: 8px;
+    }
+}
+</style>

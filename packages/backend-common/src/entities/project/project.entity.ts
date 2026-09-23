@@ -2,6 +2,7 @@ import { ProjectAccessEntity } from '@backend-common/entities/auth/project-acces
 import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { CategoryEntity } from '@backend-common/entities/category/category.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { ProjectStarEntity } from '@backend-common/entities/project/project-star.entity';
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import {
@@ -63,4 +64,10 @@ export class ProjectEntity extends BaseEntity {
 
     @Column({ default: false })
     autoConvert?: boolean;
+
+    @OneToMany(
+        () => ProjectStarEntity,
+        (star: ProjectStarEntity) => star.project,
+    )
+    stars?: ProjectStarEntity[];
 }

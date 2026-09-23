@@ -12,6 +12,7 @@ import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.e
 import { validateDockerImageName } from '@kleinkram/validation';
 import {
     ConflictException,
+    ForbiddenException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
@@ -74,6 +75,8 @@ export class TemplateService {
         data: UpdateTemplateDto,
         auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
+        await this.assertNotSystemTemplate(data.name);
+
         const nextVersion = await this.calculateNextVersion(data.name);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
@@ -165,6 +168,26 @@ export class TemplateService {
     }
 
     /**
+     * Refuse to change or remove a template the platform owns.
+     *
+     * `script-runner` is shared by every `run-script` execution across the
+     * deployment, so one person editing or deleting it would break the feature
+     * for everyone. It is seeded by migration and changed the same way.
+     */
+    private async assertNotSystemTemplate(name: string): Promise<void> {
+        const system = await this.actionTemplateRepository.findOne({
+            where: { name, isSystem: true },
+            select: { uuid: true },
+        });
+
+        if (system) {
+            throw new ForbiddenException(
+                `"${name}" is managed by Kleinkram and cannot be modified or deleted.`,
+            );
+        }
+    }
+
+    /**
      * Delete or archive a template based on its usage.
      *
      * This will target all versions of the template with the same name.
@@ -174,7 +197,9 @@ export class TemplateService {
     async delete(uuid: string): Promise<DeleteTemplateResponseDto> {
         const template = await this.actionTemplateRepository.findOne({
             where: { uuid },
-            select: ['name'],
+            select: {
+                name: true,
+            },
         });
 
         if (!template) {
@@ -182,6 +207,8 @@ export class TemplateService {
         }
 
         const { name } = template;
+
+        await this.assertNotSystemTemplate(name);
 
         const totalExecutionCount = await this.actionRepository
             .createQueryBuilder('action')
@@ -208,32 +235,45 @@ export class TemplateService {
     ): Promise<ActionTemplatesDto> {
         const current = await this.actionTemplateRepository.findOne({
             where: { uuid },
-            select: ['name'],
+            select: {
+                name: true,
+            },
         });
 
         if (!current) {
             throw new NotFoundException('Template not found');
         }
 
+        // `loadRelationCountAndMap()` was removed in TypeORM v1; count the
+        // executions with a correlated sub-query instead, the same way
+        // `findAll` above already does.
         const qb = this.actionTemplateRepository
             .createQueryBuilder('template')
             .leftJoinAndSelect('template.creator', 'creator')
-            .loadRelationCountAndMap(
-                'template.executionCount',
-                'template.actions',
-            )
+            .addSelect((subQuery) => {
+                return subQuery
+                    .select('COUNT(action.uuid)', 'count')
+                    .from(ActionEntity, 'action')
+                    .leftJoin('action.template', 't')
+                    .where('t.uuid = template.uuid');
+            }, 'executionCount')
             .where('template.name = :name', { name: current.name })
             .orderBy('template.version', 'DESC')
             .skip(skip)
             .take(take);
 
-        const [entities, count] = await qb.getManyAndCount();
+        const { entities, raw } = await qb.getRawAndEntities();
+        const count = await qb.getCount();
 
         const data = entities.map((entity) => {
-            return actionTemplateEntityToDto(
-                entity,
-                entity.executionCount ?? 0,
-            );
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            const rawRow = raw.find((r) => r.template_uuid === entity.uuid);
+            const execCount = rawRow
+                ? // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                  Number.parseInt(rawRow.executionCount, 10)
+                : 0;
+
+            return actionTemplateEntityToDto(entity, execCount);
         });
 
         return {

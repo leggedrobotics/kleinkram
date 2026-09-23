@@ -19,9 +19,11 @@ import re
 import tarfile
 import tempfile
 from pathlib import Path
+from typing import Any
 from typing import Collection
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -49,9 +51,13 @@ from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import TemplateNotFound
 from kleinkram.models import ArtifactState
+from kleinkram.models import Diagnostic
 from kleinkram.models import FileConfig
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
+from kleinkram.models import MetadataPayloadValue
+from kleinkram.models import MetadataValue
+from kleinkram.models import MetadataValueType
 from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
@@ -172,6 +178,7 @@ def download(
     allow_corrupt_files: bool = False,
     nested: bool = False,
     overwrite: bool = False,
+    mcap_slice: Optional[kleinkram.api.file_transfer.McapSlice] = None,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
@@ -180,6 +187,10 @@ def download(
     """\
     downloads files, asserts that the destination dir exists
     returns a DownloadResult with counts and metrics
+
+    if `mcap_slice` is given, `.mcap` files are fetched partially, using their
+    index to transfer only the chunks holding the selected messages; files of
+    any other type are skipped
     """
 
     if not base_dir.exists():
@@ -200,6 +211,7 @@ def download(
         allow_corrupt_files=allow_corrupt_files,
         overwrite=overwrite,
         create_parents=nested,
+        mcap_slice=mcap_slice,
         on_overall_progress_cb=on_overall_progress_cb,
         on_file_start_cb=on_file_start_cb,
         on_file_progress_cb=on_file_progress_cb,
@@ -213,6 +225,7 @@ def upload(
     query: MissionQuery,
     file_paths: Sequence[Path],
     create: bool = False,
+    fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
@@ -225,9 +238,12 @@ def upload(
 
     create a mission if it does not exist if `create` is True
     in that case you can also specify `metadata` and `ignore_missing_metadata`
+
+    if `fix_filenames` is True, badly named files are accepted and uploaded
+    under a sanitized name instead of raising, see `get_filename`
     """
     # check that file paths are for valid files and have valid suffixes
-    check_file_paths(file_paths)
+    check_file_paths(file_paths, check_filename=not fix_filenames)
 
     try:
         mission = kleinkram.api.routes.get_mission(client, query=query)
@@ -363,8 +379,66 @@ def update_file(*, client: AuthenticatedClient, file_id: UUID) -> None:
     raise NotImplementedError("if you have an idea what this should do, open an issue")
 
 
+def _metadata_value_to_payload(value: MetadataValue) -> MetadataPayloadValue:
+    """\
+    render a value that was read back from the API into request payload form
+
+    numbers and booleans are sent as native JSON values: the API parses number
+    *strings* with `parseInt`, which would truncate a decimal that the caller
+    never even touched
+    """
+    if value.type_ == MetadataValueType.NUMBER:
+        return float(value.value)
+    if value.type_ == MetadataValueType.BOOLEAN:
+        return value.value.strip().lower() == "true"
+    return value.value
+
+
+def _merge_mission_metadata(
+    client: AuthenticatedClient, mission_id: UUID, metadata: Mapping[str, str]
+) -> Dict[UUID, MetadataPayloadValue]:
+    """\
+    merge `metadata` over the metadata the mission currently has
+
+    the result is keyed by metadata *type* uuid: entries the caller did not
+    touch reuse the uuid the API reported for them, so they are never
+    re-resolved by name through the substring search in
+    `_get_metadata_type_id_by_name`
+    """
+    mission = kleinkram.api.routes.get_mission(client, MissionQuery(ids=[mission_id]))
+
+    # names are only resolved for the entries the caller actually supplied
+    merged: Dict[UUID, MetadataPayloadValue] = dict(_get_tags_map(client, metadata))
+
+    for name, value in mission.metadata.items():
+        type_id = value.type_id
+        if type_id is None:
+            # older servers may not report the type uuid; fall back to the
+            # (exact) name lookup rather than dropping the field
+            type_id, _ = _get_metadata_type_id_by_name(client, name)
+            if type_id is None:
+                raise kleinkram.errors.InvalidMissionMetadata(
+                    f"cannot resolve the metadata type of the mission's existing field: {name}"
+                )
+
+        if type_id in merged:
+            continue  # overridden by the caller
+        merged[type_id] = _metadata_value_to_payload(value)
+
+    return merged
+
+
 def update_mission(*, client: AuthenticatedClient, mission_id: UUID, metadata: Dict[str, str]) -> None:
-    tags = _get_tags_map(client, metadata)
+    """\
+    update a mission's metadata
+
+    `metadata` is merged over the mission's existing metadata: fields that are
+    not mentioned keep their current value. The endpoint behind this replaces
+    the mission's full metadata set, so sending a partial `metadata` straight
+    through would delete everything it does not mention — including metadata
+    the project requires.
+    """
+    tags = _merge_mission_metadata(client, mission_id, metadata)
     kleinkram.api.routes._update_mission(client, mission_id, tags=tags)
 
 
@@ -534,6 +608,35 @@ def delete_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None
     kleinkram.api.routes._delete_execution(client, execution_id)
 
 
+def report_diagnostic(
+    *,
+    client: AuthenticatedClient,
+    execution_id: UUID,
+    severity: str,
+    message: str,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    if not is_valid_uuid4(str(execution_id)):
+        raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
+    kleinkram.api.routes._report_diagnostic(
+        client,
+        execution_id,
+        severity=severity,
+        message=message,
+        code=code,
+        file=file,
+        details=details,
+    )
+
+
+def get_diagnostics(*, client: AuthenticatedClient, execution_id: UUID) -> Tuple[List[Diagnostic], bool]:
+    if not is_valid_uuid4(str(execution_id)):
+        raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
+    return kleinkram.api.routes._get_diagnostics(client, execution_id)
+
+
 def cancel_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None:
     if not is_valid_uuid4(str(execution_id)):
         raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
@@ -574,6 +677,62 @@ def launch_execution(
     # 3. Launch Execution via API Route
     execution_id = kleinkram.api.routes._launch_execution(client, mission_uuid, template_uuid)
     return execution_id
+
+
+MAX_SCRIPT_BYTES = 1024 * 1024
+SCRIPT_FILENAME_PATTERN = re.compile(r"^[\w.-]{1,96}\.py$")
+
+
+def run_script(
+    client: AuthenticatedClient,
+    mission_query: MissionQuery,
+    script_path: Path,
+    *,
+    max_runtime_hours: Optional[float] = None,
+) -> UUID:
+    """
+    business logic to resolve a mission and submit a single Python file as an action.
+    """
+    script = _read_script(script_path)
+
+    mission_obj = kleinkram.api.routes.get_mission(client, mission_query)
+
+    return kleinkram.api.routes._submit_script_action(
+        client,
+        mission_obj.id,
+        script=script,
+        filename=script_path.name,
+        max_runtime_hours=max_runtime_hours,
+    )
+
+
+def _read_script(script_path: Path) -> str:
+    """
+    Reads a script and rejects what the API would reject anyway, so that an
+    obvious mistake fails locally instead of after a round trip.
+    """
+    if script_path.suffix != ".py":
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not a Python file (expected a `.py` suffix).")
+
+    if not SCRIPT_FILENAME_PATTERN.match(script_path.name):
+        raise kleinkram.errors.ExecutionValidationError(
+            f"`{script_path.name}` is not a usable script name; use letters, digits, `.`, `-` and `_` only."
+        )
+
+    raw = script_path.read_bytes()
+    if not raw:
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is empty.")
+
+    if len(raw) > MAX_SCRIPT_BYTES:
+        raise kleinkram.errors.ExecutionValidationError(
+            f"`{script_path}` is {len(raw)} bytes, the limit is {MAX_SCRIPT_BYTES} bytes. "
+            "Build a Docker action for anything larger."
+        )
+
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not valid UTF-8 text.") from e
 
 
 def create_mission(
@@ -952,12 +1111,13 @@ def _validate_mission_created(client: AuthenticatedClient, project_id: str, miss
 
 def _validate_tag_value(tag_value, tag_datatype) -> None:
     if tag_datatype == "NUMBER":
-        try:
-            float(tag_value)
-        except ValueError:
-            raise kleinkram.errors.InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
+        if isinstance(tag_value, bool) or not isinstance(tag_value, (int, float)):
+            try:
+                float(tag_value)
+            except (TypeError, ValueError):
+                raise kleinkram.errors.InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
     elif tag_datatype == "BOOLEAN":
-        if tag_value.lower() not in {"true", "false"}:
+        if not isinstance(tag_value, bool) and str(tag_value).lower() not in {"true", "false"}:
             raise kleinkram.errors.InvalidMissionMetadata(
                 f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')"
             )
@@ -965,22 +1125,59 @@ def _validate_tag_value(tag_value, tag_datatype) -> None:
         pass
 
 
+METADATA_TYPE_LOOKUP_TAKE = 1000
+
+
 def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) -> Tuple[Optional[UUID], str]:
-    resp = client.get("/metadata-types/filtered", params={"name": tag_name, "take": 1})
+    """\
+    resolve a metadata type name to its uuid
+
+    `/metadata-types/filtered` matches the name as a case-insensitive
+    *substring*, so the response has to be narrowed down to exact matches
+    before anything is picked: asking for `cpu` also returns `cpu_cores`.
+    """
+    resp = client.get(
+        "/metadata-types/filtered",
+        params={"name": tag_name, "take": METADATA_TYPE_LOOKUP_TAKE},
+    )
 
     if resp.status_code in (403, 404):
         return None, ""
 
     resp.raise_for_status()
-    try:
-        data = resp.json()["data"][0]
-    except IndexError:
+    body = resp.json()
+    candidates = body.get("data", [])
+    # prefer an exact match; otherwise accept a case-insensitive *equality*
+    # match (the server's own name comparison is case-insensitive), but never a
+    # mere substring match
+    truncated = body.get("count", len(candidates)) > len(candidates)
+    exact = [entry for entry in candidates if entry.get("name") == tag_name]
+    if not exact:
+        if truncated:
+            # the exact match could be on a page we did not fetch, so neither
+            # "does not exist" nor a case-insensitive pick would be safe
+            raise kleinkram.errors.InvalidMissionMetadata(
+                f"metadata field: {tag_name} matches too many metadata types to resolve unambiguously"
+            )
+        exact = [entry for entry in candidates if str(entry.get("name", "")).lower() == tag_name.lower()]
+
+    if not exact:
         return None, ""
 
+    if len(exact) > 1:
+        raise kleinkram.errors.InvalidMissionMetadata(
+            f"metadata field: {tag_name} is ambiguous, "
+            f"{len(exact)} metadata types share this name: "
+            f"{', '.join(str(entry.get('uuid')) for entry in exact)}"
+        )
+
+    data = exact[0]
     return UUID(data["uuid"], version=4), data["datatype"]
 
 
-def _get_tags_map(client: AuthenticatedClient, metadata: Dict[str, str]) -> Dict[UUID, str]:
+def _get_tags_map(
+    client: AuthenticatedClient, metadata: Mapping[str, MetadataPayloadValue]
+) -> Dict[UUID, MetadataPayloadValue]:
     ret = {}
     for key, val in metadata.items():
         metadata_type_id, tag_datatype = _get_metadata_type_id_by_name(client, key)

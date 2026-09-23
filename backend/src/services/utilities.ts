@@ -203,18 +203,6 @@ export const getFilteredFileIdSubQuery = (
     return query;
 };
 
-export const addMissionCount = <T extends ObjectLiteral>(
-    query: SelectQueryBuilder<T>,
-): SelectQueryBuilder<T> => {
-    query.loadRelationCountAndMap(
-        'project.missionCount',
-        'project.missions',
-        'mission',
-    );
-
-    return query;
-};
-
 export const addFileStats = (
     query: SelectQueryBuilder<MissionEntity>,
 ): SelectQueryBuilder<MissionEntity> => {

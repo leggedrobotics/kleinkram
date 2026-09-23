@@ -1,3 +1,4 @@
+import { resolveAccessUuid } from '@/endpoints/auth/access-source';
 import { MissionGuardService } from '@/endpoints/auth/mission-guard.service';
 import { FileGuardService } from '@/services/file-guard.service';
 import { AccessGroupRights } from '@kleinkram/shared';
@@ -10,13 +11,8 @@ import { Reflector } from '@nestjs/core';
 import { BaseGuard } from './base.guards';
 
 interface FileBody {
-    uuid?: string;
     fileUUIDs?: string[];
     missionUUID?: string;
-}
-
-interface FileParameters {
-    uuid?: string;
 }
 
 @Injectable()
@@ -37,12 +33,10 @@ export class FileAccessGuard extends BaseGuard {
                 context.getHandler(),
             ) ?? AccessGroupRights.READ;
 
-        const body = request.body as FileBody | undefined;
-        const params = request.params as FileParameters | undefined;
-        const fileUUID =
-            (request.query.uuid as string | undefined) ??
-            body?.uuid ??
-            params?.uuid;
+        // The file uuid is read from exactly the location the route declared.
+        // Falling back to another location would let a caller authorize against
+        // a different file than the one the handler actually operates on.
+        const fileUUID = resolveAccessUuid(this.reflector, context, request);
 
         if (!fileUUID) {
             return false; // Deny access if UUID not provided
@@ -75,6 +69,8 @@ export class MoveFilesGuard extends BaseGuard {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, apiKey, request } = await this.getUser(context);
 
+        // `PATCH /files`: both the moved files and the target mission are only
+        // ever read from the request body.
         const body = request.body as FileBody;
         const fileUUIDs = body.fileUUIDs;
         const missionUUID = body.missionUUID;

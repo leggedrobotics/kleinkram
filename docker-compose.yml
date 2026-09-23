@@ -94,8 +94,8 @@ services:
                 condition: service_started
             base:
                 condition: service_started
-            loki:
-                condition: service_started
+            loki-ready:
+                condition: service_completed_successfully
 
         volumes:
             - ./backend:/app/backend
@@ -146,6 +146,7 @@ services:
             S3_DATA_BUCKET_NAME: ${S3_DATA_BUCKET_NAME}
             S3_DB_BUCKET_NAME: ${S3_DB_BUCKET_NAME}
             S3_ARTIFACTS_BUCKET_NAME: ${S3_ARTIFACTS_BUCKET_NAME}
+            S3_SCRIPTS_BUCKET_NAME: ${S3_SCRIPTS_BUCKET_NAME}
             S3_ACCESS_KEY: ${S3_ACCESS_KEY}
             S3_SECRET_KEY: ${S3_SECRET_KEY}
 
@@ -343,10 +344,14 @@ services:
             - private-network
 
         depends_on:
-            - database
-            - redis
-            - base
-            - loki
+            database:
+                condition: service_started
+            redis:
+                condition: service_started
+            base:
+                condition: service_started
+            loki-ready:
+                condition: service_completed_successfully
 
     prometheus:
         image: prom/prometheus
@@ -396,6 +401,34 @@ services:
         networks:
             - private-network
             - public-network
+
+    # Loki reports /ready as 503 for a while after startup (ring join, WAL
+    # replay, min_ready_duration), during which action submissions are
+    # rejected. The grafana/loki image ships no shell, so it cannot run a
+    # healthcheck of its own -- this one-shot container does the waiting and
+    # lets dependents gate on `service_completed_successfully`.
+    loki-ready:
+        image: curlimages/curl:latest
+        container_name: kleinkram-loki-ready
+        restart: 'no'
+        depends_on:
+            - loki
+        entrypoint:
+            - sh
+            - -c
+            - |
+                echo "waiting for Loki to become ready..."
+                for _ in $$(seq 1 120); do
+                    if curl -sf http://loki:3100/ready > /dev/null; then
+                        echo "Loki is ready"
+                        exit 0
+                    fi
+                    sleep 1
+                done
+                echo "Loki did not become ready within 120s" >&2
+                exit 1
+        networks:
+            - private-network
 
     grafana:
         image: grafana/grafana

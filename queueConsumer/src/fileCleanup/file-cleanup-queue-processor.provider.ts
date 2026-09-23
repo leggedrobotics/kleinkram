@@ -46,7 +46,11 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
                 const files = await this.fileRepository.find({
                     where: { hash: IsNull(), state: Not(FileState.LOST) },
-                    relations: ['mission', 'mission.project'],
+                    relations: {
+                        mission: {
+                            project: true,
+                        },
+                    },
                 });
                 for (const file of files) {
                     const hash = crypto.createHash('md5');

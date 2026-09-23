@@ -2,20 +2,22 @@
     <q-drawer
         v-model="_open"
         side="right"
-        :width="500"
+        :width="$q.screen.lt.md ? $q.screen.width : 500"
         bordered
-        behavior="desktop"
+        :behavior="$q.screen.lt.md ? 'mobile' : 'desktop'"
         overlay
     >
         <div
             class="q-pa-lg flex row justify-between items-center"
             style="height: 84px"
         >
-            <h3 class="text-h4 q-ma-none">Version History</h3>
+            <h3 class="q-ma-none" :class="$q.screen.xs ? 'text-h5' : 'text-h4'">
+                Version History
+            </h3>
             <q-btn
                 flat
                 dense
-                padding="6px"
+                :padding="$q.screen.xs ? '10px' : '6px'"
                 class="button-border"
                 icon="sym_o_close"
                 @click="closeDrawer"
@@ -68,7 +70,7 @@
                             {{ ver.description }}
                         </div>
                         <q-separator class="q-my-xs" />
-                        <div>
+                        <div class="version-image">
                             <code>{{ ver.imageName }}</code>
                         </div>
                     </div>
@@ -87,7 +89,7 @@
                     >
                         <q-btn
                             outline
-                            size="sm"
+                            :size="$q.screen.xs ? 'md' : 'sm'"
                             color="primary"
                             label="Restore this version"
                             icon="sym_o_restore"
@@ -144,3 +146,10 @@ const closeDrawer = (): void => {
     _open.value = false;
 };
 </script>
+
+<style scoped>
+/* Image names are long and unbreakable; they must not widen the drawer */
+.version-image code {
+    overflow-wrap: anywhere;
+}
+</style>

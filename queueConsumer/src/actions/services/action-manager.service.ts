@@ -8,10 +8,16 @@ import {
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import {
     AccessGroupRights,
+    ActionFailureOrigin,
+    ActionSeverity,
     ActionState,
     ArtifactState,
     KeyTypes,
+    maxActionSeverity,
+    resolveActionOutcome,
+    resolveFinalVerdict,
     ResourceUsage,
+    TERMINAL_ACTION_STATES,
     UserRole,
 } from '@kleinkram/shared';
 import { Injectable, OnModuleInit } from '@nestjs/common';
@@ -403,14 +409,26 @@ export class ActionManagerService implements OnModuleInit {
             // update action state based on container exit code
             action = await this.actionRepository.findOneOrFail({
                 where: { uuid: action.uuid },
-                relations: ['worker', 'template'],
+                relations: {
+                    worker: true,
+                    template: true,
+                },
             });
 
             if (!this.cancellationService.isCancelled(action.uuid)) {
-                await this.actionRepository.update(
-                    { uuid: action.uuid },
-                    { state: ActionState.STOPPING },
-                );
+                // Conditional, because the janitor may have already failed this
+                // action - it is what killed the container we just stopped
+                // waiting on. Writing STOPPING unconditionally would erase that
+                // verdict before setActionState can read it back.
+                await this.actionRepository
+                    .createQueryBuilder()
+                    .update(ActionEntity)
+                    .set({ state: ActionState.STOPPING })
+                    .where('uuid = :uuid', { uuid: action.uuid })
+                    .andWhere('state NOT IN (:...terminal)', {
+                        terminal: TERMINAL_ACTION_STATES,
+                    })
+                    .execute();
             }
 
             this.containerLifecycleService.removeContainer(container.id, true);
@@ -520,6 +538,11 @@ export class ActionManagerService implements OnModuleInit {
                     { uuid: action.uuid },
                     {
                         state: ActionState.FAILED,
+                        severity: ActionSeverity.ERROR,
+                        // The run threw before or around the container rather
+                        // than inside it: image pulls, storage, the daemon.
+                        // Nothing the action author can fix.
+                        failureOrigin: ActionFailureOrigin.SYSTEM,
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         state_cause:
                             error instanceof Error
@@ -602,88 +625,76 @@ export class ActionManagerService implements OnModuleInit {
         wideLog: WideLogger,
     ): Promise<void> {
         const containerDetailsAfter = await container.inspect();
-
         const exitCode = containerDetailsAfter.State.ExitCode;
 
-        let state: ActionState;
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        let exit_code: number;
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        let state_cause: string;
+        const outcome = this.cancellationService.isCancelled(action.uuid)
+            ? {
+                  state: ActionState.CANCELLED,
+                  severity: ActionSeverity.OK,
+                  failureOrigin: undefined,
+                  stateCause: 'Action cancelled by user',
+              }
+            : resolveActionOutcome({
+                  exitCode,
+                  oomKilled: containerDetailsAfter.State.OOMKilled,
+              });
 
-        if (this.cancellationService.isCancelled(action.uuid)) {
-            state = ActionState.CANCELLED;
-            exit_code = exitCode;
-            state_cause = 'Action cancelled by user';
-        } else {
-            switch (exitCode) {
-                case 125: {
-                    state = ActionState.FAILED;
-                    exit_code = exitCode;
-                    state_cause =
-                        'Container failed to run. Docker run command failed.';
-                    break;
-                }
-                case 126: {
-                    state = ActionState.FAILED;
-                    exit_code = exitCode;
-                    state_cause =
-                        'Command cannot be invoked (Permission denied?).';
-                    break;
-                }
-                case 127: {
-                    state = ActionState.FAILED;
-                    exit_code = exitCode;
-                    state_cause = 'Command not found.';
-                    break;
-                }
-                case 139: {
-                    state = ActionState.FAILED;
-                    exit_code = exitCode;
-                    state_cause =
-                        'Container crashed (SIGSEGV). Invalid memory access.';
-                    break;
-                }
-                case 143: {
-                    state = ActionState.FAILED;
-                    exit_code = exitCode;
-                    state_cause =
-                        'Container stopped (SIGTERM). Time limit approached.';
-                    break;
-                }
-                case 137: {
-                    state = ActionState.FAILED;
-                    exit_code = exitCode;
-                    state_cause =
-                        'Container killed (SIGKILL). Exceeded memory or CPU limit.';
-                    break;
-                }
-                default: {
-                    state_cause = `Container exited with code ${exitCode.toString()}`;
-                    state =
-                        exitCode === 0 ? ActionState.DONE : ActionState.FAILED;
-                    exit_code = exitCode;
-                }
-            }
-        }
+        // The container may have reported diagnostics while it ran, which
+        // already raised the severity stored for the action. The exit code can
+        // only ever raise it further, never talk it back down - so an outcome
+        // of OK leaves the column alone rather than writing a value read
+        // before the last diagnostic may have landed.
+        const stored = await this.actionRepository.findOne({
+            where: { uuid: action.uuid },
+            select: {
+                uuid: true,
+                severity: true,
+                state: true,
+                failureOrigin: true,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                state_cause: true,
+            },
+        });
+        const severity = maxActionSeverity(
+            stored?.severity ?? ActionSeverity.OK,
+            outcome.severity,
+        );
+        const raisesSeverity = outcome.severity !== ActionSeverity.OK;
+
+        // A verdict the janitor already recorded wins over anything the exit
+        // code implies - see resolveFinalVerdict.
+        const verdict = resolveFinalVerdict(
+            stored && {
+                state: stored.state,
+                failureOrigin: stored.failureOrigin,
+                stateCause: stored.state_cause,
+            },
+            outcome,
+        );
 
         wideLog.add({
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            exit_code,
+            exit_code: exitCode,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            final_state: state,
+            final_state: verdict.state,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            state_cause,
+            final_severity: severity,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            failure_origin: verdict.failureOrigin ?? '',
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_cause: verdict.stateCause,
         });
 
         await this.actionRepository.update(
             { uuid: action.uuid },
             {
-                state,
+                state: verdict.state,
+                failureOrigin: verdict.failureOrigin,
+                ...(raisesSeverity && { severity }),
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                exit_code,
+                exit_code: exitCode,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause,
+                state_cause: verdict.stateCause,
             },
         );
     }

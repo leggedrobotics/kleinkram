@@ -42,7 +42,10 @@ describe('Test Suite Utils', () => {
 
         const userRepository = database.getRepository(UserEntity);
         const users = await userRepository.find({
-            select: ['email', 'uuid'],
+            select: {
+                email: true,
+                uuid: true,
+            },
         });
         expect(users.length).toBe(1);
         expect(users[0]?.email).toBe('test-01@kleinkram.dev');

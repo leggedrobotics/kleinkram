@@ -13,10 +13,10 @@ echo "123" > test.yml
 klein upload --project testProject --mission testMission --create test.yml
 
 # 2. List Existing Kleinkram Action Templates
-klein action list
+klein templates list
 
 # (Assuming an action template named "extract-metadata" exists)
-klein action run extract-metadata --project testProject --mission testMission
+klein executions launch extract-metadata testMission --project testProject
 ```
 
 ## Core Workflows
@@ -37,6 +37,21 @@ klein list missions --project testProject
 # List all files currently inside a mission
 klein list files --project testProject --mission testMission
 ```
+
+### Downloading Part of a Recording
+
+`.mcap` files carry an index, so the CLI can fetch only the messages you ask for
+instead of the whole file:
+
+```bash
+klein download --dest ./slice --topics /rosout \
+  --start-time 2026-09-18T08:08:28Z --end-time 2026-09-18T08:08:38Z <file>
+```
+
+For recordings with uncompressed chunks both `--topics` and the time window cut
+the transfer; with compressed chunks only the time window does. See
+[Partial Download](../files/partial-download.md) for the numbers and the
+caveats.
 
 ### Uploading Resources
 
@@ -84,6 +99,53 @@ Use the `verify` command to double-check if your local files were successfully u
 
 ```bash
 klein verify --project testProject --mission testMission data.bag
+```
+
+### Running a Python Script as an Action
+
+Use `klein action run-script` to run a single `.py` file on a mission without building or pushing a Docker image. The
+logs are streamed and the command exits non-zero if the run did not finish cleanly.
+
+```bash
+klein action run-script ./analyse.py -p testProject -m testMission
+
+# what the runner image ships; a script may not import anything else
+klein action deps
+```
+
+See [Run a Single Python File](../actions/run-script.md) for the dependency set, the limits, and when to write a real
+Docker action instead.
+
+### Reporting from Inside an Action
+
+`klein action warn`, `fail` and `info` only work from within a running Kleinkram action container, where Kleinkram provides the
+credentials and the action id. Use them to tell the reader of the action what it found, rather than encoding it in the
+exit code.
+
+```bash
+# the action still succeeds; it is shown as "DONE · 1 finding"
+klein action warn "no /tf topic in this recording" --file run_1.bag --code MISSING_TF
+
+# record an error without stopping the run
+klein action fail "bag header is truncated" --file run_2.bag
+
+# a note that leaves the action reading as clean
+klein action info "checked 42 recordings"
+```
+
+See [Write Custom Action Templates](../actions/write-actions.md#raising-warnings) for the full description.
+
+### Inspecting Action Runs
+
+```bash
+# the status column shows e.g. "DONE (3 warnings)"
+klein executions list --mission testMission
+
+# state, cause, who failed it, and how many findings it reported
+klein executions info <execution-id>
+
+# every warning and error the action reported about itself
+klein executions diagnostics <execution-id>
 ```
 
 ## Supported File Types

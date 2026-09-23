@@ -86,7 +86,7 @@ export const traceWrapper =
                 let result: U | Promise<any>;
 
                 // capture some metadata about the function call
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, unicorn/no-array-for-each
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, unicorn/no-for-each
                 arguments_.forEach((argument: any) => {
                     // check if arg is of type Job or QueueEntity and add metadata
                     if (
@@ -161,7 +161,8 @@ export function tracing<A extends unknown[], C>(
         target: new (...arguments_: A) => C,
         propertyKey?: string | symbol,
         descriptor?: TypedPropertyDescriptor<(...arguments_: A) => C>,
-    ): // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    ):
+        // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
         | void
         | (new (...arguments_: A) => C)
         | TypedPropertyDescriptor<(...arguments_: A) => C> {

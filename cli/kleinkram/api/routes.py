@@ -27,6 +27,7 @@ from kleinkram.api.deser import TemplateObject
 from kleinkram.api.deser import TriggerObject
 from kleinkram.api.deser import _parse_action_template
 from kleinkram.api.deser import _parse_action_trigger
+from kleinkram.api.deser import _parse_diagnostic
 from kleinkram.api.deser import _parse_execution
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
@@ -57,13 +58,16 @@ from kleinkram.errors import TemplateNotFound
 from kleinkram.errors import TemplateValidationError
 from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
+from kleinkram.models import Diagnostic
 from kleinkram.models import Execution
 from kleinkram.models import File
+from kleinkram.models import MetadataPayloadValue
 from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import minutes_to_hours
 from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import split_args
 
@@ -83,6 +87,7 @@ __all__ = [
     "get_project",
     "get_mission",
     "get_file",
+    "get_file_by_id",
 ]
 
 
@@ -98,6 +103,9 @@ FILE_ENDPOINT = "/files"
 MISSION_ENDPOINT = "/missions"
 PROJECT_ENDPOINT = "/projects"
 
+# the single file route, the only one returning the topics of a file
+FILE_BY_ID_ENDPOINT = "/files/{}"
+
 TAG_TYPE_BY_NAME = "/metadata-types/filtered"
 
 ACTION_ENDPOINT = "/action"
@@ -110,6 +118,8 @@ class Params(str, Enum):
     MISSION_IDS = "missionUuids"
     PROJECT_PATTERNS = "projectPatterns"
     PROJECT_IDS = "projectUuids"
+    INCLUDE_STATES = "includeStates"
+    EXCLUDE_STATES = "excludeStates"
 
 
 def _handle_list_params(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -151,6 +161,10 @@ def _file_query_to_params(file_query: FileQuery) -> Dict[str, List[str]]:
         params[Params.FILE_PATTERNS.value] = list(file_query.patterns)
     if file_query.ids:
         params[Params.FILE_IDS.value] = list(map(str, file_query.ids))
+    if file_query.include_states:
+        params[Params.INCLUDE_STATES.value] = file_query.include_states
+    if file_query.exclude_states:
+        params[Params.EXCLUDE_STATES.value] = file_query.exclude_states
     return params
 
 
@@ -271,6 +285,9 @@ def get_templates(
 
 LIST_ACTIONTRIGGERS_ENDPOINT = "/triggers"
 
+# every single-trigger operation (get / update / delete) addresses the same route
+TRIGGER_ENDPOINT = "/triggers/{}"
+
 
 def get_triggers(client: AuthenticatedClient, query: Optional[TriggerQuery] = None) -> List[ActionTrigger]:
     params = {"missionUuid": str(query.mission_uuid)} if query and query.mission_uuid else None
@@ -285,7 +302,7 @@ def get_trigger(
     client: AuthenticatedClient,
     trigger_uuid: UUID,
 ) -> ActionTrigger:
-    resp = client.patch(UPDATE_TRIGGER.format(trigger_uuid), json={})
+    resp = client.get(TRIGGER_ENDPOINT.format(trigger_uuid))
     if resp.status_code == 404:
         raise kleinkram.errors.TriggerNotFound(f"Trigger not found: {trigger_uuid}")
     resp.raise_for_status()
@@ -316,6 +333,17 @@ def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
         raise MissionNotFound(f"Mission not found: {query}")
 
 
+def get_file_by_id(client: AuthenticatedClient, file_id: UUID) -> File:
+    """\
+    get a single file by its id, including its topics
+    """
+    resp = client.get(FILE_BY_ID_ENDPOINT.format(file_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.FileNotFound(f"File not found: {file_id}")
+    resp.raise_for_status()
+    return _parse_file(FileObject(resp.json()))
+
+
 def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
     """\
     get a unique file by specifying a file query
@@ -323,9 +351,14 @@ def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
     if not file_query_is_unique(query):
         raise InvalidFileQuery(f"File query does not uniquely determine file: {query}")
     try:
-        return next(get_files(client, query))
+        file = next(get_files(client, query))
     except StopIteration:
         raise kleinkram.errors.FileNotFound(f"File not found: {query}")
+
+    # listing files does not return topics; the query is resolved against the
+    # list route (it is the only one accepting patterns and it reports missing
+    # files as "not found" rather than "forbidden"), then completed here
+    return get_file_by_id(client, file.id)
 
 
 def _create_trigger(
@@ -376,6 +409,45 @@ def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_
     return parse_uuid_like(execution_uuid_str)
 
 
+SUBMIT_SCRIPT_ACTION_ENDPOINT = "/actions/script"
+
+
+def _submit_script_action(
+    client: AuthenticatedClient,
+    mission_uuid: UUID,
+    *,
+    script: str,
+    filename: str,
+    max_runtime_hours: Optional[float] = None,
+) -> UUID:
+    """
+    Submits a single Python file as an action and returns the action UUID.
+
+    The script travels in the request body; the backend stores it and runs it on
+    the shared `script-runner` template, so there is no template to pick here.
+
+    Raises:
+        httpx.HTTPStatusError: If the API returns an error.
+        KeyError: If the response is missing 'actionUUID'.
+    """
+    payload: Dict[str, Any] = {
+        "missionUUID": str(mission_uuid),
+        "script": script,
+        "filename": filename,
+    }
+    if max_runtime_hours is not None:
+        payload["maxRuntimeHours"] = max_runtime_hours
+
+    resp = client.post(SUBMIT_SCRIPT_ACTION_ENDPOINT, json=payload)
+    resp.raise_for_status()
+
+    action_uuid = resp.json().get("actionUUID")
+    if not action_uuid:
+        raise KeyError("API response missing 'actionUUID'")
+
+    return parse_uuid_like(action_uuid)
+
+
 def _create_template_version(
     client: AuthenticatedClient,
     template_id: UUID,
@@ -398,7 +470,8 @@ def _create_template_version(
         "cpuCores": cpu_cores,
         "cpuMemory": cpu_memory_gb,
         "gpuMemory": gpu_memory_gb,
-        "maxRuntime": max_runtime_minutes,
+        # the backend expects the runtime limit in hours
+        "maxRuntime": minutes_to_hours(max_runtime_minutes),
         "accessRights": access_rights,
     }
 
@@ -433,7 +506,8 @@ def _create_template(
         "cpuCores": cpu_cores,
         "cpuMemory": cpu_memory_gb,
         "gpuMemory": gpu_memory_gb,
-        "maxRuntime": max_runtime_minutes,
+        # the backend expects the runtime limit in hours
+        "maxRuntime": minutes_to_hours(max_runtime_minutes),
         "accessRights": access_rights,
     }
 
@@ -453,7 +527,7 @@ def _create_mission(
     project_id: UUID,
     mission_name: str,
     *,
-    tags: Dict[UUID, str],
+    tags: Dict[UUID, MetadataPayloadValue],
     ignore_missing_tags: bool = False,
 ) -> UUID:
     payload = {
@@ -478,7 +552,14 @@ def _create_project(client: AuthenticatedClient, project_name: str, description:
     # TODO: add check for LOCATION tag datatype
 
 
-def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict[UUID, str]) -> None:
+def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict[UUID, MetadataPayloadValue]) -> None:
+    """\
+    replaces the mission's *full* metadata set
+
+    metadata types missing from `tags` are removed by the API, so callers have
+    to pass everything the mission should end up with (see
+    `kleinkram.core.update_mission`, which merges partial updates)
+    """
     payload = {
         "metadata": {str(k): v for k, v in tags.items()},
     }
@@ -511,9 +592,6 @@ def _update_project(
     resp.raise_for_status()
 
 
-UPDATE_TRIGGER = "/triggers/{}"
-
-
 def _update_trigger(
     client: AuthenticatedClient,
     trigger_uuid: UUID,
@@ -543,7 +621,7 @@ def _update_trigger(
     if config is not None:
         body["config"] = config.__dict__
 
-    resp = client.patch(f"{UPDATE_TRIGGER.format(trigger_uuid)}", json=body)
+    resp = client.patch(TRIGGER_ENDPOINT.format(trigger_uuid), json=body)
     resp.raise_for_status()
 
 
@@ -626,6 +704,54 @@ def _delete_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp.raise_for_status()
 
 
+REPORT_DIAGNOSTIC_ENDPOINT = "/actions/{}/diagnostics"
+
+
+def _get_diagnostics(client: AuthenticatedClient, execution_id: UUID) -> Tuple[List[Diagnostic], bool]:
+    """
+    Returns the diagnostics an execution reported and whether the list was
+    truncated because the action reported more than Kleinkram keeps.
+    """
+    resp = client.get(REPORT_DIAGNOSTIC_ENDPOINT.format(execution_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
+    resp.raise_for_status()
+
+    payload = resp.json()
+    diagnostics = [_parse_diagnostic(entry) for entry in payload.get("data", [])]
+    return diagnostics, bool(payload.get("truncated", False))
+
+
+def _report_diagnostic(
+    client: AuthenticatedClient,
+    execution_id: UUID,
+    *,
+    severity: str,
+    message: str,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    """
+    Reports a single diagnostic on a running action.
+
+    Only the disposable API key Kleinkram injects into the action container is
+    accepted by this endpoint, so this only works from inside a running action.
+    """
+    payload: Dict[str, Any] = {"severity": severity, "message": message}
+    if code is not None:
+        payload["code"] = code
+    if file is not None:
+        payload["file"] = file
+    if details is not None:
+        payload["details"] = details
+
+    resp = client.post(REPORT_DIAGNOSTIC_ENDPOINT.format(execution_id), json=payload)
+    if resp.status_code == 404:
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
+    resp.raise_for_status()
+
+
 def _cancel_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp = client.post(f"/actions/{execution_id}/cancel")
     if resp.status_code == 404:
@@ -633,11 +759,8 @@ def _cancel_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp.raise_for_status()
 
 
-DELETE_TRIGGER_ONE = "/triggers/{}"
-
-
 def _delete_trigger(client: AuthenticatedClient, trigger_uuid: UUID) -> None:
-    resp = client.delete(DELETE_TRIGGER_ONE.format(trigger_uuid))
+    resp = client.delete(TRIGGER_ENDPOINT.format(trigger_uuid))
     if resp.status_code == 404:
         raise kleinkram.errors.TriggerNotFound(f"Trigger not found: {trigger_uuid}")
     resp.raise_for_status()

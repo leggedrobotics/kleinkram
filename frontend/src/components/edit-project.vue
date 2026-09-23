@@ -72,6 +72,7 @@ import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/projec
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
 import { useProjectQuery } from 'src/hooks/query-hooks';
+import { getErrorMessage } from 'src/services/error-handling';
 import { updateProject } from 'src/services/mutations/project';
 import { computed, Ref, ref, watch } from 'vue';
 
@@ -128,28 +129,12 @@ async function save_changes(): Promise<void> {
         projectDescription.value,
         autoConvert.value,
     ).catch((error: unknown) => {
-        let errorMessage = '';
-        errorMessage =
-            error instanceof Error
-                ? error.message
-                : ((error as { response?: { data?: { message?: string } } })
-                      .response?.data?.message ?? 'Unknown error');
-
-        if (errorMessage.includes('Project')) {
-            Notify.create({
-                message: `Error updating project: ${errorMessage}`,
-                color: 'negative',
-                position: 'bottom',
-                timeout: 5000,
-            });
-        } else {
-            Notify.create({
-                message: `Error updating project: ${errorMessage}`,
-                color: 'negative',
-                position: 'bottom',
-                timeout: 5000,
-            });
-        }
+        Notify.create({
+            message: `Error updating project: ${getErrorMessage(error)}`,
+            color: 'negative',
+            position: 'bottom',
+            timeout: 5000,
+        });
 
         throw error as Error;
     });

@@ -21,6 +21,7 @@ class FileValidator:
 
     skip: bool
     experimental_datatypes: bool
+    fix_filenames: bool = False
 
     # Stores (file, reason) for skipped files
     skipped_files: List[tuple[Path, str]] = field(default_factory=list)
@@ -76,7 +77,10 @@ class FileValidator:
         if is_experimental and not self.experimental_datatypes:
             raise DatatypeNotSupported(f"Experimental datatype '{file_suffix}' not enabled for file {file}")
 
-        # 4. Check filename
+        # 4. Check filename, unless it gets sanitized on upload anyway
+        if self.fix_filenames:
+            return
+
         is_bad_name = not check_filename_is_sanatized(file.stem)
         if is_bad_name:
             raise FileNameNotSupported(f"Badly formed filename for file {file}")
@@ -92,7 +96,7 @@ class FileValidator:
             if "Experimental" in base_message:
                 hint = "Use --experimental-datatypes to allow or --skip to ignore."
         elif isinstance(e, FileNameNotSupported):
-            hint = "Use --skip to ignore."  # No --fix-filenames hint here
+            hint = "Use --fix-filenames to upload under a sanitized name or --skip to ignore."
 
         # Raise a new exception to the same type to preserve the error type
         raise type(e)(f"{base_message}. {hint}")

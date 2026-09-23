@@ -19,6 +19,7 @@ from kleinkram.api.query import ProjectQuery
 from kleinkram.config import get_shared_state
 from kleinkram.models import Execution
 from kleinkram.models import LogEntry
+from kleinkram.printing import print_diagnostics
 from kleinkram.printing import print_execution_info
 from kleinkram.printing import print_execution_logs
 from kleinkram.printing import print_executions_table
@@ -46,6 +47,7 @@ LOGS_HELP = "Stream the logs for a specific action execution."
 DELETE_HELP = "Delete a specific action execution."
 DOWNLOAD_HELP = "Download artifacts for a specific action execution."
 CANCEL_HELP = "Cancel a running action execution."
+DIAGNOSTICS_HELP = "List the warnings and errors an execution reported."
 
 
 @executions_typer.command(help=LAUNCH_HELP, name="launch")
@@ -195,6 +197,22 @@ def get_info(
     client = AuthenticatedClient()
     execution_obj: Execution = kleinkram.api.routes.get_execution(client, execution_id=execution_id)
     print_execution_info(execution_obj, pprint=get_shared_state().verbose)
+
+
+@executions_typer.command(name="diagnostics", help=DIAGNOSTICS_HELP)
+def diagnostics(
+    execution: str = typer.Argument(..., metavar="EXECUTION_ID", help="The ID of the execution to list diagnostics for.")
+) -> None:
+    """
+    List what an execution reported about itself through `klein action warn` / `fail`.
+    """
+    if not is_valid_uuid4(execution):
+        raise typer.BadParameter(f"'{execution}' is not a valid UUID.")
+    execution_id = parse_uuid_like(execution)
+
+    client = AuthenticatedClient()
+    entries, truncated = kleinkram.core.get_diagnostics(client=client, execution_id=execution_id)
+    print_diagnostics(entries, truncated=truncated, pprint=get_shared_state().verbose)
 
 
 @executions_typer.command(help=LOGS_HELP)

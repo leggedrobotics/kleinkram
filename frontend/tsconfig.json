@@ -1,29 +1,12 @@
 {
     "extends": "./.quasar/tsconfig.json",
+    // NOTE: `compilerOptions.paths` is intentionally NOT redefined here.
+    // @quasar/app-vite v3 generates the full path mapping (folder aliases,
+    // the `@kleinkram/*` workspace packages and `#q-app`) into
+    // ./.quasar/tsconfig.json from `quasar.config.ts > build.alias`.
+    // Redefining `paths` here would shadow the inherited map and break
+    // `#q-app` imports.
     "compilerOptions": {
-        "baseUrl": ".",
-        "paths": {
-            "src/*": ["src/*"],
-            "app/*": ["*"],
-            "components/*": ["src/components/*"],
-            "layouts/*": ["src/layouts/*"],
-            "pages/*": ["src/pages/*"],
-            "assets/*": ["src/assets/*"],
-            "boot/*": ["src/boot/*"],
-            "stores/*": ["src/stores/*"],
-            "@kleinkram/shared": ["../packages/shared/src/index.ts"],
-            "@kleinkram/shared/*": ["../packages/shared/src/*"],
-            "@kleinkram/api-dto": ["../packages/api-dto/src/index.ts"],
-            "@kleinkram/api-dto/*": ["../packages/api-dto/src/*"],
-            "@kleinkram/validation": ["../packages/validation/src/index.ts"],
-            "@kleinkram/validation/*": ["../packages/validation/src/*"],
-            "@kleinkram/backend-common": [
-                "../packages/backend-common/src/index.ts"
-            ],
-            "@kleinkram/backend-common/*": ["../packages/backend-common/src/*"],
-            "@api-dto/*": ["../packages/api-dto/src/types/*"],
-            "@backend-common/*": ["../packages/backend-common/src/*"]
-        },
         "types": ["vite/client", "node"],
         "forceConsistentCasingInFileNames": true
     },
