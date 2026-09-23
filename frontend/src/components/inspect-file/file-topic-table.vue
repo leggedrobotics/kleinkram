@@ -247,9 +247,19 @@ const MAX_PLOT_MESSAGES = 5000;
  */
 const MAX_LOG_MESSAGES = 20_000;
 
+/**
+ * Upper bound of DiagnosticArray messages loaded in one go. Diagnostics are
+ * published at ~1 Hz, so this covers over half an hour of recording; each
+ * array carries every node's key/values, which makes them heavier than logs.
+ */
+const MAX_DIAGNOSTICS_MESSAGES = 2000;
+
 /** Messages added per "Load more" click, per viewer kind. */
 const LOAD_MORE_STEP = 20;
-const LOAD_MORE_STEP_LOGS = 2000;
+const LOAD_MORE_STEPS: Partial<Record<PreviewType, number>> = {
+    [PreviewType.ROS_LOG]: 2000,
+    [PreviewType.DIAGNOSTICS]: 1000,
+};
 
 /**
  * Image streams are shown as a sampled sequence covering the whole
@@ -385,6 +395,19 @@ const getSmartLoad = (row: TopicRow): LoadPlan => {
         };
     }
 
+    // 2. Whole topic, unsampled (diagnostics)
+    // Health and transitions are replayed message by message, so sampling
+    // would drop status changes. Read in order, capped like the logs.
+    if (type === PreviewType.DIAGNOSTICS) {
+        const limit = Math.min(row.nrMessages, MAX_DIAGNOSTICS_MESSAGES);
+        return {
+            limit,
+            stride: 1,
+            full: limit === row.nrMessages,
+            progressive: false,
+        };
+    }
+
     // 3. Medium Load (Strings)
     if (type === PreviewType.STRING) {
         return { limit: 100, stride: 1, full: false };
@@ -491,11 +514,7 @@ const loadMore = (topicName: string): void => {
         return;
     }
 
-    loadData(
-        topicName,
-        type === PreviewType.ROS_LOG ? LOAD_MORE_STEP_LOGS : LOAD_MORE_STEP,
-        true,
-    );
+    loadData(topicName, LOAD_MORE_STEPS[type] ?? LOAD_MORE_STEP, true);
 };
 </script>
 
