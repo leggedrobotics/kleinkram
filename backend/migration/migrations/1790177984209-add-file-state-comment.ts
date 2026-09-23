@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddStateCommentToFileEntity1783504170192 implements MigrationInterface {
-    name = 'AddStateCommentToFileEntity1783504170192';
+export class AddFileStateComment1790177984209 implements MigrationInterface {
+    name = 'AddFileStateComment1790177984209';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
