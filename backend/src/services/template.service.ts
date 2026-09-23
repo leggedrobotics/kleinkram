@@ -9,7 +9,11 @@ import {
 } from '@kleinkram/api-dto';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { validateDockerImageName } from '@kleinkram/validation';
+import {
+    isImageInDockerNamespace,
+    normalizeDockerNamespace,
+    validateDockerImageName,
+} from '@kleinkram/validation';
 import {
     ConflictException,
     ForbiddenException,
@@ -21,7 +25,9 @@ import { Brackets, QueryFailedError, Repository } from 'typeorm';
 
 @Injectable()
 export class TemplateService {
-    private readonly DOCKER_NAMESPACE = process.env.VITE_DOCKER_HUB_NAMESPACE;
+    private readonly DOCKER_NAMESPACE = normalizeDockerNamespace(
+        process.env.VITE_DOCKER_HUB_NAMESPACE,
+    );
 
     constructor(
         @InjectRepository(ActionTemplateEntity)
@@ -292,10 +298,7 @@ export class TemplateService {
     }
 
     private validateDockerNamespace(imageName: string): void {
-        if (
-            this.DOCKER_NAMESPACE &&
-            !imageName.startsWith(this.DOCKER_NAMESPACE)
-        ) {
+        if (!isImageInDockerNamespace(imageName, this.DOCKER_NAMESPACE)) {
             throw new ConflictException(
                 `Only images from the ${this.DOCKER_NAMESPACE} namespace are allowed`,
             );
