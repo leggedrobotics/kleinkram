@@ -400,18 +400,19 @@
         <!-- Node Inspector, styled like the other side drawers. Teleported to
              the layout root: the drawer is absolutely positioned, and inside
              the topic table it would anchor to the expanded row instead of
-             the page. Overlays rather than pushes the page, which would
-             squeeze the file view. Mounted only while open, because a
-             layout holds a single right drawer and a file can have several
-             diagnostics topics expanded at once. -->
+             the page. It shrinks the page like the action drawers, but only
+             on windows of 1680px and up: the file header lays out by window
+             width and overlaps itself when squeezed below ~1200px, so
+             narrower windows get the overlay instead. Mounted only while open,
+             because a layout holds a single right drawer and a file can have
+             several diagnostics topics expanded at once. -->
         <Teleport v-if="isInspectorOpen" to=".q-layout">
             <q-drawer
                 v-model="isInspectorOpen"
                 side="right"
                 bordered
-                overlay
-                :behavior="$q.screen.xs ? 'mobile' : 'desktop'"
-                :width="$q.screen.xs ? $q.screen.width : 600"
+                :behavior="$q.screen.width < 1680 ? 'mobile' : 'desktop'"
+                :width="$q.screen.xs ? $q.screen.width : 480"
             >
                 <div
                     class="q-pa-lg flex row no-wrap justify-between items-start q-gutter-x-sm inspector-drawer__header"
