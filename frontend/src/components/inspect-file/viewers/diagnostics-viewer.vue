@@ -1467,6 +1467,11 @@ const resetFilters = () => {
     display: flex;
     flex-direction: column;
 }
+/* Rows of a column flexbox grow to their unwrapped content, so a long
+   status message would push the level chip into the neighbouring card */
+.node-grid-card > .q-card__section > * {
+    max-width: 100%;
+}
 .body--dark .node-grid-card {
     background: rgba(29, 29, 29, 0.55);
     border: 1px solid rgba(var(--status-color-rgb), 0.4) !important;
