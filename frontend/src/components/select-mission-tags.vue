@@ -48,15 +48,8 @@
         ] as TagTypeDto[]"
         :key="tagtype.uuid"
     >
-        <div
-            style="
-                display: flex;
-                flex-direction: row;
-                justify-content: left;
-                margin-bottom: 20px;
-            "
-        >
-            <div style="display: flex; width: 200px">
+        <div class="tag-row">
+            <div class="tag-row__label">
                 <label style="align-self: center">
                     {{ tagtype.name }}
 
@@ -71,7 +64,7 @@
                 </q-chip>
             </div>
 
-            <div style="display: flex; flex-direction: row; flex-grow: 2">
+            <div class="tag-row__input">
                 <q-input
                     v-if="tagtype.datatype !== DataType.BOOLEAN"
                     v-model="localTagValues[tagtype.uuid]"
@@ -282,5 +275,37 @@ const removeTagType = (metadataTypeUUID: string): void => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.tag-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    margin-bottom: 20px;
+}
+
+.tag-row__label {
+    display: flex;
+    width: 200px;
+    flex: 0 0 auto;
+}
+
+.tag-row__input {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 2;
+    min-width: 0;
+}
+
+@media (max-width: 599px) {
+    .tag-row {
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 16px;
+    }
+
+    .tag-row__label {
+        width: 100%;
+    }
 }
 </style>

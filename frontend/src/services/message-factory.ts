@@ -115,7 +115,12 @@ export const detectPreviewType = (
         return PreviewType.CAMERA_INFO;
     if (typeLower.includes('sensor_msgs/temperature'))
         return PreviewType.TEMPERATURE;
-    if (typeLower.includes('rosgraph_msgs/log')) return PreviewType.ROS_LOG;
+    // rosgraph_msgs/Log is ROS 1, rcl_interfaces/Log is its ROS 2 counterpart
+    if (
+        typeLower.includes('rosgraph_msgs/log') ||
+        typeLower.includes('rcl_interfaces/log')
+    )
+        return PreviewType.ROS_LOG;
     if (typeLower.includes('sensor_msgs/timereference'))
         return PreviewType.TIME_REFERENCE;
     if (typeLower === 'tf2_msgs/tfmessage' || typeLower === 'tf/tfmessage')

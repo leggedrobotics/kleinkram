@@ -1,7 +1,7 @@
 <template>
     <div
         class="bg-grey-2 rounded-borders q-pa-sm"
-        style="max-height: 200px; overflow-y: auto"
+        style="max-height: 200px; overflow: auto"
     >
         <q-tree
             :nodes="artifactFileTree"

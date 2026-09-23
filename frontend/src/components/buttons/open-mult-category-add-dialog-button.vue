@@ -1,6 +1,8 @@
 <template>
     <q-btn
         flat
+        dense
+        padding="6px"
         color="white"
         icon="sym_o_category"
         label="Add Categories"

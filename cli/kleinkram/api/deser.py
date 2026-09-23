@@ -17,6 +17,7 @@ from kleinkram.errors import ParsingError
 from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
 from kleinkram.models import ArtifactState
+from kleinkram.models import Diagnostic
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import FileConfig
@@ -30,6 +31,7 @@ from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
 from kleinkram.models import WebhookConfig
+from kleinkram.utils import hours_to_minutes
 
 __all__ = [
     "_parse_project",
@@ -60,6 +62,7 @@ class FileObjectKeys(str, Enum):
     HASH = "hash"
     TYPE = "type"
     CATEGORIES = "categories"
+    TOPICS = "topics"
 
 
 class MissionObjectKeys(str, Enum):
@@ -85,6 +88,9 @@ class ProjectObjectKeys(str, Enum):
 class ExecutionObjectKeys(str, Enum):
     UUID = "uuid"
     STATE = "state"
+    SEVERITY = "severity"
+    FAILURE_ORIGIN = "failureOrigin"
+    DIAGNOSTIC_COUNT = "diagnosticCount"
     STATE_CAUSE = "stateCause"
     CREATED_AT = "createdAt"
     MISSION = "mission"
@@ -107,7 +113,7 @@ class TemplateObjectKeys(str, Enum):
     ENTRYPOINT = "entrypoint"
     GPU_MEMORY_GB = "gpuMemory"
     IMAGE_NAME = "imageName"
-    MAX_RUNTIME_MINUTES = "maxRuntime"
+    MAX_RUNTIME_HOURS = "maxRuntime"
     CREATED_AT = "createdAt"
     VERSION = "version"
 
@@ -255,6 +261,14 @@ def _parse_mission(mission: MissionObject) -> Mission:
     return parsed
 
 
+def _parse_names(objects: List[Any]) -> List[str]:
+    """\
+    extract the names of a list of named objects (e.g. categories or topics)
+    as returned by the api; plain strings are passed through
+    """
+    return [obj["name"] if isinstance(obj, dict) and "name" in obj else str(obj) for obj in objects]
+
+
 def _parse_file(file: FileObject) -> File:
     try:
         name = file[FileObjectKeys.FILENAME]
@@ -266,8 +280,10 @@ def _parse_file(file: FileObject) -> File:
         created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
         state = _parse_file_state(file[FileObjectKeys.STATE])
-        categories_raw = file.get(FileObjectKeys.CATEGORIES) or []
-        categories = [c["name"] if isinstance(c, dict) and "name" in c else str(c) for c in categories_raw]
+        categories = _parse_names(file.get(FileObjectKeys.CATEGORIES) or [])
+
+        # only the single file endpoint returns topics, listing files does not
+        topics = _parse_names(file.get(FileObjectKeys.TOPICS) or [])
 
         mission_id, mission_name = _get_nested_info(file, MISSION)
         project_id, project_name = _get_nested_info(file[MISSION], PROJECT)
@@ -280,6 +296,7 @@ def _parse_file(file: FileObject) -> File:
             type_=ftype,
             date=fdate,
             categories=categories,
+            topics=topics,
             state=state,
             created_at=created_at,
             updated_at=updated_at,
@@ -304,7 +321,8 @@ def _parse_action_template(template_object: TemplateObject) -> ActionTemplate:
         entrypoint = template_object[TemplateObjectKeys.ENTRYPOINT]
         gpu_memory_gb = template_object[TemplateObjectKeys.GPU_MEMORY_GB]
         image_name = template_object[TemplateObjectKeys.IMAGE_NAME]
-        max_runtime_minutes = template_object[TemplateObjectKeys.MAX_RUNTIME_MINUTES]
+        # the backend reports the runtime limit in hours
+        max_runtime_minutes = hours_to_minutes(template_object[TemplateObjectKeys.MAX_RUNTIME_HOURS])
         created_at = _parse_datetime(template_object[TemplateObjectKeys.CREATED_AT])
         name = template_object[TemplateObjectKeys.NAME]
         version = template_object[TemplateObjectKeys.VERSION]
@@ -329,10 +347,29 @@ def _parse_action_template(template_object: TemplateObject) -> ActionTemplate:
     )
 
 
+def _parse_diagnostic(diagnostic_object: Dict[str, Any]) -> Diagnostic:
+    try:
+        return Diagnostic(
+            uuid=UUID(diagnostic_object["uuid"], version=4),
+            severity=diagnostic_object["severity"],
+            message=diagnostic_object["message"],
+            code=diagnostic_object.get("code"),
+            file=diagnostic_object.get("file"),
+            count=diagnostic_object.get("count", 1),
+            created_at=_parse_datetime(diagnostic_object["createdAt"]),
+        )
+    except Exception as e:
+        raise ParsingError(f"error parsing diagnostic: {diagnostic_object}") from e
+
+
 def _parse_execution(execution_object: ExecutionObject) -> Execution:
     try:
         uuid = UUID(execution_object[ExecutionObjectKeys.UUID], version=4)
         state = execution_object[ExecutionObjectKeys.STATE]
+        # Optional: a backend older than the severity feature omits these.
+        severity = execution_object.get(ExecutionObjectKeys.SEVERITY)
+        failure_origin = execution_object.get(ExecutionObjectKeys.FAILURE_ORIGIN)
+        diagnostic_count = execution_object.get(ExecutionObjectKeys.DIAGNOSTIC_COUNT) or 0
         state_cause = execution_object[ExecutionObjectKeys.STATE_CAUSE]
         artifact_url = execution_object.get(ExecutionObjectKeys.ARTIFACT_URL)
         raw_state = execution_object.get(ExecutionObjectKeys.ARTIFACT_STATE)
@@ -374,6 +411,9 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
     return Execution(
         uuid=uuid,
         state=state,
+        severity=severity,
+        failure_origin=failure_origin,
+        diagnostic_count=diagnostic_count,
         state_cause=state_cause,
         artifact_url=artifact_url,
         artifact_state=artifact_state,

@@ -8,10 +8,11 @@ export interface CategoryContext {
     project: ProjectEntity;
     creator: UserEntity;
     name?: string;
+    description?: string;
 }
 
 setSeederFactory(CategoryEntity, (context: Partial<CategoryContext> = {}) => {
-    const { project, creator, name } = context;
+    const { project, creator, name, description } = context;
 
     if (!project) {
         throw new Error('Project is required');
@@ -23,6 +24,7 @@ setSeederFactory(CategoryEntity, (context: Partial<CategoryContext> = {}) => {
 
     const category = new CategoryEntity();
     category.name = name ?? extendedFaker.lorem.word();
+    category.description = description ?? extendedFaker.lorem.sentence();
     category.project = project;
     category.creator = creator;
 

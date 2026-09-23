@@ -62,6 +62,18 @@ export class FileIngestionService {
                         fileData,
                     );
 
+                    if (primaryFile === null) {
+                        logger.warn(
+                            `File ${queueItem.identifier} was deleted while job ` +
+                                `${queueItem.uuid} was still ingesting, discarding it`,
+                        );
+                        await this.updateQueueState(
+                            queueItem,
+                            QueueState.CANCELED,
+                        );
+                        return;
+                    }
+
                     await this.ensureFileIsInS3(
                         queueItem,
                         primaryFile,
@@ -93,6 +105,20 @@ export class FileIngestionService {
                         workDirectory,
                     );
 
+                    // Only BAG, MCAP and DB3 have a handler, and only a
+                    // handler promotes the entity out of UPLOADING. Uploads
+                    // are promoted by the upload confirmation, but a Drive
+                    // import of any other type (YAML, TUM, SVO2, MD, CSV)
+                    // would otherwise stay UPLOADING forever: invisible to
+                    // the preview, skipped by `klein download`, and excluded
+                    // from the healthy-state queries. Handlers that fail set
+                    // a terminal state and rethrow, so reaching this point
+                    // still marked UPLOADING means ingestion succeeded.
+                    if (primaryFile.state === FileState.UPLOADING) {
+                        primaryFile.state = FileState.OK;
+                        await this.fileRepo.save(primaryFile);
+                    }
+
                     await this.updateQueueState(
                         queueItem,
                         QueueState.COMPLETED,
@@ -123,7 +149,13 @@ export class FileIngestionService {
         queueItem.displayName = source.filename;
         await this.queueRepo.save(queueItem);
 
-        const downloadPath = path.join(workDirectory, source.filename);
+        // Drive file names are user-controlled and, unlike a filesystem, Drive
+        // allows separators in them, so joining one straight onto the workspace
+        // path lets a name such as `../../x` write outside the workspace.
+        const downloadPath = path.join(
+            workDirectory,
+            path.basename(source.filename),
+        );
 
         // Start Tagging in the Background
         const taggingPromise = this.dataStorage
@@ -162,22 +194,26 @@ export class FileIngestionService {
         };
     }
 
+    /**
+     * Resolves the file entity a job writes its results to. Returns `null` when
+     * the upload it belongs to has been deleted in the meantime, in which case
+     * the job has nothing left to ingest.
+     */
     private async createAndSaveFileEntity(
         queueItem: IngestionJobEntity,
         data: DownloadResult,
-    ): Promise<FileEntity> {
-        let existingFile;
-
+    ): Promise<FileEntity | null> {
         // Drive Files do not have a UUID identifier, so we cannot verify existence by UUID.
         // For standard uploads, the identifier IS the UUID.
         if (queueItem.location !== FileLocation.DRIVE) {
-            existingFile = await this.fileRepo.findOne({
+            // The row is created up front and resolved again by the source
+            // strategy, so it existed when the download started. A miss here
+            // means it was soft-deleted while we were downloading; re-creating
+            // it would resurrect the deleted upload as a new row whose object
+            // is already gone from storage.
+            return await this.fileRepo.findOne({
                 where: { uuid: queueItem.identifier },
             });
-        }
-
-        if (existingFile) {
-            return existingFile;
         }
 
         const isBag = data.filename.endsWith('.bag');
@@ -187,6 +223,8 @@ export class FileIngestionService {
         const isTum = data.filename.endsWith('.tum');
         const isYaml =
             data.filename.endsWith('.yaml') || data.filename.endsWith('.yml');
+        const isMarkdown = data.filename.endsWith('.md');
+        const isCsv = data.filename.endsWith('.csv');
 
         let type = FileType.MCAP;
         if (isBag) type = FileType.BAG;
@@ -195,6 +233,8 @@ export class FileIngestionService {
         if (isSvo2) type = FileType.SVO2;
         if (isTum) type = FileType.TUM;
         if (isYaml) type = FileType.YAML;
+        if (isMarkdown) type = FileType.MD;
+        if (isCsv) type = FileType.CSV;
 
         const entity = this.fileRepo.create({
             date: new Date(),
@@ -205,10 +245,8 @@ export class FileIngestionService {
             type,
             state: FileState.UPLOADING,
             hash: data.hash,
-            origin:
-                queueItem.location === FileLocation.DRIVE
-                    ? FileOrigin.GOOGLE_DRIVE
-                    : FileOrigin.UPLOAD,
+            // only Drive jobs reach this point, uploads return above
+            origin: FileOrigin.GOOGLE_DRIVE,
         } as FileEntity);
 
         return await this.fileRepo.save(entity);

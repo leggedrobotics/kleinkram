@@ -6,6 +6,7 @@ import { FileEventType, FileState } from '@kleinkram/shared';
 import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { ExtractedTopicInfo } from './file-handler.interface';
+import { RecordingTimes } from './time';
 
 export abstract class AbstractMetadataService {
     constructor(
@@ -22,7 +23,7 @@ export abstract class AbstractMetadataService {
         targetEntity: FileEntity,
         rawTopics: ExtractedTopicInfo[],
         fileSize: number,
-        fileDate: Date | undefined,
+        recordingTimes: RecordingTimes,
         method: string,
         startTime: number,
         actor?: UserEntity,
@@ -64,9 +65,7 @@ export abstract class AbstractMetadataService {
             }
 
             // Update File Entity
-            if (fileDate) {
-                targetEntity.date = fileDate;
-            }
+            applyRecordingTimes(targetEntity, recordingTimes);
             targetEntity.state = FileState.OK;
             targetEntity.size = fileSize;
             await this.fileRepo.save(targetEntity);
@@ -89,6 +88,18 @@ export abstract class AbstractMetadataService {
                         method,
                         extractedAt: new Date(),
                         durationMs,
+                        ...(recordingTimes.startDate
+                            ? {
+                                  recordingStartDate:
+                                      recordingTimes.startDate.toISOString(),
+                              }
+                            : {}),
+                        ...(recordingTimes.endDate
+                            ? {
+                                  recordingEndDate:
+                                      recordingTimes.endDate.toISOString(),
+                              }
+                            : {}),
                     },
                 }),
             );
@@ -107,4 +118,40 @@ export abstract class AbstractMetadataService {
         if (value < 0) return 0;
         return value;
     }
+}
+
+/**
+ * The columns the extracted recording bounds are written to.
+ *
+ * `date` is what the API sorts and filters by, so it follows the recording
+ * start as soon as we know it; without a start it keeps the upload time the
+ * file was created with rather than being cleared. Bounds we do not know are
+ * left out entirely, so that a later pass can still fill them in.
+ */
+export function recordingTimeColumns(
+    recordingTimes: RecordingTimes,
+): Partial<
+    Pick<FileEntity, 'date' | 'recordingStartDate' | 'recordingEndDate'>
+> {
+    return {
+        ...(recordingTimes.startDate
+            ? {
+                  date: recordingTimes.startDate,
+                  recordingStartDate: recordingTimes.startDate,
+              }
+            : {}),
+        ...(recordingTimes.endDate
+            ? { recordingEndDate: recordingTimes.endDate }
+            : {}),
+    };
+}
+
+/**
+ * Copies the extracted recording bounds onto the file.
+ */
+export function applyRecordingTimes(
+    file: FileEntity,
+    recordingTimes: RecordingTimes,
+): void {
+    Object.assign(file, recordingTimeColumns(recordingTimes));
 }

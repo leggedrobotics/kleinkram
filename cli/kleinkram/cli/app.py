@@ -19,6 +19,7 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.routes import _claim_admin
 from kleinkram.api.routes import _get_api_version
 from kleinkram.auth import login_flow
+from kleinkram.cli._action import action_typer
 from kleinkram.cli._download import download_typer
 from kleinkram.cli._endpoint import endpoint_typer
 from kleinkram.cli._executions import executions_typer
@@ -116,6 +117,7 @@ app.add_typer(list_typer, name="list", hidden=True)
 app.add_typer(file_typer, name="file", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(mission_typer, name="mission", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(project_typer, name="project", rich_help_panel=CommandTypes.CRUD)
+app.add_typer(action_typer, name="action", rich_help_panel=CommandTypes.ACTION)
 app.add_typer(templates_typer, name="templates", rich_help_panel=CommandTypes.ACTION)
 app.add_typer(executions_typer, name="executions", rich_help_panel=CommandTypes.ACTION)
 app.add_typer(triggers_typer, name="triggers", rich_help_panel=CommandTypes.ACTION)

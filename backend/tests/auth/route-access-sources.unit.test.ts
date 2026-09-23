@@ -76,6 +76,8 @@ const EXPECTED_ACCESS_SOURCES = new Map<string, AccessSource>([
     ['ProjectController.addTagType', fromParameter('uuid')],
     ['ProjectController.removeTagType', fromParameter('uuid')],
     ['ProjectController.updateTagTypes', fromParameter('uuid')],
+    ['ProjectController.starProject', fromParameter('uuid')],
+    ['ProjectController.unstarProject', fromParameter('uuid')],
     ['ProjectController.getProjectAccess', fromParameter('uuid')],
     ['ProjectController.updateProjectAccess', fromParameter('uuid')],
 
@@ -90,6 +92,7 @@ const EXPECTED_ACCESS_SOURCES = new Map<string, AccessSource>([
     // --- categories ------------------------------------------------------
     ['CategoryController.getAll', fromQuery('projectUuid')],
     ['CategoryController.createCategory', fromBody('projectUUID')],
+    ['CategoryController.updateCategoryDescription', fromBody('projectUUID')],
     ['CategoryController.addManyCategories', fromBody('missionUUID')],
 
     // --- triggers --------------------------------------------------------

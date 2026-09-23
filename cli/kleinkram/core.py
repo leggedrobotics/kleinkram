@@ -19,6 +19,7 @@ import re
 import tarfile
 import tempfile
 from pathlib import Path
+from typing import Any
 from typing import Collection
 from typing import Dict
 from typing import List
@@ -50,6 +51,7 @@ from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import TemplateNotFound
 from kleinkram.models import ArtifactState
+from kleinkram.models import Diagnostic
 from kleinkram.models import FileConfig
 from kleinkram.models import FileState
 from kleinkram.models import FileVerificationStatus
@@ -176,6 +178,7 @@ def download(
     allow_corrupt_files: bool = False,
     nested: bool = False,
     overwrite: bool = False,
+    mcap_slice: Optional[kleinkram.api.file_transfer.McapSlice] = None,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
@@ -184,6 +187,10 @@ def download(
     """\
     downloads files, asserts that the destination dir exists
     returns a DownloadResult with counts and metrics
+
+    if `mcap_slice` is given, `.mcap` files are fetched partially, using their
+    index to transfer only the chunks holding the selected messages; files of
+    any other type are skipped
     """
 
     if not base_dir.exists():
@@ -204,6 +211,7 @@ def download(
         allow_corrupt_files=allow_corrupt_files,
         overwrite=overwrite,
         create_parents=nested,
+        mcap_slice=mcap_slice,
         on_overall_progress_cb=on_overall_progress_cb,
         on_file_start_cb=on_file_start_cb,
         on_file_progress_cb=on_file_progress_cb,
@@ -217,6 +225,7 @@ def upload(
     query: MissionQuery,
     file_paths: Sequence[Path],
     create: bool = False,
+    fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
@@ -229,9 +238,12 @@ def upload(
 
     create a mission if it does not exist if `create` is True
     in that case you can also specify `metadata` and `ignore_missing_metadata`
+
+    if `fix_filenames` is True, badly named files are accepted and uploaded
+    under a sanitized name instead of raising, see `get_filename`
     """
     # check that file paths are for valid files and have valid suffixes
-    check_file_paths(file_paths)
+    check_file_paths(file_paths, check_filename=not fix_filenames)
 
     try:
         mission = kleinkram.api.routes.get_mission(client, query=query)
@@ -596,6 +608,35 @@ def delete_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None
     kleinkram.api.routes._delete_execution(client, execution_id)
 
 
+def report_diagnostic(
+    *,
+    client: AuthenticatedClient,
+    execution_id: UUID,
+    severity: str,
+    message: str,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    if not is_valid_uuid4(str(execution_id)):
+        raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
+    kleinkram.api.routes._report_diagnostic(
+        client,
+        execution_id,
+        severity=severity,
+        message=message,
+        code=code,
+        file=file,
+        details=details,
+    )
+
+
+def get_diagnostics(*, client: AuthenticatedClient, execution_id: UUID) -> Tuple[List[Diagnostic], bool]:
+    if not is_valid_uuid4(str(execution_id)):
+        raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
+    return kleinkram.api.routes._get_diagnostics(client, execution_id)
+
+
 def cancel_execution(*, client: AuthenticatedClient, execution_id: UUID) -> None:
     if not is_valid_uuid4(str(execution_id)):
         raise kleinkram.errors.ExecutionValidationError("Invalid UUID")
@@ -636,6 +677,62 @@ def launch_execution(
     # 3. Launch Execution via API Route
     execution_id = kleinkram.api.routes._launch_execution(client, mission_uuid, template_uuid)
     return execution_id
+
+
+MAX_SCRIPT_BYTES = 1024 * 1024
+SCRIPT_FILENAME_PATTERN = re.compile(r"^[\w.-]{1,96}\.py$")
+
+
+def run_script(
+    client: AuthenticatedClient,
+    mission_query: MissionQuery,
+    script_path: Path,
+    *,
+    max_runtime_hours: Optional[float] = None,
+) -> UUID:
+    """
+    business logic to resolve a mission and submit a single Python file as an action.
+    """
+    script = _read_script(script_path)
+
+    mission_obj = kleinkram.api.routes.get_mission(client, mission_query)
+
+    return kleinkram.api.routes._submit_script_action(
+        client,
+        mission_obj.id,
+        script=script,
+        filename=script_path.name,
+        max_runtime_hours=max_runtime_hours,
+    )
+
+
+def _read_script(script_path: Path) -> str:
+    """
+    Reads a script and rejects what the API would reject anyway, so that an
+    obvious mistake fails locally instead of after a round trip.
+    """
+    if script_path.suffix != ".py":
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not a Python file (expected a `.py` suffix).")
+
+    if not SCRIPT_FILENAME_PATTERN.match(script_path.name):
+        raise kleinkram.errors.ExecutionValidationError(
+            f"`{script_path.name}` is not a usable script name; use letters, digits, `.`, `-` and `_` only."
+        )
+
+    raw = script_path.read_bytes()
+    if not raw:
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is empty.")
+
+    if len(raw) > MAX_SCRIPT_BYTES:
+        raise kleinkram.errors.ExecutionValidationError(
+            f"`{script_path}` is {len(raw)} bytes, the limit is {MAX_SCRIPT_BYTES} bytes. "
+            "Build a Docker action for anything larger."
+        )
+
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not valid UTF-8 text.") from e
 
 
 def create_mission(

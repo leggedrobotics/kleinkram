@@ -18,7 +18,8 @@
                     </div>
                     <div class="text-caption text-grey-7">
                         Aggregated state up to message
-                        {{ currentIndex + 1 }} of {{ messages.length }} loaded
+                        {{ messages.length > 0 ? currentIndex + 1 : 0 }} of
+                        {{ messages.length }} loaded
                         ({{ totalCount }} total) on topic
                         <code>{{ topicName }}</code>
                     </div>
@@ -86,15 +87,15 @@
             <div
                 v-if="activeTab === 'grid' || activeTab === 'alerts'"
                 class="row q-col-gutter-sm items-center"
-                style="min-width: 320px"
+                :class="$q.screen.xs ? 'full-width' : ''"
+                :style="$q.screen.xs ? undefined : 'min-width: 320px'"
             >
                 <q-input
                     v-model="searchQuery"
                     dense
                     outlined
                     placeholder="Search by node name..."
-                    bg-color="white"
-                    class="col dark-input"
+                    class="col"
                 >
                     <template #append>
                         <q-icon
@@ -228,7 +229,7 @@
                 </div>
                 <div
                     v-else
-                    class="text-center q-pa-xl text-grey bg-white rounded-borders border-color glass-container"
+                    class="text-center q-pa-xl text-grey rounded-borders glass-container"
                 >
                     <q-icon
                         name="sym_o_search_off"
@@ -301,7 +302,7 @@
                 </div>
                 <div
                     v-else
-                    class="text-center q-pa-xl text-grey bg-white rounded-borders border-color glass-container"
+                    class="text-center q-pa-xl text-grey rounded-borders glass-container"
                 >
                     <q-icon
                         name="sym_o_speed"
@@ -404,7 +405,7 @@
             >
                 <!-- Drawer Header -->
                 <q-card-section
-                    class="row items-center justify-between q-pb-md border-bottom bg-grey-2 dark-bg-grey-10"
+                    class="row items-center justify-between q-pb-md border-bottom"
                 >
                     <div class="column col">
                         <span
@@ -458,7 +459,7 @@
                         </div>
                         <div
                             v-if="selectedNode.message"
-                            class="text-body2 text-grey-8 q-mt-md text-weight-medium bg-white dark-bg-grey-9 q-pa-sm rounded-borders border-dashed"
+                            class="text-body2 text-grey-8 q-mt-md text-weight-medium message-box q-pa-sm rounded-borders border-dashed"
                         >
                             {{ selectedNode.message }}
                         </div>
@@ -1521,10 +1522,10 @@ const resetFilters = () => {
     border: 1px dashed rgba(255, 255, 255, 0.08);
 }
 
-.dark-bg-grey-9 {
+.message-box {
     background: #fafafa;
 }
-.body--dark .dark-bg-grey-9 {
+.body--dark .message-box {
     background: #1e1e1e;
 }
 

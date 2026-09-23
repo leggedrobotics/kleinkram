@@ -9,7 +9,7 @@ import * as fs from 'node:fs';
 import { Repository } from 'typeorm';
 import { AbstractMetadataService } from './abstract-metadata.service';
 import { ExtractedTopicInfo } from './file-handler.interface';
-import { getDurationSeconds } from './time';
+import { getDurationSeconds, RecordingTimes, toRecordingTimes } from './time';
 
 @Injectable()
 export class Db3MetadataService extends AbstractMetadataService {
@@ -20,6 +20,21 @@ export class Db3MetadataService extends AbstractMetadataService {
         fileEventRepo: Repository<FileEventEntity>,
     ) {
         super(topicRepo, fileRepo, fileEventRepo);
+    }
+
+    /**
+     * Reads only the recording window of a db3 file.
+     *
+     * Unlike bags and MCAPs a sqlite database cannot be read over HTTP range
+     * requests, so the caller has to provide a local copy.
+     */
+    probeRecordingTimesFromLocalFile(filePath: string): RecordingTimes {
+        const database = new Database(filePath, { readonly: true });
+        try {
+            return toRecordingTimes(...readMessageTimeRange(database));
+        } finally {
+            database.close();
+        }
     }
 
     async extractFromLocalFile(
@@ -52,18 +67,7 @@ export class Db3MetadataService extends AbstractMetadataService {
                 countMap.set(c.topic_id, c.count);
             }
 
-            const timeRange = database
-                .prepare(
-                    `SELECT
-                        CAST(MIN(timestamp) AS TEXT) as minTimestamp,
-                        CAST(MAX(timestamp) AS TEXT) as maxTimestamp
-                    FROM messages`,
-                )
-                .get() as
-                | { minTimestamp: string | null; maxTimestamp: string | null }
-                | undefined;
-            const startTimeNs = toBigIntOrUndefined(timeRange?.minTimestamp);
-            const endTimeNs = toBigIntOrUndefined(timeRange?.maxTimestamp);
+            const [startTimeNs, endTimeNs] = readMessageTimeRange(database);
             const durationSec = getDurationSeconds(startTimeNs, endTimeNs);
 
             const rawTopics: ExtractedTopicInfo[] = topics.map((t) => ({
@@ -76,18 +80,12 @@ export class Db3MetadataService extends AbstractMetadataService {
                 nrMessages: BigInt(countMap.get(t.id) ?? 0),
             }));
 
-            // Try to get start time from messages
-            let fileDate: Date | undefined;
-            if (startTimeNs !== undefined) {
-                // Timestamp is usually nanoseconds
-                fileDate = new Date(Number(startTimeNs / 1_000_000n));
-            }
-
             await this.finishExtraction(
                 targetEntity,
                 rawTopics,
                 fileSize,
-                fileDate,
+                // db3 message timestamps are nanoseconds since the epoch
+                toRecordingTimes(startTimeNs, endTimeNs),
                 'db3_sqlite',
                 startTime,
                 actor,
@@ -107,4 +105,28 @@ function toBigIntOrUndefined(
     } catch {
         return undefined;
     }
+}
+
+/**
+ * Returns the [first, last] message timestamp of a db3 recording in
+ * nanoseconds, or undefined bounds when the recording holds no messages.
+ */
+function readMessageTimeRange(
+    database: Database.Database,
+): [bigint | undefined, bigint | undefined] {
+    const timeRange = database
+        .prepare(
+            `SELECT
+                CAST(MIN(timestamp) AS TEXT) as minTimestamp,
+                CAST(MAX(timestamp) AS TEXT) as maxTimestamp
+            FROM messages`,
+        )
+        .get() as
+        | { minTimestamp: string | null; maxTimestamp: string | null }
+        | undefined;
+
+    return [
+        toBigIntOrUndefined(timeRange?.minTimestamp),
+        toBigIntOrUndefined(timeRange?.maxTimestamp),
+    ];
 }

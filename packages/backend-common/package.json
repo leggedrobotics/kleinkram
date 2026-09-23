@@ -1,6 +1,6 @@
 {
     "name": "@kleinkram/backend-common",
-    "version": "0.60.0",
+    "version": "0.62.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "license": "MIT",
@@ -27,14 +27,14 @@
         "typeorm": "^1.0.0"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.967.0",
-        "@aws-sdk/client-sts": "3.967.0",
-        "@aws-sdk/s3-request-presigner": "3.967.0",
+        "@aws-sdk/client-s3": "3.1131.0",
+        "@aws-sdk/client-sts": "3.1131.0",
+        "@aws-sdk/s3-request-presigner": "3.1131.0",
         "@kleinkram/api-dto": "workspace:*",
         "@kleinkram/shared": "workspace:*",
         "@kleinkram/validation": "workspace:*",
         "@nestjs/schedule": "^12.0.1",
-        "@willsoto/nestjs-prometheus": "^6.1.0",
+        "@willsoto/nestjs-prometheus": "^6.1.1",
         "axios": "^1.20.0",
         "bull": "^4.16.5",
         "fs-extra": "^11.4.0",

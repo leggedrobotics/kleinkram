@@ -2,8 +2,8 @@
     <div
         :class="{
             disabled: !canDelete,
-            'cursor-pointer': !canDelete,
-            'cursor-not-allowed': canDelete,
+            'cursor-pointer': canDelete,
+            'cursor-not-allowed': !canDelete,
         }"
         @click="deleteProject"
     >

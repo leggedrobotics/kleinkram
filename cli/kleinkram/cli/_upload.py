@@ -86,6 +86,7 @@ def upload(
     validator = FileValidator(
         skip=skip,
         experimental_datatypes=experimental_datatypes,
+        fix_filenames=fix_filenames,
     )
 
     # This function will raise an error if skip=False and a file is invalid
@@ -105,6 +106,7 @@ def upload(
                     query=mission_query,
                     file_paths=files_to_upload,
                     create=create,
+                    fix_filenames=fix_filenames,
                     metadata=load_metadata(Path(metadata)) if metadata else None,
                     ignore_missing_metadata=ignore_missing_tags,
                     on_overall_progress_cb=cbs.on_overall_progress,
@@ -135,6 +137,7 @@ def upload(
                 query=mission_query,
                 file_paths=files_to_upload,
                 create=create,
+                fix_filenames=fix_filenames,
                 metadata=load_metadata(Path(metadata)) if metadata else None,
                 ignore_missing_metadata=ignore_missing_tags,
             )

@@ -27,11 +27,14 @@ export { QueueItemAccessGuard } from './queue.guards';
 // Action guards
 export {
     CanModifyTriggerGuard,
+    CanReadTriggerGuard,
     CancelActionGuard,
     CreateActionGuard,
     CreateActionsGuard,
+    CreateScriptActionGuard,
     DeleteActionGuard,
     ReadActionGuard,
+    ReportActionDiagnosticGuard,
 } from './action.guards';
 
 // Access group guards

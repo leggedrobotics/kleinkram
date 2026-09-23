@@ -150,6 +150,50 @@ export class UniversalHttpReader implements IReadable {
         return data;
     }
 
+    /**
+     * Fetch exactly [offset, offset+length) with no read-ahead.
+     *
+     * `read` deliberately inflates every request to at least `minChunkSize`,
+     * which is right for streaming a file and very wrong for index-driven
+     * access: reading an 8 kB message index out of each of 800 chunks would
+     * pull 200 MB rather than 6 MB. Callers that already know precisely which
+     * bytes they want use this instead.
+     *
+     * The block cache is still consulted, so a range already covered by a
+     * streaming read costs nothing, but results are not cached: these reads
+     * are scattered and would evict the blocks that do benefit from caching.
+     */
+    async readExact(offset: bigint, length: bigint): Promise<Uint8Array> {
+        if (length <= 0n) return new Uint8Array(0);
+
+        const end = offset + length;
+        const cached = this.cachedBlocks.find(
+            (b) =>
+                offset >= b.offset && end <= b.offset + BigInt(b.data.length),
+        );
+        if (cached) {
+            const relativeOffset = Number(offset - cached.offset);
+            return cached.data.subarray(
+                relativeOffset,
+                relativeOffset + Number(length),
+            );
+        }
+
+        // One retry for a transient failure. Storage answers a cancelled or
+        // overlapping request with a 5xx under load, and these reads are both
+        // numerous and concurrent, so a single blip should not become a
+        // visible error. An aborted request is not retried -- the caller
+        // meant it.
+        try {
+            return await this.fetchRange(offset, length);
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                throw error;
+            }
+            return this.fetchRange(offset, length);
+        }
+    }
+
     async read(offset: bigint, length: bigint): Promise<Uint8Array> {
         const end = offset + length;
 

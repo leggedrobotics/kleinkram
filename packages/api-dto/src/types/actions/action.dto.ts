@@ -6,6 +6,8 @@ import { MissionDto } from '@api-dto/mission/mission.dto';
 import { UserDto } from '@api-dto/user/user.dto';
 import {
     ActionErrorHint,
+    ActionFailureOrigin,
+    ActionSeverity,
     ActionState,
     ActionTriggerSource,
     ArtifactState,
@@ -14,6 +16,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+    IsBoolean,
     IsDate,
     IsEnum,
     IsInt,
@@ -31,6 +34,30 @@ export class ActionDto {
     @ApiProperty()
     @IsEnum(ActionState)
     state!: ActionState;
+
+    @ApiProperty({
+        enum: ActionSeverity,
+        description:
+            'The verdict of the run, independent of its state. A DONE action with severity WARNING finished successfully and reported warnings.',
+    })
+    @IsEnum(ActionSeverity)
+    severity!: ActionSeverity;
+
+    @ApiProperty({
+        required: false,
+        enum: ActionFailureOrigin,
+        description:
+            'Who is responsible for a failure. Only set when state is FAILED.',
+    })
+    @IsOptional()
+    @IsEnum(ActionFailureOrigin)
+    failureOrigin?: ActionFailureOrigin;
+
+    @ApiProperty({
+        description: 'Number of diagnostics the action reported while running.',
+    })
+    @IsInt()
+    diagnosticCount!: number;
 
     @ApiProperty()
     @IsEnum(ArtifactState)
@@ -95,6 +122,14 @@ export class ActionDto {
     @ValidateNested()
     @Type(() => ActionWorkerDto)
     worker!: ActionWorkerDto | null;
+
+    @ApiProperty({
+        description:
+            'True when this action ran a submitted Python file rather than a ' +
+            'Docker image. The source is readable at GET /actions/:uuid/script.',
+    })
+    @IsBoolean()
+    hasScript!: boolean;
 
     @ApiProperty()
     @IsEnum(ActionTriggerSource)
