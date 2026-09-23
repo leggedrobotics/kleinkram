@@ -63,7 +63,12 @@ export class RosBagHandler implements FileHandler {
                     '.bag',
                     '.mcap',
                 );
-                const mcapOutputPath = path.join(workDirectory, mcapFilename);
+                // The file name is user-controlled (Drive allows separators),
+                // so keep the output inside the workspace.
+                const mcapOutputPath = path.join(
+                    workDirectory,
+                    path.basename(mcapFilename),
+                );
 
                 await RosBagConverter.convert(filePath, mcapOutputPath);
 
