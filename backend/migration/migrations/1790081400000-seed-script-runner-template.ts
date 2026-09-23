@@ -24,12 +24,34 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
     private static readonly SYSTEM_USER_UUID =
         '00000000-0000-4000-8000-000000000000';
 
+    /** Matches `systemUser` in @kleinkram/backend-common; frozen here. */
+    private static readonly SYSTEM_USER = {
+        name: 'System',
+        email: 'infrastructure@leggedrobotics.com',
+        avatarUrl: 'https://datasets.leggedrobotics.com/logoRSL.png',
+    };
+
     public async up(queryRunner: QueryRunner): Promise<void> {
         // IF NOT EXISTS because a dev database running with TypeORM
         // synchronize will already have the column from the entity.
         await queryRunner.query(
             `ALTER TABLE "action_template"
              ADD COLUMN IF NOT EXISTS "isSystem" boolean NOT NULL DEFAULT false`,
+        );
+
+        // The template is owned by the System user. The backend creates that
+        // user on startup, which is after the migrations on a fresh
+        // database, so create it here the same way when it is missing.
+        await queryRunner.query(
+            `INSERT INTO "user" ("uuid", "name", "email", "role", "hidden", "avatarUrl")
+             VALUES ($1, $2, $3, 'USER', true, $4)
+             ON CONFLICT DO NOTHING`,
+            [
+                SeedScriptRunnerTemplate1790081400000.SYSTEM_USER_UUID,
+                SeedScriptRunnerTemplate1790081400000.SYSTEM_USER.name,
+                SeedScriptRunnerTemplate1790081400000.SYSTEM_USER.email,
+                SeedScriptRunnerTemplate1790081400000.SYSTEM_USER.avatarUrl,
+            ],
         );
 
         // Always insert the platform's own row, never adopt an existing one:
@@ -39,6 +61,10 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
         // actions that reference it, but stays an ordinary user template; the
         // seeded row takes the next free version so the (name, version) index
         // cannot collide with it.
+        //
+        // The parameters are cast explicitly: `$2` is used both as a value
+        // and in a comparison, and Postgres refuses to infer two different
+        // types (text and varchar) for it.
         await queryRunner.query(
             `INSERT INTO "action_template" (
                  "uuid", "name", "description", "image_name",
@@ -46,17 +72,17 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
                  "accessRights", "version", "isArchived", "isSystem",
                  "creatorUuid"
              )
-             SELECT $1, $2, $3, $4,
+             SELECT $1::uuid, $2::varchar, $3::varchar, $4::varchar,
                     2, 4, -1, 0.25,
                     '20'::action_template_accessrights_enum,
                     COALESCE((
                         SELECT MAX(t."version") FROM "action_template" t
-                         WHERE t."name" = $2
+                         WHERE t."name" = $2::varchar
                     ), 0) + 1,
                     false, true,
-                    $5
+                    $5::uuid
              WHERE NOT EXISTS (
-                 SELECT 1 FROM "action_template" t WHERE t."uuid" = $1
+                 SELECT 1 FROM "action_template" t WHERE t."uuid" = $1::uuid
              )`,
             [
                 SeedScriptRunnerTemplate1790081400000.TEMPLATE_UUID,
