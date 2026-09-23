@@ -264,15 +264,7 @@ export class AccessModificationService {
             .log(
                 accessGroupUUID,
                 AccessGroupEventType.ADD_USER,
-                {
-                    userUuid: userUUID,
-                    userName:
-                        result.memberships?.find(
-                            (m) => m.user?.uuid === userUUID,
-                        )?.user?.name ?? 'Unknown',
-                    canEditGroup,
-                    expireDate,
-                },
+                { userUuid: userUUID, canEditGroup, expireDate },
                 auth?.user as unknown as UserEntity,
             )
             .catch((error: unknown) =>
@@ -338,25 +330,11 @@ export class AccessModificationService {
             },
         );
 
-        const removedUsers = await this.userRepository.find({
-            where: { uuid: In(userUuids) },
-            select: {
-                uuid: true,
-                name: true,
-            },
-        });
-
         this.accessGroupAuditService
             .log(
                 accessGroupUUID,
                 AccessGroupEventType.REMOVE_USER,
-                {
-                    userUuids,
-                    affectedUsers: removedUsers.map((u) => ({
-                        uuid: u.uuid,
-                        name: u.name,
-                    })),
-                },
+                { userUuids },
                 auth?.user as unknown as UserEntity,
             )
             .catch((error: unknown) =>
@@ -428,11 +406,7 @@ export class AccessModificationService {
                 .log(
                     accessGroupUUID,
                     AccessGroupEventType.UPDATE_PROJECT_ACCESS,
-                    {
-                        projectUuid: projectUUID,
-                        projectName: project.name,
-                        rights,
-                    },
+                    { projectUuid: projectUUID, rights },
                     auth.user,
                 )
                 .catch((error: unknown) =>
@@ -459,8 +433,7 @@ export class AccessModificationService {
             .log(
                 accessGroupUUID,
                 AccessGroupEventType.ADD_PROJECT,
-                { projectUuid: projectUUID, projectName: project.name, rights },
-
+                { projectUuid: projectUUID, rights },
                 auth.user,
             )
             .catch((error: unknown) =>
@@ -496,11 +469,7 @@ export class AccessModificationService {
             .log(
                 accessGroupUUID,
                 AccessGroupEventType.REMOVE_PROJECT,
-                {
-                    projectUuid: projectUUID,
-                    projectName: projectAccess[0]?.project?.name ?? 'Unknown',
-                },
-
+                { projectUuid: projectUUID },
                 auth.user,
             )
             .catch((error: unknown) =>
@@ -658,7 +627,6 @@ export class AccessModificationService {
                     access.uuid,
                     AccessGroupEventType.UPDATE_PROJECT_ACCESS,
                     { projectUuid: projectUuid, rights: access.rights },
-
                     authHeader.user,
                 )
                 .catch((error: unknown) =>
@@ -699,11 +667,7 @@ export class AccessModificationService {
             .log(
                 uuid,
                 AccessGroupEventType.UPDATE_EXPIRE_DATE,
-                {
-                    userUuid,
-                    userName: savedMembership.user?.name ?? 'Unknown',
-                    expireDate,
-                },
+                { userUuid, expireDate },
                 auth?.user as unknown as UserEntity,
             )
             .catch((error: unknown) =>
@@ -758,11 +722,7 @@ export class AccessModificationService {
                 canEditGroup
                     ? AccessGroupEventType.PROMOTE_USER
                     : AccessGroupEventType.DEMOTE_USER,
-                {
-                    userUuid,
-                    userName: savedMembership.user?.name ?? 'Unknown',
-                    canEditGroup,
-                },
+                { userUuid, canEditGroup },
                 auth?.user as unknown as UserEntity,
             )
             .catch((error: unknown) =>
