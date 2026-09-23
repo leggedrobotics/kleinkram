@@ -397,30 +397,53 @@
             />
         </div>
 
-        <!-- Slide-out Node Inspector Drawer Dialog -->
-        <q-dialog v-model="isInspectorOpen" position="right" full-height>
-            <q-card
-                style="width: 450px; max-width: 90vw"
-                class="column full-height glass-drawer"
+        <!-- Node Inspector, styled like the other side drawers. Teleported to
+             the layout root: the drawer is absolutely positioned, and inside
+             the topic table it would anchor to the expanded row instead of
+             the page. Overlays rather than pushes the page, which would
+             squeeze the file view. Mounted only while open, because a
+             layout holds a single right drawer and a file can have several
+             diagnostics topics expanded at once. -->
+        <Teleport v-if="isInspectorOpen" to=".q-layout">
+            <q-drawer
+                v-model="isInspectorOpen"
+                side="right"
+                bordered
+                overlay
+                :behavior="$q.screen.xs ? 'mobile' : 'desktop'"
+                :width="$q.screen.xs ? $q.screen.width : 600"
             >
-                <!-- Drawer Header -->
-                <q-card-section
-                    class="row items-center justify-between q-pb-md border-bottom"
+                <div
+                    class="q-pa-lg flex row no-wrap justify-between items-start q-gutter-x-sm inspector-drawer__header"
                 >
-                    <div class="column col">
-                        <span
-                            class="font-mono text-weight-bold text-subtitle1 text-grey-9 text-ellipsis"
-                            >{{ selectedNodeName }}</span
+                    <div class="column col" style="min-width: 0">
+                        <h3
+                            class="text-h5 q-ma-none text-weight-medium break-all"
                         >
-                        <span class="text-caption text-grey-6"
-                            >Diagnostics Inspection</span
-                        >
+                            {{ selectedNodeName }}
+                        </h3>
+                        <span class="text-subtitle2 text-grey-7 q-mt-xs">
+                            Diagnostic status
+                        </span>
                     </div>
-                    <q-btn v-close-popup icon="sym_o_close" flat round dense />
-                </q-card-section>
+                    <q-btn
+                        flat
+                        dense
+                        padding="6px"
+                        class="button-border"
+                        icon="sym_o_close"
+                        @click="closeInspector"
+                    >
+                        <q-tooltip>Close</q-tooltip>
+                    </q-btn>
+                </div>
 
-                <!-- Drawer Body (Scrollable) -->
-                <q-card-section class="col overflow-auto q-gutter-y-md q-py-lg">
+                <q-separator />
+
+                <div
+                    class="q-gutter-y-md"
+                    :class="$q.screen.xs ? 'q-pa-md' : 'q-pa-lg'"
+                >
                     <!-- Node Health Status Card -->
                     <div
                         class="q-pa-md rounded-borders border-left-status"
@@ -628,9 +651,9 @@
                             </q-timeline-entry>
                         </q-timeline>
                     </div>
-                </q-card-section>
-            </q-card>
-        </q-dialog>
+                </div>
+            </q-drawer>
+        </Teleport>
     </div>
 </template>
 
@@ -1192,6 +1215,10 @@ const openInspector = (name: string) => {
     isInspectorOpen.value = true;
 };
 
+const closeInspector = () => {
+    isInspectorOpen.value = false;
+};
+
 const getLevelColor = (level: number): string => {
     switch (level) {
         case 0: {
@@ -1500,16 +1527,21 @@ const resetFilters = () => {
     box-shadow: 0 8px 16px rgba(255, 255, 255, 0.05);
 }
 
-/* 3. Slide-out Drawer Dialog */
-.glass-drawer {
-    background: rgba(255, 255, 255, 0.75) !important;
-    backdrop-filter: blur(12px) saturate(180%);
-    border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
+/* 3. Node Inspector drawer, matching the other side drawers */
+.inspector-drawer__header {
+    min-height: 114px;
 }
-.body--dark .glass-drawer {
-    background: rgba(30, 30, 30, 0.75) !important;
-    backdrop-filter: blur(12px) saturate(180%);
-    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+@media (max-width: 599px) {
+    .inspector-drawer__header {
+        min-height: 0;
+        padding: 16px;
+    }
+}
+.button-border {
+    border: 1px solid #e0e0e0;
+}
+.button-border:hover {
+    background: #f5f5f5;
 }
 
 .freq-bar-container {
@@ -1533,13 +1565,6 @@ const resetFilters = () => {
 }
 .body--dark .message-box {
     background: #1e1e1e;
-}
-
-.border-bottom {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-.body--dark .border-bottom {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .text-ellipsis {
