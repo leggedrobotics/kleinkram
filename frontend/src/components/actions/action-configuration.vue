@@ -253,6 +253,7 @@ import type { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
+import { isImageInDockerNamespace } from '@kleinkram/validation/frontend';
 import ActionSelector from 'components/action-selector.vue';
 import { Notify } from 'quasar';
 import {
@@ -477,9 +478,11 @@ async function submitAnalysis(): Promise<void> {
 
     const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
     if (
-        dockerhubNamespace &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        !editingTemplate.value.imageName.startsWith(dockerhubNamespace)
+        !isImageInDockerNamespace(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            editingTemplate.value.imageName,
+            dockerhubNamespace,
+        )
     ) {
         Notify.create({
             message: `Image name must start with "${dockerhubNamespace}/"`,

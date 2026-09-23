@@ -1,6 +1,7 @@
 import { ContainerLog } from '@kleinkram/backend-common/entities/action/action.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { ImageSource, LogType } from '@kleinkram/shared';
+import { isImageInDockerNamespace } from '@kleinkram/validation';
 import { Injectable } from '@nestjs/common';
 import Dockerode, { Image } from 'dockerode';
 import process from 'node:process';
@@ -311,12 +312,9 @@ export class DockerDaemon {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         const dockerhub_namespace = process.env.VITE_DOCKER_HUB_NAMESPACE;
         // assert that we only run images from a specified namespace
-        if (
-            dockerhub_namespace !== undefined &&
-            !dockerImage.startsWith(dockerhub_namespace)
-        ) {
+        if (!isImageInDockerNamespace(dockerImage, dockerhub_namespace)) {
             throw new Error(
-                `Only images from the ${dockerhub_namespace} namespace are allowed`,
+                `Only images from the ${dockerhub_namespace ?? ''} namespace are allowed`,
             );
         }
 

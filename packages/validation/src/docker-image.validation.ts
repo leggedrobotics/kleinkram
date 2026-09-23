@@ -17,3 +17,20 @@ export function validateDockerImageName(imageName: string): void {
         );
     }
 }
+
+/**
+ * Checks that an image belongs to the given Docker Hub namespace. The image
+ * must start with `<namespace>/`, so `rslethz` does not match
+ * `rslethzevil/x` or `rslethz.evil.io/x` (a different registry). An empty
+ * namespace disables the check.
+ */
+export function isImageInDockerNamespace(
+    imageName: string,
+    namespace: string | undefined,
+): boolean {
+    const normalized = namespace?.trim().replace(/\/+$/, '');
+    if (!normalized) {
+        return true;
+    }
+    return imageName.startsWith(`${normalized}/`);
+}

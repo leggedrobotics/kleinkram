@@ -973,9 +973,9 @@ def _validate_docker_image(image_name: str) -> None:
 
 
 def _validate_docker_namespace(image_name: str) -> None:
-    namespace = os.environ.get("VITE_DOCKER_HUB_NAMESPACE")
-    if namespace and not image_name.startswith(namespace):
-        raise kleinkram.errors.TemplateValidationError(f"Image name must start with '{namespace}'")
+    namespace = (os.environ.get("VITE_DOCKER_HUB_NAMESPACE") or "").strip().rstrip("/")
+    if namespace and not image_name.startswith(f"{namespace}/"):
+        raise kleinkram.errors.TemplateValidationError(f"Image name must start with '{namespace}/'")
 
 
 def _validate_access_rights(access_rights: int) -> None:

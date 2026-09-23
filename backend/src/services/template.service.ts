@@ -9,7 +9,10 @@ import {
 } from '@kleinkram/api-dto';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { validateDockerImageName } from '@kleinkram/validation';
+import {
+    isImageInDockerNamespace,
+    validateDockerImageName,
+} from '@kleinkram/validation';
 import {
     ConflictException,
     ForbiddenException,
@@ -292,12 +295,9 @@ export class TemplateService {
     }
 
     private validateDockerNamespace(imageName: string): void {
-        if (
-            this.DOCKER_NAMESPACE &&
-            !imageName.startsWith(this.DOCKER_NAMESPACE)
-        ) {
+        if (!isImageInDockerNamespace(imageName, this.DOCKER_NAMESPACE)) {
             throw new ConflictException(
-                `Only images from the ${this.DOCKER_NAMESPACE} namespace are allowed`,
+                `Only images from the ${this.DOCKER_NAMESPACE ?? ''} namespace are allowed`,
             );
         }
         validateDockerImageName(imageName);
