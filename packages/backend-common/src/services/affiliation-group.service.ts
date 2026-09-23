@@ -1,7 +1,12 @@
-import { AccessGroupConfig, AccessGroupType } from '@kleinkram/shared';
+import {
+    AccessGroupConfig,
+    AccessGroupType,
+    PUBLIC_ACCESS_GROUP,
+} from '@kleinkram/shared';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { emailMatchesDomain } from '../access-config';
 import { AccessGroupEntity } from '../entities/auth/access-group.entity';
 import { GroupMembershipEntity } from '../entities/auth/group-membership.entity';
 import { UserEntity } from '../entities/user/user.entity';
@@ -28,6 +33,7 @@ export class AffiliationGroupService {
             config.access_groups.map(async (group) => {
                 const databaseGroup = await this.accessGroupRepository.findOne({
                     where: { uuid: group.uuid },
+                    withDeleted: true,
                 });
                 if (!databaseGroup) {
                     const newGroup = this.accessGroupRepository.create({
@@ -41,6 +47,169 @@ export class AffiliationGroupService {
                 return;
             }),
         );
+    }
+
+    /**
+     * Sync affiliation groups and memberships with the access group config.
+     * Creates missing groups, updates names, soft-deletes stale groups,
+     * and reconciles user memberships based on email patterns.
+     *
+     * @param config
+     * @param userRepository
+     */
+    async syncAccessGroups(
+        config: AccessGroupConfig,
+        userRepository: Repository<UserEntity>,
+    ): Promise<void> {
+        const configUuids = new Set(config.access_groups.map((g) => g.uuid));
+
+        // 1. Upsert groups from config
+        await Promise.all(
+            config.access_groups.map(async (group) => {
+                const existing = await this.accessGroupRepository.findOne({
+                    where: { uuid: group.uuid },
+                    withDeleted: true,
+                    select: { uuid: true, name: true, deletedAt: true },
+                });
+                if (!existing) {
+                    // TODO: persist group.rights once AccessGroupEntity has a rights column
+                    const newGroup = this.accessGroupRepository.create({
+                        name: group.name,
+                        uuid: group.uuid,
+                        type: AccessGroupType.AFFILIATION,
+                        creator: {},
+                    });
+                    return this.accessGroupRepository.save(newGroup);
+                }
+                // TODO: sync group.rights on update once AccessGroupEntity has a rights column
+                const needsUpdate =
+                    (existing.deletedAt as Date | null) !== null ||
+                    existing.name !== group.name;
+                if (!needsUpdate) return;
+                existing.deletedAt = null as unknown as Date;
+                existing.name = group.name;
+                return this.accessGroupRepository.save(existing);
+            }),
+        );
+
+        // 2. Soft-delete stale affiliation groups not in config
+        const allAffiliationGroups = await this.accessGroupRepository.find({
+            where: { type: AccessGroupType.AFFILIATION },
+        });
+        const staleGroups = allAffiliationGroups.filter(
+            (g) => !configUuids.has(g.uuid),
+        );
+        for (const staleGroup of staleGroups) {
+            this.logger.warn(
+                `Removing affiliation group "${staleGroup.name}" (${staleGroup.uuid}): not in access config`,
+            );
+            await this.groupMembershipRepository.delete({
+                accessGroup: { uuid: staleGroup.uuid },
+            });
+            await this.accessGroupRepository.softRemove(staleGroup);
+        }
+
+        // 3. Re-sync user memberships for affiliation groups
+        const users = await userRepository
+            .createQueryBuilder('user')
+            .addSelect('user.email')
+            .leftJoinAndSelect('user.memberships', 'membership')
+            .leftJoinAndSelect('membership.accessGroup', 'accessGroup')
+            .getMany();
+
+        let added = 0;
+        let removed = 0;
+        for (const user of users) {
+            if (!user.email) continue;
+
+            // Compute expected affiliation group UUIDs from config
+            const expectedUuids = new Set<string>();
+            for (const emailConfig of config.emails) {
+                if (emailMatchesDomain(user.email, emailConfig.email)) {
+                    for (const uuid of emailConfig.access_groups) {
+                        expectedUuids.add(uuid);
+                    }
+                }
+            }
+
+            const currentAffiliationMemberships = (
+                user.memberships ?? []
+            ).filter(
+                (m) =>
+                    m.accessGroup?.type === AccessGroupType.AFFILIATION &&
+                    configUuids.has(m.accessGroup.uuid),
+            );
+
+            // Add missing memberships
+            for (const uuid of expectedUuids) {
+                const alreadyMember = currentAffiliationMemberships.some(
+                    (m) => m.accessGroup?.uuid === uuid,
+                );
+                if (!alreadyMember) {
+                    const membership = this.groupMembershipRepository.create({
+                        user: { uuid: user.uuid },
+                        accessGroup: { uuid },
+                    });
+                    await this.groupMembershipRepository.save(membership);
+                    this.logger.log(
+                        `Added ${user.email} to affiliation group ${uuid}`,
+                    );
+                    added++;
+                }
+            }
+
+            // Remove memberships that no longer match
+            for (const membership of currentAffiliationMemberships) {
+                if (
+                    membership.accessGroup?.uuid &&
+                    !expectedUuids.has(membership.accessGroup.uuid)
+                ) {
+                    await this.groupMembershipRepository.remove(membership);
+                    this.logger.log(
+                        `Removed ${user.email} from affiliation group ${membership.accessGroup.uuid}`,
+                    );
+                    removed++;
+                }
+            }
+        }
+
+        this.logger.log(
+            `Synced affiliation groups: ${String(added)} memberships added, ${String(removed)} removed`,
+        );
+    }
+
+    /**
+     * Create the public access group if it does not exist yet. Granting
+     * this group access to a project makes the project readable for every
+     * user; see `AccessGroupType.PUBLIC`.
+     */
+    async createPublicAccessGroup(): Promise<void> {
+        // A single atomic insert, so that several replicas starting at the
+        // same time cannot race each other into a primary key violation.
+        await this.accessGroupRepository
+            .createQueryBuilder()
+            .insert()
+            .values({
+                uuid: PUBLIC_ACCESS_GROUP.uuid,
+                name: PUBLIC_ACCESS_GROUP.name,
+                type: AccessGroupType.PUBLIC,
+                // hidden from searches: the group is offered through the
+                // "General access" setting of a project, not as a group
+                hidden: true,
+            })
+            .orIgnore()
+            .execute();
+
+        // The insert is also skipped when another group already uses the
+        // name; fail loudly then instead of breaking public projects later.
+        const exists = await this.accessGroupRepository.exists({
+            where: { uuid: PUBLIC_ACCESS_GROUP.uuid },
+        });
+        if (!exists) {
+            throw new Error(
+                `Cannot create the public access group: the name "${PUBLIC_ACCESS_GROUP.name}" is already taken by another access group.`,
+            );
+        }
     }
 
     /**
@@ -101,7 +270,7 @@ export class AffiliationGroupService {
         await Promise.all(
             // eslint-disable-next-line @typescript-eslint/await-thenable
             config.emails.map((_config) => {
-                if (resolvingEmail.endsWith(_config.email)) {
+                if (emailMatchesDomain(resolvingEmail, _config.email)) {
                     return Promise.all(
                         _config.access_groups.map(async (uuid) => {
                             const group =

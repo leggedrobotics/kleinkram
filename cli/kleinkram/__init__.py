@@ -17,6 +17,7 @@ from kleinkram.wrappers import delete_template
 from kleinkram.wrappers import delete_trigger
 from kleinkram.wrappers import download
 from kleinkram.wrappers import download_artifact
+from kleinkram.wrappers import fail
 from kleinkram.wrappers import get_execution
 from kleinkram.wrappers import get_file
 from kleinkram.wrappers import get_mission
@@ -24,24 +25,31 @@ from kleinkram.wrappers import get_project
 from kleinkram.wrappers import get_template
 from kleinkram.wrappers import get_template_revisions
 from kleinkram.wrappers import get_trigger
+from kleinkram.wrappers import info
 from kleinkram.wrappers import launch_execution
+from kleinkram.wrappers import list_diagnostics
 from kleinkram.wrappers import list_executions
 from kleinkram.wrappers import list_files
 from kleinkram.wrappers import list_missions
 from kleinkram.wrappers import list_projects
 from kleinkram.wrappers import list_templates
 from kleinkram.wrappers import list_triggers
+from kleinkram.wrappers import run_script
 from kleinkram.wrappers import update_file
 from kleinkram.wrappers import update_mission
 from kleinkram.wrappers import update_project
 from kleinkram.wrappers import update_trigger
 from kleinkram.wrappers import upload
 from kleinkram.wrappers import verify
+from kleinkram.wrappers import warn
 
 __all__ = [
     "__version__",
     "upload",
     "verify",
+    "warn",
+    "fail",
+    "info",
     "download",
     "download_artifact",
     "get_execution",
@@ -56,6 +64,7 @@ __all__ = [
     "list_projects",
     "list_templates",
     "list_executions",
+    "list_diagnostics",
     "update_file",
     "update_mission",
     "update_project",
@@ -70,6 +79,7 @@ __all__ = [
     "create_template",
     "create_template_version",
     "launch_execution",
+    "run_script",
     "create_trigger",
     "update_trigger",
     "list_triggers",

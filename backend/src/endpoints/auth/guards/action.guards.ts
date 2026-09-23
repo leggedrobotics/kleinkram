@@ -6,6 +6,8 @@ import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.e
 import {
     AccessGroupRights,
     isTerminalActionState,
+    KeyTypes,
+    SCRIPT_RUNNER_TEMPLATE_NAME,
     UserRole,
 } from '@kleinkram/shared';
 import {
@@ -54,6 +56,50 @@ export class CanModifyTriggerGuard extends BaseGuard {
         }
 
         return trigger.creatorUuid === user.uuid;
+    }
+}
+
+/**
+ * Allows a running action container to report on itself.
+ *
+ * The only credential accepted is the disposable action key the runner minted
+ * for this exact action, so an action can never write diagnostics onto another
+ * action, and no human token works here at all. The key is revoked when the
+ * container exits, which closes the route for that action automatically.
+ */
+@Injectable()
+export class ReportActionDiagnosticGuard extends BaseGuard {
+    constructor(
+        @InjectRepository(ActionEntity)
+        private actionRepository: Repository<ActionEntity>,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { apiKey, request } = await this.getUser(context);
+
+        // KeyTypes currently has a single member, so this reads as redundant to
+        // the type checker. It is not: it is what keeps this route closed to
+        // any future key type that is not an action key.
+        if (apiKey?.key_type !== KeyTypes.ACTION) {
+            return false;
+        }
+
+        const params = request.params as { uuid?: string } | undefined;
+        const actionUUID = params?.uuid;
+
+        if (!actionUUID) {
+            return false;
+        }
+
+        const action = await this.actionRepository.findOne({
+            where: { uuid: actionUUID },
+            relations: { key: true },
+            select: { uuid: true },
+        });
+
+        return action?.key?.uuid === apiKey.uuid;
     }
 }
 
@@ -179,6 +225,67 @@ export class CreateActionGuard extends BaseGuard {
             await this.actionTemplateRepository.findOneOrFail({
                 where: { uuid: actionTemplateUUID },
             });
+
+        if (apiKey) {
+            return this.missionGuardService.canKeyAccessMission(
+                apiKey,
+                missionUUID,
+                actionTemplate.accessRights,
+            );
+        }
+        return this.missionGuardService.canAccessMission(
+            user,
+            missionUUID,
+            actionTemplate.accessRights,
+        );
+    }
+}
+
+/**
+ * Guards `POST /actions/script`.
+ *
+ * Same check as {@link CreateActionGuard}, except that the caller does not name
+ * a template: a script action always runs on the shared `script-runner`
+ * template, so the rights required are that template's.
+ */
+@Injectable()
+export class CreateScriptActionGuard extends BaseGuard {
+    constructor(
+        private missionGuardService: MissionGuardService,
+        @InjectRepository(ActionTemplateEntity)
+        private actionTemplateRepository: Repository<ActionTemplateEntity>,
+    ) {
+        super();
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const { user, apiKey, request } = await this.getUser(context);
+
+        const body = request.body as ActionBody | undefined;
+        const missionUUID = body?.missionUUID;
+
+        if (!missionUUID) {
+            return false; // Deny access if required parameters not provided
+        }
+
+        const actionTemplate = await this.actionTemplateRepository.findOne({
+            // Only the platform-owned template qualifies. Matching the name alone
+            // would hand every submitted script to whatever image a same-named,
+            // user-made template happens to point at.
+            where: {
+                name: SCRIPT_RUNNER_TEMPLATE_NAME,
+                isSystem: true,
+                isArchived: false,
+            },
+            order: { version: 'DESC' },
+        });
+
+        if (!actionTemplate) {
+            // The deployment has no script runner installed. The service turns
+            // this into a readable error; here it is simply nothing to grant
+            // access to.
+            return false;
+        }
 
         if (apiKey) {
             return this.missionGuardService.canKeyAccessMission(

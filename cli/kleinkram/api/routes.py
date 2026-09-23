@@ -7,10 +7,13 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import Generator
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Type
+from typing import TypeVar
 from uuid import UUID
 
 import httpx
@@ -27,6 +30,7 @@ from kleinkram.api.deser import TemplateObject
 from kleinkram.api.deser import TriggerObject
 from kleinkram.api.deser import _parse_action_template
 from kleinkram.api.deser import _parse_action_trigger
+from kleinkram.api.deser import _parse_diagnostic
 from kleinkram.api.deser import _parse_execution
 from kleinkram.api.deser import _parse_file
 from kleinkram.api.deser import _parse_mission
@@ -57,6 +61,7 @@ from kleinkram.errors import TemplateNotFound
 from kleinkram.errors import TemplateValidationError
 from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
+from kleinkram.models import Diagnostic
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import MetadataPayloadValue
@@ -65,6 +70,7 @@ from kleinkram.models import Project
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
 from kleinkram.utils import is_valid_uuid4
+from kleinkram.utils import minutes_to_hours
 from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import split_args
 
@@ -84,6 +90,7 @@ __all__ = [
     "get_project",
     "get_mission",
     "get_file",
+    "get_file_by_id",
 ]
 
 
@@ -99,7 +106,10 @@ FILE_ENDPOINT = "/files"
 MISSION_ENDPOINT = "/missions"
 PROJECT_ENDPOINT = "/projects"
 
-TAG_TYPE_BY_NAME = "/metadata-types/filtered"
+# the single file route, the only one returning the topics of a file
+FILE_BY_ID_ENDPOINT = "/files/{}"
+
+METADATA_TYPE_BY_NAME = "/metadata-types/filtered"
 
 ACTION_ENDPOINT = "/action"
 
@@ -178,9 +188,10 @@ def get_files(
     client: AuthenticatedClient,
     file_query: FileQuery,
     max_entries: Optional[int] = None,
+    exact_match: bool = False,
 ) -> Generator[File, None, None]:
     params = _file_query_to_params(file_query)
-    response_stream = paginated_request(client, FILE_ENDPOINT, params=params, max_entries=max_entries)
+    response_stream = paginated_request(client, FILE_ENDPOINT, params=params, max_entries=max_entries, exact_match=exact_match)
     yield from map(lambda f: _parse_file(FileObject(f)), response_stream)
 
 
@@ -188,9 +199,12 @@ def get_missions(
     client: AuthenticatedClient,
     mission_query: MissionQuery,
     max_entries: Optional[int] = None,
+    exact_match: bool = False,
 ) -> Generator[Mission, None, None]:
     params = _mission_query_to_params(mission_query)
-    response_stream = paginated_request(client, MISSION_ENDPOINT, params=params, max_entries=max_entries)
+    response_stream = paginated_request(
+        client, MISSION_ENDPOINT, params=params, max_entries=max_entries, exact_match=exact_match
+    )
     yield from map(lambda m: _parse_mission(MissionObject(m)), response_stream)
 
 
@@ -302,40 +316,114 @@ def get_trigger(
     return _parse_action_trigger(TriggerObject(resp.json()))
 
 
-def get_project(client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False) -> Project:
+T = TypeVar("T")
+
+
+def _only_match(matches: Iterator[T], *, not_found: Exception, ambiguous: Exception) -> T:
+    first = next(matches, None)
+    if first is None:
+        raise not_found
+    if next(matches, None) is not None:
+        raise ambiguous
+    return first
+
+
+def _check_strict_names(query: Any, error: Type[Exception]) -> None:
+    """\
+    a strict lookup must name every entity exactly; blank names do not
+    identify anything (wildcards are already rejected by the uniqueness checks)
+    """
+    while query is not None:
+        if any(not pattern.strip() for pattern in query.patterns):
+            raise error(f"Blank names do not identify anything: {query}")
+        query = getattr(query, "mission_query", None) or getattr(query, "project_query", None)
+
+
+def get_project(
+    client: AuthenticatedClient, query: ProjectQuery, exact_match: bool = False, *, strict: bool = False
+) -> Project:
     """\
     get a unique project by specifying a project spec
+
+    `strict` (used before deleting) matches the name exactly and fails
+    instead of returning the first of several matches
     """
     if not project_query_is_unique(query):
         raise InvalidProjectQuery(f"Project query does not uniquely determine project: {query}")
-    try:
-        return next(get_projects(client, query, exact_match=exact_match))
-    except StopIteration:
-        raise ProjectNotFound(f"Project not found: {query}")
+    if not strict:
+        try:
+            return next(get_projects(client, query, exact_match=exact_match))
+        except StopIteration:
+            raise ProjectNotFound(f"Project not found: {query}")
+
+    _check_strict_names(query, InvalidProjectQuery)
+    return _only_match(
+        get_projects(client, query, exact_match=True),
+        not_found=ProjectNotFound(f"Project not found: {query}"),
+        ambiguous=InvalidProjectQuery(f"Project query matches more than one project: {query}"),
+    )
 
 
-def get_mission(client: AuthenticatedClient, query: MissionQuery) -> Mission:
+def get_mission(client: AuthenticatedClient, query: MissionQuery, *, strict: bool = False) -> Mission:
     """\
     get a unique mission by specifying a mission query
+
+    `strict` (used before deleting) matches the project name exactly instead
+    of as a substring and fails instead of returning the first of several matches
     """
     if not mission_query_is_unique(query):
         raise InvalidMissionQuery(f"Mission query does not uniquely determine mission: {query}")
-    try:
-        return next(get_missions(client, query))
-    except StopIteration:
-        raise MissionNotFound(f"Mission not found: {query}")
+    if not strict:
+        try:
+            return next(get_missions(client, query))
+        except StopIteration:
+            raise MissionNotFound(f"Mission not found: {query}")
+
+    _check_strict_names(query, InvalidMissionQuery)
+    return _only_match(
+        get_missions(client, query, exact_match=True),
+        not_found=MissionNotFound(f"Mission not found: {query}"),
+        ambiguous=InvalidMissionQuery(f"Mission query matches more than one mission: {query}"),
+    )
 
 
-def get_file(client: AuthenticatedClient, query: FileQuery) -> File:
+def get_file_by_id(client: AuthenticatedClient, file_id: UUID) -> File:
+    """\
+    get a single file by its id, including its topics
+    """
+    resp = client.get(FILE_BY_ID_ENDPOINT.format(file_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.FileNotFound(f"File not found: {file_id}")
+    resp.raise_for_status()
+    return _parse_file(FileObject(resp.json()))
+
+
+def get_file(client: AuthenticatedClient, query: FileQuery, *, strict: bool = False) -> File:
     """\
     get a unique file by specifying a file query
+
+    `strict` (used before deleting) matches the project name exactly instead
+    of as a substring and fails instead of returning the first of several matches
     """
     if not file_query_is_unique(query):
         raise InvalidFileQuery(f"File query does not uniquely determine file: {query}")
-    try:
-        return next(get_files(client, query))
-    except StopIteration:
-        raise kleinkram.errors.FileNotFound(f"File not found: {query}")
+    if strict:
+        _check_strict_names(query, InvalidFileQuery)
+        file = _only_match(
+            get_files(client, query, exact_match=True),
+            not_found=kleinkram.errors.FileNotFound(f"File not found: {query}"),
+            ambiguous=InvalidFileQuery(f"File query matches more than one file: {query}"),
+        )
+    else:
+        try:
+            file = next(get_files(client, query))
+        except StopIteration:
+            raise kleinkram.errors.FileNotFound(f"File not found: {query}")
+
+    # listing files does not return topics; the query is resolved against the
+    # list route (it is the only one accepting patterns and it reports missing
+    # files as "not found" rather than "forbidden"), then completed here
+    return get_file_by_id(client, file.id)
 
 
 def _create_trigger(
@@ -386,6 +474,45 @@ def _launch_execution(client: AuthenticatedClient, mission_uuid: UUID, template_
     return parse_uuid_like(execution_uuid_str)
 
 
+SUBMIT_SCRIPT_ACTION_ENDPOINT = "/actions/script"
+
+
+def _submit_script_action(
+    client: AuthenticatedClient,
+    mission_uuid: UUID,
+    *,
+    script: str,
+    filename: str,
+    max_runtime_hours: Optional[float] = None,
+) -> UUID:
+    """
+    Submits a single Python file as an action and returns the action UUID.
+
+    The script travels in the request body; the backend stores it and runs it on
+    the shared `script-runner` template, so there is no template to pick here.
+
+    Raises:
+        httpx.HTTPStatusError: If the API returns an error.
+        KeyError: If the response is missing 'actionUUID'.
+    """
+    payload: Dict[str, Any] = {
+        "missionUUID": str(mission_uuid),
+        "script": script,
+        "filename": filename,
+    }
+    if max_runtime_hours is not None:
+        payload["maxRuntimeHours"] = max_runtime_hours
+
+    resp = client.post(SUBMIT_SCRIPT_ACTION_ENDPOINT, json=payload)
+    resp.raise_for_status()
+
+    action_uuid = resp.json().get("actionUUID")
+    if not action_uuid:
+        raise KeyError("API response missing 'actionUUID'")
+
+    return parse_uuid_like(action_uuid)
+
+
 def _create_template_version(
     client: AuthenticatedClient,
     template_id: UUID,
@@ -408,7 +535,8 @@ def _create_template_version(
         "cpuCores": cpu_cores,
         "cpuMemory": cpu_memory_gb,
         "gpuMemory": gpu_memory_gb,
-        "maxRuntime": max_runtime_minutes,
+        # the backend expects the runtime limit in hours
+        "maxRuntime": minutes_to_hours(max_runtime_minutes),
         "accessRights": access_rights,
     }
 
@@ -443,7 +571,8 @@ def _create_template(
         "cpuCores": cpu_cores,
         "cpuMemory": cpu_memory_gb,
         "gpuMemory": gpu_memory_gb,
-        "maxRuntime": max_runtime_minutes,
+        # the backend expects the runtime limit in hours
+        "maxRuntime": minutes_to_hours(max_runtime_minutes),
         "accessRights": access_rights,
     }
 
@@ -463,14 +592,18 @@ def _create_mission(
     project_id: UUID,
     mission_name: str,
     *,
-    tags: Dict[UUID, MetadataPayloadValue],
-    ignore_missing_tags: bool = False,
+    metadata: Dict[UUID, MetadataPayloadValue],
+    ignore_missing_metadata: bool = False,
 ) -> UUID:
+    # `tags` and `ignoreTags` are the pre-rename names of `metadata` and
+    # `ignoreMissingMetadata`. Servers before the rename require `tags` and
+    # reject unknown fields, newer servers still accept both as deprecated
+    # aliases, so the old names are the only ones every server understands.
     payload = {
         "name": mission_name,
         "projectUUID": str(project_id),
-        "tags": {str(k): v for k, v in tags.items()},
-        "ignoreTags": ignore_missing_tags,
+        "tags": {str(k): v for k, v in metadata.items()},
+        "ignoreTags": ignore_missing_metadata,
     }
     resp = client.post(CREATE_MISSION, json=payload)
     resp.raise_for_status()
@@ -485,19 +618,19 @@ def _create_project(client: AuthenticatedClient, project_name: str, description:
 
     return UUID(resp.json()["uuid"], version=4)
 
-    # TODO: add check for LOCATION tag datatype
+    # TODO: add check for LOCATION metadata datatype
 
 
-def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, tags: Dict[UUID, MetadataPayloadValue]) -> None:
+def _update_mission(client: AuthenticatedClient, mission_id: UUID, *, metadata: Dict[UUID, MetadataPayloadValue]) -> None:
     """\
     replaces the mission's *full* metadata set
 
-    metadata types missing from `tags` are removed by the API, so callers have
+    metadata types missing from `metadata` are removed by the API, so callers have
     to pass everything the mission should end up with (see
     `kleinkram.core.update_mission`, which merges partial updates)
     """
     payload = {
-        "metadata": {str(k): v for k, v in tags.items()},
+        "metadata": {str(k): v for k, v in metadata.items()},
     }
     resp = client.post(f"/missions/{mission_id}/metadata", json=payload)
 
@@ -635,6 +768,54 @@ EXECUTION_DELETE_ONE = "/actions/{}"
 
 def _delete_execution(client: AuthenticatedClient, execution_id: UUID) -> None:
     resp = client.delete(EXECUTION_DELETE_ONE.format(execution_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
+    resp.raise_for_status()
+
+
+REPORT_DIAGNOSTIC_ENDPOINT = "/actions/{}/diagnostics"
+
+
+def _get_diagnostics(client: AuthenticatedClient, execution_id: UUID) -> Tuple[List[Diagnostic], bool]:
+    """
+    Returns the diagnostics an execution reported and whether the list was
+    truncated because the action reported more than Kleinkram keeps.
+    """
+    resp = client.get(REPORT_DIAGNOSTIC_ENDPOINT.format(execution_id))
+    if resp.status_code == 404:
+        raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
+    resp.raise_for_status()
+
+    payload = resp.json()
+    diagnostics = [_parse_diagnostic(entry) for entry in payload.get("data", [])]
+    return diagnostics, bool(payload.get("truncated", False))
+
+
+def _report_diagnostic(
+    client: AuthenticatedClient,
+    execution_id: UUID,
+    *,
+    severity: str,
+    message: str,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    """
+    Reports a single diagnostic on a running action.
+
+    Only the disposable API key Kleinkram injects into the action container is
+    accepted by this endpoint, so this only works from inside a running action.
+    """
+    payload: Dict[str, Any] = {"severity": severity, "message": message}
+    if code is not None:
+        payload["code"] = code
+    if file is not None:
+        payload["file"] = file
+    if details is not None:
+        payload["details"] = details
+
+    resp = client.post(REPORT_DIAGNOSTIC_ENDPOINT.format(execution_id), json=payload)
     if resp.status_code == 404:
         raise kleinkram.errors.ExecutionNotFound(f"Execution not found: {execution_id}")
     resp.raise_for_status()

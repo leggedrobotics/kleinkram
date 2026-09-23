@@ -4,6 +4,8 @@ import {
 } from '@kleinkram/backend-common/entities/action/action.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import {
+    ActionFailureOrigin,
+    ActionSeverity,
     ActionState,
     ArtifactState,
     resolveCompletedActionState,
@@ -221,6 +223,9 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             }
 
             action.state = ActionState.FAILED;
+            action.severity = ActionSeverity.ERROR;
+            // The job itself failed, not the action's own script.
+            action.failureOrigin = ActionFailureOrigin.SYSTEM;
             action.state_cause = error.message;
             action.artifacts = ArtifactState.ERROR;
             await this.actionRepository.save(action);

@@ -1,4 +1,15 @@
 <template>
+    <select-all-matching-banner
+        noun="file"
+        :all-on-page-selected="allOnPageSelected"
+        :all-matching-selected="allMatchingSelected"
+        :page-count="data.length"
+        :total="total"
+        :busy="isSelectingAllMatching"
+        @select-all="selectAllMatching"
+        @clear="clearSelection"
+    />
+
     <div v-if="isPhone" class="row items-center justify-between q-mb-sm">
         <q-btn-dropdown
             flat
@@ -87,8 +98,21 @@
                     :color="getColorFileState(props.row.state)"
                     size="20px"
                 >
-                    <q-tooltip>{{ getTooltip(props.row.state) }}</q-tooltip>
+                    <q-tooltip>{{
+                        getTooltip(props.row.state, props.row.stateComment)
+                    }}</q-tooltip>
                 </q-icon>
+            </q-td>
+        </template>
+        <template #body-cell-filename="props">
+            <q-td :props="props">
+                <router-link
+                    :to="fileRoute(props.row)"
+                    class="kk-row-link"
+                    @click.stop
+                >
+                    {{ props.row.filename }}
+                </router-link>
             </q-td>
         </template>
         <template #body-cell-cats="props">
@@ -176,7 +200,7 @@
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="(e) => onRowClick(e, props.row)"
+                                @click="() => openFile(props.row)"
                             >
                                 <q-item-section>View</q-item-section>
                             </q-item>
@@ -233,7 +257,7 @@
                     bordered
                     class="file-card"
                     :class="{ 'file-card--selected': props.selected }"
-                    @click="() => openFile(props.row)"
+                    @click="() => onRowClick(undefined, props.row)"
                 >
                     <div class="q-pa-sm">
                         <div class="row items-center no-wrap">
@@ -417,8 +441,10 @@ import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 import MoveFileDialogOpener from 'components/button-wrapper/move-file-dialog-opener.vue';
+import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
 import { fileColumns } from 'components/explorer-page/explorer-page-table-columns';
-import { QTable, useQuasar } from 'quasar';
+import { Notify, QTable, useQuasar } from 'quasar';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import {
     useHandler,
     useMission,
@@ -437,8 +463,8 @@ import {
 } from 'src/services/generic';
 import { filesOfMission } from 'src/services/queries/file';
 import { TableRequest } from 'src/services/query-handler';
-import { computed, unref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, Ref, ref, unref, watch } from 'vue';
+import { RouteLocationRaw, useRouter } from 'vue-router';
 
 const selected = defineModel('selected', { required: true, type: Array });
 
@@ -574,44 +600,50 @@ const queryKey = computed(() => [
     missionUuid.value,
     queryHandler.value.queryKey,
 ]);
+/**
+ * One window onto the current result set. Extracted from the query so that
+ * "select all matching" can re-run the exact same filters over the full set
+ * instead of restating the twenty-odd arguments.
+ */
+function fetchFilesPage(take: number, skip: number): Promise<FilesDto> {
+    const h = queryHandler.value;
+    return filesOfMission(
+        missionUuid.value ?? '',
+        take,
+        skip,
+        h.fileTypes,
+        h.searchParams.name,
+        h.categories,
+        h.sortBy,
+        h.descending,
+
+        h.searchParams.health as HealthStatus,
+        h.searchParams.startDate
+            ? parseDate(h.searchParams.startDate)
+            : undefined,
+        h.searchParams.endDate ? parseDate(h.searchParams.endDate) : undefined,
+        // Topics and Datatypes
+        h.searchParams.topics && h.searchParams.topics.length > 0
+            ? h.searchParams.topics.split(',')
+            : undefined,
+        h.searchParams.messageDatatypes &&
+            h.searchParams.messageDatatypes.length > 0
+            ? h.searchParams.messageDatatypes.split(',')
+            : undefined,
+        h.searchParams.matchAllTopics === 'true',
+        undefined,
+        [FileState.CANCELED],
+    );
+}
+
 const {
     data: rawData,
     isLoading,
     refetch,
 }: UseQueryReturnType<FilesDto | undefined, Error> = useQuery({
     queryKey: queryKey,
-    queryFn: () => {
-        const h = queryHandler.value;
-        return filesOfMission(
-            missionUuid.value ?? '',
-            h.take,
-            h.skip,
-            h.fileTypes,
-            h.searchParams.name,
-            h.categories,
-            h.sortBy,
-            h.descending,
-
-            h.searchParams.health as HealthStatus,
-            h.searchParams.startDate
-                ? parseDate(h.searchParams.startDate)
-                : undefined,
-            h.searchParams.endDate
-                ? parseDate(h.searchParams.endDate)
-                : undefined,
-            // Topics and Datatypes
-            h.searchParams.topics && h.searchParams.topics.length > 0
-                ? h.searchParams.topics.split(',')
-                : undefined,
-            h.searchParams.messageDatatypes &&
-                h.searchParams.messageDatatypes.length > 0
-                ? h.searchParams.messageDatatypes.split(',')
-                : undefined,
-            h.searchParams.matchAllTopics === 'true',
-            undefined,
-            [FileState.CANCELED],
-        );
-    },
+    queryFn: () =>
+        fetchFilesPage(queryHandler.value.take, queryHandler.value.skip),
     placeholderData: keepPreviousData,
 });
 const data = computed(() => (rawData.value ? rawData.value.data : []));
@@ -641,6 +673,76 @@ function toggleSelectAll(): void {
         : [...otherPages, ...data.value];
 }
 
+/**
+ * The backend caps `take` at 10 000 rows (PaginatedQueryDto), so a result set
+ * larger than that cannot be selected in one request.
+ */
+const MAX_SELECT_ALL_MATCHING = 10_000;
+
+/**
+ * Everything that decides which files match, with the pagination left out:
+ * paging through an all-matching selection must not invalidate it, but
+ * changing a filter must.
+ */
+const filterKey = computed(() =>
+    JSON.stringify({
+        mission: missionUuid.value,
+        search: queryHandler.value.searchParams,
+        fileTypes: queryHandler.value.fileTypes,
+        categories: queryHandler.value.categories,
+    }),
+);
+
+/** The filters that the last "select all matching" click ran against. */
+const selectAllMatchingKey = ref<string>();
+const isSelectingAllMatching = ref(false);
+
+/**
+ * A stale selection must not be allowed to claim the current result set: with
+ * 247 files selected under one filter and 96 matching after it narrows, the
+ * bare `selected.length >= total` comparison would read as "all 96 selected".
+ * So the claim only holds while the filters have not moved since the click.
+ */
+const allMatchingSelected = computed(
+    () =>
+        selectAllMatchingKey.value === filterKey.value &&
+        total.value > 0 &&
+        selected.value.length >= total.value,
+);
+
+async function selectAllMatching(): Promise<void> {
+    if (total.value > MAX_SELECT_ALL_MATCHING) return;
+
+    const requestedFor = filterKey.value;
+    isSelectingAllMatching.value = true;
+    try {
+        const allMatching = await fetchFilesPage(total.value, 0);
+
+        // The filters may have moved while the request was in flight; dropping
+        // the result is better than selecting rows nobody can see.
+        if (filterKey.value !== requestedFor) return;
+
+        selected.value = allMatching.data;
+        selectAllMatchingKey.value = requestedFor;
+    } catch (error_: unknown) {
+        Notify.create({
+            message: `Could not select all matching files: ${
+                error_ instanceof Error ? error_.message : 'unknown error'
+            }`,
+            color: 'negative',
+            timeout: 2000,
+            position: 'bottom',
+        });
+    } finally {
+        isSelectingAllMatching.value = false;
+    }
+}
+
+function clearSelection(): void {
+    selected.value = [];
+    selectAllMatchingKey.value = undefined;
+}
+
 watch(
     () => total.value,
     () => {
@@ -652,26 +754,33 @@ watch(
     { immediate: true },
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const openFile = async (row: any): Promise<void> => {
-    await $router.push({
-        path: '',
-        // @ts-ignore
+/**
+ * Route to a file, shared by the row click and the name link.
+ */
+function fileRoute(row: FileWithTopicDto): RouteLocationRaw {
+    return {
         name: ROUTES.FILE.routeName,
         params: {
-            projectUuid: projectUuid.value,
-            missionUuid: missionUuid.value,
-
-            // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            projectUuid: projectUuid.value ?? '',
+            missionUuid: missionUuid.value ?? '',
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             file_uuid: row.uuid,
         },
-    });
+    };
+}
+
+const openFile = async (row: FileWithTopicDto): Promise<void> => {
+    await $router.push(fileRoute(row));
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: Event, row: any): Promise<void> => {
-    await openFile(row);
-};
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick } = useRowActivation(
+    selected as Ref<FileWithTopicDto[]>,
+    openFile,
+);
 
 /**
  * Sorting control used by the card layout on phones, where the sortable

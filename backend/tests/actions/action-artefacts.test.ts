@@ -15,7 +15,7 @@ describe('Action Artefacts Tests', () => {
 
     test('should generate a presigned download URL for action artifacts', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'artefact-user@kleinkram.dev',
+            'artefact-user@leggedrobotics.com',
             'Artefact User',
         );
 

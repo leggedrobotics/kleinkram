@@ -187,6 +187,8 @@ const allColumns: QTableColumn[] = [
         label: 'Messages',
         field: 'nrMessages',
         align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         sortable: true,
     },
     {
@@ -195,6 +197,8 @@ const allColumns: QTableColumn[] = [
         field: 'frequency',
         format: (v: number): string => (v ? v.toFixed(1) : '-'),
         align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
     },
 ];
 
@@ -219,6 +223,13 @@ interface LoadPlan {
     stride: number;
     /** Whether the plan covers the whole topic (possibly sampled) */
     full: boolean;
+    /**
+     * Read the file coarse-to-fine instead of front-to-back. Wanted for
+     * plots and image sequences, where a partial load should already span
+     * the whole recording; unwanted for logs, which read top to bottom.
+     * Defaults to `full`.
+     */
+    progressive?: boolean;
 }
 
 /**
@@ -228,6 +239,27 @@ interface LoadPlan {
  * exhaust browser memory.
  */
 const MAX_PLOT_MESSAGES = 5000;
+
+/**
+ * Upper bound of log messages loaded in one go. Log payloads are small, so
+ * this is about keeping the rendered list and the decode time bounded rather
+ * than about memory; beyond it the viewer offers "Load more".
+ */
+const MAX_LOG_MESSAGES = 20_000;
+
+/**
+ * Upper bound of DiagnosticArray messages loaded in one go. Diagnostics are
+ * published at ~1 Hz, so this covers over half an hour of recording; each
+ * array carries every node's key/values, which makes them heavier than logs.
+ */
+const MAX_DIAGNOSTICS_MESSAGES = 2000;
+
+/** Messages added per "Load more" click, per viewer kind. */
+const LOAD_MORE_STEP = 20;
+const LOAD_MORE_STEPS: Partial<Record<PreviewType, number>> = {
+    [PreviewType.ROS_LOG]: 2000,
+    [PreviewType.DIAGNOSTICS]: 1000,
+};
 
 /**
  * Image streams are shown as a sampled sequence covering the whole
@@ -288,13 +320,22 @@ const imageStrideForLevel = (row: TopicRow, level: number): number => {
         bytesPerFrame > 0
             ? Math.floor(IMAGE_BYTE_BUDGET / bytesPerFrame)
             : MAX_IMAGE_FRAMES;
+
+    // Once the frame size is known, what the data actually costs decides the
+    // stride rather than a fixed starting count: a compressed stream of a few
+    // hundred frames fits the budget many times over and is shown whole, while
+    // a raw stream of multi-megabyte frames is still sampled.
+    //
+    // Before the first frame arrives the size is unknown, and guessing
+    // generously there could mean asking for gigabytes, so that pass stays
+    // deliberately small and the next one widens on real numbers.
+    const sizeKnown = bytesPerFrame > 0;
+    const affordable = Math.min(MAX_IMAGE_FRAMES, framesWithinBudget);
     const targetFrames = Math.max(
         1,
-        Math.min(
-            MAX_IMAGE_FRAMES,
-            framesWithinBudget,
-            INITIAL_IMAGE_FRAMES * 2 ** level,
-        ),
+        sizeKnown
+            ? affordable
+            : Math.min(affordable, INITIAL_IMAGE_FRAMES * 2 ** level),
     );
     return Math.max(1, Math.ceil(row.nrMessages / targetFrames));
 };
@@ -340,8 +381,35 @@ const getSmartLoad = (row: TopicRow): LoadPlan => {
         };
     }
 
-    // 2. Medium Load (Logs)
-    if (type === PreviewType.ROS_LOG || type === PreviewType.STRING) {
+    // 2. Whole topic, unsampled (ROS logs)
+    // The log viewer filters client-side, so a partial load would silently
+    // hide matches. Log messages are small, so the whole topic fits; very
+    // long streams stop at the cap and are extended with "Load more".
+    if (type === PreviewType.ROS_LOG) {
+        const limit = Math.min(row.nrMessages, MAX_LOG_MESSAGES);
+        return {
+            limit,
+            stride: 1,
+            full: limit === row.nrMessages,
+            progressive: false,
+        };
+    }
+
+    // 2. Whole topic, unsampled (diagnostics)
+    // Health and transitions are replayed message by message, so sampling
+    // would drop status changes. Read in order, capped like the logs.
+    if (type === PreviewType.DIAGNOSTICS) {
+        const limit = Math.min(row.nrMessages, MAX_DIAGNOSTICS_MESSAGES);
+        return {
+            limit,
+            stride: 1,
+            full: limit === row.nrMessages,
+            progressive: false,
+        };
+    }
+
+    // 3. Medium Load (Strings)
+    if (type === PreviewType.STRING) {
         return { limit: 100, stride: 1, full: false };
     }
 
@@ -412,8 +480,15 @@ const loadData = (
 const loadSmart = (row: TopicRow): void => {
     const plan = getSmartLoad(row);
     // Plot viewers show the whole recording: load it coarse-to-fine so the
-    // full time range is visible early and refines as data streams in.
-    loadData(row.name, plan.limit, false, plan.stride, plan.full);
+    // full time range is visible early and refines as data streams in. Logs
+    // opt out of that and stream in reading order instead.
+    loadData(
+        row.name,
+        plan.limit,
+        false,
+        plan.stride,
+        plan.progressive ?? plan.full,
+    );
 };
 
 // Incremental Load (Load More button)
@@ -439,7 +514,7 @@ const loadMore = (topicName: string): void => {
         return;
     }
 
-    loadData(topicName, 20, true);
+    loadData(topicName, LOAD_MORE_STEPS[type] ?? LOAD_MORE_STEP, true);
 };
 </script>
 
@@ -451,6 +526,14 @@ const loadMore = (topicName: string): void => {
 /* Long topic names wrap instead of widening the table */
 .topic-name {
     overflow-wrap: anywhere;
+}
+
+/* QTable keeps every cell on one line (its `wrap-cells` prop is off). The
+   expanded viewer is a cell too, so without this its long values — the
+   NavSatFix service list, for instance — run past the card instead of
+   wrapping. Viewers that need unwrapped text set it on their own elements. */
+.topic-expanded {
+    white-space: normal;
 }
 
 @media (max-width: 599px) {

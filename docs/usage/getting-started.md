@@ -21,21 +21,21 @@ Kleinkram organizes data in a three-level hierarchy: **Project**, **Mission**, a
 - **Mission**: A specific data collection event or experiment. A mission belongs to exactly one project. For example, "Mission 1: Calibration Run" or "Mission 2: Obstacle Avoidance".
 - **File**: The actual data files (e.g., `.bag`, `.mcap`, `.db3`, `.yaml`) collected during a mission. Files belong to exactly one mission.
 
-### Metadata and Tags
+### Metadata and Categories
 
-Kleinkram allows you to organize and search your data using metadata and tags at different levels.
+Kleinkram allows you to organize and search your data using metadata on missions and categories on files.
 
-#### Mission Level: Metadata Tags
+#### Mission Level: Metadata
 
-You can add key-value pairs as metadata to missions. This allows for powerful filtering and organization.
+You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization.
 
-- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" tag for every mission).
-- **Usage**: Use these tags to quickly find all missions performed by a specific robot or in a specific location.
+- **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission).
+- **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.
 
 ::: tip Example: GrandTourDataset
-The GrandTourDataset uses a Metadata Tag `Short Name` to identify the mission in addition to the mission name `release_2024-11-04-10-57-34`. This is useful for quickly identifying the mission in the Kleinkram UI.
+The GrandTourDataset uses the metadata type `Short Name` to identify the mission in addition to the mission name `release_2024-11-04-10-57-34`. This is useful for quickly identifying the mission in the Kleinkram UI.
 
-![Metadata and Tags UI](/assets/metadata.png)
+![Mission metadata in the UI](/assets/metadata.png)
 :::
 
 #### File Level: Category Tags
@@ -63,7 +63,7 @@ The primary way to upload data to Kleinkram is using the **Kleinkram CLI**.
 
 3.  **Upload Data**:
     ```bash
-    klein project create "My Project"
+    klein project create "My Project" --description "Data of my robot"
     klein upload -p "My Project" -m "Mission 1" --create ./data/*.bag
     ```
 

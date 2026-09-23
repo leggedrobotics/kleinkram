@@ -28,7 +28,9 @@ services:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         volumes:
             - ./backend/.endpoints:/app/backend/.endpoints
+            - ./backend/access_config.dev.json:/app/config/access_config.json:ro
         environment:
+            ACCESS_CONFIG_PATH: /app/config/access_config.json
             SEED: 'false'
             DEVBUILD: 'false'
             REDIS_HOST: 'redis'
@@ -39,8 +41,10 @@ services:
             - webnet
             - privatenet
         depends_on:
-            - database
-            - loki
+            database:
+                condition: service_started
+            loki-ready:
+                condition: service_completed_successfully
 
     loki:
         image: grafana/loki
@@ -55,6 +59,34 @@ services:
         networks:
             - privatenet
             - webnet
+
+    # Loki reports /ready as 503 for a while after startup (ring join, WAL
+    # replay, min_ready_duration), during which action submissions are
+    # rejected. The grafana/loki image ships no shell, so it cannot run a
+    # healthcheck of its own -- this one-shot container does the waiting and
+    # lets dependents gate on `service_completed_successfully`.
+    loki-ready:
+        image: curlimages/curl:latest
+        container_name: kleinkram-loki-ready-test
+        restart: 'no'
+        depends_on:
+            - loki
+        entrypoint:
+            - sh
+            - -c
+            - |
+                echo "waiting for Loki to become ready..."
+                for _ in $$(seq 1 120); do
+                    if curl -sf http://loki:3100/ready > /dev/null; then
+                        echo "Loki is ready"
+                        exit 0
+                    fi
+                    sleep 1
+                done
+                echo "Loki did not become ready within 120s" >&2
+                exit 1
+        networks:
+            - privatenet
 
     database:
         image: postgres:17
@@ -86,6 +118,7 @@ services:
             S3_DATA_BUCKET_NAME: ${S3_DATA_BUCKET_NAME}
             S3_DB_BUCKET_NAME: ${S3_DB_BUCKET_NAME}
             S3_ARTIFACTS_BUCKET_NAME: ${S3_ARTIFACTS_BUCKET_NAME}
+            S3_SCRIPTS_BUCKET_NAME: ${S3_SCRIPTS_BUCKET_NAME}
             S3_ACCESS_KEY: ${S3_ACCESS_KEY}
             S3_SECRET_KEY: ${S3_SECRET_KEY}
 

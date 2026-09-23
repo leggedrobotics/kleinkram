@@ -1,4 +1,15 @@
 <template>
+    <select-all-matching-banner
+        noun="mission"
+        :all-on-page-selected="allOnPageSelected"
+        :all-matching-selected="allMatchingSelected"
+        :page-count="data.length"
+        :total="total"
+        :busy="isSelectingAllMatching"
+        @select-all="selectAllMatching"
+        @clear="clearSelection"
+    />
+
     <q-table
         ref="tableRef"
         v-model:pagination="pagination"
@@ -30,10 +41,21 @@
         <template #loading>
             <q-inner-loading showing color="primary" />
         </template>
-        <template #body-cell-tagverification="props">
+        <template #body-cell-name="props">
+            <q-td :props="props">
+                <router-link
+                    :to="missionRoute(props.row)"
+                    class="kk-row-link"
+                    @click.stop
+                >
+                    {{ props.row.name }}
+                </router-link>
+            </q-td>
+        </template>
+        <template #body-cell-missingMetadata="props">
             <q-td :props="props" style="width: 150px">
                 <div
-                    v-if="missingTags(props.row).length === 0"
+                    v-if="missingMetadataTypes(props.row).length === 0"
                     class="flex items-center"
                 >
                     <q-icon
@@ -57,14 +79,16 @@
                         size="20px"
                         round
                     />
-                    {{ missingTagsText(props.row) }}
+                    {{ missingMetadataText(props.row) }}
                     <q-tooltip>
                         <div
-                            v-for="tagType in missingTags(props.row)"
-                            :key="tagType.uuid"
+                            v-for="metadataType in missingMetadataTypes(
+                                props.row,
+                            )"
+                            :key="metadataType.uuid"
                             style="font-size: 14px"
                         >
-                            {{ tagType.name }}
+                            {{ metadataType.name }}
                         </div>
                     </q-tooltip>
                 </div>
@@ -82,7 +106,10 @@
                 >
                     <span class="text-subtitle1"> No Mission Found </span>
 
-                    <create-mission-dialog-opener :project-uuid="projectUuid">
+                    <create-mission-dialog-opener
+                        v-if="!isReadOnlyPublicView"
+                        :project-uuid="projectUuid"
+                    >
                         <q-btn
                             flat
                             dense
@@ -138,7 +165,9 @@
                                 {{ formatDate(new Date(props.row.createdAt)) }}
                             </div>
                             <div
-                                v-if="missingTags(props.row).length === 0"
+                                v-if="
+                                    missingMetadataTypes(props.row).length === 0
+                                "
                                 class="text-caption q-mt-xs"
                             >
                                 <q-icon
@@ -160,7 +189,7 @@
                                     size="16px"
                                     class="q-mr-xs"
                                 />
-                                {{ missingTagsText(props.row) }}
+                                {{ missingMetadataText(props.row) }}
                             </div>
                         </div>
 
@@ -180,16 +209,14 @@
                                     <q-item
                                         v-ripple
                                         clickable
-                                        @click="
-                                            (event) =>
-                                                onRowClick(event, props.row)
-                                        "
+                                        @click="() => openMission(props.row)"
                                     >
                                         <q-item-section>
                                             View Files
                                         </q-item-section>
                                     </q-item>
                                     <EditMissionDialogOpener
+                                        v-if="!isReadOnlyPublicView"
                                         :mission="props.row"
                                     >
                                         <q-item v-ripple clickable>
@@ -198,7 +225,10 @@
                                             </q-item-section>
                                         </q-item>
                                     </EditMissionDialogOpener>
-                                    <MissionMetadataOpener :mission="props.row">
+                                    <MissionMetadataOpener
+                                        v-if="!isReadOnlyPublicView"
+                                        :mission="props.row"
+                                    >
                                         <q-item v-ripple clickable>
                                             <q-item-section>
                                                 Edit Metadata
@@ -206,6 +236,7 @@
                                         </q-item>
                                     </MissionMetadataOpener>
                                     <MoveMissionDialogOpener
+                                        v-if="!isReadOnlyPublicView"
                                         :mission="props.row"
                                     >
                                         <q-item v-ripple clickable>
@@ -215,6 +246,7 @@
                                         </q-item>
                                     </MoveMissionDialogOpener>
                                     <DeleteMissionDialogOpener
+                                        v-if="!isReadOnlyPublicView"
                                         :mission="props.row"
                                     >
                                         <q-item v-ripple clickable>
@@ -249,30 +281,42 @@
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="(event) => onRowClick(event, props.row)"
+                                @click="() => openMission(props.row)"
                             >
                                 <q-item-section>View Files</q-item-section>
                             </q-item>
-                            <EditMissionDialogOpener :mission="props.row">
+                            <EditMissionDialogOpener
+                                v-if="!isReadOnlyPublicView"
+                                :mission="props.row"
+                            >
                                 <q-item v-ripple clickable>
                                     <q-item-section>
                                         Edit Mission
                                     </q-item-section>
                                 </q-item>
                             </EditMissionDialogOpener>
-                            <MissionMetadataOpener :mission="props.row">
+                            <MissionMetadataOpener
+                                v-if="!isReadOnlyPublicView"
+                                :mission="props.row"
+                            >
                                 <q-item v-ripple clickable>
                                     <q-item-section>
                                         Edit Metadata
                                     </q-item-section>
                                 </q-item>
                             </MissionMetadataOpener>
-                            <MoveMissionDialogOpener :mission="props.row">
+                            <MoveMissionDialogOpener
+                                v-if="!isReadOnlyPublicView"
+                                :mission="props.row"
+                            >
                                 <q-item v-ripple clickable>
                                     <q-item-section>Move</q-item-section>
                                 </q-item>
                             </MoveMissionDialogOpener>
-                            <DeleteMissionDialogOpener :mission="props.row">
+                            <DeleteMissionDialogOpener
+                                v-if="!isReadOnlyPublicView"
+                                :mission="props.row"
+                            >
                                 <q-item v-ripple clickable>
                                     <q-item-section>Delete</q-item-section>
                                 </q-item>
@@ -286,11 +330,18 @@
 </template>
 
 <script setup lang="ts">
+import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
-import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type {
+    FlatMissionDto,
+    MissionsDto,
+} from '@kleinkram/api-dto/types/mission/mission.dto';
 import { keepPreviousData, useQuery } from '@tanstack/vue-query';
+import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
 import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
-import { QTable, useQuasar } from 'quasar';
+import { Notify, QTable, useQuasar } from 'quasar';
+import { usePublicReadOnlyView } from 'src/composables/use-public-read-only-view';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import { useHandler, useProjectQuery } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
@@ -298,7 +349,7 @@ import { formatSize } from 'src/services/general-formatting';
 import { missionsOfProject } from 'src/services/queries/mission';
 import { TableRequest } from 'src/services/query-handler';
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouteLocationRaw, useRouter } from 'vue-router';
 
 import DeleteMissionDialogOpener from 'components/button-wrapper/delete-mission-dialog-opener.vue';
 import CreateMissionDialogOpener from 'components/button-wrapper/dialog-opener-create-mission.vue';
@@ -306,8 +357,6 @@ import EditMissionDialogOpener from 'components/button-wrapper/edit-mission-dial
 import MissionMetadataOpener from 'components/button-wrapper/mission-metadata-opener.vue';
 import MoveMissionDialogOpener from 'components/button-wrapper/move-mission-dialog-pener.vue';
 import { useProjectUUID } from 'src/hooks/router-hooks';
-
-const $emit = defineEmits(['update:selected']);
 
 const queryHandler = useHandler();
 const $q = useQuasar();
@@ -328,7 +377,7 @@ const tableColumns = computed(() =>
 
 const visibleColumns = computed(() =>
     isCompact.value
-        ? ['name', 'NrOfFiles', 'tagverification', 'missionaction']
+        ? ['name', 'filesCount', 'missingMetadata', 'missionaction']
         : undefined,
 );
 
@@ -358,13 +407,36 @@ const pagination = computed({
 
 const projectUuid = useProjectUUID();
 const { data: project } = useProjectQuery(projectUuid);
+const isReadOnlyPublicView = usePublicReadOnlyView(projectUuid);
 
-const selected = ref([]);
+/**
+ * Two-way, so that the bulk-action bar in the parent and the checkboxes here
+ * cannot drift apart: the bar clears the selection after a delete, and the
+ * "select all matching" banner needs that clear to reach the table.
+ */
+const selected = defineModel<FlatMissionDto[]>('selected', {
+    default: () => [],
+});
 const queryKey = computed(() => [
     'missions',
     projectUuid,
     queryHandler.value.queryKey,
 ]);
+
+/**
+ * One window onto the current result set, so that "select all matching" can
+ * re-run the same filters over the full set.
+ */
+function fetchMissionsPage(take: number, skip: number): Promise<MissionsDto> {
+    return missionsOfProject(
+        projectUuid.value ?? '',
+        take,
+        skip,
+        queryHandler.value.sortBy,
+        queryHandler.value.descending,
+        queryHandler.value.searchParams as { name: string },
+    );
+}
 
 const {
     data: rawData,
@@ -373,14 +445,7 @@ const {
 } = useQuery({
     queryKey: queryKey,
     queryFn: () =>
-        missionsOfProject(
-            projectUuid.value ?? '',
-            queryHandler.value.take,
-            queryHandler.value.skip,
-            queryHandler.value.sortBy,
-            queryHandler.value.descending,
-            queryHandler.value.searchParams as { name: string },
-        ),
+        fetchMissionsPage(queryHandler.value.take, queryHandler.value.skip),
     placeholderData: keepPreviousData,
 });
 
@@ -397,46 +462,126 @@ watch(
     },
     { immediate: true },
 );
+
+/**
+ * The backend caps `take` at 10 000 rows (PaginatedQueryDto), so a result set
+ * larger than that cannot be selected in one request.
+ */
+const MAX_SELECT_ALL_MATCHING = 10_000;
+
+/**
+ * What decides which missions match, with the pagination left out: paging
+ * through an all-matching selection must not invalidate it, changing the
+ * search must.
+ */
+const filterKey = computed(() =>
+    JSON.stringify({
+        project: projectUuid.value,
+        search: queryHandler.value.searchParams,
+    }),
+);
+
+/** The filters that the last "select all matching" click ran against. */
+const selectAllMatchingKey = ref<string>();
+const isSelectingAllMatching = ref(false);
+
+const allOnPageSelected = computed(() => {
+    const selectedKeys = new Set(selected.value.map((row) => row.uuid));
+    return (
+        data.value.length > 0 &&
+        data.value.every((row) => selectedKeys.has(row.uuid))
+    );
+});
+
+/**
+ * Only claim to cover the result set while the filters have not moved since
+ * the click — otherwise a stale, larger selection would read as "all N
+ * matching selected" against a smaller N.
+ */
+const allMatchingSelected = computed(
+    () =>
+        selectAllMatchingKey.value === filterKey.value &&
+        total.value > 0 &&
+        selected.value.length >= total.value,
+);
+
+async function selectAllMatching(): Promise<void> {
+    if (total.value > MAX_SELECT_ALL_MATCHING) return;
+
+    const requestedFor = filterKey.value;
+    isSelectingAllMatching.value = true;
+    try {
+        const allMatching = await fetchMissionsPage(total.value, 0);
+
+        // The filters may have moved while the request was in flight; dropping
+        // the result is better than selecting rows nobody can see.
+        if (filterKey.value !== requestedFor) return;
+
+        selected.value = allMatching.data;
+        selectAllMatchingKey.value = requestedFor;
+    } catch (error_: unknown) {
+        Notify.create({
+            message: `Could not select all matching missions: ${
+                error_ instanceof Error ? error_.message : 'unknown error'
+            }`,
+            color: 'negative',
+            timeout: 2000,
+            position: 'bottom',
+        });
+    } finally {
+        isSelectingAllMatching.value = false;
+    }
+}
+
+function clearSelection(): void {
+    selected.value = [];
+    selectAllMatchingKey.value = undefined;
+}
+
 const $router = useRouter();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: Event, row: any) => {
-    await $router.push({
+/**
+ * Route to a mission's files, shared by the row click and the name link.
+ */
+function missionRoute(row: FlatMissionDto): RouteLocationRaw {
+    return {
         name: ROUTES.FILES.routeName,
         params: {
-            projectUuid: projectUuid.value,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            missionUuid: row.uuid as string,
+            projectUuid: projectUuid.value ?? '',
+            missionUuid: row.uuid,
         },
-    });
+    };
+}
+
+const openMission = async (row: FlatMissionDto): Promise<void> => {
+    await $router.push(missionRoute(row));
 };
 
-const missingTags = (row: MissionWithFilesDto): TagDto[] => {
-    const mapped = project.value?.requiredTags.map((tagType) => {
-        const setTypes = row.tags.map((tag) => tag.type);
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick } = useRowActivation(selected, openMission);
 
-        if (!setTypes.some((setType) => setType.uuid === tagType.uuid)) {
-            return tagType;
+const missingMetadataTypes = (row: MissionWithFilesDto): MetadataTypeDto[] => {
+    const mapped = project.value?.requiredMetadataTypes.map((metadataType) => {
+        const setTypes = row.metadata.map((metadata) => metadata.type);
+
+        if (!setTypes.some((setType) => setType.uuid === metadataType.uuid)) {
+            return metadataType;
         }
         return;
     });
-    return mapped?.filter((value): value is TagDto => !!value) ?? [];
+    return mapped?.filter((value): value is MetadataTypeDto => !!value) ?? [];
 };
 
-const missingTagsText = (row: MissionWithFilesDto): string => {
-    const _missionTags = missingTags(row);
-    if (_missionTags.length === 1) {
+const missingMetadataText = (row: MissionWithFilesDto): string => {
+    const missing = missingMetadataTypes(row);
+    if (missing.length === 1) {
         return `1 Metadata missing`;
     }
-    return `${_missionTags.length.toString()} Metadata missing`;
+    return `${missing.length.toString()} Metadata missing`;
 };
-
-watch(
-    () => selected.value,
-    (newValue) => {
-        $emit('update:selected', newValue);
-    },
-);
 </script>
 <style scoped>
 .mission-card {

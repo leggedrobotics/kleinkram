@@ -97,29 +97,18 @@
                 </q-slide-transition>
             </div>
         </div>
-        <div
-            v-else-if="$q.screen.xs"
-            class="selection-bar selection-bar--phone"
-            style="background: #0f62fe"
+        <table-selection-bar
+            v-else
+            noun="file"
+            :count="selectedFiles.length"
+            @clear="deselect"
         >
-            <div class="row items-center justify-between no-wrap">
-                <div class="text-white text-subtitle1 text-weight-medium">
-                    {{ selectedFiles.length }}
-                    {{ selectedFiles.length === 1 ? 'file' : 'files' }}
-                    selected
-                </div>
-                <q-btn
-                    flat
-                    round
-                    icon="sym_o_close"
-                    color="white"
-                    aria-label="Clear selection"
-                    @click="deselect"
-                >
-                    <q-tooltip>Clear selection</q-tooltip>
-                </q-btn>
-            </div>
-            <div v-if="missionData" class="selection-bar__actions">
+            <template v-if="missionData">
+                <klein-download-files
+                    v-if="$q.screen.gt.xs"
+                    :files="selectedFiles"
+                    class="files-selection__cli"
+                />
                 <OpenMultCategoryAdd
                     :mission="missionData"
                     :files="selectedFiles"
@@ -130,77 +119,27 @@
                 />
                 <q-btn
                     flat
-                    no-caps
+                    dense
+                    padding="6px"
                     icon="sym_o_download"
-                    label="Download"
                     color="white"
                     @click="downloadCallback"
-                />
+                >
+                    Download
+                </q-btn>
                 <q-btn
                     flat
-                    no-caps
+                    dense
+                    padding="6px"
                     icon="sym_o_delete"
-                    label="Delete"
                     color="white"
                     @click="deleteFilesCallback"
-                />
-            </div>
-        </div>
-        <div v-else class="selection-bar q-py-lg" style="background: #0f62fe">
-            <ButtonGroupOverlay>
-                <template #start>
-                    <div style="margin: 0; font-size: 14pt; color: white">
-                        {{ selectedFiles.length }}
-                        {{ selectedFiles.length === 1 ? 'file' : 'files' }}
-                        selected
-                    </div>
-                </template>
-                <template v-if="missionData" #end>
-                    <klein-download-files
-                        v-if="$q.screen.gt.xs"
-                        :files="selectedFiles"
-                        style="max-width: 300px"
-                    />
-                    <OpenMultCategoryAdd
-                        :mission="missionData"
-                        :files="selectedFiles"
-                    />
-                    <OpenMultiFileMoveDialog
-                        :mission="missionData"
-                        :files="selectedFiles"
-                    />
+                >
+                    Delete
+                </q-btn>
+            </template>
+        </table-selection-bar>
 
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_download"
-                        color="white"
-                        @click="downloadCallback"
-                    >
-                        Download
-                    </q-btn>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_delete"
-                        color="white"
-                        @click="deleteFilesCallback"
-                    >
-                        Delete
-                    </q-btn>
-                    <q-btn
-                        flat
-                        dense
-                        padding="6px"
-                        icon="sym_o_close"
-                        color="white"
-                        @click="deselect"
-                    />
-                </template>
-            </ButtonGroupOverlay>
-        </div>
         <div>
             <Suspense>
                 <explorer-page-files-table
@@ -236,11 +175,11 @@ import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { FileType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
-import ButtonGroupOverlay from 'components/buttons/button-group-overlay.vue';
 import OpenMultCategoryAdd from 'components/buttons/open-mult-category-add-dialog-button.vue';
 import OpenMultiFileMoveDialog from 'components/buttons/open-multi-file-move-dialog-button.vue';
 import KleinDownloadFiles from 'components/cli-links/klein-download-files.vue';
 import AppCreateButton from 'components/common/app-create-button.vue';
+import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import ExplorerPageFilesTable from 'components/explorer-page/explorer-page-files-table.vue';
 import ExplorerPageTableHeader from 'components/explorer-page/explorer-page-table-header.vue';
 import { Notify, useQuasar } from 'quasar';
@@ -435,7 +374,7 @@ watch(
         () => state.selectedTopics,
         () => state.selectedDatatypes,
         () => state.matchAllTopics,
-        () => state.tagFilter,
+        () => state.metadataFilter,
     ],
     () => {
         refresh();
@@ -647,6 +586,18 @@ const openUploadDialogWithFiles = (files: File[]) => {
     gap: 8px;
 }
 
+.files-selection__cli {
+    max-width: 300px;
+}
+
+/* Below 1024px the actions wrap: the CLI command gets a row of its own */
+@media (max-width: 1023px) {
+    .files-selection__cli {
+        flex: 1 0 100%;
+        max-width: 100%;
+    }
+}
+
 /* Mobile: search input on its own row, the buttons on a second one */
 .search-row--stacked {
     flex-direction: column;
@@ -674,31 +625,6 @@ const openUploadDialogWithFiles = (files: File[]) => {
         width: 100%;
         height: auto;
     }
-}
-
-/* Phone layout of the bulk-action bar: a header row with the count and the
-   close button, then the actions as a two-column grid of equal buttons */
-.selection-bar--phone {
-    padding: 8px 8px 8px 16px;
-}
-
-.selection-bar__actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 8px;
-    margin: 4px 8px 0 0;
-}
-
-.selection-bar__actions :deep(.q-btn) {
-    width: 100%;
-    min-height: 44px;
-    justify-content: flex-start;
-    text-transform: none;
-}
-
-.selection-bar__actions :deep(.q-btn .q-btn__content) {
-    justify-content: flex-start;
-    flex-wrap: nowrap;
 }
 
 .drop-overlay {

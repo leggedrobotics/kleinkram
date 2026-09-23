@@ -25,38 +25,129 @@ export interface FetchOptions {
     totalMessages?: number;
 }
 
+/** The part of a decoded message this module needs to order the previews. */
+interface TimedMessage {
+    logTime: bigint;
+}
+
 /**
- * Inserts a message keeping the array ordered by log time. Appending is the
- * fast path; progressive (coarse-to-fine) loading delivers messages out of
- * order and falls back to a binary search for the insertion point.
+ * How long decoded messages are buffered before they reach the UI.
+ * Appending one at a time makes every viewer re-render — and re-derive its
+ * tracks, series and SVG paths over the whole array — once per message,
+ * which is what froze the page while a topic loaded. At ten batches per
+ * second the progress counter still moves visibly.
  */
-function insertSorted(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: any[],
-    message: { logTime: bigint },
+const FLUSH_INTERVAL_MS = 100;
+
+/**
+ * Merges a batch of freshly decoded messages into the ones already loaded,
+ * keeping the result ordered by log time. Returns a new array so that the
+ * reactive store is written once per batch instead of once per message.
+ */
+function mergeBatch(
+    loaded: TimedMessage[],
+    batch: TimedMessage[],
     dedupeByTime: boolean,
-): void {
-    const last = messages.at(-1) as { logTime: bigint } | undefined;
-    if (last === undefined || last.logTime < message.logTime) {
-        messages.push(message);
-        return;
+): TimedMessage[] {
+    if (batch.length === 0) return loaded;
+    batch.sort((a, b) => {
+        if (a.logTime === b.logTime) return 0;
+        return a.logTime < b.logTime ? -1 : 1;
+    });
+
+    // Sequential loading delivers messages in time order, so the batch
+    // usually belongs at the end; progressive (coarse-to-fine) loading
+    // delivers them out of order and needs the full merge below.
+    const last = loaded.at(-1);
+    const first = batch[0];
+    if (
+        last === undefined ||
+        (first !== undefined && last.logTime < first.logTime)
+    ) {
+        return [...loaded, ...batch];
     }
-    let low = 0;
-    let high = messages.length;
-    while (low < high) {
-        const mid = Math.floor((low + high) / 2);
-        const midMessage = messages[mid] as { logTime: bigint };
-        if (midMessage.logTime < message.logTime) low = mid + 1;
-        else high = mid;
+
+    const merged: TimedMessage[] = [];
+    // When refining an already sampled topic, a message whose log time is
+    // present already is one that was loaded before; distinct records with
+    // equal timestamps are kept during ordinary loads.
+    const appendFromBatch = (message: TimedMessage): void => {
+        if (dedupeByTime && merged.at(-1)?.logTime === message.logTime) return;
+        merged.push(message);
+    };
+
+    let read = 0;
+    let write = 0;
+    while (read < loaded.length && write < batch.length) {
+        const existing = loaded[read];
+        const incoming = batch[write];
+        if (
+            existing !== undefined &&
+            incoming !== undefined &&
+            incoming.logTime < existing.logTime
+        ) {
+            appendFromBatch(incoming);
+            write++;
+        } else {
+            if (existing !== undefined) merged.push(existing);
+            read++;
+        }
     }
-    // When merging a refinement, a message with the same log time is one
-    // that was loaded before; distinct records with equal timestamps are
-    // kept during ordinary loads.
-    if (dedupeByTime) {
-        const existing = messages[low] as { logTime: bigint } | undefined;
-        if (existing?.logTime === message.logTime) return;
+    for (; read < loaded.length; read++) {
+        const existing = loaded[read];
+        if (existing !== undefined) merged.push(existing);
     }
-    messages.splice(low, 0, message);
+    for (; write < batch.length; write++) {
+        const incoming = batch[write];
+        if (incoming !== undefined) appendFromBatch(incoming);
+    }
+    return merged;
+}
+
+interface MessageBatcher {
+    add: (message: TimedMessage) => void;
+    /** Hands over whatever is buffered right away */
+    flush: () => void;
+    /** Drops the buffer and any pending flush */
+    cancel: () => void;
+}
+
+/**
+ * Buffers decoded messages and hands them to `commit` at most every
+ * FLUSH_INTERVAL_MS, so that decoding a topic does not re-render the
+ * viewers once per message.
+ */
+function createMessageBatcher(
+    commit: (batch: TimedMessage[]) => void,
+    isCancelled: () => boolean,
+): MessageBatcher {
+    const pending: TimedMessage[] = [];
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const clear = (): void => {
+        if (timer !== undefined) clearTimeout(timer);
+        timer = undefined;
+    };
+
+    const flush = (): void => {
+        clear();
+        // A flush that was scheduled before the topic got cancelled must
+        // not write into the preview of the load that replaced it.
+        if (isCancelled() || pending.length === 0) return;
+        commit(pending.splice(0));
+    };
+
+    return {
+        add: (message: TimedMessage): void => {
+            pending.push(message);
+            timer ??= setTimeout(flush, FLUSH_INTERVAL_MS);
+        },
+        flush,
+        cancel: (): void => {
+            clear();
+            pending.length = 0;
+        },
+    };
 }
 
 export function useRosmsgPreview(): {
@@ -212,6 +303,18 @@ export function useRosmsgPreview(): {
               )
             : undefined;
 
+        const batcher = createMessageBatcher(
+            (batch) => {
+                topicPreviews[topicName] = mergeBatch(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+                    topicPreviews[topicName] ?? [],
+                    batch,
+                    merge,
+                );
+            },
+            () => controller.signal.aborted,
+        );
+
         try {
             // We ignore the return value (full array) because we populate
             // the reactive array via the callback for immediate UI feedback.
@@ -221,11 +324,7 @@ export function useRosmsgPreview(): {
                 (message) => {
                     if (controller.signal.aborted) return;
                     // Use markRaw to prevent deep reactivity overhead
-                    insertSorted(
-                        (topicPreviews[topicName] ??= []),
-                        markRaw(message),
-                        merge,
-                    );
+                    batcher.add(markRaw(message));
                 },
                 controller.signal,
                 startTime,
@@ -247,7 +346,10 @@ export function useRosmsgPreview(): {
             topicErrors[topicName] =
                 error instanceof Error ? error.message : String(error);
         } finally {
-            if (!controller.signal.aborted) {
+            if (controller.signal.aborted) {
+                batcher.cancel();
+            } else {
+                batcher.flush();
                 topicLoadingState[topicName] = false;
                 abortControllers.delete(topicName);
             }

@@ -5,8 +5,12 @@ from typing import Optional
 
 import typer
 
+from kleinkram.cli._deprecation import warn_deprecated
+
 HELP = """\
 List projects, missions, or files.
+
+Deprecated, use `klein project list`, `klein mission list` and `klein file list` instead.
 """
 
 list_typer = typer.Typer(name="list", invoke_without_command=True, help=HELP, no_args_is_help=True)
@@ -23,6 +27,8 @@ def files(
 ) -> None:
     from kleinkram.cli._file import list_files
 
+    warn_deprecated("`klein list files`", "`klein file list`")
+
     list_files(
         files=files, projects=projects, missions=missions, include_canceled=False, include_states=None, exclude_states=None
     )
@@ -35,6 +41,8 @@ def missions(
 ) -> None:
     from kleinkram.cli._mission import list_missions
 
+    warn_deprecated("`klein list missions`", "`klein mission list`")
+
     list_missions(projects=projects, missions=missions)
 
 
@@ -43,5 +51,7 @@ def projects(
     projects: Optional[List[str]] = typer.Argument(None, help="project names"),
 ) -> None:
     from kleinkram.cli._project import list_projects
+
+    warn_deprecated("`klein list projects`", "`klein project list`")
 
     list_projects(projects=projects)

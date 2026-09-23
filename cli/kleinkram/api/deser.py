@@ -6,6 +6,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Literal
+from typing import Mapping
 from typing import NewType
 from typing import Optional
 from typing import Tuple
@@ -17,6 +18,7 @@ from kleinkram.errors import ParsingError
 from kleinkram.models import ActionTemplate
 from kleinkram.models import ActionTrigger
 from kleinkram.models import ArtifactState
+from kleinkram.models import Diagnostic
 from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import FileConfig
@@ -30,6 +32,7 @@ from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
 from kleinkram.models import WebhookConfig
+from kleinkram.utils import hours_to_minutes
 
 __all__ = [
     "_parse_project",
@@ -60,6 +63,8 @@ class FileObjectKeys(str, Enum):
     HASH = "hash"
     TYPE = "type"
     CATEGORIES = "categories"
+    TOPICS = "topics"
+    STATE_COMMENT = "stateComment"
 
 
 class MissionObjectKeys(str, Enum):
@@ -68,7 +73,9 @@ class MissionObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
-    TAGS = "tags"
+    METADATA = "metadata"
+    # deprecated alias of `metadata`, the only key servers before the rename send
+    LEGACY_METADATA = "tags"
     FILESIZE = "size"
     FILECOUNT = "filesCount"
 
@@ -79,12 +86,17 @@ class ProjectObjectKeys(str, Enum):
     DESCRIPTION = "description"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
-    REQUIRED_TAGS = "requiredTags"
+    REQUIRED_METADATA_TYPES = "requiredMetadataTypes"
+    # deprecated alias of `requiredMetadataTypes`, the only key servers before the rename send
+    LEGACY_REQUIRED_METADATA_TYPES = "requiredTags"
 
 
 class ExecutionObjectKeys(str, Enum):
     UUID = "uuid"
     STATE = "state"
+    SEVERITY = "severity"
+    FAILURE_ORIGIN = "failureOrigin"
+    DIAGNOSTIC_COUNT = "diagnosticCount"
     STATE_CAUSE = "stateCause"
     CREATED_AT = "createdAt"
     MISSION = "mission"
@@ -107,7 +119,7 @@ class TemplateObjectKeys(str, Enum):
     ENTRYPOINT = "entrypoint"
     GPU_MEMORY_GB = "gpuMemory"
     IMAGE_NAME = "imageName"
-    MAX_RUNTIME_MINUTES = "maxRuntime"
+    MAX_RUNTIME_HOURS = "maxRuntime"
     CREATED_AT = "createdAt"
     VERSION = "version"
 
@@ -153,13 +165,23 @@ def _parse_file_state(state: str) -> FileState:
         raise ParsingError(f"error parsing file state: {state}") from e
 
 
-def _parse_metadata_type_id(tag: Dict) -> Optional[UUID]:
+def _get_with_fallback(data: Mapping[str, Any], key: str, legacy_key: str) -> Any:
+    """\
+    read `key`, falling back to its pre-rename name for older servers
+    """
+    if key in data:
+        return data[key]
+    return data[legacy_key]
+
+
+def _parse_metadata_type_id(metadata: Dict) -> Optional[UUID]:
     """\
     the uuid of the metadata *type*, not of the metadata value itself
 
-    `TagDto` exposes it under `type`; the raw entity uses `tagType`.
+    `MetadataDto` exposes it under `type`; the raw entity uses `metadataType`
+    (`tagType` on servers before the rename).
     """
-    type_object = tag.get("type") or tag.get("tagType")
+    type_object = metadata.get("type") or metadata.get("metadataType") or metadata.get("tagType")
     if not isinstance(type_object, dict):
         return None
 
@@ -173,13 +195,13 @@ def _parse_metadata_type_id(tag: Dict) -> Optional[UUID]:
         raise ParsingError(f"error parsing metadata type uuid: {raw}") from e
 
 
-def _parse_metadata_value(tag: Dict) -> MetadataValue:
-    raw = tag.get("valueAsString")
+def _parse_metadata_value(metadata: Dict) -> MetadataValue:
+    raw = metadata.get("valueAsString")
     if raw is None:
         # `valueAsString` is a plain getter on the API DTO and is therefore not
         # part of the serialized response (see #2360); the value is carried by
         # the `value` key instead.
-        raw = tag.get("value")
+        raw = metadata.get("value")
 
     if isinstance(raw, bool):
         # JSON booleans would stringify to "True"/"False", which neither the
@@ -190,21 +212,21 @@ def _parse_metadata_value(tag: Dict) -> MetadataValue:
     else:
         value = str(raw)
 
-    return MetadataValue(value, tag.get("datatype"), _parse_metadata_type_id(tag))
+    return MetadataValue(value, metadata.get("datatype"), _parse_metadata_type_id(metadata))
 
 
-def _parse_metadata(tags: List[Dict]) -> Dict[str, MetadataValue]:
+def _parse_metadata(metadata: List[Dict]) -> Dict[str, MetadataValue]:
     result = {}
     try:
-        for tag in tags:
-            result[tag.get("name")] = _parse_metadata_value(tag)
+        for entry in metadata:
+            result[entry.get("name")] = _parse_metadata_value(entry)
         return result
     except ValueError as e:
         raise ParsingError(f"error parsing metadata: {e}") from e
 
 
-def _parse_required_tags(tags: List[Dict]) -> list[str]:
-    return list(_parse_metadata(tags).keys())
+def _parse_required_metadata_types(metadata_types: List[Dict]) -> list[str]:
+    return list(_parse_metadata(metadata_types).keys())
 
 
 def _parse_project(project_object: ProjectObject) -> Project:
@@ -214,7 +236,13 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description = project_object[ProjectObjectKeys.DESCRIPTION]
         created_at = _parse_datetime(project_object[ProjectObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(project_object[ProjectObjectKeys.UPDATED_AT])
-        required_tags = _parse_required_tags(project_object[ProjectObjectKeys.REQUIRED_TAGS])
+        required_metadata_types = _parse_required_metadata_types(
+            _get_with_fallback(
+                project_object,
+                ProjectObjectKeys.REQUIRED_METADATA_TYPES,
+                ProjectObjectKeys.LEGACY_REQUIRED_METADATA_TYPES,
+            )
+        )
     except Exception as e:
         raise ParsingError(f"error parsing project: {project_object}") from e
     return Project(
@@ -223,7 +251,7 @@ def _parse_project(project_object: ProjectObject) -> Project:
         description=description,
         created_at=created_at,
         updated_at=updated_at,
-        required_tags=required_tags,
+        required_metadata_types=required_metadata_types,
     )
 
 
@@ -233,7 +261,7 @@ def _parse_mission(mission: MissionObject) -> Mission:
         name = mission[MissionObjectKeys.NAME]
         created_at = _parse_datetime(mission[MissionObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(mission[MissionObjectKeys.UPDATED_AT])
-        metadata = _parse_metadata(mission[MissionObjectKeys.TAGS])
+        metadata = _parse_metadata(_get_with_fallback(mission, MissionObjectKeys.METADATA, MissionObjectKeys.LEGACY_METADATA))
         file_count = mission[MissionObjectKeys.FILECOUNT]
         filesize = mission[MissionObjectKeys.FILESIZE]
 
@@ -255,6 +283,14 @@ def _parse_mission(mission: MissionObject) -> Mission:
     return parsed
 
 
+def _parse_names(objects: List[Any]) -> List[str]:
+    """\
+    extract the names of a list of named objects (e.g. categories or topics)
+    as returned by the api; plain strings are passed through
+    """
+    return [obj["name"] if isinstance(obj, dict) and "name" in obj else str(obj) for obj in objects]
+
+
 def _parse_file(file: FileObject) -> File:
     try:
         name = file[FileObjectKeys.FILENAME]
@@ -266,8 +302,11 @@ def _parse_file(file: FileObject) -> File:
         created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
         state = _parse_file_state(file[FileObjectKeys.STATE])
-        categories_raw = file.get(FileObjectKeys.CATEGORIES) or []
-        categories = [c["name"] if isinstance(c, dict) and "name" in c else str(c) for c in categories_raw]
+        state_comment = file.get(FileObjectKeys.STATE_COMMENT)
+        categories = _parse_names(file.get(FileObjectKeys.CATEGORIES) or [])
+
+        # only the single file endpoint returns topics, listing files does not
+        topics = _parse_names(file.get(FileObjectKeys.TOPICS) or [])
 
         mission_id, mission_name = _get_nested_info(file, MISSION)
         project_id, project_name = _get_nested_info(file[MISSION], PROJECT)
@@ -280,7 +319,9 @@ def _parse_file(file: FileObject) -> File:
             type_=ftype,
             date=fdate,
             categories=categories,
+            topics=topics,
             state=state,
+            state_comment=state_comment,
             created_at=created_at,
             updated_at=updated_at,
             mission_id=mission_id,
@@ -304,7 +345,8 @@ def _parse_action_template(template_object: TemplateObject) -> ActionTemplate:
         entrypoint = template_object[TemplateObjectKeys.ENTRYPOINT]
         gpu_memory_gb = template_object[TemplateObjectKeys.GPU_MEMORY_GB]
         image_name = template_object[TemplateObjectKeys.IMAGE_NAME]
-        max_runtime_minutes = template_object[TemplateObjectKeys.MAX_RUNTIME_MINUTES]
+        # the backend reports the runtime limit in hours
+        max_runtime_minutes = hours_to_minutes(template_object[TemplateObjectKeys.MAX_RUNTIME_HOURS])
         created_at = _parse_datetime(template_object[TemplateObjectKeys.CREATED_AT])
         name = template_object[TemplateObjectKeys.NAME]
         version = template_object[TemplateObjectKeys.VERSION]
@@ -329,10 +371,29 @@ def _parse_action_template(template_object: TemplateObject) -> ActionTemplate:
     )
 
 
+def _parse_diagnostic(diagnostic_object: Dict[str, Any]) -> Diagnostic:
+    try:
+        return Diagnostic(
+            uuid=UUID(diagnostic_object["uuid"], version=4),
+            severity=diagnostic_object["severity"],
+            message=diagnostic_object["message"],
+            code=diagnostic_object.get("code"),
+            file=diagnostic_object.get("file"),
+            count=diagnostic_object.get("count", 1),
+            created_at=_parse_datetime(diagnostic_object["createdAt"]),
+        )
+    except Exception as e:
+        raise ParsingError(f"error parsing diagnostic: {diagnostic_object}") from e
+
+
 def _parse_execution(execution_object: ExecutionObject) -> Execution:
     try:
         uuid = UUID(execution_object[ExecutionObjectKeys.UUID], version=4)
         state = execution_object[ExecutionObjectKeys.STATE]
+        # Optional: a backend older than the severity feature omits these.
+        severity = execution_object.get(ExecutionObjectKeys.SEVERITY)
+        failure_origin = execution_object.get(ExecutionObjectKeys.FAILURE_ORIGIN)
+        diagnostic_count = execution_object.get(ExecutionObjectKeys.DIAGNOSTIC_COUNT) or 0
         state_cause = execution_object[ExecutionObjectKeys.STATE_CAUSE]
         artifact_url = execution_object.get(ExecutionObjectKeys.ARTIFACT_URL)
         raw_state = execution_object.get(ExecutionObjectKeys.ARTIFACT_STATE)
@@ -374,6 +435,9 @@ def _parse_execution(execution_object: ExecutionObject) -> Execution:
     return Execution(
         uuid=uuid,
         state=state,
+        severity=severity,
+        failure_origin=failure_origin,
+        diagnostic_count=diagnostic_count,
         state_cause=state_cause,
         artifact_url=artifact_url,
         artifact_state=artifact_state,

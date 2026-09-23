@@ -221,8 +221,55 @@ label {
     font-size: 32px;
 }
 
+/*
+ * Numeric table cells. Right alignment only pays off if the digits are also
+ * fixed-width: with the default proportional figures a "1" is narrower than an
+ * "8", so the decimal points drift from row to row and the column reads ragged
+ * even though its right edge is flush.
+ */
+.kk-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+}
+
 .q-table .selected {
     background-color: #e7efff;
+}
+
+/*
+ * A selected row is tinted, but the tint sits close enough to the hover and
+ * stripe colours that scanning a long table for what is selected means
+ * reading each row. The accent bar on the leading edge is the thing the eye
+ * can follow down the column, and it does not depend on telling two pale
+ * backgrounds apart.
+ */
+.q-table tbody tr.selected > td:first-child {
+    position: relative;
+}
+
+.q-table tbody tr.selected > td:first-child::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: $border-interactive;
+}
+
+/*
+ * The name cell of a table whose rows drill down a level. The row click
+ * already navigates, but a click handler is not a link: it cannot be
+ * middle-clicked, opened in a new tab, copied as an address, or announced as
+ * a link. This carries the real href while keeping the body text colour —
+ * turning every name blue would repaint the table for an affordance the whole
+ * row already advertises.
+ */
+.kk-row-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.kk-row-link:hover {
+    text-decoration: underline;
 }
 
 .help-text {

@@ -1,5 +1,7 @@
+import { ActionDiagnosticService } from '@/services/action-diagnostic.service';
 import { ActionService } from '@/services/action.service';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
+import { ActionDiagnosticEntity } from '@kleinkram/backend-common/entities/action/action-diagnostic.entity';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
@@ -20,6 +22,7 @@ import { ActionsController } from './action.controller';
     imports: [
         TypeOrmModule.forFeature([
             ActionEntity,
+            ActionDiagnosticEntity,
             ActionTemplateEntity,
             AccessGroupEntity,
             ProjectEntity,
@@ -34,8 +37,8 @@ import { ActionsController } from './action.controller';
         ActionDispatcherModule,
         FileModule,
     ],
-    providers: [ActionService, ActionGuardService],
-    exports: [ActionService],
+    providers: [ActionService, ActionDiagnosticService, ActionGuardService],
+    exports: [ActionService, ActionDiagnosticService],
     controllers: [ActionsController],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

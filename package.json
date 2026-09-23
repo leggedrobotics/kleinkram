@@ -1,6 +1,6 @@
 {
     "name": "kleinkram",
-    "version": "0.62.0",
+    "version": "0.63.0",
     "main": "index.js",
     "repository": "git@github.com:leggedrobotics/GrandTourDatasets.git",
     "author": "Johann Schwabe <johann@schwabe.dev>",
@@ -8,8 +8,8 @@
     "private": true,
     "scripts": {
         "start": "docker compose build base && docker compose up --build -d",
-        "start:infra": "docker compose up -d database seaweedfs redis",
-        "stop:infra": "docker compose stop database seaweedfs redis",
+        "start:infra": "docker compose up -d database seaweedfs redis loki",
+        "stop:infra": "docker compose stop database seaweedfs redis loki",
         "dev": "pnpm start:infra && dotenv -e .env -- pnpm --parallel --filter \"./backend\" --filter \"./frontend\" --filter \"./queueConsumer\" run start:dev",
         "lint": "NODE_OPTIONS='--max-old-space-size=8192' eslint . --fix --cache",
         "lint:check": "NODE_OPTIONS='--max-old-space-size=8192' eslint .",
@@ -81,7 +81,7 @@
             "got@<11.8.5": ">=11.8.5",
             "js-yaml@>=4.0.0 <4.1.1": ">=4.1.1",
             "tmp@<=0.2.3": ">=0.2.4",
-            "webpack": "5.110.3"
+            "webpack": "5.111.1"
         }
     },
     "packageManager": "pnpm@11.0.9+sha512.34ce82e6780233cf9cad8685029a8f81d2e06196c5a9bad98879f7424940c6817c4e4524fb7d38b8553ceed48b9758b8ebaf1abd3600c232c4c8cf7366086f38"

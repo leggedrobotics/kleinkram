@@ -3,7 +3,7 @@
         <div class="row q-col-gutter-md">
             <!-- State Info -->
             <div class="col-12 col-sm-6">
-                <AppInput label="State" :model-value="action.state" readonly>
+                <AppInput label="State" :model-value="stateLabel" readonly>
                     <template
                         v-if="
                             action.state === ActionState.PROCESSING ||
@@ -98,6 +98,23 @@
             </div>
 
             <div class="col-12">
+                <q-separator class="q-my-sm" />
+            </div>
+
+            <!-- What the action reported about itself -->
+            <div
+                v-if="diagnostics.length > 0 || diagnosticsTruncated"
+                class="col-12"
+            >
+                <ActionDiagnosticsPanel
+                    :diagnostics="diagnostics"
+                    :truncated="diagnosticsTruncated"
+                />
+            </div>
+            <div
+                v-if="diagnostics.length > 0 || diagnosticsTruncated"
+                class="col-12"
+            >
                 <q-separator class="q-my-sm" />
             </div>
 
@@ -356,21 +373,58 @@
 <script setup lang="ts">
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import {
+    ActionFailureOrigin,
+    ActionSeverity,
     ActionState,
     ActionTriggerSource,
     ArtifactState,
     ImageSource,
 } from '@kleinkram/shared';
+import ActionDiagnosticsPanel from 'components/actions/action-diagnostics-panel.vue';
 import ActionRuntime from 'components/actions/action-runtime.vue';
 import ArtifactFileTree from 'components/actions/artifact-file-tree.vue';
 import AppInput from 'components/common/app-input.vue';
 import { copyToClipboard } from 'quasar';
+import { useActionDiagnostics } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const props = defineProps<{ action: ActionDto }>();
 const $router = useRouter();
+
+const isRunning = computed(
+    () =>
+        props.action.state === ActionState.PROCESSING ||
+        props.action.state === ActionState.STARTING,
+);
+
+const { data: diagnosticsData } = useActionDiagnostics(
+    computed(() => props.action.uuid),
+    isRunning,
+);
+
+const diagnostics = computed(() => diagnosticsData.value?.data ?? []);
+const diagnosticsTruncated = computed(
+    () => diagnosticsData.value?.truncated ?? false,
+);
+
+/**
+ * The state plus the verdict, because "DONE" alone hides the fact that the run
+ * had something to say.
+ */
+const stateLabel = computed(() => {
+    if (
+        props.action.state === ActionState.DONE &&
+        props.action.severity === ActionSeverity.WARNING
+    ) {
+        return `${props.action.state} (with warnings)`;
+    }
+    if (props.action.failureOrigin === ActionFailureOrigin.SYSTEM) {
+        return `${props.action.state} (Kleinkram, not your action)`;
+    }
+    return props.action.state;
+});
 
 const triggerSourceLabel = computed(() => {
     switch (props.action.triggerSource) {

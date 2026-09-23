@@ -1,10 +1,12 @@
+import {
+    emailMatchesDomain,
+    loadAccessConfig,
+} from '@backend-common/access-config';
 import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { extendedFaker } from '@backend-common/faker-extended';
 import { UserRole } from '@kleinkram/shared';
-import * as fs from 'node:fs';
-import path from 'node:path';
 import { setSeederFactory } from 'typeorm-extension';
 
 export interface UserContext {
@@ -13,13 +15,6 @@ export interface UserContext {
     mail: string;
     role: UserRole;
     defaultGroupIds: string[];
-}
-
-interface AccessGroupConfig {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    emails: { email: string; access_groups: string[] }[];
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    access_groups: { name: string; uuid: string; rights: number }[];
 }
 
 setSeederFactory(UserEntity, (context: Partial<UserContext> = {}) => {
@@ -41,23 +36,14 @@ setSeederFactory(UserEntity, (context: Partial<UserContext> = {}) => {
     let groupIds: string[] = context.defaultGroupIds ?? [];
 
     try {
-        const configPath = path.resolve(
-            __dirname,
-            '@backend-common/../../../backend/src/access_config.json',
-        );
-
-        if (fs.existsSync(configPath)) {
-            const configContent = fs.readFileSync(configPath, 'utf8');
-            const config = JSON.parse(configContent) as AccessGroupConfig;
-
-            for (const emailConfig of config.emails) {
-                if (user.email.endsWith(emailConfig.email)) {
-                    groupIds = [...groupIds, ...emailConfig.access_groups];
-                }
+        const config = loadAccessConfig();
+        for (const emailConfig of config.emails) {
+            if (emailMatchesDomain(user.email, emailConfig.email)) {
+                groupIds = [...groupIds, ...emailConfig.access_groups];
             }
         }
     } catch {
-        // ignore
+        // no access config available, e.g. outside of a deployment
     }
 
     // Deduplicate

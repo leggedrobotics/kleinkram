@@ -1,6 +1,6 @@
 import { FileType } from '@kleinkram/shared';
 import { useQuery } from '@tanstack/vue-query';
-import { useAllTags } from 'src/hooks/query-hooks';
+import { useAllMetadataTypes } from 'src/hooks/query-hooks';
 import { Filter } from 'src/services/filters/filter-interface';
 import { CategoryFilter } from 'src/services/filters/implementations/category-filter';
 import { DatatypeFilter } from 'src/services/filters/implementations/datatype-filter';
@@ -17,7 +17,7 @@ import { allTopicsNames, allTopicTypes } from 'src/services/queries/topic';
 import { CompositeFilterProvider } from 'src/services/suggestions/strategies/composite-filter-provider';
 import { KeywordStrategy } from 'src/services/suggestions/strategies/keyword-strategy';
 import {
-    MetadataTag,
+    MetadataTypeOption,
     SuggestionProvider,
 } from 'src/services/suggestions/suggestion-types';
 import { computed, Ref } from 'vue';
@@ -31,7 +31,7 @@ export interface MissionFileSearchContextData extends FilterParserContext {
     datatypes: string[];
     fileTypes: string[];
     filenames: string[];
-    availableTags: MetadataTag[];
+    availableMetadataTypes: MetadataTypeOption[];
     availableCategories: { name: string; uuid: string; description?: string }[];
     // Compatibility properties
     projects: { name: string; uuid: string }[];
@@ -56,8 +56,8 @@ export function useMissionFileSearch(
         queryFn: allTopicTypes,
     });
 
-    // Tags
-    const { data: allTags } = useAllTags();
+    // Metadata types
+    const { data: allMetadataTypes } = useAllMetadataTypes();
 
     // Categories (fetched from project)
     const { data: categoriesDto } = useQuery({
@@ -90,8 +90,8 @@ export function useMissionFileSearch(
         datatypes: allDatatypes.value ?? [],
         fileTypes: allFileTypes,
         filenames: allFilenames.value,
-        availableTags:
-            allTags.value?.map((t) => ({
+        availableMetadataTypes:
+            allMetadataTypes.value?.map((t) => ({
                 name: t.name,
                 uuid: t.uuid,
                 datatype: t.datatype,
@@ -159,7 +159,7 @@ export function useMissionFileSearch(
         contextData,
         allTopics,
         allDatatypes,
-        allTags,
+        allMetadataTypes,
         allFileTypes,
         availableCategories,
     };

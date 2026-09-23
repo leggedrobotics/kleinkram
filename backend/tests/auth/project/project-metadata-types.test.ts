@@ -1,7 +1,7 @@
 import { UserEntity } from '@kleinkram/backend-common';
 import { DataType, UserRole } from '@kleinkram/shared';
 import {
-    createMetadataUsingPost,
+    createMetadataTypeUsingPost,
     createProjectUsingPost,
     getAuthHeaders,
 } from '../../utils/api-calls';
@@ -18,13 +18,13 @@ const setup = async (): Promise<{
     metadataTypeUuid: string;
 }> => {
     const userUuid = await mockDatabaseUser(
-        'metadata-types@kleinkram.dev',
+        'metadata-types@leggedrobotics.com',
         'Metadata Types User',
         UserRole.ADMIN,
     );
     const user = await getUserFromDatabase(userUuid);
 
-    const metadataTypeUuid = await createMetadataUsingPost(
+    const metadataTypeUuid = await createMetadataTypeUsingPost(
         { type: DataType.STRING, name: `mdt_${String(Date.now())}` },
         user,
     );
@@ -33,7 +33,7 @@ const setup = async (): Promise<{
         {
             name: `metadata_types_project_${String(Date.now())}`,
             description: 'Test project',
-            requiredTags: [metadataTypeUuid],
+            requiredMetadataTypes: [metadataTypeUuid],
         },
         user,
     );
@@ -41,20 +41,31 @@ const setup = async (): Promise<{
     return { user, projectUuid, metadataTypeUuid };
 };
 
-const getRequiredTagUuids = async (
+interface TestProject {
+    requiredMetadataTypes: { uuid: string; name: string }[];
+    requiredTags: { uuid: string; name: string }[];
+}
+
+const getProject = async (
     user: UserEntity,
     projectUuid: string,
-): Promise<string[]> => {
+): Promise<TestProject> => {
     const response = await fetch(`${DEFAULT_URL}/projects/${projectUuid}`, {
         method: 'GET',
         headers: getAuthHeaders(user),
     });
     expect(response.status).toBe(200);
+    return (await response.json()) as TestProject;
+};
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const json = await response.json();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-    return json.requiredTags.map((tag: any) => tag.uuid);
+const getRequiredMetadataTypeUuids = async (
+    user: UserEntity,
+    projectUuid: string,
+): Promise<string[]> => {
+    const project = await getProject(user, projectUuid);
+    return project.requiredMetadataTypes.map(
+        (metadataType) => metadataType.uuid,
+    );
 };
 
 const putMetadataTypes = async (
@@ -89,7 +100,7 @@ describe('Project required metadata types', () => {
         const response = await putMetadataTypes(user, projectUuid, {});
         expect(response.status).toBe(400);
 
-        expect(await getRequiredTagUuids(user, projectUuid)).toEqual([
+        expect(await getRequiredMetadataTypeUuids(user, projectUuid)).toEqual([
             metadataTypeUuid,
         ]);
     });
@@ -102,7 +113,7 @@ describe('Project required metadata types', () => {
         });
         expect(response.status).toBe(400);
 
-        expect(await getRequiredTagUuids(user, projectUuid)).toEqual([
+        expect(await getRequiredMetadataTypeUuids(user, projectUuid)).toEqual([
             metadataTypeUuid,
         ]);
     });
@@ -115,7 +126,9 @@ describe('Project required metadata types', () => {
         });
         expect(response.status).toBe(200);
 
-        expect(await getRequiredTagUuids(user, projectUuid)).toEqual([]);
+        expect(await getRequiredMetadataTypeUuids(user, projectUuid)).toEqual(
+            [],
+        );
     });
 
     test('PUT still accepts the deprecated tagTypeUUIDs alias', async () => {
@@ -126,7 +139,7 @@ describe('Project required metadata types', () => {
         });
         expect(response.status).toBe(200);
 
-        expect(await getRequiredTagUuids(user, projectUuid)).toEqual([
+        expect(await getRequiredMetadataTypeUuids(user, projectUuid)).toEqual([
             metadataTypeUuid,
         ]);
     });
@@ -148,5 +161,34 @@ describe('Project required metadata types', () => {
             { method: 'POST', headers: getAuthHeaders(user) },
         );
         expect(response.status).toBe(400);
+    });
+
+    // `requiredTags` is the deprecated name of `requiredMetadataTypes`; old
+    // clients use it until 1.0, both in requests and in responses.
+    test('project responses contain the deprecated requiredTags alias', async () => {
+        const { user, projectUuid, metadataTypeUuid } = await setup();
+
+        const project = await getProject(user, projectUuid);
+        expect(project.requiredMetadataTypes.map((m) => m.uuid)).toEqual([
+            metadataTypeUuid,
+        ]);
+        expect(project.requiredTags).toEqual(project.requiredMetadataTypes);
+    });
+
+    test('a project can be created with the deprecated requiredTags alias', async () => {
+        const { user, metadataTypeUuid } = await setup();
+
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: `legacy_required_tags_project_${String(Date.now())}`,
+                description: 'Test project',
+                requiredTags: [metadataTypeUuid],
+            },
+            user,
+        );
+
+        expect(await getRequiredMetadataTypeUuids(user, projectUuid)).toEqual([
+            metadataTypeUuid,
+        ]);
     });
 });

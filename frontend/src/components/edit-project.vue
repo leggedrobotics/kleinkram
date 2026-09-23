@@ -68,7 +68,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
 import { useProjectQuery } from 'src/hooks/query-hooks';
@@ -92,7 +92,7 @@ const { data: project } = useProjectQuery(computed(() => projectUuid));
 
 watch(
     () => project.value,
-    (newVale: ProjectWithRequiredTagsDto | undefined) => {
+    (newVale: ProjectWithRequiredMetadataTypesDto | undefined) => {
         if (newVale) {
             projectName.value = newVale.name;
             projectDescription.value = newVale.description;

@@ -10,7 +10,7 @@
                 required
                 multiple
                 input-debounce="100"
-                :options="filteredTags"
+                :options="filteredMetadataTypes"
                 class="full-width"
                 option-label="label"
                 option-value="value"
@@ -50,15 +50,17 @@
 
             <div v-if="selected.length > 0" class="q-mt-md">
                 <div
-                    v-for="tag in selected"
-                    :key="tag.uuid"
-                    class="selected-tag-item"
+                    v-for="metadataType in selected"
+                    :key="metadataType.uuid"
+                    class="selected-metadata-type-item"
                 >
-                    <div class="tag-name">{{ tag.name }}</div>
-                    <div class="tag-actions">
+                    <div class="metadata-type-name">
+                        {{ metadataType.name }}
+                    </div>
+                    <div class="metadata-type-actions">
                         <!-- the font-size is necessary for consistnet font sizes for production builds -->
                         <q-icon
-                            :name="icon(tag.datatype)"
+                            :name="icon(metadataType.datatype)"
                             class="q-mr-sm"
                             style="font-size: 24px"
                         />
@@ -67,7 +69,7 @@
                             class="q-ml-sm text-red cursor-pointer"
                             name="sym_o_delete"
                             style="font-size: 24px"
-                            @click="() => removeTag(tag)"
+                            @click="() => removeMetadataType(metadataType)"
                         />
                     </div>
                 </div>
@@ -77,59 +79,62 @@
 </template>
 
 <script setup lang="ts">
-import type { TagTypeDto } from '@kleinkram/api-dto/types/tags/tags.dto';
+import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import { DataType } from '@kleinkram/shared';
 import { QSelect } from 'quasar';
-import { useFilteredTag } from 'src/hooks/query-hooks';
+import { useFilteredMetadataTypes } from 'src/hooks/query-hooks';
 import { icon } from 'src/services/generic';
 import { computed, ref, watch } from 'vue';
 
 const selectReference = ref<QSelect | undefined>(undefined);
-const tagSearch = ref('');
+const nameSearch = ref('');
 const selectedDataType = ref(DataType.ANY);
 const properties = defineProps<{
-    selected: TagTypeDto[];
+    selected: MetadataTypeDto[];
 }>();
 
-const selected = ref<TagTypeDto[]>([...properties.selected]);
+const selected = ref<MetadataTypeDto[]>([...properties.selected]);
 
 const emits = defineEmits(['update:selected']);
 
 watch(
     selected,
-    (newValue: TagTypeDto[]) => {
+    (newValue: MetadataTypeDto[]) => {
         // Corrected type here
         emits('update:selected', newValue);
     },
     { deep: true },
 );
 
-const { data: tags } = useFilteredTag(tagSearch.value, selectedDataType.value);
+const { data: metadataTypes } = useFilteredMetadataTypes(
+    nameSearch.value,
+    selectedDataType.value,
+);
 
 const onInputUpdate = (value: string): void => {
-    tagSearch.value = value;
+    nameSearch.value = value;
 };
 
-const removeTag = (tag: TagTypeDto): void => {
-    const index = selected.value.findIndex((t) => t.uuid === tag.uuid);
+const removeMetadataType = (metadataType: MetadataTypeDto): void => {
+    const index = selected.value.findIndex((t) => t.uuid === metadataType.uuid);
     if (index !== -1) {
         selected.value.splice(index, 1);
     }
 };
 
-const filteredTags = computed(() => {
-    if (!tags.value?.data) return;
-    return tags.value.data.filter(
-        (tag) =>
+const filteredMetadataTypes = computed(() => {
+    if (!metadataTypes.value?.data) return;
+    return metadataTypes.value.data.filter(
+        (metadataType) =>
             !selected.value.some(
-                (selectedTag) => selectedTag.uuid === tag.uuid,
+                (selectedType) => selectedType.uuid === metadataType.uuid,
             ),
     );
 });
 
 watch(
     selected,
-    (newValue: TagTypeDto[]) => {
+    (newValue: MetadataTypeDto[]) => {
         emits('update:selected', newValue);
         if (selectReference.value) {
             selectReference.value.hidePopup(); // Close the dropdown after selection
@@ -140,7 +145,7 @@ watch(
 </script>
 
 <style scoped>
-.selected-tag-item {
+.selected-metadata-type-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -150,11 +155,11 @@ watch(
     margin-bottom: 8px;
 }
 
-.tag-name {
+.metadata-type-name {
     flex-grow: 1;
 }
 
-.tag-actions {
+.metadata-type-actions {
     display: flex;
     align-items: center;
 }

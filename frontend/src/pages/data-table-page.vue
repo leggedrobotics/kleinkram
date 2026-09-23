@@ -3,9 +3,15 @@
 
     <FilesFilter :use-filter="filterHook" />
 
+    <table-selection-bar
+        noun="file"
+        :count="selected.length"
+        @clear="clearSelection"
+    />
+
     <!--
         The card list has no column headers, so phones get an explicit sort
-        control and a hint about how many rows are currently selected.
+        control.
     -->
     <div v-if="isPhone" class="row items-center justify-between q-mb-sm">
         <q-btn-dropdown
@@ -40,10 +46,6 @@
                 </q-item>
             </q-list>
         </q-btn-dropdown>
-
-        <span v-if="selected.length > 0" class="text-caption text-grey-7">
-            {{ selected.length }} selected
-        </span>
     </div>
 
     <q-table
@@ -74,6 +76,18 @@
                 class="checkbox-with-hitbox"
             />
         </template>
+        <template #body-cell-filename="props">
+            <q-td :props="props">
+                <router-link
+                    :to="fileRoute(props.row)"
+                    class="kk-row-link"
+                    @click.stop
+                >
+                    {{ props.row.filename }}
+                </router-link>
+            </q-td>
+        </template>
+
         <template #body-cell-state="props">
             <q-td :props="props">
                 <q-icon
@@ -81,7 +95,9 @@
                     :color="getColorFileState(props.row.state)"
                     size="20px"
                 >
-                    <q-tooltip>{{ getTooltip(props.row.state) }}</q-tooltip>
+                    <q-tooltip>{{
+                        getTooltip(props.row.state, props.row.stateComment)
+                    }}</q-tooltip>
                 </q-icon>
             </q-td>
         </template>
@@ -107,7 +123,7 @@
                             <q-item
                                 v-ripple
                                 clickable
-                                @click="() => onRowClick(undefined, props.row)"
+                                @click="() => openFile(props.row)"
                             >
                                 <q-item-section>View File</q-item-section>
                             </q-item>
@@ -184,13 +200,7 @@
                                         <q-item
                                             v-ripple
                                             clickable
-                                            @click="
-                                                () =>
-                                                    onRowClick(
-                                                        undefined,
-                                                        props.row,
-                                                    )
-                                            "
+                                            @click="() => openFile(props.row)"
                                         >
                                             <q-item-section>
                                                 View File
@@ -256,10 +266,12 @@ import {
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 import TableEmptyState from 'components/common/table-empty-state.vue';
+import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import FilesFilter from 'components/files/files-filter.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable, QTableColumn, useQuasar } from 'quasar';
 import { useFileFilter } from 'src/composables/use-file-filter';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import { useHandler } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
@@ -267,14 +279,20 @@ import { formatSize } from 'src/services/general-formatting';
 import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
 import { computed, Ref, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 
 const $router = useRouter();
+const $route = useRoute();
 const $q = useQuasar();
 const tableReference: Ref<QTable | undefined> = ref(undefined);
 const handler = useHandler();
-handler.value.sortBy = 'file.createdAt';
-handler.value.descending = true;
+
+// Files are listed newest recording first. A sort pinned in the URL (a shared
+// deep link, a reload after clicking a column header) takes precedence.
+if (!$route.query.sortBy) {
+    handler.value.sortBy = 'file.date';
+    handler.value.descending = true;
+}
 const loading = ref(false);
 const selected = ref<FileWithTopicDto[]>([]);
 
@@ -288,6 +306,9 @@ const isCompact = computed(() => $q.screen.lt.md);
 const sortOptions = [
     { label: 'File name', value: 'file.filename' },
     { label: 'Health', value: 'state' },
+    { label: 'Project', value: 'project.name' },
+    { label: 'Mission', value: 'mission.name' },
+    { label: 'Creator', value: 'creator.name' },
     { label: 'Recording date', value: 'file.date' },
     { label: 'Creation date', value: 'file.createdAt' },
     { label: 'Size', value: 'file.size' },
@@ -296,7 +317,7 @@ const sortOptions = [
 const activeSortLabel = computed(
     () =>
         sortOptions.find((option) => option.value === handler.value.sortBy)
-            ?.label ?? 'Creation date',
+            ?.label ?? 'Recording date',
 );
 
 function toggleSort(name: string): void {
@@ -313,7 +334,7 @@ const {
     startDate,
     endDate,
     selectedFileTypesFilter,
-    tagFilterQuery,
+    metadataFilterQuery,
     debouncedFilter,
 } = filterHook;
 
@@ -365,7 +386,7 @@ const queryKeyFiles = computed(() => [
     state.selectedTopics,
     state.selectedDatatypes,
     state.matchAllTopics,
-    state.tagFilter,
+    state.metadataFilter,
     selectedFileTypesFilter,
     handler.value.queryKey,
 ]);
@@ -384,7 +405,7 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
                 messageDatatypes: state.selectedDatatypes,
                 matchAllTopics: state.matchAllTopics,
                 fileTypes: selectedFileTypesFilter.value,
-                tag: tagFilterQuery.value,
+                metadataByTypeUuid: metadataFilterQuery.value,
                 take: handler.value.take,
                 skip: handler.value.skip,
                 sort: handler.value.sortBy,
@@ -422,7 +443,7 @@ const columns = [
         align: 'left',
         field: (row: FileWithTopicDto): string => row.mission.project.name,
         format: (value: string): string => value,
-        sortable: false,
+        sortable: true,
         style: 'width:  10%; max-width:  10%; min-width: 10%;',
     },
     {
@@ -432,7 +453,7 @@ const columns = [
         align: 'left',
         field: (row: FileWithTopicDto): string => row.mission.name,
         format: (value: string): string => value,
-        sortable: false,
+        sortable: true,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
     {
@@ -448,7 +469,7 @@ const columns = [
     {
         name: 'file.date',
         required: true,
-        label: 'Recoring Date',
+        label: 'Recording Date',
         align: 'left',
         field: (row: FileWithTopicDto): Date => row.date,
         format: (value: string): string => formatDate(new Date(value)),
@@ -464,20 +485,22 @@ const columns = [
         sortable: true,
     },
     {
-        name: 'Creator',
+        name: 'creator.name',
         required: true,
         label: 'Creator',
         align: 'left',
         field: (row: FileWithTopicDto): string => row.creator.name,
         format: (value: string): string => value,
-        sortable: false,
+        sortable: true,
         style: 'width:  9%; max-width:  9%; min-width: 9%;',
     },
     {
         name: 'file.size',
         required: true,
         label: 'Size',
-        align: 'left',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
         field: (row: FileWithTopicDto): number => row.size,
         format: formatSize,
         sortable: true,
@@ -510,9 +533,11 @@ const visibleColumns = computed(() =>
         : columns,
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: any, row: FileWithTopicDto): Promise<void> => {
-    await $router.push({
+/**
+ * Route to a file, shared by the row click and the name link.
+ */
+function fileRoute(row: FileWithTopicDto): RouteLocationRaw {
+    return {
         name: ROUTES.FILE.routeName,
         params: {
             // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -520,8 +545,22 @@ const onRowClick = async (_: any, row: FileWithTopicDto): Promise<void> => {
             missionUuid: row.mission.uuid,
             projectUuid: row.mission.project.uuid,
         },
-    });
+    };
+}
+
+const openFile = async (row: FileWithTopicDto): Promise<void> => {
+    await $router.push(fileRoute(row));
 };
+
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick } = useRowActivation(selected, openFile);
+
+function clearSelection(): void {
+    selected.value = [];
+}
 </script>
 
 <style scoped>

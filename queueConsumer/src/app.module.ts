@@ -5,6 +5,7 @@ import {
     StorageModule,
 } from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
+import { ActionDiagnosticEntity } from '@kleinkram/backend-common/entities/action/action-diagnostic.entity';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
@@ -17,11 +18,11 @@ import { CategoryEntity } from '@kleinkram/backend-common/entities/category/cate
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectStarEntity } from '@kleinkram/backend-common/entities/project/project-star.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
@@ -90,6 +91,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                     ProjectStarEntity,
                     TopicEntity,
                     ActionEntity,
+                    ActionDiagnosticEntity,
                     ActionRunnerEntity,
                     ActionTemplateEntity,
                     ActionTriggerEntity,
@@ -97,7 +99,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                     ApiKeyEntity,
                     AccountEntity,
                     AccessGroupEntity,
-                    TagTypeEntity,
+                    MetadataTypeEntity,
                     MetadataEntity,
                     ProjectAccessEntity,
                     MissionAccessEntity,

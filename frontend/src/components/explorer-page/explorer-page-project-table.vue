@@ -1,4 +1,10 @@
 <template>
+    <table-selection-bar
+        noun="project"
+        :count="selected.length"
+        @clear="clearSelection"
+    />
+
     <q-table
         v-if="!isLoading"
         v-model:pagination="pagination"
@@ -91,7 +97,9 @@
                 >
                     <span class="text-subtitle1">{{ emptyStateLabel }}</span>
 
-                    <dialog-opener-create-project v-if="scope !== 'starred'">
+                    <dialog-opener-create-project
+                        v-if="scope !== 'starred' && scope !== 'public'"
+                    >
                         <q-btn
                             flat
                             dense
@@ -132,6 +140,9 @@
                                 class="text-subtitle2 project-card__text ellipsis-2-lines"
                             >
                                 {{ props.row.name }}
+                                <public-project-chip
+                                    v-if="props.row.isPublic"
+                                />
                             </div>
                             <div
                                 v-if="props.row.description"
@@ -193,7 +204,7 @@
                                             </q-item-section>
                                         </q-item>
                                     </EditProjectDialogOpener>
-                                    <ConfigureTagsDialogOpener
+                                    <ConfigureMetadataTypesDialogOpener
                                         :project-uuid="props.row.uuid"
                                     >
                                         <q-item v-ripple clickable>
@@ -201,7 +212,7 @@
                                                 Enforce Metadata
                                             </q-item-section>
                                         </q-item>
-                                    </ConfigureTagsDialogOpener>
+                                    </ConfigureMetadataTypesDialogOpener>
                                     <change-project-rights-dialog-opener
                                         :project-uuid="props.row.uuid"
                                         :project-access-uuid="
@@ -232,6 +243,19 @@
                     </div>
                 </q-card>
             </div>
+        </template>
+
+        <template #body-cell-name="props">
+            <q-td :props="props">
+                <router-link
+                    :to="projectRoute(props.row)"
+                    class="kk-row-link"
+                    @click.stop
+                >
+                    {{ props.row.name }}
+                </router-link>
+                <public-project-chip v-if="props.row.isPublic" />
+            </q-td>
         </template>
 
         <template #body-cell-star="props">
@@ -279,7 +303,7 @@
                                         </q-item-section>
                                     </q-item>
                                 </EditProjectDialogOpener>
-                                <ConfigureTagsDialogOpener
+                                <ConfigureMetadataTypesDialogOpener
                                     :project-uuid="props.row.uuid"
                                 >
                                     <q-item v-ripple clickable>
@@ -287,7 +311,7 @@
                                             Enforce Metadata
                                         </q-item-section>
                                     </q-item>
-                                </ConfigureTagsDialogOpener>
+                                </ConfigureMetadataTypesDialogOpener>
 
                                 <change-project-rights-dialog-opener
                                     :project-uuid="props.row.uuid"
@@ -319,14 +343,18 @@
 </template>
 
 <script setup lang="ts">
+import type { ProjectWithMissionCountDto } from '@kleinkram/api-dto/types/project/project-with-mission-count.dto';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
-import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
+import ConfigureMetadataTypesDialogOpener from 'components/button-wrapper/dialog-opener-configure-metadata-types.vue';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
 import ProjectStarButton from 'components/common/project-star-button.vue';
+import PublicProjectChip from 'components/common/public-project-chip.vue';
+import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import { QTable, useQuasar } from 'quasar';
 import { explorerPageTableColumns } from 'src/components/explorer-page/explorer-page-table-columns';
+import { useRowActivation } from 'src/composables/use-row-activation';
 import {
     useFilteredProjects,
     useHandler,
@@ -338,7 +366,7 @@ import { formatSize } from 'src/services/general-formatting';
 import { TableRequest } from 'src/services/query-handler';
 import type { ProjectScope } from 'src/types/project-scope';
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouteLocationRaw, useRouter } from 'vue-router';
 
 const urlHandler = useHandler();
 const $q = useQuasar();
@@ -369,11 +397,19 @@ const visibleColumns = computed(() =>
         : undefined,
 );
 
-const emptyStateLabel = computed(() =>
-    scope === 'starred'
-        ? 'No starred projects yet — star a project to find it here'
-        : 'No Projects Found',
-);
+const emptyStateLabel = computed(() => {
+    switch (scope) {
+        case 'starred': {
+            return 'No starred projects yet — star a project to find it here';
+        }
+        case 'public': {
+            return 'No public projects yet';
+        }
+        default: {
+            return 'No Projects Found';
+        }
+    }
+});
 
 const sortOptions = explorerPageTableColumns
     .filter((column) => column.sortable === true)
@@ -421,7 +457,7 @@ const pagination = computed({
     }),
 });
 
-const selected = ref([]);
+const selected = ref<ProjectWithMissionCountDto[]>([]);
 
 const {
     data: rawData,
@@ -439,6 +475,7 @@ const {
               { 'creator.uuid': user.value?.uuid ?? '' }
             : {}),
         ...(scope === 'starred' ? { starred: 'true' } : {}),
+        ...(scope === 'public' ? { public: 'true' } : {}),
     })),
 );
 
@@ -458,16 +495,29 @@ watch(
 
 const $router = useRouter();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const onRowClick = async (_: Event, row: any): Promise<void> => {
-    await $router.push({
+/**
+ * Route to a project's missions, shared by the row click and the name link.
+ */
+function projectRoute(row: ProjectWithMissionCountDto): RouteLocationRaw {
+    return {
         name: ROUTES.MISSIONS.routeName,
-        params: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            projectUuid: row.uuid,
-        },
-    });
+        params: { projectUuid: row.uuid },
+    };
+}
+
+const openProject = async (row: ProjectWithMissionCountDto): Promise<void> => {
+    await $router.push(projectRoute(row));
 };
+
+/**
+ * Navigates while nothing is selected, toggles the row once something is.
+ * See use-row-activation for why that is safe here.
+ */
+const { onRowClick } = useRowActivation(selected, openProject);
+
+function clearSelection(): void {
+    selected.value = [];
+}
 </script>
 
 <style scoped>

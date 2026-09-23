@@ -1,5 +1,5 @@
 import type { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import type { ResentProjectsDto } from '@kleinkram/api-dto/types/project/recent-projects.dto';
 import { AxiosResponse } from 'axios';
@@ -30,6 +30,10 @@ export const filteredProjects = async (
         parameters.starred = 'true';
     }
 
+    if (searchParameters?.public === 'true') {
+        parameters.public = 'true';
+    }
+
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
         '/projects',
         {
@@ -41,9 +45,11 @@ export const filteredProjects = async (
 
 export const getProject = async (
     uuid: string,
-): Promise<ProjectWithRequiredTagsDto> => {
-    const response: AxiosResponse<ProjectWithRequiredTagsDto> =
-        await axios.get<ProjectWithRequiredTagsDto>(`/projects/${uuid}`);
+): Promise<ProjectWithRequiredMetadataTypesDto> => {
+    const response: AxiosResponse<ProjectWithRequiredMetadataTypesDto> =
+        await axios.get<ProjectWithRequiredMetadataTypesDto>(
+            `/projects/${uuid}`,
+        );
     return response.data;
 };
 

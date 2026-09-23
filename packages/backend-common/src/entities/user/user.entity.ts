@@ -115,8 +115,11 @@ export class UserEntity extends BaseEntity {
     )
     templates?: ActionTemplateEntity[];
 
-    @OneToMany(() => MetadataEntity, (tag: MetadataEntity) => tag.creator)
-    tags?: MetadataEntity[];
+    @OneToMany(
+        () => MetadataEntity,
+        (metadata: MetadataEntity) => metadata.creator,
+    )
+    metadata?: MetadataEntity[];
 
     @OneToMany(() => ApiKeyEntity, (apikey: ApiKeyEntity) => apikey.user)
 

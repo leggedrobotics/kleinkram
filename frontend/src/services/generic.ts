@@ -1,5 +1,7 @@
 import {
     AccessGroupRights,
+    ActionFailureOrigin,
+    ActionSeverity,
     ActionState,
     DataType,
     FileState,
@@ -261,6 +263,62 @@ async function downloadFiles(files: { url: string; filename: string }[]) {
     }
 }
 
+/**
+ * How an action should read at a glance: the colour of its badge and the words
+ * on it.
+ *
+ * State alone is no longer enough. A run that finished and reported warnings is
+ * `DONE` but must not be green, and a failure we caused should not look like
+ * one the user caused, so the verdict and the blame are folded in here rather
+ * than at every call site.
+ *
+ * @param state the lifecycle state of the action
+ * @param severity the verdict of the run, defaulting to OK for actions
+ * recorded before severity existed
+ * @param options extra context used only for the label
+ */
+export function getActionBadge(
+    state: ActionState,
+    severity: ActionSeverity = ActionSeverity.OK,
+    options: {
+        diagnosticCount?: number;
+        failureOrigin?: ActionFailureOrigin | undefined;
+    } = {},
+): { color: string; label: string } {
+    // A finished run is described by its verdict, not by the fact that it
+    // finished. An action that reported a fatal finding and still exited 0 is
+    // `DONE` with severity `ERROR`, and showing that as a green success is the
+    // exact thing this feature exists to prevent - so every non-OK verdict is
+    // handled here, not just `WARNING`.
+    if (state === ActionState.DONE && severity !== ActionSeverity.OK) {
+        const isError = severity === ActionSeverity.ERROR;
+        const count = options.diagnosticCount ?? 0;
+        // `diagnosticCount` counts every diagnostic, including `INFO` notes
+        // that did not raise the verdict, so it cannot be called a count of
+        // warnings. The colour carries the severity; the number is findings.
+        const detail =
+            count > 0
+                ? `${count.toString()} ${count === 1 ? 'finding' : 'findings'}`
+                : isError
+                  ? 'errors'
+                  : 'warnings';
+
+        return {
+            color: isError ? 'red' : 'amber-8',
+            label: `DONE · ${detail}`,
+        };
+    }
+
+    if (
+        state === ActionState.FAILED &&
+        options.failureOrigin === ActionFailureOrigin.SYSTEM
+    ) {
+        return { color: 'red', label: 'FAILED · system' };
+    }
+
+    return { color: getActionColor(state), label: state };
+}
+
 export function getActionColor(state: ActionState) {
     switch (state) {
         case ActionState.DONE: {
@@ -290,34 +348,53 @@ export function getActionColor(state: ActionState) {
     }
 }
 
-export function getTooltip(state: FileState | undefined) {
+export function getTooltip(
+    state: FileState | undefined,
+    stateComment?: string | null,
+) {
     if (state === undefined) {
         return 'Unknown';
     }
 
+    let baseText = '';
     switch (state) {
         case FileState.OK: {
-            return 'File is OK';
+            baseText = 'File is OK';
+            break;
         }
         case FileState.ERROR: {
-            return 'File has an error';
+            baseText = 'File has an error';
+            break;
         }
         case FileState.UPLOADING: {
-            return 'File is uploading';
+            baseText = 'File is uploading';
+            break;
         }
         case FileState.CORRUPTED: {
-            return 'File is corrupted';
+            baseText = 'File is corrupted';
+            break;
         }
         case FileState.LOST: {
-            return 'File cannot be found in storage';
+            baseText = 'File cannot be found in storage';
+            break;
         }
         case FileState.FOUND: {
-            return 'File was recovered';
+            baseText = 'File was recovered';
+            break;
         }
         case FileState.CONVERSION_ERROR: {
-            return 'File conversion failed';
+            baseText = 'File conversion failed';
+            break;
+        }
+        default: {
+            baseText = 'Unknown';
         }
     }
+
+    if (stateComment) {
+        return `${baseText}: ${stateComment}`;
+    }
+    return baseText;
 }
 
 export function getIcon(state: FileState) {

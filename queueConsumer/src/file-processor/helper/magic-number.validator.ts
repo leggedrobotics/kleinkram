@@ -15,22 +15,68 @@ const MAGIC_NUMBERS: Partial<Record<FileType, Buffer>> = {
     [FileType.DB3]: Buffer.from('SQLite format 3\0'),
 };
 
+const FORMAT_SPEC_URLS: Partial<Record<FileType, string>> = {
+    [FileType.MCAP]: 'https://mcap.dev/spec',
+    [FileType.BAG]: 'https://wiki.ros.org/Bags/Format/2.0',
+};
+
+export interface FileValidationResult {
+    valid: boolean;
+    /** User-facing reason, set when `valid` is false. */
+    error?: string;
+}
+
+/**
+ * Neither MD nor CSV has a magic number, so we check that the content is
+ * text and, for CSV, that it is tabular.
+ */
+const validateTextFormat = async (
+    handle: fs.FileHandle,
+    fileType: FileType.MD | FileType.CSV,
+): Promise<FileValidationResult> => {
+    const buffer = Buffer.alloc(TEXT_SAMPLE_BYTES);
+    const { bytesRead } = await handle.read(buffer, 0, TEXT_SAMPLE_BYTES, 0);
+    if (bytesRead === 0) return { valid: false, error: 'File is empty' };
+
+    const sample = buffer.subarray(0, bytesRead);
+    const { size } = await handle.stat();
+    const sampleIsCompleteFile = size <= bytesRead;
+
+    if (!isPlainTextSample(sample, sampleIsCompleteFile))
+        return {
+            valid: false,
+            error: `${fileType} validation failed: the file is not plain text`,
+        };
+    if (fileType === FileType.MD) return { valid: true };
+
+    if (looksLikeCsv(sample, sampleIsCompleteFile)) return { valid: true };
+    return {
+        valid: false,
+        error: 'CSV validation failed: no consistent column structure found',
+    };
+};
+
 export const MagicNumberValidator = {
-    async validate(filePath: string, fileType: FileType): Promise<boolean> {
+    async validate(
+        filePath: string,
+        fileType: FileType,
+    ): Promise<FileValidationResult> {
         try {
             const handle = await fs.open(filePath, 'r');
             try {
                 if (fileType === FileType.SVO2) {
                     // the magic number is unknown, so we just check if the file is not empty
                     const stat = await handle.stat();
-                    return stat.size > 0;
+                    if (stat.size > 0) return { valid: true };
+                    return { valid: false, error: 'File is empty' };
                 }
 
                 if (fileType === FileType.YAML) {
                     // Basic check for YAML: readable text file
                     const buffer = Buffer.alloc(1024);
                     const { bytesRead } = await handle.read(buffer, 0, 1024, 0);
-                    if (bytesRead === 0) return false;
+                    if (bytesRead === 0)
+                        return { valid: false, error: 'File is empty' };
 
                     // Check for common YAML markers or just that it's not binary garbage
                     // A simple heuristic: check if it has printable characters
@@ -39,36 +85,23 @@ export const MagicNumberValidator = {
                     const nullCount = buffer
                         .subarray(0, bytesRead)
                         .filter((b) => b === 0).length;
-                    return nullCount < bytesRead * 0.1; // Less than 10% null bytes
+                    if (nullCount < bytesRead * 0.1) return { valid: true }; // Less than 10% null bytes
+                    return {
+                        valid: false,
+                        error: `YAML validation failed: excessive null bytes (${String(nullCount)} out of ${String(bytesRead)})`,
+                    };
                 }
 
-                if (fileType === FileType.MD || fileType === FileType.CSV) {
-                    // Neither format has a magic number, so we check that the
-                    // content is text and, for CSV, that it is tabular.
-                    const buffer = Buffer.alloc(TEXT_SAMPLE_BYTES);
-                    const { bytesRead } = await handle.read(
-                        buffer,
-                        0,
-                        TEXT_SAMPLE_BYTES,
-                        0,
-                    );
-                    const sample = buffer.subarray(0, bytesRead);
-                    const { size } = await handle.stat();
-                    const sampleIsCompleteFile = size <= bytesRead;
-
-                    if (!isPlainTextSample(sample, sampleIsCompleteFile))
-                        return false;
-                    if (fileType === FileType.MD) return true;
-
-                    return looksLikeCsv(sample, sampleIsCompleteFile);
-                }
+                if (fileType === FileType.MD || fileType === FileType.CSV)
+                    return await validateTextFormat(handle, fileType);
 
                 if (fileType === FileType.TUM) {
                     // TUM format: timestamp tx ty tz qx qy qz qw
                     // Check if the first non-comment line has 8 columns
                     const buffer = Buffer.alloc(4096);
                     const { bytesRead } = await handle.read(buffer, 0, 4096, 0);
-                    if (bytesRead === 0) return false;
+                    if (bytesRead === 0)
+                        return { valid: false, error: 'File is empty' };
 
                     const content = buffer
                         .subarray(0, bytesRead)
@@ -81,10 +114,13 @@ export const MagicNumberValidator = {
                             continue;
 
                         const parts = trimmed.split(/\s+/);
-                        if (parts.length >= 8) return true;
-                        return false;
+                        if (parts.length >= 8) return { valid: true };
+                        return {
+                            valid: false,
+                            error: `TUM validation failed: expected 8 columns, found ${String(parts.length)}`,
+                        };
                     }
-                    return true;
+                    return { valid: true };
                 }
 
                 const magic = MAGIC_NUMBERS[fileType];
@@ -92,7 +128,7 @@ export const MagicNumberValidator = {
                     logger.warn(
                         `No magic number defined for file type ${fileType}, skipping validation.`,
                     );
-                    return true;
+                    return { valid: true };
                 }
 
                 const buffer = Buffer.alloc(magic.length);
@@ -104,10 +140,22 @@ export const MagicNumberValidator = {
                 );
 
                 if (bytesRead < magic.length) {
-                    return false;
+                    return {
+                        valid: false,
+                        error: `File too small: only ${String(bytesRead)} bytes, need at least ${String(magic.length)} for ${fileType} header`,
+                    };
                 }
 
-                return buffer.equals(magic);
+                if (buffer.equals(magic)) {
+                    return { valid: true };
+                }
+
+                const specUrl = FORMAT_SPEC_URLS[fileType];
+
+                return {
+                    valid: false,
+                    error: `Invalid magic number: expected ${magic.toString('hex')} but got ${buffer.toString('hex')}. This may be a split/segmented file missing its header.${specUrl ? ` See ${specUrl}` : ''}`,
+                };
             } finally {
                 await handle.close();
             }
@@ -115,7 +163,11 @@ export const MagicNumberValidator = {
             logger.error(
                 `Failed to validate magic number for ${filePath}: ${String(error)}`,
             );
-            return false;
+            // The raw error names paths inside the worker, keep it in the log.
+            return {
+                valid: false,
+                error: 'Validation failed: the uploaded file could not be read',
+            };
         }
     },
 };

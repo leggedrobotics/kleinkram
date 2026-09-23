@@ -193,12 +193,36 @@ export default {
         return asString('S3_ARTIFACTS_BUCKET_NAME');
     },
 
+    /**
+     * Bucket holding the single-file scripts submitted through
+     * `klein action run-script`.
+     *
+     * Unlike the other three buckets this one falls back to a default instead
+     * of throwing, so that an existing deployment keeps booting after an
+     * upgrade without first adding the variable to its environment.
+     */
+    get S3_SCRIPTS_BUCKET_NAME(): string {
+        return asOptionalString('S3_SCRIPTS_BUCKET_NAME') ?? 'action-scripts';
+    },
+
     get DOCS_URL(): string {
         return asString('DOCS_URL');
     },
 
+    /**
+     * @returns base URL of the Loki instance storing action logs
+     * @example http://loki:3100
+     */
+    get LOKI_URL(): string {
+        return asOptionalString('LOKI_URL') ?? 'http://loki:3100';
+    },
+
     get VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT(): boolean {
         return asBoolean('VITE_USE_FAKE_OAUTH_FOR_DEVELOPMENT');
+    },
+
+    get ACCESS_CONFIG_PATH(): string | undefined {
+        return asOptionalString('ACCESS_CONFIG_PATH');
     },
 
     /**

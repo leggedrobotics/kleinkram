@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from pathlib import Path
 from typing import List
 from typing import Optional
 
+import dateutil.parser
 import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.file_transfer import DownloadState
+from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
@@ -20,8 +25,43 @@ from kleinkram.utils import split_args
 
 logger = logging.getLogger(__name__)
 
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def _parse_log_time(value: Optional[str], flag: str) -> Optional[int]:
+    """Parse a slice bound into MCAP log time (nanoseconds since the epoch).
+
+    Accepts an ISO 8601 timestamp, which is what `klein file info` prints, or a
+    raw nanosecond count for callers that already have one.
+    """
+    if value is None:
+        return None
+
+    if value.isdigit():
+        return int(value)
+
+    try:
+        parsed = dateutil.parser.isoparse(value)
+    except ValueError as e:
+        raise typer.BadParameter(
+            f"{flag} must be an ISO 8601 timestamp (e.g. 2026-09-18T08:08:28Z) "
+            f"or nanoseconds since the epoch, got {value!r}"
+        ) from e
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    # Integer arithmetic: a float timestamp cannot hold nanoseconds since the
+    # epoch exactly, and would shift a bound by a few hundred nanoseconds.
+    return (parsed - _EPOCH) // timedelta(microseconds=1) * 1_000
+
+
 HELP = """\
 Download files from kleinkram.
+
+Passing --topics, --start-time or --end-time downloads only part of each .mcap, \
+using the file's own index to fetch only the selected messages (or, for \
+compressed chunks, only the chunks holding them). Files that are not .mcap \
+cannot be sliced and are skipped.
 """
 
 
@@ -59,6 +99,21 @@ def download(
         "--create-dirs",
         help="create missing destination directories without prompting",
     ),
+    topics: Optional[List[str]] = typer.Option(
+        None,
+        "--topics",
+        help="only keep these topics (.mcap only); repeatable",
+    ),
+    start_time: Optional[str] = typer.Option(
+        None,
+        "--start-time",
+        help="drop messages logged before this time: ISO 8601 (UTC if no zone) or epoch nanoseconds (.mcap only)",
+    ),
+    end_time: Optional[str] = typer.Option(
+        None,
+        "--end-time",
+        help="drop messages logged at or after this time: ISO 8601 (UTC if no zone) or epoch nanoseconds (.mcap only)",
+    ),
 ) -> None:
     if include_corrupt_files:
         typer.secho(
@@ -69,6 +124,36 @@ def download(
         )
         if not (yes or allow_corrupt):
             typer.confirm("Do you want to continue? You can use --yes or --allow-corrupt to skip this prompt.", abort=True)
+
+    parsed_start = _parse_log_time(start_time, "--start-time")
+    parsed_end = _parse_log_time(end_time, "--end-time")
+    if parsed_start is not None and parsed_end is not None and parsed_end <= parsed_start:
+        raise typer.BadParameter("--end-time must be after --start-time")
+
+    mcap_slice = McapSlice(
+        topics=tuple(topics) if topics else None,
+        start_time=parsed_start,
+        end_time=parsed_end,
+    )
+
+    if mcap_slice:
+        # Messages can only be addressed one by one in uncompressed chunks. In a
+        # compressed file every chunk holding a wanted topic is fetched whole,
+        # which without a time window is usually most of the file.
+        if mcap_slice.topics and mcap_slice.start_time is None and mcap_slice.end_time is None:
+            typer.secho(
+                "Note: --topics without a time window only transfers less for .mcap files with "
+                "uncompressed chunks; compressed chunks are fetched whole. "
+                "Add --start-time/--end-time to bound the transfer.",
+                fg=typer.colors.YELLOW,
+                err=True,
+            )
+
+        typer.secho(
+            "Partial download: only .mcap files will be downloaded, and only in part.",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
 
     # create destination directory
     dest_dir = Path(dest)
@@ -106,6 +191,7 @@ def download(
                 base_dir=dest_dir,
                 nested=nested,
                 overwrite=overwrite,
+                mcap_slice=mcap_slice if mcap_slice else None,
                 on_overall_progress_cb=cbs.on_overall_progress,
                 on_file_start_cb=cbs.on_file_start,
                 on_file_progress_cb=cbs.on_file_progress,
@@ -115,11 +201,15 @@ def download(
         # Print summary
         avg_speed = result.total_bytes / result.elapsed_seconds if result.elapsed_seconds > 0 else 0
         typer.echo(f"\nDownload took {result.elapsed_seconds:.2f} seconds")
-        typer.echo(f"Total downloaded/verified: {format_bytes(result.total_bytes)}")
+        label = "Total transferred" if mcap_slice else "Total downloaded/verified"
+        typer.echo(f"{label}: {format_bytes(result.total_bytes)}")
         typer.echo(f"Average speed: {format_bytes(avg_speed, speed=True)}")
         typer.echo(
             "Summary: "
             f"{result.state_counts.get(DownloadState.DOWNLOADED_OK, 0)} downloaded OK, "
+            f"{result.state_counts.get(DownloadState.DOWNLOADED_PARTIAL, 0)} downloaded partially, "
+            f"{result.state_counts.get(DownloadState.SKIPPED_NOT_SLICEABLE, 0)} skipped not sliceable, "
+            f"{result.state_counts.get(DownloadState.SKIPPED_SLICE_EXISTS, 0)} skipped slice target exists, "
             f"{result.state_counts.get(DownloadState.DOWNLOADED_CORRUPTED, 0)} downloaded corrupted, "
             f"{result.state_counts.get(DownloadState.OVERWRITTEN_OK, 0)} overwritten OK, "
             f"{result.state_counts.get(DownloadState.OVERWRITTEN_CORRUPTED, 0)} overwritten corrupted, "
@@ -141,10 +231,12 @@ def download(
             base_dir=dest_dir,
             nested=nested,
             overwrite=overwrite,
+            mcap_slice=mcap_slice if mcap_slice else None,
         )
 
         downloaded = (
             result.state_counts.get(DownloadState.DOWNLOADED_OK, 0)
+            + result.state_counts.get(DownloadState.DOWNLOADED_PARTIAL, 0)
             + result.state_counts.get(DownloadState.DOWNLOADED_CORRUPTED, 0)
             + result.state_counts.get(DownloadState.OVERWRITTEN_OK, 0)
             + result.state_counts.get(DownloadState.OVERWRITTEN_CORRUPTED, 0)

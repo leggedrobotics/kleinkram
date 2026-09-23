@@ -12,7 +12,7 @@
             <div class="flex column justify-center">
                 <h3 class="text-h5 q-ma-none text-weight-medium">Metadata</h3>
                 <span class="text-subtitle2 text-grey-7 q-mt-xs"
-                    >{{ mission.tags?.length || 0 }} Metadata</span
+                    >{{ mission.metadata?.length || 0 }} Metadata</span
                 >
             </div>
             <div class="row items-center q-gutter-sm">
@@ -24,7 +24,7 @@
                     padding="4px 12px"
                     icon="sym_o_edit"
                     label="Edit Metadata"
-                    @click="openTagsDialog"
+                    @click="openMetadataDialog"
                 />
                 <q-btn
                     flat
@@ -44,31 +44,33 @@
         <div class="q-pa-none">
             <div class="column">
                 <div
-                    v-for="tag in mission.tags ?? []"
-                    :key="tag.uuid"
-                    class="column tag-item-container q-pa-lg relative-position"
+                    v-for="metadata in mission.metadata ?? []"
+                    :key="metadata.uuid"
+                    class="column metadata-item-container q-pa-lg relative-position"
                 >
                     <div class="row items-center q-gutter-x-sm text-grey-8">
                         <q-icon
-                            :name="getIconForDataType(tag.type.datatype)"
+                            :name="getIconForDataType(metadata.type.datatype)"
                             size="16px"
                         />
-                        <span class="text-caption">{{ tag.type.name }}:</span>
+                        <span class="text-caption"
+                            >{{ metadata.type.name }}:</span
+                        >
                     </div>
 
                     <div style="word-break: break-all">
                         <div
-                            v-if="tag.type.datatype === DataType.LINK"
+                            v-if="metadata.type.datatype === DataType.LINK"
                             class="bg-grey-1 rounded-borders q-pa-sm text-body2 cursor-pointer inline-block value-box"
-                            @click="() => openLink(tag)"
+                            @click="() => openLink(metadata)"
                         >
-                            {{ tag.value }}
+                            {{ metadata.value }}
                         </div>
                         <div
                             v-else
                             class="bg-grey-1 rounded-borders q-pa-sm text-body2 inline-block value-box"
                         >
-                            {{ tag.value }}
+                            {{ metadata.value }}
                         </div>
 
                         <div
@@ -79,21 +81,21 @@
                                 flat
                                 dense
                                 :icon="
-                                    copiedStates[tag.uuid]
+                                    copiedStates[metadata.uuid]
                                         ? 'sym_o_check'
                                         : 'sym_o_content_copy'
                                 "
                                 size="sm"
                                 :color="
-                                    copiedStates[tag.uuid]
+                                    copiedStates[metadata.uuid]
                                         ? 'positive'
                                         : 'grey-7'
                                 "
                                 class="bg-grey-1 rounded-borders q-mr-xs"
-                                @click="() => copyTagValue(tag)"
+                                @click="() => copyMetadataValue(metadata)"
                             >
                                 <q-tooltip>{{
-                                    copiedStates[tag.uuid]
+                                    copiedStates[metadata.uuid]
                                         ? 'Copied!'
                                         : 'Copy Output'
                                 }}</q-tooltip>
@@ -103,10 +105,10 @@
                 </div>
 
                 <div
-                    v-if="!mission.tags || mission.tags.length === 0"
+                    v-if="!mission.metadata || mission.metadata.length === 0"
                     class="text-grey text-center q-pa-md"
                 >
-                    No tags available.
+                    No metadata available.
                 </div>
             </div>
         </div>
@@ -114,11 +116,11 @@
 </template>
 
 <script setup lang="ts">
+import type { MetadataDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
-import type { TagDto } from '@kleinkram/api-dto/types/tags/tags.dto';
 import { DataType } from '@kleinkram/shared';
 import { copyToClipboard, useQuasar } from 'quasar';
-import ModifyMissionTagsDialog from 'src/dialogs/modify-mission-tags-dialog.vue';
+import ModifyMissionMetadataDialog from 'src/dialogs/modify-mission-metadata-dialog.vue';
 import { canModifyMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { computed, ref } from 'vue';
 
@@ -155,19 +157,19 @@ const canModify = computed(() =>
     ),
 );
 
-const openTagsDialog = (): void => {
+const openMetadataDialog = (): void => {
     if (!canModify.value) return;
     $q.dialog({
-        component: ModifyMissionTagsDialog,
+        component: ModifyMissionMetadataDialog,
         componentProps: {
             mission: props.mission,
         },
     });
 };
 
-const openLink = (tag: TagDto): void => {
-    if (tag.type.datatype === DataType.LINK) {
-        const rawValue = tag.value as
+const openLink = (metadata: MetadataDto): void => {
+    if (metadata.type.datatype === DataType.LINK) {
+        const rawValue = metadata.value as
             string | Date | number | boolean | null | undefined;
         const url =
             rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
@@ -179,21 +181,21 @@ const openLink = (tag: TagDto): void => {
 
 const copiedStates = ref<Record<string, boolean>>({});
 
-const copyTagValue = async (tag: TagDto): Promise<void> => {
+const copyMetadataValue = async (metadata: MetadataDto): Promise<void> => {
     let value: unknown;
-    if (tag.type.datatype === DataType.BOOLEAN) {
-        value = tag.value;
+    if (metadata.type.datatype === DataType.BOOLEAN) {
+        value = metadata.value;
     } else {
-        const rawValue = tag.value as
+        const rawValue = metadata.value as
             string | Date | number | boolean | null | undefined;
         value =
             rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
     }
     try {
         await copyToClipboard(String(value));
-        copiedStates.value[tag.uuid] = true;
+        copiedStates.value[metadata.uuid] = true;
         setTimeout(() => {
-            copiedStates.value[tag.uuid] = false;
+            copiedStates.value[metadata.uuid] = false;
         }, 2000);
     } catch {
         // Silently fail if copy is denied
@@ -239,7 +241,7 @@ const getIconForDataType = (datatype: DataType): string => {
         padding: 16px;
     }
 
-    .tag-item-container {
+    .metadata-item-container {
         padding: 16px;
     }
 
@@ -257,10 +259,10 @@ const getIconForDataType = (datatype: DataType): string => {
 .button-border:hover {
     background: #f5f5f5;
 }
-.tag-item-container {
+.metadata-item-container {
     transition: background-color 0.2s;
 }
-.tag-item-container::after {
+.metadata-item-container::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -269,19 +271,19 @@ const getIconForDataType = (datatype: DataType): string => {
     height: 1px;
     background-color: rgba(0, 0, 0, 0.12);
 }
-.tag-item-container:last-child::after {
+.metadata-item-container:last-child::after {
     display: none;
 }
-.tag-item-container:hover {
+.metadata-item-container:hover {
     background-color: #f5f5f5;
 }
-.tag-item-container:hover .actions-container {
+.metadata-item-container:hover .actions-container {
     opacity: 1 !important;
 }
 .value-box {
     transition: background-color 0.2s;
 }
-.tag-item-container:hover .value-box {
+.metadata-item-container:hover .value-box {
     background-color: #e0e0e0 !important;
 }
 </style>

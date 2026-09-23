@@ -1,13 +1,12 @@
 import {
-    AddTagDto,
-    AddTagsDto,
-    DeleteTagDto,
-    TagTypeDto,
-    TagTypesDto,
+    DeleteMetadataDto,
+    MetadataTypeDto,
+    MetadataTypesDto,
+    UpdateMissionMetadataDto,
 } from '@kleinkram/api-dto';
+import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { DataType } from '@kleinkram/shared';
 import {
     BadRequestException,
@@ -22,72 +21,78 @@ import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 export class MetadataService {
     constructor(
         @InjectRepository(MetadataEntity)
-        private tagRepository: Repository<MetadataEntity>,
-        @InjectRepository(TagTypeEntity)
-        private tagTypeRepository: Repository<TagTypeEntity>,
+        private metadataRepository: Repository<MetadataEntity>,
+        @InjectRepository(MetadataTypeEntity)
+        private metadataTypeRepository: Repository<MetadataTypeEntity>,
         @InjectRepository(MissionEntity)
         private missionRepository: Repository<MissionEntity>,
     ) {}
 
-    async create(name: string, type: DataType): Promise<TagTypeDto> {
-        const existingTagType = await this.tagTypeRepository.findOne({
+    async createMetadataType(
+        name: string,
+        type: DataType,
+    ): Promise<MetadataTypeDto> {
+        const existingMetadataType = await this.metadataTypeRepository.findOne({
             where: { name, datatype: type },
         });
-        if (existingTagType) {
-            throw new ConflictException('TagType already exists');
+        if (existingMetadataType) {
+            throw new ConflictException('Metadata type already exists');
         }
-        const tagType = this.tagTypeRepository.create({
+        const metadataType = this.metadataTypeRepository.create({
             name,
             datatype: type,
         });
 
-        const databaseTag = await this.tagTypeRepository.save(tagType);
+        const databaseMetadataType =
+            await this.metadataTypeRepository.save(metadataType);
 
         return {
-            uuid: databaseTag.uuid,
-            updatedAt: databaseTag.updatedAt,
-            createdAt: databaseTag.createdAt,
-            name: databaseTag.name,
-            datatype: databaseTag.datatype,
+            uuid: databaseMetadataType.uuid,
+            updatedAt: databaseMetadataType.updatedAt,
+            createdAt: databaseMetadataType.createdAt,
+            name: databaseMetadataType.name,
+            datatype: databaseMetadataType.datatype,
             description: '',
         };
     }
 
-    async addTagType(
+    async addMetadata(
         missionUUID: string,
-        tagTypeUUID: string,
+        metadataTypeUUID: string,
         value: string | number | boolean,
-    ): Promise<AddTagDto> {
-        const tagType = await this.tagTypeRepository.findOneOrFail({
-            where: { uuid: tagTypeUUID },
+    ): Promise<UpdateMissionMetadataDto> {
+        const metadataType = await this.metadataTypeRepository.findOneOrFail({
+            where: { uuid: metadataTypeUUID },
         });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: {
-                tags: {
-                    tagType: true,
+                metadata: {
+                    metadataType: true,
                 },
             },
         });
 
-        if (mission.tags === undefined)
-            throw new Error('Mission tags are undefined');
+        if (mission.metadata === undefined)
+            throw new Error('Mission metadata is undefined');
 
-        const exisitingTagType = mission.tags.map((tag) => tag.tagType?.uuid);
-        if (exisitingTagType.includes(tagType.uuid)) {
-            throw new ConflictException('Tag already exists');
+        const existingMetadataTypeUUIDs = mission.metadata.map(
+            (metadata) => metadata.metadataType?.uuid,
+        );
+        if (existingMetadataTypeUUIDs.includes(metadataType.uuid)) {
+            throw new ConflictException('Metadata already exists');
         }
 
-        let tag: MetadataEntity | undefined;
+        let metadata: MetadataEntity | undefined;
         const isString = typeof value === 'string';
-        switch (tagType.datatype) {
+        switch (metadataType.datatype) {
             case DataType.NUMBER: {
                 if (typeof value === 'number' || isString) {
                     if (isString) {
                         value = Number.parseInt(value as string);
                     }
-                    tag = this.tagRepository.create({
-                        tagType,
+                    metadata = this.metadataRepository.create({
+                        metadataType,
 
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         value_number: value as number,
@@ -107,8 +112,8 @@ export class MetadataService {
                         'Value must be a string',
                     );
                 }
-                tag = this.tagRepository.create({
-                    tagType,
+                metadata = this.metadataRepository.create({
+                    metadataType,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_string: value,
                     mission,
@@ -122,8 +127,8 @@ export class MetadataService {
                     );
                 }
 
-                tag = this.tagRepository.create({
-                    tagType,
+                metadata = this.metadataRepository.create({
+                    metadataType,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_location: value,
                     mission,
@@ -135,8 +140,8 @@ export class MetadataService {
                     if (isString) {
                         value = value === 'true';
                     }
-                    tag = this.tagRepository.create({
-                        tagType,
+                    metadata = this.metadataRepository.create({
+                        metadataType,
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         value_boolean: value as boolean,
                         mission,
@@ -154,8 +159,8 @@ export class MetadataService {
                         'Value must be a string',
                     );
                 }
-                tag = this.tagRepository.create({
-                    tagType,
+                metadata = this.metadataRepository.create({
+                    metadataType,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_date: new Date(value),
                     mission,
@@ -168,42 +173,42 @@ export class MetadataService {
             }
         }
 
-        await this.tagRepository.save(tag);
+        await this.metadataRepository.save(metadata);
         return { success: true };
     }
 
-    async updateTagType(
+    async updateMetadata(
         missionUUID: string,
-        tagTypeUUID: string,
+        metadataTypeUUID: string,
         value: string | number | boolean,
     ): Promise<MetadataEntity> {
-        const tagType = await this.tagTypeRepository.findOneOrFail({
-            where: { uuid: tagTypeUUID },
+        const metadataType = await this.metadataTypeRepository.findOneOrFail({
+            where: { uuid: metadataTypeUUID },
         });
-        const exsitingTag = await this.tagRepository.findOne({
+        const existingMetadata = await this.metadataRepository.findOne({
             where: {
-                tagType: { uuid: tagTypeUUID },
+                metadataType: { uuid: metadataTypeUUID },
                 mission: { uuid: missionUUID },
             },
             relations: {
-                tagType: true,
+                metadataType: true,
                 mission: true,
             },
         });
 
-        if (!exsitingTag) {
-            throw new ConflictException("Tag hasn't been set yet");
+        if (!existingMetadata) {
+            throw new ConflictException("Metadata hasn't been set yet");
         }
 
         const isString = typeof value === 'string';
-        switch (tagType.datatype) {
+        switch (metadataType.datatype) {
             case DataType.NUMBER: {
                 if (typeof value === 'number' || isString) {
                     if (isString) {
                         value = Number.parseInt(value as string);
                     }
 
-                    exsitingTag.value_number = value as number;
+                    existingMetadata.value_number = value as number;
                     break;
                 }
                 throw new UnprocessableEntityException(
@@ -219,7 +224,7 @@ export class MetadataService {
                     );
                 }
 
-                exsitingTag.value_string = value;
+                existingMetadata.value_string = value;
                 break;
             }
 
@@ -229,7 +234,7 @@ export class MetadataService {
                         value = value === 'true';
                     }
 
-                    exsitingTag.value_boolean = value as boolean;
+                    existingMetadata.value_boolean = value as boolean;
                     break;
                 }
 
@@ -244,7 +249,7 @@ export class MetadataService {
                     );
                 }
 
-                exsitingTag.value_date = new Date(value);
+                existingMetadata.value_date = new Date(value);
                 break;
             }
             case DataType.LOCATION: {
@@ -254,7 +259,7 @@ export class MetadataService {
                     );
                 }
 
-                exsitingTag.value_location = value;
+                existingMetadata.value_location = value;
                 break;
             }
 
@@ -262,72 +267,83 @@ export class MetadataService {
                 throw new Error('Unknown datatype');
             }
         }
-        return this.tagRepository.save(exsitingTag);
+        return this.metadataRepository.save(existingMetadata);
     }
 
     /**
      * Replaces a mission's metadata with the given set.
      *
-     * This is a *full replace*: any metadata whose tag type is absent from
-     * `tags` (or is present with an empty value) is removed. Metadata whose
-     * tag type is listed in the mission's project `requiredTags` cannot be
-     * removed this way — such a request is rejected rather than silently
-     * dropping the required value.
+     * This is a *full replace*: any metadata whose metadata type is absent
+     * from `metadata` (or is present with an empty value) is removed.
+     * Metadata whose type is listed in the mission's project
+     * `requiredMetadataTypes` cannot be removed this way — such a request is
+     * rejected rather than silently dropping the required value.
      *
      * @param missionUUID the mission to update
-     * @param tags tag type uuid to value; the complete new metadata set
+     * @param metadata metadata type uuid to value; the complete new metadata
+     *   set
      * @throws BadRequestException if the payload would remove metadata that
      *   the project marks as required
      */
-    async addTags(
+    async replaceMissionMetadata(
         missionUUID: string,
-        tags: Record<string, string>,
-    ): Promise<AddTagsDto> {
+        metadata: Record<string, string>,
+    ): Promise<UpdateMissionMetadataDto> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: {
-                tags: {
-                    tagType: true,
+                metadata: {
+                    metadataType: true,
                 },
                 project: {
-                    requiredTags: true,
+                    requiredMetadataTypes: true,
                 },
             },
         });
 
-        if (mission.tags === undefined) {
-            throw new Error('Mission tags are undefined');
+        if (mission.metadata === undefined) {
+            throw new Error('Mission metadata is undefined');
         }
 
-        // Filter out empty values and identify tags to keep/upsert
-        const tagsToUpsert = Object.entries(tags).filter(([_, value]) => {
-            const valueToCheck = value as unknown;
-            return (
-                valueToCheck !== '' &&
-                valueToCheck !== null &&
-                valueToCheck !== undefined
-            );
-        });
-        const tagTypeUUIDsToKeep = new Set(tagsToUpsert.map(([uuid]) => uuid));
+        // Filter out empty values and identify metadata to keep/upsert
+        const metadataToUpsert = Object.entries(metadata).filter(
+            ([_, value]) => {
+                const valueToCheck = value as unknown;
+                return (
+                    valueToCheck !== '' &&
+                    valueToCheck !== null &&
+                    valueToCheck !== undefined
+                );
+            },
+        );
+        const metadataTypeUUIDsToKeep = new Set(
+            metadataToUpsert.map(([uuid]) => uuid),
+        );
 
-        // Delete any existing tags that are not in the list of tags to keep
-        const tagsToDelete = mission.tags.filter(
-            (tag) => !tagTypeUUIDsToKeep.has(tag.tagType?.uuid ?? ''),
+        // Delete any existing metadata whose type is not in the list to keep
+        const metadataToDelete = mission.metadata.filter(
+            (existing) =>
+                !metadataTypeUUIDsToKeep.has(existing.metadataType?.uuid ?? ''),
         );
 
         // A partial payload (e.g. from `klein mission update --metadata`) must
         // never strip metadata the project requires.
-        const requiredTagTypeUUIDs = new Set(
-            (mission.project?.requiredTags ?? []).map(
-                (tagType) => tagType.uuid,
+        const requiredMetadataTypeUUIDs = new Set(
+            (mission.project?.requiredMetadataTypes ?? []).map(
+                (metadataType) => metadataType.uuid,
             ),
         );
-        const requiredTagsToDelete = tagsToDelete.filter((tag) =>
-            requiredTagTypeUUIDs.has(tag.tagType?.uuid ?? ''),
+        const requiredMetadataToDelete = metadataToDelete.filter((existing) =>
+            requiredMetadataTypeUUIDs.has(existing.metadataType?.uuid ?? ''),
         );
-        if (requiredTagsToDelete.length > 0) {
-            const names = requiredTagsToDelete
-                .map((tag) => tag.tagType?.name ?? tag.tagType?.uuid ?? '?')
+        if (requiredMetadataToDelete.length > 0) {
+            const names = requiredMetadataToDelete
+                .map(
+                    (existing) =>
+                        existing.metadataType?.name ??
+                        existing.metadataType?.uuid ??
+                        '?',
+                )
                 .join(', ');
             throw new BadRequestException(
                 `Cannot remove required metadata: ${names}. ` +
@@ -337,44 +353,52 @@ export class MetadataService {
             );
         }
 
-        if (tagsToDelete.length > 0) {
-            await this.tagRepository.remove(tagsToDelete);
+        if (metadataToDelete.length > 0) {
+            await this.metadataRepository.remove(metadataToDelete);
         }
 
         await Promise.all(
-            tagsToUpsert.map(async ([tagTypeUUID, value]) => {
-                const tag = mission.tags?.find(
-                    (_tag) => _tag.tagType?.uuid === tagTypeUUID,
+            metadataToUpsert.map(async ([metadataTypeUUID, value]) => {
+                const existing = mission.metadata?.find(
+                    (_metadata) =>
+                        _metadata.metadataType?.uuid === metadataTypeUUID,
                 );
-                if (tag) {
-                    return this.updateTagType(missionUUID, tagTypeUUID, value);
+                if (existing) {
+                    return this.updateMetadata(
+                        missionUUID,
+                        metadataTypeUUID,
+                        value,
+                    );
                 }
-                return this.addTagType(missionUUID, tagTypeUUID, value);
+                return this.addMetadata(missionUUID, metadataTypeUUID, value);
             }),
         );
         return { success: true };
     }
 
-    async deleteTag(uuid: string): Promise<DeleteTagDto> {
-        await this.tagRepository.delete({ uuid });
+    async deleteMetadata(uuid: string): Promise<DeleteMetadataDto> {
+        await this.metadataRepository.delete({ uuid });
         return { success: true };
     }
 
-    async getAll(skip: number, take: number): Promise<TagTypesDto> {
-        const [tags, count] = await this.tagTypeRepository.findAndCount({
-            skip,
-            take,
-        });
+    async getAll(skip: number, take: number): Promise<MetadataTypesDto> {
+        const [metadataTypes, count] =
+            await this.metadataTypeRepository.findAndCount({
+                skip,
+                take,
+            });
 
         return {
-            data: tags.map((tag: TagTypeEntity): TagTypeDto => ({
-                uuid: tag.uuid,
-                updatedAt: tag.updatedAt,
-                createdAt: tag.createdAt,
-                name: tag.name,
-                datatype: tag.datatype,
-                description: '',
-            })),
+            data: metadataTypes.map(
+                (metadataType: MetadataTypeEntity): MetadataTypeDto => ({
+                    uuid: metadataType.uuid,
+                    updatedAt: metadataType.updatedAt,
+                    createdAt: metadataType.createdAt,
+                    name: metadataType.name,
+                    datatype: metadataType.datatype,
+                    description: '',
+                }),
+            ),
             count,
             take,
             skip,
@@ -386,8 +410,8 @@ export class MetadataService {
         type: DataType | undefined,
         skip: number,
         take: number,
-    ): Promise<TagTypesDto> {
-        const where: FindOptionsWhere<TagTypeEntity> = {};
+    ): Promise<MetadataTypesDto> {
+        const where: FindOptionsWhere<MetadataTypeEntity> = {};
         if (name) {
             where.name = ILike(`%${name}%`);
         }
@@ -399,21 +423,24 @@ export class MetadataService {
         ) {
             where.datatype = type;
         }
-        const [tags, count] = await this.tagTypeRepository.findAndCount({
-            where,
-            skip,
-            take,
-        });
+        const [metadataTypes, count] =
+            await this.metadataTypeRepository.findAndCount({
+                where,
+                skip,
+                take,
+            });
 
         return {
-            data: tags.map((tag: TagTypeEntity): TagTypeDto => ({
-                uuid: tag.uuid,
-                updatedAt: tag.updatedAt,
-                createdAt: tag.createdAt,
-                name: tag.name,
-                datatype: tag.datatype,
-                description: '',
-            })),
+            data: metadataTypes.map(
+                (metadataType: MetadataTypeEntity): MetadataTypeDto => ({
+                    uuid: metadataType.uuid,
+                    updatedAt: metadataType.updatedAt,
+                    createdAt: metadataType.createdAt,
+                    name: metadataType.name,
+                    datatype: metadataType.datatype,
+                    description: '',
+                }),
+            ),
             count,
             take,
             skip,

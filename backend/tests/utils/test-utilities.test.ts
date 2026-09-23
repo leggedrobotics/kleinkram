@@ -1,7 +1,7 @@
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { UserRole } from '@kleinkram/shared';
+import { AccessGroupType, UserRole } from '@kleinkram/shared';
 import { clearAllData, database, mockDatabaseUser } from './database-utilities';
 
 describe('Test Suite Utils', () => {
@@ -20,7 +20,7 @@ describe('Test Suite Utils', () => {
         // Insert some data
         const user = new UserEntity();
         user.name = 'John Doe';
-        user.email = 'test-01@kleinkram.dev';
+        user.email = 'test-01@leggedrobotics.com';
         user.role = UserRole.USER;
 
         await database.getRepository(UserEntity).save(user);
@@ -38,7 +38,7 @@ describe('Test Suite Utils', () => {
     });
 
     test('Create User with Valid Token', async () => {
-        await mockDatabaseUser('test-01@kleinkram.dev');
+        await mockDatabaseUser('test-01@leggedrobotics.com');
 
         const userRepository = database.getRepository(UserEntity);
         const users = await userRepository.find({
@@ -48,7 +48,7 @@ describe('Test Suite Utils', () => {
             },
         });
         expect(users.length).toBe(1);
-        expect(users[0]?.email).toBe('test-01@kleinkram.dev');
+        expect(users[0]?.email).toBe('test-01@leggedrobotics.com');
 
         const accountRepository = database.getRepository(AccountEntity);
         const accounts = await accountRepository.find();
@@ -56,6 +56,16 @@ describe('Test Suite Utils', () => {
 
         const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const accessGroups = await accessGroupRepository.find();
-        expect(accessGroups.length).toBe(2);
+        // the affiliation group of the email domain, the primary group of the
+        // user, and the system group behind public projects
+        const types = accessGroups.map((group) => group.type);
+        expect(types).toHaveLength(3);
+        expect(types).toEqual(
+            expect.arrayContaining([
+                AccessGroupType.AFFILIATION,
+                AccessGroupType.PRIMARY,
+                AccessGroupType.PUBLIC,
+            ]),
+        );
     });
 });

@@ -107,6 +107,13 @@
                 </button-group>
             </div>
 
+            <!-- TODO: bulk actions go in the default slot as they arrive -->
+            <table-selection-bar
+                noun="project"
+                :count="selectedProjects.length"
+                @clear="deselectProjects"
+            />
+
             <q-table
                 ref="tableRef"
                 v-model:pagination="pagination"
@@ -341,45 +348,27 @@
                     </DialogOpenerAddUser>
                 </button-group>
             </div>
-            <div
+            <table-selection-bar
                 v-else
-                class="q-py-lg selection-banner"
-                style="background: #0f62fe"
+                noun="user"
+                :count="selectedUsers.length"
+                @clear="deselectUsers"
             >
-                <ButtonGroupOverlay>
-                    <template #start>
-                        <div style="margin: 0; font-size: 14pt; color: white">
-                            {{ selectedUsers.length }}
-                            {{ selectedUsers.length === 1 ? 'user' : 'users' }}
-                            selected
-                        </div>
-                    </template>
-                    <template #end>
-                        <q-btn
-                            flat
-                            dense
-                            padding="6px"
-                            icon="sym_o_delete"
-                            color="white"
-                            :disable="!currentUserCanEdit"
-                            @click="deleteSelectedUsers"
-                        >
-                            Delete
-                            <q-tooltip v-if="!currentUserCanEdit">
-                                You cannot edit this group
-                            </q-tooltip>
-                        </q-btn>
-                        <q-btn
-                            flat
-                            dense
-                            padding="6px"
-                            icon="sym_o_close"
-                            color="white"
-                            @click="deselectUsers"
-                        />
-                    </template>
-                </ButtonGroupOverlay>
-            </div>
+                <q-btn
+                    flat
+                    dense
+                    padding="6px"
+                    icon="sym_o_delete"
+                    color="white"
+                    :disable="!currentUserCanEdit"
+                    @click="deleteSelectedUsers"
+                >
+                    Delete
+                    <q-tooltip v-if="!currentUserCanEdit">
+                        You cannot edit this group
+                    </q-tooltip>
+                </q-btn>
+            </table-selection-bar>
             <q-table
                 v-model:pagination="pagination2"
                 v-model:selected="selectedUsers"
@@ -914,12 +903,12 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import RemoveProjectDialogOpener from 'components/button-wrapper/remove-project-dialog-opener.vue';
-import ButtonGroupOverlay from 'components/buttons/button-group-overlay.vue';
 import ButtonGroup from 'components/buttons/button-group.vue';
 import AppCreateButton from 'components/common/app-create-button.vue';
 import AppRefreshButton from 'components/common/app-refresh-button.vue';
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import AppStatusChip from 'components/common/app-status-chip.vue';
+import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import TitleSection from 'components/title-section.vue';
 import { Notify, QTable, useQuasar } from 'quasar';
 import { projectAccessColumns } from 'src/components/explorer-page/explorer-page-table-columns';
@@ -947,6 +936,10 @@ const uuid: ComputedRef<string> = computed(
     () => router.currentRoute.value.params.uuid,
 ) as ComputedRef<string>;
 const selectedProjects = ref([]);
+
+function deselectProjects(): void {
+    selectedProjects.value = [];
+}
 const selectedUsers = ref<GroupMembershipDto[]>([]);
 
 const search = ref('');
@@ -1316,16 +1309,6 @@ const activeAuditLogCols = computed(() =>
     .ag-toolbar :deep(.q-btn) {
         min-height: 40px;
         min-width: 40px;
-    }
-}
-
-@media (max-width: 599px) {
-    .selection-banner :deep(.q-ml-lg) {
-        margin-left: 12px;
-    }
-
-    .selection-banner :deep(.q-pr-lg) {
-        padding-right: 12px;
     }
 }
 </style>

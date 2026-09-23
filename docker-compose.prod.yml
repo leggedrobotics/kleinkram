@@ -23,10 +23,15 @@ services:
         env_file:
             - .env
 
+        volumes:
+            # deployment specific access config (affiliation groups), not part of the image
+            - ${ACCESS_CONFIG_FILE:-./access_config.json}:/app/config/access_config.json:ro
+
         networks:
             - webnet
             - privatenet
         environment:
+            ACCESS_CONFIG_PATH: /app/config/access_config.json
             SEED: 'false'
             DEVBUILD: 'false'
             REDIS_HOST: redis
@@ -69,6 +74,7 @@ services:
             S3_DATA_BUCKET_NAME: ${S3_DATA_BUCKET_NAME}
             S3_DB_BUCKET_NAME: ${S3_DB_BUCKET_NAME}
             S3_ARTIFACTS_BUCKET_NAME: ${S3_ARTIFACTS_BUCKET_NAME}
+            S3_SCRIPTS_BUCKET_NAME: ${S3_SCRIPTS_BUCKET_NAME}
             S3_ACCESS_KEY: ${S3_ACCESS_KEY}
             S3_SECRET_KEY: ${S3_SECRET_KEY}
 

@@ -76,9 +76,26 @@ steps occur behind the scenes:
     - The action's container is started with the defined resource limits (CPU, Memory).
     - The action's entrypoint/command is executed.
 3. Any output files placed in `/out` are saved as artifacts.
-4. The action's status is updated based on the exit code of the
-   container ([-> Action Exit Codes](/usage/actions/write-actions#action-status-exit-codes)).
-5. Logs and artifacts are made available for download.
+4. The action's state is updated based on the exit code of the container, and its severity from the exit code together
+   with anything the action reported while it ran
+   ([-> Action Outcome](/usage/actions/write-actions#action-outcome)).
+5. Logs, findings and artifacts are made available for download.
+
+### Reading the Result
+
+An execution carries a state and a severity, and they answer different questions. The state says whether the run
+reached the end; the severity says what it found on the way.
+
+An action that completes its work but notices something worth flagging shows up in amber as **DONE · 3 findings**, not
+in red. Open the execution to see a **What this action reported** panel listing every finding, grouped by message, with
+the file each one is about.
+
+A failed execution also says who is responsible. **FAILED · system** means Kleinkram could not run the action — a
+runner restart or an infrastructure problem — and is safe to run again. A plain **FAILED** points at the action or its
+template.
+
+Action authors raise these findings with `klein action warn`; see
+[Raising Warnings](/usage/actions/write-actions#raising-warnings).
 
 ### Artifacts and Output Files
 

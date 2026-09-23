@@ -1,7 +1,9 @@
+export * from './access-config';
 export * from './audit/access-group-audit.service';
 export * from './audit/audit.types';
 export * from './audit/file-audit.service';
 export * from './consts';
+export * from './entities/action/action-diagnostic.entity';
 export * from './entities/action/action-template.entity';
 export * from './entities/action/action-trigger.entity';
 export * from './entities/action/action.entity';
@@ -17,19 +19,22 @@ export * from './entities/category/category.entity';
 export * from './entities/file/file-event.entity';
 export * from './entities/file/file.entity';
 export * from './entities/file/ingestion-job.entity';
+export * from './entities/metadata/metadata-type.entity';
 export * from './entities/metadata/metadata.entity';
 export * from './entities/mission/mission.entity';
 export * from './entities/project/project-star.entity';
 export * from './entities/project/project.entity';
-export * from './entities/tagType/tag-type.entity';
 export * from './entities/topic/topic.entity';
 export * from './entities/user/user.entity';
 export * from './entities/worker/worker.entity';
 export { default as environment } from './environment';
+export * from './exceptions/dependency-unavailable.exception';
 export * from './modules/access-control/access-control.module';
 export * from './modules/access-control/access-control.service';
 export * from './modules/action-dispatcher/action-dispatcher.module';
 export * from './modules/action-dispatcher/action-dispatcher.service';
+export * from './modules/loki-health/loki-health.module';
+export * from './modules/loki-health/loki-health.service';
 export * from './modules/storage/storage-auth.service';
 export * from './modules/storage/storage-config.factory';
 export * from './modules/storage/storage-metrics.service';
@@ -43,6 +48,7 @@ export * from './types';
 export * from './viewEntities/mission-access-view.entity';
 export * from './viewEntities/project-access-view.entity';
 
+import { ActionDiagnosticEntity } from './entities/action/action-diagnostic.entity';
 import { ActionTemplateEntity } from './entities/action/action-template.entity';
 import { ActionTriggerEntity } from './entities/action/action-trigger.entity';
 import { ActionEntity } from './entities/action/action.entity';
@@ -57,11 +63,11 @@ import { CategoryEntity } from './entities/category/category.entity';
 import { FileEventEntity } from './entities/file/file-event.entity';
 import { FileEntity } from './entities/file/file.entity';
 import { IngestionJobEntity } from './entities/file/ingestion-job.entity';
+import { MetadataTypeEntity } from './entities/metadata/metadata-type.entity';
 import { MetadataEntity } from './entities/metadata/metadata.entity';
 import { MissionEntity } from './entities/mission/mission.entity';
 import { ProjectStarEntity } from './entities/project/project-star.entity';
 import { ProjectEntity } from './entities/project/project.entity';
-import { TagTypeEntity } from './entities/tagType/tag-type.entity';
 import { TopicEntity } from './entities/topic/topic.entity';
 import { UserEntity } from './entities/user/user.entity';
 import { WorkerEntity } from './entities/worker/worker.entity';
@@ -69,6 +75,7 @@ import { MissionAccessViewEntity } from './viewEntities/mission-access-view.enti
 import { ProjectAccessViewEntity } from './viewEntities/project-access-view.entity';
 
 export const ALL_ENTITIES = [
+    ActionDiagnosticEntity,
     ActionTemplateEntity,
     ActionTriggerEntity,
     ActionEntity,
@@ -87,7 +94,7 @@ export const ALL_ENTITIES = [
     MissionEntity,
     ProjectEntity,
     ProjectStarEntity,
-    TagTypeEntity,
+    MetadataTypeEntity,
     TopicEntity,
     UserEntity,
     WorkerEntity,

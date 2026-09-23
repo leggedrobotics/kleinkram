@@ -54,7 +54,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import { useQuery } from '@tanstack/vue-query';
 import ProjectStarButton from 'components/common/project-star-button.vue';
@@ -76,7 +76,7 @@ const { data } = useQuery<ProjectsDto | undefined>({
     queryFn: () => starredProjects(STARRED_PANEL_SIZE),
 });
 
-const projects: ComputedRef<ProjectWithRequiredTagsDto[]> = computed(
+const projects: ComputedRef<ProjectWithRequiredMetadataTypesDto[]> = computed(
     () => data.value?.data ?? [],
 );
 

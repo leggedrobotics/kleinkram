@@ -1,3 +1,4 @@
+import { loadAccessConfig } from '@kleinkram/backend-common';
 import env from '@kleinkram/backend-common/environment';
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import configuration from '@kleinkram/backend-common/typeorm-config';
@@ -9,7 +10,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import * as pg from 'pg';
-import accessConfig from './access_config.json';
 import { appVersion } from './app-version';
 import { AccessModule } from './endpoints/access/access.module';
 import { ActionModule } from './endpoints/action/action.module';
@@ -48,7 +48,7 @@ import { DBDumper } from './services/dbdumper.service';
                 configuration,
                 (): {
                     accessConfig: AccessGroupConfig;
-                } => ({ accessConfig: accessConfig }),
+                } => ({ accessConfig: loadAccessConfig() }),
             ],
         }),
         TypeOrmModule.forRootAsync({

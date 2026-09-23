@@ -21,7 +21,7 @@ export interface FilteredFilesConfig {
     categories?: string[] | undefined;
     matchAllTopics?: boolean | undefined;
     fileTypes?: FileType[] | undefined;
-    tag?: Record<string, unknown> | undefined;
+    metadataByTypeUuid?: Record<string, unknown> | undefined;
     take?: number | undefined;
     skip?: number | undefined;
     sort?: string | undefined;
@@ -46,7 +46,7 @@ export const fetchFilteredFiles = async (
         categories,
         matchAllTopics,
         fileTypes,
-        tag,
+        metadataByTypeUuid,
         take,
         skip,
         sort,
@@ -71,7 +71,8 @@ export const fetchFilteredFiles = async (
         if (matchAllTopics !== undefined)
             parameters.matchAllTopics = matchAllTopics.toString();
         if (fileTypes !== undefined) parameters.fileTypes = fileTypes.join(',');
-        if (tag) parameters.tags = JSON.stringify(tag);
+        if (metadataByTypeUuid)
+            parameters.metadataByTypeUuid = JSON.stringify(metadataByTypeUuid);
         if (take) parameters.take = take.toString();
         if (skip) parameters.skip = skip.toString();
         if (sort) parameters.sort = sort;
@@ -145,15 +146,12 @@ export const filesOfMission = async (
     includeStates?: FileState[],
     excludeStates?: FileState[],
 ): Promise<FilesDto> => {
-    const tag: Record<string, unknown> = {};
-
     return fetchFilteredFiles({
         filename: filename ?? '',
         missionUUID,
         categories,
         matchAllTopics,
         fileTypes,
-        tag: Object.keys(tag).length > 0 ? tag : undefined,
         take,
         skip,
         sort,

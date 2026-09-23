@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import AppSelect from 'components/common/app-select.vue';
 import { ValidationRule } from 'quasar';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
@@ -64,7 +64,7 @@ const props = withDefaults(
         fixedProjectUuid?: string | undefined;
         projectUuid?: string | undefined;
         missionUuid?: string | undefined;
-        customProjects?: ProjectWithRequiredTagsDto[] | undefined;
+        customProjects?: ProjectWithRequiredMetadataTypesDto[] | undefined;
         customMissionRules?: ValidationRule[];
         projectPlaceholder?: string;
         missionPlaceholder?: string;

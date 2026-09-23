@@ -4,8 +4,6 @@ import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
 import { QueryUUID } from '@/validation/query-decorators';
 import {
-    AddTagsDto,
-    AddTagsRequestDto,
     CreateMission,
     FlatMissionDto,
     MinimumMissionsDto,
@@ -14,6 +12,8 @@ import {
     MissionsDto,
     MissionWithFilesDto,
     SuccessResponseDto,
+    UpdateMissionMetadataDto,
+    UpdateMissionMetadataRequestDto,
     UpdateMissionNameDto,
 } from '@kleinkram/api-dto';
 import { toBoolean } from '@kleinkram/validation';
@@ -30,7 +30,7 @@ import { ApiOperation } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ParameterUuid as ParameterUID } from '../../validation/parameter-decorators';
 import {
-    CanAddTag,
+    CanAddMetadata,
     CanCreateInProjectByBody,
     CanDeleteMission,
     CanMoveMission,
@@ -150,7 +150,7 @@ export class MissionController {
     }
 
     @Post(':uuid/metadata')
-    @CanAddTag()
+    @CanAddMetadata()
     @ApiOperation({
         summary: "Replace a mission's metadata",
         description:
@@ -160,18 +160,18 @@ export class MissionController {
             'entries you want to change — the CLI/SDK merges a partial ' +
             "update over the mission's existing metadata before calling " +
             "this endpoint. Metadata types listed in the project's " +
-            '`requiredTags` cannot be removed; a body omitting one of them ' +
+            '`requiredMetadataTypes` cannot be removed; a body omitting one of them ' +
             'is rejected with 400 instead of dropping the required value.',
     })
     @ApiCreatedResponse({
         description: 'Metadata added to mission',
-        type: AddTagsDto,
+        type: UpdateMissionMetadataDto,
     })
-    async addTags(
+    async updateMetadata(
         @ParameterUID('uuid') uuid: string,
-        @Body() body: AddTagsRequestDto,
-    ): Promise<AddTagsDto> {
+        @Body() body: UpdateMissionMetadataRequestDto,
+    ): Promise<UpdateMissionMetadataDto> {
         const metadata = body.metadata ?? body.tags ?? {};
-        return this.metadataService.addTags(uuid, metadata);
+        return this.metadataService.replaceMissionMetadata(uuid, metadata);
     }
 }
