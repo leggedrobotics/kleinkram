@@ -77,7 +77,7 @@ describe('Trigger System API Tests', () => {
             {
                 name: 'test_project',
                 description: 'desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [],
             },
             user,
@@ -87,8 +87,8 @@ describe('Trigger System API Tests', () => {
             {
                 name: 'test_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );

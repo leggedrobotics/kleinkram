@@ -6,10 +6,10 @@ import {
 import { GroupMembershipEntity } from '@kleinkram/backend-common/entities/auth/group-membership.entity';
 import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/project-access.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 
@@ -22,6 +22,8 @@ import {
     FileWithTopicDto,
     FlatMissionDto,
     GroupMembershipDto,
+    MetadataDto,
+    MetadataTypeDto,
     MinimumMissionDto,
     MissionDto,
     MissionWithCreatorDto,
@@ -29,9 +31,7 @@ import {
     ProjectAccessDto,
     ProjectDto,
     ProjectWithAccessRightsDto,
-    ProjectWithRequiredTagsDto,
-    TagDto,
-    TagTypeDto,
+    ProjectWithRequiredMetadataTypesDto,
     TopicDto,
     UserDto,
 } from '@kleinkram/api-dto';
@@ -114,8 +114,8 @@ export const missionEntityToDtoWithFiles = (
         throw new Error('Mission files are not set');
     }
 
-    if (!mission.tags) {
-        throw new Error('Mission tags are not set');
+    if (!mission.metadata) {
+        throw new Error('Mission metadata is not set');
     }
 
     if (!mission.creator) {
@@ -135,8 +135,10 @@ export const missionEntityToMinimumDto = (
     });
 };
 
-export const tagTypeEntityToDto = (tagType: TagTypeEntity): TagTypeDto => {
-    return plainToInstance(TagTypeDto, tagType, {
+export const metadataTypeEntityToDto = (
+    metadataType: MetadataTypeEntity,
+): MetadataTypeDto => {
+    return plainToInstance(MetadataTypeDto, metadataType, {
         excludeExtraneousValues: true,
     });
 };
@@ -220,10 +222,10 @@ export const projectEntityToDto = (project: ProjectEntity): ProjectDto => {
     });
 };
 
-export const projectEntityToDtoWithRequiredTags = (
+export const projectEntityToDtoWithRequiredMetadataTypes = (
     project: ProjectEntity,
     missionCount: number,
-): ProjectWithRequiredTagsDto => {
+): ProjectWithRequiredMetadataTypesDto => {
     if (project.creator === undefined) {
         throw new Error('Creator can never be undefined');
     }
@@ -233,19 +235,19 @@ export const projectEntityToDtoWithRequiredTags = (
     ) as ProjectEntity;
     Object.assign(copy, project, { missionCount });
 
-    return plainToInstance(ProjectWithRequiredTagsDto, copy, {
+    return plainToInstance(ProjectWithRequiredMetadataTypesDto, copy, {
         excludeExtraneousValues: true,
     });
 };
 
-export const projectEntityToDtoWithMissionCountAndTags = (
+export const projectEntityToDtoWithMissionCountAndMetadataTypes = (
     project: ProjectEntity,
-): ProjectWithRequiredTagsDto => {
+): ProjectWithRequiredMetadataTypesDto => {
     if (project.creator === undefined) {
         throw new Error('Creator can never be undefined');
     }
 
-    return plainToInstance(ProjectWithRequiredTagsDto, project, {
+    return plainToInstance(ProjectWithRequiredMetadataTypesDto, project, {
         excludeExtraneousValues: true,
     });
 };
@@ -256,12 +258,12 @@ export const topicEntityToDto = (topic: TopicEntity): TopicDto => {
     });
 };
 
-export const tagEntityToDto = (tag: MetadataEntity): TagDto => {
-    if (!tag.tagType) {
-        throw new Error('TagType is not set');
+export const metadataEntityToDto = (metadata: MetadataEntity): MetadataDto => {
+    if (!metadata.metadataType) {
+        throw new Error('Metadata type is not set');
     }
 
-    return plainToInstance(TagDto, tag, {
+    return plainToInstance(MetadataDto, metadata, {
         excludeExtraneousValues: true,
     });
 };

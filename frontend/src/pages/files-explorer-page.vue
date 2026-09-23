@@ -6,7 +6,7 @@
                 ellipsized) mission name, so it is rendered underneath the
                 title instead of beside it.
             -->
-            <template v-if="mission?.tags" #[metadataChipSlot]>
+            <template v-if="mission?.metadata" #[metadataChipSlot]>
                 <div class="q-shrink">
                     <q-btn
                         unelevated
@@ -32,7 +32,7 @@
                                 class="q-mr-xs"
                             />
                             <span
-                                >{{ mission.tags.length }} metadata
+                                >{{ mission.metadata.length }} metadata
                                 attributes</span
                             >
                         </span>

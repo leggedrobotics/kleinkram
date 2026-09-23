@@ -1,7 +1,7 @@
 import { MetadataEntity, UserEntity } from '@kleinkram/backend-common';
 import { DataType, UserRole } from '@kleinkram/shared';
 import {
-    createMetadataUsingPost,
+    createMetadataTypeUsingPost,
     createMissionUsingPost,
     createProjectUsingPost,
     getAuthHeaders,
@@ -36,14 +36,14 @@ const postMetadata = async (
         body: JSON.stringify({ metadata }),
     });
 
-const getMissionTagTypeUuids = async (
+const getMissionMetadataTypeUuids = async (
     missionUuid: string,
 ): Promise<string[]> => {
-    const tags = await database.getRepository(MetadataEntity).find({
+    const metadata = await database.getRepository(MetadataEntity).find({
         where: { mission: { uuid: missionUuid } },
-        relations: { mission: true, tagType: true },
+        relations: { mission: true, metadataType: true },
     });
-    return tags.map((tag) => tag.tagType?.uuid ?? '');
+    return metadata.map((entry) => entry.metadataType?.uuid ?? '');
 };
 
 const setup = async (): Promise<Fixture> => {
@@ -55,11 +55,11 @@ const setup = async (): Promise<Fixture> => {
     );
     const user = await getUserFromDatabase(userUuid);
 
-    const requiredTypeUuid = await createMetadataUsingPost(
+    const requiredTypeUuid = await createMetadataTypeUsingPost(
         { type: DataType.STRING, name: `required_${suffix}` },
         user,
     );
-    const optionalTypeUuid = await createMetadataUsingPost(
+    const optionalTypeUuid = await createMetadataTypeUsingPost(
         { type: DataType.STRING, name: `optional_${suffix}` },
         user,
     );
@@ -68,7 +68,7 @@ const setup = async (): Promise<Fixture> => {
         {
             name: `metadata_replace_project_${suffix}`,
             description: 'Test project',
-            requiredTags: [requiredTypeUuid],
+            requiredMetadataTypes: [requiredTypeUuid],
         },
         user,
     );
@@ -77,8 +77,8 @@ const setup = async (): Promise<Fixture> => {
         {
             name: `metadata_replace_mission_${suffix}`,
             projectUUID: projectUuid,
-            tags: {},
-            ignoreTags: true,
+            metadata: {},
+            ignoreMissingMetadata: true,
         },
         user,
     );
@@ -111,9 +111,10 @@ describe('Mission metadata full replace', () => {
         });
         expect(response.status).toBeLessThan(300);
 
-        const tagTypeUuids = await getMissionTagTypeUuids(missionUuid);
-        expect(tagTypeUuids).toContain(requiredTypeUuid);
-        expect(tagTypeUuids).not.toContain(optionalTypeUuid);
+        const metadataTypeUuids =
+            await getMissionMetadataTypeUuids(missionUuid);
+        expect(metadataTypeUuids).toContain(requiredTypeUuid);
+        expect(metadataTypeUuids).not.toContain(optionalTypeUuid);
     });
 
     test('a required metadata type cannot be removed', async () => {
@@ -126,9 +127,10 @@ describe('Mission metadata full replace', () => {
         expect(response.status).toBe(400);
 
         // nothing was applied
-        const tagTypeUuids = await getMissionTagTypeUuids(missionUuid);
-        expect(tagTypeUuids).toContain(requiredTypeUuid);
-        expect(tagTypeUuids).toContain(optionalTypeUuid);
+        const metadataTypeUuids =
+            await getMissionMetadataTypeUuids(missionUuid);
+        expect(metadataTypeUuids).toContain(requiredTypeUuid);
+        expect(metadataTypeUuids).toContain(optionalTypeUuid);
     });
 
     test('a required metadata type can still be updated', async () => {
@@ -141,12 +143,12 @@ describe('Mission metadata full replace', () => {
         });
         expect(response.status).toBeLessThan(300);
 
-        const tags = await database.getRepository(MetadataEntity).find({
+        const metadata = await database.getRepository(MetadataEntity).find({
             where: { mission: { uuid: missionUuid } },
-            relations: { mission: true, tagType: true },
+            relations: { mission: true, metadataType: true },
         });
-        const required = tags.find(
-            (tag) => tag.tagType?.uuid === requiredTypeUuid,
+        const required = metadata.find(
+            (entry) => entry.metadataType?.uuid === requiredTypeUuid,
         );
         expect(required?.value_string).toBe('new_required_value');
     });

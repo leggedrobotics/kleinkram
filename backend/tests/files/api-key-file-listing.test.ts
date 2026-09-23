@@ -89,7 +89,7 @@ describe('Mission scoped API keys can only list their own mission', () => {
             {
                 name: `api_key_scope_project_${suffix}`,
                 description: 'API key scope test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: owner.uuid,
@@ -104,8 +104,8 @@ describe('Mission scoped API keys can only list their own mission', () => {
             {
                 name: `api_key_scope_a_${suffix}`,
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             owner,
         );
@@ -113,8 +113,8 @@ describe('Mission scoped API keys can only list their own mission', () => {
             {
                 name: `api_key_scope_b_${suffix}`,
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             owner,
         );

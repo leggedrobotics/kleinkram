@@ -108,37 +108,37 @@ const metadataMatchesKeyValuePair = (
     }
 
     const valueBracket = new Brackets((qb) => {
-        qb.orWhere(`tags.STRING = :stringValue_${tok}`, {
+        qb.orWhere(`metadata.STRING = :stringValue_${tok}`, {
             [`stringValue_${tok}`]: value,
         });
         const numberValue = stringToNumber(value);
         if (numberValue !== undefined) {
-            qb.orWhere(`tags.NUMBER = :numberValue_${tok}`, {
+            qb.orWhere(`metadata.NUMBER = :numberValue_${tok}`, {
                 [`numberValue_${tok}`]: numberValue,
             });
         }
         const booleanValue = stringToBoolean(value);
         if (booleanValue !== undefined) {
-            qb.orWhere(`tags.BOOLEAN = :booleanValue_${tok}`, {
+            qb.orWhere(`metadata.BOOLEAN = :booleanValue_${tok}`, {
                 [`booleanValue_${tok}`]: booleanValue,
             });
         }
         const dateValue = stringToDate(value);
         if (dateValue !== undefined) {
-            qb.orWhere(`tags.DATE = :dateValue_${tok}`, {
+            qb.orWhere(`metadata.DATE = :dateValue_${tok}`, {
                 [`dateValue_${tok}`]: dateValue,
             });
         }
         const locationValue = stringToLocation(value);
         if (locationValue !== undefined) {
-            qb.orWhere(`tags.LOCATION = :locationValue_${tok}`, {
+            qb.orWhere(`metadata.LOCATION = :locationValue_${tok}`, {
                 [`locationValue_${tok}`]: locationValue,
             });
         }
     });
 
     return new Brackets((qb) => {
-        qb.andWhere(`tagType.name = :key_${tok}`, {
+        qb.andWhere(`metadataType.name = :key_${tok}`, {
             [`key_${tok}`]: key,
         }).andWhere(valueBracket);
     });
@@ -168,8 +168,8 @@ export const getFilteredMissionIdSubQuery = (
 
     if (Object.keys(missionMetadata).length > 0) {
         query
-            .leftJoin('mission.tags', 'tags')
-            .leftJoin('tags.tagType', 'tagType');
+            .leftJoin('mission.metadata', 'metadata')
+            .leftJoin('metadata.metadataType', 'metadataType');
 
         for (const [key, value] of Object.entries(missionMetadata)) {
             query.orWhere(metadataMatchesKeyValuePair(key, value));

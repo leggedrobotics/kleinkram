@@ -1,25 +1,26 @@
 import type {
-    TagsDto,
-    TagTypeDto,
-} from '@kleinkram/api-dto/types/tags/tags.dto';
+    MetadataTypeDto,
+    MetadataTypesDto,
+} from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import { DataType } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
-export const getTagTypes = async (): Promise<TagTypeDto[]> => {
-    const response: AxiosResponse<TagsDto> = await axios.get('/metadata-types');
+export const getMetadataTypes = async (): Promise<MetadataTypeDto[]> => {
+    const response: AxiosResponse<MetadataTypesDto> =
+        await axios.get('/metadata-types');
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return response.data.data ?? [];
 };
 
-export const getFilteredTagTypes = async (
+export const getFilteredMetadataTypes = async (
     name?: string,
     type?: DataType,
-): Promise<TagsDto> => {
-    let response: AxiosResponse<TagsDto>;
+): Promise<MetadataTypesDto> => {
+    let response: AxiosResponse<MetadataTypesDto>;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!name && type === null) {
-        response = await axios.get<TagsDto>('/metadata-types');
+        response = await axios.get<MetadataTypesDto>('/metadata-types');
     } else {
         const parameters: Record<string, string | DataType> = {};
         if (name) {
@@ -29,9 +30,12 @@ export const getFilteredTagTypes = async (
         if (type !== null) {
             parameters.type = type ?? '';
         }
-        response = await axios.get<TagsDto>(`/metadata-types/filtered`, {
-            params: parameters,
-        });
+        response = await axios.get<MetadataTypesDto>(
+            `/metadata-types/filtered`,
+            {
+                params: parameters,
+            },
+        );
     }
     return response.data;
 };

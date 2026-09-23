@@ -44,6 +44,7 @@ mission_typer = typer.Typer(no_args_is_help=True, context_settings={"help_option
 MISSION_ARG_HELP = "mission id or name"
 PROJECT_OPT_HELP = "project id or name, required when the mission is given by name and not unique"
 DEPRECATED_MISSION_FLAG = "--mission/-m"
+DEPRECATED_IGNORE_MISSING_TAGS_FLAG = "--ignore-missing-tags"
 
 
 def _mission_query(mission: str, project: Optional[str]) -> MissionQuery:
@@ -62,10 +63,17 @@ def create(
     name: Optional[str] = typer.Argument(None, metavar="NAME", help="mission name"),
     project: str = typer.Option(..., "--project", "-p", help="project id or name"),
     metadata: Optional[str] = typer.Option(None, help="path to metadata file (json or yaml)"),
-    ignore_missing_tags: bool = typer.Option(False, help="ignore mission tags"),
+    ignore_missing_metadata: bool = typer.Option(
+        False, "--ignore-missing-metadata", help="create the mission even if metadata required by the project is missing"
+    ),
+    ignore_missing_tags: bool = typer.Option(False, "--ignore-missing-tags", hidden=True),
     mission_flag: Optional[str] = typer.Option(None, "--mission", "-m", hidden=True),
 ) -> None:
     name = require(prefer_new(name, mission_flag, old=DEPRECATED_MISSION_FLAG, new="the positional NAME argument"), "NAME")
+
+    if ignore_missing_tags:
+        warn_deprecated(DEPRECATED_IGNORE_MISSING_TAGS_FLAG, "--ignore-missing-metadata")
+        ignore_missing_metadata = True
 
     project_ids, project_patterns = split_args([project])
     project_query = ProjectQuery(ids=project_ids, patterns=project_patterns)
@@ -79,8 +87,8 @@ def create(
         project_parsed.id,
         name,
         metadata=metadata_dct,
-        ignore_missing_tags=ignore_missing_tags,
-        required_tags=project_parsed.required_tags,
+        ignore_missing_metadata=ignore_missing_metadata,
+        required_metadata_types=project_parsed.required_metadata_types,
     )
 
     mission_parsed = get_mission(client, MissionQuery(ids=[mission_id]))

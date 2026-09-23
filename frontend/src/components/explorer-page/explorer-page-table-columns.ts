@@ -186,7 +186,7 @@ export const missionColumns: ProjectColumnType[] = [
         format: (value: string) => formatDate(new Date(value)),
     },
     {
-        name: 'tagverification',
+        name: 'metadataverification',
         required: true,
         label: 'Metadata Verification',
         align: 'left',

@@ -82,7 +82,7 @@ describe('File listing sorted by a joined relation', () => {
             {
                 name: 'aaa_project',
                 description: 'sorting test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -90,7 +90,7 @@ describe('File listing sorted by a joined relation', () => {
             {
                 name: 'zzz_project',
                 description: 'sorting test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -98,8 +98,8 @@ describe('File listing sorted by a joined relation', () => {
             {
                 name: 'aaa_mission',
                 projectUUID: firstProject,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -107,8 +107,8 @@ describe('File listing sorted by a joined relation', () => {
             {
                 name: 'zzz_mission',
                 projectUUID: secondProject,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );

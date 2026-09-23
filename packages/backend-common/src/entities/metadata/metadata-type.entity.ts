@@ -4,8 +4,8 @@ import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { DataType } from '@kleinkram/shared';
 import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 
-@Entity({ name: 'tag_type' })
-export class TagTypeEntity extends BaseEntity {
+@Entity({ name: 'metadata_type' })
+export class MetadataTypeEntity extends BaseEntity {
     @Column()
     name!: string;
 
@@ -17,11 +17,14 @@ export class TagTypeEntity extends BaseEntity {
 
     @ManyToMany(
         () => ProjectEntity,
-        (project: ProjectEntity) => project.requiredTags,
+        (project: ProjectEntity) => project.requiredMetadataTypes,
     )
     @JoinTable()
-    project?: ProjectEntity[];
+    projects?: ProjectEntity[];
 
-    @OneToMany(() => MetadataEntity, (tag: MetadataEntity) => tag.tagType)
-    tags?: MetadataEntity[];
+    @OneToMany(
+        () => MetadataEntity,
+        (metadata: MetadataEntity) => metadata.metadataType,
+    )
+    metadata?: MetadataEntity[];
 }

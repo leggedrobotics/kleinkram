@@ -43,8 +43,8 @@ describe('Action Access Rights', () => {
             {
                 name: 'access_rights_mission',
                 projectUUID: projectUUID,
-                tags: {},
-                ignoreTags: false,
+                metadata: {},
+                ignoreMissingMetadata: false,
             },
             creator,
         );
@@ -171,8 +171,8 @@ describe('Action Access Rights', () => {
             {
                 name: 'cancel_access_mission',
                 projectUUID: projectUUID,
-                tags: {},
-                ignoreTags: false,
+                metadata: {},
+                ignoreMissingMetadata: false,
             },
             creator,
         );

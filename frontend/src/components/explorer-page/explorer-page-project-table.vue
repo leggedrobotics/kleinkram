@@ -204,7 +204,7 @@
                                             </q-item-section>
                                         </q-item>
                                     </EditProjectDialogOpener>
-                                    <ConfigureTagsDialogOpener
+                                    <ConfigureMetadataTypesDialogOpener
                                         :project-uuid="props.row.uuid"
                                     >
                                         <q-item v-ripple clickable>
@@ -212,7 +212,7 @@
                                                 Enforce Metadata
                                             </q-item-section>
                                         </q-item>
-                                    </ConfigureTagsDialogOpener>
+                                    </ConfigureMetadataTypesDialogOpener>
                                     <change-project-rights-dialog-opener
                                         :project-uuid="props.row.uuid"
                                         :project-access-uuid="
@@ -303,7 +303,7 @@
                                         </q-item-section>
                                     </q-item>
                                 </EditProjectDialogOpener>
-                                <ConfigureTagsDialogOpener
+                                <ConfigureMetadataTypesDialogOpener
                                     :project-uuid="props.row.uuid"
                                 >
                                     <q-item v-ripple clickable>
@@ -311,7 +311,7 @@
                                             Enforce Metadata
                                         </q-item-section>
                                     </q-item>
-                                </ConfigureTagsDialogOpener>
+                                </ConfigureMetadataTypesDialogOpener>
 
                                 <change-project-rights-dialog-opener
                                     :project-uuid="props.row.uuid"
@@ -346,7 +346,7 @@
 import type { ProjectWithMissionCountDto } from '@kleinkram/api-dto/types/project/project-with-mission-count.dto';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
-import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-configure-tags.vue';
+import ConfigureMetadataTypesDialogOpener from 'components/button-wrapper/dialog-opener-configure-metadata-types.vue';
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
 import ProjectStarButton from 'components/common/project-star-button.vue';

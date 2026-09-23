@@ -20,7 +20,7 @@ import logger from '../../logger';
  * `forbidUnknownValues` is off on purpose. class-validator reports an
  * `unknownValue` error for every instance of a class that carries no validation
  * metadata at all, which includes the intentionally empty response DTOs
- * (`CancelProcessingResponseDto`, `AddMetadataTypeDto`, `RemoveTagTypeDto`, ...)
+ * (`CancelProcessingResponseDto`, `AddMetadataTypeDto`, `RemoveMetadataTypeDto`, ...)
  * that describe a `{}` body. Those routes would otherwise always fail with a 500
  * in development. A DTO that merely forgot its decorators is still caught: as
  * soon as the response carries any property, `forbidNonWhitelisted` rejects it.

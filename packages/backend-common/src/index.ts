@@ -19,11 +19,11 @@ export * from './entities/category/category.entity';
 export * from './entities/file/file-event.entity';
 export * from './entities/file/file.entity';
 export * from './entities/file/ingestion-job.entity';
+export * from './entities/metadata/metadata-type.entity';
 export * from './entities/metadata/metadata.entity';
 export * from './entities/mission/mission.entity';
 export * from './entities/project/project-star.entity';
 export * from './entities/project/project.entity';
-export * from './entities/tagType/tag-type.entity';
 export * from './entities/topic/topic.entity';
 export * from './entities/user/user.entity';
 export * from './entities/worker/worker.entity';
@@ -63,11 +63,11 @@ import { CategoryEntity } from './entities/category/category.entity';
 import { FileEventEntity } from './entities/file/file-event.entity';
 import { FileEntity } from './entities/file/file.entity';
 import { IngestionJobEntity } from './entities/file/ingestion-job.entity';
+import { MetadataTypeEntity } from './entities/metadata/metadata-type.entity';
 import { MetadataEntity } from './entities/metadata/metadata.entity';
 import { MissionEntity } from './entities/mission/mission.entity';
 import { ProjectStarEntity } from './entities/project/project-star.entity';
 import { ProjectEntity } from './entities/project/project.entity';
-import { TagTypeEntity } from './entities/tagType/tag-type.entity';
 import { TopicEntity } from './entities/topic/topic.entity';
 import { UserEntity } from './entities/user/user.entity';
 import { WorkerEntity } from './entities/worker/worker.entity';
@@ -94,7 +94,7 @@ export const ALL_ENTITIES = [
     MissionEntity,
     ProjectEntity,
     ProjectStarEntity,
-    TagTypeEntity,
+    MetadataTypeEntity,
     TopicEntity,
     UserEntity,
     WorkerEntity,

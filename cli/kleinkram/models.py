@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
@@ -59,7 +60,21 @@ class Project:
     description: str
     created_at: datetime
     updated_at: datetime
-    required_tags: List[str]
+    # names of the metadata types every mission of the project has to set
+    required_metadata_types: List[str]
+
+    @property
+    def required_tags(self) -> List[str]:
+        """\
+        deprecated alias of `required_metadata_types`, removed in kleinkram 1.0.0
+        """
+        warnings.warn(
+            "Project.required_tags is deprecated and will be removed in kleinkram 1.0.0, "
+            "use Project.required_metadata_types instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.required_metadata_types
 
 
 @dataclass(frozen=True)

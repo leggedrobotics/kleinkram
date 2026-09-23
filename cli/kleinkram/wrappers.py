@@ -524,7 +524,7 @@ def create_mission(
         parse_uuid_like(project_id),
         mission_name,
         metadata=metadata,
-        ignore_missing_tags=ignore_missing_metadata,
+        ignore_missing_metadata=ignore_missing_metadata,
     )
 
 

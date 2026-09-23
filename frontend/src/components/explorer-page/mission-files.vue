@@ -374,7 +374,7 @@ watch(
         () => state.selectedTopics,
         () => state.selectedDatatypes,
         () => state.matchAllTopics,
-        () => state.tagFilter,
+        () => state.metadataFilter,
     ],
     () => {
         refresh();

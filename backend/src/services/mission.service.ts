@@ -13,9 +13,9 @@ import {
     MissionsDto,
     MissionWithFilesDto,
 } from '@kleinkram/api-dto';
+import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { UserRole } from '@kleinkram/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
@@ -75,29 +75,40 @@ export class MissionService {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: createMission.projectUUID },
             relations: {
-                requiredTags: true,
+                requiredMetadataTypes: true,
             },
         });
-        if (!createMission.ignoreTags) {
-            const missingTags = project.requiredTags.filter(
-                (tagType: TagTypeEntity) =>
+
+        // `tags` / `ignoreTags` are deprecated aliases kept for old clients;
+        // the canonical fields win when both are given.
+        const metadata = createMission.metadata ?? createMission.tags ?? {};
+        const ignoreMissingMetadata =
+            createMission.ignoreMissingMetadata ??
+            createMission.ignoreTags ??
+            false;
+
+        if (!ignoreMissingMetadata) {
+            const missingMetadataTypes = project.requiredMetadataTypes.filter(
+                (metadataType: MetadataTypeEntity) =>
                     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    createMission.tags[tagType.uuid] === undefined &&
-                    createMission.tags[tagType.uuid] === '' &&
+                    metadata[metadataType.uuid] === undefined &&
+                    metadata[metadataType.uuid] === '' &&
                     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    createMission.tags[tagType.uuid] === null,
+                    metadata[metadataType.uuid] === null,
             );
-            if (missingTags.length > 0) {
-                const missingTagNames = missingTags
-                    .map((tagType: TagTypeEntity) => tagType.name)
+            if (missingMetadataTypes.length > 0) {
+                const missingNames = missingMetadataTypes
+                    .map(
+                        (metadataType: MetadataTypeEntity) => metadataType.name,
+                    )
                     .join(', ');
                 throw new ConflictException(
-                    `All required tags must be provided for the mission. Missing tags: ${
-                        missingTagNames
+                    `All required metadata must be provided for the mission. Missing metadata: ${
+                        missingNames
                     }`,
                 );
             } else {
-                logger.info('All required tags are provided');
+                logger.info('All required metadata is provided');
             }
         }
 
@@ -123,15 +134,13 @@ export class MissionService {
         });
         const newMission = await this.missionRepository.save(mission);
         await Promise.all(
-            Object.entries(createMission.tags).map(
-                async ([tagTypeUUID, value]) => {
-                    return this.metadataService.addTagType(
-                        newMission.uuid,
-                        tagTypeUUID,
-                        value,
-                    );
-                },
-            ),
+            Object.entries(metadata).map(async ([metadataTypeUUID, value]) => {
+                return this.metadataService.addMetadata(
+                    newMission.uuid,
+                    metadataTypeUUID,
+                    value,
+                );
+            }),
         );
         return this.missionRepository
             .findOneOrFail({
@@ -139,7 +148,7 @@ export class MissionService {
                 relations: {
                     project: true,
                     creator: true,
-                    tags: { tagType: true },
+                    metadata: { metadataType: true },
                 },
             })
             .then((m) => missionEntityToFlatDto(m));
@@ -150,13 +159,13 @@ export class MissionService {
             where: { uuid },
             relations: {
                 project: {
-                    requiredTags: true,
+                    requiredMetadataTypes: true,
                 },
 
                 creator: true,
 
-                tags: {
-                    tagType: true,
+                metadata: {
+                    metadataType: true,
                 },
 
                 files: {
@@ -186,8 +195,8 @@ export class MissionService {
             .select('mission.uuid')
             .leftJoin('mission.project', 'project')
             .leftJoin('mission.creator', 'creator')
-            .leftJoin('mission.tags', 'tag')
-            .leftJoin('tag.tagType', 'tagType');
+            .leftJoin('mission.metadata', 'metadata')
+            .leftJoin('metadata.metadataType', 'metadataType');
 
         if (user.role !== UserRole.ADMIN) {
             idQuery = addAccessConstraintsToMissionQuery(idQuery, userUuid);
@@ -271,7 +280,7 @@ export class MissionService {
         );
 
         if (query.minimal) {
-            // Minimal projection logic (does not fetch tags, metadata, file stats)
+            // Minimal projection logic (does not fetch metadata or file stats)
             const dataQuery = this.missionRepository
                 .createQueryBuilder('mission')
                 .leftJoinAndSelect('mission.project', 'project')
@@ -305,8 +314,8 @@ export class MissionService {
             .createQueryBuilder('mission')
             .leftJoinAndSelect('mission.project', 'project')
             .leftJoinAndSelect('mission.creator', 'creator')
-            .leftJoinAndSelect('mission.tags', 'tag')
-            .leftJoinAndSelect('tag.tagType', 'tagType')
+            .leftJoinAndSelect('mission.metadata', 'metadata')
+            .leftJoinAndSelect('metadata.metadataType', 'metadataType')
             .where('mission.uuid IN (:...mappedMissionIds)', {
                 mappedMissionIds,
             });
@@ -428,36 +437,38 @@ export class MissionService {
         await this.missionRepository.softRemove(mission);
     }
 
-    async updateTags(
+    async updateMetadata(
         missionUUID: string,
-        tags: Record<string, string>,
+        metadata: Record<string, string>,
     ): Promise<void> {
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: {
-                tags: {
-                    tagType: true,
+                metadata: {
+                    metadataType: true,
                 },
             },
         });
 
-        if (mission.tags === undefined) throw new Error('Tags not loaded');
+        if (mission.metadata === undefined)
+            throw new Error('Metadata not loaded');
 
         await Promise.all(
-            Object.entries(tags).map(async ([tagTypeUUID, value]) => {
-                const tag = mission.tags?.find(
-                    (_tag) => _tag.tagType?.uuid === tagTypeUUID,
+            Object.entries(metadata).map(async ([metadataTypeUUID, value]) => {
+                const existing = mission.metadata?.find(
+                    (_metadata) =>
+                        _metadata.metadataType?.uuid === metadataTypeUUID,
                 );
-                if (tag) {
-                    return this.metadataService.updateTagType(
+                if (existing) {
+                    return this.metadataService.updateMetadata(
                         missionUUID,
-                        tagTypeUUID,
+                        metadataTypeUUID,
                         value,
                     );
                 }
-                return this.metadataService.addTagType(
+                return this.metadataService.addMetadata(
                     missionUUID,
-                    tagTypeUUID,
+                    metadataTypeUUID,
                     value,
                 );
             }),
@@ -509,7 +520,7 @@ export class MissionService {
             relations: {
                 project: true,
                 creator: true,
-                tags: { tagType: true },
+                metadata: { metadataType: true },
             },
         });
     }

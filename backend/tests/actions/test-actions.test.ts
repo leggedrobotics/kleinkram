@@ -123,7 +123,7 @@ describe('Verify Action (Templates & Runs)', () => {
             {
                 name: 'test_project',
                 description: 'This is a test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
@@ -144,8 +144,8 @@ describe('Verify Action (Templates & Runs)', () => {
             {
                 name: 'test_mission',
                 projectUUID: globalThis.projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
