@@ -52,7 +52,7 @@
                 </router-link>
             </q-td>
         </template>
-        <template #body-cell-tagverification="props">
+        <template #body-cell-missingTags="props">
             <q-td :props="props" style="width: 150px">
                 <div
                     v-if="missingTags(props.row).length === 0"
@@ -373,7 +373,7 @@ const tableColumns = computed(() =>
 
 const visibleColumns = computed(() =>
     isCompact.value
-        ? ['name', 'NrOfFiles', 'tagverification', 'missionaction']
+        ? ['name', 'filesCount', 'missingTags', 'missionaction']
         : undefined,
 );
 

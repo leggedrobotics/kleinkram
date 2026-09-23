@@ -38,6 +38,27 @@ import {
 } from '@kleinkram/backend-common/modules/storage/response-headers';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 
+/**
+ * Number of files of a mission, same definition as the `fileCount` of
+ * {@link addFileStats}, so that the sort order matches the displayed value.
+ */
+const MISSION_FILE_COUNT_SQL = `(SELECT COUNT(file.uuid) FROM file_entity file WHERE file."missionUuid" = "mission"."uuid")`;
+
+/**
+ * Total file size of a mission, same definition as the `fileSize` of
+ * {@link addFileStats}.
+ */
+const MISSION_SIZE_SQL = `(SELECT COALESCE(SUM(file.size), 0) FROM file_entity file WHERE file."missionUuid" = "mission"."uuid")`;
+
+/**
+ * Number of metadata types required by the project of a mission that are not
+ * set on the mission, i.e. what the "Metadata Verification" column shows.
+ */
+const MISSION_MISSING_TAGS_SQL = `(SELECT COUNT(*) FROM tag_type_project_project required
+    JOIN tag_type requiredType ON requiredType.uuid = required."tagTypeUuid" AND requiredType."deletedAt" IS NULL
+    WHERE required."projectUuid" = "mission"."projectUuid"
+    AND NOT EXISTS (SELECT 1 FROM tag setTag WHERE setTag."missionUuid" = "mission"."uuid" AND setTag."tagTypeUuid" = required."tagTypeUuid" AND setTag."deletedAt" IS NULL))`;
+
 const FIND_MANY_SORT_KEYS = {
     name: 'mission.name',
     missionName: 'mission.name',
@@ -46,6 +67,24 @@ const FIND_MANY_SORT_KEYS = {
     creatorName: 'creator.name',
     createdAt: 'mission.createdAt',
     updatedAt: 'mission.updatedAt',
+    filesCount: MISSION_FILE_COUNT_SQL,
+    size: MISSION_SIZE_SQL,
+    missingTags: MISSION_MISSING_TAGS_SQL,
+};
+
+/**
+ * Orders the missions of a page like the (already sorted and paginated) ids
+ * they were fetched by, so that the sorting only has to happen once.
+ */
+const sortLikeIds = (
+    missions: MissionEntity[],
+    ids: string[],
+): MissionEntity[] => {
+    const position = new Map(ids.map((id, index) => [id, index]));
+    // eslint-disable-next-line unicorn/no-array-sort
+    return [...missions].sort(
+        (a, b) => (position.get(a.uuid) ?? 0) - (position.get(b.uuid) ?? 0),
+    );
 };
 
 @Injectable()
@@ -241,8 +280,12 @@ export class MissionService {
         // across LIMIT/OFFSET pages.
         idQuery.addOrderBy('mission.uuid', 'ASC');
 
-        // Get distinct mission UUIDs
-        idQuery.groupBy('mission.uuid');
+        // Get distinct mission UUIDs. Project and creator are grouped as well
+        // (one of each per mission), so that their columns can be sorted by.
+        idQuery
+            .groupBy('mission.uuid')
+            .addGroupBy('project.uuid')
+            .addGroupBy('creator.uuid');
 
         // Get count before pagination
         const count = await idQuery.getCount();
@@ -280,15 +323,10 @@ export class MissionService {
                     mappedMissionIds,
                 });
 
-            const sortedQuery = addSort(
-                dataQuery,
-                FIND_MANY_SORT_KEYS,
-                sortField,
-                order,
+            const missions = sortLikeIds(
+                await dataQuery.getMany(),
+                mappedMissionIds,
             );
-            // same tie-breaker as the id query, so the page keeps its order
-            sortedQuery.addOrderBy('mission.uuid', 'ASC');
-            const missions = await sortedQuery.getMany();
 
             return {
                 data: missions.map((element) =>
@@ -311,14 +349,10 @@ export class MissionService {
                 mappedMissionIds,
             });
 
-        dataQuery = addSort(dataQuery, FIND_MANY_SORT_KEYS, sortField, order);
-        // same tie-breaker as the id query, so the page keeps its order
-        dataQuery.addOrderBy('mission.uuid', 'ASC');
-
         dataQuery = addFileStats(dataQuery);
 
         const result = await dataQuery.getRawAndEntities();
-        const missions = result.entities;
+        const missions = sortLikeIds(result.entities, mappedMissionIds);
         const rawResults = result.raw;
 
         // Create a map for quick lookup of file stats by mission UUID
