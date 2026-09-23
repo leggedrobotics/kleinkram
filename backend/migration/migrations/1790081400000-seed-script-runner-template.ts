@@ -32,6 +32,17 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
              ADD COLUMN IF NOT EXISTS "isSystem" boolean NOT NULL DEFAULT false`,
         );
 
+        // The backend creates the System user on startup, so a fresh database
+        // being migrated before the first boot does not have it yet. Insert
+        // the same row the backend would; an existing one is left untouched.
+        await queryRunner.query(
+            `INSERT INTO "user" ("uuid", "name", "email", "role", "hidden", "avatarUrl")
+             VALUES ($1::uuid, 'System', 'infrastructure@leggedrobotics.com',
+                     'USER', true, 'https://datasets.leggedrobotics.com/logoRSL.png')
+             ON CONFLICT DO NOTHING`,
+            [SeedScriptRunnerTemplate1790081400000.SYSTEM_USER_UUID],
+        );
+
         // Always insert the platform's own row, never adopt an existing one:
         // a `script-runner` template made by hand before this shipped points at
         // whatever image its author chose, and flagging it as system would run
@@ -39,6 +50,9 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
         // actions that reference it, but stays an ordinary user template; the
         // seeded row takes the next free version so the (name, version) index
         // cannot collide with it.
+        // The parameters are cast explicitly: `$2` is used both in the select
+        // list and in a comparison, and Postgres refuses to deduce two
+        // different types for one parameter.
         await queryRunner.query(
             `INSERT INTO "action_template" (
                  "uuid", "name", "description", "image_name",
@@ -46,17 +60,17 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
                  "accessRights", "version", "isArchived", "isSystem",
                  "creatorUuid"
              )
-             SELECT $1, $2, $3, $4,
+             SELECT $1::uuid, $2::varchar, $3::varchar, $4::varchar,
                     2, 4, -1, 0.25,
                     '20'::action_template_accessrights_enum,
                     COALESCE((
                         SELECT MAX(t."version") FROM "action_template" t
-                         WHERE t."name" = $2
+                         WHERE t."name" = $2::varchar
                     ), 0) + 1,
                     false, true,
-                    $5
+                    $5::uuid
              WHERE NOT EXISTS (
-                 SELECT 1 FROM "action_template" t WHERE t."uuid" = $1
+                 SELECT 1 FROM "action_template" t WHERE t."uuid" = $1::uuid
              )`,
             [
                 SeedScriptRunnerTemplate1790081400000.TEMPLATE_UUID,
