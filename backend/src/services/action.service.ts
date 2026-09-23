@@ -9,6 +9,7 @@ import {
     ActionsDto,
     ActionSubmitResponseDto,
     PaginatedQueryDto,
+    SortOrder,
     SubmitActionDto,
     SubmitActionMulti,
     SubmitScriptActionDto,
@@ -54,6 +55,22 @@ import {
     SelectQueryBuilder,
 } from 'typeorm';
 import logger from '../logger';
+import { addSort } from './utilities';
+
+// `sortBy` is user input that ends up in ORDER BY, so only these keys (the
+// sortable columns of the actions table) are accepted.
+/* eslint-disable @typescript-eslint/naming-convention */
+const FIND_ALL_SORT_KEYS = {
+    createdAt: 'action.createdAt',
+    updatedAt: 'action.updatedAt',
+    state: 'action.state',
+    state_cause: 'action.state_cause',
+    'mission.name': 'mission.name',
+    'template.name': 'template.name',
+    'template.image_name': 'template.image_name',
+    'creator.name': 'creator.name',
+};
+/* eslint-enable @typescript-eslint/naming-convention */
 
 interface LokiStream {
     stream: Record<string, string>;
@@ -321,11 +338,12 @@ export class ActionService {
             sortDirection &&
             ['ASC', 'DESC'].includes(sortDirection)
         ) {
-            if (sortBy.includes('.')) {
-                qb.orderBy(sortBy, sortDirection as 'ASC' | 'DESC');
-            } else {
-                qb.orderBy(`action.${sortBy}`, sortDirection as 'ASC' | 'DESC');
-            }
+            addSort(
+                qb,
+                FIND_ALL_SORT_KEYS,
+                sortBy,
+                sortDirection === 'ASC' ? SortOrder.ASC : SortOrder.DESC,
+            );
         } else {
             // Default sort: newest first
             qb.orderBy('action.createdAt', 'DESC');
