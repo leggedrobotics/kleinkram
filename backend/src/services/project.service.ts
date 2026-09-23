@@ -25,6 +25,7 @@ import {
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
+import { assertValidPublicAccessRights } from './public-access';
 import { UserService } from './user.service';
 
 import {
@@ -226,6 +227,51 @@ export class ProjectService {
     }
 
     /**
+     * Returns the subset of `projectUuids` that are public, i.e. grant the
+     * public access group access.
+     */
+    private async _getPublicProjectUuids(
+        projectUuids: string[],
+    ): Promise<Set<string>> {
+        if (projectUuids.length === 0) {
+            return new Set();
+        }
+
+        const publicAccesses = await this.projectAccessRepository
+            .createQueryBuilder('access')
+            .innerJoin('access.accessGroup', 'accessGroup')
+            .innerJoin('access.project', 'accessProject')
+            .select('accessProject.uuid', 'projectUuid')
+            .where('accessGroup.type = :publicType', {
+                publicType: AccessGroupType.PUBLIC,
+            })
+            .andWhere('accessProject.uuid IN (:...projectUuids)', {
+                projectUuids,
+            })
+            .getRawMany<{ projectUuid: string }>();
+
+        return new Set(publicAccesses.map((access) => access.projectUuid));
+    }
+
+    /**
+     * Restricts the query to public projects. A semi-join for the same
+     * reason as `_addStarredFilter`.
+     */
+    private _addPublicFilter(
+        query: SelectQueryBuilder<ProjectEntity>,
+    ): SelectQueryBuilder<ProjectEntity> {
+        const publicUuids = this.projectAccessRepository
+            .createQueryBuilder('publicAccess')
+            .innerJoin('publicAccess.accessGroup', 'publicGroup')
+            .select('"publicAccess"."projectUuid"')
+            .where('publicGroup.type = :publicGroupType');
+
+        return query
+            .andWhere(`project.uuid IN (${publicUuids.getQuery()})`)
+            .setParameter('publicGroupType', AccessGroupType.PUBLIC);
+    }
+
+    /**
      * Adds the total size of a project (the summed size of all files of all its
      * non-deleted missions) as a computed column, so that the database can sort
      * by it.
@@ -294,6 +340,7 @@ export class ProjectService {
         userUuid: string,
         exactMatch = false,
         starredOnly = false,
+        publicOnly = false,
     ): Promise<ProjectsDto> {
         let query = this.projectRepository
             .createQueryBuilder('project')
@@ -312,6 +359,10 @@ export class ProjectService {
 
         if (starredOnly) {
             query = this._addStarredFilter(query, userUuid);
+        }
+
+        if (publicOnly) {
+            query = this._addPublicFilter(query);
         }
 
         if (sortBy === 'rights') {
@@ -348,11 +399,13 @@ export class ProjectService {
         const [projects, count] = await query.getManyAndCount();
 
         const foundProjectUuids = projects.map((p) => p.uuid);
-        const [sizes, missionCounts, starredUuids] = await Promise.all([
-            this._getProjectSizes(foundProjectUuids),
-            this._getMissionCounts(foundProjectUuids),
-            this._getStarredProjectUuids(foundProjectUuids, userUuid),
-        ]);
+        const [sizes, missionCounts, starredUuids, publicUuids] =
+            await Promise.all([
+                this._getProjectSizes(foundProjectUuids),
+                this._getMissionCounts(foundProjectUuids),
+                this._getStarredProjectUuids(foundProjectUuids, userUuid),
+                this._getPublicProjectUuids(foundProjectUuids),
+            ]);
 
         return {
             data: projects.map((element) => {
@@ -360,6 +413,7 @@ export class ProjectService {
                 dto.size = sizes.get(element.uuid) ?? 0;
                 dto.missionCount = missionCounts.get(element.uuid) ?? 0;
                 dto.isStarred = starredUuids.has(element.uuid);
+                dto.isPublic = publicUuids.has(element.uuid);
                 return dto;
             }),
             count,
@@ -392,7 +446,10 @@ export class ProjectService {
             missionPromise,
             missionCountPromise,
         ]);
-        const sizes = await this._getProjectSizes([uuid]);
+        const [sizes, publicUuids] = await Promise.all([
+            this._getProjectSizes([uuid]),
+            this._getPublicProjectUuids([uuid]),
+        ]);
         const starredUuids =
             userUuid === undefined
                 ? new Set<string>()
@@ -401,6 +458,7 @@ export class ProjectService {
         const dto = projectEntityToDtoWithRequiredTags(mission, missionCount);
         dto.size = sizes.get(uuid) ?? 0;
         dto.isStarred = starredUuids.has(uuid);
+        dto.isPublic = publicUuids.has(uuid);
         return dto;
     }
 
@@ -612,6 +670,18 @@ export class ProjectService {
                 'Project with that name already exists',
             );
         }
+
+        // checked up front: errors of the access group creation below are
+        // reported as invalid uuids
+        for (const accessGroup of project.accessGroups ?? []) {
+            if ('accessGroupUUID' in accessGroup) {
+                assertValidPublicAccessRights(
+                    accessGroup.accessGroupUUID,
+                    accessGroup.rights,
+                );
+            }
+        }
+
         const creator = await this.userService.findOneByUUID(
             auth.user.uuid,
             {},

@@ -34,6 +34,16 @@ export class ProjectWithRequiredTagsDto extends ProjectWithCreator {
     isStarred!: boolean;
 
     @ApiProperty({
+        description:
+            'Whether the project is public, i.e. every user can read it ' +
+            'without being a member of one of its access groups.',
+    })
+    @IsBoolean()
+    @Expose()
+    @Transform(({ obj }) => obj.isPublic ?? false)
+    isPublic!: boolean;
+
+    @ApiProperty({
         type: () => [TagTypeDto],
         description: 'List of required tags',
     })

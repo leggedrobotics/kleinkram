@@ -30,6 +30,10 @@ export const filteredProjects = async (
         parameters.starred = 'true';
     }
 
+    if (searchParameters?.public === 'true') {
+        parameters.public = 'true';
+    }
+
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
         '/projects',
         {

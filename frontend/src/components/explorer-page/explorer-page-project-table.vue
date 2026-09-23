@@ -97,7 +97,9 @@
                 >
                     <span class="text-subtitle1">{{ emptyStateLabel }}</span>
 
-                    <dialog-opener-create-project v-if="scope !== 'starred'">
+                    <dialog-opener-create-project
+                        v-if="scope !== 'starred' && scope !== 'public'"
+                    >
                         <q-btn
                             flat
                             dense
@@ -138,6 +140,9 @@
                                 class="text-subtitle2 project-card__text ellipsis-2-lines"
                             >
                                 {{ props.row.name }}
+                                <public-project-chip
+                                    v-if="props.row.isPublic"
+                                />
                             </div>
                             <div
                                 v-if="props.row.description"
@@ -249,6 +254,7 @@
                 >
                     {{ props.row.name }}
                 </router-link>
+                <public-project-chip v-if="props.row.isPublic" />
             </q-td>
         </template>
 
@@ -344,6 +350,7 @@ import ConfigureTagsDialogOpener from 'components/button-wrapper/dialog-opener-c
 import DialogOpenerCreateProject from 'components/button-wrapper/dialog-opener-create-project.vue';
 import EditProjectDialogOpener from 'components/button-wrapper/edit-project-dialog-opener.vue';
 import ProjectStarButton from 'components/common/project-star-button.vue';
+import PublicProjectChip from 'components/common/public-project-chip.vue';
 import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import { QTable, useQuasar } from 'quasar';
 import { explorerPageTableColumns } from 'src/components/explorer-page/explorer-page-table-columns';
@@ -390,11 +397,19 @@ const visibleColumns = computed(() =>
         : undefined,
 );
 
-const emptyStateLabel = computed(() =>
-    scope === 'starred'
-        ? 'No starred projects yet — star a project to find it here'
-        : 'No Projects Found',
-);
+const emptyStateLabel = computed(() => {
+    switch (scope) {
+        case 'starred': {
+            return 'No starred projects yet — star a project to find it here';
+        }
+        case 'public': {
+            return 'No public projects yet';
+        }
+        default: {
+            return 'No Projects Found';
+        }
+    }
+});
 
 const sortOptions = explorerPageTableColumns
     .filter((column) => column.sortable === true)
@@ -460,6 +475,7 @@ const {
               { 'creator.uuid': user.value?.uuid ?? '' }
             : {}),
         ...(scope === 'starred' ? { starred: 'true' } : {}),
+        ...(scope === 'public' ? { public: 'true' } : {}),
     })),
 );
 

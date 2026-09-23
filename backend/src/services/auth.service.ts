@@ -53,6 +53,7 @@ export class AuthService implements OnModuleInit {
 
     async onModuleInit(): Promise<void> {
         await this.affiliationGroupService.createAccessGroups(this.config);
+        await this.affiliationGroupService.createPublicAccessGroup();
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

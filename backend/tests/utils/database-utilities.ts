@@ -80,6 +80,7 @@ export const mockDatabaseUser = async (
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await affiliationGroupService.createAccessGroups(config);
+    await affiliationGroupService.createPublicAccessGroup();
 
     const userRepository = database.getRepository(UserEntity);
     const accountRepository = database.getRepository(AccountEntity);

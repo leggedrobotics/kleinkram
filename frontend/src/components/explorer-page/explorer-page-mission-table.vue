@@ -104,7 +104,10 @@
                 >
                     <span class="text-subtitle1"> No Mission Found </span>
 
-                    <create-mission-dialog-opener :project-uuid="projectUuid">
+                    <create-mission-dialog-opener
+                        v-if="!isReadOnlyPublicView"
+                        :project-uuid="projectUuid"
+                    >
                         <q-btn
                             flat
                             dense
@@ -209,6 +212,7 @@
                                         </q-item-section>
                                     </q-item>
                                     <EditMissionDialogOpener
+                                        v-if="!isReadOnlyPublicView"
                                         :mission="props.row"
                                     >
                                         <q-item v-ripple clickable>
@@ -217,7 +221,10 @@
                                             </q-item-section>
                                         </q-item>
                                     </EditMissionDialogOpener>
-                                    <MissionMetadataOpener :mission="props.row">
+                                    <MissionMetadataOpener
+                                        v-if="!isReadOnlyPublicView"
+                                        :mission="props.row"
+                                    >
                                         <q-item v-ripple clickable>
                                             <q-item-section>
                                                 Edit Metadata
@@ -225,6 +232,7 @@
                                         </q-item>
                                     </MissionMetadataOpener>
                                     <MoveMissionDialogOpener
+                                        v-if="!isReadOnlyPublicView"
                                         :mission="props.row"
                                     >
                                         <q-item v-ripple clickable>
@@ -234,6 +242,7 @@
                                         </q-item>
                                     </MoveMissionDialogOpener>
                                     <DeleteMissionDialogOpener
+                                        v-if="!isReadOnlyPublicView"
                                         :mission="props.row"
                                     >
                                         <q-item v-ripple clickable>
@@ -272,26 +281,38 @@
                             >
                                 <q-item-section>View Files</q-item-section>
                             </q-item>
-                            <EditMissionDialogOpener :mission="props.row">
+                            <EditMissionDialogOpener
+                                v-if="!isReadOnlyPublicView"
+                                :mission="props.row"
+                            >
                                 <q-item v-ripple clickable>
                                     <q-item-section>
                                         Edit Mission
                                     </q-item-section>
                                 </q-item>
                             </EditMissionDialogOpener>
-                            <MissionMetadataOpener :mission="props.row">
+                            <MissionMetadataOpener
+                                v-if="!isReadOnlyPublicView"
+                                :mission="props.row"
+                            >
                                 <q-item v-ripple clickable>
                                     <q-item-section>
                                         Edit Metadata
                                     </q-item-section>
                                 </q-item>
                             </MissionMetadataOpener>
-                            <MoveMissionDialogOpener :mission="props.row">
+                            <MoveMissionDialogOpener
+                                v-if="!isReadOnlyPublicView"
+                                :mission="props.row"
+                            >
                                 <q-item v-ripple clickable>
                                     <q-item-section>Move</q-item-section>
                                 </q-item>
                             </MoveMissionDialogOpener>
-                            <DeleteMissionDialogOpener :mission="props.row">
+                            <DeleteMissionDialogOpener
+                                v-if="!isReadOnlyPublicView"
+                                :mission="props.row"
+                            >
                                 <q-item v-ripple clickable>
                                     <q-item-section>Delete</q-item-section>
                                 </q-item>
@@ -315,6 +336,7 @@ import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
 import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { Notify, QTable, useQuasar } from 'quasar';
+import { usePublicReadOnlyView } from 'src/composables/use-public-read-only-view';
 import { useRowActivation } from 'src/composables/use-row-activation';
 import { useHandler, useProjectQuery } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
@@ -381,6 +403,7 @@ const pagination = computed({
 
 const projectUuid = useProjectUUID();
 const { data: project } = useProjectQuery(projectUuid);
+const isReadOnlyPublicView = usePublicReadOnlyView(projectUuid);
 
 /**
  * Two-way, so that the bulk-action bar in the parent and the checkboxes here

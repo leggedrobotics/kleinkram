@@ -73,24 +73,62 @@
     </q-select>
 
     <AccessRightsTable
-        :access-rights="accessRights || []"
+        :access-rights="groupAccessRights"
         @update-rights="onUpdateRights"
         @remove="onRemoveGroup"
     />
+
+    <GeneralAccessSelector v-model="isPublic" />
 </template>
 
 <script setup lang="ts">
 import type { AccessGroupDto } from '@kleinkram/api-dto/types/access-control/access-group.dto';
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
-import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    PUBLIC_ACCESS_GROUP,
+    PUBLIC_ACCESS_RIGHTS,
+} from '@kleinkram/shared';
 import AccessGroupAvatar from 'components/configure-access-rights/access-group-avatar.vue';
 import AccessRightsTable from 'components/configure-access-rights/access-rights-table.vue';
+import GeneralAccessSelector from 'components/configure-access-rights/general-access-selector.vue';
 import { QSelect } from 'quasar';
 import { useSearchAccessGroup } from 'src/hooks/query-hooks';
 import { getAccessRightDescription } from 'src/services/generic';
 import { computed, ref } from 'vue';
 
 const accessRights = defineModel<DefaultRightDto[]>({ default: () => [] });
+
+/**
+ * The public access group is part of the same list of access rights, but it
+ * is shown as the "General access" setting instead of as a row of the table.
+ */
+const isPublicAccess = (access: DefaultRightDto): boolean =>
+    access.type === AccessGroupType.PUBLIC ||
+    access.uuid === PUBLIC_ACCESS_GROUP.uuid;
+
+const groupAccessRights = computed(() =>
+    accessRights.value.filter((access) => !isPublicAccess(access)),
+);
+
+const isPublic = computed({
+    get: () => accessRights.value.some((access) => isPublicAccess(access)),
+    set: (value: boolean) => {
+        accessRights.value = value
+            ? [
+                  ...groupAccessRights.value,
+                  {
+                      uuid: PUBLIC_ACCESS_GROUP.uuid,
+                      name: PUBLIC_ACCESS_GROUP.name,
+                      type: AccessGroupType.PUBLIC,
+                      rights: PUBLIC_ACCESS_RIGHTS,
+                      memberCount: 0,
+                  },
+              ]
+            : groupAccessRights.value;
+    },
+});
 
 // State
 const selectReference = ref<QSelect>();
