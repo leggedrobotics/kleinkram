@@ -1,9 +1,9 @@
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import logger from '../../logger';
 import { traceWrapper } from '../../tracing';
 
-const execPromise = promisify(exec);
+const execFilePromise = promisify(execFile);
 
 export const RosBagConverter = {
     /**
@@ -14,8 +14,10 @@ export const RosBagConverter = {
         return traceWrapper(async (): Promise<void> => {
             logger.debug(`Converting ${inputFile} -> ${outputFile}`);
 
-            // You might want to add timeout or max buffer options here for safety
-            await execPromise(`mcap convert "${inputFile}" "${outputFile}"`);
+            // The paths contain user-controlled file names (e.g. Drive
+            // imports), so they must be passed as arguments and never go
+            // through a shell, where `$(...)` would still expand inside quotes.
+            await execFilePromise('mcap', ['convert', inputFile, outputFile]);
 
             logger.debug(`Conversion successful: ${outputFile}`);
         }, 'RosBagConverter.convert')();
