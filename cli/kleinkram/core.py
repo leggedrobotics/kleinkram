@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 import tarfile
 import tempfile
 from pathlib import Path
@@ -296,8 +297,8 @@ def verify(
     # add deprecated warning for skip_hash
     if skip_hash is not None:
         print(
-            "Warning: --skip-hash is deprecated and will be removed in a future version. "
-            "Use --check-file-hash=False instead.",
+            "Warning: skip_hash is deprecated and will be removed in a future version. " "Use check_file_hash=False instead.",
+            file=sys.stderr,
         )
         check_file_hash = not skip_hash
 
@@ -649,6 +650,23 @@ def delete_trigger(*, client: AuthenticatedClient, trigger_uuid: UUID) -> None:
     kleinkram.api.routes._delete_trigger(client, trigger_uuid)
 
 
+def resolve_template(client: AuthenticatedClient, template: Union[str, UUID]) -> UUID:
+    """\
+    resolve a template given by UUID or by name (latest version) to its UUID
+    """
+    template_str = str(template)
+    if is_valid_uuid4(template_str):
+        template_uuid = UUID(template_str)
+        _ = kleinkram.api.routes.get_template(client, template_uuid)  # check if template exists
+        return template_uuid
+
+    templates = kleinkram.api.routes.get_templates(client)
+    found_template = next((t for t in templates if t.name == template_str), None)
+    if not found_template:
+        raise TemplateNotFound(f"Template '{template_str}' not found.")
+    return found_template.uuid
+
+
 def launch_execution(
     client: AuthenticatedClient,
     mission_query: MissionQuery,
@@ -662,17 +680,7 @@ def launch_execution(
     mission_uuid = mission_obj.id
 
     # 2. Resolve Template to UUID
-    template_str = str(template)
-    if is_valid_uuid4(template_str):
-        template_uuid = UUID(template_str)
-        _ = kleinkram.api.routes.get_template(client, template_uuid)  # check if template exists
-    else:
-        templates = kleinkram.api.routes.get_templates(client)
-        found_template = next((t for t in templates if t.name == template_str), None)
-
-        if not found_template:
-            raise TemplateNotFound(f"Template '{template_str}' not found.")
-        template_uuid = found_template.uuid
+    template_uuid = resolve_template(client, template)
 
     # 3. Launch Execution via API Route
     execution_id = kleinkram.api.routes._launch_execution(client, mission_uuid, template_uuid)
