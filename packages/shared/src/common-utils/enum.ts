@@ -75,6 +75,18 @@ export enum AccessGroupType {
      *
      */
     CUSTOM = 'CUSTOM',
+
+    /**
+     * The single system group that stands for every user. Granting it
+     * access to a project makes the project public: every user who can
+     * log in can read it, including users who sign up later.
+     *
+     * Membership is implicit, the group has no membership rows. It is
+     * created by the system (see `PUBLIC_ACCESS_GROUP`), is hidden
+     * from searches, and can only ever be granted READ rights.
+     *
+     */
+    PUBLIC = 'PUBLIC',
 }
 
 export enum AccessGroupEventType {

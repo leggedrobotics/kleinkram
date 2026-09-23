@@ -168,6 +168,7 @@ export class ProjectController {
         // Convert string 'true'/'false' to boolean
         const exactMatch = query.exactMatch === 'true';
         const starredOnly = query.starred === 'true';
+        const publicOnly = query.public === 'true';
 
         return await this.projectService.findMany(
             query.projectUuids ?? [],
@@ -180,6 +181,7 @@ export class ProjectController {
             user.user.uuid,
             exactMatch,
             starredOnly,
+            publicOnly,
         );
     }
 
