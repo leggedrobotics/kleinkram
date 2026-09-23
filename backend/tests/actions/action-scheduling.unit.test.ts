@@ -43,8 +43,8 @@ describe('Action Scheduling Logic Unit Tests', () => {
             const worker = await findWorkerForAction(
                 { cpuCores: 2, cpuMemory: 4, gpuMemory: 0, maxRuntime: 60 },
                 mockWorkerRepository as unknown as Repository<WorkerEntity>,
-                mockActionQueues as unknown as Record<string, unknown>,
-                mockLogger as unknown as import('winston').Logger,
+                mockActionQueues,
+                mockLogger as unknown,
             );
 
             expect(mockWorkerRepository.find).toHaveBeenCalledWith({
@@ -75,8 +75,8 @@ describe('Action Scheduling Logic Unit Tests', () => {
             const worker = await findWorkerForAction(
                 { cpuCores: 1, cpuMemory: 1, gpuMemory: 0, maxRuntime: 60 },
                 mockWorkerRepository as unknown as Repository<WorkerEntity>,
-                mockActionQueues as unknown as Record<string, unknown>,
-                mockLogger as unknown as import('winston').Logger,
+                mockActionQueues,
+                mockLogger as unknown,
             );
 
             expect(worker?.identifier).toBe('worker-2');
@@ -104,8 +104,8 @@ describe('Action Scheduling Logic Unit Tests', () => {
             const worker = await findWorkerForAction(
                 { cpuCores: 1, cpuMemory: 1, gpuMemory: 0, maxRuntime: 60 },
                 mockWorkerRepository as unknown as Repository<WorkerEntity>,
-                mockActionQueues as unknown as Record<string, unknown>,
-                mockLogger as unknown as import('winston').Logger,
+                mockActionQueues,
+                mockLogger as unknown,
             );
 
             expect(worker?.identifier).toBe('worker-B');
@@ -131,10 +131,10 @@ describe('Action Scheduling Logic Unit Tests', () => {
             await addActionQueue(
                 action,
                 runtimeDesc,
-                mockWorkerRepository as unknown as Repository<WorkerEntity>,
-                mockActionRepository as unknown as Repository<ActionEntity>,
-                mockActionQueues as unknown as Record<string, unknown>,
-                mockLogger as unknown as import('winston').Logger,
+                mockWorkerRepository as unknown,
+                mockActionRepository as unknown,
+                mockActionQueues,
+                mockLogger as unknown,
             );
 
             expect(action.state).toBe(ActionState.UNPROCESSABLE);
@@ -158,10 +158,10 @@ describe('Action Scheduling Logic Unit Tests', () => {
             await addActionQueue(
                 action,
                 runtimeDesc,
-                mockWorkerRepository as unknown as Repository<WorkerEntity>,
-                mockActionRepository as unknown as Repository<ActionEntity>,
-                mockActionQueues as unknown as Record<string, unknown>,
-                mockLogger as unknown as import('winston').Logger,
+                mockWorkerRepository as unknown,
+                mockActionRepository as unknown,
+                mockActionQueues,
+                mockLogger as unknown,
             );
 
             // DB was updated

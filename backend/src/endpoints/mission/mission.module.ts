@@ -1,5 +1,5 @@
+import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
-import { TagService } from '@/services/tag.service';
 import { UserService } from '@/services/user.service';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
@@ -24,7 +24,7 @@ import { MissionController } from './mission.controller';
         ]),
         StorageModule,
     ],
-    providers: [MissionService, UserService, TagService],
+    providers: [MissionService, UserService, MetadataService],
     controllers: [MissionController],
     exports: [MissionService],
 })

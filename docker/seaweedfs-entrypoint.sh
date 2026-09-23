@@ -100,6 +100,9 @@ create_bucket() {
 create_bucket "${S3_DATA_BUCKET_NAME:-data}"
 create_bucket "${S3_DB_BUCKET_NAME:-dbdumps}"
 create_bucket "${S3_ARTIFACTS_BUCKET_NAME:-action-artifacts}"
+# No TTL is configured for the scripts bucket below: an action keeps a reference
+# to the script it ran, so expiring the object would make old runs unreadable.
+create_bucket "${S3_SCRIPTS_BUCKET_NAME:-action-scripts}"
 
 echo "Configuring Bucket TTL..."
 # Apply a 90-day TTL to the action-artifacts bucket so all objects inside inherit it

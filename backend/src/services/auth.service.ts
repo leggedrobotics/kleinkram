@@ -69,7 +69,9 @@ export class AuthService implements OnModuleInit {
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.GITHUB },
-            relations: ['user'],
+            relations: {
+                user: true,
+            },
         });
 
         if (account !== null && account.user === undefined) {
@@ -110,7 +112,9 @@ export class AuthService implements OnModuleInit {
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.FakeOAuth },
-            relations: ['user'],
+            relations: {
+                user: true,
+            },
         });
 
         if (account !== null && account.user === undefined) {
@@ -144,7 +148,9 @@ export class AuthService implements OnModuleInit {
         const account = await this.accountRepository.findOne({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             where: { oauthID: id, provider: Providers.GOOGLE },
-            relations: ['user'],
+            relations: {
+                user: true,
+            },
         });
 
         if (account !== null && account.user === undefined) {
@@ -250,7 +256,9 @@ export const createNewUser = async (
 ): Promise<UserEntity> => {
     const existingUser = await userRepository.findOne({
         where: { email: options.email },
-        relations: ['account'],
+        relations: {
+            account: true,
+        },
     });
 
     // assert that we don't have a user with the same email but a different provider
@@ -298,8 +306,16 @@ export const createNewUser = async (
     user = await userRepository.save(user);
     user = await userRepository.findOneOrFail({
         where: { uuid: user.uuid },
-        relations: ['memberships'],
-        select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
+        relations: {
+            memberships: true,
+        },
+        select: {
+            uuid: true,
+            name: true,
+            email: true,
+            role: true,
+            avatarUrl: true,
+        },
     });
 
     /////////////////////////////////////////////////////////
@@ -312,7 +328,15 @@ export const createNewUser = async (
 
     return await userRepository.findOneOrFail({
         where: { uuid: user.uuid },
-        relations: ['memberships'],
-        select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
+        relations: {
+            memberships: true,
+        },
+        select: {
+            uuid: true,
+            name: true,
+            email: true,
+            role: true,
+            avatarUrl: true,
+        },
     });
 };

@@ -23,18 +23,25 @@ services:
 
         volumes:
             - swagger-spec:/usr/src/app/backend/docs
+            # deployment specific access config (affiliation groups), not part of the image
+            - ${ACCESS_CONFIG_FILE:-./access_config.json}:/app/config/access_config.json:ro
 
         networks:
             - webnet
             - privatenet
 
         environment:
+            ACCESS_CONFIG_PATH: /app/config/access_config.json
             DEVBUILD: 'false'
             REDIS_HOST: redis
 
         depends_on:
-            - database
-            - redis
+            database:
+                condition: service_started
+            redis:
+                condition: service_started
+            loki-ready:
+                condition: service_completed_successfully
 
     database:
         image: postgres:17
@@ -55,7 +62,7 @@ services:
             - postgres_db_data:/var/lib/postgresql/data
 
     seaweedfs:
-        image: chrislusf/seaweedfs:latest
+        image: chrislusf/seaweedfs:4.17
         container_name: kleinkram-seaweedfs-dev
 
         command: server -dir=/data -s3 -s3.port=9000
@@ -68,6 +75,7 @@ services:
             S3_DATA_BUCKET_NAME: ${S3_DATA_BUCKET_NAME}
             S3_DB_BUCKET_NAME: ${S3_DB_BUCKET_NAME}
             S3_ARTIFACTS_BUCKET_NAME: ${S3_ARTIFACTS_BUCKET_NAME}
+            S3_SCRIPTS_BUCKET_NAME: ${S3_SCRIPTS_BUCKET_NAME}
             S3_ACCESS_KEY: ${S3_ACCESS_KEY}
             S3_SECRET_KEY: ${S3_SECRET_KEY}
 
@@ -124,8 +132,10 @@ services:
         networks:
             - privatenet
         depends_on:
-            - database
-            - loki
+            database:
+                condition: service_started
+            loki-ready:
+                condition: service_completed_successfully
         volumes:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
@@ -175,6 +185,34 @@ services:
             - -log.level=error
         volumes:
             - ./observability/loki/loki-config.yml:/mnt/config/loki-config.yml:ro
+        networks:
+            - privatenet
+
+    # Loki reports /ready as 503 for a while after startup (ring join, WAL
+    # replay, min_ready_duration), during which action submissions are
+    # rejected. The grafana/loki image ships no shell, so it cannot run a
+    # healthcheck of its own -- this one-shot container does the waiting and
+    # lets dependents gate on `service_completed_successfully`.
+    loki-ready:
+        image: curlimages/curl:latest
+        container_name: kleinkram-loki-ready-dev
+        restart: 'no'
+        depends_on:
+            - loki
+        entrypoint:
+            - sh
+            - -c
+            - |
+                echo "waiting for Loki to become ready..."
+                for _ in $$(seq 1 120); do
+                    if curl -sf http://loki:3100/ready > /dev/null; then
+                        echo "Loki is ready"
+                        exit 0
+                    fi
+                    sleep 1
+                done
+                echo "Loki did not become ready within 120s" >&2
+                exit 1
         networks:
             - privatenet
 

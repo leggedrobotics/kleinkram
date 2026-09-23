@@ -203,18 +203,6 @@ export const getFilteredFileIdSubQuery = (
     return query;
 };
 
-export const addMissionCount = <T extends ObjectLiteral>(
-    query: SelectQueryBuilder<T>,
-): SelectQueryBuilder<T> => {
-    query.loadRelationCountAndMap(
-        'project.missionCount',
-        'project.missions',
-        'mission',
-    );
-
-    return query;
-};
-
 export const addFileStats = (
     query: SelectQueryBuilder<MissionEntity>,
 ): SelectQueryBuilder<MissionEntity> => {
@@ -256,9 +244,11 @@ export const addProjectFilters = <T extends ObjectLiteral>(
     exactMatch = false,
 ): SelectQueryBuilder<T> => {
     if (projectIds.length > 0 || projectPatterns.length > 0) {
-        const projectLikePatterns = projectPatterns.map((element) =>
-            convertGlobToLikePattern(element),
-        );
+        const projectLikePatterns = exactMatch
+            ? projectPatterns
+            : projectPatterns.map((element) =>
+                  convertGlobToLikePattern(element),
+              );
 
         const projectUUIDQuery = getFilteredProjectIdSubQuery(
             projectRepository,
@@ -269,7 +259,10 @@ export const addProjectFilters = <T extends ObjectLiteral>(
 
         query
             .andWhere(`project.uuid IN (${projectUUIDQuery.getQuery()})`)
-            .setParameters(projectUUIDQuery.getParameters());
+            .setParameters({
+                ...query.getParameters(),
+                ...projectUUIDQuery.getParameters(),
+            });
     }
 
     return query;
@@ -300,7 +293,10 @@ export const addMissionFilters = <T extends ObjectLiteral>(
 
         query
             .andWhere(`mission.uuid IN (${missionIdSubQuery.getQuery()})`)
-            .setParameters(missionIdSubQuery.getParameters());
+            .setParameters({
+                ...query.getParameters(),
+                ...missionIdSubQuery.getParameters(),
+            });
     }
 
     return query;
@@ -325,7 +321,10 @@ export const addFileFilters = <T extends ObjectLiteral>(
 
         query
             .andWhere(`file.uuid IN (${fileIdSubQuery.getQuery()})`)
-            .setParameters(fileIdSubQuery.getParameters());
+            .setParameters({
+                ...query.getParameters(),
+                ...fileIdSubQuery.getParameters(),
+            });
     }
 
     return query;

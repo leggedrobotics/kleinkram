@@ -4,11 +4,11 @@
             class="q-pa-sm text-center"
             style="width: 80%; min-height: 250px; max-width: 1500px"
         >
-            <div class="q-mt-md row">
-                <div class="col-4">
+            <div class="q-mt-md row q-col-gutter-sm items-end">
+                <div class="col-12 col-sm-4">
                     <q-input v-model="tagtype" label="Search Metadata" />
                 </div>
-                <div class="col-2">
+                <div class="col-12 col-sm-2">
                     <q-btn label="Search" color="primary" />
                 </div>
             </div>
@@ -34,14 +34,9 @@
                     @update:tag-values="updateTagValues"
                 />
             </div>
-            <div class="q-mt-md row">
-                <div class="col-10" />
-                <div class="col-1">
-                    <q-btn label="Close" color="orange" @click="onDialogHide" />
-                </div>
-                <div class="col-1">
-                    <q-btn label="Apply" color="primary" @click="applyAction" />
-                </div>
+            <div class="q-mt-md row justify-end q-gutter-x-sm">
+                <q-btn label="Close" color="orange" @click="onDialogHide" />
+                <q-btn label="Apply" color="primary" @click="applyAction" />
             </div>
         </q-card>
     </q-dialog>

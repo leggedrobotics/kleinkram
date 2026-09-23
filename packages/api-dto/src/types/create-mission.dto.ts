@@ -24,3 +24,11 @@ export class CreateMission {
     @IsOptional()
     ignoreTags!: boolean;
 }
+
+export class UpdateMissionNameDto {
+    @IsString()
+    @IsNotEmpty()
+    @IsValidMissionName()
+    @IsNoValidUUID()
+    name!: string;
+}

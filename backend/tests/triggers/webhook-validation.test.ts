@@ -194,6 +194,6 @@ describe('Webhook Validation Tests', () => {
 
         expect(hookResponse.status).toBe(413); // Payload Too Large
         const data = (await hookResponse.json()) as { message: string };
-        expect(data.message).toContain('Payload too large');
+        expect(data.message).toMatch(/Payload size|Payload too large/i);
     });
 });

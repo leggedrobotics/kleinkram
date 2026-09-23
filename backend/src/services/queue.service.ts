@@ -13,6 +13,11 @@ import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity'
 import env from '@kleinkram/backend-common/environment';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
+    findFilesMissingRecordingTimes,
+    RECORDING_TIMES_BACKFILL_JOB,
+    recordingTimesBackfillJobOptions,
+} from '@kleinkram/backend-common/services/recording-times-backfill';
+import {
     FileEventType,
     FileLocation,
     FileOrigin,
@@ -41,6 +46,12 @@ import { FindOptionsWhere, In, IsNull, MoreThan, Repository } from 'typeorm';
 import logger from '../logger';
 import { TriggerService } from './trigger.service';
 import { UserService } from './user.service';
+
+/**
+ * Upper bound of files a single manual backfill run queues, so that a click
+ * cannot enqueue a million storage reads at once.
+ */
+const RECORDING_TIMES_BACKFILL_BATCH_SIZE = 2000;
 
 @Injectable()
 export class QueueService implements OnModuleInit {
@@ -128,7 +139,11 @@ export class QueueService implements OnModuleInit {
                 { hash: IsNull(), state: FileState.OK },
                 { hash: '', state: FileState.OK },
             ],
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -148,39 +163,77 @@ export class QueueService implements OnModuleInit {
         return { success: true, fileCount: files.length };
     }
 
+    /**
+     * Queues the recovery of the recording window for files that do not know
+     * theirs yet. The nightly job in the queue consumer does the same; this is
+     * the manual trigger for when a fix should not wait for the night.
+     */
+    async backfillRecordingTimes(): Promise<{
+        success: boolean;
+        fileCount: number;
+    }> {
+        const files = await findFilesMissingRecordingTimes(
+            this.fileRepository,
+            RECORDING_TIMES_BACKFILL_BATCH_SIZE,
+        );
+
+        logger.debug(
+            `Add ${files.length.toString()} files to queue for recording time backfill`,
+        );
+
+        for (const file of files) {
+            try {
+                await this.fileQueue.add(
+                    RECORDING_TIMES_BACKFILL_JOB,
+                    { fileUuid: file.uuid },
+                    recordingTimesBackfillJobOptions(file.uuid),
+                );
+            } catch (error: unknown) {
+                logger.error(error);
+            }
+        }
+
+        return { success: true, fileCount: files.length };
+    }
+
     async confirmUpload(
         uuid: string,
         md5: string,
         actor: UserEntity,
         source: FileSource | string = FileSource.WEB_INTERFACE,
     ): Promise<void> {
-        let job = await this.queueRepository.findOne({
-            where: { identifier: uuid },
-            relations: ['mission', 'mission.project'],
+        const file = await this.fileRepository.findOneOrFail({
+            where: { uuid },
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
-        if (!job) {
-            logger.warn(
-                `confirmUpload: Job missing for file ${uuid}.Recreating...`,
-            );
-
-            const file = await this.fileRepository.findOneOrFail({
-                where: { uuid },
-                relations: ['mission', 'mission.project'],
-            });
-
-            job = await this.queueRepository.save(
-                this.queueRepository.create({
-                    identifier: file.uuid,
-
-                    displayName: file.filename,
-                    state: QueueState.AWAITING_UPLOAD,
-                    location: FileLocation.S3,
-                    mission: file.mission,
-                    creator: actor,
-                } as IngestionJobEntity),
-            );
+        if (file.state === FileState.CANCELED) {
+            throw new ConflictException('Cannot confirm a canceled upload');
         }
+
+        let job = await this.queueRepository.findOne({
+            where: { identifier: uuid },
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
+        });
+
+        job ??= await this.queueRepository.save(
+            this.queueRepository.create({
+                identifier: file.uuid,
+                displayName: file.filename,
+                state: QueueState.AWAITING_UPLOAD,
+                location: FileLocation.S3,
+                mission: file.mission,
+                creator: actor,
+            } as IngestionJobEntity),
+        );
 
         if (
             job.state !== QueueState.AWAITING_UPLOAD &&
@@ -192,11 +245,6 @@ export class QueueService implements OnModuleInit {
                 `Resuming upload for job ${job.uuid} in state ${job.state} `,
             );
         }
-
-        const file = await this.fileRepository.findOneOrFail({
-            where: { uuid: uuid },
-            relations: ['mission', 'mission.project'],
-        });
 
         const fileInfo = await this.dataStorage
             .getFileInfo(file.uuid)
@@ -266,7 +314,13 @@ export class QueueService implements OnModuleInit {
             }
             return await this.queueRepository.find({
                 where,
-                relations: ['mission', 'mission.project', 'creator'],
+                relations: {
+                    mission: {
+                        project: true,
+                    },
+
+                    creator: true,
+                },
                 skip,
                 take,
                 order: { createdAt: 'DESC' },
@@ -301,7 +355,11 @@ export class QueueService implements OnModuleInit {
     ): Promise<DeleteMissionResponseDto> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         if (
@@ -343,7 +401,7 @@ export class QueueService implements OnModuleInit {
                 }
             }
         }
-        return {};
+        return { success: true };
     }
 
     async cancelProcessing(
@@ -352,7 +410,11 @@ export class QueueService implements OnModuleInit {
     ): Promise<CancelProcessingResponseDto> {
         const queue = await this.queueRepository.findOneOrFail({
             where: { uuid: queueUUID, mission: { uuid: missionUUID } },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         if (queue.state >= QueueState.PROCESSING) {

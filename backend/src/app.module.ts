@@ -1,3 +1,4 @@
+import { loadAccessConfig } from '@kleinkram/backend-common';
 import env from '@kleinkram/backend-common/environment';
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import configuration from '@kleinkram/backend-common/typeorm-config';
@@ -8,9 +9,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import * as pg from 'pg';
 import { appVersion } from './app-version';
 import { AccessModule } from './endpoints/access/access.module';
 import { ActionModule } from './endpoints/action/action.module';
@@ -19,10 +18,10 @@ import { CategoryModule } from './endpoints/category/category.module';
 import { FileModule } from './endpoints/file/file.module';
 import { HealthModule } from './endpoints/health/health.module';
 import { FoxgloveModule } from './endpoints/integrations/foxglove.module';
+import { MetadataModule } from './endpoints/metadata/metadata.module';
 import { MissionModule } from './endpoints/mission/mission.module';
 import { ProjectModule } from './endpoints/project/project.module';
 import { QueueModule } from './endpoints/queue/queue.module';
-import { TagModule } from './endpoints/tag/tag.module';
 import { TemplatesModule } from './endpoints/templates/templates.module';
 import { TopicModule } from './endpoints/topic/topic.module';
 import { TriggerModule } from './endpoints/trigger/trigger.module';
@@ -49,67 +48,26 @@ import { DBDumper } from './services/dbdumper.service';
                 configuration,
                 (): {
                     accessConfig: AccessGroupConfig;
-                } => {
-                    const configPath =
-                        process.env.ACCESS_CONFIG_PATH ??
-                        path.resolve(process.cwd(), '..', 'access_config.json');
-                    let rawConfig: string;
-                    try {
-                        rawConfig = fs.readFileSync(configPath, 'utf8');
-                    } catch {
-                        throw new Error(
-                            `Cannot read access config at "${configPath}". Set ACCESS_CONFIG_PATH or place access_config.json at the repo root.`,
-                        );
-                    }
-                    const accessConfig = JSON.parse(
-                        rawConfig,
-                    ) as AccessGroupConfig;
-                    if (
-                        !Array.isArray(accessConfig.emails) ||
-                        !Array.isArray(accessConfig.access_groups)
-                    ) {
-                        throw new TypeError(
-                            `Invalid access_config.json: "emails" and "access_groups" must be arrays`,
-                        );
-                    }
-                    const configGroupUuids = new Set(
-                        accessConfig.access_groups.map((g) => g.uuid),
-                    );
-                    for (const emailEntry of accessConfig.emails) {
-                        if (!Array.isArray(emailEntry.access_groups)) {
-                            throw new TypeError(
-                                `Invalid access_config.json: each entry in "emails" must have an "access_groups" array`,
-                            );
-                        }
-                        for (const uuid of emailEntry.access_groups) {
-                            if (!configGroupUuids.has(uuid)) {
-                                throw new TypeError(
-                                    `Invalid access_config.json: UUID "${uuid}" in emails config is not defined in access_groups`,
-                                );
-                            }
-                        }
-                    }
-                    return { accessConfig };
-                },
+                } => ({ accessConfig: loadAccessConfig() }),
             ],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
-            useFactory: (configService: ConfigService) =>
-                ({
-                    type: 'postgres',
-                    host: configService.getOrThrow<string>('database.host'),
-                    port: configService.getOrThrow<number>('database.port'),
-                    username:
-                        configService.getOrThrow<string>('database.username'),
-                    password:
-                        configService.getOrThrow<string>('database.password'),
-                    database:
-                        configService.getOrThrow<string>('database.database'),
-                    entities: configService.getOrThrow('entities'),
-                    synchronize: env.DEV,
-                    logging: ['warn', 'error'],
-                }) as PostgresConnectionOptions,
+            useFactory: (configService: ConfigService) => ({
+                type: 'postgres',
+                // TypeORM v1 loads its driver package through a dynamic
+                // `require()` that webpack cannot resolve when the app is
+                // bundled, so hand it the already bundled `pg` module.
+                driver: pg,
+                host: configService.getOrThrow<string>('database.host'),
+                port: configService.getOrThrow<number>('database.port'),
+                username: configService.getOrThrow<string>('database.username'),
+                password: configService.getOrThrow<string>('database.password'),
+                database: configService.getOrThrow<string>('database.database'),
+                entities: configService.getOrThrow('entities'),
+                synchronize: env.DEV,
+                logging: ['warn', 'error'],
+            }),
             inject: [ConfigService],
         }),
         FileModule,
@@ -126,7 +84,7 @@ import { DBDumper } from './services/dbdumper.service';
         PassportModule,
         ActionModule,
         TemplatesModule,
-        TagModule,
+        MetadataModule,
         WorkerModule,
         CategoryModule,
         ScheduleModule.forRoot(),

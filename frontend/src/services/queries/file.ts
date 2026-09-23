@@ -6,7 +6,7 @@ import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import type { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
 import type { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
 import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
-import { FileType, HealthStatus } from '@kleinkram/shared';
+import { FileState, FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
@@ -27,6 +27,8 @@ export interface FilteredFilesConfig {
     sort?: string | undefined;
     desc?: boolean | undefined;
     health?: HealthStatus | undefined;
+    includeStates?: FileState[] | undefined;
+    excludeStates?: FileState[] | undefined;
 }
 
 export const fetchFilteredFiles = async (
@@ -50,6 +52,8 @@ export const fetchFilteredFiles = async (
         sort,
         desc,
         health,
+        includeStates,
+        excludeStates,
     } = config;
     try {
         const parameters: Record<string, string> = {};
@@ -74,10 +78,17 @@ export const fetchFilteredFiles = async (
         if (desc !== undefined)
             parameters.sortDirection = desc ? 'DESC' : 'ASC';
         if (health) parameters.health = health;
+        const stateParameters = new URLSearchParams(parameters);
+        for (const state of includeStates ?? []) {
+            stateParameters.append('includeStates', state);
+        }
+        for (const state of excludeStates ?? []) {
+            stateParameters.append('excludeStates', state);
+        }
 
-        const queryParameters = new URLSearchParams(parameters).toString();
+        const queryParameters = stateParameters.toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
-            `/files/filtered?${queryParameters}`,
+            `/files?${queryParameters}`,
         );
         return response.data;
     } catch (error) {
@@ -89,9 +100,7 @@ export const fetchFilteredFiles = async (
 export const fetchFile = async (uuid: string): Promise<FileWithTopicDto> => {
     try {
         const response: AxiosResponse<FileWithTopicDto> =
-            await axios.get<FileWithTopicDto>('/files/one', {
-                params: { uuid },
-            });
+            await axios.get<FileWithTopicDto>(`/files/${uuid}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching file:', error);
@@ -105,15 +114,16 @@ export const downloadFile = async (
     // eslint-disable-next-line @typescript-eslint/naming-convention
     preview_only = false,
 ): Promise<string> => {
-    const response = await axios.get<DownloadResponseDto>('files/download', {
-        params: {
-            uuid,
-
-            expires,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            preview_only,
+    const response = await axios.get<DownloadResponseDto>(
+        `/files/${uuid}/download`,
+        {
+            params: {
+                expires,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                preview_only,
+            },
         },
-    });
+    );
     return response.data.url;
 };
 
@@ -132,6 +142,8 @@ export const filesOfMission = async (
     topics?: string[],
     messageDatatypes?: string[],
     matchAllTopics = true,
+    includeStates?: FileState[],
+    excludeStates?: FileState[],
 ): Promise<FilesDto> => {
     const tag: Record<string, unknown> = {};
 
@@ -151,6 +163,8 @@ export const filesOfMission = async (
         endDate,
         topics,
         messageDatatypes,
+        includeStates,
+        excludeStates,
     });
 };
 

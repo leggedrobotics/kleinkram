@@ -22,15 +22,17 @@ from kleinkram.auth import login_flow
 from kleinkram.cli._action import action_typer
 from kleinkram.cli._download import download_typer
 from kleinkram.cli._endpoint import endpoint_typer
+from kleinkram.cli._executions import executions_typer
 from kleinkram.cli._file import file_typer
 from kleinkram.cli._list import list_typer
 from kleinkram.cli._mission import mission_typer
 from kleinkram.cli._project import project_typer
-from kleinkram.cli._run import run_typer
+from kleinkram.cli._templates import templates_typer
+from kleinkram.cli._triggers import triggers_typer
 from kleinkram.cli._upload import upload_typer
 from kleinkram.cli._verify import verify_typer
 from kleinkram.cli.error_handling import ErrorHandledTyper
-from kleinkram.cli.error_handling import display_error
+from kleinkram.cli.error_handling import register_error_handlers
 from kleinkram.config import MAX_TABLE_SIZE
 from kleinkram.config import Config
 from kleinkram.config import check_config_compatibility
@@ -103,31 +105,22 @@ app = ErrorHandledTyper(
     no_args_is_help=True,
 )
 
+register_error_handlers(app)
+
 app.add_typer(endpoint_typer, name="endpoint", rich_help_panel=CommandTypes.AUTH)
 
 app.add_typer(download_typer, name="download", rich_help_panel=CommandTypes.CORE)
 app.add_typer(upload_typer, name="upload", rich_help_panel=CommandTypes.CORE)
 app.add_typer(verify_typer, name="verify", rich_help_panel=CommandTypes.CORE)
-app.add_typer(list_typer, name="list", rich_help_panel=CommandTypes.CORE)
+app.add_typer(list_typer, name="list", hidden=True)
 
 app.add_typer(file_typer, name="file", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(mission_typer, name="mission", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(project_typer, name="project", rich_help_panel=CommandTypes.CRUD)
 app.add_typer(action_typer, name="action", rich_help_panel=CommandTypes.ACTION)
-app.add_typer(run_typer, name="run", rich_help_panel=CommandTypes.ACTION)
-
-
-# attach error handler to app
-@app.error_handler(Exception)
-def base_handler(exc: Exception) -> int:
-    shared_state = get_shared_state()
-
-    display_error(exc=exc, verbose=shared_state.verbose)
-    logger.error(format_traceback(exc))
-
-    if logging.getLogger().getEffectiveLevel() != logging.DEBUG:
-        return 1
-    raise exc
+app.add_typer(templates_typer, name="templates", rich_help_panel=CommandTypes.ACTION)
+app.add_typer(executions_typer, name="executions", rich_help_panel=CommandTypes.ACTION)
+app.add_typer(triggers_typer, name="triggers", rich_help_panel=CommandTypes.ACTION)
 
 
 @app.command(rich_help_panel=CommandTypes.AUTH)

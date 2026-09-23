@@ -4,26 +4,53 @@ import { ActionEntity } from '@backend-common/entities/action/action.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
+import { DependencyUnavailableException } from '@backend-common/exceptions/dependency-unavailable.exception';
 import { addActionQueue } from '@backend-common/scheduling-logic';
-import { ActionState, ActionTriggerSource, UserRole } from '@kleinkram/shared';
+import {
+    ActionFailureOrigin,
+    ActionSeverity,
+    ActionState,
+    ActionTriggerSource,
+    UserRole,
+} from '@kleinkram/shared';
 import {
     ConflictException,
     Injectable,
     Logger,
+    OnModuleDestroy,
     OnModuleInit,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import Queue from 'bull';
+import { Redis } from 'ioredis';
 import { Gauge } from 'prom-client';
 import { EntityManager, LessThan, Repository } from 'typeorm';
 import { AccessControlService } from '../access-control/access-control.service';
+import {
+    LOKI_RETRY_AFTER_SECONDS,
+    LokiHealthService,
+} from '../loki-health/loki-health.service';
+
+/**
+ * Per-run values that are not derivable from the template.
+ *
+ * Only single-file script actions use these today; an ordinary action leaves
+ * them unset and inherits everything from its template.
+ */
+export interface ActionDispatchOverrides {
+    /** Object key of the script to run, see {@link ActionEntity.scriptObject}. */
+    scriptObject?: string;
+    /** Runtime budget in hours; must not exceed the template's. */
+    maxRuntimeHours?: number;
+}
 
 @Injectable()
-export class ActionDispatcherService implements OnModuleInit {
+export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(ActionDispatcherService.name);
     private actionQueues: Record<string, Queue.Queue> = {};
+    private redisPublisher!: Redis;
 
     constructor(
         @InjectRepository(ActionEntity)
@@ -43,9 +70,11 @@ export class ActionDispatcherService implements OnModuleInit {
         @InjectMetric('backend_failed_jobs')
         private failedJobs: Gauge,
         private accessControlService: AccessControlService,
+        private lokiHealthService: LokiHealthService,
     ) {}
 
     async onModuleInit(): Promise<void> {
+        this.redisPublisher = new Redis(redis);
         const availableWorkers = await this.workerRepository.find({
             where: { reachable: true },
         });
@@ -73,6 +102,10 @@ export class ActionDispatcherService implements OnModuleInit {
         this.onlineWorkers.set({}, availableWorkers.length);
     }
 
+    async onModuleDestroy(): Promise<void> {
+        await this.redisPublisher.quit();
+    }
+
     /**
      * Core dispatch logic: Creates entity and schedules on Bull queue
      */
@@ -84,6 +117,7 @@ export class ActionDispatcherService implements OnModuleInit {
         parameters: Record<string, any>,
         triggerSource: ActionTriggerSource = ActionTriggerSource.MANUAL,
         triggerUuid?: string,
+        overrides: ActionDispatchOverrides = {},
     ): Promise<string> {
         const template = await this.actionTemplateRepository.findOneOrFail({
             where: { uuid: templateUuid },
@@ -107,16 +141,21 @@ export class ActionDispatcherService implements OnModuleInit {
             );
         }
 
-        try {
-            if (process.env.NODE_ENV !== 'test') {
-                const lokiUrl = process.env.LOKI_URL ?? 'http://loki:3100';
-                const { default: axios } = await import('axios');
-                await axios.get(`${lokiUrl}/ready`, { timeout: 2000 });
-            }
-        } catch {
-            this.logger.error('Loki logging system is down or unreachable');
-            throw new ConflictException(
-                'Logging system (Loki) is not available. Please try again later.',
+        // Action logs are only readable through Loki, so a run dispatched while
+        // Loki is down would lose its logs. Reject up front rather than
+        // producing a run nobody can debug.
+        if (!(await this.lokiHealthService.waitUntilReady())) {
+            this.logger.error(
+                'Refusing to dispatch action: Loki is not reachable',
+            );
+            // The retry delay is not spelled out here: it travels in
+            // `Retry-After` and each client renders it in its own words.
+            throw new DependencyUnavailableException(
+                'Loki',
+                'The action log store (Loki) is not ready yet, so this action ' +
+                    'would run without retrievable logs. Nothing is wrong with ' +
+                    'the action itself.',
+                LOKI_RETRY_AFTER_SECONDS,
             );
         }
 
@@ -127,6 +166,8 @@ export class ActionDispatcherService implements OnModuleInit {
             template,
             triggerSource,
             triggerUuid,
+            scriptObject: overrides.scriptObject,
+            maxRuntimeHours: overrides.maxRuntimeHours,
         });
 
         action = await this.actionRepository.save(action);
@@ -136,7 +177,7 @@ export class ActionDispatcherService implements OnModuleInit {
                 cpuCores: template.cpuCores,
                 cpuMemory: template.cpuMemory,
                 gpuMemory: template.gpuMemory,
-                maxRuntime: template.maxRuntime,
+                maxRuntime: overrides.maxRuntimeHours ?? template.maxRuntime,
                 ...parameters,
             };
 
@@ -178,6 +219,8 @@ export class ActionDispatcherService implements OnModuleInit {
             this.logger.error(`Failed to queue action ${action.uuid}`, error);
             await this.actionRepository.update(action.uuid, {
                 state: ActionState.UNPROCESSABLE,
+                severity: ActionSeverity.ERROR,
+                failureOrigin: ActionFailureOrigin.SYSTEM,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 state_cause: 'Resources unavailable or queue error',
             });
@@ -189,25 +232,27 @@ export class ActionDispatcherService implements OnModuleInit {
      * Stops a running action by removing it from the specific worker queue
      */
     async stopAction(actionRunId: string): Promise<void> {
-        let actionIdentifier: string | undefined = undefined;
+        let actionIdentifier: string | undefined;
 
         await this.actionRepository.manager.transaction(
             async (manager: EntityManager): Promise<void> => {
                 const action = await manager.findOne(ActionEntity, {
                     where: { uuid: actionRunId },
-                    relations: ['worker'],
+                    relations: {
+                        worker: true,
+                    },
                 });
 
                 if (action?.worker === undefined)
                     throw new Error('No worker found for this action');
 
-                action.state = ActionState.FAILED;
+                action.state = ActionState.CANCELLED;
+                action.state_cause = 'Action cancelled by user';
                 await manager.save(action);
                 actionIdentifier = action.worker.identifier;
             },
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (actionIdentifier === undefined)
             throw new ConflictException('Action or Worker not found');
 
@@ -216,12 +261,21 @@ export class ActionDispatcherService implements OnModuleInit {
         if (!queue) throw new ConflictException('Worker queue not active');
 
         const job = await queue.getJob(actionRunId);
-        if (!job) {
-            this.logger.warn(`Job ${actionRunId} not found in queue to stop`);
-            return;
+        if (job) {
+            try {
+                await job.remove();
+            } catch (error) {
+                this.logger.warn(
+                    `Could not remove job ${actionRunId} from queue (it may be currently active): ${error instanceof Error ? error.message : String(error)}`,
+                );
+            }
+        } else {
+            this.logger.warn(
+                `Job ${actionRunId} not found in queue to stop, publishing cancel event anyway`,
+            );
         }
 
-        await job.remove();
+        await this.redisPublisher.publish('action-cancellation', actionRunId);
         this.logger.log(`Action ${actionRunId} stopped successfully`);
     }
 
@@ -263,7 +317,9 @@ export class ActionDispatcherService implements OnModuleInit {
                                     await this.actionRepository.findOneOrFail({
                                         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                                         where: { uuid: job.data.uuid },
-                                        relations: ['template'],
+                                        relations: {
+                                            template: true,
+                                        },
                                     });
 
                                 await job.remove();
@@ -275,7 +331,9 @@ export class ActionDispatcherService implements OnModuleInit {
                                         action.template?.cpuMemory ?? 512,
                                     gpuMemory: action.template?.gpuMemory ?? -1,
                                     maxRuntime:
-                                        action.template?.maxRuntime ?? 4,
+                                        action.maxRuntimeHours ??
+                                        action.template?.maxRuntime ??
+                                        4,
                                 };
 
                                 this.logger.log(

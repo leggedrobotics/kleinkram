@@ -10,8 +10,7 @@
         <slot />
 
         <q-tooltip v-if="!canModify">
-            You need delete rights on the project to remove it from this access
-            group
+            You need delete rights on the project to modify its access rights
         </q-tooltip>
     </div>
 </template>

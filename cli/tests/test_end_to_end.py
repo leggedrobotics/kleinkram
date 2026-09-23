@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
 import shutil
 import time
@@ -10,6 +11,7 @@ import pytest
 from rich.console import Console
 from rich.text import Text
 
+import kleinkram.wrappers
 from kleinkram.api.routes import _get_api_version
 
 VERBOSE = True
@@ -64,17 +66,26 @@ def test_upload_verify_update_download_mission(project, tmp_path, api):
 @pytest.mark.slow
 def test_list_files(project, mission, api):
     assert api
+    # Legacy commands
     assert run_cmd(f"{CLI} list files -p {project.name}") == 0
     assert run_cmd(f"{CLI} list files -p {project.name} -m {mission.name}") == 0
     assert run_cmd(f"{CLI} list files") == 0
     assert run_cmd(f"{CLI} list files -p {project.name}") == 0
     assert run_cmd(f'{CLI} list files -p "*" -m "*" "*"') == 0
 
+    # New commands
+    assert run_cmd(f"{CLI} file list -p {project.name}") == 0
+    assert run_cmd(f"{CLI} file list -p {project.name} -m {mission.name}") == 0
+    assert run_cmd(f"{CLI} file list") == 0
+    assert run_cmd(f"{CLI} file list -p {project.name}") == 0
+    assert run_cmd(f'{CLI} file list -p "*" -m "*" "*"') == 0
+
 
 @pytest.mark.slow
 def test_list_missions(api, project, mission):
     assert api
 
+    # Legacy commands
     assert run_cmd(f"{CLI} list missions -p {project.name} {mission.name}") == 0
     assert run_cmd(f"{CLI} list missions -p {project.name} {secrets.token_hex(8)}") == 0
     assert run_cmd(f"{CLI} list missions -p {project.name} {mission.id}") == 0
@@ -88,12 +99,132 @@ def test_list_missions(api, project, mission):
     assert run_cmd(f"{CLI} list missions") == 0
     assert run_cmd(f'{CLI} list missions -p "*" "*"') == 0
 
+    # New commands
+    assert run_cmd(f"{CLI} mission list -p {project.name} {mission.name}") == 0
+    assert run_cmd(f"{CLI} mission list -p {project.name} {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} mission list -p {project.name} {mission.id}") == 0
+    assert run_cmd(f"{CLI} mission list {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} mission list {mission.id}") == 0
+    assert run_cmd(f"{CLI} mission list {mission.name}") == 0
+
+    assert run_cmd(f"{CLI} mission list -p {project.name}") == 0
+    assert run_cmd(f"{CLI} mission list -p {project.id}") == 0
+    assert run_cmd(f"{CLI} mission list -p {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} mission list") == 0
+    assert run_cmd(f'{CLI} mission list -p "*" "*"') == 0
+
 
 @pytest.mark.slow
 def test_list_projects(api, project):
     assert api
+    # Legacy commands
     assert run_cmd(f"{CLI} list projects") == 0
     assert run_cmd(f"{CLI} list projects {project.name}") == 0
     assert run_cmd(f"{CLI} list projects {secrets.token_hex(8)}") == 0
     assert run_cmd(f"{CLI} list projects {project.id}") == 0
     assert run_cmd(f'{CLI} list projects "*"') == 0
+
+    # New commands
+    assert run_cmd(f"{CLI} project list") == 0
+    assert run_cmd(f"{CLI} project list {project.name}") == 0
+    assert run_cmd(f"{CLI} project list {secrets.token_hex(8)}") == 0
+    assert run_cmd(f"{CLI} project list {project.id}") == 0
+    assert run_cmd(f'{CLI} project list "*"') == 0
+
+
+@pytest.mark.slow
+def test_trigger_cli_operations(empty_mission, action_template, api):
+    """E2E Test to verify CLI trigger commands process flags and return correct exit codes."""
+    assert api
+
+    trigger_name = f"trig-cli-{secrets.token_hex(6)}"
+    create_cmd = (
+        f"{CLI} triggers create "
+        f"--name {trigger_name} "
+        f"--template {action_template.uuid} "
+        f"--mission {empty_mission.id} "
+        f"--type FILE "
+        f"--file-patterns '*.bag' "
+        f"--file-events UPLOAD"
+    )
+    assert run_cmd(create_cmd) == 0
+
+    list_cmd = f"{CLI} triggers list --mission {empty_mission.id}"
+    assert run_cmd(list_cmd) == 0
+
+    fail_cmd = (
+        f"{CLI} triggers create "
+        f"--name {trigger_name}-fail "
+        f"--template {action_template.uuid} "
+        f"--mission {empty_mission.id} "
+        f"--type FILE"
+    )
+    assert run_cmd(fail_cmd) != 0
+
+    triggers = kleinkram.wrappers.list_triggers(mission_uuid=empty_mission.id)
+    assert len(triggers) == 1
+    trigger_uuid = triggers[0].uuid
+
+    info_cmd = f"{CLI} triggers info {trigger_uuid}"
+    assert run_cmd(info_cmd) == 0
+
+    update_cmd = f"{CLI} triggers update {trigger_uuid} --description 'updated via E2E CLI'"
+    assert run_cmd(update_cmd) == 0
+
+    delete_cmd = f"{CLI} triggers delete {trigger_uuid}"
+    assert run_cmd(delete_cmd) == 0
+
+
+@pytest.mark.slow
+def test_cancel_execution(api, project, empty_mission):
+    assert api
+
+    # Create an action template that sleeps for 120 seconds
+    template_name = f"template-cancel-{secrets.token_hex(6)}"
+    kleinkram.wrappers.create_template(
+        name=template_name,
+        description="Template for cancellation test",
+        docker_image="ubuntu:latest",
+        cpu_cores=1,
+        cpu_memory_gb=1,
+        gpu_memory_gb=-1,
+        max_runtime_minutes=60,
+        command="sleep 120",
+    )
+
+    # Submit/launch the action run using the CLI launch command.
+    # Run it without follow mode so it runs asynchronously in the queue/worker.
+    import subprocess
+    from uuid import UUID
+
+    from kleinkram.api.client import AuthenticatedClient
+
+    launch_cmd = f"{CLI} executions launch {template_name} {empty_mission.id}"
+    res = subprocess.run(launch_cmd, shell=True, capture_output=True, text=True)
+    assert res.returncode == 0, f"Launch failed: {res.stderr}"
+
+    # Extract the Execution ID (UUID) from the launch output.
+    # Output structure: "Action submitted. Execution ID: <uuid>"
+    match = re.search(r"Execution ID:\s*([a-f0-9\-]+)", res.stdout, re.IGNORECASE)
+    assert match is not None, f"Could not find Execution ID in output: {res.stdout}"
+    execution_uuid = match.group(1)
+
+    # Cancel the action execution using the CLI cancel command.
+    cancel_cmd = f"{CLI} executions cancel {execution_uuid}"
+    res_cancel = subprocess.run(cancel_cmd, shell=True, capture_output=True, text=True)
+    assert res_cancel.returncode == 0, f"Cancel failed: {res_cancel.stderr}"
+    assert "cancellation requested" in res_cancel.stdout.lower()
+
+    # Poll the action details via get_execution wrapper for up to 10 seconds.
+    # Assert that its state becomes CANCELLED.
+    start_time = time.time()
+    cancelled = False
+    client = AuthenticatedClient()
+    while time.time() - start_time < 10:
+        execution_obj = kleinkram.api.routes.get_execution(client, execution_id=UUID(execution_uuid))
+        if execution_obj.state == "CANCELLED":
+            cancelled = True
+            break
+        time.sleep(0.5)
+
+    assert cancelled, f"Execution was not cancelled in 10s. Current state: {execution_obj.state}"

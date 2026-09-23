@@ -45,8 +45,11 @@ export class SortablePaginatedQueryDto extends PaginatedQueryDto {
     sortBy?: string;
 
     // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-    @Transform(({ value }) => SortOrder[value.toUpperCase()])
+    @Transform(({ value }) =>
+        value && typeof value === 'string'
+            ? SortOrder[value.toUpperCase() as keyof typeof SortOrder]
+            : SortOrder.ASC,
+    )
     @IsEnum(SortOrder)
     @ApiProperty({ required: false })
     sortOrder: SortOrder = SortOrder.ASC;

@@ -8,6 +8,7 @@ conversion to the internal representation
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 from typing import Collection
@@ -16,24 +17,46 @@ from typing import List
 from typing import Literal
 from typing import Optional
 from typing import Sequence
+from typing import Union
 from typing import overload
+from uuid import UUID
 
+import kleinkram.api.file_transfer
 import kleinkram.api.routes
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import DownloadResult
+from kleinkram.api.file_transfer import McapSlice
+from kleinkram.api.file_transfer import OnFileProgressCb
+from kleinkram.api.file_transfer import OnFileStartCb
+from kleinkram.api.file_transfer import OnMessageCb
+from kleinkram.api.file_transfer import OnOverallProgressCb
+from kleinkram.api.file_transfer import UploadResult
+from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.api.query import TriggerQuery
+from kleinkram.config import get_running_action_uuid
 from kleinkram.errors import FileNameNotSupported
+from kleinkram.errors import NotInsideAction
+from kleinkram.models import ActionTemplate
+from kleinkram.models import ActionTrigger
+from kleinkram.models import Diagnostic
+from kleinkram.models import Execution
 from kleinkram.models import File
 from kleinkram.models import Mission
 from kleinkram.models import Project
+from kleinkram.models import TriggerConfig
+from kleinkram.models import TriggerType
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 from kleinkram.utils import parse_path_like
 from kleinkram.utils import parse_uuid_like
 from kleinkram.utils import singleton_list
+
+logger = logging.getLogger(__name__)
 
 
 def _args_to_project_query(
@@ -131,8 +154,42 @@ def download(
     nested: bool = False,
     overwrite: bool = False,
     allow_corrupt_files: bool = False,
-    verbose: bool = False,
-) -> None:
+    topics: Optional[Sequence[str]] = None,
+    start_time: Optional[int] = None,
+    end_time: Optional[int] = None,
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> DownloadResult:
+    """Download files, optionally fetching only part of each `.mcap`.
+
+    Passing any of `topics`, `start_time` or `end_time` turns this into a
+    partial download: each `.mcap` is read through its own index over HTTP range
+    requests, and only the selected messages are transferred. Files that are
+    not `.mcap` cannot be sliced and are skipped, and an existing local file is
+    only replaced by a slice when `overwrite` is set.
+
+    `start_time` and `end_time` are nanoseconds since the epoch, matching MCAP
+    log times; `start_time` is inclusive and `end_time` exclusive.
+
+    In uncompressed chunks each message is fetched on its own, so both filters
+    cut the transfer. Compressed chunks can only be fetched whole: there a time
+    window still saves bandwidth, because chunks are ordered by log time, but
+    `topics` alone usually does not, since a chunk normally holds several
+    topics.
+    """
+    if isinstance(topics, str):
+        # A bare string is a sequence too; without this, "/tf" would become
+        # the topics "/", "t" and "f".
+        topics = [topics]
+    mcap_slice = McapSlice(
+        topics=tuple(topics) if topics else None,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
     query = _args_to_file_query(
         file_names=file_names,
         file_ids=file_ids,
@@ -141,15 +198,52 @@ def download(
         project_names=project_names,
         project_ids=project_ids,
     )
-    client = AuthenticatedClient()
-    kleinkram.core.download(
+    client = client or AuthenticatedClient()
+    return kleinkram.core.download(
         client=client,
         query=query,
         base_dir=parse_path_like(dest),
         nested=nested,
         overwrite=overwrite,
-        verbose=verbose,
         allow_corrupt_files=allow_corrupt_files,
+        mcap_slice=mcap_slice if mcap_slice else None,
+        on_overall_progress_cb=on_overall_progress_cb,
+        on_file_start_cb=on_file_start_cb,
+        on_file_progress_cb=on_file_progress_cb,
+        on_message_cb=on_message_cb,
+    )
+
+
+def download_artifact(
+    execution_id: IdLike,
+    output_dir: Optional[PathLike] = None,
+    filename: Optional[str] = None,
+    extract: bool = False,
+    verbose: bool = False,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> str:
+    """
+    Download the artifacts (.tar.gz) for a finished execution.
+
+    Args:
+        execution_id: The ID of the execution to download artifacts for.
+        output_dir: Directory to save the artifacts to (optional, defaults to current directory).
+        filename: Filename to save the artifact as (optional, must end in .tar.gz).
+        extract: Automatically extract the archive after downloading.
+        verbose: Print progress and extraction info.
+
+    Returns:
+        The path where the artifact was saved (or extracted).
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.core.download_artifact(
+        client=client,
+        execution_id=parse_uuid_like(execution_id),
+        output_dir=str(output_dir) if output_dir else None,
+        filename=filename,
+        extract=extract,
+        verbose=verbose,
     )
 
 
@@ -161,6 +255,7 @@ def list_files(
     mission_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
+    client: Optional[AuthenticatedClient] = None,
 ) -> List[File]:
     query = _args_to_file_query(
         file_names=file_names,
@@ -170,7 +265,7 @@ def list_files(
         project_names=project_names,
         project_ids=project_ids,
     )
-    client = AuthenticatedClient()
+    client = client or AuthenticatedClient()
     return list(kleinkram.api.routes.get_files(client, query))
 
 
@@ -180,6 +275,7 @@ def list_missions(
     mission_names: Optional[Sequence[str]] = None,
     project_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
+    client: Optional[AuthenticatedClient] = None,
 ) -> List[Mission]:
     query = _args_to_mission_query(
         mission_names=mission_names,
@@ -187,7 +283,7 @@ def list_missions(
         project_names=project_names,
         project_ids=project_ids,
     )
-    client = AuthenticatedClient()
+    client = client or AuthenticatedClient()
     return list(kleinkram.api.routes.get_missions(client, query))
 
 
@@ -195,13 +291,61 @@ def list_projects(
     *,
     project_ids: Optional[Sequence[IdLike]] = None,
     project_names: Optional[Sequence[str]] = None,
+    client: Optional[AuthenticatedClient] = None,
 ) -> List[Project]:
     query = _args_to_project_query(
         project_names=project_names,
         project_ids=project_ids,
     )
-    client = AuthenticatedClient()
+    client = client or AuthenticatedClient()
     return list(kleinkram.api.routes.get_projects(client, query))
+
+
+def list_templates(*, latest_only: bool = True, client: Optional[AuthenticatedClient] = None) -> List[ActionTemplate]:
+    client = client or AuthenticatedClient()
+    return kleinkram.core.list_templates(client, latest_only=latest_only)
+
+
+def list_executions(
+    *,
+    project_uuid: Optional[IdLike] = None,
+    mission_uuid: Optional[IdLike] = None,
+    template_name: Optional[str] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> List[Execution]:
+
+    query = ExecutionQuery(
+        project_uuid=parse_uuid_like(project_uuid) if project_uuid else None,
+        mission_uuid=parse_uuid_like(mission_uuid) if mission_uuid else None,
+        template_name=template_name,
+    )
+
+    client = client or AuthenticatedClient()
+    return list(kleinkram.api.routes.get_executions(client, query=query))
+
+
+def list_triggers(
+    *,
+    client: Optional[AuthenticatedClient] = None,
+    mission_uuid: Optional[IdLike] = None,
+) -> List[ActionTrigger]:
+    query = TriggerQuery(
+        mission_uuid=parse_uuid_like(mission_uuid) if mission_uuid else None,
+    )
+    client = client or AuthenticatedClient()
+    return list(kleinkram.api.routes.get_triggers(client, query=query))
+
+
+def get_trigger(
+    trigger_uuid: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> ActionTrigger:
+    """\
+    get detailed information for a specific trigger by its uuid
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes.get_trigger(client, parse_uuid_like(trigger_uuid))
 
 
 @overload
@@ -214,8 +358,12 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
-    verbose: bool = False,
-) -> None: ...
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UploadResult: ...
 
 
 @overload
@@ -225,8 +373,12 @@ def upload(
     files: Sequence[PathLike],
     create: Literal[False] = False,
     fix_filenames: bool = False,
-    verbose: bool = False,
-) -> None: ...
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UploadResult: ...
 
 
 @overload
@@ -239,8 +391,12 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
-    verbose: bool = False,
-) -> None: ...
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UploadResult: ...
 
 
 def upload(
@@ -254,8 +410,12 @@ def upload(
     fix_filenames: bool = False,
     metadata: Optional[Dict[str, str]] = None,
     ignore_missing_metadata: bool = False,
-    verbose: bool = False,
-) -> None:
+    on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
+    on_file_start_cb: Optional[OnFileStartCb] = None,
+    on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    on_message_cb: Optional[OnMessageCb] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UploadResult:
     parsed_file_paths = [parse_path_like(f) for f in files]
     if not fix_filenames:
         for file in parsed_file_paths:
@@ -272,15 +432,19 @@ def upload(
         project_names=singleton_list(project_name),
         project_ids=singleton_list(project_id),
     )
-    client = AuthenticatedClient()
-    kleinkram.core.upload(
+    client = client or AuthenticatedClient()
+    return kleinkram.core.upload(
         client=client,
         query=query,
         file_paths=parsed_file_paths,
         create=create,
+        fix_filenames=fix_filenames,
         metadata=metadata,
         ignore_missing_metadata=ignore_missing_metadata,
-        verbose=verbose,
+        on_overall_progress_cb=on_overall_progress_cb,
+        on_file_start_cb=on_file_start_cb,
+        on_file_progress_cb=on_file_progress_cb,
+        on_message_cb=on_message_cb,
     )
 
 
@@ -291,6 +455,7 @@ def verify(
     project_name: str,
     files: Sequence[PathLike],
     verbose: bool = False,
+    client: Optional[AuthenticatedClient] = None,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
 
 
@@ -301,6 +466,7 @@ def verify(
     project_id: IdLike,
     files: Sequence[PathLike],
     verbose: bool = False,
+    client: Optional[AuthenticatedClient] = None,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
 
 
@@ -310,6 +476,7 @@ def verify(
     mission_id: IdLike,
     files: Sequence[PathLike],
     verbose: bool = False,
+    client: Optional[AuthenticatedClient] = None,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]: ...
 
 
@@ -322,6 +489,7 @@ def verify(
     files: Sequence[PathLike],
     skip_hash: bool = False,
     verbose: bool = False,
+    client: Optional[AuthenticatedClient] = None,
 ) -> Dict[Path, kleinkram.core.FileVerificationStatus]:
     query = _args_to_mission_query(
         mission_names=singleton_list(mission_name),
@@ -332,8 +500,9 @@ def verify(
 
     _verify_string_sequence("files", files)
 
+    client = client or AuthenticatedClient()
     return kleinkram.core.verify(
-        client=AuthenticatedClient(),
+        client=client,
         query=query,
         file_paths=[parse_path_like(f) for f in files],
         skip_hash=skip_hash,
@@ -346,9 +515,12 @@ def create_mission(
     project_id: IdLike,
     metadata: Dict[str, str],
     ignore_missing_metadata: bool = False,
+    *,
+    client: Optional[AuthenticatedClient] = None,
 ) -> None:
-    kleinkram.api.routes._create_mission(
-        AuthenticatedClient(),
+    client = client or AuthenticatedClient()
+    kleinkram.core.create_mission(
+        client,
         parse_uuid_like(project_id),
         mission_name,
         metadata=metadata,
@@ -356,72 +528,526 @@ def create_mission(
     )
 
 
-def create_project(project_name: str, description: str) -> None:
-    kleinkram.api.routes._create_project(AuthenticatedClient(), project_name, description)
+def get_template_revisions(template_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> List[ActionTemplate]:
+    """\
+    get history/revisions for a specific template by its id
+    """
+    client = client or AuthenticatedClient()
+    return list(kleinkram.api.routes.get_template_revisions(client, parse_uuid_like(template_id)))
 
 
-def update_file(file_id: IdLike) -> None:
-    kleinkram.core.update_file(client=AuthenticatedClient(), file_id=parse_uuid_like(file_id))
+def create_template_version(
+    template_id: IdLike,
+    *,
+    description: Optional[str] = None,
+    docker_image: Optional[str] = None,
+    cpu_cores: Optional[int] = None,
+    cpu_memory_gb: Optional[int] = None,
+    gpu_memory_gb: Optional[int] = None,
+    max_runtime_minutes: Optional[int] = None,
+    access_rights: Optional[int] = None,
+    command: Optional[str] = None,
+    entrypoint: Optional[str] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID:
+    client = client or AuthenticatedClient()
+    return kleinkram.core.create_template_version(
+        client,
+        template_id=parse_uuid_like(template_id),
+        description=description,
+        docker_image=docker_image,
+        cpu_cores=cpu_cores,
+        cpu_memory_gb=cpu_memory_gb,
+        gpu_memory_gb=gpu_memory_gb,
+        max_runtime_minutes=max_runtime_minutes,
+        access_rights=access_rights,
+        command=command,
+        entrypoint=entrypoint,
+    )
 
 
-def update_mission(mission_id: IdLike, metadata: Dict[str, str]) -> None:
+def create_template(
+    name: str,
+    description: str,
+    docker_image: str,
+    cpu_cores: int,
+    cpu_memory_gb: int,
+    gpu_memory_gb: int,
+    max_runtime_minutes: int,
+    access_rights: int = 0,
+    command: Optional[str] = None,
+    entrypoint: Optional[str] = None,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID:
+    client = client or AuthenticatedClient()
+    return kleinkram.core.create_template(
+        client,
+        name=name,
+        description=description,
+        docker_image=docker_image,
+        cpu_cores=cpu_cores,
+        cpu_memory_gb=cpu_memory_gb,
+        gpu_memory_gb=gpu_memory_gb,
+        max_runtime_minutes=max_runtime_minutes,
+        access_rights=access_rights,
+        command=command,
+        entrypoint=entrypoint,
+    )
+
+
+def create_project(
+    project_name: str,
+    description: str,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.create_project(client, project_name, description)
+
+
+def create_trigger(
+    trigger_name: str,
+    template_uuid: IdLike,
+    mission_uuid: IdLike,
+    type_: TriggerType,
+    config: TriggerConfig,
+    description: str = "",
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID:
+    client = client or AuthenticatedClient()
+    return kleinkram.core.create_trigger(
+        client=client,
+        trigger_name=trigger_name,
+        description=description,
+        template_uuid=parse_uuid_like(template_uuid),
+        mission_uuid=parse_uuid_like(mission_uuid),
+        type_=type_,
+        config=config,
+    )
+
+
+def update_file(
+    file_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.update_file(client=client, file_id=parse_uuid_like(file_id))
+
+
+def update_mission(
+    mission_id: IdLike,
+    metadata: Dict[str, str],
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    """\
+    update a mission's metadata
+
+    `metadata` is merged over the mission's existing metadata: fields that are
+    not mentioned keep their current value.
+    """
+    client = client or AuthenticatedClient()
     kleinkram.core.update_mission(
-        client=AuthenticatedClient(),
+        client=client,
         mission_id=parse_uuid_like(mission_id),
         metadata=metadata,
     )
 
 
-def update_project(project_id: IdLike, description: Optional[str] = None) -> None:
+def update_project(
+    project_id: IdLike,
+    description: Optional[str] = None,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
     kleinkram.core.update_project(
-        client=AuthenticatedClient(),
+        client=client,
         project_id=parse_uuid_like(project_id),
         description=description,
     )
 
 
-def delete_files(file_ids: Collection[IdLike]) -> None:
+def update_trigger(
+    trigger_uuid: IdLike,
+    *,
+    trigger_name: Optional[str] = None,
+    description: Optional[str] = None,
+    template_uuid: Optional[IdLike] = None,
+    mission_uuid: Optional[IdLike] = None,
+    type_: Optional[TriggerType] = None,
+    config: Optional[TriggerConfig] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.update_trigger(
+        client=client,
+        trigger_uuid=parse_uuid_like(trigger_uuid),
+        trigger_name=trigger_name,
+        description=description,
+        template_uuid=parse_uuid_like(template_uuid) if template_uuid else None,
+        mission_uuid=parse_uuid_like(mission_uuid) if mission_uuid else None,
+        type_=type_,
+        config=config,
+    )
+
+
+def delete_files(
+    file_ids: Collection[IdLike],
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
     """\
     delete multiple files by their ids
     """
+    client = client or AuthenticatedClient()
     kleinkram.core.delete_files(
-        client=AuthenticatedClient(),
+        client=client,
         file_ids=[parse_uuid_like(_id) for _id in file_ids],
     )
 
 
-def delete_file(file_id: IdLike) -> None:
+def delete_file(
+    file_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
     """\
     delete a single file by id
     """
-    file = kleinkram.api.routes.get_file(AuthenticatedClient(), FileQuery(ids=[parse_uuid_like(file_id)]))
-    kleinkram.api.routes._delete_files(AuthenticatedClient(), file_ids=[file.id], mission_id=file.mission_id)
+    client = client or AuthenticatedClient()
+    file = kleinkram.api.routes.get_file(client, FileQuery(ids=[parse_uuid_like(file_id)]))
+    kleinkram.api.routes._delete_files(client, file_ids=[file.id], mission_id=file.mission_id)
 
 
-def delete_mission(mission_id: IdLike) -> None:
-    kleinkram.core.delete_mission(client=AuthenticatedClient(), mission_id=parse_uuid_like(mission_id))
+def delete_template(
+    template_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> bool:
+    """
+    returns True if the template was archived due to existing executions, False otherwise.
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.core.delete_template(client=client, template_id=parse_uuid_like(template_id))
 
 
-def delete_project(project_id: IdLike) -> None:
-    kleinkram.core.delete_project(client=AuthenticatedClient(), project_id=parse_uuid_like(project_id))
+def _report(
+    severity: str,
+    message: str,
+    *,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    execution_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    resolved = execution_id or get_running_action_uuid()
+    if resolved is None:
+        raise NotInsideAction("no action to report on: set KLEINKRAM_ACTION_UUID or pass execution_id explicitly")
+
+    # Reporting must never be the thing that fails the run. The caller is in the
+    # middle of the work the user actually asked for, so a network blip while
+    # recording a warning would otherwise turn a `DONE`/`WARNING` into a
+    # `FAILED` - the exact inversion these functions exist to avoid. Only
+    # NotInsideAction above escapes, because that is a programming error the
+    # caller can fix rather than a transport failure they cannot.
+    try:
+        client = client or AuthenticatedClient()
+        kleinkram.core.report_diagnostic(
+            client=client,
+            execution_id=parse_uuid_like(resolved),
+            severity=severity,
+            message=message,
+            code=code,
+            file=file,
+            details=details,
+        )
+    except Exception:
+        logger.warning("could not report %s: %s", severity.lower(), message, exc_info=True)
 
 
-def get_file(file_id: IdLike) -> File:
+def warn(
+    message: str,
+    *,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    execution_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    """\
+    report a warning on the action this process is running inside
+
+    the action still finishes successfully; it is shown as done with warnings.
+    """
+    _report(
+        "WARNING",
+        message,
+        code=code,
+        file=file,
+        details=details,
+        execution_id=execution_id,
+        client=client,
+    )
+
+
+def fail(
+    message: str,
+    *,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    execution_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    """\
+    report an error on the action this process is running inside
+
+    this records the finding, it does not stop the action; exit non-zero to
+    make the action itself fail.
+    """
+    _report(
+        "ERROR",
+        message,
+        code=code,
+        file=file,
+        details=details,
+        execution_id=execution_id,
+        client=client,
+    )
+
+
+def info(
+    message: str,
+    *,
+    code: Optional[str] = None,
+    file: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    execution_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    """\
+    record a note on the action without changing how the action is reported
+    """
+    _report(
+        "INFO",
+        message,
+        code=code,
+        file=file,
+        details=details,
+        execution_id=execution_id,
+        client=client,
+    )
+
+
+def list_diagnostics(
+    execution_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> List[Diagnostic]:
+    """\
+    the diagnostics an execution reported while it ran
+    """
+    client = client or AuthenticatedClient()
+    diagnostics, _ = kleinkram.core.get_diagnostics(client=client, execution_id=parse_uuid_like(execution_id))
+    return diagnostics
+
+
+def delete_execution(
+    execution_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.delete_execution(client=client, execution_id=parse_uuid_like(execution_id))
+
+
+def delete_mission(
+    mission_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.delete_mission(client=client, mission_id=parse_uuid_like(mission_id))
+
+
+def delete_project(
+    project_id: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.delete_project(client=client, project_id=parse_uuid_like(project_id))
+
+
+def delete_trigger(
+    trigger_uuid: IdLike,
+    *,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    client = client or AuthenticatedClient()
+    kleinkram.core.delete_trigger(client=client, trigger_uuid=parse_uuid_like(trigger_uuid))
+
+
+def get_file(file_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> File:
     """\
     get a file by its id
     """
-    return kleinkram.api.routes.get_file(AuthenticatedClient(), FileQuery(ids=[parse_uuid_like(file_id)]))
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes.get_file(client, FileQuery(ids=[parse_uuid_like(file_id)]))
 
 
-def get_mission(mission_id: IdLike) -> Mission:
+def get_template(template_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> ActionTemplate:
+    """\
+    get detailed information for a specific template by its id
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes.get_template(client, parse_uuid_like(template_id))
+
+
+def get_execution(execution_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> Execution:
+    """\
+    get detailed information and logs for a specific execution by its id
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes.get_execution(client, parse_uuid_like(execution_id))
+
+
+def get_mission(mission_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> Mission:
     """\
     get a mission by its id
     """
-    return kleinkram.api.routes.get_mission(AuthenticatedClient(), MissionQuery(ids=[parse_uuid_like(mission_id)]))
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes.get_mission(client, MissionQuery(ids=[parse_uuid_like(mission_id)]))
 
 
-def get_project(project_id: IdLike) -> Project:
+def get_project(project_id: IdLike, *, client: Optional[AuthenticatedClient] = None) -> Project:
     """\
     get a project by its id
     """
-    return kleinkram.api.routes.get_project(AuthenticatedClient(), ProjectQuery(ids=[parse_uuid_like(project_id)]))
+    client = client or AuthenticatedClient()
+    return kleinkram.api.routes.get_project(client, ProjectQuery(ids=[parse_uuid_like(project_id)]))
+
+
+@overload
+def launch_execution(
+    template: Union[str, IdLike],
+    *,
+    mission_name: str,
+    project_name: str,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+@overload
+def launch_execution(
+    template: Union[str, IdLike],
+    *,
+    mission_id: IdLike,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+@overload
+def launch_execution(
+    template: Union[str, IdLike],
+    *,
+    mission_name: str,
+    project_id: IdLike,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+def launch_execution(
+    template: Union[str, IdLike],
+    *,
+    mission_name: Optional[str] = None,
+    mission_id: Optional[IdLike] = None,
+    project_name: Optional[str] = None,
+    project_id: Optional[IdLike] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID:
+    """
+    Launch a new execution from an action template.
+    """
+    query = _args_to_mission_query(
+        mission_names=singleton_list(mission_name),
+        mission_ids=singleton_list(mission_id),
+        project_names=singleton_list(project_name),
+        project_ids=singleton_list(project_id),
+    )
+
+    client = client or AuthenticatedClient()
+    return kleinkram.core.launch_execution(
+        client=client,
+        mission_query=query,
+        template=template,
+    )
+
+
+@overload
+def run_script(
+    script: Union[str, Path],
+    *,
+    mission_name: str,
+    project_name: str,
+    max_runtime_hours: Optional[float] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+@overload
+def run_script(
+    script: Union[str, Path],
+    *,
+    mission_id: IdLike,
+    max_runtime_hours: Optional[float] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+@overload
+def run_script(
+    script: Union[str, Path],
+    *,
+    mission_name: str,
+    project_id: IdLike,
+    max_runtime_hours: Optional[float] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID: ...
+
+
+def run_script(
+    script: Union[str, Path],
+    *,
+    mission_name: Optional[str] = None,
+    mission_id: Optional[IdLike] = None,
+    project_name: Optional[str] = None,
+    project_id: Optional[IdLike] = None,
+    max_runtime_hours: Optional[float] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> UUID:
+    """
+    Run a single Python file as an action, without building an image.
+
+    The file is stored by Kleinkram and executed by the shared script runner image,
+    which ships a fixed dependency set. `max_runtime_hours` may only lower the runtime
+    budget the script runner template allows, never raise it.
+    """
+    query = _args_to_mission_query(
+        mission_names=singleton_list(mission_name),
+        mission_ids=singleton_list(mission_id),
+        project_names=singleton_list(project_name),
+        project_ids=singleton_list(project_id),
+    )
+
+    client = client or AuthenticatedClient()
+    return kleinkram.core.run_script(
+        client=client,
+        mission_query=query,
+        script_path=Path(script),
+        max_runtime_hours=max_runtime_hours,
+    )

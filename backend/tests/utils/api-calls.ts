@@ -105,7 +105,7 @@ export const createMissionUsingPost = async (
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const response = await fetch(`${DEFAULT_URL}/mission/create`, {
+    const response = await fetch(`${DEFAULT_URL}/missions`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
@@ -246,7 +246,7 @@ export const createMetadataUsingPost = async (
     const headersBuilder = new HeaderCreator(user);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const response = await fetch(`${DEFAULT_URL}/tag/create`, {
+    const response = await fetch(`${DEFAULT_URL}/metadata-types`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
@@ -272,7 +272,7 @@ export const createAccessGroupUsingPost = async (
     const headersBuilder = new HeaderCreator(creator);
     headersBuilder.addHeader('Content-Type', 'application/json');
 
-    const response = await fetch(`${DEFAULT_URL}/access`, {
+    const response = await fetch(`${DEFAULT_URL}/access-groups`, {
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({

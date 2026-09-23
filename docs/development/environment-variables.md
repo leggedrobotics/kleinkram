@@ -22,16 +22,17 @@ These URLs are used for communication between services and for generating links.
 
 Configuration for SeaweedFS (or S3-compatible storage), which is used for object storage.
 
-| Variable                   | Description                                   | Default                                    |
-| :------------------------- | :-------------------------------------------- | :----------------------------------------- |
-| `S3_USER`                  | The username for S3 access.                   | `seaweed`                                  |
-| `S3_PASSWORD`              | The password for S3 access.                   | `seaweed`                                  |
-| `S3_ACCESS_KEY`            | The access key for S3 clients.                | `pMEKIOCnYJhmssiKZDGU`                     |
-| `S3_SECRET_KEY`            | The secret key for S3 clients.                | `ECnXGyUR5ZrPsxeD5JEWxtI1CMZFMJ8kTJMMAQ5B` |
-| `S3_DATA_BUCKET_NAME`      | The bucket name for main data storage.        | `data`                                     |
-| `S3_DB_BUCKET_NAME`        | The bucket name for database dumps/backups.   | `dbdumps`                                  |
-| `S3_ARTIFACTS_BUCKET_NAME` | The bucket name for build artifacts.          | `artifacts`                                |
-| `S3_ENDPOINT`              | The hostname or IP address of the S3 service. | `localhost`                                |
+| Variable                   | Description                                     | Default                                    |
+| :------------------------- | :---------------------------------------------- | :----------------------------------------- |
+| `S3_USER`                  | The username for S3 access.                     | `seaweed`                                  |
+| `S3_PASSWORD`              | The password for S3 access.                     | `seaweed`                                  |
+| `S3_ACCESS_KEY`            | The access key for S3 clients.                  | `pMEKIOCnYJhmssiKZDGU`                     |
+| `S3_SECRET_KEY`            | The secret key for S3 clients.                  | `ECnXGyUR5ZrPsxeD5JEWxtI1CMZFMJ8kTJMMAQ5B` |
+| `S3_DATA_BUCKET_NAME`      | The bucket name for main data storage.          | `data`                                     |
+| `S3_DB_BUCKET_NAME`        | The bucket name for database dumps/backups.     | `dbdumps`                                  |
+| `S3_ARTIFACTS_BUCKET_NAME` | The bucket name for build artifacts.            | `artifacts`                                |
+| `S3_SCRIPTS_BUCKET_NAME`   | The bucket name for single-file action scripts. | `action-scripts`                           |
+| `S3_ENDPOINT`              | The hostname or IP address of the S3 service.   | `localhost`                                |
 
 ## Database Configuration
 
@@ -69,7 +70,14 @@ Configuration for the PostgreSQL database.
 | `GOOGLE_CLIENT_SECRET`                | Google OAuth Client Secret.                                    | -                             |
 | `GITHUB_CLIENT_ID`                    | GitHub OAuth Client ID.                                        | -                             |
 | `GITHUB_CLIENT_SECRET`                | GitHub OAuth Client Secret.                                    | -                             |
-| `JWT_SECRET`                          | Secret key used to sign and verify JWT tokens.                 | `SECRET`                      |
+
+### Access Config
+
+| Variable             | Description                                                                                                                                                 | Default                               |
+| :------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
+| `ACCESS_CONFIG_PATH` | Path (inside the container) to the `access_config.json` that defines the affiliation groups. Required: the backend refuses to start without a valid config. | `/app/backend/access_config.dev.json` |
+| `ACCESS_CONFIG_FILE` | Host path of the deployment's `access_config.json`, mounted by `docker-compose.dev.yml` and `docker-compose.prod.yml`.                                      | `./access_config.json`                |
+| `JWT_SECRET`         | Secret key used to sign and verify JWT tokens.                                                                                                              | `SECRET`                              |
 
 ## Docker & Registry Configuration
 

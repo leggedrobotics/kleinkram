@@ -10,6 +10,8 @@ Kleinkram supports a variety of robotics data formats. All other files should be
 | `.svo2`          | ZED camera recording (v2)                                        |
 | `.tum`           | TUM dataset format                                               |
 | `.yaml` / `.yml` | YAML configuration files                                         |
+| `.md`            | Markdown notes, rendered in the file preview                     |
+| `.csv`           | Comma/semicolon/tab separated tables, shown as a table preview   |
 
 ::: tip Requesting New File Types
 If you need support for additional file types, please [open a new issue](https://github.com/leggedrobotics/kleinkram/issues/new) on GitHub.

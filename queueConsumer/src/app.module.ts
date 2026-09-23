@@ -5,6 +5,7 @@ import {
     StorageModule,
 } from '@kleinkram/backend-common';
 import { redis } from '@kleinkram/backend-common/consts';
+import { ActionDiagnosticEntity } from '@kleinkram/backend-common/entities/action/action-diagnostic.entity';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
@@ -19,6 +20,7 @@ import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity'
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectStarEntity } from '@kleinkram/backend-common/entities/project/project-star.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
@@ -33,7 +35,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import * as pg from 'pg';
 import { AccessGroupExpiryProvider } from './accessGroupExpiry/access-group-expiry.provider';
 import { ActionsModule } from './actions/actions.module';
 import { FileProcessorModule } from './file-processor/file-processor.module';
@@ -66,45 +68,50 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
-            useFactory: (configService: ConfigService) =>
-                ({
-                    type: 'postgres',
-                    host: configService.getOrThrow<string>('database.host'),
-                    port: configService.getOrThrow<number>('database.port'),
-                    username:
-                        configService.getOrThrow<string>('database.username'),
-                    password:
-                        configService.getOrThrow<string>('database.password'),
-                    database:
-                        configService.getOrThrow<string>('database.database'),
-                    entities: [
-                        IngestionJobEntity,
-                        FileEventEntity,
-                        MissionEntity,
-                        FileEntity,
-                        ProjectEntity,
-                        TopicEntity,
-                        ActionEntity,
-                        ActionRunnerEntity,
-                        ActionTemplateEntity,
-                        ActionTriggerEntity,
-                        UserEntity,
-                        ApiKeyEntity,
-                        AccountEntity,
-                        AccessGroupEntity,
-                        TagTypeEntity,
-                        MetadataEntity,
-                        ProjectAccessEntity,
-                        MissionAccessEntity,
-                        ProjectAccessViewEntity,
-                        MissionAccessViewEntity,
-                        WorkerEntity,
-                        CategoryEntity,
-                        GroupMembershipEntity,
-                    ],
-                    synchronize: env.DEV,
-                    logging: ['warn', 'error'],
-                }) as PostgresConnectionOptions,
+            useFactory: (configService: ConfigService) => ({
+                type: 'postgres',
+                // TypeORM v1 loads its driver package through a dynamic
+                // `require()` that webpack cannot resolve when the app is
+                // bundled, so hand it the already bundled `pg` module.
+                driver: pg,
+                host: configService.getOrThrow<string>('database.host'),
+                port: configService.getOrThrow<number>('database.port'),
+                username: configService.getOrThrow<string>('database.username'),
+                password: configService.getOrThrow<string>('database.password'),
+                database: configService.getOrThrow<string>('database.database'),
+                entities: [
+                    IngestionJobEntity,
+                    FileEventEntity,
+                    MissionEntity,
+                    FileEntity,
+                    ProjectEntity,
+                    // Not used here, but `ProjectEntity.stars` points at it:
+                    // TypeORM refuses to build the metadata of a relation
+                    // whose target is missing from the connection.
+                    ProjectStarEntity,
+                    TopicEntity,
+                    ActionEntity,
+                    ActionDiagnosticEntity,
+                    ActionRunnerEntity,
+                    ActionTemplateEntity,
+                    ActionTriggerEntity,
+                    UserEntity,
+                    ApiKeyEntity,
+                    AccountEntity,
+                    AccessGroupEntity,
+                    TagTypeEntity,
+                    MetadataEntity,
+                    ProjectAccessEntity,
+                    MissionAccessEntity,
+                    ProjectAccessViewEntity,
+                    MissionAccessViewEntity,
+                    WorkerEntity,
+                    CategoryEntity,
+                    GroupMembershipEntity,
+                ],
+                synchronize: env.DEV,
+                logging: ['warn', 'error'],
+            }),
             inject: [ConfigService],
         }),
         TypeOrmModule.forFeature([

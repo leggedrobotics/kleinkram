@@ -85,7 +85,7 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const user = await userRepository.findOneOrFail({
             where: { email: 'alice@kleinkram.dev' },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: { memberships: { accessGroup: true } },
         });
 
         const groupUuids =
@@ -128,7 +128,7 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const user = await userRepository.findOneOrFail({
             where: { email: 'bob@kleinkram.dev' },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: { memberships: { accessGroup: true } },
         });
 
         const groupUuids =
@@ -208,7 +208,7 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const user = await userRepository.findOneOrFail({
             where: { email: 'carol@kleinkram.dev' },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: { memberships: { accessGroup: true } },
         });
 
         const affiliationMemberships = (user.memberships ?? []).filter(
@@ -235,7 +235,7 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const user = await userRepository.findOneOrFail({
             where: { email: 'dave@kleinkram.dev' },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: { memberships: { accessGroup: true } },
         });
 
         const affiliationMemberships = (user.memberships ?? []).filter(
@@ -261,7 +261,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         // Verify user has a primary group
         const userBefore = await userRepository.findOneOrFail({
             where: { email: 'eve@kleinkram.dev' },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: { memberships: { accessGroup: true } },
         });
         const primaryBefore = (userBefore.memberships ?? []).filter(
             (m) => m.accessGroup?.type === AccessGroupType.PRIMARY,
@@ -282,7 +282,7 @@ describe('Affiliation Group Sync on Reboot', () => {
         // Primary group should still exist
         const userAfter = await userRepository.findOneOrFail({
             where: { email: 'eve@kleinkram.dev' },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: { memberships: { accessGroup: true } },
         });
         const primaryAfter = (userAfter.memberships ?? []).filter(
             (m) => m.accessGroup?.type === AccessGroupType.PRIMARY,
@@ -323,11 +323,47 @@ describe('Affiliation Group Sync on Reboot', () => {
 
         const updatedFrank = await userRepository.findOneOrFail({
             where: { email: 'frank@external.com' },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: { memberships: { accessGroup: true } },
         });
         const affiliationMemberships = (updatedFrank.memberships ?? []).filter(
             (m) => m.accessGroup?.type === AccessGroupType.AFFILIATION,
         );
         expect(affiliationMemberships).toHaveLength(0);
+    });
+
+    test('should not add users of look-alike domains', async () => {
+        const userRepository = database.getRepository(UserEntity);
+
+        const emptyConfig: AccessGroupConfig = {
+            emails: [],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
+        };
+        await affiliationGroupService.createAccessGroups(emptyConfig);
+        await createUser('mallory@evilkleinkram.dev', emptyConfig);
+        await createUser('trent@sub.kleinkram.dev', emptyConfig);
+
+        const config: AccessGroupConfig = {
+            emails: [{ email: 'kleinkram.dev', access_groups: [GROUP_A_UUID] }],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+            ],
+        };
+        await affiliationGroupService.syncAccessGroups(config, userRepository);
+
+        for (const email of [
+            'mallory@evilkleinkram.dev',
+            'trent@sub.kleinkram.dev',
+        ]) {
+            const user = await userRepository.findOneOrFail({
+                where: { email },
+                relations: { memberships: { accessGroup: true } },
+            });
+            const affiliationMemberships = (user.memberships ?? []).filter(
+                (m) => m.accessGroup?.type === AccessGroupType.AFFILIATION,
+            );
+            expect(affiliationMemberships).toHaveLength(0);
+        }
     });
 });

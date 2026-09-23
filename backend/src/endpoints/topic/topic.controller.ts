@@ -1,16 +1,20 @@
 import { ApiOkResponse } from '@/decorators';
 import { TopicService } from '@/services/topic.service';
-import { QuerySkip, QueryTake } from '@/validation/query-decorators';
-import { TopicNamesDto, TopicsDto, TopicTypesDto } from '@kleinkram/api-dto';
-import { Controller, Get } from '@nestjs/common';
+import {
+    PaginatedQueryDto,
+    TopicNamesDto,
+    TopicsDto,
+    TopicTypesDto,
+} from '@kleinkram/api-dto';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import { LoggedIn } from '../auth/roles.decorator';
 
-@Controller('topic')
+@Controller('topics')
 export class TopicController {
     constructor(private readonly topicService: TopicService) {}
 
-    @Get('all')
+    @Get()
     @LoggedIn()
     @ApiOkResponse({
         description: 'Get all topics',
@@ -18,10 +22,13 @@ export class TopicController {
     })
     async allTopics(
         @AddUser() user: AuthHeader,
-        @QuerySkip('skip') skip: number,
-        @QueryTake('take') take: number,
+        @Query() query: PaginatedQueryDto,
     ): Promise<TopicsDto> {
-        return await this.topicService.findAll(user.user.uuid, skip, take);
+        return await this.topicService.findAll(
+            user.user.uuid,
+            query.skip,
+            query.take,
+        );
     }
 
     @Get('names')

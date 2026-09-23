@@ -2,19 +2,19 @@
     <q-drawer
         v-model="_open"
         side="right"
-        :width="1000"
+        :width="$q.screen.lt.md ? $q.screen.width : 1000"
         style="bottom: 0 !important"
         bordered
-        behavior="desktop"
+        :behavior="$q.screen.lt.md ? 'mobile' : 'desktop'"
     >
         <div class="q-pa-lg flex row justify-between" style="height: 84px">
-            <h3 class="text-h4 q-ma-none">
+            <h3 class="q-ma-none" :class="$q.screen.xs ? 'text-h5' : 'text-h4'">
                 {{ selectedTemplate ? 'Configure Action' : 'Create Action' }}
             </h3>
             <q-btn
                 flat
                 dense
-                padding="6px"
+                :padding="$q.screen.xs ? '10px' : '6px'"
                 class="button-border"
                 icon="sym_o_close"
                 @click="closeDrawer"
@@ -23,7 +23,7 @@
 
         <q-separator />
 
-        <div class="q-pa-lg">
+        <div :class="$q.screen.xs ? 'q-pa-md' : 'q-pa-lg'">
             <span class="help-text">
                 Actions are used to verify mission data or to generate derived
                 files.
@@ -160,7 +160,7 @@
                     Compute Resources
                 </span>
                 <div style="margin-top: 16px" class="row q-col-gutter-sm">
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <label for="memory">Memory Allocation (GB)</label>
                         <q-input
                             v-model="editingTemplate.cpuMemory"
@@ -171,7 +171,7 @@
                             dense
                         />
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <label for="cpu">CPU Core Allocation</label>
                         <q-input
                             v-model="editingTemplate.cpuCores"
@@ -182,7 +182,7 @@
                             dense
                         />
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <label for="gpu">GPU Memory (-1 for no GPU)</label>
                         <q-input
                             v-if="editingTemplate"
@@ -195,7 +195,7 @@
                             dense
                         />
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <label for="maxRuntime">Max Runtime (h)</label>
                         <q-input
                             v-if="editingTemplate"
@@ -266,7 +266,6 @@ import { computed, Ref, ref, watch } from 'vue';
 
 // 1. New Composable Imports
 import {
-    SubmitActionPayload,
     useCreateTemplate,
     useSubmitAction,
     useUpdateTemplateVersion,
@@ -476,15 +475,13 @@ async function submitAnalysis(): Promise<void> {
         return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const dockerhubNamespace = import.meta.env.VITE_DOCKER_HUB_NAMESPACE;
     if (
         dockerhubNamespace &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/restrict-template-expressions
-        !editingTemplate.value.imageName.startsWith(`${dockerhubNamespace}`)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        !editingTemplate.value.imageName.startsWith(dockerhubNamespace)
     ) {
         Notify.create({
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             message: `Image name must start with "${dockerhubNamespace}/"`,
             color: 'negative',
         });
@@ -522,7 +519,7 @@ async function submitAnalysis(): Promise<void> {
             missionUUIDs: hasMissionUUIDs.value
                 ? allMissionUUIDs.value
                 : undefined,
-        } as SubmitActionPayload);
+        });
 
         Notify.create({ message: 'Analysis submitted', color: 'positive' });
         closeDrawer();
@@ -608,17 +605,12 @@ const removeMission = (uuid: string): void => {
 };
 
 const accessOptions = Object.keys(accessGroupRightsMap)
-    .filter(
-        (key) =>
-            (Number.parseInt(key) as AccessGroupRights) !==
-            AccessGroupRights._ADMIN,
-    )
-    .map((key) => ({
-        label:
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            accessGroupRightsMap[
-                Number.parseInt(key, 10) as AccessGroupRights
-            ] ?? '',
-        value: Number.parseInt(key, 10),
-    }));
+    .map((key) => {
+        const right = Number.parseInt(key, 10) as AccessGroupRights;
+        return {
+            label: accessGroupRightsMap[right],
+            value: right,
+        };
+    })
+    .filter(({ value }) => value !== AccessGroupRights._ADMIN);
 </script>

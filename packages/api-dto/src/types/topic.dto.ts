@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import { Paginated } from '@api-dto/pagination';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { IsArray, IsNumber, IsString, ValidateNested } from 'class-validator';
 
 @Expose()
@@ -19,11 +20,13 @@ export class TopicDto {
     @ApiProperty()
     @IsNumber()
     @Expose()
+    @Transform(({ obj }) => obj.nrMessages ?? 0n)
     nrMessages?: bigint;
 
     @ApiProperty()
     @IsNumber()
     @Expose()
+    @Transform(({ obj }) => (Number.isNaN(obj.frequency) ? 0 : obj.frequency))
     frequency!: number;
 }
 

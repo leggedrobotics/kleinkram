@@ -74,7 +74,6 @@
 
     <AccessRightsTable
         :access-rights="accessRights || []"
-        :min-access-rights="minAccessRights"
         @update-rights="onUpdateRights"
         @remove="onRemoveGroup"
     />
@@ -91,11 +90,7 @@ import { useSearchAccessGroup } from 'src/hooks/query-hooks';
 import { getAccessRightDescription } from 'src/services/generic';
 import { computed, ref } from 'vue';
 
-defineProps<{
-    minAccessRights: DefaultRightDto[];
-}>();
-
-const accessRights = defineModel<DefaultRightDto[]>({ default: [] });
+const accessRights = defineModel<DefaultRightDto[]>({ default: () => [] });
 
 // State
 const selectReference = ref<QSelect>();

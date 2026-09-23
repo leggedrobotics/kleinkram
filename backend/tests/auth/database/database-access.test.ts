@@ -18,7 +18,12 @@ describe('Verify Database User Persistence', () => {
         const userRepo = database.getRepository(UserEntity);
         const user = await userRepo.findOneOrFail({
             where: { uuid: userId },
-            select: ['uuid', 'email', 'name', 'role'],
+            select: {
+                uuid: true,
+                email: true,
+                name: true,
+                role: true,
+            },
         });
         expect(user).toBeDefined();
         expect(user.uuid).toBe(userId);

@@ -1,6 +1,6 @@
 <template>
     <q-dialog ref="dialogRef" @hide="onDialogHide">
-        <q-card class="q-dialog-plugin" style="min-width: 500px">
+        <q-card class="q-dialog-plugin rename-files-card">
             <q-card-section>
                 <div class="text-h6">Invalid Filenames</div>
                 <div class="text-caption text-grey">
@@ -136,3 +136,15 @@ export default defineComponent({
     },
 });
 </script>
+
+<style scoped>
+.rename-files-card {
+    min-width: 500px;
+}
+
+@media (max-width: 599px) {
+    .rename-files-card {
+        min-width: 0;
+    }
+}
+</style>

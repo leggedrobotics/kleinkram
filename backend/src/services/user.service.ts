@@ -99,12 +99,19 @@ export class UserService implements OnModuleInit {
     async me(auth: AuthHeader): Promise<CurrentAPIUserDto> {
         const user = await this.userRepository.findOneOrFail({
             where: { uuid: auth.user.uuid },
-            select: ['uuid', 'name', 'email', 'role', 'avatarUrl'],
-            relations: [
-                'memberships',
-                'memberships.accessGroup',
-                'memberships.user',
-            ],
+            select: {
+                uuid: true,
+                name: true,
+                email: true,
+                role: true,
+                avatarUrl: true,
+            },
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                    user: true,
+                },
+            },
         });
 
         return userEntityToCurrentAPIUserDto(user);
@@ -207,19 +214,29 @@ export class UserService implements OnModuleInit {
             // Query 1: Get User and specific memberships in one go
             this.userRepository.findOne({
                 where: { uuid: userUuid },
-                relations: ['memberships', 'memberships.accessGroup'],
+                relations: {
+                    memberships: {
+                        accessGroup: true,
+                    },
+                },
             }),
 
             // Query 2: Get Project Access
             this.projectAccessView.find({
                 where: { userUuid: userUuid },
-                select: ['projectUuid', 'rights'],
+                select: {
+                    projectUuid: true,
+                    rights: true,
+                },
             }),
 
             // Query 3: Get Mission Access
             this.missionAccessView.find({
                 where: { userUuid: userUuid },
-                select: ['missionUuid', 'rights'],
+                select: {
+                    missionUuid: true,
+                    rights: true,
+                },
             }),
         ]);
 
@@ -268,8 +285,14 @@ export class UserService implements OnModuleInit {
         const user = await this.userRepository.findOneOrFail({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             where: { api_keys: { apikey } },
-            relations: ['api_keys'],
-            select: ['uuid', 'name', 'role'],
+            relations: {
+                api_keys: true,
+            },
+            select: {
+                uuid: true,
+                name: true,
+                role: true,
+            },
         });
 
         const apiKey = await this.apikeyRepository.findOneOrFail({
@@ -320,13 +343,30 @@ export class UserService implements OnModuleInit {
                 createdAt: true,
                 updatedAt: true,
                 deletedAt: true,
+                mission: {
+                    uuid: true,
+                    name: true,
+                    project: {
+                        uuid: true,
+                    },
+                },
+                action: {
+                    uuid: true,
+                    template: {
+                        name: true,
+                        version: true,
+                    },
+                },
             },
-            relations: [
-                'mission',
-                'mission.project',
-                'action',
-                'action.template',
-            ],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                action: {
+                    template: true,
+                },
+            },
             order,
             skip,
             take,
@@ -360,7 +400,10 @@ export class UserService implements OnModuleInit {
 
         const users = await this.userRepository.find({
             where: { uuid: In(uuids) },
-            select: ['uuid', 'name'],
+            select: {
+                uuid: true,
+                name: true,
+            },
         });
 
         const result: Record<string, string> = {};

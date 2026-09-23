@@ -61,7 +61,7 @@ export class AuthController {
 
     @Get('github/callback')
     @UseGuards(AuthGuard('github'))
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(null)
     // eslint-disable-next-line @typescript-eslint/require-await
     async githubAuthCallback(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,7 +74,7 @@ export class AuthController {
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(null)
     googleAuthRedirect(
         @Req() request: Request,
         @Res() response: Response,
@@ -84,7 +84,7 @@ export class AuthController {
 
     @Get('fake-oauth/callback')
     @UseGuards(AuthGuard(Providers.FakeOAuth))
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(null)
     fakeOAuthAuthRedirect(
         @Req() request: Request,
         @Res() response: Response,
@@ -185,14 +185,14 @@ export class AuthController {
 
     @Get('validate-token')
     @UserOnly()
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(null)
     validateToken(@Res() response: Response): void {
         // If we reach here, the token is valid
         response.status(200).json({ message: 'Token is valid' });
     }
 
     @Post('refresh-token')
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(null)
     async refreshToken(@Req() request: Request, @Res() response: Response) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const refreshToken = request.cookies[CookieNames.REFRESH_TOKEN];
@@ -238,7 +238,7 @@ export class AuthController {
     }
 
     @Post('logout')
-    @OutputDto(null) // TODO: type API response
+    @OutputDto(null)
     logout(@Res() response: Response): void {
         response.cookie(CookieNames.AUTH_TOKEN, '', {
             httpOnly: false,

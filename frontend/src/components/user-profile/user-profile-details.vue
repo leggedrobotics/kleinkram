@@ -1,5 +1,5 @@
 <template>
-    <div v-if="user" class="q-table-container">
+    <div v-if="user" class="q-table-container profile-details">
         <table class="q-table__table">
             <tbody>
                 <tr>
@@ -129,5 +129,49 @@ const primaryGroup = computed(
 
 .first-column {
     width: 130px;
+}
+</style>
+
+<style scoped>
+/*
+ * On phones the two-column key/value table does not fit: the labels and the
+ * (potentially very long) values are stacked instead, and chip content is
+ * allowed to wrap so that UUIDs never push the page wider than the viewport.
+ */
+@media (max-width: 599px) {
+    .profile-details tr {
+        display: block;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .profile-details .q-table__cell {
+        display: block;
+        width: auto;
+        border-right: none;
+        border-bottom: none;
+        padding: 2px 8px;
+    }
+
+    .profile-details .first-column {
+        padding-top: 8px;
+        color: #58585c;
+        font-size: 12px;
+    }
+
+    .profile-details tr td:last-child {
+        padding-bottom: 8px;
+    }
+
+    .profile-details :deep(.q-chip) {
+        max-width: 100%;
+        height: auto;
+        min-height: 2em;
+    }
+
+    .profile-details :deep(.q-chip__content) {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-all;
+    }
 }
 </style>

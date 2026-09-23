@@ -69,6 +69,22 @@ export function useDeleteAction(): UseMutationReturnType<
     });
 }
 
+export function useCancelAction(): UseMutationReturnType<
+    void,
+    Error,
+    string,
+    unknown
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (uuid: string) => ActionService.cancel(uuid),
+        onSuccess: () => {
+            return queryClient.invalidateQueries({ queryKey: actionKeys.all });
+        },
+    });
+}
+
 export function useDeleteTemplate(): UseMutationReturnType<
     void,
     Error,

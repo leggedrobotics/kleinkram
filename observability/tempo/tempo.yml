@@ -21,20 +21,6 @@ distributor:
                 grpc:
                     endpoint: '0.0.0.0:4317' # This example repository only utilises the OTLP gRPC receiver on port 4317, on all interfaces.
 
-# The ingester receives data from the distributor and processes it into indices and blocks.
-ingester:
-    trace_idle_period: 10s # The length of time after a trace has not received spans to consider it complete and flush it.
-    max_block_bytes: 1_000_000 # Cut the head block when it hits this size or
-    max_block_duration: 5m # this much time passes
-
-# The compactor block configures the compactor responsible for compacting TSDB blocks.
-compactor:
-    compaction:
-        compaction_window: 1h # Blocks in this time window will be compacted together.
-        max_block_bytes: 100_000_000 # Maximum size of a compacted block.
-        block_retention: 1h # How long to keep blocks. Default is 14 days, this demo system is short-lived.
-        compacted_block_retention: 10m # How long to keep compacted blocks stored elsewhere.
-
 # Configuration block to determine where to store TSDB blocks.
 storage:
     trace:
@@ -72,10 +58,6 @@ metrics_generator:
                 - http.target
                 - http.status_code
                 - service.version
-        # Configure the local blocks processor.
-        local_blocks:
-            # Ensure that metrics blocks are flushed to storage so TraceQL metrics queries against historical data.
-            flush_to_storage: true
     # The registry configuration determines how to process metrics.
     registry:
         collection_interval: 5s # Create new metrics every 5s.
@@ -88,12 +70,10 @@ metrics_generator:
         remote_write:
             - url: http://prometheus:9090/api/v1/write
               send_exemplars: true
-    traces_storage:
-        path: /tmp/tempo/generator/traces
 
 # Global override configuration.
 overrides:
     defaults:
         metrics_generator:
-            processors: [service-graphs, span-metrics, local-blocks] # enables metrics generator
+            processors: [service-graphs, span-metrics] # enables metrics generator
             generate_native_histograms: both

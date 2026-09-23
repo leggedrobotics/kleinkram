@@ -2,6 +2,7 @@ import { AccessGroupConfig, AccessGroupType } from '@kleinkram/shared';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { emailMatchesDomain } from '../access-config';
 import { AccessGroupEntity } from '../entities/auth/access-group.entity';
 import { GroupMembershipEntity } from '../entities/auth/group-membership.entity';
 import { UserEntity } from '../entities/user/user.entity';
@@ -95,6 +96,9 @@ export class AffiliationGroupService {
             (g) => !configUuids.has(g.uuid),
         );
         for (const staleGroup of staleGroups) {
+            this.logger.warn(
+                `Removing affiliation group "${staleGroup.name}" (${staleGroup.uuid}): not in access config`,
+            );
             await this.groupMembershipRepository.delete({
                 accessGroup: { uuid: staleGroup.uuid },
             });
@@ -109,13 +113,15 @@ export class AffiliationGroupService {
             .leftJoinAndSelect('membership.accessGroup', 'accessGroup')
             .getMany();
 
+        let added = 0;
+        let removed = 0;
         for (const user of users) {
             if (!user.email) continue;
 
             // Compute expected affiliation group UUIDs from config
             const expectedUuids = new Set<string>();
             for (const emailConfig of config.emails) {
-                if (user.email.endsWith('@' + emailConfig.email)) {
+                if (emailMatchesDomain(user.email, emailConfig.email)) {
                     for (const uuid of emailConfig.access_groups) {
                         expectedUuids.add(uuid);
                     }
@@ -141,6 +147,10 @@ export class AffiliationGroupService {
                         accessGroup: { uuid },
                     });
                     await this.groupMembershipRepository.save(membership);
+                    this.logger.log(
+                        `Added ${user.email} to affiliation group ${uuid}`,
+                    );
+                    added++;
                 }
             }
 
@@ -151,9 +161,17 @@ export class AffiliationGroupService {
                     !expectedUuids.has(membership.accessGroup.uuid)
                 ) {
                     await this.groupMembershipRepository.remove(membership);
+                    this.logger.log(
+                        `Removed ${user.email} from affiliation group ${membership.accessGroup.uuid}`,
+                    );
+                    removed++;
                 }
             }
         }
+
+        this.logger.log(
+            `Synced affiliation groups: ${String(added)} memberships added, ${String(removed)} removed`,
+        );
     }
 
     /**
@@ -214,7 +232,7 @@ export class AffiliationGroupService {
         await Promise.all(
             // eslint-disable-next-line @typescript-eslint/await-thenable
             config.emails.map((_config) => {
-                if (resolvingEmail.endsWith('@' + _config.email)) {
+                if (emailMatchesDomain(resolvingEmail, _config.email)) {
                     return Promise.all(
                         _config.access_groups.map(async (uuid) => {
                             const group =
@@ -228,7 +246,10 @@ export class AffiliationGroupService {
                                         user: { uuid: user.uuid },
                                         accessGroup: { uuid: group.uuid },
                                     },
-                                    relations: ['accessGroup', 'user'],
+                                    relations: {
+                                        accessGroup: true,
+                                        user: true,
+                                    },
                                 });
 
                             if (!existingMembership) {

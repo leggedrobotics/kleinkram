@@ -11,7 +11,7 @@
                 autofocus
                 style="padding-bottom: 30px"
                 :error="!isNameValid"
-                :error-message="'Please enter a valid mission name'"
+                :error-message="nameErrorMessage"
                 placeholder="Name..."
             />
         </template>
@@ -31,13 +31,17 @@ import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/missi
 import { useQueryClient } from '@tanstack/vue-query';
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { getErrorMessage, getErrorStatus } from 'src/services/error-handling';
 import { updateMissionName } from 'src/services/mutations/mission';
 import { ref } from 'vue';
+
+const DEFAULT_NAME_ERROR = 'Please enter a valid mission name';
 
 const { dialogRef } = useDialogPluginComponent();
 const $q = useQuasar();
 const queryClient = useQueryClient();
 const isNameValid = ref(true);
+const nameErrorMessage = ref(DEFAULT_NAME_ERROR);
 
 const properties = defineProps<{
     mission: MissionWithFilesDto;
@@ -46,6 +50,7 @@ const properties = defineProps<{
 const missionName = ref(properties.mission.name);
 
 const saveMissionName = async () => {
+    isNameValid.value = true;
     await updateMissionName(properties.mission.uuid, missionName.value)
         .then(async () => {
             $q.notify({
@@ -66,7 +71,19 @@ const saveMissionName = async () => {
             });
             dialogRef.value?.hide();
         })
-        .catch(() => {
+        .catch((error: unknown) => {
+            // only a rejected name is reported on the input itself, every other
+            // failure (missing rights, name already taken, ...) is shown as a
+            // notification to not mislabel it as an invalid name
+            if (getErrorStatus(error) !== 400) {
+                $q.notify({
+                    message: `Failed to update mission name: ${getErrorMessage(error)}`,
+                    color: 'negative',
+                });
+                return;
+            }
+
+            nameErrorMessage.value = getErrorMessage(error, DEFAULT_NAME_ERROR);
             isNameValid.value = false;
         });
 };

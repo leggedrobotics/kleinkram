@@ -1,7 +1,9 @@
 import { FileGuardService } from '@/services/file-guard.service';
-import { FileService } from '@/services/file.service';
+import { FileLifecycleService } from '@/services/file-lifecycle.service';
+import { FileQueryService } from '@/services/file-query.service';
+import { FileStorageService } from '@/services/file-storage.service';
+import { MetadataService } from '@/services/metadata.service';
 import { MissionService } from '@/services/mission.service';
-import { TagService } from '@/services/tag.service';
 import { TopicService } from '@/services/topic.service';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
@@ -43,14 +45,16 @@ import { FileController } from './file.controller';
         TriggerModule,
     ],
     providers: [
-        FileService,
+        FileQueryService,
+        FileStorageService,
+        FileLifecycleService,
         TopicService,
         MissionService,
         FileGuardService,
-        TagService,
+        MetadataService,
     ],
     controllers: [FileController],
-    exports: [FileService],
+    exports: [FileQueryService, FileStorageService, FileLifecycleService],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class FileModule {}

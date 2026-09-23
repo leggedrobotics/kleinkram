@@ -1,6 +1,5 @@
 import { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
-import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
 import {
     AccessGroupEntity,
     ActionEntity,
@@ -230,7 +229,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -244,22 +243,22 @@ describe('Verify Action (Templates & Runs)', () => {
         // Verify in DB
         const actionRepo = database.getRepository(ActionEntity);
         const savedAction = await actionRepo.findOne({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            where: { uuid: json.uuid },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            where: { uuid },
         });
-        expect(savedAction).toBeDefined();
+        expect(savedAction).not.toBeNull();
     });
 
     test('if a user can view details of a submitted action', async () => {
-        // Debug: Check /user/me
-        const meResponse = await fetch(`${DEFAULT_URL}/user/me`, {
+        // Debug: Check /users/me
+        const meResponse = await fetch(`${DEFAULT_URL}/users/me`, {
             method: 'GET',
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             headers: new HeaderCreator(globalThis.creator).getHeaders(),
         });
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const me = await meResponse.json();
-        console.log('[DEBUG] /user/me:', me);
+        console.log('[DEBUG] /users/me:', me);
 
         // 1. Submit Action first
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -271,7 +270,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         if (submitResponse.status !== 201) {
             const errorText = await submitResponse.text();
@@ -313,7 +312,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         expect(submitResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -387,6 +386,32 @@ describe('Verify Action (Templates & Runs)', () => {
         expect(json).toHaveProperty('count');
     });
 
+    test('if a user can list actions with sortBy, sortDirection, and templateName', async () => {
+        const headers = new HeaderCreator(globalThis.creator as UserEntity);
+        headers.addHeader('Content-Type', 'application/json');
+        const submitResponse = await fetch(`${DEFAULT_URL}/actions`, {
+            method: 'POST',
+            headers: headers.getHeaders(),
+            body: JSON.stringify({
+                missionUUID: globalThis.missionUuid,
+                templateUUID: globalThis.templateUuid,
+            }),
+        });
+        expect(submitResponse.status).toBe(201);
+
+        const response = await fetch(
+            `${DEFAULT_URL}/actions?take=100&skip=0&sortBy=createdAt&sortDirection=DESC&templateName=Run`,
+            {
+                method: 'GET',
+                headers: new HeaderCreator(
+                    globalThis.creator as UserEntity,
+                ).getHeaders(),
+            },
+        );
+        await response.json();
+        expect(response.status).toBe(200);
+    });
+
     test('if a user with DELETE rights can delete an action run', async () => {
         // 1. Submit Action
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -398,7 +423,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         expect(submitResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -457,7 +482,7 @@ describe('Verify Action (Templates & Runs)', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         if (submitResponse.status !== 201) {
             const errorText = await submitResponse.text();

@@ -184,7 +184,7 @@ describe('Verify Action Access Rights', () => {
 
         // 2. Try to DELETE the mission using the Action API Key
         const deleteResponse = await fetch(
-            `${DEFAULT_URL}/mission/${globalThis.missionUuid}`,
+            `${DEFAULT_URL}/missions/${globalThis.missionUuid}`,
             {
                 method: 'DELETE',
 
@@ -238,7 +238,7 @@ describe('Verify Action Access Rights', () => {
 
         // 2. Try to GET the mission using the Action API Key
         const getResponse = await fetch(
-            `${DEFAULT_URL}/mission/one?uuid=${globalThis.missionUuid}`,
+            `${DEFAULT_URL}/missions/${globalThis.missionUuid}`,
 
             {
                 method: 'GET',

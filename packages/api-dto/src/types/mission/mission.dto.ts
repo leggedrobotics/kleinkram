@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import { Paginated } from '@api-dto/pagination';
 import { ProjectDto } from '@api-dto/project/base-project.dto';
 import { TagDto } from '@api-dto/tags/tags.dto';
 import { UserDto } from '@api-dto/user/user.dto';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import {
     IsDate,
     IsInt,
@@ -70,13 +71,18 @@ export class MissionWithCreatorDto extends MissionDto {
     creator!: UserDto;
 }
 
+@Expose()
 export class FlatMissionDto extends MissionWithCreatorDto {
     @ApiProperty()
     @IsNumber()
+    @Expose()
+    @Transform(({ value, obj }) => obj.fileCount ?? value ?? 0)
     filesCount!: number;
 
     @ApiProperty()
     @IsInt()
+    @Expose()
+    @Transform(({ value, obj }) => obj.size ?? value ?? 0)
     size!: number;
 }
 

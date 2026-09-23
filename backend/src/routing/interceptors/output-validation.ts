@@ -1,3 +1,4 @@
+import { DynamicDtoResolver } from '@/decorators';
 import {
     CallHandler,
     ExecutionContext,
@@ -8,9 +9,27 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
+import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import logger from '../../logger';
+
+/**
+ * Options used to validate a response against its output DTO.
+ *
+ * `forbidUnknownValues` is off on purpose. class-validator reports an
+ * `unknownValue` error for every instance of a class that carries no validation
+ * metadata at all, which includes the intentionally empty response DTOs
+ * (`CancelProcessingResponseDto`, `AddMetadataTypeDto`, `RemoveTagTypeDto`, ...)
+ * that describe a `{}` body. Those routes would otherwise always fail with a 500
+ * in development. A DTO that merely forgot its decorators is still caught: as
+ * soon as the response carries any property, `forbidNonWhitelisted` rejects it.
+ */
+const VALIDATOR_OPTIONS = {
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    forbidUnknownValues: false,
+};
 
 function validateResponseJSON<T extends object>(dto: ClassConstructor<T>) {
     return (data: JSON): JSON => {
@@ -27,19 +46,11 @@ function validateResponseJSON<T extends object>(dto: ClassConstructor<T>) {
             if (Array.isArray(instance)) {
                 for (const item of instance) {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-                    const itemErrors = validateSync(item, {
-                        whitelist: true,
-                        forbidNonWhitelisted: true,
-                        forbidUnknownValues: true,
-                    });
+                    const itemErrors = validateSync(item, VALIDATOR_OPTIONS);
                     errors.push(...itemErrors);
                 }
             } else {
-                errors = validateSync(instance as object, {
-                    whitelist: true,
-                    forbidNonWhitelisted: true,
-                    forbidUnknownValues: true,
-                });
+                errors = validateSync(instance as object, VALIDATOR_OPTIONS);
             }
 
             if (errors.length > 0) {
@@ -87,8 +98,12 @@ export class GlobalResponseValidationInterceptor implements NestInterceptor {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         const target = context.getHandler();
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const dto = this.reflector.get('outputDto', target);
+        let dto = this.reflector.get<unknown>('outputDto', target);
+
+        if (dto && typeof dto === 'object' && 'resolver' in dto) {
+            const request = context.switchToHttp().getRequest<Request>();
+            dto = (dto as DynamicDtoResolver).resolver(request);
+        }
 
         if (dto === null) return next.handle(); // explicitly disabled
 
@@ -98,7 +113,8 @@ export class GlobalResponseValidationInterceptor implements NestInterceptor {
                 `No output DTO defined for route ${target.name}.`,
             );
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        return next.handle().pipe(map(validateResponseJSON(dto)));
+        return next
+            .handle()
+            .pipe(map(validateResponseJSON(dto as ClassConstructor<object>)));
     }
 }

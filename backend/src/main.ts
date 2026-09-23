@@ -67,6 +67,8 @@ async function bootstrap(): Promise<void> {
         logger: new NestLoggerWrapper(),
     });
 
+    app.useBodyParser('json', { limit: '50mb' });
+
     app.useGlobalInterceptors(new AddVersionInterceptor());
     app.use(cookieParser());
     app.useGlobalFilters(new AuthFlowExceptionRedirectFilter());

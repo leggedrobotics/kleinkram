@@ -16,11 +16,13 @@ export function IsSkip(validationOptions?: ValidationOptions) {
 
                     // Check if the value is an integer and within range
                     return (
-                        Number.isInteger(value) && value >= 0 && value <= 9999
+                        Number.isInteger(value) &&
+                        value >= 0 &&
+                        value <= Number.MAX_SAFE_INTEGER
                     );
                 },
                 defaultMessage() {
-                    return 'Skip must be an optional integer between 0 and 9999'; // Custom error message
+                    return 'Skip must be an optional non-negative integer'; // Custom error message
                 },
             },
         });

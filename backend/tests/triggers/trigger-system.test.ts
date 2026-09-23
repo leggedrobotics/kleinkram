@@ -157,7 +157,9 @@ describe('Trigger System API Tests', () => {
 
         const file = await fileRepo.findOne({
             where: { uuid: fileUuid },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         if (!file?.mission) return;
 
@@ -166,7 +168,10 @@ describe('Trigger System API Tests', () => {
                 mission: { uuid: file.mission.uuid },
                 type: TriggerType.FILE,
             },
-            relations: ['template', 'mission'],
+            relations: {
+                template: true,
+                mission: true,
+            },
         });
 
         for (const trigger of triggers) {
@@ -239,7 +244,10 @@ describe('Trigger System API Tests', () => {
         const actionRepo = database.getRepository(ActionEntity);
         const action = await actionRepo.findOne({
             where: { uuid: hookData.actionUUID },
-            relations: ['template', 'mission'],
+            relations: {
+                template: true,
+                mission: true,
+            },
         });
 
         expect(action).toBeDefined();

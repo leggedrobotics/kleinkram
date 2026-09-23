@@ -1,4 +1,4 @@
-import { ActionDto, SubmitActionDto } from '@kleinkram/api-dto';
+import { ActionDto } from '@kleinkram/api-dto';
 import { ActionEntity, environment } from '@kleinkram/backend-common';
 import { AccessGroupRights, ArtifactState } from '@kleinkram/shared';
 import { DEFAULT_URL } from '../auth/utilities';
@@ -47,7 +47,7 @@ describe('Action Artefacts Tests', () => {
             body: JSON.stringify({
                 missionUUID: missionUuid,
                 templateUUID: templateUuid,
-            } as SubmitActionDto),
+            }),
         });
 
         expect(submitResponse.status).toBe(201);

@@ -5,11 +5,11 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { LoggedIn } from '../auth/roles.decorator';
 
-@Controller('worker')
+@Controller('workers')
 export class WorkerController {
     constructor(private readonly workerService: WorkerService) {}
 
-    @Get('all')
+    @Get()
     @LoggedIn()
     @ApiOperation({
         summary: 'Get all workers',

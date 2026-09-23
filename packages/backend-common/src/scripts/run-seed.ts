@@ -1,9 +1,10 @@
 /* eslint-disable unicorn/prefer-top-level-await, unicorn/no-process-exit */
-import { DataSource, DataSourceOptions } from 'typeorm';
+import 'reflect-metadata';
+import { DataSource } from 'typeorm';
 import { runSeeders } from 'typeorm-extension';
 import { dataSourceOptions } from '../ormconfig';
 
-const dataSource = new DataSource(dataSourceOptions as DataSourceOptions);
+const dataSource = new DataSource(dataSourceOptions);
 
 (async () => {
     await dataSource.initialize();

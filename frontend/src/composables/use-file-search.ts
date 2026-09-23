@@ -61,15 +61,14 @@ export function useFileSearch(
                 uuid: p.uuid,
             })) ?? [];
 
-        if (currentProjectUuid.value) {
-            const p = list.find((x) => x.uuid === currentProjectUuid.value);
-            if (!p) {
-                list.push({
-                    name:
-                        selectedProject.value?.name ?? currentProjectUuid.value,
-                    uuid: currentProjectUuid.value,
-                });
-            }
+        if (
+            currentProjectUuid.value &&
+            !list.some((x) => x.uuid === currentProjectUuid.value)
+        ) {
+            list.push({
+                name: selectedProject.value?.name ?? currentProjectUuid.value,
+                uuid: currentProjectUuid.value,
+            });
         }
         return list;
     });
@@ -87,14 +86,14 @@ export function useFileSearch(
                 uuid: m.uuid,
             })) ?? [];
 
-        if (currentMissionUuid?.value) {
-            const m = list.find((x) => x.uuid === currentMissionUuid.value);
-            if (!m) {
-                list.push({
-                    name: currentMissionUuid.value, // We don't have a mission query yet, so just use UUID
-                    uuid: currentMissionUuid.value,
-                });
-            }
+        if (
+            currentMissionUuid?.value &&
+            !list.some((x) => x.uuid === currentMissionUuid.value)
+        ) {
+            list.push({
+                name: currentMissionUuid.value, // We don't have a mission query yet, so just use UUID
+                uuid: currentMissionUuid.value,
+            });
         }
         return list;
     });

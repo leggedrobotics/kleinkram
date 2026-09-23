@@ -5,7 +5,7 @@ import { ActionState } from '@kleinkram/shared';
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { ApiOkResponse, OutputDto } from '../../decorators';
+import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '../../decorators';
 import { PublicGuard } from '../auth/guards';
 import { ThrottlerLoggerGuard } from './throttler-logger.guard';
 
@@ -30,8 +30,7 @@ export class HookController {
     @Post(':uuid')
     @UseGuards(PublicGuard, ThrottlerLoggerGuard)
     @Throttle({ default: { limit: 10, ttl: 60_000 } })
-    @OutputDto(WebhookTriggerResponseDto)
-    @ApiOkResponse({ type: WebhookTriggerResponseDto })
+    @ApiCreatedResponse({ type: WebhookTriggerResponseDto })
     async triggerPost(
         @ParameterUuid('uuid') uuid: string,
         @Body() body: Record<string, unknown>,

@@ -1,3 +1,4 @@
+import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { FileEntity as File } from '@kleinkram/backend-common/entities/file/file.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
@@ -92,8 +93,10 @@ export const addAccessConstraintsToProjectQuery = (
         }),
     );
 
-    query.setParameters(userIsAdminSubQuery.getParameters());
-    query.setParameters(projectUUIDQuery.getParameters());
+    query.setParameters({
+        ...userIsAdminSubQuery.getParameters(),
+        ...projectUUIDQuery.getParameters(),
+    });
 
     return query;
 };
@@ -119,9 +122,11 @@ export const addAccessConstraintsToMissionQuery = (
         }),
     );
 
-    query.setParameters(userIsAdminSubQuery.getParameters());
-    query.setParameters(missionUUIDQuery.getParameters());
-    query.setParameters(projectUUIDQuery.getParameters());
+    query.setParameters({
+        ...userIsAdminSubQuery.getParameters(),
+        ...missionUUIDQuery.getParameters(),
+        ...projectUUIDQuery.getParameters(),
+    });
 
     return query;
 };
@@ -147,20 +152,55 @@ export const addAccessConstraintsToFileQuery = (
         }),
     );
 
-    query.setParameters(userIsAdminSubQuery.getParameters());
-    query.setParameters(missionUUIDQuery.getParameters());
-    query.setParameters(projectUUIDQuery.getParameters());
+    query.setParameters({
+        ...userIsAdminSubQuery.getParameters(),
+        ...missionUUIDQuery.getParameters(),
+        ...projectUUIDQuery.getParameters(),
+    });
 
     return query;
 };
 
-// TODO: deprecate this in favor of the above functions
+export const addAccessConstraintsToTriggerQuery = (
+    query: SelectQueryBuilder<ActionTriggerEntity>,
+    userUUID: string,
+): SelectQueryBuilder<ActionTriggerEntity> => {
+    const tok = uuidv4().replaceAll('-', '');
+    const missionUUIDQuery = missionAccessUUIDQuery(query, userUUID);
+    const projectUUIDQuery = projectAccessUUIDQuery(query, userUUID);
+    const userIsAdminSubQuery = getUserIsAdminSubQuery(query, userUUID);
+
+    const accessBracket = new Brackets((qb) => {
+        qb.where(`mission.uuid IN (${missionUUIDQuery.getQuery()})`);
+        qb.orWhere(`project.uuid IN (${projectUUIDQuery.getQuery()})`);
+        qb.orWhere(`trigger.creatorUuid = :creatorUserUUID_${tok}`);
+    });
+
+    query.andWhere(
+        new Brackets((qb) => {
+            qb.where(`EXISTS (${userIsAdminSubQuery.getQuery()})`);
+            qb.orWhere(accessBracket);
+        }),
+    );
+
+    query.setParameters({
+        ...userIsAdminSubQuery.getParameters(),
+        ...missionUUIDQuery.getParameters(),
+        ...projectUUIDQuery.getParameters(),
+        [`creatorUserUUID_${tok}`]: userUUID,
+    });
+
+    return query;
+};
+
 export function addAccessConstraints(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     qb: SelectQueryBuilder<any>,
     userUUID: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): SelectQueryBuilder<any> {
+    qb.setParameter('userUUID', userUUID);
+
     // Add project access join
     qb.leftJoin(
         (subQuery) => {

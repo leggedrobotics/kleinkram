@@ -1,11 +1,10 @@
-import { AccessService } from '@/services/access.service';
 import { ProjectService } from '@/services/project.service';
 import {
-    AccessGroupAuditService,
     AccessGroupEntity,
     AccessGroupEventEntity,
     GroupMembershipEntity,
     ProjectEntity,
+    ProjectStarEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
@@ -13,12 +12,14 @@ import { ProjectAccessEntity } from '@kleinkram/backend-common/entities/auth/pro
 import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OldProjectController, ProjectController } from './project.controller';
+import { AccessModule } from '../access/access.module';
+import { ProjectController } from './project.controller';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([
             ProjectEntity,
+            ProjectStarEntity,
             AccountEntity,
             AccessGroupEntity,
             AccessGroupEventEntity,
@@ -27,10 +28,11 @@ import { OldProjectController, ProjectController } from './project.controller';
             UserEntity,
             GroupMembershipEntity,
         ]),
+        AccessModule,
     ],
-    providers: [ProjectService, AccessService, AccessGroupAuditService],
+    providers: [ProjectService],
     exports: [ProjectService],
-    controllers: [ProjectController, OldProjectController],
+    controllers: [ProjectController],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ProjectModule {}

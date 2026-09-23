@@ -40,7 +40,30 @@ files = kleinkram.list_files(
     mission_names=["testMission"],
     file_names=["*.bag"]
 )
+
+# List the action triggers of a mission
+triggers = kleinkram.list_triggers(mission_uuid="...")
 ```
+
+### Downloading Part of a Recording
+
+`download` takes the same MCAP filters as the CLI. Passing any of them fetches
+only the selected messages (or, for compressed chunks, the chunks holding them)
+and skips files that are not `.mcap`. `start_time` is inclusive, `end_time`
+exclusive.
+
+```python
+kleinkram.download(
+    file_ids=["38d7e53e-64d6-434e-a21a-f02017dc6290"],
+    dest="./slice",
+    topics=["/imu/data_raw"],
+    start_time=1789718908373212789,   # nanoseconds, as in MCAP log times
+    end_time=1789718918373212789,
+)
+```
+
+See [Partial Download](../files/partial-download.md) for what actually saves
+bandwidth.
 
 ### Getting Resources by ID
 
@@ -50,7 +73,13 @@ If you already know the unique identifier for a resource, you can fetch it direc
 project = kleinkram.get_project(project_id="...")
 mission = kleinkram.get_mission(mission_id="...")
 file = kleinkram.get_file(file_id="...")
+trigger = kleinkram.get_trigger("...")
 ```
+
+`get_trigger` returns the trigger's full configuration, so it needs `Read`
+access on the trigger's mission — or you have to have created the trigger
+yourself. See [Action and Action Template](../access-control/action.md) for the
+access rules, in particular the caveat on webhook trigger uuids.
 
 ### Creating Resources
 
@@ -121,6 +150,30 @@ kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
 # Trigger a file update (re-process the file)
 kleinkram.update_file(file_id="...")
 ```
+
+### Reporting from Inside an Action
+
+When your code runs inside a Kleinkram action, it can report what it found. Warnings do not fail the action: the run
+still completes, and is shown as done with warnings.
+
+```python
+import kleinkram
+
+for bag in bags:
+    if "/tf" not in bag.topics:
+        kleinkram.warn("no /tf topic in this recording", file=bag.name, code="MISSING_TF")
+
+# record an error without stopping the run; exit non-zero to fail the action itself
+kleinkram.fail("bag header is truncated", file="run_2.bag")
+
+# a note that leaves the action reading as clean
+kleinkram.info("checked 42 recordings")
+```
+
+These read `KLEINKRAM_ACTION_UUID` from the environment, so they raise `NotInsideAction` when called outside an action
+container. Pass `execution_id=` explicitly if you need to target a specific run.
+
+Read them back with `kleinkram.list_diagnostics(execution_id)`.
 
 ### Deleting Resources
 

@@ -177,7 +177,7 @@ describe('Action File Events', () => {
 
         // 5. Download File using Action API Key
         const downloadResponse = await fetch(
-            `${DEFAULT_URL}/files/download?uuid=${file.uuid}&expires=false&preview_only=false`,
+            `${DEFAULT_URL}/files/${file.uuid}/download?expires=false&preview_only=false`,
             {
                 method: 'GET',
                 headers: {
@@ -204,7 +204,7 @@ describe('Action File Events', () => {
         expect(events.count).toBeGreaterThan(0);
 
         const downloadEvent = events.data.find(
-            // eslint-disable-next-line unicorn/prevent-abbreviations
+            // eslint-disable-next-line unicorn/name-replacements
             (e) => e.type === FileEventType.DOWNLOADED,
         );
         expect(downloadEvent).toBeDefined();

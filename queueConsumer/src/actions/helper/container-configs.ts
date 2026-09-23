@@ -13,22 +13,7 @@ export const LogConfig = {
 
 // For security reasons, we drop all default capabilities
 // and only add the ones we really need.
-export const CapDrop = [
-    'CHOWN',
-    'DAC_OVERRIDE',
-    'FSETID',
-    'FOWNER',
-    'MKNOD',
-    'NET_RAW',
-    'SETGID',
-    'SETUID',
-    'SETFCAP',
-    'SETPCAP',
-    'NET_BIND_SERVICE',
-    'SYS_CHROOT',
-    'KILL',
-    'AUDIT_WRITE',
-];
+export const CapDrop = ['ALL'];
 
 // limits the number of processes the container can create
 // this helps to prevent fork bombs / bugs in the container
@@ -36,8 +21,8 @@ export const CapDrop = [
 export const PidsLimit = 256;
 
 // we don't want to allow the container to escalate privileges
-export const SecurityOpt = ['no-new-privileges'];
+export const SecurityOpt = ['no-new-privileges:true'];
 
-// TODO: we should not use host network mode
-//  as it can be a security risk! We should use a bridge network instead.
-export const NetworkMode = 'host';
+// For security reasons, we do not use host network mode
+// as it can be a security risk! We use a bridge network by default.
+export const NetworkMode = 'bridge';

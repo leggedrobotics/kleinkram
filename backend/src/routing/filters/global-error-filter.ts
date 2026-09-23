@@ -8,12 +8,16 @@ import {
     ConflictException,
     ExceptionFilter,
     ForbiddenException,
+    ServiceUnavailableException,
     UnauthorizedException,
 } from '@nestjs/common';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { Response } from 'express';
 import { EntityNotFoundError } from 'typeorm';
 import logger from '../../logger';
+
+/** Fallback for 503s that don't carry an explicit retry hint. */
+const DEFAULT_RETRY_AFTER_SECONDS = 15;
 
 /**
  * A global error filter that catches all errors and logs them.
@@ -124,7 +128,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
                 'unauthenticated';
             const details =
                 resp !== null && typeof resp === 'object' && 'errors' in resp
-                    ? (resp as { errors: unknown }).errors
+                    ? resp.errors
                     : exception.message;
             logger.warn(
                 `ConflictException: user="${userLabel}" endpoint="${request.method} ${request.url}" reason=${JSON.stringify(details)}`,
@@ -135,6 +139,11 @@ export class GlobalErrorFilter implements ExceptionFilter {
                     ? resp
                     : { message: exception.message }),
             });
+            return;
+        }
+
+        if (exception instanceof ServiceUnavailableException) {
+            this.respondServiceUnavailable(exception, request, response);
             return;
         }
 
@@ -190,6 +199,44 @@ export class GlobalErrorFilter implements ExceptionFilter {
         response.status(500).json({
             statusCode: 500,
             message: 'Internal server error',
+        });
+    }
+
+    /**
+     * A backing service being unavailable is an expected operational state,
+     * not a bug, so it is logged as a warning rather than an error with a
+     * stack trace. The response repeats whatever the exception carried (the
+     * explanation the client needs) and adds `Retry-After` so clients know
+     * this is worth retrying.
+     */
+    private respondServiceUnavailable(
+        exception: ServiceUnavailableException,
+        request: Request,
+        response: Response,
+    ): void {
+        const resp: unknown = exception.getResponse();
+        const retryAfterSeconds =
+            typeof resp === 'object' &&
+            resp !== null &&
+            'retryAfterSeconds' in resp &&
+            typeof resp.retryAfterSeconds === 'number'
+                ? resp.retryAfterSeconds
+                : DEFAULT_RETRY_AFTER_SECONDS;
+
+        logger.warn(
+            `ServiceUnavailable: endpoint="${request.method} ${request.url}" reason="${exception.message}"`,
+        );
+
+        response.header('Retry-After', retryAfterSeconds.toString());
+        response.header(
+            'Access-Control-Expose-Headers',
+            'kleinkram-version, Retry-After',
+        );
+        response.status(503).json({
+            statusCode: 503,
+            ...(typeof resp === 'object' && resp !== null
+                ? resp
+                : { message: exception.message }),
         });
     }
 }

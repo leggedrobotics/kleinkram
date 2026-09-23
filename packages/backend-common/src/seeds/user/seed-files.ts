@@ -8,9 +8,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { TagTypeEntity } from '@backend-common/entities/tagType/tag-type.entity';
 import { TopicEntity } from '@backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
-import { FileContext } from '@backend-common/factories/file/file.factory';
 import { MetadataContext } from '@backend-common/factories/metadata/metadata.factory';
-import { TopicContext } from '@backend-common/factories/topic/topic.factory';
 import { extendedFaker } from '@backend-common/faker-extended';
 import {
     DataType,
@@ -99,9 +97,39 @@ export const seedFiles = async (
 ): Promise<void> => {
     // eslint-disable-next-line no-console
     console.log('4. Generate and Upload Data...');
-    const generateScriptPath = '/app/cli/tests/generate_test_data.py';
+    let rootDirectory = '/app';
+    if (
+        !fs.existsSync(
+            path.join(rootDirectory, 'cli/tests/generate_test_data.py'),
+        )
+    ) {
+        let currentDirectory = __dirname;
+        while (currentDirectory !== path.dirname(currentDirectory)) {
+            if (
+                fs.existsSync(
+                    path.join(
+                        currentDirectory,
+                        'cli/tests/generate_test_data.py',
+                    ),
+                )
+            ) {
+                rootDirectory = currentDirectory;
+                break;
+            }
+            currentDirectory = path.dirname(currentDirectory);
+        }
+    }
+    const generateScriptPath = path.join(
+        rootDirectory,
+        'cli/tests/generate_test_data.py',
+    );
+    const pythonExecutable = fs.existsSync(
+        path.join(rootDirectory, 'cli/.venv/bin/python3'),
+    )
+        ? path.join(rootDirectory, 'cli/.venv/bin/python3')
+        : 'python3';
     try {
-        execSync(`python3 ${generateScriptPath}`);
+        execSync(`"${pythonExecutable}" "${generateScriptPath}"`);
     } catch (error) {
         console.error('Failed to generate test data', error);
     }
@@ -129,7 +157,7 @@ export const seedFiles = async (
     });
 
     const bucketName = process.env.S3_DATA_BUCKET_NAME ?? 'data';
-    const dataDirectory = '/app/cli/tests/data';
+    const dataDirectory = path.join(rootDirectory, 'cli/tests/data');
 
     if (fs.existsSync(dataDirectory)) {
         const files = fs.readdirSync(dataDirectory);
@@ -208,7 +236,9 @@ export const seedFiles = async (
                             name: randomCategoryName ?? '',
                             project: { uuid: mission.project.uuid },
                         },
-                        relations: ['project'],
+                        relations: {
+                            project: true,
+                        },
                     });
                 // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                 if (!category) {
@@ -237,7 +267,7 @@ export const seedFiles = async (
                         origin: FileOrigin.UPLOAD,
                         hash: fileHash,
                         categories: [category],
-                    } as FileContext)
+                    })
                     .save();
 
                 if (!fileEntity.uuid) {
@@ -297,7 +327,7 @@ export const seedFiles = async (
                                 frequency: topicDefinition.frequency,
                                 nrMessages: 1000n,
                                 messageEncoding: 'cdr',
-                            } as Partial<TopicContext>)
+                            })
                             .save();
                     }
 

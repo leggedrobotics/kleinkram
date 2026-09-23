@@ -18,6 +18,9 @@ export default withMermaid({
     vite: {
         envDir: '..',
         envPrefix: ['VITE_', 'BACKEND_URL'],
+        esbuild: {
+            target: 'es2022',
+        },
         // force use of esm version of dayjs
         resolve: {
             alias: {
@@ -28,6 +31,12 @@ export default withMermaid({
         },
         optimizeDeps: {
             include: ['mermaid'],
+            esbuildOptions: {
+                target: 'es2022',
+            },
+        },
+        build: {
+            target: 'es2022',
         },
     },
     head: [
@@ -91,6 +100,10 @@ export default withMermaid({
                             link: '/usage/files/files',
                         },
                         {
+                            text: 'Partial Download',
+                            link: '/usage/files/partial-download',
+                        },
+                        {
                             text: 'Access Control',
                             link: '/usage/access-control/base-concepts',
                             items: [
@@ -111,6 +124,10 @@ export default withMermaid({
                         {
                             text: 'Use Actions',
                             link: '/usage/actions/use-actions.md',
+                        },
+                        {
+                            text: 'Run a Python Script',
+                            link: '/usage/actions/run-script.md',
                         },
                         {
                             text: 'Action Triggers',

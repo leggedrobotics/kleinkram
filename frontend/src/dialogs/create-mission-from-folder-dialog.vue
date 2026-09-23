@@ -64,7 +64,7 @@
                     <q-file
                         v-model="files"
                         outlined
-                        style="min-width: 300px"
+                        style="width: 100%"
                         @click="transferClick"
                     >
                         <template #prepend>
@@ -149,7 +149,9 @@ const tagValues: Ref<Record<string, string>> = ref({});
 
 const allRequiredTagsSet = computed(() => {
     return project.value?.requiredTags.every(
-        (tag) => tagValues.value[tag.uuid] !== '',
+        (tag) =>
+            tagValues.value[tag.uuid] !== undefined &&
+            tagValues.value[tag.uuid] !== '',
     );
 });
 

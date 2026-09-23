@@ -21,7 +21,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch
 
 COPY . .
@@ -49,7 +49,8 @@ RUN apt-get update && apt-get install -y curl ca-certificates && \
 
 WORKDIR /app
 
-COPY --from=build /app/queueConsumer/dist/main.js ./queueConsumer/dist/main.js
+COPY --from=build /app/queueConsumer/dist ./queueConsumer/dist
+COPY --from=build /prod/queueConsumer/node_modules ./queueConsumer/node_modules
 
 WORKDIR /app/queueConsumer
 

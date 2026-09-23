@@ -1,9 +1,10 @@
 import { FileDto } from '@api-dto/file/file.dto';
 import { MissionWithCreatorDto } from '@api-dto/mission/mission.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { ValidateNested } from 'class-validator';
 
+@Expose()
 export class MissionWithFilesDto extends MissionWithCreatorDto {
     @ApiProperty({
         type: () => FileDto,
@@ -11,5 +12,6 @@ export class MissionWithFilesDto extends MissionWithCreatorDto {
     })
     @ValidateNested()
     @Type(() => FileDto)
+    @Expose()
     files!: FileDto[];
 }

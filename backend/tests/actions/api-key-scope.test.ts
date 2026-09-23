@@ -2,7 +2,6 @@
 /// <reference path="../global.d.ts" />
 import { appVersion } from '@/app-version';
 import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-template.dto';
-import { SubmitActionDto } from '@kleinkram/api-dto/types/submit-action-response.dto';
 import {
     AccessGroupEntity,
     ActionEntity,
@@ -179,7 +178,7 @@ describe('Verify Action API Key Scope', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         expect(submitResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -253,7 +252,7 @@ describe('Verify Action API Key Scope', () => {
             body: JSON.stringify({
                 missionUUID: globalThis.missionUuid,
                 templateUUID: globalThis.templateUuid,
-            } as SubmitActionDto),
+            }),
         });
         expect(submitResponse.status).toBe(201);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

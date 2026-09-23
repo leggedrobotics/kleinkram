@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import base64
+import functools
 import hashlib
+import logging
 import math
+import random
 import re
 import string
+import time
 import traceback
 from hashlib import md5
 from pathlib import Path
@@ -27,8 +31,49 @@ from kleinkram.models import File
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
 
+logger = logging.getLogger(__name__)
+
+
+def retry(
+    max_attempts: int = 5,
+    backoff_base: int = 2,
+    exceptions: Tuple[type[Exception], ...] = (Exception,),
+    exclude_exceptions: Tuple[type[Exception], ...] = (),
+):
+    """
+    Decorator for retrying a function on specified exceptions with exponential backoff and jitter.
+    Can override max_attempts dynamically by passing `_retry_attempts` to the wrapped function.
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            attempts = kwargs.pop("_retry_attempts", max_attempts)
+
+            for attempt in range(1, attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exclude_exceptions:
+                    raise
+                except exceptions as e:
+                    if attempt == attempts:
+                        logger.error(f"Function '{func.__name__}' failed after {attempts} attempts. Final error: {e}")
+                        raise
+
+                    delay = (backoff_base**attempt) + random.uniform(0, 0.5)
+                    logger.warning(
+                        f"Function '{func.__name__}' failed (Error: {e}). "
+                        f"Attempt {attempt}/{attempts} failed. Retrying in {delay:.2f}s..."
+                    )
+                    time.sleep(delay)
+
+        return wrapper
+
+    return decorator
+
+
 INTERNAL_ALLOWED_CHARS = string.ascii_letters + string.digits + "_" + "-"
-SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml"]
+SUPPORT_FILE_TYPES = [".bag", ".mcap", ".db3", ".svo2", ".tum", ".yaml", ".yml", ".md", ".csv"]
 EXPERIMENTAL_FILE_TYPES = []
 
 
@@ -91,25 +136,28 @@ def split_args(args: Sequence[str]) -> Tuple[List[UUID], List[str]]:
     return uuids, names
 
 
-def check_file_paths(files: Sequence[Path]) -> None:
+def check_file_paths(files: Sequence[Path], *, check_filename: bool = True) -> None:
     """\
     checks that files exist, are files and have a supported file suffix
 
     NOTE: kleinkram treats filesuffixes as filetypes and limits
     the supported suffixes
+
+    set `check_filename` to False to allow filenames that are not sanitized,
+    they are then sanitized on upload, see `get_filename`
     """
     for file in files:
-        check_file_path(file)
+        check_file_path(file, check_filename=check_filename)
 
 
-def check_file_path(file: Path) -> None:
+def check_file_path(file: Path, *, check_filename: bool = True) -> None:
     if file.is_dir():
         raise FileNotFoundError(f"{file} is a directory and not a file")
     if not file.exists():
         raise FileNotFoundError(f"{file} does not exist")
     if file.suffix not in SUPPORT_FILE_TYPES:
         raise FileTypeNotSupported(f"only {', '.join(SUPPORT_FILE_TYPES)} files are supported: {file}")
-    if not check_filename_is_sanatized(file.stem):
+    if check_filename and not check_filename_is_sanatized(file.stem):
         raise FileNameNotSupported(
             f"only `{''.join(INTERNAL_ALLOWED_CHARS)}` are " f"allowed in filenames and at most 50chars: {file}"
         )
@@ -213,6 +261,22 @@ def load_metadata(path: Path) -> Dict[str, str]:
             return {str(k): str(v) for k, v in yaml.safe_load(f).items()}
     except Exception as e:
         raise ValueError(f"could not parse metadata file: {e}")
+
+
+MINUTES_PER_HOUR = 60
+
+
+def minutes_to_hours(minutes: float) -> float:
+    """\
+    the backend stores action template runtime limits in hours,
+    whereas the CLI and the SDK express them in minutes
+    """
+    return minutes / MINUTES_PER_HOUR
+
+
+def hours_to_minutes(hours: float) -> int:
+    """inverse of `minutes_to_hours`, see the note there"""
+    return round(hours * MINUTES_PER_HOUR)
 
 
 def get_supported_api_version() -> Tuple[int, int, int]:

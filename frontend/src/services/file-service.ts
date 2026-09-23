@@ -222,10 +222,12 @@ async function _createFileAction(
 
     while (!temporaryCredentials) {
         const filenames = fileItems.map((item) => item.virtualName);
+        const fileSizes = fileItems.map((item) => item.file.size);
         try {
             temporaryCredentials = await generateTemporaryCredentials({
                 filenames,
                 missionUUID: selectedMission.uuid,
+                fileSizes,
             });
         } catch (error: unknown) {
             let handled = false;
@@ -305,15 +307,28 @@ async function _createFileAction(
                 let message = `Upload failed: ${errorMessage}`;
 
                 if (error instanceof AxiosError) {
-                    if (error.response?.status === 403) {
-                        message = `Upload failed: You do not have the necessary permissions.`;
-                    } else if (error.response?.status === 400) {
-                        const responseData: unknown = error.response.data;
-                        message =
-                            isValidationErrorResponse(responseData) &&
-                            responseData.message
-                                ? `Upload failed: ${responseData.message}`
-                                : `Upload failed: ${JSON.stringify(responseData)}`;
+                    switch (error.response?.status) {
+                        case 403: {
+                            message = `Upload failed: You do not have the necessary permissions.`;
+
+                            break;
+                        }
+                        case 507: {
+                            message = `Upload failed: Insufficient storage space on the server. Please free up space before trying again.`;
+
+                            break;
+                        }
+                        case 400: {
+                            const responseData: unknown = error.response.data;
+                            message =
+                                isValidationErrorResponse(responseData) &&
+                                responseData.message
+                                    ? `Upload failed: ${responseData.message}`
+                                    : `Upload failed: ${JSON.stringify(responseData)}`;
+
+                            break;
+                        }
+                        // No default
                     }
                 }
 

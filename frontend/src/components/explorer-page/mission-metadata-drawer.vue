@@ -3,12 +3,11 @@
         v-model="isOpen"
         side="right"
         bordered
-        behavior="desktop"
-        :width="600"
+        :behavior="$q.screen.xs ? 'mobile' : 'desktop'"
+        :width="drawerWidth"
     >
         <div
-            class="q-pa-lg flex row justify-between items-start"
-            style="height: 114px"
+            class="q-pa-lg flex row justify-between items-start q-gutter-y-sm metadata-drawer__header"
         >
             <div class="flex column justify-center">
                 <h3 class="text-h5 q-ma-none text-weight-medium">Metadata</h3>
@@ -63,17 +62,13 @@
                             class="bg-grey-1 rounded-borders q-pa-sm text-body2 cursor-pointer inline-block value-box"
                             @click="() => openLink(tag)"
                         >
-                            {{ tag.valueAsString || tag.value }}
+                            {{ tag.value }}
                         </div>
                         <div
                             v-else
                             class="bg-grey-1 rounded-borders q-pa-sm text-body2 inline-block value-box"
                         >
-                            {{
-                                tag.type.datatype === DataType.BOOLEAN
-                                    ? tag.value
-                                    : tag.valueAsString || tag.value
-                            }}
+                            {{ tag.value }}
                         </div>
 
                         <div
@@ -146,6 +141,10 @@ const closeDrawer = () => {
 };
 
 const $q = useQuasar();
+
+/** The drawer covers the full viewport on phones. */
+const drawerWidth = computed(() => ($q.screen.xs ? $q.screen.width : 600));
+
 const { data: permissions } = usePermissionsQuery();
 
 const canModify = computed(() =>
@@ -168,17 +167,28 @@ const openTagsDialog = (): void => {
 
 const openLink = (tag: TagDto): void => {
     if (tag.type.datatype === DataType.LINK) {
-        window.open(tag.valueAsString, '_blank');
+        const rawValue = tag.value as
+            string | Date | number | boolean | null | undefined;
+        const url =
+            rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
+        if (url) {
+            window.open(url, '_blank');
+        }
     }
 };
 
 const copiedStates = ref<Record<string, boolean>>({});
 
 const copyTagValue = async (tag: TagDto): Promise<void> => {
-    const value =
-        tag.type.datatype === DataType.BOOLEAN
-            ? tag.value
-            : tag.valueAsString || tag.value;
+    let value: unknown;
+    if (tag.type.datatype === DataType.BOOLEAN) {
+        value = tag.value;
+    } else {
+        const rawValue = tag.value as
+            string | Date | number | boolean | null | undefined;
+        value =
+            rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
+    }
     try {
         await copyToClipboard(String(value));
         copiedStates.value[tag.uuid] = true;
@@ -218,6 +228,29 @@ const getIconForDataType = (datatype: DataType): string => {
 </script>
 
 <style scoped>
+.metadata-drawer__header {
+    height: 114px;
+}
+
+@media (max-width: 599px) {
+    /* Title and buttons wrap on phones, so the header grows with them */
+    .metadata-drawer__header {
+        height: auto;
+        padding: 16px;
+    }
+
+    .tag-item-container {
+        padding: 16px;
+    }
+
+    /* Touch devices have no hover, so the copy button is always visible */
+    .actions-container {
+        opacity: 1 !important;
+        position: static !important;
+        padding-right: 0 !important;
+    }
+}
+
 .button-border {
     border: 1px solid #e0e0e0;
 }

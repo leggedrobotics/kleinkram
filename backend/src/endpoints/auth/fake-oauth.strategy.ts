@@ -4,11 +4,7 @@ import { Providers } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import e from 'express';
-import {
-    Strategy as OAuth2Strategy,
-    StrategyOptions,
-    VerifyCallback,
-} from 'passport-oauth2';
+import { Strategy as OAuth2Strategy, VerifyCallback } from 'passport-oauth2';
 import logger from '../../logger';
 
 /**
@@ -32,7 +28,7 @@ export class FakeOauthStrategy extends PassportStrategy(
             clientSecret: 'some-random-string-it-does-not-matter',
             callbackURL: `${env.BACKEND_URL}/auth/fake-oauth/callback`,
             scope: [],
-        } as StrategyOptions);
+        });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

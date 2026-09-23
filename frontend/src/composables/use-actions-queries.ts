@@ -1,3 +1,4 @@
+import type { ActionDiagnosticsDto } from '@kleinkram/api-dto/types/actions/action-diagnostic.dto';
 import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
 import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
@@ -32,7 +33,7 @@ export function useActionList(
 
         queryFn: ({ queryKey }) => {
             const _filters = queryKey[2];
-            return ActionService.getAll(_filters as ActionQuery);
+            return ActionService.getAll(_filters);
         },
     });
 }
@@ -104,6 +105,27 @@ export function useActionLogs(
                 unref(level),
             ),
         enabled: computed(() => !!unref(uuid)),
+    });
+}
+
+/**
+ * The diagnostics an action reported about itself.
+ *
+ * Polled while the action is still running, because a container reports as it
+ * goes rather than only at the end.
+ */
+export function useActionDiagnostics(
+    uuid: MaybeRef<string>,
+    isRunning: MaybeRef<boolean> = false,
+): UseQueryReturnType<ActionDiagnosticsDto, Error> {
+    return useQuery({
+        queryKey: computed(() => [
+            ...actionKeys.detail(unref(uuid)),
+            'diagnostics',
+        ]),
+        queryFn: () => ActionService.getDiagnostics(unref(uuid)),
+        enabled: computed(() => !!unref(uuid)),
+        refetchInterval: computed(() => (unref(isRunning) ? 5000 : false)),
     });
 }
 

@@ -1,16 +1,16 @@
 export enum QueueState {
-    'AWAITING_UPLOAD' = 0,
-    'AWAITING_PROCESSING' = 10,
-    'PROCESSING' = 20,
-    'DOWNLOADING' = 21,
-    'CONVERTING_AND_EXTRACTING_TOPICS' = 22,
-    'UPLOADING' = 23,
-    'COMPLETED' = 30,
-    'ERROR' = 40,
-    'CORRUPTED' = 41,
-    'CANCELED' = 42,
-    'UNSUPPORTED_FILE_TYPE' = 43,
-    'FILE_ALREADY_EXISTS' = 44,
+    AWAITING_UPLOAD = 0,
+    AWAITING_PROCESSING = 10,
+    PROCESSING = 20,
+    DOWNLOADING = 21,
+    CONVERTING_AND_EXTRACTING_TOPICS = 22,
+    UPLOADING = 23,
+    COMPLETED = 30,
+    ERROR = 40,
+    CORRUPTED = 41,
+    CANCELED = 42,
+    UNSUPPORTED_FILE_TYPE = 43,
+    FILE_ALREADY_EXISTS = 44,
 }
 
 export enum FileOrigin {
@@ -85,6 +85,8 @@ export enum AccessGroupEventType {
     ADD_PROJECT = 'ADD_PROJECT',
     REMOVE_PROJECT = 'REMOVE_PROJECT',
     UPDATE_PROJECT_ACCESS = 'UPDATE_PROJECT_ACCESS',
+    PROMOTE_USER = 'PROMOTE_USER',
+    DEMOTE_USER = 'DEMOTE_USER',
 }
 
 export enum ActionState {
@@ -95,6 +97,45 @@ export enum ActionState {
     DONE = 'DONE',
     FAILED = 'FAILED',
     UNPROCESSABLE = 'UNPROCESSABLE',
+    CANCELLED = 'CANCELLED',
+}
+
+/**
+ * The verdict an action reached, orthogonal to its lifecycle {@link ActionState}.
+ *
+ * `state` answers whether the run reached the end, `severity` answers what it
+ * found on the way. A run that completes and reports warnings is `DONE` with
+ * severity `WARNING`; it is not a failure and must not be rendered as one.
+ */
+export enum ActionSeverity {
+    OK = 'OK',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR',
+}
+
+/**
+ * Who is responsible for a failed action.
+ *
+ * `USER` failures are fixable by whoever wrote the action or its template
+ * (bad image, crashed script, exceeded the quota they configured). `SYSTEM`
+ * failures are ours (runner restarts, image pulls, storage) and are the ones
+ * that are safe to retry automatically.
+ */
+export enum ActionFailureOrigin {
+    USER = 'USER',
+    SYSTEM = 'SYSTEM',
+}
+
+/**
+ * The severity of a single diagnostic reported by a running action container.
+ *
+ * Unlike {@link ActionSeverity} there is no `OK`: a diagnostic always says
+ * something. `INFO` records a note without colouring the action's verdict.
+ */
+export enum DiagnosticSeverity {
+    INFO = 'INFO',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR',
 }
 
 export enum KeyTypes {
@@ -114,6 +155,8 @@ export enum FileType {
     SVO2 = 'SVO2',
     TUM = 'TUM',
     DB3 = 'DB3',
+    MD = 'MD',
+    CSV = 'CSV',
     ALL = 'ALL',
 }
 
@@ -138,6 +181,7 @@ export enum ArtifactState {
     UPLOADING = 20,
     UPLOADED = 30,
     ERROR = 40,
+    EXPIRED = 50,
 }
 
 export enum FileState {
@@ -149,6 +193,7 @@ export enum FileState {
     CONVERSION_ERROR = 'CONVERSION_ERROR',
     LOST = 'LOST',
     FOUND = 'FOUND',
+    CANCELED = 'CANCELED',
 }
 
 export enum HealthStatus {

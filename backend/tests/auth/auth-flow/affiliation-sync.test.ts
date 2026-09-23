@@ -32,7 +32,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
                 rights: 10,
             },
         ],
-    } as AccessGroupConfig;
+    };
 
     let config: AccessGroupConfig;
     let affiliationGroupService: AffiliationGroupService;
@@ -83,7 +83,11 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         // 3. Verify affiliation group membership
         const userWithGroups = await userRepository.findOneOrFail({
             where: { email },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
         });
 
         const hasKleinkramDevs = userWithGroups.memberships?.some(
@@ -147,7 +151,11 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         // 3. Verify affiliation group membership was added back
         const userWithGroups = await userRepository.findOneOrFail({
             where: { email: email2 },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
         });
 
         const hasKleinkramDevs = userWithGroups.memberships?.some(
@@ -211,7 +219,11 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
         // 3. Verify affiliation group membership was added back
         const userWithGroups = await userRepository.findOneOrFail({
             where: { email: email3 },
-            relations: ['memberships', 'memberships.accessGroup'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
         });
 
         const hasKleinkramDevs = userWithGroups.memberships?.some(
@@ -280,7 +292,7 @@ describe('syncAccessGroups', () => {
                     user: { uuid: user.uuid },
                     accessGroup: { uuid: TEST_GROUP_UUID },
                 },
-                relations: ['accessGroup'],
+                relations: { accessGroup: true },
             });
         expect(memberships).toHaveLength(1);
     });

@@ -8,9 +8,16 @@ import {
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import {
     AccessGroupRights,
+    ActionFailureOrigin,
+    ActionSeverity,
     ActionState,
+    ArtifactState,
     KeyTypes,
+    maxActionSeverity,
+    resolveActionOutcome,
+    resolveFinalVerdict,
     ResourceUsage,
+    TERMINAL_ACTION_STATES,
     UserRole,
 } from '@kleinkram/shared';
 import { Injectable, OnModuleInit } from '@nestjs/common';
@@ -23,10 +30,12 @@ import { Repository } from 'typeorm';
 import logger from '../../logger';
 import { DisposableAPIKey } from '../helper/disposable-api-key';
 import { WideLogger } from '../helper/wide-logger';
+import { ActionCancellationService } from './action-cancellation.service';
 import { ActionErrorHintService } from './action-error-hint.service';
 import { ArtifactService } from './artifact.service';
 import { ContainerLifecycleService } from './container-lifecycle.service';
 import { ContainerStatsService } from './container-stats.service';
+import { DockerDaemon } from './docker-daemon.service';
 import { LogIngestionService } from './log-ingestion.service';
 
 @Injectable()
@@ -47,6 +56,8 @@ export class ActionManagerService implements OnModuleInit {
         private readonly logIngestionService: LogIngestionService,
         private readonly artifactService: ArtifactService,
         private readonly containerStatsService: ContainerStatsService,
+        private readonly dockerDaemon: DockerDaemon,
+        private readonly cancellationService: ActionCancellationService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -165,6 +176,17 @@ export class ActionManagerService implements OnModuleInit {
 
     @tracing('processing_action')
     async processAction(action: Readonly<ActionEntity>): Promise<boolean> {
+        this.cancellationService.registerAction(action.uuid);
+        try {
+            return await this.executeProcessAction(action);
+        } finally {
+            this.cancellationService.cleanup(action.uuid);
+        }
+    }
+
+    private async executeProcessAction(
+        action: Readonly<ActionEntity>,
+    ): Promise<boolean> {
         const wideLog = new WideLogger('action_processed', {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             action_uuid: action.uuid,
@@ -208,6 +230,19 @@ export class ActionManagerService implements OnModuleInit {
             wideLog.recordError(error);
             wideLog.flush('error');
             throw error;
+        }
+
+        if (this.cancellationService.isCancelled(action.uuid)) {
+            logger.info(`Action ${action.uuid} was cancelled before starting`);
+            await this.actionRepository.update(
+                { uuid: action.uuid },
+                {
+                    state: ActionState.CANCELLED,
+                    state_cause: 'Action cancelled by user',
+                },
+            );
+            this.cancellationService.cleanup(action.uuid);
+            return true;
         }
 
         // set state to 'STARTING'
@@ -257,6 +292,21 @@ export class ActionManagerService implements OnModuleInit {
                     );
                 },
             );
+
+            this.cancellationService.registerContainer(action.uuid, container);
+
+            if (this.cancellationService.isCancelled(action.uuid)) {
+                logger.info(
+                    `Action ${action.uuid} was cancelled during container start. Killing container...`,
+                );
+                try {
+                    await container.kill();
+                } catch (error) {
+                    logger.error(
+                        `Failed to kill container ${container.id} for action ${action.uuid}: ${String(error)}`,
+                    );
+                }
+            }
 
             wideLog.add({
                 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -359,13 +409,27 @@ export class ActionManagerService implements OnModuleInit {
             // update action state based on container exit code
             action = await this.actionRepository.findOneOrFail({
                 where: { uuid: action.uuid },
-                relations: ['worker', 'template'],
+                relations: {
+                    worker: true,
+                    template: true,
+                },
             });
 
-            await this.actionRepository.update(
-                { uuid: action.uuid },
-                { state: ActionState.STOPPING },
-            );
+            if (!this.cancellationService.isCancelled(action.uuid)) {
+                // Conditional, because the janitor may have already failed this
+                // action - it is what killed the container we just stopped
+                // waiting on. Writing STOPPING unconditionally would erase that
+                // verdict before setActionState can read it back.
+                await this.actionRepository
+                    .createQueryBuilder()
+                    .update(ActionEntity)
+                    .set({ state: ActionState.STOPPING })
+                    .where('uuid = :uuid', { uuid: action.uuid })
+                    .andWhere('state NOT IN (:...terminal)', {
+                        terminal: TERMINAL_ACTION_STATES,
+                    })
+                    .execute();
+            }
 
             this.containerLifecycleService.removeContainer(container.id, true);
             await this.setActionState(container, action, wideLog);
@@ -416,24 +480,42 @@ export class ActionManagerService implements OnModuleInit {
                 throw new Error('Template is undefined');
             }
 
-            // Delegate artifact upload to ArtifactService
-            const {
-                artifactSize,
-                artifactFiles,
-                containerLimits: artifactContainerLimits,
-            } = await this.artifactService.uploadArtifacts(
-                action.uuid,
-                this.currentInstanceId,
-            );
+            if (this.cancellationService.isCancelled(action.uuid)) {
+                logger.info(
+                    `Action ${action.uuid} was cancelled, skipping artifact upload and cleaning volume`,
+                );
+                await this.dockerDaemon
+                    .removeArtifactVolume(this.currentInstanceId, action.uuid)
+                    .catch((error: unknown) => {
+                        logger.warn(
+                            `Failed to clean up artifact volume: ${String(error)}`,
+                        );
+                    });
+                await this.actionRepository.update(
+                    { uuid: action.uuid },
+                    { artifacts: ArtifactState.ERROR },
+                );
+                this.cancellationService.cleanup(action.uuid);
+            } else {
+                // Delegate artifact upload to ArtifactService
+                const {
+                    artifactSize,
+                    artifactFiles,
+                    containerLimits: artifactContainerLimits,
+                } = await this.artifactService.uploadArtifacts(
+                    action.uuid,
+                    this.currentInstanceId,
+                );
 
-            wideLog.add({
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_size: artifactSize,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_files: artifactFiles?.length,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                artifact_memory_limit: artifactContainerLimits.memory_limit,
-            });
+                wideLog.add({
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    artifact_size: artifactSize,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    artifact_files: artifactFiles?.length,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    artifact_memory_limit: artifactContainerLimits.memory_limit,
+                });
+            }
 
             wideLog.flush();
 
@@ -442,19 +524,38 @@ export class ActionManagerService implements OnModuleInit {
             wideLog.recordError(error);
             wideLog.flush('error');
 
-            await this.actionRepository.update(
-                { uuid: action.uuid },
-                {
-                    state: ActionState.FAILED,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    state_cause:
-                        error instanceof Error ? error.message : String(error),
-                },
-            );
-            // Trigger hint assessment asynchronously
-            void this.actionErrorHintService.assess(action.uuid);
+            if (this.cancellationService.isCancelled(action.uuid)) {
+                await this.actionRepository.update(
+                    { uuid: action.uuid },
+                    {
+                        state: ActionState.CANCELLED,
+                        state_cause: 'Action cancelled by user',
+                    },
+                );
+                this.cancellationService.cleanup(action.uuid);
+            } else {
+                await this.actionRepository.update(
+                    { uuid: action.uuid },
+                    {
+                        state: ActionState.FAILED,
+                        severity: ActionSeverity.ERROR,
+                        // The run threw before or around the container rather
+                        // than inside it: image pulls, storage, the daemon.
+                        // Nothing the action author can fix.
+                        failureOrigin: ActionFailureOrigin.SYSTEM,
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        state_cause:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+                // Trigger hint assessment asynchronously
+                void this.actionErrorHintService.assess(action.uuid);
+            }
             throw error;
         } finally {
+            this.cancellationService.unregisterContainer(action.uuid);
             await apikey[Symbol.asyncDispose]();
         }
     }
@@ -524,80 +625,76 @@ export class ActionManagerService implements OnModuleInit {
         wideLog: WideLogger,
     ): Promise<void> {
         const containerDetailsAfter = await container.inspect();
-
         const exitCode = containerDetailsAfter.State.ExitCode;
 
-        let state: ActionState;
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        let exit_code: number;
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        let state_cause: string;
+        const outcome = this.cancellationService.isCancelled(action.uuid)
+            ? {
+                  state: ActionState.CANCELLED,
+                  severity: ActionSeverity.OK,
+                  failureOrigin: undefined,
+                  stateCause: 'Action cancelled by user',
+              }
+            : resolveActionOutcome({
+                  exitCode,
+                  oomKilled: containerDetailsAfter.State.OOMKilled,
+              });
 
-        switch (exitCode) {
-            case 125: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause =
-                    'Container failed to run. Docker run command failed.';
-                break;
-            }
-            case 126: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause = 'Command cannot be invoked (Permission denied?).';
-                break;
-            }
-            case 127: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause = 'Command not found.';
-                break;
-            }
-            case 139: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause =
-                    'Container crashed (SIGSEGV). Invalid memory access.';
-                break;
-            }
-            case 143: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause =
-                    'Container stopped (SIGTERM). Time limit approached.';
-                break;
-            }
-            case 137: {
-                state = ActionState.FAILED;
-                exit_code = exitCode;
-                state_cause =
-                    'Container killed (SIGKILL). Exceeded memory or CPU limit.';
-                break;
-            }
-            default: {
-                state_cause = `Container exited with code ${exitCode.toString()}`;
-                state = exitCode === 0 ? ActionState.DONE : ActionState.FAILED;
-                exit_code = exitCode;
-            }
-        }
+        // The container may have reported diagnostics while it ran, which
+        // already raised the severity stored for the action. The exit code can
+        // only ever raise it further, never talk it back down - so an outcome
+        // of OK leaves the column alone rather than writing a value read
+        // before the last diagnostic may have landed.
+        const stored = await this.actionRepository.findOne({
+            where: { uuid: action.uuid },
+            select: {
+                uuid: true,
+                severity: true,
+                state: true,
+                failureOrigin: true,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                state_cause: true,
+            },
+        });
+        const severity = maxActionSeverity(
+            stored?.severity ?? ActionSeverity.OK,
+            outcome.severity,
+        );
+        const raisesSeverity = outcome.severity !== ActionSeverity.OK;
+
+        // A verdict the janitor already recorded wins over anything the exit
+        // code implies - see resolveFinalVerdict.
+        const verdict = resolveFinalVerdict(
+            stored && {
+                state: stored.state,
+                failureOrigin: stored.failureOrigin,
+                stateCause: stored.state_cause,
+            },
+            outcome,
+        );
 
         wideLog.add({
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            exit_code,
+            exit_code: exitCode,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            final_state: state,
+            final_state: verdict.state,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            state_cause,
+            final_severity: severity,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            failure_origin: verdict.failureOrigin ?? '',
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_cause: verdict.stateCause,
         });
 
         await this.actionRepository.update(
             { uuid: action.uuid },
             {
-                state,
+                state: verdict.state,
+                failureOrigin: verdict.failureOrigin,
+                ...(raisesSeverity && { severity }),
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                exit_code,
+                exit_code: exitCode,
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause,
+                state_cause: verdict.stateCause,
             },
         );
     }

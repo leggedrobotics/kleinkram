@@ -25,11 +25,25 @@ import {
  * Renders a ROS message directly onto a specific HTML Canvas.
  // eslint-disable-next-line complexity
  */
-// eslint-disable-next-line complexity
+
+/**
+ * Formats of sensor_msgs/CompressedImage that are video codec packets rather
+ * than self-contained pictures. A single packet cannot be decoded without
+ * the surrounding stream, so the preview reports them as unsupported.
+ */
+const VIDEO_STREAM_FORMATS = ['h264', 'h265', 'hevc', 'av1', 'vp8', 'vp9'];
+
+export const isVideoStreamFormat = (format: string | undefined): boolean => {
+    if (!format) return false;
+    const lower = format.toLowerCase();
+    return VIDEO_STREAM_FORMATS.some((codec) => lower.includes(codec));
+};
+
 export function renderMessageToCanvas(
     message: RosImageMessage,
     canvas: HTMLCanvasElement,
     onRender?: () => void,
+    onError?: (error: Error) => void,
 ): void {
     const context = canvas.getContext('2d', {
         alpha: false,
@@ -49,9 +63,14 @@ export function renderMessageToCanvas(
         (!message.encoding && !message.width && !message.height);
 
     if (isCompressed) {
+        if (isVideoStreamFormat(message.format)) {
+            throw new Error(
+                `This topic is a ${message.format ?? 'video'} stream. Single video packets cannot be shown as images; the preview supports JPEG/PNG compressed and raw images.`,
+            );
+        }
         // We cannot calculate scale yet because we don't know the dimensions.
         // Pass the canvas element directly to resize it after load.
-        renderCompressed(context, bytes, canvas, onRender);
+        renderCompressed(context, bytes, canvas, onRender, onError);
         return;
     }
 

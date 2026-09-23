@@ -1,11 +1,18 @@
-import { ApiOkResponse, ApiResponse, OutputDto } from '@/decorators';
+import {
+    ApiCreatedResponse,
+    ApiOkResponse,
+    ApiResponse,
+    OutputDto,
+} from '@/decorators';
 import { projectEntityToDto } from '@/serialization';
-import { AccessService } from '@/services/access.service';
+import { AccessModificationService } from '@/services/access-modification.service';
+import { AccessQueryService } from '@/services/access-query.service';
 import { ProjectService } from '@/services/project.service';
 import { ParameterUuid as ParameterUID } from '@/validation/parameter-decorators';
-import { QueryTake, QueryUUID } from '@/validation/query-decorators';
+import { QueryTake } from '@/validation/query-decorators';
 import {
-    AddTagTypeDto,
+    AddMetadataTypeDto,
+    AddMetadataTypeQueryDto,
     AddUserToProjectDto,
     CreateProject,
     DefaultRights,
@@ -15,13 +22,15 @@ import {
     ProjectDto,
     ProjectQueryDto,
     ProjectsDto,
+    ProjectStarDto,
     ProjectWithRequiredTagsDto,
     RemoveTagTypeDto,
     ResentProjectsDto,
-    UpdateTagTypesDto,
+    UpdateMetadataTypesBodyDto,
+    UpdateMetadataTypesDto,
 } from '@kleinkram/api-dto';
-import { BodyUUIDArray } from '@kleinkram/validation';
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -46,12 +55,13 @@ import {
 export class ProjectController {
     constructor(
         private readonly projectService: ProjectService,
-        private readonly accessService: AccessService,
+        private readonly accessQueryService: AccessQueryService,
+        private readonly accessModificationService: AccessModificationService,
     ) {}
 
     @Post()
     @CanCreate()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Returns the created project',
         type: ProjectDto,
     })
@@ -62,7 +72,51 @@ export class ProjectController {
         return this.projectService.create(dto, user);
     }
 
-    // dont match filtered, recent, and getDefaultRights, TODO: fix this at some point
+    @Get('recent')
+    @UserOnly()
+    @ApiOperation({
+        summary: 'Get recent projects',
+        description:
+            'Get the most recent projects the current user has access to',
+    })
+    @ApiOkResponse({
+        description: 'Returns the most recent projects',
+        type: ResentProjectsDto,
+    })
+    async getRecentProjects(
+        @QueryTake('take') take: number,
+        @AddUser() user: AuthHeader,
+    ): Promise<ResentProjectsDto> {
+        const projects = await this.projectService.getRecentProjects(
+            take,
+            user.user,
+        );
+
+        return {
+            data: projects,
+            count: projects.length,
+            skip: 0,
+            take: projects.length,
+        };
+    }
+
+    @Get('default-rights')
+    @LoggedIn()
+    @ApiOperation({
+        summary: 'Get default rights',
+        description: `Get the default rights for a project, the default rights
+        are the rights that should be assigned to a new project upon creation`,
+    })
+    @ApiOkResponse({
+        description: 'Returns the default rights for a project',
+        type: DefaultRights,
+    })
+    async getDefaultRights(
+        @AddUser() user: AuthHeader,
+    ): Promise<DefaultRights> {
+        return this.projectService.getDefaultRights(user);
+    }
+
     @Get(':uuid')
     @CanReadProject()
     @ApiOkResponse({
@@ -71,8 +125,9 @@ export class ProjectController {
     })
     async getProjectById(
         @ParameterUID('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
     ): Promise<ProjectWithRequiredTagsDto> {
-        return this.projectService.findOne(uuid);
+        return this.projectService.findOne(uuid, user.user.uuid);
     }
 
     @Put(':uuid')
@@ -112,6 +167,7 @@ export class ProjectController {
     ): Promise<ProjectsDto> {
         // Convert string 'true'/'false' to boolean
         const exactMatch = query.exactMatch === 'true';
+        const starredOnly = query.starred === 'true';
 
         return await this.projectService.findMany(
             query.projectUuids ?? [],
@@ -123,15 +179,57 @@ export class ProjectController {
             query.creatorUuid,
             user.user.uuid,
             exactMatch,
+            starredOnly,
         );
+    }
+
+    @Post(':uuid/star')
+    @UserOnly()
+    @CanReadProject()
+    @ApiOperation({
+        summary: 'Star a project',
+        description:
+            'Marks the project as a favorite of the current user. Stars are ' +
+            'private to the user and do not change who can access the ' +
+            'project. Starring an already starred project succeeds without ' +
+            'creating a second star.',
+    })
+    @ApiCreatedResponse({
+        description: 'Returns the resulting star state',
+        type: ProjectStarDto,
+    })
+    async starProject(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectStarDto> {
+        return this.projectService.starProject(uuid, user.user.uuid);
+    }
+
+    @Delete(':uuid/star')
+    @UserOnly()
+    @CanReadProject()
+    @ApiOperation({
+        summary: 'Remove the star from a project',
+        description:
+            "Removes the current user's star from the project. Un-starring " +
+            'a project that is not starred succeeds without doing anything.',
+    })
+    @ApiOkResponse({
+        description: 'Returns the resulting star state',
+        type: ProjectStarDto,
+    })
+    async unstarProject(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectStarDto> {
+        return this.projectService.unstarProject(uuid, user.user.uuid);
     }
 
     @ApiOperation({
         summary: 'Add User to Project',
         description: 'Adds a user to a project with the given rights.',
     })
-    @ApiResponse({
-        status: 200,
+    @ApiCreatedResponse({
         type: ProjectDto,
         description: 'The Project the user was added to.',
     })
@@ -143,30 +241,50 @@ export class ProjectController {
         @Body() body: AddUserToProjectDto,
         @AddUser() requestUser: AuthHeader,
     ): Promise<ProjectDto> {
-        const projectEntity = await this.accessService.addUserToProject(
-            uuid,
-            body.userUuid,
-            body.rights,
-            requestUser,
-        );
+        const projectEntity =
+            await this.accessModificationService.addUserToProject(
+                uuid,
+                body.userUuid,
+                body.rights,
+                requestUser,
+            );
         return projectEntityToDto(projectEntity);
     }
 
-    @Post(':uuid/addTagType')
+    @Post(':uuid/metadata-types')
     @CanWriteProject()
-    @ApiOkResponse({
+    @ApiOperation({
+        summary: 'Add a required metadata type to a project',
+        description:
+            'At least one of the `metadataTypeUUID` / `tagTypeUUID` query ' +
+            'parameters must be given (`tagTypeUUID` is the deprecated ' +
+            'alias; if both are given, `metadataTypeUUID` wins). Requests ' +
+            'providing neither are rejected with 400.',
+    })
+    @ApiCreatedResponse({
         description: 'Empty response',
-        type: AddTagTypeDto,
+        type: AddMetadataTypeDto,
     })
     async addTagType(
         @ParameterUID('uuid') uuid: string,
-        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
-    ): Promise<AddTagTypeDto> {
-        await this.projectService.addTagType(uuid, tagTypeUUID);
+        @Query() query: AddMetadataTypeQueryDto,
+    ): Promise<AddMetadataTypeDto> {
+        const typeUuid = query.metadataTypeUUID ?? query.tagTypeUUID;
+
+        // `AddMetadataTypeQueryDto` already enforces this, but defaulting to a
+        // bogus uuid here would turn a client mistake into a 500, so guard
+        // explicitly instead of falling back to ''.
+        if (typeUuid === undefined) {
+            throw new BadRequestException(
+                'Either metadataTypeUUID or tagTypeUUID must be provided',
+            );
+        }
+
+        await this.projectService.addTagType(uuid, typeUuid);
         return {};
     }
 
-    @Post(':uuid/removeTagType')
+    @Delete(':uuid/metadata-types/:typeUuid')
     @CanWriteProject()
     @ApiOkResponse({
         type: RemoveTagTypeDto,
@@ -174,24 +292,45 @@ export class ProjectController {
     })
     async removeTagType(
         @ParameterUID('uuid') uuid: string,
-        @QueryUUID('tagTypeUUID', 'TagType UUID') tagTypeUUID: string,
+        @ParameterUID('typeUuid') typeUuid: string,
     ): Promise<RemoveTagTypeDto> {
-        await this.projectService.removeTagType(uuid, tagTypeUUID);
+        await this.projectService.removeTagType(uuid, typeUuid);
         return {};
     }
 
-    @Post(':uuid/updateTagTypes')
+    @Put(':uuid/metadata-types')
     @CanWriteProject()
+    @ApiOperation({
+        summary: "Replace a project's required metadata types",
+        description:
+            'Replaces the full set of required metadata types. At least one ' +
+            'of `metadataTypeUUIDs` / `tagTypeUUIDs` must be given in the ' +
+            'body (`tagTypeUUIDs` is the deprecated alias; if both are ' +
+            'given, `metadataTypeUUIDs` wins); a body providing ' +
+            'neither — `{}`, or one that only carries a misspelled key — is ' +
+            'rejected with 400 rather than clearing the project. Passing an ' +
+            'explicit empty array clears the required metadata types.',
+    })
     @ApiOkResponse({
         description: 'Empty response',
-        type: UpdateTagTypesDto,
+        type: UpdateMetadataTypesDto,
     })
     async updateTagTypes(
         @ParameterUID('uuid') uuid: string,
-        @BodyUUIDArray('tagTypeUUIDs', 'List of Tagtype UUID to set')
-        tagTypeUUIDs: string[],
-    ): Promise<UpdateTagTypesDto> {
-        await this.projectService.updateTagTypes(uuid, tagTypeUUIDs);
+        @Body() body: UpdateMetadataTypesBodyDto,
+    ): Promise<UpdateMetadataTypesDto> {
+        const uuids = body.metadataTypeUUIDs ?? body.tagTypeUUIDs;
+
+        // `UpdateMetadataTypesBodyDto` already enforces this, but defaulting
+        // to [] here would silently wipe the project's required metadata
+        // types, so guard explicitly instead.
+        if (uuids === undefined) {
+            throw new BadRequestException(
+                'Either metadataTypeUUIDs or tagTypeUUIDs must be provided',
+            );
+        }
+
+        await this.projectService.updateTagTypes(uuid, uuids);
         return {
             success: true,
         };
@@ -206,12 +345,12 @@ export class ProjectController {
     async getProjectAccess(
         @ParameterUID('uuid') uuid: string,
     ): Promise<ProjectAccessListDto> {
-        return this.accessService.getProjectAccesses(uuid);
+        return this.accessQueryService.getProjectAccesses(uuid);
     }
 
     @Post(':uuid/access')
     @CanWriteProject()
-    @ApiOkResponse({
+    @ApiCreatedResponse({
         description: 'Returns the project access',
         type: ProjectAccessListDto,
     })
@@ -221,60 +360,10 @@ export class ProjectController {
         body: ProjectAccessDto[],
         @AddUser() auth: AuthHeader,
     ): Promise<ProjectAccessListDto> {
-        return this.accessService.updateProjectAccess(uuid, body, auth);
-    }
-}
-
-// TODO: this controller should get removed at some point,
-// filtered and recent will effectively be replaced by `GET /projects`
-// for the getDefaultRights endpoint we should make a separate controller that
-// does all the access control stuff
-@Controller('oldProject')
-export class OldProjectController {
-    constructor(private readonly projectService: ProjectService) {}
-
-    @Get('recent')
-    @UserOnly()
-    @ApiOperation({
-        summary: 'Get recent projects',
-        description:
-            'Get the most recent projects the current user has access to',
-    })
-    @ApiOkResponse({
-        description: 'Returns the most recent projects',
-        type: ResentProjectsDto,
-    })
-    async getRecentProjects(
-        @QueryTake('take') take: number,
-        @AddUser() user: AuthHeader,
-    ): Promise<ResentProjectsDto> {
-        const projects = await this.projectService.getRecentProjects(
-            take,
-            user.user,
+        return this.accessModificationService.updateProjectAccess(
+            uuid,
+            body,
+            auth,
         );
-
-        return {
-            data: projects,
-            count: projects.length,
-            skip: 0,
-            take: projects.length,
-        };
-    }
-
-    @Get('getDefaultRights')
-    @LoggedIn()
-    @ApiOperation({
-        summary: 'Get default rights',
-        description: `Get the default rights for a project, the default rights
-        are the rights that should be assigned to a new project upon creation`,
-    })
-    @ApiOkResponse({
-        description: 'Returns the default rights for a project',
-        type: DefaultRights,
-    })
-    async getDefaultRights(
-        @AddUser() user: AuthHeader,
-    ): Promise<DefaultRights> {
-        return this.projectService.getDefaultRights(user);
     }
 }

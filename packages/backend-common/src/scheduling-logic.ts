@@ -1,4 +1,8 @@
-import { ActionState } from '@kleinkram/shared';
+import {
+    ActionFailureOrigin,
+    ActionSeverity,
+    ActionState,
+} from '@kleinkram/shared';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { ActionEntity } from './entities/action/action.entity';
 import { WorkerEntity } from './entities/worker/worker.entity';
@@ -72,6 +76,8 @@ export async function addActionQueue(
     );
     if (!worker) {
         action.state = ActionState.UNPROCESSABLE;
+        action.severity = ActionSeverity.ERROR;
+        action.failureOrigin = ActionFailureOrigin.SYSTEM;
         action.state_cause =
             'No worker available with the required hardware capabilities';
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
