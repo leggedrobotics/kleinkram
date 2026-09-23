@@ -24,6 +24,13 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
     private static readonly SYSTEM_USER_UUID =
         '00000000-0000-4000-8000-000000000000';
 
+    /** Matches `systemUser` in @kleinkram/backend-common; frozen here. */
+    private static readonly SYSTEM_USER = {
+        name: 'System',
+        email: 'infrastructure@leggedrobotics.com',
+        avatarUrl: 'https://datasets.leggedrobotics.com/logoRSL.png',
+    };
+
     public async up(queryRunner: QueryRunner): Promise<void> {
         // IF NOT EXISTS because a dev database running with TypeORM
         // synchronize will already have the column from the entity.
@@ -32,15 +39,19 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
              ADD COLUMN IF NOT EXISTS "isSystem" boolean NOT NULL DEFAULT false`,
         );
 
-        // The backend creates the System user on startup, so a fresh database
-        // being migrated before the first boot does not have it yet. Insert
-        // the same row the backend would; an existing one is left untouched.
+        // The template is owned by the System user. The backend creates that
+        // user on startup, which is after the migrations on a fresh
+        // database, so create it here the same way when it is missing.
         await queryRunner.query(
             `INSERT INTO "user" ("uuid", "name", "email", "role", "hidden", "avatarUrl")
-             VALUES ($1::uuid, 'System', 'infrastructure@leggedrobotics.com',
-                     'USER', true, 'https://datasets.leggedrobotics.com/logoRSL.png')
+             VALUES ($1, $2, $3, 'USER', true, $4)
              ON CONFLICT DO NOTHING`,
-            [SeedScriptRunnerTemplate1790081400000.SYSTEM_USER_UUID],
+            [
+                SeedScriptRunnerTemplate1790081400000.SYSTEM_USER_UUID,
+                SeedScriptRunnerTemplate1790081400000.SYSTEM_USER.name,
+                SeedScriptRunnerTemplate1790081400000.SYSTEM_USER.email,
+                SeedScriptRunnerTemplate1790081400000.SYSTEM_USER.avatarUrl,
+            ],
         );
 
         // Always insert the platform's own row, never adopt an existing one:
@@ -50,9 +61,10 @@ export class SeedScriptRunnerTemplate1790081400000 implements MigrationInterface
         // actions that reference it, but stays an ordinary user template; the
         // seeded row takes the next free version so the (name, version) index
         // cannot collide with it.
-        // The parameters are cast explicitly: `$2` is used both in the select
-        // list and in a comparison, and Postgres refuses to deduce two
-        // different types for one parameter.
+        //
+        // The parameters are cast explicitly: `$2` is used both as a value
+        // and in a comparison, and Postgres refuses to infer two different
+        // types (text and varchar) for it.
         await queryRunner.query(
             `INSERT INTO "action_template" (
                  "uuid", "name", "description", "image_name",

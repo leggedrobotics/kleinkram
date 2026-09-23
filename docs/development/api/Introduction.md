@@ -39,3 +39,21 @@ curl 'http://localhost:3000/user/me' \
 **Exception:** The `/api/health` endpoint does not require a kleinkram client version header.
 
 :::
+
+## Deprecated Field Names
+
+Mission metadata used to be called "tags" and metadata types "tag types". The canonical names are `metadata` (a value on
+a mission) and metadata type (its definition). Until kleinkram 1.0, the API keeps accepting and returning the old names
+as deprecated aliases. If a request contains both, the canonical field wins.
+
+| Where                                         | Canonical               | Deprecated alias |
+| :-------------------------------------------- | :---------------------- | :--------------- |
+| Mission responses                             | `metadata`              | `tags`           |
+| Project responses                             | `requiredMetadataTypes` | `requiredTags`   |
+| `POST /missions` (create mission)             | `metadata`              | `tags`           |
+| `POST /missions` (create mission)             | `ignoreMissingMetadata` | `ignoreTags`     |
+| `POST /missions/:uuid/metadata`               | `metadata`              | `tags`           |
+| `POST /projects` (create project)             | `requiredMetadataTypes` | `requiredTags`   |
+| `GET /files` query                            | `metadataByTypeUuid`    | `tags`           |
+| `PUT /projects/:uuid/metadata-types` (body)   | `metadataTypeUUIDs`     | `tagTypeUUIDs`   |
+| `POST /projects/:uuid/metadata-types` (query) | `metadataTypeUUID`      | `tagTypeUUID`    |

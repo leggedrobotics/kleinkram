@@ -11,7 +11,7 @@ describe('Verify Database User Persistence', () => {
     setupDatabaseHooks();
 
     test('if user is correctly stored and retrievable after creation', async () => {
-        const email = 'db-access-test@kleinkram.dev';
+        const email = 'db-access-test@leggedrobotics.com';
         const username = 'DB Access User';
         const userId = await mockDatabaseUser(email, username, UserRole.USER);
 

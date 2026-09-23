@@ -91,12 +91,12 @@ describe('Project stars', () => {
     setupDatabaseHooks();
 
     test('starring a project is reflected on the project and in the list', async () => {
-        const user = await createUser('stars@kleinkram.dev', 'Stars User');
+        const user = await createUser('stars@leggedrobotics.com', 'Stars User');
         const projectUuid = await createProjectUsingPost(
             {
                 name: `stars_project_${String(Date.now())}`,
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -117,14 +117,14 @@ describe('Project stars', () => {
 
     test('starring twice does not create a second star', async () => {
         const user = await createUser(
-            'stars-twice@kleinkram.dev',
+            'stars-twice@leggedrobotics.com',
             'Stars Twice User',
         );
         const projectUuid = await createProjectUsingPost(
             {
                 name: `stars_twice_project_${String(Date.now())}`,
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -139,12 +139,15 @@ describe('Project stars', () => {
     });
 
     test('un-starring removes the star and is idempotent', async () => {
-        const user = await createUser('unstars@kleinkram.dev', 'Unstars User');
+        const user = await createUser(
+            'unstars@leggedrobotics.com',
+            'Unstars User',
+        );
         const projectUuid = await createProjectUsingPost(
             {
                 name: `unstars_project_${String(Date.now())}`,
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -169,11 +172,11 @@ describe('Project stars', () => {
 
     test('a star of one user is invisible to another user', async () => {
         const owner = await createUser(
-            'stars-owner@kleinkram.dev',
+            'stars-owner@leggedrobotics.com',
             'Stars Owner',
         );
         const other = await createUser(
-            'stars-other@kleinkram.dev',
+            'stars-other@leggedrobotics.com',
             'Stars Other',
         );
 
@@ -181,7 +184,7 @@ describe('Project stars', () => {
             {
                 name: `stars_private_project_${String(Date.now())}`,
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             owner,
         );

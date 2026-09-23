@@ -70,7 +70,7 @@ describe('Verification project endpoint', () => {
             {
                 name: 'test_project',
                 description: 'This is a test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
@@ -245,7 +245,7 @@ describe('Verification project endpoint', () => {
             body: JSON.stringify({
                 name: '1234',
                 description: '1234',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             }),
         });
         expect(response.status).toBe(403);
@@ -275,7 +275,7 @@ describe('Verification project endpoint', () => {
             {
                 name: 'test_project_2',
                 description: 'This is a second test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.WRITE,
@@ -299,7 +299,7 @@ describe('Verification project endpoint', () => {
             body: JSON.stringify({
                 name: '1234',
                 description: '1234',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.WRITE,
@@ -326,7 +326,7 @@ describe('Verification project endpoint', () => {
                 body: JSON.stringify({
                     name: '1234',
                     description: '1234',
-                    requiredTags: [],
+                    requiredMetadataTypes: [],
                     accessGroups: [
                         {
                             rights: AccessGroupRights.WRITE,
@@ -358,7 +358,7 @@ describe('Verification project endpoint', () => {
             {
                 name: 'test_project_2',
                 description: 'This is a second test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.CREATE,
@@ -377,8 +377,8 @@ describe('Verification project endpoint', () => {
             {
                 name: 'test_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );
@@ -402,7 +402,7 @@ describe('Verification project endpoint', () => {
             body: JSON.stringify({
                 name: '1234',
                 description: '1234',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.WRITE,
@@ -442,7 +442,7 @@ describe('Verification project endpoint', () => {
                 body: JSON.stringify({
                     name: '1234',
                     description: '1234',
-                    requiredTags: [],
+                    requiredMetadataTypes: [],
                     accessGroups: [
                         {
                             rights: AccessGroupRights.WRITE,
@@ -497,8 +497,8 @@ describe('Verification project endpoint', () => {
             {
                 name: 'test_mission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );
@@ -524,7 +524,7 @@ describe('Verification project endpoint', () => {
             body: JSON.stringify({
                 name: '1234',
                 description: '1234',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             }),
         });
         expect(response.status).toBe(409);

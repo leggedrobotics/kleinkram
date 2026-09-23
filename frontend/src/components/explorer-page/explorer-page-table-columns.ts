@@ -156,9 +156,10 @@ export const missionColumns: ProjectColumnType[] = [
         align: 'left',
         field: (row: FlatMissionDto) => row.name,
         format: (value: string) => value,
+        sortable: true,
     },
     {
-        name: 'NrOfFiles',
+        name: 'filesCount',
         required: true,
         label: '# Files',
         align: 'right',
@@ -166,6 +167,7 @@ export const missionColumns: ProjectColumnType[] = [
         headerClasses: 'kk-num',
         field: (row: FlatMissionDto) => row.filesCount,
         format: (value: number) => value.toString(),
+        sortable: true,
     },
     {
         name: 'creator',
@@ -175,26 +177,28 @@ export const missionColumns: ProjectColumnType[] = [
         field: (row: FlatMissionDto) => row.creator.name,
         format: (value: number) => value.toString(),
         style: 'min-width: 100px',
-        sortable: false,
+        sortable: true,
     },
     {
-        name: 'Created',
+        name: 'createdAt',
         required: true,
         label: 'Creation Date',
         align: 'left',
         field: (row: FlatMissionDto) => row.createdAt,
         format: (value: string) => formatDate(new Date(value)),
+        sortable: true,
     },
     {
-        name: 'tagverification',
+        name: 'missingMetadata',
         required: true,
         label: 'Metadata Verification',
         align: 'left',
         style: 'min-width: 180px',
+        sortable: true,
     },
 
     {
-        name: 'Size',
+        name: 'size',
         required: true,
         label: 'Size',
         align: 'right',
@@ -202,6 +206,7 @@ export const missionColumns: ProjectColumnType[] = [
         headerClasses: 'kk-num',
         field: (row: FlatMissionDto) => row.size,
         format: formatSize,
+        sortable: true,
     },
 
     {

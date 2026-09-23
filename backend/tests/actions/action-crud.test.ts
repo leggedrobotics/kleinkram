@@ -16,7 +16,7 @@ describe('Action Management Tests', () => {
 
     test('should create and archive an action template', async () => {
         const { user } = await setupTestEnvironment(
-            'test-action@kleinkram.dev',
+            'test-action@leggedrobotics.com',
             'Action User',
         );
 
@@ -501,7 +501,7 @@ describe('Action Management Tests', () => {
 
     test('should restore an old template version as a new version', async () => {
         const { user } = await setupTestEnvironment(
-            'test-restore@kleinkram.dev',
+            'test-restore@leggedrobotics.com',
             'Restore User',
         );
 

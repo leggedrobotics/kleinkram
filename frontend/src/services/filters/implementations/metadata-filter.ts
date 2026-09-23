@@ -30,15 +30,15 @@ export class MetadataFilter extends BaseFilter<
             const [mKey, mValue] = tokenValue.split('=');
 
             if (mKey && mValue) {
-                // Find all tag UUIDs ignoring case
-                const tags = context.availableTags.filter(
+                // Find all metadata type UUIDs ignoring case
+                const metadataTypes = context.availableMetadataTypes.filter(
                     (t) => t.name.toLowerCase() === mKey.toLowerCase(),
                 );
 
-                if (tags.length > 0) {
-                    for (const tag of tags) {
-                        state.tagFilter[tag.uuid] = {
-                            name: tag.name,
+                if (metadataTypes.length > 0) {
+                    for (const metadataType of metadataTypes) {
+                        state.metadataFilter[metadataType.uuid] = {
+                            name: metadataType.name,
                             value: mValue,
                         };
                     }
@@ -60,19 +60,19 @@ export class MetadataFilter extends BaseFilter<
         if (operatorMatch) return [];
 
         const list: Suggestion[] = [];
-        const availableTags = context.data.availableTags;
+        const availableMetadataTypes = context.data.availableMetadataTypes;
 
         // Operators
-        const exactTag = availableTags.find(
+        const exactMetadataType = availableMetadataTypes.find(
             (t) => t.name.toLowerCase() === metaPart,
         );
-        if (exactTag) {
+        if (exactMetadataType) {
             for (const op of ['=', '!=', '>', '<', '>=', '<=']) {
                 list.push(
                     this.createSuggestion({
                         label: op,
                         value: op,
-                        prefix: this.key + exactTag.name,
+                        prefix: this.key + exactMetadataType.name,
                         description: `Operator ${op}`,
                         icon: 'sym_o_calculate',
                         appendSpace: false,
@@ -84,43 +84,43 @@ export class MetadataFilter extends BaseFilter<
 
         // Keys
         const seenNames = new Set<string>();
-        for (const tag of availableTags) {
-            const tagNameLower = tag.name.toLowerCase();
-            if (tagNameLower.includes(metaPart) && tagNameLower !== metaPart) {
-                if (seenNames.has(tagNameLower)) continue;
+        for (const metadataType of availableMetadataTypes) {
+            const nameLower = metadataType.name.toLowerCase();
+            if (nameLower.includes(metaPart) && nameLower !== metaPart) {
+                if (seenNames.has(nameLower)) continue;
 
                 list.push(
                     this.createSuggestion({
-                        label: tag.name,
-                        value: tag.name + '=',
+                        label: metadataType.name,
+                        value: metadataType.name + '=',
                         prefix: this.key,
-                        description: `Metadata: ${tag.datatype}`,
+                        description: `Metadata: ${metadataType.datatype}`,
                         icon: 'sym_o_label',
                         appendSpace: false,
                         disabled: false,
                     }),
                 );
-                seenNames.add(tagNameLower);
+                seenNames.add(nameLower);
             }
         }
 
         // All keys if empty
         if (metaPart === '') {
-            for (const tag of availableTags) {
-                if (seenNames.has(tag.name.toLowerCase())) continue;
+            for (const metadataType of availableMetadataTypes) {
+                if (seenNames.has(metadataType.name.toLowerCase())) continue;
 
                 list.push(
                     this.createSuggestion({
-                        label: tag.name,
-                        value: tag.name + '=',
+                        label: metadataType.name,
+                        value: metadataType.name + '=',
                         prefix: this.key,
-                        description: `Metadata: ${tag.datatype}`,
+                        description: `Metadata: ${metadataType.datatype}`,
                         icon: 'sym_o_label',
                         appendSpace: false,
                         disabled: false,
                     }),
                 );
-                seenNames.add(tag.name.toLowerCase());
+                seenNames.add(metadataType.name.toLowerCase());
 
                 if (list.length >= 50) break;
             }

@@ -334,7 +334,7 @@ const {
     startDate,
     endDate,
     selectedFileTypesFilter,
-    tagFilterQuery,
+    metadataFilterQuery,
     debouncedFilter,
 } = filterHook;
 
@@ -386,7 +386,7 @@ const queryKeyFiles = computed(() => [
     state.selectedTopics,
     state.selectedDatatypes,
     state.matchAllTopics,
-    state.tagFilter,
+    state.metadataFilter,
     selectedFileTypesFilter,
     handler.value.queryKey,
 ]);
@@ -405,7 +405,7 @@ const { data: _data, isLoading }: UseQueryReturnType<FilesDto, Error> =
                 messageDatatypes: state.selectedDatatypes,
                 matchAllTopics: state.matchAllTopics,
                 fileTypes: selectedFileTypesFilter.value,
-                tag: tagFilterQuery.value,
+                metadataByTypeUuid: metadataFilterQuery.value,
                 take: handler.value.take,
                 skip: handler.value.skip,
                 sort: handler.value.sortBy,

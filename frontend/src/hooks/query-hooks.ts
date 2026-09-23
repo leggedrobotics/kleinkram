@@ -8,18 +8,18 @@ import type { ActionWorkersDto } from '@kleinkram/api-dto/types/action-workers.d
 import type { CategoriesDto } from '@kleinkram/api-dto/types/category.dto';
 import type { FileEventsDto } from '@kleinkram/api-dto/types/file/file-event.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type {
+    MetadataTypeDto,
+    MetadataTypesDto,
+} from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type {
     PermissionsDto,
     ProjectPermissions,
 } from '@kleinkram/api-dto/types/permissions.dto';
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
-import type {
-    TagsDto,
-    TagTypeDto,
-} from '@kleinkram/api-dto/types/tags/tags.dto';
 import type { ApiKeysDto } from '@kleinkram/api-dto/types/user/api-keys.dto';
 import type { CurrentAPIUserDto } from '@kleinkram/api-dto/types/user/current-api-user.dto';
 import type { UsersDto } from '@kleinkram/api-dto/types/user/users.dto';
@@ -52,6 +52,10 @@ import {
     getStorage,
 } from 'src/services/queries/file';
 import {
+    getFilteredMetadataTypes,
+    getMetadataTypes,
+} from 'src/services/queries/metadata';
+import {
     getMission,
     getMissions,
     missionsOfProjectMinimal,
@@ -61,7 +65,6 @@ import {
     getProject,
     getProjectDefaultAccess,
 } from 'src/services/queries/project';
-import { getFilteredTagTypes, getTagTypes } from 'src/services/queries/tag';
 import {
     getMyApiKeys,
     getPermissions,
@@ -259,10 +262,10 @@ export const canDeleteProject = (
 
 export const useProjectQuery = (
     projectUuid: Ref<string | undefined> | string | undefined,
-): UseQueryReturnType<ProjectWithRequiredTagsDto, Error> =>
-    useQuery<ProjectWithRequiredTagsDto>({
+): UseQueryReturnType<ProjectWithRequiredMetadataTypesDto, Error> =>
+    useQuery<ProjectWithRequiredMetadataTypesDto>({
         queryKey: ['project', projectUuid],
-        queryFn: (): Promise<ProjectWithRequiredTagsDto> => {
+        queryFn: (): Promise<ProjectWithRequiredMetadataTypesDto> => {
             return getProject(unref(projectUuid) ?? '');
         },
         enabled: () => unref(projectUuid) !== undefined,
@@ -495,10 +498,13 @@ export const useUserSearch = (
     });
 };
 
-export const useAllTags = (): UseQueryReturnType<TagTypeDto[], Error> => {
-    return useQuery<TagTypeDto[]>({
-        queryKey: ['tagTypes'],
-        queryFn: getTagTypes,
+export const useAllMetadataTypes = (): UseQueryReturnType<
+    MetadataTypeDto[],
+    Error
+> => {
+    return useQuery<MetadataTypeDto[]>({
+        queryKey: ['metadataTypes'],
+        queryFn: getMetadataTypes,
     });
 };
 
@@ -512,14 +518,18 @@ export const useFileEvents = (
         refetchInterval: 5000,
     });
 
-export const useFilteredTag = (
-    tagSearch: string,
+export const useFilteredMetadataTypes = (
+    nameSearch: string,
     selectedDataType: DataType | undefined,
-): UseQueryReturnType<TagsDto | undefined, Error> => {
+): UseQueryReturnType<MetadataTypesDto | undefined, Error> => {
     return useQuery({
-        queryKey: computed(() => ['tagTypes', tagSearch, selectedDataType]),
+        queryKey: computed(() => [
+            'metadataTypes',
+            nameSearch,
+            selectedDataType,
+        ]),
         queryFn: async () => {
-            return getFilteredTagTypes(tagSearch, selectedDataType);
+            return getFilteredMetadataTypes(nameSearch, selectedDataType);
         },
     });
 };

@@ -57,8 +57,11 @@ export class MissionEntity extends BaseEntity {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     mission_accesses?: MissionAccessEntity[];
 
-    @OneToMany(() => MetadataEntity, (tag: MetadataEntity) => tag.mission)
-    tags?: MetadataEntity[];
+    @OneToMany(
+        () => MetadataEntity,
+        (metadata: MetadataEntity) => metadata.mission,
+    )
+    metadata?: MetadataEntity[];
 
     fileCount?: number;
     size?: number;

@@ -79,7 +79,7 @@ describe('Comprehensive Soft Delete Behavior', () => {
         const projectRequest = {
             name: projectName,
             description: 'A project to be soft-deleted',
-            requiredTags: [],
+            requiredMetadataTypes: [],
             accessGroups: [
                 {
                     rights: AccessGroupRights.DELETE,
@@ -144,7 +144,7 @@ describe('Comprehensive Soft Delete Behavior', () => {
             {
                 name: 'MissionProject',
                 description: 'desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
@@ -159,8 +159,8 @@ describe('Comprehensive Soft Delete Behavior', () => {
         const missionRequest = {
             name: missionName,
             projectUUID: projectUuid,
-            tags: {},
-            ignoreTags: true,
+            metadata: {},
+            ignoreMissingMetadata: true,
         };
 
         // 1. Create Mission
@@ -212,7 +212,7 @@ describe('Comprehensive Soft Delete Behavior', () => {
             {
                 name: 'FileProject',
                 description: 'desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -221,8 +221,8 @@ describe('Comprehensive Soft Delete Behavior', () => {
             {
                 name: 'FileMission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -305,15 +305,19 @@ describe('Comprehensive Soft Delete Behavior', () => {
     test('ApiKey soft delete and re-creation', async () => {
         const apiKeyRepo = database.getRepository(ApiKeyEntity);
         const projectUuid = await createProjectUsingPost(
-            { name: 'KeyProject', description: 'desc', requiredTags: [] },
+            {
+                name: 'KeyProject',
+                description: 'desc',
+                requiredMetadataTypes: [],
+            },
             admin,
         );
         const missionUuid = await createMissionUsingPost(
             {
                 name: 'KeyMission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -348,7 +352,11 @@ describe('Comprehensive Soft Delete Behavior', () => {
     test('Category soft delete and re-creation', async () => {
         const categoryRepo = database.getRepository(CategoryEntity);
         const projectUuid = await createProjectUsingPost(
-            { name: 'CatProject', description: 'desc', requiredTags: [] },
+            {
+                name: 'CatProject',
+                description: 'desc',
+                requiredMetadataTypes: [],
+            },
             admin,
         );
         const project = { uuid: projectUuid } as ProjectEntity;
@@ -445,7 +453,7 @@ describe('Comprehensive Soft Delete Behavior', () => {
             {
                 name: projectName,
                 description: 'desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
@@ -477,8 +485,8 @@ describe('Comprehensive Soft Delete Behavior', () => {
             {
                 name: 'ActiveMission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             creator,
         );

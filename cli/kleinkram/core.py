@@ -19,6 +19,7 @@ import re
 import sys
 import tarfile
 import tempfile
+import warnings
 from pathlib import Path
 from typing import Any
 from typing import Collection
@@ -73,6 +74,7 @@ from kleinkram.utils import split_args
 NAME_REGEX = re.compile(r"^[\w\-_]{3,50}$")
 DOCKER_IMAGE_REGEX = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._\-/]*(?::[a-zA-Z0-9._\-]+)?(?:@sha256:[a-fA-F0-9]{64})?$")
 DOCKER_IMAGE_MAX_LENGTH = 256
+DOCKER_HUB_NAMESPACE_REGEX = re.compile(r"^[a-z0-9]+(?:[_-]+[a-z0-9]+)*$")
 ALLOWED_ACCESS_RIGHTS = {0, 10, 20, 30}  # READ  # CREATE  # WRITE  # DELETE
 
 
@@ -257,15 +259,15 @@ def upload(
         # check if project exists and get its id at the same time
         project = kleinkram.api.routes.get_project(client, query=query.project_query, exact_match=True)
         project_id = project.id
-        project_required_tags = project.required_tags
+        project_required_metadata_types = project.required_metadata_types
         mission_name = check_mission_query_is_creatable(query)
         create_mission(
             client,
             project_id,
             mission_name,
             metadata=metadata or {},
-            ignore_missing_tags=ignore_missing_metadata,
-            required_tags=project_required_tags,
+            ignore_missing_metadata=ignore_missing_metadata,
+            required_metadata_types=project_required_metadata_types,
         )
         mission = kleinkram.api.routes.get_mission(client, query)
 
@@ -409,7 +411,7 @@ def _merge_mission_metadata(
     mission = kleinkram.api.routes.get_mission(client, MissionQuery(ids=[mission_id]))
 
     # names are only resolved for the entries the caller actually supplied
-    merged: Dict[UUID, MetadataPayloadValue] = dict(_get_tags_map(client, metadata))
+    merged: Dict[UUID, MetadataPayloadValue] = dict(_get_metadata_map(client, metadata))
 
     for name, value in mission.metadata.items():
         type_id = value.type_id
@@ -439,8 +441,8 @@ def update_mission(*, client: AuthenticatedClient, mission_id: UUID, metadata: D
     through would delete everything it does not mention — including metadata
     the project requires.
     """
-    tags = _merge_mission_metadata(client, mission_id, metadata)
-    kleinkram.api.routes._update_mission(client, mission_id, tags=tags)
+    merged = _merge_mission_metadata(client, mission_id, metadata)
+    kleinkram.api.routes._update_mission(client, mission_id, metadata=merged)
 
 
 def update_project(
@@ -743,32 +745,54 @@ def _read_script(script_path: Path) -> str:
         raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not valid UTF-8 text.") from e
 
 
+def _warn_deprecated_kwarg(old: str, new: str) -> None:
+    warnings.warn(
+        f"create_mission(..., {old}=...) is deprecated and will be removed in kleinkram 1.0.0, use {new} instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+
 def create_mission(
     client: AuthenticatedClient,
     project_id: UUID,
     mission_name: str,
     *,
     metadata: Optional[Dict[str, str]] = None,
-    ignore_missing_tags: bool = False,
+    ignore_missing_metadata: bool = False,
+    required_metadata_types: Optional[List[str]] = None,
+    ignore_missing_tags: Optional[bool] = None,
     required_tags: Optional[List[str]] = None,
 ) -> UUID:
+    """\
+    `ignore_missing_tags` and `required_tags` are deprecated aliases of
+    `ignore_missing_metadata` and `required_metadata_types`, removed in 1.0.0
+    """
+    if ignore_missing_tags is not None:
+        _warn_deprecated_kwarg("ignore_missing_tags", "ignore_missing_metadata")
+        ignore_missing_metadata = ignore_missing_tags
+    if required_tags is not None:
+        _warn_deprecated_kwarg("required_tags", "required_metadata_types")
+        if required_metadata_types is None:
+            required_metadata_types = required_tags
+
     if metadata is None:
         metadata = {}
 
     _validate_mission_name(client, project_id, mission_name)
 
-    if required_tags and not set(required_tags).issubset(metadata.keys()):
+    if required_metadata_types and not set(required_metadata_types).issubset(metadata.keys()):
         raise kleinkram.errors.InvalidMissionMetadata(
-            f"Mission tags `{required_tags}` are required but missing from metadata: {metadata}"
+            f"Mission metadata `{required_metadata_types}` is required but missing from metadata: {metadata}"
         )
 
-    tags = _get_tags_map(client, metadata)
+    metadata_map = _get_metadata_map(client, metadata)
     mission_id = kleinkram.api.routes._create_mission(
         client,
         project_id,
         mission_name,
-        tags=tags,
-        ignore_missing_tags=ignore_missing_tags,
+        metadata=metadata_map,
+        ignore_missing_metadata=ignore_missing_metadata,
     )
     _validate_mission_created(client, str(project_id), mission_name)
     return mission_id
@@ -973,9 +997,16 @@ def _validate_docker_image(image_name: str) -> None:
 
 
 def _validate_docker_namespace(image_name: str) -> None:
-    namespace = os.environ.get("VITE_DOCKER_HUB_NAMESPACE")
-    if namespace and not image_name.startswith(namespace):
-        raise kleinkram.errors.TemplateValidationError(f"Image name must start with '{namespace}'")
+    # keep in sync with isImageInDockerNamespace in packages/validation
+    namespace = (os.environ.get("VITE_DOCKER_HUB_NAMESPACE") or "").strip().rstrip("/")
+    if not namespace:
+        return
+    if not DOCKER_HUB_NAMESPACE_REGEX.match(namespace) or namespace == "localhost":
+        raise kleinkram.errors.TemplateValidationError(
+            f"Invalid VITE_DOCKER_HUB_NAMESPACE '{namespace}': must be a single Docker Hub namespace."
+        )
+    if not image_name.startswith(f"{namespace}/"):
+        raise kleinkram.errors.TemplateValidationError(f"Image name must start with '{namespace}/'")
 
 
 def _validate_access_rights(access_rights: int) -> None:
@@ -1117,17 +1148,17 @@ def _validate_mission_created(client: AuthenticatedClient, project_id: str, miss
             tmp_path.unlink()
 
 
-def _validate_tag_value(tag_value, tag_datatype) -> None:
-    if tag_datatype == "NUMBER":
-        if isinstance(tag_value, bool) or not isinstance(tag_value, (int, float)):
+def _validate_metadata_value(value, datatype) -> None:
+    if datatype == "NUMBER":
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
             try:
-                float(tag_value)
+                float(value)
             except (TypeError, ValueError):
-                raise kleinkram.errors.InvalidMissionMetadata(f"Value '{tag_value}' is not a valid NUMBER")
-    elif tag_datatype == "BOOLEAN":
-        if not isinstance(tag_value, bool) and str(tag_value).lower() not in {"true", "false"}:
+                raise kleinkram.errors.InvalidMissionMetadata(f"Value '{value}' is not a valid NUMBER")
+    elif datatype == "BOOLEAN":
+        if not isinstance(value, bool) and str(value).lower() not in {"true", "false"}:
             raise kleinkram.errors.InvalidMissionMetadata(
-                f"Value '{tag_value}' is not a valid BOOLEAN (expected 'true' or 'false')"
+                f"Value '{value}' is not a valid BOOLEAN (expected 'true' or 'false')"
             )
     else:
         pass
@@ -1136,7 +1167,7 @@ def _validate_tag_value(tag_value, tag_datatype) -> None:
 METADATA_TYPE_LOOKUP_TAKE = 1000
 
 
-def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) -> Tuple[Optional[UUID], str]:
+def _get_metadata_type_id_by_name(client: AuthenticatedClient, metadata_type_name: str) -> Tuple[Optional[UUID], str]:
     """\
     resolve a metadata type name to its uuid
 
@@ -1145,8 +1176,8 @@ def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) ->
     before anything is picked: asking for `cpu` also returns `cpu_cores`.
     """
     resp = client.get(
-        "/metadata-types/filtered",
-        params={"name": tag_name, "take": METADATA_TYPE_LOOKUP_TAKE},
+        kleinkram.api.routes.METADATA_TYPE_BY_NAME,
+        params={"name": metadata_type_name, "take": METADATA_TYPE_LOOKUP_TAKE},
     )
 
     if resp.status_code in (403, 404):
@@ -1159,22 +1190,22 @@ def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) ->
     # match (the server's own name comparison is case-insensitive), but never a
     # mere substring match
     truncated = body.get("count", len(candidates)) > len(candidates)
-    exact = [entry for entry in candidates if entry.get("name") == tag_name]
+    exact = [entry for entry in candidates if entry.get("name") == metadata_type_name]
     if not exact:
         if truncated:
             # the exact match could be on a page we did not fetch, so neither
             # "does not exist" nor a case-insensitive pick would be safe
             raise kleinkram.errors.InvalidMissionMetadata(
-                f"metadata field: {tag_name} matches too many metadata types to resolve unambiguously"
+                f"metadata field: {metadata_type_name} matches too many metadata types to resolve unambiguously"
             )
-        exact = [entry for entry in candidates if str(entry.get("name", "")).lower() == tag_name.lower()]
+        exact = [entry for entry in candidates if str(entry.get("name", "")).lower() == metadata_type_name.lower()]
 
     if not exact:
         return None, ""
 
     if len(exact) > 1:
         raise kleinkram.errors.InvalidMissionMetadata(
-            f"metadata field: {tag_name} is ambiguous, "
+            f"metadata field: {metadata_type_name} is ambiguous, "
             f"{len(exact)} metadata types share this name: "
             f"{', '.join(str(entry.get('uuid')) for entry in exact)}"
         )
@@ -1183,14 +1214,14 @@ def _get_metadata_type_id_by_name(client: AuthenticatedClient, tag_name: str) ->
     return UUID(data["uuid"], version=4), data["datatype"]
 
 
-def _get_tags_map(
+def _get_metadata_map(
     client: AuthenticatedClient, metadata: Mapping[str, MetadataPayloadValue]
 ) -> Dict[UUID, MetadataPayloadValue]:
     ret = {}
     for key, val in metadata.items():
-        metadata_type_id, tag_datatype = _get_metadata_type_id_by_name(client, key)
+        metadata_type_id, metadata_datatype = _get_metadata_type_id_by_name(client, key)
         if metadata_type_id is None:
             raise kleinkram.errors.InvalidMissionMetadata(f"metadata field: {key} does not exist")
-        _validate_tag_value(val, tag_datatype)
+        _validate_metadata_value(val, metadata_datatype)
         ret[metadata_type_id] = val
     return ret

@@ -6,7 +6,10 @@ import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 export class FilteredMetadataTypesQueryDto {
     @IsOptional()
     @IsString()
-    @ApiProperty({ required: false, description: 'Filter by TagType name' })
+    @ApiProperty({
+        required: false,
+        description: 'Filter by metadata type name',
+    })
     name?: string;
 
     @IsOptional()
@@ -14,7 +17,7 @@ export class FilteredMetadataTypesQueryDto {
     @ApiProperty({
         required: false,
         enum: DataType,
-        description: 'Filter by TagType datatype',
+        description: 'Filter by metadata type datatype',
     })
     type?: DataType;
 

@@ -144,7 +144,7 @@ Modify the metadata and descriptions of existing resources.
 # Update a project's description
 kleinkram.update_project(project_id="...", description="Updated Description")
 
-# Update a mission's metadata tags
+# Update a mission's metadata
 kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
 
 # Trigger a file update (re-process the file)

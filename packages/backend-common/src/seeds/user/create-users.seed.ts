@@ -1,12 +1,11 @@
+import { loadAccessConfig } from '@backend-common/access-config';
 import { AccessGroupEntity } from '@backend-common/entities/auth/access-group.entity';
 import { GroupMembershipEntity } from '@backend-common/entities/auth/group-membership.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { AffiliationGroupService } from '@backend-common/services/affiliation-group.service';
 import { AccessGroupConfig } from '@kleinkram/shared';
-import * as fs from 'node:fs';
 
 import { systemUser } from '@backend-common/consts';
-import path from 'node:path';
 import { DataSource, Not } from 'typeorm';
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
 import { seedActionTemplates } from './seed-action-templates';
@@ -48,26 +47,12 @@ export default class CreateUsers implements Seeder {
             groupMembershipRepository,
         );
 
-        // Load config
-        const configPath = path.resolve(
-            __dirname,
-            '../../../../../backend/src/access_config.json',
-        );
         let config: AccessGroupConfig | undefined;
-
-        if (fs.existsSync(configPath)) {
-            try {
-                const configContent = fs.readFileSync(configPath, 'utf8');
-                config = JSON.parse(configContent) as AccessGroupConfig;
-                await affiliationGroupService.createAccessGroups(config);
-            } catch (error: unknown) {
-                console.error(
-                    'Error loading or parsing access_config.json:',
-                    error,
-                );
-            }
-        } else {
-            console.warn(`Access config not found at ${configPath}`);
+        try {
+            config = loadAccessConfig();
+            await affiliationGroupService.createAccessGroups(config);
+        } catch (error: unknown) {
+            console.warn('Seeding without access config:', error);
         }
 
         const { adminUser, internalUser } = await seedUsers(
@@ -77,7 +62,7 @@ export default class CreateUsers implements Seeder {
             config,
         );
 
-        const { createdMissions, tagTypes } = await seedProjects(
+        const { createdMissions, metadataTypes } = await seedProjects(
             factoryManager,
             dataSource,
             adminUser,
@@ -91,7 +76,7 @@ export default class CreateUsers implements Seeder {
             dataSource,
             adminUser,
             createdMissions,
-            tagTypes,
+            metadataTypes,
         );
     }
 }

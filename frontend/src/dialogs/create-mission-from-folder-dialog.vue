@@ -11,16 +11,16 @@
                 active-color="primary"
             >
                 <q-tab
-                    name="meta_data"
+                    name="details"
                     label="Mission Details*"
                     style="color: #222"
                     :disable="missionCreated"
                 />
                 <q-tab
-                    name="tags"
+                    name="metadata"
                     :label="
-                        'Tags' +
-                        (!!project && project.requiredTags.length > 0
+                        'Metadata' +
+                        (!!project && project.requiredMetadataTypes.length > 0
                             ? '*'
                             : '')
                     "
@@ -31,7 +31,7 @@
         </template>
         <template #content>
             <q-tab-panels v-model="tab_selection">
-                <q-tab-panel name="meta_data" style="min-height: 280px">
+                <q-tab-panel name="details" style="min-height: 280px">
                     <p>
                         Project:<b style="margin-left: 10px">{{
                             project?.name
@@ -76,11 +76,11 @@
                         </template>
                     </q-file>
                 </q-tab-panel>
-                <q-tab-panel name="tags" style="min-height: 280px">
-                    <SelectMissionTags
-                        :tag-values="tagValues"
+                <q-tab-panel name="metadata" style="min-height: 280px">
+                    <SelectMissionMetadata
+                        :metadata-values="metadataValues"
                         :project-uuid="project?.uuid ?? ''"
-                        @update:tag-values="onTagValueUpdate"
+                        @update:metadata-values="onMetadataValuesUpdate"
                     />
                 </q-tab-panel>
             </q-tab-panels>
@@ -88,19 +88,19 @@
 
         <template #actions>
             <q-btn
-                v-if="tab_selection === 'meta_data'"
+                v-if="tab_selection === 'details'"
                 flat
                 label="Next"
                 :disable="missionName.length < 3"
                 class="bg-button-primary"
-                @click="goToTagTab"
+                @click="goToMetadataTab"
             />
             <q-btn
-                v-if="tab_selection === 'tags'"
+                v-if="tab_selection === 'metadata'"
                 flat
                 label="Create Mission"
                 class="bg-button-primary"
-                :disable="!allRequiredTagsSet"
+                :disable="!allRequiredMetadataSet"
                 @click="submitNewMission"
             />
         </template>
@@ -111,7 +111,7 @@
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
 import { useQueryClient } from '@tanstack/vue-query';
-import SelectMissionTags from 'components/select-mission-tags.vue';
+import SelectMissionMetadata from 'components/select-mission-metadata.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { useProjectQuery } from 'src/hooks/query-hooks';
@@ -122,7 +122,7 @@ import { computed, ref, Ref, watch } from 'vue';
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-const tab_selection = ref('meta_data');
+const tab_selection = ref('details');
 
 const properties = defineProps<{
     projectUuid: string | undefined;
@@ -145,13 +145,13 @@ const isInErrorState = ref(false);
 const errorMessage = ref('');
 const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 
-const tagValues: Ref<Record<string, string>> = ref({});
+const metadataValues: Ref<Record<string, string>> = ref({});
 
-const allRequiredTagsSet = computed(() => {
-    return project.value?.requiredTags.every(
-        (tag) =>
-            tagValues.value[tag.uuid] !== undefined &&
-            tagValues.value[tag.uuid] !== '',
+const allRequiredMetadataSet = computed(() => {
+    return project.value?.requiredMetadataTypes.every(
+        (metadataType) =>
+            metadataValues.value[metadataType.uuid] !== undefined &&
+            metadataValues.value[metadataType.uuid] !== '',
     );
 });
 
@@ -185,9 +185,9 @@ const submitNewMission = async () => {
     const resp = await createMission(
         missionName.value,
         project.value.uuid,
-        tagValues.value,
+        metadataValues.value,
     ).catch((error: unknown) => {
-        tab_selection.value = 'meta_data';
+        tab_selection.value = 'details';
         isInErrorState.value = true;
         errorMessage.value =
             (
@@ -242,11 +242,11 @@ const submitNewMission = async () => {
     onDialogOK();
     await created;
     missionName.value = '';
-    tagValues.value = {};
+    metadataValues.value = {};
 };
 
-const goToTagTab = (): void => {
-    tab_selection.value = 'tags';
+const goToMetadataTab = (): void => {
+    tab_selection.value = 'metadata';
 };
 
 const onModelValueUpdate = (): void => {
@@ -257,7 +257,7 @@ const onCancel = (): void => {
     files.value = [];
 };
 
-const onTagValueUpdate = (update: Record<string, string>): void => {
-    tagValues.value = update;
+const onMetadataValuesUpdate = (update: Record<string, string>): void => {
+    metadataValues.value = update;
 };
 </script>

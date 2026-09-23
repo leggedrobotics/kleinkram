@@ -28,7 +28,9 @@ services:
             - 127.0.0.1:${SERVER_PORT}:${SERVER_PORT}
         volumes:
             - ./backend/.endpoints:/app/backend/.endpoints
+            - ./backend/access_config.dev.json:/app/config/access_config.json:ro
         environment:
+            ACCESS_CONFIG_PATH: /app/config/access_config.json
             SEED: 'false'
             DEVBUILD: 'false'
             REDIS_HOST: 'redis'

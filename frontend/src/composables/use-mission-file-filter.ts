@@ -16,7 +16,7 @@ export interface MissionFilterState {
     selectedDatatypes: string[];
     matchAllTopics: boolean;
     fileTypeFilter: FileTypeOption[] | undefined;
-    tagFilter: Record<string, { name: string; value: string }>;
+    metadataFilter: Record<string, { name: string; value: string }>;
 }
 
 export const DEFAULT_MISSION_STATE = (): MissionFilterState => {
@@ -41,7 +41,7 @@ export const DEFAULT_MISSION_STATE = (): MissionFilterState => {
         selectedDatatypes: [],
         matchAllTopics: false,
         fileTypeFilter: allFileTypes,
-        tagFilter: {},
+        metadataFilter: {},
     };
 };
 
@@ -115,10 +115,10 @@ export function useMissionFileFilter() {
             .map((option) => option.name) as FileType[];
     });
 
-    const tagFilterQuery = computed(() => {
+    const metadataFilterQuery = computed(() => {
         const query: Record<string, string> = {};
-        for (const key of Object.keys(state.tagFilter)) {
-            const value = state.tagFilter[key]?.value;
+        for (const key of Object.keys(state.metadataFilter)) {
+            const value = state.metadataFilter[key]?.value;
 
             if (value === undefined || value === '') continue;
 
@@ -196,7 +196,7 @@ export function useMissionFileFilter() {
         startDate,
         endDate,
         selectedFileTypesFilter,
-        tagFilterQuery,
+        metadataFilterQuery,
         debouncedFilter,
         allTopics,
         allDatatypes,

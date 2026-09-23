@@ -13,7 +13,7 @@ export { CreateGuard, ProjectAccessGuard } from './project.guards';
 // Mission guards
 export {
     CanReadManyMissionsGuard,
-    DeleteTagGuard,
+    DeleteMetadataGuard,
     MissionAccessGuard,
     MoveMissionToProjectGuard,
 } from './mission.guards';

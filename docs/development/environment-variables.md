@@ -70,7 +70,14 @@ Configuration for the PostgreSQL database.
 | `GOOGLE_CLIENT_SECRET`                | Google OAuth Client Secret.                                    | -                             |
 | `GITHUB_CLIENT_ID`                    | GitHub OAuth Client ID.                                        | -                             |
 | `GITHUB_CLIENT_SECRET`                | GitHub OAuth Client Secret.                                    | -                             |
-| `JWT_SECRET`                          | Secret key used to sign and verify JWT tokens.                 | `SECRET`                      |
+
+### Access Config
+
+| Variable             | Description                                                                                                                                                 | Default                               |
+| :------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
+| `ACCESS_CONFIG_PATH` | Path (inside the container) to the `access_config.json` that defines the affiliation groups. Required: the backend refuses to start without a valid config. | `/app/backend/access_config.dev.json` |
+| `ACCESS_CONFIG_FILE` | Host path of the deployment's `access_config.json`, mounted by `docker-compose.dev.yml` and `docker-compose.prod.yml`.                                      | `./access_config.json`                |
+| `JWT_SECRET`         | Secret key used to sign and verify JWT tokens.                                                                                                              | `SECRET`                              |
 
 ## Docker & Registry Configuration
 

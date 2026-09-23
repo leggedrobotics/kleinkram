@@ -76,7 +76,7 @@ const createTestProject = async (
     const project = getRepo<ProjectEntity>(ProjectEntity).create({
         name,
         description: 'Test Project Description',
-        requiredTags: [],
+        requiredMetadataTypes: [],
         creator: owner,
     });
     await getRepo(ProjectEntity).save(project);

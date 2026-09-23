@@ -284,22 +284,38 @@ Defined in: `file/ingestion-job.entity.ts`
 
 ---
 
-<h2 id="metadataentity-tag">MetadataEntity (tag)</h2>
+<h2 id="metadataentity-metadata">MetadataEntity (metadata)</h2>
 
 Defined in: `metadata/metadata.entity.ts`
 
 ### Columns
 
-| Column           | Type                                     | Constraints  | Description |
-| :--------------- | :--------------------------------------- | :----------- | :---------- |
-| `value_string`   | `string`                                 | Nullable     |             |
-| `value_number`   | `number`                                 | Nullable     |             |
-| `value_boolean`  | `boolean`                                | Nullable     |             |
-| `value_date`     | `Date`                                   | Nullable     |             |
-| `value_location` | `string`                                 | Nullable     |             |
-| `mission`        | [MissionEntity](#missionentity-mission)  | FK, Nullable |             |
-| `tagType`        | [TagTypeEntity](#tagtypeentity-tag_type) | FK, Nullable |             |
-| `creator`        | [UserEntity](#userentity-user)           | FK, Nullable |             |
+| Column           | Type                                                    | Constraints  | Description |
+| :--------------- | :------------------------------------------------------ | :----------- | :---------- |
+| `value_string`   | `string`                                                | Nullable     |             |
+| `value_number`   | `number`                                                | Nullable     |             |
+| `value_boolean`  | `boolean`                                               | Nullable     |             |
+| `value_date`     | `Date`                                                  | Nullable     |             |
+| `value_location` | `string`                                                | Nullable     |             |
+| `mission`        | [MissionEntity](#missionentity-mission)                 | FK, Nullable |             |
+| `metadataType`   | [MetadataTypeEntity](#metadatatypeentity-metadata_type) | FK, Nullable |             |
+| `creator`        | [UserEntity](#userentity-user)                          | FK, Nullable |             |
+
+---
+
+<h2 id="metadatatypeentity-metadata_type">MetadataTypeEntity (metadata_type)</h2>
+
+Defined in: `metadata/metadata-type.entity.ts`
+
+### Columns
+
+| Column        | Type                                         | Constraints | Description |
+| :------------ | :------------------------------------------- | :---------- | :---------- |
+| `name`        | `string`                                     | Not Null    |             |
+| `description` | `string`                                     | Nullable    |             |
+| `datatype`    | `enum`                                       | Not Null    |             |
+| `projects`    | [ProjectEntity](#projectentity-project)[]    | ManyToMany  |             |
+| `metadata`    | [MetadataEntity](#metadataentity-metadata)[] | OneToMany   |             |
 
 ---
 
@@ -333,7 +349,7 @@ Defined in: `mission/mission.entity.ts`
 | `creator`          | [UserEntity](#userentity-user)                               | FK, Nullable |             |
 | `api_keys`         | [ApiKeyEntity](#apikeyentity-apikey)[]                       | OneToMany    |             |
 | `mission_accesses` | [MissionAccessEntity](#missionaccessentity-mission_access)[] | OneToMany    |             |
-| `tags`             | [MetadataEntity](#metadataentity-tag)[]                      | OneToMany    |             |
+| `metadata`         | [MetadataEntity](#metadataentity-metadata)[]                 | OneToMany    |             |
 
 ---
 
@@ -357,32 +373,16 @@ Defined in: `project/project.entity.ts`
 
 ### Columns
 
-| Column             | Type                                                         | Constraints  | Description                                                                                                   |
-| :----------------- | :----------------------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------ |
-| `name`             | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be globally unique. |
-| `missions`         | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                               |
-| `project_accesses` | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                               |
-| `description`      | `string`                                                     | Not Null     |                                                                                                               |
-| `creator`          | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                               |
-| `requiredTags`     | [TagTypeEntity](#tagtypeentity-tag_type)[]                   | ManyToMany   |                                                                                                               |
-| `categories`       | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                               |
-| `autoConvert`      | `boolean`                                                    | Nullable     |                                                                                                               |
-
----
-
-<h2 id="tagtypeentity-tag_type">TagTypeEntity (tag_type)</h2>
-
-Defined in: `tagType/tag-type.entity.ts`
-
-### Columns
-
-| Column        | Type                                      | Constraints | Description |
-| :------------ | :---------------------------------------- | :---------- | :---------- |
-| `name`        | `string`                                  | Not Null    |             |
-| `description` | `string`                                  | Nullable    |             |
-| `datatype`    | `enum`                                    | Not Null    |             |
-| `project`     | [ProjectEntity](#projectentity-project)[] | ManyToMany  |             |
-| `tags`        | [MetadataEntity](#metadataentity-tag)[]   | OneToMany   |             |
+| Column                  | Type                                                         | Constraints  | Description                                                                                                   |
+| :---------------------- | :----------------------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------ |
+| `name`                  | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be globally unique. |
+| `missions`              | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                               |
+| `project_accesses`      | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                               |
+| `description`           | `string`                                                     | Not Null     |                                                                                                               |
+| `creator`               | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                               |
+| `requiredMetadataTypes` | [MetadataTypeEntity](#metadatatypeentity-metadata_type)[]    | ManyToMany   |                                                                                                               |
+| `categories`            | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                               |
+| `autoConvert`           | `boolean`                                                    | Nullable     |                                                                                                               |
 
 ---
 
@@ -424,7 +424,7 @@ Defined in: `user/user.entity.ts`
 | `queues`           | [IngestionJobEntity](#ingestionjobentity-ingestion_job)[]          | OneToMany   |                                                                                                                                                                                                                       |
 | `submittedActions` | [ActionEntity](#actionentity-action)[]                             | OneToMany   |                                                                                                                                                                                                                       |
 | `templates`        | [ActionTemplateEntity](#actiontemplateentity-action_template)[]    | OneToMany   |                                                                                                                                                                                                                       |
-| `tags`             | [MetadataEntity](#metadataentity-tag)[]                            | OneToMany   |                                                                                                                                                                                                                       |
+| `metadata`         | [MetadataEntity](#metadataentity-metadata)[]                       | OneToMany   |                                                                                                                                                                                                                       |
 | `api_keys`         | [ApiKeyEntity](#apikeyentity-apikey)[]                             | OneToMany   |                                                                                                                                                                                                                       |
 | `categories`       | [CategoryEntity](#categoryentity-category)[]                       | OneToMany   |                                                                                                                                                                                                                       |
 | `triggers`         | [ActionTriggerEntity](#actiontriggerentity-action_trigger)[]       | OneToMany   |                                                                                                                                                                                                                       |

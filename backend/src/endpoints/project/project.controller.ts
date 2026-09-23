@@ -23,8 +23,8 @@ import {
     ProjectQueryDto,
     ProjectsDto,
     ProjectStarDto,
-    ProjectWithRequiredTagsDto,
-    RemoveTagTypeDto,
+    ProjectWithRequiredMetadataTypesDto,
+    RemoveMetadataTypeDto,
     ResentProjectsDto,
     UpdateMetadataTypesBodyDto,
     UpdateMetadataTypesDto,
@@ -121,12 +121,12 @@ export class ProjectController {
     @CanReadProject()
     @ApiOkResponse({
         description: 'Returns the project macthing the uuid.',
-        type: ProjectWithRequiredTagsDto,
+        type: ProjectWithRequiredMetadataTypesDto,
     })
     async getProjectById(
         @ParameterUID('uuid') uuid: string,
         @AddUser() user: AuthHeader,
-    ): Promise<ProjectWithRequiredTagsDto> {
+    ): Promise<ProjectWithRequiredMetadataTypesDto> {
         return this.projectService.findOne(uuid, user.user.uuid);
     }
 
@@ -267,7 +267,7 @@ export class ProjectController {
         description: 'Empty response',
         type: AddMetadataTypeDto,
     })
-    async addTagType(
+    async addMetadataType(
         @ParameterUID('uuid') uuid: string,
         @Query() query: AddMetadataTypeQueryDto,
     ): Promise<AddMetadataTypeDto> {
@@ -282,21 +282,21 @@ export class ProjectController {
             );
         }
 
-        await this.projectService.addTagType(uuid, typeUuid);
+        await this.projectService.addMetadataType(uuid, typeUuid);
         return {};
     }
 
     @Delete(':uuid/metadata-types/:typeUuid')
     @CanWriteProject()
     @ApiOkResponse({
-        type: RemoveTagTypeDto,
+        type: RemoveMetadataTypeDto,
         description: 'Empty response',
     })
-    async removeTagType(
+    async removeMetadataType(
         @ParameterUID('uuid') uuid: string,
         @ParameterUID('typeUuid') typeUuid: string,
-    ): Promise<RemoveTagTypeDto> {
-        await this.projectService.removeTagType(uuid, typeUuid);
+    ): Promise<RemoveMetadataTypeDto> {
+        await this.projectService.removeMetadataType(uuid, typeUuid);
         return {};
     }
 
@@ -317,7 +317,7 @@ export class ProjectController {
         description: 'Empty response',
         type: UpdateMetadataTypesDto,
     })
-    async updateTagTypes(
+    async updateMetadataTypes(
         @ParameterUID('uuid') uuid: string,
         @Body() body: UpdateMetadataTypesBodyDto,
     ): Promise<UpdateMetadataTypesDto> {
@@ -332,7 +332,7 @@ export class ProjectController {
             );
         }
 
-        await this.projectService.updateTagTypes(uuid, uuids);
+        await this.projectService.updateMetadataTypes(uuid, uuids);
         return {
             success: true,
         };

@@ -185,7 +185,7 @@ watch(
         () => props.useFilter.state.selectedTopics,
         () => props.useFilter.state.selectedDatatypes,
         () => props.useFilter.state.matchAllTopics,
-        () => props.useFilter.state.tagFilter,
+        () => props.useFilter.state.metadataFilter,
     ],
     () => {
         refresh();

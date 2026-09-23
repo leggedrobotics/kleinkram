@@ -82,7 +82,7 @@ export class CanReadManyMissionsGuard extends BaseGuard {
 }
 
 @Injectable()
-export class DeleteTagGuard extends BaseGuard {
+export class DeleteMetadataGuard extends BaseGuard {
     constructor(
         private missionGuardService: MissionGuardService,
         private reflector: Reflector,
@@ -99,22 +99,26 @@ export class DeleteTagGuard extends BaseGuard {
                 context.getHandler(),
             ) ?? AccessGroupRights.DELETE;
 
-        const tagUuid = resolveAccessUuid(this.reflector, context, request);
+        const metadataUuid = resolveAccessUuid(
+            this.reflector,
+            context,
+            request,
+        );
 
-        if (!tagUuid) {
-            return false; // Deny access if tag UUID not provided
+        if (!metadataUuid) {
+            return false; // Deny access if metadata UUID not provided
         }
 
         if (apiKey) {
-            return this.missionGuardService.canKeyTagMission(
+            return this.missionGuardService.canKeyAccessMetadataMission(
                 apiKey,
-                tagUuid,
+                metadataUuid,
                 requiredRight,
             );
         }
-        return this.missionGuardService.canTagMission(
+        return this.missionGuardService.canAccessMetadataMission(
             user,
-            tagUuid,
+            metadataUuid,
             requiredRight === AccessGroupRights.DELETE
                 ? AccessGroupRights.WRITE
                 : requiredRight,

@@ -18,7 +18,7 @@ export class MissionGuardService {
         private missionRepository: Repository<MissionEntity>,
         private projectGuardService: ProjectGuardService,
         @InjectRepository(MetadataEntity)
-        private tagRepository: Repository<MetadataEntity>,
+        private metadataRepository: Repository<MetadataEntity>,
         @InjectRepository(MissionAccessViewEntity)
         private missionAccessView: Repository<MissionAccessViewEntity>,
     ) {}
@@ -66,15 +66,15 @@ export class MissionGuardService {
         return this.canAccessMission(user, mission.uuid, rights);
     }
 
-    async canTagMission(
+    async canAccessMetadataMission(
         user: UserEntity,
-        tagUUID: string,
+        metadataUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!tagUUID || !user) {
+        if (!metadataUUID || !user) {
             logger.error(
-                `MissionGuard: tagUUID (${tagUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
+                `MissionGuard: metadataUUID (${metadataUUID}) or User (${user.uuid}) not provided. Requesting ${rights.toString()} access.`,
             );
             return false;
         }
@@ -82,40 +82,42 @@ export class MissionGuardService {
         if (user.role === UserRole.ADMIN) {
             return true;
         }
-        const tag = await this.tagRepository.findOne({
-            where: { uuid: tagUUID },
+        const metadata = await this.metadataRepository.findOne({
+            where: { uuid: metadataUUID },
             relations: {
                 mission: true,
             },
         });
 
-        if (tag?.mission === undefined) throw new Error('Tag has no mission');
+        if (metadata?.mission === undefined)
+            throw new Error('Metadata has no mission');
 
-        // All interactions with tags except READ are considered WRITE on the mission
+        // All interactions with metadata except READ are considered WRITE on the mission
         let accessRights = AccessGroupRights.READ;
         if (rights !== AccessGroupRights.READ) {
             accessRights = AccessGroupRights.WRITE;
         }
-        return this.canAccessMission(user, tag.mission.uuid, accessRights);
+        return this.canAccessMission(user, metadata.mission.uuid, accessRights);
     }
 
-    async canKeyTagMission(
+    async canKeyAccessMetadataMission(
         apikey: ApiKeyEntity,
-        tagUUID: string,
+        metadataUUID: string,
         rights: AccessGroupRights = AccessGroupRights.READ,
     ): Promise<boolean> {
-        if (!tagUUID) {
-            throw new ConflictException('Tag UUID not provided');
+        if (!metadataUUID) {
+            throw new ConflictException('Metadata UUID not provided');
         }
-        const tag = await this.tagRepository.findOne({
-            where: { uuid: tagUUID },
+        const metadata = await this.metadataRepository.findOne({
+            where: { uuid: metadataUUID },
             relations: {
                 mission: true,
             },
         });
 
-        if (tag?.mission === undefined) throw new Error('Tag has no mission');
-        return this.canKeyAccessMission(apikey, tag.mission.uuid, rights);
+        if (metadata?.mission === undefined)
+            throw new Error('Metadata has no mission');
+        return this.canKeyAccessMission(apikey, metadata.mission.uuid, rights);
     }
 
     async canReadManyMissions(

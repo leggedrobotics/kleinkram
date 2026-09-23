@@ -295,7 +295,7 @@ def project_info_table(project: Project) -> Table:
     table.add_row("description", project.description)
     table.add_row("created", str(project.created_at))
     table.add_row("updated", str(project.updated_at))
-    table.add_row("required tags", ", ".join(project.required_tags))
+    table.add_row("required metadata types", ", ".join(project.required_metadata_types))
 
     return table
 
@@ -396,7 +396,10 @@ def print_project_info(project: Project, *, pprint: bool) -> None:
     if pprint:
         Console().print(project_info_table(project))
     else:
-        print(json.dumps(asdict(project), default=kleinkram_json_default))
+        project_dict = asdict(project)
+        # deprecated key, kept so that scripts parsing this output keep working until kleinkram 1.0.0
+        project_dict["required_tags"] = project_dict["required_metadata_types"]
+        print(json.dumps(project_dict, default=kleinkram_json_default))
 
 
 def _execution_status_text(execution: Execution) -> Text:
