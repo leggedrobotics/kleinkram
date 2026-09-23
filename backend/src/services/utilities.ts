@@ -336,7 +336,8 @@ export const addSort = <T extends ObjectLiteral>(
     sortBy: string,
     sortOrder: SortOrder,
 ): SelectQueryBuilder<T> => {
-    if (!(sortBy in allowedSortKeyMap)) {
+    // `in` would also accept inherited names such as `constructor`
+    if (!Object.hasOwn(allowedSortKeyMap, sortBy)) {
         throw new MethodNotAllowedException(`Invalid sortBy key: ${sortBy}`);
     }
 

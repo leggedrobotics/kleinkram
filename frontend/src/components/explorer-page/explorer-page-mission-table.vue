@@ -52,7 +52,7 @@
                 </router-link>
             </q-td>
         </template>
-        <template #body-cell-metadataverification="props">
+        <template #body-cell-missingMetadata="props">
             <q-td :props="props" style="width: 150px">
                 <div
                     v-if="missingMetadataTypes(props.row).length === 0"
@@ -377,7 +377,7 @@ const tableColumns = computed(() =>
 
 const visibleColumns = computed(() =>
     isCompact.value
-        ? ['name', 'NrOfFiles', 'metadataverification', 'missionaction']
+        ? ['name', 'filesCount', 'missingMetadata', 'missionaction']
         : undefined,
 );
 
