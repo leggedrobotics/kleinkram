@@ -9,7 +9,8 @@
                 dense
                 required
                 multiple
-                input-debounce="100"
+                use-input
+                input-debounce="300"
                 :options="filteredMetadataTypes"
                 class="full-width"
                 option-label="label"
@@ -40,6 +41,7 @@
                 </template>
 
                 <span
+                    v-if="!nameSearch"
                     class="text-placeholder absolute"
                     style="line-height: 40px"
                 >
@@ -107,8 +109,8 @@ watch(
 );
 
 const { data: metadataTypes } = useFilteredMetadataTypes(
-    nameSearch.value,
-    selectedDataType.value,
+    nameSearch,
+    selectedDataType,
 );
 
 const onInputUpdate = (value: string): void => {

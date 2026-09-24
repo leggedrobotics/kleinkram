@@ -30,6 +30,7 @@ import {
     UserRole,
 } from '@kleinkram/shared';
 import {
+    keepPreviousData,
     ThrowOnError,
     useQuery,
     UseQueryReturnType,
@@ -73,7 +74,7 @@ import {
 } from 'src/services/queries/user';
 import { allWorkers } from 'src/services/queries/worker';
 import { QueryURLHandler } from 'src/services/query-handler';
-import { computed, ComputedRef, ref, Ref, unref, watch } from 'vue';
+import { computed, ComputedRef, MaybeRef, ref, Ref, unref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
@@ -519,18 +520,22 @@ export const useFileEvents = (
     });
 
 export const useFilteredMetadataTypes = (
-    nameSearch: string,
-    selectedDataType: DataType | undefined,
+    nameSearch: MaybeRef<string>,
+    selectedDataType: MaybeRef<DataType | undefined>,
 ): UseQueryReturnType<MetadataTypesDto | undefined, Error> => {
     return useQuery({
         queryKey: computed(() => [
             'metadataTypes',
-            nameSearch,
-            selectedDataType,
+            unref(nameSearch),
+            unref(selectedDataType),
         ]),
         queryFn: async () => {
-            return getFilteredMetadataTypes(nameSearch, selectedDataType);
+            return getFilteredMetadataTypes(
+                unref(nameSearch),
+                unref(selectedDataType),
+            );
         },
+        placeholderData: keepPreviousData,
     });
 };
 
