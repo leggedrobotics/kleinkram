@@ -53,12 +53,43 @@ files in place and reads them at random offsets.
 
 ```
 ACTIVE ─archive─▶ ARCHIVING: QUEUED → PACKING → VERIFYING → AWAITING_SEAL → PURGING ─▶ ARCHIVED
-ARCHIVED ─restore─▶ RESTORING: RECALLING → UNPACKING ─▶ ACTIVE
+ARCHIVED ─restore─▶ RESTORING: RECALLING ⇄ UNPACKING (part by part) ─▶ ACTIVE
 ```
 
-The files are removed from S3 only after every part is sealed. The archived
-copy is kept after a restore; archiving the unchanged project again reuses it
-instead of writing a second copy.
+The archived copy is kept after a restore; archiving the unchanged project
+again reuses it instead of writing a second copy.
+
+## Never losing data
+
+Files are removed from S3 only after every part was read back and matched its
+checksum, every archived file matched the MD5 Kleinkram stored at upload, and
+the storage sealed every part. On top of that, any step may be interrupted:
+
+- **The database is the source of truth.** The state of an archive, its
+  layout (planned before the first byte is written), the parts written so far
+  and the parts restored so far are stored in `project_archive`. Queue jobs
+  only say "advance this archive".
+- **A reconciler** in the queue consumer re-queues every unfinished archive
+  on start-up and every 30 s. A crashed consumer, a lost job or a wiped Redis
+  only delay the work.
+- **Every phase resumes and can be repeated.** Packing skips finished parts
+  and rewrites an interrupted one, a restore continues with the first
+  unfinished part, uploads to S3 are only completed once their MD5 matches,
+  and purging is idempotent.
+- **A lease** (owner and expiry in the table, renewed every 30 s) keeps two
+  consumers off one archive. When a consumer dies, the lease expires after
+  two minutes and another consumer takes over.
+- **Bounded retries.** A failing phase is retried `ARCHIVE_MAX_ATTEMPTS`
+  times with growing delays; a phase that kills the consumer counts too.
+  Before purging starts, giving up removes the partial copy and hands the
+  project back with its files untouched. Purging never gives up: once the
+  first object is removed, it is retried until S3 is clean. A restore that
+  gives up leaves the project archived.
+
+Tested on the local stack by killing the queue consumer while packing and
+while restoring, wiping the Redis queue while waiting for the seal, and making
+the storage unwritable; every file was byte-identical afterwards, or still in
+S3 after giving up.
 
 ## Enabling it
 
@@ -80,6 +111,8 @@ These describe how to reach the storage.
 | `ARCHIVE_STAGING_DIR`              | queue consumer | Local disk recalled parts are copied to; needs room for one part.                    | `/tmp/archive-staging` |
 | `ARCHIVE_SEAL_MODE`                | queue consumer | `storage`: wait for the storage to seal files (ETH LTS: 1 h). `self`: seal on write. | `storage`              |
 | `ARCHIVE_SIMULATED_RECALL_SECONDS` | queue consumer | Delay before reading a sealed part, only for mocks.                                  | `0`                    |
+| `ARCHIVE_MAX_ATTEMPTS`             | both           | Runs of a phase before it gives up (purging never does).                             | `5`                    |
+| `ARCHIVE_RETRY_DELAY_SECONDS`      | queue consumer | Delay before the first retry; doubles with every attempt, up to an hour.             | `60`                   |
 | `ARCHIVE_PART_SIZE_BYTES`          | both           | Target size of one tar part.                                                         | `107374182400`         |
 
 ## Config file

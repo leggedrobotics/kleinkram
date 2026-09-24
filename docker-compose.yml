@@ -356,6 +356,8 @@ services:
             # set e.g. 1073741824 (1 GB) to see a project split into parts
             ARCHIVE_PART_SIZE_BYTES: ${ARCHIVE_PART_SIZE_BYTES:-107374182400}
             ARCHIVE_SIMULATED_RECALL_SECONDS: ${ARCHIVE_SIMULATED_RECALL_SECONDS:-20}
+            # retry failed phases quickly locally (default 60 s, doubling)
+            ARCHIVE_RETRY_DELAY_SECONDS: ${ARCHIVE_RETRY_DELAY_SECONDS:-5}
 
         networks:
             - private-network

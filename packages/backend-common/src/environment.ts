@@ -288,6 +288,24 @@ export default {
     },
 
     /**
+     * @returns how often a phase of an archive or restore is tried before it
+     *   gives up (purging S3 never gives up, see the archive processor)
+     */
+    get ARCHIVE_MAX_ATTEMPTS(): number {
+        const value = asOptionalString('ARCHIVE_MAX_ATTEMPTS');
+        return value === undefined ? 5 : Number.parseInt(value, 10);
+    },
+
+    /**
+     * @returns delay before the first retry of a failed phase; it doubles
+     *   with every attempt, up to an hour
+     */
+    get ARCHIVE_RETRY_DELAY_SECONDS(): number {
+        const value = asOptionalString('ARCHIVE_RETRY_DELAY_SECONDS');
+        return value === undefined ? 60 : Number.parseFloat(value);
+    },
+
+    /**
      * @returns whether projects can be archived at all; off by default
      */
     get ARCHIVE_ENABLED(): boolean {

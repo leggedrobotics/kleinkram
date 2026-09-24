@@ -127,6 +127,20 @@ export class ProjectArchiveDto {
     @IsString()
     @Expose()
     error!: string | null;
+
+    @ApiProperty({
+        description:
+            'Failed or interrupted runs of the current phase; it is retried ' +
+            'automatically until maxAttempts',
+    })
+    @IsNumber()
+    @Expose()
+    attempts!: number;
+
+    @ApiProperty()
+    @IsNumber()
+    @Expose()
+    maxAttempts!: number;
 }
 
 /** What archiving the project right now would involve. */

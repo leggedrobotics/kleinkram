@@ -25,6 +25,23 @@ export interface ArchivePart {
     files: ArchivedFileEntry[];
 }
 
+/** One file as planned into a part, before it is written. */
+export interface PlannedFile {
+    fileUuid: string;
+    size: number;
+    /** Path of the entry inside the tar part, fixed at planning time. */
+    path: string;
+}
+
+/**
+ * The layout of an archive, decided once before the first byte is written so
+ * that a resumed run writes exactly the same parts.
+ */
+export interface PlannedPart {
+    name: string;
+    files: PlannedFile[];
+}
+
 const bigintTransformer = {
     to: (value: number): number => value,
     from: (value: string | null): number =>
@@ -64,8 +81,36 @@ export class ProjectArchiveEntity extends BaseEntity {
     @Column()
     location!: string;
 
+    /** Layout of the archive, see {@link PlannedPart}. */
+    @Column({ type: 'jsonb', default: [] })
+    plan!: PlannedPart[];
+
+    /** Parts written and checksummed so far, in the order of the plan. */
     @Column({ type: 'jsonb', default: [] })
     parts!: ArchivePart[];
+
+    /**
+     * Runs that worked on the current phase, the running one included. A
+     * phase that keeps failing, or keeps killing the consumer, gives up after
+     * ARCHIVE_MAX_ATTEMPTS of them.
+     */
+    @Column({ default: 0 })
+    attempts!: number;
+
+    /** Parts restored so far, so that a resumed restore skips them. */
+    @Column({ default: 0 })
+    partsDone!: number;
+
+    /**
+     * Which queue consumer works on the archive, and until when. The lease
+     * is renewed while it works and simply expires if the consumer dies, so
+     * another one can take over; two consumers never work on one archive.
+     */
+    @Column({ type: 'varchar', nullable: true })
+    leaseOwner?: string | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    leaseUntil?: Date | null;
 
     @Column({ default: 0 })
     fileCount!: number;

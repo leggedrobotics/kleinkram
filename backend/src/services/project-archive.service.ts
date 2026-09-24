@@ -16,7 +16,9 @@ import {
     renderRestoreInstructions,
 } from '@kleinkram/backend-common/modules/archive-storage/archive-config';
 import {
+    ARCHIVE_ADVANCE_JOB,
     ARCHIVE_QUEUE,
+    archiveJobOptions,
     planArchiveParts,
 } from '@kleinkram/backend-common/modules/archive-storage/archive-storage';
 import {
@@ -132,6 +134,7 @@ export class ProjectArchiveService implements OnModuleInit {
                 previous.reason = reason ?? previous.reason ?? null;
                 previous.requestedBy = user;
                 previous.error = null;
+                previous.attempts = 0;
                 return manager.save(previous);
             }
 
@@ -151,13 +154,7 @@ export class ProjectArchiveService implements OnModuleInit {
             return manager.save(saved);
         });
 
-        await this.archiveQueue.add(
-            archive.state === ProjectArchiveJobState.QUEUED
-                ? 'archive-project'
-                : 'await-seal',
-            { archiveUuid: archive.uuid },
-            { jobId: `archive-${archive.uuid}-${Date.now().toString()}` },
-        );
+        await this.nudge(archive.uuid);
         logger.info(
             `Archive ${archive.uuid} of project ${projectUuid} requested by ${user.uuid}`,
         );
@@ -184,10 +181,7 @@ export class ProjectArchiveService implements OnModuleInit {
             const current = await manager.findOneOrFail(ProjectArchiveEntity, {
                 where: {
                     project: { uuid: projectUuid },
-                    state: In([
-                        ProjectArchiveJobState.ARCHIVED,
-                        ProjectArchiveJobState.FAILED,
-                    ]),
+                    state: ProjectArchiveJobState.ARCHIVED,
                 },
                 order: { createdAt: 'DESC' },
             });
@@ -198,6 +192,8 @@ export class ProjectArchiveService implements OnModuleInit {
             current.state = ProjectArchiveJobState.RECALLING;
             current.bytesProcessed = 0;
             current.error = null;
+            current.attempts = 0;
+            current.partsDone = 0;
             current.restoreReason = reason;
             current.restoreRequestedBy = user;
             current.restoreRequestedAt = new Date();
@@ -205,15 +201,29 @@ export class ProjectArchiveService implements OnModuleInit {
             return manager.save(current);
         });
 
-        await this.archiveQueue.add(
-            'restore-project',
-            { archiveUuid: archive.uuid },
-            { jobId: `restore-${archive.uuid}-${Date.now().toString()}` },
-        );
+        await this.nudge(archive.uuid);
         logger.info(
             `Restore of archive ${archive.uuid} (project ${projectUuid}) requested by ${user.uuid}`,
         );
         return this.getStatus(projectUuid);
+    }
+
+    /**
+     * Queues the archive right away. The state is already committed, so if
+     * Redis is unavailable the reconciler of the queue consumer picks it up.
+     */
+    private async nudge(archiveUuid: string): Promise<void> {
+        await this.archiveQueue
+            .add(
+                ARCHIVE_ADVANCE_JOB,
+                { archiveUuid },
+                archiveJobOptions(archiveUuid),
+            )
+            .catch((error: unknown) => {
+                logger.warn(
+                    `Could not queue archive ${archiveUuid}, the reconciler will: ${String(error)}`,
+                );
+            });
     }
 
     /** Archiving is opt-in per deployment, see ARCHIVE_ENABLED. */
@@ -336,6 +346,8 @@ export class ProjectArchiveService implements OnModuleInit {
             restoreRequestedAt: archive.restoreRequestedAt ?? null,
             restoredAt: archive.restoredAt ?? null,
             error: archive.error ?? null,
+            attempts: archive.attempts,
+            maxAttempts: environment.ARCHIVE_MAX_ATTEMPTS,
         };
     }
 }

@@ -49,6 +49,8 @@ storage has to provide and for the format of the config file.
 | `ARCHIVE_SEAL_MODE`                | `storage`: wait until the storage makes files read-only; `self`: do it on write.    | `storage`              |
 | `ARCHIVE_PART_SIZE_BYTES`          | Target size of one tar part.                                                        | `107374182400`         |
 | `ARCHIVE_SIMULATED_RECALL_SECONDS` | Delay before reading a sealed part; only for the local mock.                        | `0`                    |
+| `ARCHIVE_MAX_ATTEMPTS`             | Runs of an archive phase before it gives up (purging never does).                   | `5`                    |
+| `ARCHIVE_RETRY_DELAY_SECONDS`      | Delay before retrying a failed phase; doubles with every attempt, up to an hour.    | `60`                   |
 
 ## Database Configuration
 

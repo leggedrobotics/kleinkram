@@ -8,6 +8,21 @@ import { pipeline } from 'node:stream/promises';
 /** Bull queue that moves projects to and from the archive storage. */
 export const ARCHIVE_QUEUE = 'archive-queue';
 
+/**
+ * The only job on {@link ARCHIVE_QUEUE}: advance one archive as far as it can
+ * go. The state lives in the database, the job is just a nudge.
+ */
+export const ARCHIVE_ADVANCE_JOB = 'advance';
+
+/** One queued job per archive at most; ids are freed once a job is done. */
+export const archiveJobOptions = (
+    archiveUuid: string,
+): { jobId: string; removeOnComplete: boolean; removeOnFail: boolean } => ({
+    jobId: `advance-${archiveUuid}`,
+    removeOnComplete: true,
+    removeOnFail: true,
+});
+
 /** A write-once object that becomes visible under its key on commit. */
 export interface ArchiveStorageUpload {
     stream: Writable;

@@ -81,7 +81,12 @@
                     v-if="current?.error"
                     class="text-caption text-negative q-mt-sm"
                 >
-                    Last attempt failed: {{ current.error }}
+                    <template v-if="steps.length > 0">
+                        Attempt {{ current.attempts }} of
+                        {{ current.maxAttempts }} failed, retrying
+                        automatically: {{ current.error }}
+                    </template>
+                    <template v-else>{{ current.error }}</template>
                 </div>
             </div>
 
