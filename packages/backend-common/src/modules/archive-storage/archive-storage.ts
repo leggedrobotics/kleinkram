@@ -161,8 +161,15 @@ export class FilesystemArchiveStorage implements ArchiveStorage {
 }
 
 /**
- * Groups items into tar parts of roughly `partSize` bytes, in order. An item
- * never spans two parts, so one larger than `partSize` gets a part of its own.
+ * Groups items into tar parts of at least `partSize` bytes, keeping their
+ * order (files of a mission stay together).
+ *
+ * Cold storage wants few, large objects (ETH LTS: 10-200 GB, nothing below
+ * 10 GB), so a part is only closed once it reached `partSize`. A remainder
+ * of less than half of that is folded into the previous part instead of
+ * becoming a small part of its own. Parts are therefore at least
+ * `partSize / 2` (unless the whole project is smaller) and at most
+ * `1.5 * partSize` plus the largest file. An item never spans two parts.
  */
 export function planArchiveParts<T extends { size: number }>(
     items: T[],
@@ -171,15 +178,21 @@ export function planArchiveParts<T extends { size: number }>(
     const parts: T[][] = [];
     let current: T[] = [];
     let currentSize = 0;
+
     for (const item of items) {
-        if (current.length > 0 && currentSize + item.size > partSize) {
+        current.push(item);
+        currentSize += item.size;
+        if (currentSize >= partSize) {
             parts.push(current);
             current = [];
             currentSize = 0;
         }
-        current.push(item);
-        currentSize += item.size;
     }
-    if (current.length > 0) parts.push(current);
+
+    if (current.length > 0) {
+        const previous = parts.at(-1);
+        if (previous && currentSize < partSize / 2) previous.push(...current);
+        else parts.push(current);
+    }
     return parts;
 }

@@ -87,7 +87,7 @@ services:
             # Archiving is opt-in; the local stack archives to a mock
             ARCHIVE_ENABLED: ${ARCHIVE_ENABLED:-true}
             ARCHIVE_CONFIG_PATH: /etc/kleinkram/archive-config.yml
-            ARCHIVE_PART_SIZE_BYTES: ${ARCHIVE_PART_SIZE_BYTES:-52428800}
+            ARCHIVE_PART_SIZE_BYTES: ${ARCHIVE_PART_SIZE_BYTES:-107374182400}
 
         depends_on:
             database:
@@ -353,8 +353,8 @@ services:
             ARCHIVE_STAGING_DIR: /tmp/archive-staging
             # the mock seals files itself, a plain NFS share would need `self`
             ARCHIVE_SEAL_MODE: storage
-            # tiny parts so that the prototype produces several of them
-            ARCHIVE_PART_SIZE_BYTES: ${ARCHIVE_PART_SIZE_BYTES:-52428800}
+            # set e.g. 1073741824 (1 GB) to see a project split into parts
+            ARCHIVE_PART_SIZE_BYTES: ${ARCHIVE_PART_SIZE_BYTES:-107374182400}
             ARCHIVE_SIMULATED_RECALL_SECONDS: ${ARCHIVE_SIMULATED_RECALL_SECONDS:-20}
 
         networks:

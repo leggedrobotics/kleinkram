@@ -39,8 +39,11 @@ files in place and reads them at random offsets.
 
 - Files are stored exactly as they were uploaded (ROS bags, MCAPs, ...), read
   through the S3 API, so no SeaweedFS chunks end up in the archive.
-- A file never spans two tar files; one larger than the part size gets a part
-  of its own.
+- Files are grouped into tar parts in order, so the files of a mission stay
+  together. A part is closed once it reached `ARCHIVE_PART_SIZE_BYTES`; a
+  remainder of less than half of that joins the previous part. A project
+  smaller than the part size becomes a single tar, and no part is smaller
+  than half the part size. A file never spans two tar files.
 - Every tar ends with a `kleinkram.yml` listing the project, the missions of
   the part with their metadata, and every file with its size, MD5, SHA-256,
   recording times, categories and topics. A single tar can be extracted with
