@@ -84,6 +84,7 @@ services:
             DEVBUILD: 'true'
             S3_ENDPOINT_INTERNAL: 'seaweedfs'
             REDIS_HOST: redis
+            LTS_PART_SIZE_BYTES: ${LTS_PART_SIZE_BYTES:-52428800}
 
         depends_on:
             database:
@@ -278,6 +279,8 @@ services:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
             - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
+            # stands in for the NFS export of the ETH Long Term Storage
+            - lts_data:/mnt/lts
             # Mask host node_modules with anonymous volumes to avoid broken symlinks
             - /app/packages/api-dto/node_modules
             - /app/packages/backend-common/node_modules
@@ -339,6 +342,11 @@ services:
 
         environment:
             REDIS_HOST: redis
+            LTS_ROOT: /mnt/lts
+            LTS_STAGING_DIR: /tmp/lts-staging
+            # tiny parts so that the prototype produces several of them
+            LTS_PART_SIZE_BYTES: ${LTS_PART_SIZE_BYTES:-52428800}
+            LTS_SIMULATED_RECALL_SECONDS: ${LTS_SIMULATED_RECALL_SECONDS:-20}
 
         networks:
             - private-network
@@ -352,6 +360,24 @@ services:
                 condition: service_started
             loki-ready:
                 condition: service_completed_successfully
+            lts-mock:
+                condition: service_started
+
+    # Mock of the ETH Long Term Storage appliance, see docker/lts-mock
+    lts-mock:
+        image: alpine:3.22
+        container_name: kleinkram-lts-mock
+        entrypoint: ['/lts-mock.sh']
+        environment:
+            # the real LTS seals files after 1h
+            LTS_DELAY_ACTION_SECONDS: ${LTS_DELAY_ACTION_SECONDS:-60}
+            LTS_CLIENT_UID: ${USER_ID:-1000}
+            LTS_CLIENT_GID: ${GROUP_ID:-1000}
+        volumes:
+            - lts_data:/lts
+            - ./docker/lts-mock/lts-mock.sh:/lts-mock.sh:ro
+        networks:
+            - private-network
 
     prometheus:
         image: prom/prometheus
@@ -513,6 +539,7 @@ volumes:
     backend_node_modules:
     frontend_node_modules:
     queue_consumer_node_modules:
+    lts_data:
 
 networks:
     public-network:

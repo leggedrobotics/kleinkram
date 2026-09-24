@@ -138,7 +138,7 @@
                     <span class="text-subtitle1"> No Mission Found </span>
 
                     <create-mission-dialog-opener
-                        v-if="!isReadOnlyPublicView"
+                        v-if="!isReadOnlyPublicView && !isArchived"
                         :project-uuid="projectUuid"
                     >
                         <q-btn
@@ -267,7 +267,9 @@
                                         </q-item>
                                     </MissionMetadataOpener>
                                     <MoveMissionDialogOpener
-                                        v-if="!isReadOnlyPublicView"
+                                        v-if="
+                                            !isReadOnlyPublicView && !isArchived
+                                        "
                                         :mission="props.row"
                                     >
                                         <q-item v-ripple clickable>
@@ -277,7 +279,9 @@
                                         </q-item>
                                     </MoveMissionDialogOpener>
                                     <DeleteMissionDialogOpener
-                                        v-if="!isReadOnlyPublicView"
+                                        v-if="
+                                            !isReadOnlyPublicView && !isArchived
+                                        "
                                         :mission="props.row"
                                     >
                                         <q-item v-ripple clickable>
@@ -337,7 +341,7 @@
                                 </q-item>
                             </MissionMetadataOpener>
                             <MoveMissionDialogOpener
-                                v-if="!isReadOnlyPublicView"
+                                v-if="!isReadOnlyPublicView && !isArchived"
                                 :mission="props.row"
                             >
                                 <q-item v-ripple clickable>
@@ -345,7 +349,7 @@
                                 </q-item>
                             </MoveMissionDialogOpener>
                             <DeleteMissionDialogOpener
-                                v-if="!isReadOnlyPublicView"
+                                v-if="!isReadOnlyPublicView && !isArchived"
                                 :mission="props.row"
                             >
                                 <q-item v-ripple clickable>
@@ -377,6 +381,7 @@ import {
     missionMetadataColumn,
 } from 'components/explorer-page/explorer-page-table-columns';
 import { Notify, QTable, useQuasar } from 'quasar';
+import { useProjectArchived } from 'src/composables/use-project-archive';
 import { usePublicReadOnlyView } from 'src/composables/use-public-read-only-view';
 import { useRowActivation } from 'src/composables/use-row-activation';
 import { useTableColumns } from 'src/composables/use-table-columns';
@@ -466,6 +471,7 @@ const pagination = computed({
 const projectUuid = useProjectUUID();
 const { data: project } = useProjectQuery(projectUuid);
 const isReadOnlyPublicView = usePublicReadOnlyView(projectUuid);
+const isArchived = useProjectArchived(projectUuid);
 
 /**
  * Two-way, so that the bulk-action bar in the parent and the checkboxes here

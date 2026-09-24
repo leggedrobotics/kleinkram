@@ -7,6 +7,7 @@ import {
 import { projectEntityToDto } from '@/serialization';
 import { AccessModificationService } from '@/services/access-modification.service';
 import { AccessQueryService } from '@/services/access-query.service';
+import { ProjectArchiveService } from '@/services/project-archive.service';
 import { ProjectService } from '@/services/project.service';
 import { ParameterUuid as ParameterUID } from '@/validation/parameter-decorators';
 import { QueryTake } from '@/validation/query-decorators';
@@ -14,11 +15,13 @@ import {
     AddMetadataTypeDto,
     AddMetadataTypeQueryDto,
     AddUserToProjectDto,
+    ArchiveProjectDto,
     CreateProject,
     DefaultRights,
     DeleteProjectResponseDto,
     ProjectAccessDto,
     ProjectAccessListDto,
+    ProjectArchiveStatusDto,
     ProjectDto,
     ProjectQueryDto,
     ProjectsDto,
@@ -26,6 +29,7 @@ import {
     ProjectWithRequiredMetadataTypesDto,
     RemoveMetadataTypeDto,
     ResentProjectsDto,
+    RestoreProjectDto,
     UpdateMetadataTypesBodyDto,
     UpdateMetadataTypesDto,
 } from '@kleinkram/api-dto';
@@ -57,6 +61,7 @@ export class ProjectController {
         private readonly projectService: ProjectService,
         private readonly accessQueryService: AccessQueryService,
         private readonly accessModificationService: AccessModificationService,
+        private readonly projectArchiveService: ProjectArchiveService,
     ) {}
 
     @Post()
@@ -182,6 +187,77 @@ export class ProjectController {
             exactMatch,
             starredOnly,
             publicOnly,
+        );
+    }
+
+    @Get(':uuid/archive')
+    @CanReadProject()
+    @ApiOperation({
+        summary: 'Get the archive state of a project',
+        description:
+            'Returns where the data of the project lives, the progress of a ' +
+            'running archive or restore, the archive history and, for active ' +
+            'projects, what archiving would involve.',
+    })
+    @ApiOkResponse({
+        description: 'Returns the archive status',
+        type: ProjectArchiveStatusDto,
+    })
+    async getArchiveStatus(
+        @ParameterUID('uuid') uuid: string,
+    ): Promise<ProjectArchiveStatusDto> {
+        return this.projectArchiveService.getStatus(uuid);
+    }
+
+    @Post(':uuid/archive')
+    @UserOnly()
+    @CanDeleteProject()
+    @ApiOperation({
+        summary: 'Move a project to the long term storage',
+        description:
+            'Packs all files of the project into tar parts on the long term ' +
+            'storage (ETH LTS) and removes them from the object storage once ' +
+            'the parts are sealed. The project becomes read-only right away.',
+    })
+    @ApiCreatedResponse({
+        description: 'Returns the archive status',
+        type: ProjectArchiveStatusDto,
+    })
+    async archiveProject(
+        @ParameterUID('uuid') uuid: string,
+        @Body() dto: ArchiveProjectDto,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectArchiveStatusDto> {
+        return this.projectArchiveService.requestArchive(
+            uuid,
+            user.user,
+            dto.reason,
+        );
+    }
+
+    @Post(':uuid/archive/restore')
+    @UserOnly()
+    @CanDeleteProject()
+    @ApiOperation({
+        summary: 'Restore an archived project',
+        description:
+            'Recalls the tar parts from tape, unpacks them and uploads the ' +
+            'files back to the object storage. The archive stays on the long ' +
+            'term storage.',
+    })
+    @ApiCreatedResponse({
+        description: 'Returns the archive status',
+        type: ProjectArchiveStatusDto,
+    })
+    async restoreProject(
+        @ParameterUID('uuid') uuid: string,
+        @Body() dto: RestoreProjectDto,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectArchiveStatusDto> {
+        return this.projectArchiveService.requestRestore(
+            uuid,
+            user.user,
+            dto.reason,
         );
     }
 

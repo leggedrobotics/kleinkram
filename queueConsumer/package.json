@@ -67,6 +67,7 @@
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
         "systeminformation": "^5.33.12",
+        "tar-stream": "^3.1.7",
         "typeorm": "^1.1.1",
         "typeorm-extension": "^4.1.0",
         "util": "^0.12.5",

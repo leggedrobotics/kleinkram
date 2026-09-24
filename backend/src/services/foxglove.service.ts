@@ -2,6 +2,7 @@ import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.ser
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import environment from '@kleinkram/backend-common/environment';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/long-term-storage/archive-guard';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileEventType, FileType } from '@kleinkram/shared';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
@@ -33,6 +34,9 @@ export class FoxgloveService {
 
     async generateFoxgloveUrl(uuid: string, user: UserEntity): Promise<string> {
         logger.debug(`Generating Foxglove URL for file UUID: ${uuid}`);
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            fileUuid: uuid,
+        });
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
         });

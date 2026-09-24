@@ -22,6 +22,7 @@ export * from './entities/file/ingestion-job.entity';
 export * from './entities/metadata/metadata-type.entity';
 export * from './entities/metadata/metadata.entity';
 export * from './entities/mission/mission.entity';
+export * from './entities/project/project-archive.entity';
 export * from './entities/project/project-star.entity';
 export * from './entities/project/project.entity';
 export * from './entities/topic/topic.entity';
@@ -35,6 +36,8 @@ export * from './modules/action-dispatcher/action-dispatcher.module';
 export * from './modules/action-dispatcher/action-dispatcher.service';
 export * from './modules/loki-health/loki-health.module';
 export * from './modules/loki-health/loki-health.service';
+export * from './modules/long-term-storage/archive-guard';
+export * from './modules/long-term-storage/long-term-storage';
 export * from './modules/storage/storage-auth.service';
 export * from './modules/storage/storage-config.factory';
 export * from './modules/storage/storage-metrics.service';
@@ -66,6 +69,7 @@ import { IngestionJobEntity } from './entities/file/ingestion-job.entity';
 import { MetadataTypeEntity } from './entities/metadata/metadata-type.entity';
 import { MetadataEntity } from './entities/metadata/metadata.entity';
 import { MissionEntity } from './entities/mission/mission.entity';
+import { ProjectArchiveEntity } from './entities/project/project-archive.entity';
 import { ProjectStarEntity } from './entities/project/project-star.entity';
 import { ProjectEntity } from './entities/project/project.entity';
 import { TopicEntity } from './entities/topic/topic.entity';
@@ -93,6 +97,7 @@ export const ALL_ENTITIES = [
     MetadataEntity,
     MissionEntity,
     ProjectEntity,
+    ProjectArchiveEntity,
     ProjectStarEntity,
     MetadataTypeEntity,
     TopicEntity,

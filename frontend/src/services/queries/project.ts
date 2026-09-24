@@ -1,4 +1,5 @@
 import type { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
+import type { ProjectArchiveStatusDto } from '@kleinkram/api-dto/types/project/project-archive.dto';
 import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import type { ResentProjectsDto } from '@kleinkram/api-dto/types/project/recent-projects.dto';
@@ -82,5 +83,13 @@ export const starredProjects = async (take: number): Promise<ProjectsDto> => {
             },
         },
     );
+    return response.data;
+};
+
+export const getProjectArchiveStatus = async (
+    uuid: string,
+): Promise<ProjectArchiveStatusDto> => {
+    const response: AxiosResponse<ProjectArchiveStatusDto> =
+        await axios.get<ProjectArchiveStatusDto>(`/projects/${uuid}/archive`);
     return response.data;
 };

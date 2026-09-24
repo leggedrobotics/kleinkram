@@ -232,4 +232,37 @@ export default {
     get DOCKER_HUB_NAMESPACE(): string {
         return process.env.VITE_DOCKER_HUB_NAMESPACE ?? '';
     },
+    /**
+     * @returns mount point of the long term storage (ETH LTS NFS export)
+     */
+    get LTS_ROOT(): string {
+        return asOptionalString('LTS_ROOT') ?? '/mnt/lts';
+    },
+
+    /**
+     * @returns local scratch disk that recalled tar parts are copied to
+     *   before they are unpacked, as the LTS docs ask for
+     */
+    get LTS_STAGING_DIR(): string {
+        return asOptionalString('LTS_STAGING_DIR') ?? '/tmp/lts-staging';
+    },
+
+    /**
+     * @returns target size of one tar part; ETH LTS wants 10-200 GB objects
+     */
+    get LTS_PART_SIZE_BYTES(): number {
+        const value = asOptionalString('LTS_PART_SIZE_BYTES');
+        return value === undefined
+            ? 100 * 1024 ** 3
+            : Number.parseInt(value, 10);
+    },
+
+    /**
+     * @returns seconds the mock waits to "mount a tape" before a recall,
+     *   0 against the real LTS, which recalls transparently on read
+     */
+    get LTS_SIMULATED_RECALL_SECONDS(): number {
+        const value = asOptionalString('LTS_SIMULATED_RECALL_SECONDS');
+        return value === undefined ? 0 : Number.parseFloat(value);
+    },
 };

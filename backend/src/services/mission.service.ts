@@ -17,6 +17,7 @@ import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/long-term-storage/archive-guard';
 import { UserRole } from '@kleinkram/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -106,6 +107,9 @@ export class MissionService {
         createMission: CreateMission,
         auth: AuthHeader,
     ): Promise<FlatMissionDto> {
+        await assertProjectDataAvailable(this.projectRepository.manager, {
+            projectUuid: createMission.projectUUID,
+        });
         const creator = await this.userService.findOneByUUID(
             auth.user.uuid,
             {},
@@ -410,6 +414,12 @@ export class MissionService {
     }
 
     async moveMission(missionUUID: string, projectUUID: string): Promise<void> {
+        await assertProjectDataAvailable(this.projectRepository.manager, {
+            missionUuid: missionUUID,
+        });
+        await assertProjectDataAvailable(this.projectRepository.manager, {
+            projectUuid: projectUUID,
+        });
         // Validate that the target project exists
         const projectExists = await this.projectRepository.exists({
             where: { uuid: projectUUID },
@@ -455,6 +465,9 @@ export class MissionService {
     }
 
     async deleteMission(uuid: string): Promise<void> {
+        await assertProjectDataAvailable(this.projectRepository.manager, {
+            missionUuid: uuid,
+        });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid },
             relations: {
@@ -512,6 +525,9 @@ export class MissionService {
     async download(
         missionUUID: string,
     ): Promise<{ filename: string; link: string }[]> {
+        await assertProjectDataAvailable(this.projectRepository.manager, {
+            missionUuid: missionUUID,
+        });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: {

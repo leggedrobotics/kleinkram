@@ -3,6 +3,7 @@ import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.ser
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/long-term-storage/archive-guard';
 import {
     OPAQUE_CONTENT_TYPE,
     contentDisposition,
@@ -43,6 +44,9 @@ export class FileStorageService {
         // verify that an uuid is provided
         if (!uuid || uuid === '')
             throw new BadRequestException('UUID is required');
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            fileUuid: uuid,
+        });
 
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },

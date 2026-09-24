@@ -11,6 +11,7 @@ import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/inge
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/long-term-storage/archive-guard';
 import {
     IStorageBucket,
     StorageCredentials,
@@ -253,6 +254,14 @@ export class FileLifecycleService implements OnModuleInit {
         actor?: UserEntity,
         action?: ActionEntity,
     ): Promise<void> {
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            missionUuid: missionUUID,
+        });
+        for (const uuid of fileUUIDs) {
+            await assertProjectDataAvailable(this.fileRepository.manager, {
+                fileUuid: uuid,
+            });
+        }
         await Promise.all(
             fileUUIDs.map(async (uuid) => {
                 try {
@@ -317,6 +326,9 @@ export class FileLifecycleService implements OnModuleInit {
         action?: ActionEntity,
     ): Promise<void> {
         if (!uuid) throw new BadRequestException('UUID is required');
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            fileUuid: uuid,
+        });
 
         logger.debug(`Deleting file with uuid: ${uuid}`);
 
@@ -386,6 +398,9 @@ export class FileLifecycleService implements OnModuleInit {
         uploadSource = 'Web Interface',
         fileSizes?: number[],
     ): Promise<TemporaryFileAccessesDto> {
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            missionUuid: missionUUID,
+        });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: {
@@ -686,6 +701,9 @@ export class FileLifecycleService implements OnModuleInit {
         missionUUID: string,
     ): Promise<void> {
         if (fileUUIDs.length === 0) return;
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            missionUuid: missionUUID,
+        });
 
         const uniqueFilesUuids = [...new Set(fileUUIDs)];
 
