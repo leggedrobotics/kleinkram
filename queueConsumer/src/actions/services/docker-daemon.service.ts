@@ -94,12 +94,18 @@ const artifactUploaderImage =
  * not follow. Use the same scheme rule as the backend.
  */
 const artifactUploaderS3Endpoint = (): string => {
-    const endpoint = environment.S3_ENDPOINT;
-    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
-        return endpoint;
+    let endpoint = environment.S3_ENDPOINT;
+    if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+        endpoint = `${environment.DEV ? 'http' : 'https'}://${endpoint}`;
     }
-    const host = endpoint === 'localhost' ? '127.0.0.1' : endpoint;
-    return environment.DEV ? `http://${host}:9000` : `https://${host}`;
+    const url = new URL(endpoint);
+    if (url.hostname === 'localhost') {
+        url.hostname = '127.0.0.1';
+    }
+    if (environment.DEV && !url.port) {
+        url.port = '9000';
+    }
+    return url.toString().replace(/\/$/, '');
 };
 
 /**
