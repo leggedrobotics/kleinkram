@@ -19,7 +19,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Job, Queue } from 'bull';
 import { createHash, Hash } from 'node:crypto';
-import { createReadStream, createWriteStream } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Readable, Transform, Writable } from 'node:stream';
@@ -52,16 +52,32 @@ class Digest extends Transform {
         super();
     }
 
+    add(chunk: Buffer): void {
+        this.md5.update(chunk);
+        this.sha256.update(chunk);
+        this.bytes += chunk.length;
+        this.onBytes?.(chunk.length);
+    }
+
     override _transform(
         chunk: Buffer,
         _encoding: BufferEncoding,
         callback: (error?: Error | null, data?: Buffer) => void,
     ): void {
-        this.md5.update(chunk);
-        this.sha256.update(chunk);
-        this.bytes += chunk.length;
-        this.onBytes?.(chunk.length);
+        this.add(chunk);
         callback(null, chunk);
+    }
+}
+
+/** Passes the chunks of `source` through while feeding them to `digest`. */
+async function* digested(
+    source: AsyncIterable<unknown>,
+    digest: Digest,
+): AsyncGenerator<Buffer> {
+    for await (const chunk of source) {
+        const buffer = chunk as Buffer;
+        digest.add(buffer);
+        yield buffer;
     }
 }
 
@@ -423,7 +439,7 @@ export class ArchiveQueueProcessorProvider {
                         stream.on('end', next);
                         return;
                     }
-                    this.restoreEntry(projectUuid, entry, stream, staging)
+                    this.restoreEntry(projectUuid, entry, stream)
                         .then(async () => {
                             archive.bytesProcessed += entry.size;
                             await this.archiveRepository.update(archive.uuid, {
@@ -446,25 +462,28 @@ export class ArchiveQueueProcessorProvider {
         projectUuid: string,
         entry: ArchivedFileEntry,
         stream: AsyncIterable<unknown>,
-        staging: string,
     ): Promise<void> {
-        const temporary = path.join(staging, `${entry.fileUuid}.tmp`);
+        // Streamed straight into S3 in parts: no temporary copy, bounded
+        // memory, and files larger than 5 GB work. The upload is only
+        // completed once the checksum matches, otherwise it is aborted.
         const digest = new Digest();
-        await pipeline(
-            Readable.from(stream),
-            digest,
-            createWriteStream(temporary),
+        await this.dataStorage.uploadStream(
+            entry.fileUuid,
+            digested(stream, digest),
+            {
+                sizeHint: entry.size,
+                beforeComplete: () => {
+                    if (digest.md5.digest('base64') !== entry.md5) {
+                        throw new Error(`Checksum mismatch for ${entry.path}`);
+                    }
+                },
+            },
         );
-        if (digest.md5.digest('base64') !== entry.md5) {
-            throw new Error(`Checksum mismatch for ${entry.path}`);
-        }
-        await this.dataStorage.uploadFile(entry.fileUuid, temporary);
         await this.dataStorage.addTags(entry.fileUuid, {
             projectUuid,
             missionUuid: entry.missionUuid,
             filename: entry.filename,
         });
-        await fs.rm(temporary, { force: true });
     }
 
     private async load(uuid: string): Promise<ProjectArchiveEntity> {
