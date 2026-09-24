@@ -684,6 +684,9 @@ importers:
       typeorm-extension:
         specifier: ^4.1.0
         version: 4.1.0(typeorm@1.1.1(better-sqlite3@13.0.3)(ioredis@6.0.0)(pg@8.23.0)(sql.js@1.14.2)(ts-node@10.9.2(@swc/core@1.16.2)(@swc/wasm@1.16.2)(@types/node@24.13.3)(typescript@5.9.3)))
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
     devDependencies:
       '@faker-js/faker':
         specifier: ^10.6.0
@@ -918,6 +921,9 @@ importers:
       systeminformation:
         specifier: ^5.33.12
         version: 5.33.13
+      tar-stream:
+        specifier: ^3.1.7
+        version: 3.2.1
       typeorm:
         specifier: ^1.1.1
         version: 1.1.1(better-sqlite3@13.0.3)(ioredis@6.0.0)(pg@8.23.0)(sql.js@1.14.2)(ts-node@10.9.2(@swc/core@1.16.2)(@swc/wasm@1.16.2)(@types/node@26.6.2)(typescript@5.9.3))
@@ -933,6 +939,9 @@ importers:
       winston-loki:
         specifier: ^6.1.7
         version: 6.1.7
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
     devDependencies:
       '@nestjs/cli':
         specifier: ^12.0.3
@@ -15337,7 +15346,7 @@ snapshots:
       '@jest/expect': 30.5.2
       '@jest/test-result': 30.5.2
       '@jest/types': 30.5.1
-      '@types/node': 24.13.3
+      '@types/node': 26.6.2
       chalk: 4.1.2
       co: 4.6.0
       dedent: 1.7.2
@@ -15472,7 +15481,7 @@ snapshots:
       '@jest/environment': 30.5.2
       '@jest/fake-timers': 30.5.2
       '@jest/types': 30.5.1
-      '@types/node': 24.13.3
+      '@types/node': 26.6.2
       jest-mock: 30.5.2
       jest-util: 30.5.1
       jest-validate: 30.5.1
@@ -15681,7 +15690,7 @@ snapshots:
 
   jest-worker@30.5.1:
     dependencies:
-      '@types/node': 24.13.3
+      '@types/node': 26.6.2
       '@ungap/structured-clone': 1.4.0
       jest-util: 30.5.1
       merge-stream: 2.0.0

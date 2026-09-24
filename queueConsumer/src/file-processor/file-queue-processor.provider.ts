@@ -1,5 +1,6 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
+import { isProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { RECORDING_TIMES_BACKFILL_JOB } from '@kleinkram/backend-common/services/recording-times-backfill';
 import { FileLocation, FileState, QueueState } from '@kleinkram/shared';
@@ -92,6 +93,13 @@ export class FileQueueProcessorProvider {
         });
         if (!file) {
             logger.error(`File ${fileUuid} not found for hash extraction`);
+            return;
+        }
+        // Queued before the project was archived
+        if (
+            !(await isProjectDataAvailable(this.fileRepo.manager, { fileUuid }))
+        ) {
+            logger.debug(`Skipping hash of archived file ${fileUuid}`);
             return;
         }
 

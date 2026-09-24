@@ -1,8 +1,10 @@
+import { ProjectArchiveService } from '@/services/project-archive.service';
 import { ProjectService } from '@/services/project.service';
 import {
     AccessGroupEntity,
     AccessGroupEventEntity,
     GroupMembershipEntity,
+    ProjectArchiveEntity,
     ProjectEntity,
     ProjectStarEntity,
     UserEntity,
@@ -19,6 +21,7 @@ import { ProjectController } from './project.controller';
     imports: [
         TypeOrmModule.forFeature([
             ProjectEntity,
+            ProjectArchiveEntity,
             ProjectStarEntity,
             AccountEntity,
             AccessGroupEntity,
@@ -30,7 +33,7 @@ import { ProjectController } from './project.controller';
         ]),
         AccessModule,
     ],
-    providers: [ProjectService],
+    providers: [ProjectService, ProjectArchiveService],
     exports: [ProjectService],
     controllers: [ProjectController],
 })

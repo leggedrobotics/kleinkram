@@ -1,4 +1,8 @@
 import {
+    AbortMultipartUploadCommand,
+    CompleteMultipartUploadCommand,
+    CompletedPart,
+    CreateMultipartUploadCommand,
     DeleteObjectCommand,
     DeleteObjectTaggingCommand,
     GetObjectCommand,
@@ -8,6 +12,7 @@ import {
     NotFound,
     PutObjectCommand,
     PutObjectTaggingCommand,
+    UploadPartCommand,
     _Object,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -25,7 +30,12 @@ import {
     StorageItem,
     StorageItemStat,
     StorageSystemMetrics,
+    UploadStreamOptions,
 } from './types';
+
+/** S3 allows at most 10'000 parts; stay clear of that. */
+const MAX_UPLOAD_PARTS = 9000;
+const MIN_UPLOAD_PART_SIZE = 16 * 1024 * 1024;
 
 export class S3StorageBucket implements IStorageBucket {
     constructor(
@@ -189,6 +199,93 @@ export class S3StorageBucket implements IStorageBucket {
             Metadata: metaData,
         });
         await this.clients.internal.send(command);
+    }
+
+    async uploadStream(
+        objectName: string,
+        source: AsyncIterable<Buffer | Uint8Array>,
+        options: UploadStreamOptions = {},
+    ): Promise<void> {
+        const partSize = Math.max(
+            MIN_UPLOAD_PART_SIZE,
+            Math.ceil((options.sizeHint ?? 0) / MAX_UPLOAD_PARTS),
+        );
+        const { UploadId } = await this.clients.internal.send(
+            new CreateMultipartUploadCommand({
+                Bucket: this.bucketName,
+                Key: objectName,
+            }),
+        );
+        if (!UploadId) throw new Error('S3 returned no upload id');
+
+        const parts: CompletedPart[] = [];
+        const uploadPart = async (body: Buffer): Promise<void> => {
+            const PartNumber = parts.length + 1;
+            const { ETag } = await this.clients.internal.send(
+                new UploadPartCommand({
+                    Bucket: this.bucketName,
+                    Key: objectName,
+                    UploadId,
+                    PartNumber,
+                    Body: body,
+                }),
+            );
+            parts.push({ ETag, PartNumber });
+        };
+
+        try {
+            // Awaiting every part before pulling more applies backpressure
+            // to the source, so at most one buffered part plus the chunk
+            // being read is held in memory.
+            let pending: Buffer[] = [];
+            let pendingSize = 0;
+            for await (const chunk of source) {
+                pending.push(
+                    Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk),
+                );
+                pendingSize += chunk.length;
+                if (pendingSize >= partSize) {
+                    const joined = Buffer.concat(pending, pendingSize);
+                    pending = [];
+                    pendingSize = 0;
+                    await uploadPart(joined.subarray(0, partSize));
+                    if (joined.length > partSize) {
+                        pending.push(joined.subarray(partSize));
+                        pendingSize = joined.length - partSize;
+                    }
+                }
+            }
+            // The last part may be smaller; an empty object still needs one
+            if (pendingSize > 0 || parts.length === 0) {
+                await uploadPart(Buffer.concat(pending, pendingSize));
+            }
+
+            await options.beforeComplete?.();
+
+            await this.clients.internal.send(
+                new CompleteMultipartUploadCommand({
+                    Bucket: this.bucketName,
+                    Key: objectName,
+                    UploadId,
+                    MultipartUpload: { Parts: parts },
+                }),
+            );
+        } catch (error) {
+            await this.clients.internal
+                .send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: this.bucketName,
+                        Key: objectName,
+                        UploadId,
+                    }),
+                )
+                .catch((abortError: unknown) => {
+                    Logger.warn(
+                        `Could not abort upload of ${objectName}: ${String(abortError)}`,
+                    );
+                });
+            throw error;
+        }
     }
 
     async deleteFile(objectName: string): Promise<void> {

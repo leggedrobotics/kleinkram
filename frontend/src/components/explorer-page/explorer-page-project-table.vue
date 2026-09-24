@@ -142,6 +142,10 @@
                                 <public-project-chip
                                     v-if="props.row.isPublic"
                                 />
+                                <archived-project-chip
+                                    v-if="isArchivedRow(props.row)"
+                                    :state="props.row.archiveState"
+                                />
                             </div>
                             <div
                                 v-if="props.row.description"
@@ -263,6 +267,10 @@
                     {{ props.row.name }}
                 </router-link>
                 <public-project-chip v-if="props.row.isPublic" />
+                <archived-project-chip
+                    v-if="isArchivedRow(props.row)"
+                    :state="props.row.archiveState"
+                />
             </q-td>
         </template>
 
@@ -352,6 +360,7 @@
 
 <script setup lang="ts">
 import type { ProjectWithMissionCountDto } from '@kleinkram/api-dto/types/project/project-with-mission-count.dto';
+import { ProjectArchiveState } from '@kleinkram/shared';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
 import ConfigureMetadataTypesDialogOpener from 'components/button-wrapper/dialog-opener-configure-metadata-types.vue';
@@ -362,6 +371,7 @@ import PublicProjectChip from 'components/common/public-project-chip.vue';
 import TableColumnSettings from 'components/common/table-columns/table-column-settings.vue';
 import TableHeaderCell from 'components/common/table-columns/table-header-cell.vue';
 import TableSelectionBar from 'components/common/table-selection-bar.vue';
+import ArchivedProjectChip from 'components/project-archive/archived-project-chip.vue';
 import { QTable, useQuasar } from 'quasar';
 import { explorerPageTableColumns } from 'src/components/explorer-page/explorer-page-table-columns';
 import { useRowActivation } from 'src/composables/use-row-activation';
@@ -524,6 +534,10 @@ const { onRowClick } = useRowActivation(selected, openProject);
 function clearSelection(): void {
     selected.value = [];
 }
+
+const isArchivedRow = (row: { archiveState?: ProjectArchiveState }): boolean =>
+    row.archiveState !== undefined &&
+    row.archiveState !== ProjectArchiveState.ACTIVE;
 </script>
 
 <style scoped>

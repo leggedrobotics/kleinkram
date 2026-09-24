@@ -34,6 +34,24 @@ Configuration for SeaweedFS (or S3-compatible storage), which is used for object
 | `S3_SCRIPTS_BUCKET_NAME`   | The bucket name for single-file action scripts. | `action-scripts`                           |
 | `S3_ENDPOINT`              | The hostname or IP address of the S3 service.   | `localhost`                                |
 
+## Archive Storage
+
+Moving finished projects to cold archive storage (e.g. ETH LTS) is opt-in.
+See [Archive Storage](./application-structure/archive-storage.md) for what the
+storage has to provide and for the format of the config file.
+
+| Variable                           | Description                                                                         | Default                |
+| :--------------------------------- | :---------------------------------------------------------------------------------- | :--------------------- |
+| `ARCHIVE_ENABLED`                  | Enables archiving and restoring projects (API server and queue consumer).           | `false`                |
+| `ARCHIVE_CONFIG_PATH`              | YAML file describing the storage to users: name, cost, links, restore instructions. | unset (neutral texts)  |
+| `ARCHIVE_ROOT`                     | Mount point of the archive storage in the queue consumer.                           | `/mnt/archive`         |
+| `ARCHIVE_STAGING_DIR`              | Local disk recalled tar parts are copied to; needs room for one part.               | `/tmp/archive-staging` |
+| `ARCHIVE_SEAL_MODE`                | `storage`: wait until the storage makes files read-only; `self`: do it on write.    | `storage`              |
+| `ARCHIVE_PART_SIZE_BYTES`          | Target size of one tar part.                                                        | `107374182400`         |
+| `ARCHIVE_SIMULATED_RECALL_SECONDS` | Delay before reading a sealed part; only for the local mock.                        | `0`                    |
+| `ARCHIVE_MAX_ATTEMPTS`             | Runs of an archive phase before it gives up (purging never does).                   | `5`                    |
+| `ARCHIVE_RETRY_DELAY_SECONDS`      | Delay before retrying a failed phase; doubles with every attempt, up to an hour.    | `60`                   |
+
 ## Database Configuration
 
 Configuration for the PostgreSQL database.

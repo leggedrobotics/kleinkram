@@ -3,8 +3,10 @@ import { BaseEntity } from '@backend-common/entities/base-entity.entity';
 import { CategoryEntity } from '@backend-common/entities/category/category.entity';
 import { MetadataTypeEntity } from '@backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { ProjectArchiveEntity } from '@backend-common/entities/project/project-archive.entity';
 import { ProjectStarEntity } from '@backend-common/entities/project/project-star.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
+import { ProjectArchiveState } from '@kleinkram/shared';
 import {
     Column,
     Entity,
@@ -71,4 +73,21 @@ export class ProjectEntity extends BaseEntity {
         (star: ProjectStarEntity) => star.project,
     )
     stars?: ProjectStarEntity[];
+
+    /**
+     * Where the data of the project lives, see {@link ProjectArchiveState}.
+     * Anything but ACTIVE makes the project read-only.
+     */
+    @Column({
+        type: 'enum',
+        enum: ProjectArchiveState,
+        default: ProjectArchiveState.ACTIVE,
+    })
+    archiveState!: ProjectArchiveState;
+
+    @OneToMany(
+        () => ProjectArchiveEntity,
+        (archive: ProjectArchiveEntity) => archive.project,
+    )
+    archives?: ProjectArchiveEntity[];
 }

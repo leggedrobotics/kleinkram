@@ -21,12 +21,14 @@ import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/inge
 import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MetadataEntity } from '@kleinkram/backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { ProjectArchiveEntity } from '@kleinkram/backend-common/entities/project/project-archive.entity';
 import { ProjectStarEntity } from '@kleinkram/backend-common/entities/project/project-star.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import env from '@kleinkram/backend-common/environment';
+import { ARCHIVE_QUEUE } from '@kleinkram/backend-common/modules/archive-storage/archive-storage';
 import configuration from '@kleinkram/backend-common/typeorm-config';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
@@ -38,6 +40,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import * as pg from 'pg';
 import { AccessGroupExpiryProvider } from './accessGroupExpiry/access-group-expiry.provider';
 import { ActionsModule } from './actions/actions.module';
+import { ArchiveQueueProcessorProvider } from './archive/archive-queue-processor.provider';
 import { FileProcessorModule } from './file-processor/file-processor.module';
 import { FileCleanupQueueProcessorProvider } from './fileCleanup/file-cleanup-queue-processor.provider';
 import { TriggerProcessorModule } from './trigger-processor/trigger-processor.module';
@@ -61,6 +64,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
 
         BullModule.registerQueue({ name: 'file-queue' }),
         BullModule.registerQueue({ name: 'trigger-queue' }),
+        BullModule.registerQueue({ name: ARCHIVE_QUEUE }),
 
         ConfigModule.forRoot({
             isGlobal: true,
@@ -85,6 +89,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                     MissionEntity,
                     FileEntity,
                     ProjectEntity,
+                    ProjectArchiveEntity,
                     // Not used here, but `ProjectEntity.stars` points at it:
                     // TypeORM refuses to build the metadata of a relation
                     // whose target is missing from the connection.
@@ -118,6 +123,8 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
             IngestionJobEntity,
             MissionEntity,
             FileEntity,
+            ProjectEntity,
+            ProjectArchiveEntity,
             UserEntity,
             ProjectAccessViewEntity,
             MissionAccessViewEntity,
@@ -127,7 +134,12 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
         StorageModule,
         AccessControlModule,
     ],
-    providers: [FileCleanupQueueProcessorProvider, AccessGroupExpiryProvider],
+    providers: [
+        FileCleanupQueueProcessorProvider,
+        AccessGroupExpiryProvider,
+        // Archiving is opt-in per deployment
+        ...(env.ARCHIVE_ENABLED ? [ArchiveQueueProcessorProvider] : []),
+    ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}

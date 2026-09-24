@@ -11,6 +11,7 @@ import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/inge
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import {
     IStorageBucket,
     StorageCredentials,
@@ -23,6 +24,7 @@ import {
     FileOrigin,
     FileState,
     FileType,
+    ProjectArchiveState,
     TriggerEvent,
     UserRole,
 } from '@kleinkram/shared';
@@ -134,6 +136,14 @@ export class FileLifecycleService implements OnModuleInit {
             file.missionUuid &&
             file.missionUuid !== databaseFile.mission.uuid
         ) {
+            // Moving would carry archived data into an active project, or
+            // put a file without data in S3 into an archived one.
+            await assertProjectDataAvailable(this.fileRepository.manager, {
+                fileUuid: uuid,
+            });
+            await assertProjectDataAvailable(this.fileRepository.manager, {
+                missionUuid: file.missionUuid,
+            });
             // An API key is scoped to a single mission and the guard of this
             // route only ever validates the key against the file it addresses.
             // Authorizing the target mission through the rights of the key
@@ -253,6 +263,14 @@ export class FileLifecycleService implements OnModuleInit {
         actor?: UserEntity,
         action?: ActionEntity,
     ): Promise<void> {
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            missionUuid: missionUUID,
+        });
+        for (const uuid of fileUUIDs) {
+            await assertProjectDataAvailable(this.fileRepository.manager, {
+                fileUuid: uuid,
+            });
+        }
         await Promise.all(
             fileUUIDs.map(async (uuid) => {
                 try {
@@ -317,6 +335,9 @@ export class FileLifecycleService implements OnModuleInit {
         action?: ActionEntity,
     ): Promise<void> {
         if (!uuid) throw new BadRequestException('UUID is required');
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            fileUuid: uuid,
+        });
 
         logger.debug(`Deleting file with uuid: ${uuid}`);
 
@@ -386,6 +407,9 @@ export class FileLifecycleService implements OnModuleInit {
         uploadSource = 'Web Interface',
         fileSizes?: number[],
     ): Promise<TemporaryFileAccessesDto> {
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            missionUuid: missionUUID,
+        });
         const mission = await this.missionRepository.findOneOrFail({
             where: { uuid: missionUUID },
             relations: {
@@ -686,6 +710,9 @@ export class FileLifecycleService implements OnModuleInit {
         missionUUID: string,
     ): Promise<void> {
         if (fileUUIDs.length === 0) return;
+        await assertProjectDataAvailable(this.fileRepository.manager, {
+            missionUuid: missionUUID,
+        });
 
         const uniqueFilesUuids = [...new Set(fileUUIDs)];
 
@@ -744,7 +771,13 @@ export class FileLifecycleService implements OnModuleInit {
         const filesToFix = await this.fileRepository
             .createQueryBuilder('file')
             .leftJoin('file.topics', 'topic')
+            // Files of archived projects are not in S3 to read topics from
+            .innerJoin('file.mission', 'mission')
+            .innerJoin('mission.project', 'project')
             .where('file.type = :type', { type: FileType.BAG })
+            .andWhere('project.archiveState = :active', {
+                active: ProjectArchiveState.ACTIVE,
+            })
             .andWhere('file.state = :state', { state: FileState.OK })
             .andWhere('topic.uuid IS NULL')
             .select(['file.uuid', 'file.filename'])

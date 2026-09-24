@@ -51,6 +51,7 @@ import {
     ProjectStarEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import {
     AccessGroupConfig,
     AccessGroupRights,
@@ -854,6 +855,11 @@ export class ProjectService {
     }
 
     async deleteProject(uuid: string): Promise<void> {
+        // Deleting an archived project would orphan its copy on the long
+        // term storage, whose second site can only be cleared by a ticket.
+        await assertProjectDataAvailable(this.dataSource.manager, {
+            projectUuid: uuid,
+        });
         await this.dataSource.transaction(
             async (transactionalEntityManager) => {
                 // Check if there are any missions with that project

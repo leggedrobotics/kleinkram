@@ -84,6 +84,10 @@ services:
             DEVBUILD: 'true'
             S3_ENDPOINT_INTERNAL: 'seaweedfs'
             REDIS_HOST: redis
+            # Archiving is opt-in; the local stack archives to a mock
+            ARCHIVE_ENABLED: ${ARCHIVE_ENABLED:-true}
+            ARCHIVE_CONFIG_PATH: /etc/kleinkram/archive-config.yml
+            ARCHIVE_PART_SIZE_BYTES: ${ARCHIVE_PART_SIZE_BYTES:-107374182400}
 
         depends_on:
             database:
@@ -109,6 +113,7 @@ services:
             - /app/packages/shared/node_modules
             - /app/packages/validation/node_modules
             - ./docs:/app/docs
+            - ./docker/archive-mock/archive-config.yml:/etc/kleinkram/archive-config.yml:ro
 
     database:
         image: postgres:17
@@ -278,6 +283,9 @@ services:
             # mount docker socket to access docker from within the container
             - /var/run/docker.sock:/var/run/docker.sock
             - ./google-service-account.json:/app/queueConsumer/google-service-account.json:ro
+            # stands in for the NFS mount of the archive storage
+            - archive_data:/mnt/archive
+            - ./docker/archive-mock/archive-config.yml:/etc/kleinkram/archive-config.yml:ro
             # Mask host node_modules with anonymous volumes to avoid broken symlinks
             - /app/packages/api-dto/node_modules
             - /app/packages/backend-common/node_modules
@@ -339,6 +347,17 @@ services:
 
         environment:
             REDIS_HOST: redis
+            ARCHIVE_ENABLED: ${ARCHIVE_ENABLED:-true}
+            ARCHIVE_CONFIG_PATH: /etc/kleinkram/archive-config.yml
+            ARCHIVE_ROOT: /mnt/archive
+            ARCHIVE_STAGING_DIR: /tmp/archive-staging
+            # the mock seals files itself, a plain NFS share would need `self`
+            ARCHIVE_SEAL_MODE: storage
+            # set e.g. 1073741824 (1 GB) to see a project split into parts
+            ARCHIVE_PART_SIZE_BYTES: ${ARCHIVE_PART_SIZE_BYTES:-107374182400}
+            ARCHIVE_SIMULATED_RECALL_SECONDS: ${ARCHIVE_SIMULATED_RECALL_SECONDS:-20}
+            # retry failed phases quickly locally (default 60 s, doubling)
+            ARCHIVE_RETRY_DELAY_SECONDS: ${ARCHIVE_RETRY_DELAY_SECONDS:-5}
 
         networks:
             - private-network
@@ -352,6 +371,25 @@ services:
                 condition: service_started
             loki-ready:
                 condition: service_completed_successfully
+            archive-mock:
+                condition: service_started
+
+    # Mock of a write-once archive storage (such as ETH LTS), see
+    # docker/archive-mock
+    archive-mock:
+        image: alpine:3.22
+        container_name: kleinkram-archive-mock
+        entrypoint: ['/archive-mock.sh']
+        environment:
+            # ETH LTS seals files after 1h
+            ARCHIVE_SEAL_DELAY_SECONDS: ${ARCHIVE_SEAL_DELAY_SECONDS:-60}
+            ARCHIVE_CLIENT_UID: ${USER_ID:-1000}
+            ARCHIVE_CLIENT_GID: ${GROUP_ID:-1000}
+        volumes:
+            - archive_data:/archive
+            - ./docker/archive-mock/archive-mock.sh:/archive-mock.sh:ro
+        networks:
+            - private-network
 
     prometheus:
         image: prom/prometheus
@@ -513,6 +551,7 @@ volumes:
     backend_node_modules:
     frontend_node_modules:
     queue_consumer_node_modules:
+    archive_data:
 
 networks:
     public-network:

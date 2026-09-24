@@ -1,8 +1,12 @@
 <template>
     <div>
         <title-section :title="project?.name">
-            <template v-if="project?.isPublic" #titleAppend>
-                <public-project-chip />
+            <template v-if="project?.isPublic || isArchived" #titleAppend>
+                <public-project-chip v-if="project?.isPublic" />
+                <archived-project-chip
+                    v-if="isArchived && project?.archiveState"
+                    :state="project.archiveState"
+                />
             </template>
 
             <template
@@ -128,8 +132,45 @@
                                     </q-item-section>
                                     <q-item-section> Copy UUID</q-item-section>
                                 </q-item>
+                                <archive-project-dialog-opener
+                                    v-if="canManageArchive && !isArchived"
+                                    :project-uuid="projectUuid"
+                                >
+                                    <q-item v-close-popup clickable>
+                                        <q-item-section avatar>
+                                            <q-icon name="sym_o_inventory_2" />
+                                        </q-item-section>
+                                        <q-item-section>
+                                            <q-item-label>
+                                                Archive Project
+                                            </q-item-label>
+                                            <q-item-label caption>
+                                                Move all files to cold storage
+                                            </q-item-label>
+                                        </q-item-section>
+                                    </q-item>
+                                </archive-project-dialog-opener>
+                                <restore-project-dialog-opener
+                                    v-if="
+                                        canManageArchive &&
+                                        project?.archiveState ===
+                                            ProjectArchiveState.ARCHIVED
+                                    "
+                                    :project-uuid="projectUuid"
+                                >
+                                    <q-item v-close-popup clickable>
+                                        <q-item-section avatar>
+                                            <q-icon
+                                                name="sym_o_settings_backup_restore"
+                                            />
+                                        </q-item-section>
+                                        <q-item-section>
+                                            Restore from Archive
+                                        </q-item-section>
+                                    </q-item>
+                                </restore-project-dialog-opener>
                                 <DeleteProjectDialogOpener
-                                    v-if="!isReadOnlyPublicView"
+                                    v-if="!isReadOnly"
                                     :project-uuid="projectUuid ?? ''"
                                     :has-missions="
                                         (project?.missionCount ?? 0) > 0
@@ -163,6 +204,10 @@
             @close="onClose"
         />
         <div>
+            <project-archive-banner
+                v-if="projectUuid && isArchived"
+                :project-uuid="projectUuid"
+            />
             <div
                 v-if="isReadOnlyPublicView"
                 class="row items-center no-wrap q-pa-md public-project-banner"
@@ -201,7 +246,7 @@
                 <div class="missions-toolbar__actions">
                     <app-refresh-button @click="refresh" />
                     <UploadMissionFolder
-                        v-if="!isReadOnlyPublicView"
+                        v-if="!isReadOnly"
                         :project-uuid="projectUuid"
                     >
                         <q-btn
@@ -216,7 +261,7 @@
                         </q-btn>
                     </UploadMissionFolder>
                     <create-mission-dialog-opener
-                        v-if="!isReadOnlyPublicView"
+                        v-if="!isReadOnly"
                         :project-uuid="projectUuid"
                     >
                         <app-create-button
@@ -234,10 +279,12 @@
                 @clear="deselect"
             >
                 <KleinDownloadMissions
+                    v-if="!isArchived"
                     :missions="selectedMissions"
                     class="missions-selection__cli"
                 />
                 <q-btn
+                    v-if="!isArchived"
                     flat
                     dense
                     padding="6px"
@@ -249,7 +296,7 @@
                 </q-btn>
 
                 <q-btn
-                    v-if="!isReadOnlyPublicView"
+                    v-if="!isReadOnly"
                     flat
                     dense
                     padding="6px"
@@ -308,6 +355,7 @@
 </template>
 <script setup lang="ts">
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { ProjectArchiveState } from '@kleinkram/shared';
 import { useQueryClient } from '@tanstack/vue-query';
 import ActionConfiguration from 'components/actions/action-configuration.vue';
 import DeleteProjectDialogOpener from 'components/button-wrapper/delete-project-dialog-opener.vue';
@@ -324,9 +372,17 @@ import ProjectStarButton from 'components/common/project-star-button.vue';
 import PublicProjectChip from 'components/common/public-project-chip.vue';
 import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import ExplorerPageMissionTable from 'components/explorer-page/explorer-page-mission-table.vue';
+import ArchiveProjectDialogOpener from 'components/project-archive/archive-project-dialog-opener.vue';
+import ArchivedProjectChip from 'components/project-archive/archived-project-chip.vue';
+import ProjectArchiveBanner from 'components/project-archive/project-archive-banner.vue';
+import RestoreProjectDialogOpener from 'components/project-archive/restore-project-dialog-opener.vue';
 import TitleSection from 'components/title-section.vue';
 import UploadMissionFolder from 'components/upload-mission-folder.vue';
 import { copyToClipboard, useQuasar } from 'quasar';
+import {
+    useProjectArchived,
+    useProjectArchiveStatus,
+} from 'src/composables/use-project-archive';
 import { usePublicReadOnlyView } from 'src/composables/use-public-read-only-view';
 import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
 import {
@@ -350,6 +406,18 @@ registerNoPermissionErrorHandler(isLoadingError, projectUuid, 'project', error);
 
 const { data: permissions } = usePermissionsQuery();
 const isReadOnlyPublicView = usePublicReadOnlyView(projectUuid);
+const isArchived = useProjectArchived(projectUuid);
+/** Archived projects are read-only for everybody, like public ones. */
+const isReadOnly = computed(
+    () => isReadOnlyPublicView.value || isArchived.value,
+);
+const { data: archiveStatus } = useProjectArchiveStatus(projectUuid);
+/** Archiving is opt-in per deployment and needs project admin rights. */
+const canManageArchive = computed(
+    () =>
+        archiveStatus.value?.storage.enabled === true &&
+        canDeleteProject(projectUuid.value, permissions.value),
+);
 
 /** Tells the users who manage access that the project is public. */
 const showPublicAccessHint = computed(

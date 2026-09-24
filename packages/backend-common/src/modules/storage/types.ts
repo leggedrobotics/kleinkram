@@ -38,6 +38,12 @@ export interface PresignedResponseHeaders {
     contentDisposition?: string;
 }
 
+export interface UploadStreamOptions {
+    /** Expected size, used to pick a part size that stays below 10k parts. */
+    sizeHint?: number;
+    beforeComplete?: () => void | Promise<void>;
+}
+
 export interface IStorageBucket {
     getPresignedDownloadUrl(
         objectName: string,
@@ -65,6 +71,18 @@ export interface IStorageBucket {
         objectName: string,
         filePath: string,
         metaData?: Record<string, string>,
+    ): Promise<void>;
+
+    /**
+     * Streams an object of any size into the bucket as a multipart upload,
+     * holding at most about two parts in memory. `beforeComplete` runs once
+     * the source is drained; if it throws (e.g. a checksum mismatch) the
+     * upload is aborted and no object is written.
+     */
+    uploadStream(
+        objectName: string,
+        source: AsyncIterable<Buffer | Uint8Array>,
+        options?: UploadStreamOptions,
     ): Promise<void>;
 
     deleteFile(objectName: string): Promise<void>;

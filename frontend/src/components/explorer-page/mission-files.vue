@@ -5,7 +5,7 @@
         @dragleave.prevent="onDragLeave"
         @drop.prevent="onDrop"
     >
-        <div v-if="isDragging" class="drop-overlay">
+        <div v-if="isDragging && !isArchived" class="drop-overlay">
             <q-icon name="sym_o_upload" size="4rem" color="white" />
             <div class="text-h4 text-white q-mt-md">Drop files to upload</div>
         </div>
@@ -71,6 +71,7 @@
                             <q-tooltip v-if="$q.screen.xs">Search</q-tooltip>
                         </q-btn>
                         <create-file-dialog-opener
+                            v-if="!isArchived"
                             :mission="missionData as MissionWithFilesDto"
                             class="search-row__upload"
                         >
@@ -105,7 +106,7 @@
         >
             <template v-if="missionData">
                 <klein-download-files
-                    v-if="$q.screen.gt.xs"
+                    v-if="$q.screen.gt.xs && !isArchived"
                     :files="selectedFiles"
                     class="files-selection__cli"
                 />
@@ -114,10 +115,12 @@
                     :files="selectedFiles"
                 />
                 <OpenMultiFileMoveDialog
+                    v-if="!isArchived"
                     :mission="missionData"
                     :files="selectedFiles"
                 />
                 <q-btn
+                    v-if="!isArchived"
                     flat
                     dense
                     padding="6px"
@@ -128,6 +131,7 @@
                     Download
                 </q-btn>
                 <q-btn
+                    v-if="!isArchived"
                     flat
                     dense
                     padding="6px"
@@ -191,6 +195,7 @@ import {
     useMissionFileFilter,
 } from 'src/composables/use-mission-file-filter';
 import { useMissionFileSearch } from 'src/composables/use-mission-file-search';
+import { useProjectArchived } from 'src/composables/use-project-archive';
 import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
 import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue';
 import CreateFileDialog from 'src/dialogs/create-file-dialog.vue';
@@ -212,6 +217,7 @@ const $q = useQuasar();
 
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
+const isArchived = useProjectArchived(projectUuid);
 
 /**
  * Below 1024px the search panel is stacked under the section title and the
@@ -494,6 +500,7 @@ const downloadCallback = async (): Promise<void> => {
 const isDragging = ref(false);
 
 const onDragOver = () => {
+    if (isArchived.value) return;
     isDragging.value = true;
 };
 
@@ -514,6 +521,7 @@ const onDragLeave = (event: DragEvent) => {
 
 const onDrop = (event: DragEvent) => {
     isDragging.value = false;
+    if (isArchived.value) return;
     const dt = event.dataTransfer;
     if (dt?.files && dt.files.length > 0) {
         const droppedFiles = [...dt.files];

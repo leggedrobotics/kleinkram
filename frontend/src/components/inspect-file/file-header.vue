@@ -18,6 +18,7 @@
                     <edit-file-button v-if="file" :file="file" />
 
                     <q-btn
+                        v-if="!archived"
                         class="button-border"
                         flat
                         icon="sym_o_download"
@@ -37,6 +38,7 @@
                         <q-menu v-if="file" auto-close>
                             <q-list>
                                 <q-item
+                                    v-if="!archived"
                                     v-ripple
                                     clickable
                                     :disable="isInvalid"
@@ -51,6 +53,7 @@
                                 </q-item>
 
                                 <q-item
+                                    v-if="!archived"
                                     v-ripple
                                     clickable
                                     :disable="isInvalid"
@@ -85,6 +88,7 @@
                                     <q-item-section>Copy UUID</q-item-section>
                                 </q-item>
                                 <q-item
+                                    v-if="!archived"
                                     v-ripple
                                     clickable
                                     class="text-negative"
@@ -106,7 +110,7 @@
                     </q-btn>
                 </button-group>
                 <div class="col-auto">
-                    <KleinDownloadFile v-if="file" :file="file" />
+                    <KleinDownloadFile v-if="file && !archived" :file="file" />
                 </div>
             </div>
         </template>
@@ -254,7 +258,11 @@ import { computed } from 'vue';
 
 const $q = useQuasar();
 
-const properties = defineProps<{ file: FileWithTopicDto }>();
+const properties = defineProps<{
+    file: FileWithTopicDto;
+    /** The file is on the long term storage: no downloads or links. */
+    archived?: boolean;
+}>();
 const emit = defineEmits([
     'download',
     'copy-link',

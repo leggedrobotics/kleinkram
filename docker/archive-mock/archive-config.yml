@@ -1,0 +1,31 @@
+# Describes the archive storage to users; see
+# docs/development/application-structure/archive-storage.md
+#
+# This one describes the local mock as if it were ETH LTS.
+name: ETH Long Term Storage (mock)
+
+description: >-
+    Tape archive run by ETH IT Services. Every tar part is kept on two tapes,
+    one in ETH Zentrum and one in Hönggerberg. Files are read-only one hour
+    after they were written.
+
+costPerTbYear: 40
+currency: CHF
+
+links:
+    - label: LTS service description
+      url: https://unlimited.ethz.ch/help/storage/lts-long-term-storage
+
+# Shown on archived projects and written into every archive (manifest.yml and
+# the kleinkram.yml of each tar). Placeholders: {projectName}, {projectUuid},
+# {archiveUuid}, {location}, {parts}
+restoreInstructions: |-
+    The files of "{projectName}" are on the LTS share of the Robotic Systems
+    Lab, directory {location}.
+    1. Ask the D-MAVT ISG for read access to the LTS share (NFS or SMB).
+    2. Copy {parts} to a local disk; do not open them on the share, every
+       read is a tape recall.
+    3. Unpack with `tar -xf <part>.tar`: the files are stored as uploaded,
+       at <mission>/<filename>.
+    4. Each tar ends with a kleinkram.yml with the mission metadata and the
+       sha256 of every file; check them with `sha256sum`.

@@ -74,6 +74,7 @@ export * from '@api-dto/permissions.dto';
 export * from '@api-dto/project/base-project.dto';
 export * from '@api-dto/project/delete-project-response.dto';
 export * from '@api-dto/project/project-access.dto';
+export * from '@api-dto/project/project-archive.dto';
 export * from '@api-dto/project/project-query.dto';
 export * from '@api-dto/project/project-star.dto';
 export * from '@api-dto/project/project-with-creator.dto';

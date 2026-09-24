@@ -7,6 +7,7 @@ export * from './adaptive-chunk-optimizer';
 export * from './cron-utilities';
 export * from './enum';
 export * from './mcap-message-index';
+export * from './project-archive';
 export * from './public-access';
 export * from './text-decoding';
 export * from './universal-http-reader';

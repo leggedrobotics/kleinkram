@@ -1,6 +1,7 @@
 import { FileState, FileType } from '@kleinkram/shared';
 import { In, IsNull, LessThan, Repository } from 'typeorm';
 import { FileEntity } from '../entities/file/file.entity';
+import { fileDataInObjectStorage } from '../modules/archive-storage/archive-guard';
 
 /**
  * Name of the `file-queue` job that recovers the recording window of a single
@@ -62,10 +63,14 @@ export const findFilesMissingRecordingTimes = async (
         recordingStartDate: IsNull(),
         state: FileState.OK,
         type: In(RECORDING_FILE_TYPES),
+        // Archived files are read again once their project is restored
+        ...fileDataInObjectStorage(),
     };
 
     return fileRepository.find({
-        select: { uuid: true },
+        // The ordered column has to be selected: filtering on the project
+        // makes TypeORM wrap the query to apply `take` over the join.
+        select: { uuid: true, recordingTimesCheckedAt: true },
         where: [
             { ...eligible, recordingTimesCheckedAt: IsNull() },
             { ...eligible, recordingTimesCheckedAt: LessThan(retryBefore) },

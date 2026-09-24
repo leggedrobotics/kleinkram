@@ -1,4 +1,5 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { isProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileType } from '@kleinkram/shared';
 import { Inject, Injectable } from '@nestjs/common';
@@ -49,6 +50,17 @@ export class RecordingTimesBackfillService {
         }
 
         if (file.recordingStartDate) return true;
+
+        // Queued before the project was archived. Leave the file unchecked so
+        // that it is picked up again once the project is restored.
+        if (
+            !(await isProjectDataAvailable(this.fileRepo.manager, {
+                fileUuid,
+            }))
+        ) {
+            logger.debug(`[Backfill] File ${fileUuid} is archived, skipping.`);
+            return false;
+        }
 
         const recordingTimes =
             (await this.inheritFromRelatedFile(file)) ??

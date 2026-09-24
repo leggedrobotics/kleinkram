@@ -4,8 +4,9 @@
             class="flex justify-between items-center q-mb-md file-topic-table__head"
         >
             <h2 class="text-h5 text-md-h4 q-my-none flex items-center">
-                Messages
+                {{ previewDisabled ? 'Topics' : 'Messages' }}
                 <q-badge
+                    v-if="!previewDisabled"
                     color="orange-7"
                     text-color="white"
                     label="BETA"
@@ -40,7 +41,9 @@
             <template #body="props">
                 <q-tr
                     :props="props"
-                    class="cursor-pointer hover:bg-grey-1"
+                    :class="{
+                        'cursor-pointer hover:bg-grey-1': !previewDisabled,
+                    }"
                     @click="() => toggleExpand(props)"
                 >
                     <q-td
@@ -51,6 +54,7 @@
                     >
                         <template v-if="col.name === 'expand'">
                             <q-btn
+                                v-if="!previewDisabled"
                                 round
                                 flat
                                 dense
@@ -144,6 +148,8 @@ const properties = defineProps<{
     loadingState: Record<string, boolean>;
     topicErrors: Record<string, string | null>;
     isLoading: boolean;
+    /** Lists the topics without offering to load their messages. */
+    previewDisabled?: boolean;
 }>();
 
 const emit = defineEmits(['load-preview', 'pause-preview', 'resume-preview']);
@@ -445,6 +451,7 @@ const expectedCount = (
 };
 
 const toggleExpand = (props: { row: TopicRow; expand: boolean }): void => {
+    if (properties.previewDisabled) return;
     props.expand = !props.expand;
     if (props.expand) {
         const hasData =

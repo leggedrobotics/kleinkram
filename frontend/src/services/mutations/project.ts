@@ -1,3 +1,4 @@
+import type { ProjectArchiveStatusDto } from '@kleinkram/api-dto/types/project/project-archive.dto';
 import type { ProjectStarDto } from '@kleinkram/api-dto/types/project/project-star.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import axios from 'src/api/axios';
@@ -70,6 +71,28 @@ export const unstarProject = async (
 ): Promise<ProjectStarDto> => {
     const response = await axios.delete<ProjectStarDto>(
         `/projects/${projectUUID}/star`,
+    );
+    return response.data;
+};
+
+export const archiveProject = async (
+    projectUUID: string,
+    reason?: string,
+): Promise<ProjectArchiveStatusDto> => {
+    const response = await axios.post<ProjectArchiveStatusDto>(
+        `/projects/${projectUUID}/archive`,
+        { reason },
+    );
+    return response.data;
+};
+
+export const restoreProject = async (
+    projectUUID: string,
+    reason: string,
+): Promise<ProjectArchiveStatusDto> => {
+    const response = await axios.post<ProjectArchiveStatusDto>(
+        `/projects/${projectUUID}/archive/restore`,
+        { reason },
     );
     return response.data;
 };

@@ -1,6 +1,14 @@
+import { ProjectArchiveState } from '@kleinkram/shared';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsBoolean, IsDate, IsString, IsUUID } from 'class-validator';
+import {
+    IsBoolean,
+    IsDate,
+    IsEnum,
+    IsOptional,
+    IsString,
+    IsUUID,
+} from 'class-validator';
 
 @Expose()
 export class ProjectDto {
@@ -33,4 +41,16 @@ export class ProjectDto {
     @IsBoolean()
     @Expose()
     autoConvert!: boolean;
+
+    @ApiProperty({
+        enum: ProjectArchiveState,
+        required: false,
+        description:
+            'Where the data of the project lives. Anything but ACTIVE makes ' +
+            'the project read-only; missing means ACTIVE.',
+    })
+    @IsOptional()
+    @IsEnum(ProjectArchiveState)
+    @Expose()
+    archiveState?: ProjectArchiveState;
 }

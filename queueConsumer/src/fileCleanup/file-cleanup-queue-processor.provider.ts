@@ -2,6 +2,7 @@ import { redis } from '@kleinkram/backend-common/consts';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 
+import { fileDataInObjectStorage } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileState, QueueState } from '@kleinkram/shared';
 import { Processor } from '@nestjs/bull';
@@ -45,7 +46,12 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 logger.debug('Fixing file hashes');
 
                 const files = await this.fileRepository.find({
-                    where: { hash: IsNull(), state: Not(FileState.LOST) },
+                    where: {
+                        hash: IsNull(),
+                        state: Not(FileState.LOST),
+                        // Archived files are not in S3 to hash
+                        ...fileDataInObjectStorage(),
+                    },
                     relations: {
                         mission: {
                             project: true,

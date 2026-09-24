@@ -66,12 +66,12 @@
                         <q-menu v-if="mission" auto-close style="width: 320px">
                             <q-list>
                                 <klein-download-mission
-                                    v-if="mission"
+                                    v-if="mission && !isArchived"
                                     :mission="mission"
                                 />
                                 <q-separator class="q-ma-sm" />
                                 <MoveMissionDialogOpener
-                                    v-if="mission"
+                                    v-if="mission && !isArchived"
                                     :mission="mission"
                                 >
                                     <q-item v-close-popup clickable>
@@ -127,7 +127,7 @@
                                 </q-item>
 
                                 <delete-mission-dialog-opener
-                                    v-if="mission"
+                                    v-if="mission && !isArchived"
                                     :mission="mission"
                                 >
                                     <q-item
@@ -169,6 +169,11 @@
             </template>
         </title-section>
 
+        <project-archive-banner
+            v-if="projectUuid && isArchived"
+            :project-uuid="projectUuid"
+        />
+
         <q-tab-panels
             v-model="activeTab"
             class="q-mt-lg"
@@ -200,13 +205,15 @@ import KleinDownloadMission from 'components/cli-links/klein-download-mission.vu
 import MissionActions from 'components/explorer-page/mission-actions.vue';
 import MissionFiles from 'components/explorer-page/mission-files.vue';
 import MissionMetadataDrawer from 'components/explorer-page/mission-metadata-drawer.vue';
+import ProjectArchiveBanner from 'components/project-archive/project-archive-banner.vue';
 import TitleSection from 'components/title-section.vue';
 import { copyToClipboard, Notify, useQuasar } from 'quasar';
+import { useProjectArchived } from 'src/composables/use-project-archive';
 import {
     registerNoPermissionErrorHandler,
     useMission,
 } from 'src/hooks/query-hooks';
-import { useMissionUUID } from 'src/hooks/router-hooks';
+import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -215,6 +222,8 @@ const $route = useRoute();
 const $q = useQuasar();
 
 const missionUuid = useMissionUUID();
+const projectUuid = useProjectUUID();
+const isArchived = useProjectArchived(projectUuid);
 const isMetadataDrawerOpen = ref(false);
 
 /**
