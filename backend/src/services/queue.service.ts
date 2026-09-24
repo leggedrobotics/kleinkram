@@ -11,7 +11,10 @@ import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/inge
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
-import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
+import {
+    assertProjectDataAvailable,
+    fileDataInObjectStorage,
+} from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import {
     findFilesMissingRecordingTimes,
@@ -140,8 +143,12 @@ export class QueueService implements OnModuleInit {
     }> {
         const files = await this.fileRepository.find({
             where: [
-                { hash: IsNull(), state: FileState.OK },
-                { hash: '', state: FileState.OK },
+                {
+                    hash: IsNull(),
+                    state: FileState.OK,
+                    ...fileDataInObjectStorage(),
+                },
+                { hash: '', state: FileState.OK, ...fileDataInObjectStorage() },
             ],
             relations: {
                 mission: {

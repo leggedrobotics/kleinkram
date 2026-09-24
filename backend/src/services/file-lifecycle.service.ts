@@ -24,6 +24,7 @@ import {
     FileOrigin,
     FileState,
     FileType,
+    ProjectArchiveState,
     TriggerEvent,
     UserRole,
 } from '@kleinkram/shared';
@@ -770,7 +771,13 @@ export class FileLifecycleService implements OnModuleInit {
         const filesToFix = await this.fileRepository
             .createQueryBuilder('file')
             .leftJoin('file.topics', 'topic')
+            // Files of archived projects are not in S3 to read topics from
+            .innerJoin('file.mission', 'mission')
+            .innerJoin('mission.project', 'project')
             .where('file.type = :type', { type: FileType.BAG })
+            .andWhere('project.archiveState = :active', {
+                active: ProjectArchiveState.ACTIVE,
+            })
             .andWhere('file.state = :state', { state: FileState.OK })
             .andWhere('topic.uuid IS NULL')
             .select(['file.uuid', 'file.filename'])

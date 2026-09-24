@@ -1,4 +1,5 @@
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { isProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { Process, Processor } from '@nestjs/bull';
 import { Inject } from '@nestjs/common';
@@ -39,6 +40,18 @@ export class FileRepairProcessor {
             if (!fileEntity) {
                 logger.warn(
                     `[Repair] File entity ${fileUuid} not found, skipping.`,
+                );
+                return;
+            }
+
+            // Queued before the project was archived
+            if (
+                !(await isProjectDataAvailable(this.fileRepo.manager, {
+                    fileUuid,
+                }))
+            ) {
+                logger.debug(
+                    `[Repair] File ${fileUuid} is archived, skipping.`,
                 );
                 return;
             }
