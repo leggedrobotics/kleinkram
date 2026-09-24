@@ -68,7 +68,7 @@
         bordered
         :rows-per-page-options="[5, 10, 20, 50, 100]"
         :rows="data"
-        :columns="visibleFileColumns as any"
+        :columns="columnLayout.columns as any"
         row-key="uuid"
         :loading="isLoading"
         binary-state-sort
@@ -90,6 +90,14 @@
         </template>
         <template #loading>
             <q-inner-loading showing color="primary" />
+        </template>
+        <template #header-cell="props">
+            <table-header-cell :cell-props="props" :layout="columnLayout" />
+        </template>
+        <template #header-cell-fileaction="props">
+            <q-th :props="props">
+                <table-column-settings :layout="columnLayout" />
+            </q-th>
         </template>
         <template #body-cell-state="props">
             <q-td :props="props">
@@ -442,9 +450,12 @@ import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-crea
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
 import MoveFileDialogOpener from 'components/button-wrapper/move-file-dialog-opener.vue';
 import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
+import TableColumnSettings from 'components/common/table-columns/table-column-settings.vue';
+import TableHeaderCell from 'components/common/table-columns/table-header-cell.vue';
 import { fileColumns } from 'components/explorer-page/explorer-page-table-columns';
 import { Notify, QTable, useQuasar } from 'quasar';
 import { useRowActivation } from 'src/composables/use-row-activation';
+import { useTableColumns } from 'src/composables/use-table-columns';
 import {
     useHandler,
     useMission,
@@ -478,18 +489,10 @@ const $q = useQuasar();
  */
 const isPhone = computed(() => $q.screen.xs);
 
-const COMPACT_COLUMN_NAMES = new Set([
-    'state',
-    'filename',
-    'size',
-    'fileaction',
-]);
-
-const visibleFileColumns = computed(() =>
-    $q.screen.lt.md
-        ? fileColumns.filter((column) => COMPACT_COLUMN_NAMES.has(column.name))
-        : fileColumns,
-);
+const columnLayout = useTableColumns('files', fileColumns, {
+    compact: () => $q.screen.lt.md,
+    compactColumns: ['state', 'filename', 'size', 'fileaction'],
+});
 
 const sortOptions = [
     { label: 'File name', value: 'filename' },

@@ -1,18 +1,20 @@
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
+import type {
+    MetadataDto,
+    MetadataTypeDto,
+} from '@kleinkram/api-dto/types/metadata/metadata.dto';
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { DataType } from '@kleinkram/shared';
 import { formatDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
 
 import type { ProjectWithAccessRightsDto } from '@kleinkram/api-dto/types/project/project-access.dto';
 import type { ProjectWithMissionCountDto } from '@kleinkram/api-dto/types/project/project-with-mission-count.dto';
+import type { ConfigurableColumn } from 'src/composables/use-table-columns';
 
-export interface ProjectColumnType {
-    name: string;
+export interface ProjectColumnType extends ConfigurableColumn {
     required?: boolean;
-    label: string;
     align: string;
-    classes?: string;
-    headerClasses?: string;
     field?:
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: ProjectWithMissionCountDto) => any)
@@ -23,8 +25,9 @@ export interface ProjectColumnType {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | ((row: FileWithTopicDto) => any);
     format?: ((value: string) => string) | ((value: number) => string);
+    /** Set on the per-metadata-type columns of the missions table. */
+    metadataType?: MetadataTypeDto;
     sortable?: boolean;
-    style?: string;
     sort?: (
         _a: string,
         _b: string,
@@ -36,6 +39,7 @@ export interface ProjectColumnType {
 export const explorerPageTableColumns: ProjectColumnType[] = [
     {
         name: 'star',
+        configurable: false,
         required: true,
         label: '',
         align: 'center',
@@ -43,6 +47,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
     },
     {
         name: 'name',
+        alwaysVisible: true,
         required: true,
         label: 'Project Name',
         align: 'left',
@@ -105,6 +110,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
     },
     {
         name: 'project-action',
+        configurable: false,
         label: '',
         style: 'width: 10px',
         align: 'center',
@@ -142,6 +148,7 @@ export const projectAccessColumns: ProjectColumnType[] = [
     },
     {
         name: 'project-action',
+        configurable: false,
         label: '',
         style: 'width: 10px',
         align: 'center',
@@ -151,6 +158,7 @@ export const projectAccessColumns: ProjectColumnType[] = [
 export const missionColumns: ProjectColumnType[] = [
     {
         name: 'name',
+        alwaysVisible: true,
         required: true,
         label: 'Mission',
         align: 'left',
@@ -211,11 +219,60 @@ export const missionColumns: ProjectColumnType[] = [
 
     {
         name: 'missionaction',
+        configurable: false,
         label: '',
         style: 'width: 10px',
         align: 'center',
     },
 ];
+
+function formatMetadataValue(
+    value: MetadataDto['value'],
+    datatype: DataType,
+): string {
+    switch (datatype) {
+        case DataType.DATE: {
+            return formatDate(new Date(value as string));
+        }
+        case DataType.BOOLEAN: {
+            return value ? 'Yes' : 'No';
+        }
+        default: {
+            return String(value);
+        }
+    }
+}
+
+/**
+ * An optional missions-table column showing the value of one metadata type.
+ *
+ * Keyed by the type's name rather than its uuid: several types can share a
+ * name, and a column like "location" should mean the same thing in every
+ * project. Not sortable, as missions are paged on the server, which cannot
+ * order by metadata values yet.
+ */
+export function missionMetadataColumn(
+    metadataType: MetadataTypeDto,
+): ProjectColumnType {
+    const isNumber = metadataType.datatype === DataType.NUMBER;
+    return {
+        name: `metadata:${metadataType.name}`,
+        label: metadataType.name,
+        align: isNumber ? 'right' : 'left',
+        ...(isNumber ? { classes: 'kk-num', headerClasses: 'kk-num' } : {}),
+        group: 'Metadata',
+        defaultHidden: true,
+        metadataType,
+        field: (row: FlatMissionDto) => {
+            const metadata = row.metadata.find(
+                (candidate) => candidate.type.name === metadataType.name,
+            );
+            return metadata
+                ? formatMetadataValue(metadata.value, metadata.type.datatype)
+                : '';
+        },
+    };
+}
 
 export const fileColumns: ProjectColumnType[] = [
     {
@@ -228,6 +285,7 @@ export const fileColumns: ProjectColumnType[] = [
     },
     {
         name: 'filename',
+        alwaysVisible: true,
         required: true,
         label: 'File',
         align: 'left',
@@ -270,6 +328,7 @@ export const fileColumns: ProjectColumnType[] = [
     },
     {
         name: 'fileaction',
+        configurable: false,
         required: true,
         label: '',
         style: 'width: 10px',

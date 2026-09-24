@@ -19,8 +19,7 @@
         :grid="isPhone"
         :rows-per-page-options="[10, 20, 50, 100]"
         :rows="data"
-        :columns="tableColumns as any"
-        :visible-columns="visibleColumns"
+        :columns="columnLayout.columns as any"
         row-key="uuid"
         :loading="isLoading"
         binary-state-sort
@@ -40,6 +39,36 @@
         </template>
         <template #loading>
             <q-inner-loading showing color="primary" />
+        </template>
+        <template #header-cell="props">
+            <table-header-cell :cell-props="props" :layout="columnLayout" />
+        </template>
+        <template #header-cell-missionaction="props">
+            <q-th :props="props">
+                <table-column-settings :layout="columnLayout" />
+            </q-th>
+        </template>
+        <template #body-cell="props">
+            <q-td :props="props">
+                <template v-if="props.col.metadataType">
+                    <span v-if="props.value === ''" class="text-grey-5">
+                        &ndash;
+                    </span>
+                    <a
+                        v-else-if="
+                            props.col.metadataType.datatype === DataType.LINK
+                        "
+                        :href="props.value"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        @click.stop
+                    >
+                        {{ props.value }}
+                    </a>
+                    <template v-else>{{ props.value }}</template>
+                </template>
+                <template v-else>{{ props.value }}</template>
+            </q-td>
         </template>
         <template #body-cell-name="props">
             <q-td :props="props">
@@ -336,13 +365,24 @@ import type {
     FlatMissionDto,
     MissionsDto,
 } from '@kleinkram/api-dto/types/mission/mission.dto';
+import { DataType } from '@kleinkram/shared';
 import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
-import { missionColumns } from 'components/explorer-page/explorer-page-table-columns';
+import TableColumnSettings from 'components/common/table-columns/table-column-settings.vue';
+import TableHeaderCell from 'components/common/table-columns/table-header-cell.vue';
+import {
+    missionColumns,
+    missionMetadataColumn,
+} from 'components/explorer-page/explorer-page-table-columns';
 import { Notify, QTable, useQuasar } from 'quasar';
 import { usePublicReadOnlyView } from 'src/composables/use-public-read-only-view';
 import { useRowActivation } from 'src/composables/use-row-activation';
-import { useHandler, useProjectQuery } from 'src/hooks/query-hooks';
+import { useTableColumns } from 'src/composables/use-table-columns';
+import {
+    useAllMetadataTypes,
+    useHandler,
+    useProjectQuery,
+} from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
@@ -368,17 +408,33 @@ const $q = useQuasar();
 const isPhone = computed(() => $q.screen.xs);
 const isCompact = computed(() => $q.screen.lt.md);
 
-const tableColumns = computed(() =>
-    isCompact.value
-        ? // `required` columns cannot be hidden by `visible-columns`
-          missionColumns.map((column) => ({ ...column, required: false }))
-        : missionColumns,
-);
+const { data: metadataTypes } = useAllMetadataTypes();
 
-const visibleColumns = computed(() =>
-    isCompact.value
-        ? ['name', 'filesCount', 'missingMetadata', 'missionaction']
-        : undefined,
+const uniqueByName = (types: MetadataTypeDto[]): MetadataTypeDto[] => [
+    ...new Map(types.map((type) => [type.name, type])).values(),
+];
+
+/**
+ * Besides the fixed columns, every metadata type can be shown as a column of
+ * its own. They are off by default and turned on in the column settings.
+ */
+const columnLayout = useTableColumns(
+    'missions',
+    () => [
+        ...missionColumns,
+        ...uniqueByName(metadataTypes.value ?? []).map((metadataType) =>
+            missionMetadataColumn(metadataType),
+        ),
+    ],
+    {
+        compact: isCompact,
+        compactColumns: [
+            'name',
+            'filesCount',
+            'missingMetadata',
+            'missionaction',
+        ],
+    },
 );
 
 async function setPagination(update: TableRequest): Promise<void> {
