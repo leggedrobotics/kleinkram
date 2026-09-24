@@ -2,6 +2,7 @@
     <FileHeader
         v-if="file"
         :file="file"
+        :archived="isArchived"
         @download="handleDownload"
         @copy-link="copyPublicLink"
         @copy-hash="copyHash"
@@ -9,9 +10,36 @@
         @copy-foxglove="copyFoxgloveLink"
     />
 
+    <project-archive-banner
+        v-if="file && projectUuid && isArchived"
+        :project-uuid="projectUuid"
+    />
+
     <div v-if="file" class="q-my-lg">
+        <!-- Archived: the bytes are on tape, only the metadata is here -->
+        <div v-if="isArchived">
+            <FileTopicTable
+                v-if="file.topics.length > 0"
+                :topics="file.topics"
+                :is-loading="false"
+                :previews="{}"
+                :loading-state="{}"
+                :topic-errors="{}"
+                preview-disabled
+            />
+            <div
+                v-else
+                class="text-center q-pa-xl q-px-md bg-grey-1 rounded-borders border-dashed text-grey-7"
+            >
+                <q-icon name="sym_o_inventory_2" size="4em" class="q-mb-md" />
+                <div class="text-h6">
+                    No preview available while the file is archived
+                </div>
+            </div>
+        </div>
+
         <!-- YAML/Text Preview -->
-        <div v-if="isYaml" class="q-mb-lg">
+        <div v-else-if="isYaml" class="q-mb-lg">
             <h2 class="text-h5 text-md-h4 q-mb-md">Content Preview</h2>
             <div
                 v-if="yamlContent"
@@ -157,14 +185,17 @@
 
 <script setup lang="ts">
 import { decodeTextSample, FileState, FileType } from '@kleinkram/shared';
+import ProjectArchiveBanner from 'components/project-archive/project-archive-banner.vue';
 import { copyToClipboard, Notify } from 'quasar';
+import { useProjectArchived } from 'src/composables/use-project-archive';
 import { useRosmsgPreview } from 'src/composables/use-rosmsg-preview';
 import {
     registerNoPermissionErrorHandler,
     useFile,
     useFileEvents,
+    useProjectQuery,
 } from 'src/hooks/query-hooks';
-import { useFileUUID } from 'src/hooks/router-hooks';
+import { useFileUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import { _downloadFile } from 'src/services/generic';
 import { downloadFile, getFoxgloveLink } from 'src/services/queries/file';
 import { computed, onUnmounted, ref, watch } from 'vue';
@@ -178,6 +209,9 @@ import Svo2Viewer from './viewers/svo2-viewer.vue';
 import TumViewer from './viewers/tum-viewer.vue';
 
 const fileUuid = useFileUUID();
+const projectUuid = useProjectUUID();
+const isArchived = useProjectArchived(projectUuid);
+const { data: project } = useProjectQuery(projectUuid);
 const { isLoading, data: file, error, isLoadingError } = useFile(fileUuid);
 registerNoPermissionErrorHandler(isLoadingError, fileUuid, 'file', error);
 const { data: events } = useFileEvents(fileUuid);
@@ -303,8 +337,10 @@ async function fetchTextPreview(url: string): Promise<TextPreview | undefined> {
 
 // --- Init ---
 watch(
-    () => file.value,
-    async (currentFile) => {
+    // The archive state decides whether there is anything to preview, so wait
+    // for the project and try again once a restore finished.
+    () => [file.value, project.value?.archiveState] as const,
+    async ([currentFile]) => {
         if (currentFile?.uuid !== loadedFileUuid.value) {
             loadedFileUuid.value = currentFile?.uuid;
             yamlContent.value = undefined;
@@ -315,7 +351,12 @@ watch(
             preview.reset();
         }
 
-        if (currentFile?.state !== FileState.OK || preview.isReaderReady.value)
+        if (
+            currentFile?.state !== FileState.OK ||
+            preview.isReaderReady.value ||
+            project.value === undefined ||
+            isArchived.value
+        )
             return;
 
         // Navigating away mid-request must not let a late response overwrite

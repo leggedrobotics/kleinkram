@@ -135,6 +135,14 @@ export class FileLifecycleService implements OnModuleInit {
             file.missionUuid &&
             file.missionUuid !== databaseFile.mission.uuid
         ) {
+            // Moving would carry archived data into an active project, or
+            // put a file without data in S3 into an archived one.
+            await assertProjectDataAvailable(this.fileRepository.manager, {
+                fileUuid: uuid,
+            });
+            await assertProjectDataAvailable(this.fileRepository.manager, {
+                missionUuid: file.missionUuid,
+            });
             // An API key is scoped to a single mission and the guard of this
             // route only ever validates the key against the file it addresses.
             // Authorizing the target mission through the rights of the key
