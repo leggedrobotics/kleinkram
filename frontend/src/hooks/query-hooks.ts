@@ -30,7 +30,6 @@ import {
     UserRole,
 } from '@kleinkram/shared';
 import {
-    keepPreviousData,
     ThrowOnError,
     useQuery,
     UseQueryReturnType,
@@ -524,18 +523,19 @@ export const useFilteredMetadataTypes = (
     selectedDataType: MaybeRef<DataType | undefined>,
 ): UseQueryReturnType<MetadataTypesDto | undefined, Error> => {
     return useQuery({
-        queryKey: computed(() => [
-            'metadataTypes',
-            unref(nameSearch),
-            unref(selectedDataType),
-        ]),
-        queryFn: async () => {
-            return getFilteredMetadataTypes(
-                unref(nameSearch),
-                unref(selectedDataType),
-            );
+        queryKey: computed(
+            () =>
+                [
+                    'metadataTypes',
+                    unref(nameSearch),
+                    unref(selectedDataType),
+                ] as const,
+        ),
+        // read the filters from the key, so a response is always cached
+        // under the search it was fetched for
+        queryFn: async ({ queryKey: [, name, dataType] }) => {
+            return getFilteredMetadataTypes(name, dataType);
         },
-        placeholderData: keepPreviousData,
     });
 };
 

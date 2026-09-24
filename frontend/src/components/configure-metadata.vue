@@ -11,6 +11,8 @@
                 multiple
                 use-input
                 input-debounce="300"
+                placeholder="Select Metadata"
+                :loading="isFetching"
                 :options="filteredMetadataTypes"
                 class="full-width"
                 option-label="label"
@@ -39,14 +41,6 @@
                         </q-item-section>
                     </q-item>
                 </template>
-
-                <span
-                    v-if="!nameSearch"
-                    class="text-placeholder absolute"
-                    style="line-height: 40px"
-                >
-                    Select Metadata
-                </span>
                 <template #selected-item />
             </q-select>
 
@@ -108,7 +102,7 @@ watch(
     { deep: true },
 );
 
-const { data: metadataTypes } = useFilteredMetadataTypes(
+const { data: metadataTypes, isFetching } = useFilteredMetadataTypes(
     nameSearch,
     selectedDataType,
 );
@@ -139,6 +133,8 @@ watch(
     (newValue: MetadataTypeDto[]) => {
         emits('update:selected', newValue);
         if (selectReference.value) {
+            // Clear the search so the next open shows every metadata type
+            selectReference.value.updateInputValue('');
             selectReference.value.hidePopup(); // Close the dropdown after selection
         }
     },
