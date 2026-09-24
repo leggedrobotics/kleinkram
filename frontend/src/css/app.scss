@@ -272,6 +272,33 @@ label {
     text-decoration: underline;
 }
 
+/*
+ * A column the user gave a width (see use-table-columns). Long unbroken
+ * values, like timestamped mission names, would otherwise push the column
+ * back open.
+ */
+.q-table .kk-col-sized {
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    text-overflow: ellipsis;
+}
+
+/*
+ * Short values that read wrong when broken over two lines ("56.80 / MB",
+ * a date above its time) and only make rows uneven in height.
+ */
+.q-table td.kk-num,
+.q-table td.kk-nowrap {
+    white-space: nowrap;
+}
+
+/* While a column is dragged wider, the cursor must not flicker or select */
+body.kk-col-resizing,
+body.kk-col-resizing * {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
+
 .help-text {
     color: $text-secondary;
     font-size: 14px;

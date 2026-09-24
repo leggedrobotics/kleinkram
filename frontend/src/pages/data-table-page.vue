@@ -57,7 +57,7 @@
         separator="none"
         :rows-per-page-options="[5, 10, 20, 50, 100]"
         :rows="data"
-        :columns="visibleColumns as QTableColumn<FileWithTopicDto>[]"
+        :columns="columnLayout.columns as QTableColumn<FileWithTopicDto>[]"
         row-key="uuid"
         :loading="loading"
         selection="multiple"
@@ -75,6 +75,31 @@
                 color="grey-8"
                 class="checkbox-with-hitbox"
             />
+        </template>
+        <template #header-cell="props">
+            <table-header-cell :cell-props="props" :layout="columnLayout" />
+        </template>
+        <template #header-cell-action="props">
+            <q-th :props="props">
+                <table-column-settings :layout="columnLayout" />
+            </q-th>
+        </template>
+        <template #body-cell-categories="props">
+            <q-td :props="props">
+                <q-chip
+                    v-for="category in sortedCategories(props.row)"
+                    :key="category.uuid"
+                    :label="category.name"
+                    :color="hashUUIDtoColor(category.uuid)"
+                    text-color="white"
+                    dense
+                    class="q-ml-none q-mr-xs"
+                >
+                    <q-tooltip v-if="category.description">
+                        {{ category.description }}
+                    </q-tooltip>
+                </q-chip>
+            </q-td>
         </template>
         <template #body-cell-filename="props">
             <q-td :props="props">
@@ -256,6 +281,7 @@
 </template>
 
 <script setup lang="ts">
+import type { CategoryDto } from '@kleinkram/api-dto/types/category.dto';
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import {
@@ -265,6 +291,8 @@ import {
 } from '@tanstack/vue-query';
 import DeleteFileDialogOpener from 'components/button-wrapper/delete-file-dialog-opener.vue';
 import EditFileDialogOpener from 'components/button-wrapper/edit-file-dialog-opener.vue';
+import TableColumnSettings from 'components/common/table-columns/table-column-settings.vue';
+import TableHeaderCell from 'components/common/table-columns/table-header-cell.vue';
 import TableEmptyState from 'components/common/table-empty-state.vue';
 import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import FilesFilter from 'components/files/files-filter.vue';
@@ -272,11 +300,17 @@ import TitleSection from 'components/title-section.vue';
 import { QTable, QTableColumn, useQuasar } from 'quasar';
 import { useFileFilter } from 'src/composables/use-file-filter';
 import { useRowActivation } from 'src/composables/use-row-activation';
+import { useTableColumns } from 'src/composables/use-table-columns';
 import { useHandler } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
-import { formatDate } from 'src/services/date-formating';
+import { formatDate, formatDuration } from 'src/services/date-formating';
 import { formatSize } from 'src/services/general-formatting';
-import { getColorFileState, getIcon, getTooltip } from 'src/services/generic';
+import {
+    getColorFileState,
+    getIcon,
+    getTooltip,
+    hashUUIDtoColor,
+} from 'src/services/generic';
 import { fetchFilteredFiles } from 'src/services/queries/file';
 import { computed, Ref, ref, watch } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
@@ -458,6 +492,7 @@ const columns = [
     },
     {
         name: 'file.filename',
+        alwaysVisible: true,
         required: true,
         label: 'File',
         align: 'left',
@@ -469,6 +504,7 @@ const columns = [
     {
         name: 'file.date',
         required: true,
+        classes: 'kk-nowrap',
         label: 'Recording Date',
         align: 'left',
         field: (row: FileWithTopicDto): Date => row.date,
@@ -478,6 +514,7 @@ const columns = [
     {
         name: 'file.createdAt',
         required: true,
+        classes: 'kk-nowrap',
         label: 'Creation Date',
         align: 'left',
         field: (row: FileWithTopicDto): Date => row.createdAt,
@@ -505,8 +542,63 @@ const columns = [
         format: formatSize,
         sortable: true,
     },
+    // Off by default, can be added in the column settings. Not sortable: the
+    // backend only orders by the columns above.
+    {
+        name: 'type',
+        label: 'Type',
+        align: 'left',
+        defaultHidden: true,
+        field: (row: FileWithTopicDto): string => row.type,
+    },
+    {
+        name: 'categories',
+        label: 'Categories',
+        align: 'left',
+        defaultHidden: true,
+    },
+    {
+        name: 'duration',
+        label: 'Duration',
+        align: 'right',
+        classes: 'kk-num',
+        headerClasses: 'kk-num',
+        defaultHidden: true,
+        field: (row: FileWithTopicDto): number | null => row.durationSeconds,
+        format: (value: number | null): string =>
+            value === null ? '' : formatDuration(value),
+    },
+    {
+        name: 'recordingStart',
+        label: 'Recording Start',
+        align: 'left',
+        classes: 'kk-nowrap',
+        defaultHidden: true,
+        field: (row: FileWithTopicDto): Date | null => row.recordingStartDate,
+        format: (value: string | null): string =>
+            value ? formatDate(new Date(value)) : '',
+    },
+    {
+        name: 'recordingEnd',
+        label: 'Recording End',
+        align: 'left',
+        classes: 'kk-nowrap',
+        defaultHidden: true,
+        field: (row: FileWithTopicDto): Date | null => row.recordingEndDate,
+        format: (value: string | null): string =>
+            value ? formatDate(new Date(value)) : '',
+    },
+    {
+        name: 'hash',
+        label: 'Hash',
+        align: 'left',
+        classes: 'kk-nowrap',
+        defaultHidden: true,
+        field: (row: FileWithTopicDto): string => row.hash ?? '',
+    },
     {
         name: 'action',
+        configurable: false,
         required: true,
         label: '',
         align: 'center',
@@ -518,20 +610,21 @@ const columns = [
  * Below 1024px only the essentials are shown: project, recording date and
  * creator are dropped so that the remaining columns fit the viewport.
  */
-const COMPACT_COLUMN_NAMES = new Set([
-    'state',
-    'mission.name',
-    'file.filename',
-    'file.createdAt',
-    'file.size',
-    'action',
-]);
+const columnLayout = useTableColumns('datatable', columns, {
+    compact: isCompact,
+    compactColumns: [
+        'state',
+        'mission.name',
+        'file.filename',
+        'file.createdAt',
+        'file.size',
+        'action',
+    ],
+});
 
-const visibleColumns = computed(() =>
-    isCompact.value
-        ? columns.filter((column) => COMPACT_COLUMN_NAMES.has(column.name))
-        : columns,
-);
+function sortedCategories(file: FileWithTopicDto): CategoryDto[] {
+    return file.categories.toSorted((a, b) => a.name.localeCompare(b.name));
+}
 
 /**
  * Route to a file, shared by the row click and the name link.
