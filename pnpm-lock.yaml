@@ -684,6 +684,9 @@ importers:
       typeorm-extension:
         specifier: ^4.1.0
         version: 4.1.0(typeorm@1.1.1(better-sqlite3@13.0.3)(ioredis@6.0.0)(pg@8.23.0)(sql.js@1.14.2)(ts-node@10.9.2(@swc/core@1.16.2)(@swc/wasm@1.16.2)(@types/node@24.13.3)(typescript@5.9.3)))
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
     devDependencies:
       '@faker-js/faker':
         specifier: ^10.6.0

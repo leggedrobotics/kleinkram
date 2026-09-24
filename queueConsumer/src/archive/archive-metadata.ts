@@ -7,6 +7,10 @@ import {
     ProjectArchiveEntity,
 } from '@kleinkram/backend-common/entities/project/project-archive.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
+import {
+    loadArchiveConfig,
+    renderRestoreInstructions,
+} from '@kleinkram/backend-common/modules/archive-storage/archive-config';
 import { stringify } from 'yaml';
 
 /** Name of the metadata file stored as the last entry of every tar part. */
@@ -28,7 +32,29 @@ export interface ArchiveContext {
     project: ProjectEntity;
     missions: MissionEntity[];
     files: Map<string, FileEntity>;
+    /** Names of all tar parts of the archive, known once they are planned. */
+    partNames: string[];
 }
+
+/**
+ * What the storage is and how to get the files back without Kleinkram, as
+ * configured for this deployment (ARCHIVE_CONFIG_PATH).
+ */
+const describeStorage = (context: ArchiveContext): Record<string, unknown> => {
+    const config = loadArchiveConfig();
+    return {
+        name: config.name,
+        description: config.description,
+        links: config.links.length > 0 ? config.links : undefined,
+        howToRestore: renderRestoreInstructions({
+            projectName: context.project.name,
+            projectUuid: context.project.uuid,
+            archiveUuid: context.archive.uuid,
+            location: context.archive.location,
+            parts: context.partNames,
+        }),
+    };
+};
 
 const metadataValue = (
     metadata: MetadataEntity,
@@ -109,6 +135,7 @@ export function partMetadataYaml(
             partCount: part.count,
             createdAt: new Date(),
         },
+        storage: describeStorage(context),
         project: describeProject(context.project),
         missions: context.missions
             .filter((mission) => missionUuids.has(mission.uuid))
@@ -119,7 +146,7 @@ export function partMetadataYaml(
     });
 }
 
-/** Index of all parts, written next to them on the long term storage. */
+/** Index of all parts, written next to them on the archive storage. */
 export function manifestYaml(
     context: ArchiveContext,
     parts: ArchivePart[],
@@ -131,6 +158,7 @@ export function manifestYaml(
             createdAt: new Date(),
             reason: context.archive.reason ?? undefined,
         },
+        storage: describeStorage(context),
         project: describeProject(context.project),
         missions: context.missions.map((mission) => describeMission(mission)),
         parts: parts.map((part) => ({

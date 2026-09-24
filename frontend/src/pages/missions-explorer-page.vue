@@ -142,10 +142,10 @@
                                         </q-item-section>
                                         <q-item-section>
                                             <q-item-label>
-                                                Archive to Long Term Storage
+                                                Archive Project
                                             </q-item-label>
                                             <q-item-label caption>
-                                                Move all files to tape
+                                                Move all files to cold storage
                                             </q-item-label>
                                         </q-item-section>
                                     </q-item>
@@ -379,7 +379,10 @@ import RestoreProjectDialogOpener from 'components/project-archive/restore-proje
 import TitleSection from 'components/title-section.vue';
 import UploadMissionFolder from 'components/upload-mission-folder.vue';
 import { copyToClipboard, useQuasar } from 'quasar';
-import { useProjectArchived } from 'src/composables/use-project-archive';
+import {
+    useProjectArchived,
+    useProjectArchiveStatus,
+} from 'src/composables/use-project-archive';
 import { usePublicReadOnlyView } from 'src/composables/use-public-read-only-view';
 import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
 import {
@@ -408,8 +411,12 @@ const isArchived = useProjectArchived(projectUuid);
 const isReadOnly = computed(
     () => isReadOnlyPublicView.value || isArchived.value,
 );
-const canManageArchive = computed(() =>
-    canDeleteProject(projectUuid.value, permissions.value),
+const { data: archiveStatus } = useProjectArchiveStatus(projectUuid);
+/** Archiving is opt-in per deployment and needs project admin rights. */
+const canManageArchive = computed(
+    () =>
+        archiveStatus.value?.storage.enabled === true &&
+        canDeleteProject(projectUuid.value, permissions.value),
 );
 
 /** Tells the users who manage access that the project is public. */

@@ -3,7 +3,7 @@ import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.ser
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/long-term-storage/archive-guard';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import {
     OPAQUE_CONTENT_TYPE,
     contentDisposition,

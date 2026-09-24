@@ -4,10 +4,17 @@
         <template #content>
             <div v-if="status && project" class="archive-dialog">
                 <p class="q-ma-none">
-                    Moves all files of <b>{{ project.name }}</b> to the ETH Long
-                    Term Storage, a tape archive kept at two sites. Use it for
-                    finished projects whose data has to be kept but is rarely
-                    needed.
+                    Moves all files of <b>{{ project.name }}</b> to the
+                    {{ status.storage.name }}, as tar files with their metadata.
+                    Use it for finished projects whose data has to be kept but
+                    is rarely needed.
+                </p>
+
+                <p
+                    v-if="status.storage.description"
+                    class="q-ma-none text-body2 text-grey-8"
+                >
+                    {{ status.storage.description }}
                 </p>
 
                 <div v-if="preflight" class="archive-summary">
@@ -31,12 +38,15 @@
                             {{ preflight.estimatedParts }}
                         </div>
                     </div>
-                    <div>
-                        <div class="text-caption text-grey-7">
-                            LTS cost / year
-                        </div>
+                    <div v-if="preflight.estimatedYearlyCost !== null">
+                        <div class="text-caption text-grey-7">Cost / year</div>
                         <div class="text-h6">
-                            {{ formatCost(preflight.estimatedYearlyCostChf) }}
+                            {{
+                                formatCost(
+                                    preflight.estimatedYearlyCost,
+                                    status.storage.currency,
+                                )
+                            }}
                         </div>
                     </div>
                 </div>
@@ -52,8 +62,8 @@
                         color="green-8"
                     />
                     Nothing changed since the last restore. The copy that is
-                    still on tape is reused, only the Kleinkram storage is
-                    freed.
+                    still on the archive storage is reused, only the Kleinkram
+                    storage is freed.
                 </div>
 
                 <q-list dense class="text-body2">
@@ -82,7 +92,8 @@
                         </q-item-section>
                         <q-item-section>
                             Getting the data back needs a restore, which recalls
-                            the tapes and takes hours for large projects.
+                            the parts from cold storage and can take hours for
+                            large projects.
                         </q-item-section>
                     </q-item>
                 </q-list>
@@ -157,8 +168,12 @@ const { data: status } = useProjectArchiveStatus(uuid);
 const preflight = computed(() => status.value?.preflight ?? null);
 const blockers = computed(() => preflight.value?.blockers ?? []);
 
-const formatCost = (chf: number): string =>
-    chf < 0.01 ? '< CHF 0.01' : `CHF ${chf.toFixed(2)}`;
+const formatCost = (cost: number | null, currency: string): string => {
+    if (cost === null) return '';
+    return cost < 0.01
+        ? `< ${currency} 0.01`
+        : `${currency} ${cost.toFixed(2)}`;
+};
 
 const reason = ref('');
 const nameCheck = ref('');

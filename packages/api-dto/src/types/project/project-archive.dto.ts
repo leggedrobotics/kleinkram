@@ -48,7 +48,7 @@ export class ProjectArchiveDto {
     @Expose()
     state!: ProjectArchiveJobState;
 
-    @ApiProperty({ description: 'Directory on the long term storage' })
+    @ApiProperty({ description: 'Directory on the archive storage' })
     @IsString()
     @Expose()
     location!: string;
@@ -151,10 +151,17 @@ export class ArchivePreflightDto {
     @Expose()
     estimatedParts!: number;
 
-    @ApiProperty({ description: 'Yearly LTS cost at CHF 40 per TB' })
+    @ApiProperty({
+        required: false,
+        nullable: true,
+        description:
+            'Yearly cost on the archive storage, in the currency of the ' +
+            'storage; null if no price is configured',
+    })
+    @IsOptional()
     @IsNumber()
     @Expose()
-    estimatedYearlyCostChf!: number;
+    estimatedYearlyCost!: number | null;
 
     @ApiProperty({
         description:
@@ -175,7 +182,66 @@ export class ArchivePreflightDto {
     blockers!: string[];
 }
 
+export class ArchiveStorageLinkDto {
+    @ApiProperty()
+    @IsString()
+    @Expose()
+    label!: string;
+
+    @ApiProperty()
+    @IsString()
+    @Expose()
+    url!: string;
+}
+
+/** The archive storage this instance writes to, as configured. */
+export class ArchiveStorageInfoDto {
+    @ApiProperty({
+        description:
+            'Whether this instance can archive and restore projects ' +
+            '(ARCHIVE_ENABLED)',
+    })
+    @IsBoolean()
+    @Expose()
+    enabled!: boolean;
+
+    @ApiProperty({ description: 'Name shown to users, e.g. ETH LTS' })
+    @IsString()
+    @Expose()
+    name!: string;
+
+    @ApiProperty({ required: false, nullable: true })
+    @IsOptional()
+    @IsString()
+    @Expose()
+    description!: string | null;
+
+    @ApiProperty({ type: [ArchiveStorageLinkDto] })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ArchiveStorageLinkDto)
+    @Expose()
+    links!: ArchiveStorageLinkDto[];
+
+    @ApiProperty({ required: false, nullable: true })
+    @IsOptional()
+    @IsNumber()
+    @Expose()
+    costPerTbYear!: number | null;
+
+    @ApiProperty()
+    @IsString()
+    @Expose()
+    currency!: string;
+}
+
 export class ProjectArchiveStatusDto {
+    @ApiProperty({ type: ArchiveStorageInfoDto })
+    @ValidateNested()
+    @Type(() => ArchiveStorageInfoDto)
+    @Expose()
+    storage!: ArchiveStorageInfoDto;
+
     @ApiProperty({ enum: ProjectArchiveState })
     @IsEnum(ProjectArchiveState)
     @Expose()
@@ -194,6 +260,18 @@ export class ProjectArchiveStatusDto {
     @Type(() => ProjectArchiveDto)
     @Expose()
     history!: ProjectArchiveDto[];
+
+    @ApiProperty({
+        required: false,
+        nullable: true,
+        description:
+            'How to get the files of the current archive back without ' +
+            'Kleinkram, from the deployment config',
+    })
+    @IsOptional()
+    @IsString()
+    @Expose()
+    restoreInstructions!: string | null;
 
     @ApiProperty({ type: ArchivePreflightDto, required: false, nullable: true })
     @IsOptional()
@@ -217,8 +295,8 @@ export class ArchiveProjectDto {
 export class RestoreProjectDto {
     @ApiProperty({
         description:
-            'Why the data is needed again. Recalls from tape are slow and ' +
-            'frequent reads cost extra, so every restore is justified.',
+            'Why the data is needed again. Recalls from cold storage are ' +
+            'slow and may cost extra, so every restore is justified.',
     })
     @IsString()
     @MinLength(3)

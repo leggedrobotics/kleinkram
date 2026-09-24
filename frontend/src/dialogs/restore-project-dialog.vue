@@ -9,8 +9,9 @@
                 <p class="q-ma-none">
                     Recalls the {{ current.parts.length }} part(s) of
                     <b>{{ project.name }}</b> ({{ current.fileCount }} files,
-                    {{ formatSize(current.totalBytes) }}) from tape and puts the
-                    files back into the Kleinkram storage.
+                    {{ formatSize(current.totalBytes) }}) from the
+                    {{ status?.storage.name }} and puts the files back into the
+                    Kleinkram storage.
                 </p>
 
                 <q-list dense class="text-body2">
@@ -19,9 +20,9 @@
                             <q-icon name="sym_o_schedule" color="grey-8" />
                         </q-item-section>
                         <q-item-section>
-                            Tapes have to be mounted and read sequentially.
-                            Large projects take hours; progress is shown on the
-                            project page.
+                            Cold storage can take a long time before it starts
+                            reading. Large projects take hours; progress is
+                            shown on the project page.
                         </q-item-section>
                     </q-item>
                     <q-item class="q-px-none">
@@ -29,9 +30,8 @@
                             <q-icon name="sym_o_payments" color="grey-8" />
                         </q-item-section>
                         <q-item-section>
-                            ETH IT Services may charge for frequent recalls, and
-                            the restored files count against the Kleinkram
-                            storage again.
+                            Frequent recalls may cost extra, and the restored
+                            files count against the Kleinkram storage again.
                         </q-item-section>
                     </q-item>
                     <q-item class="q-px-none">
@@ -39,7 +39,7 @@
                             <q-icon name="sym_o_recycling" color="green-8" />
                         </q-item-section>
                         <q-item-section>
-                            The copy on tape is kept. Archiving the project
+                            The archived copy is kept. Archiving the project
                             again without changing its files only frees the
                             storage.
                         </q-item-section>
@@ -106,7 +106,7 @@ const submit = async (): Promise<void> => {
                 (q.queryKey[0] === 'project' && q.queryKey[1] === projectUuid),
         });
         Notify.create({
-            message: 'Restore requested, recalling the data from tape',
+            message: 'Restore requested, recalling the data',
             color: 'positive',
             position: 'bottom',
         });

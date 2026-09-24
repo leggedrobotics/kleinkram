@@ -213,10 +213,10 @@ export class ProjectController {
     @UserOnly()
     @CanDeleteProject()
     @ApiOperation({
-        summary: 'Move a project to the long term storage',
+        summary: 'Move a project to the archive storage',
         description:
-            'Packs all files of the project into tar parts on the long term ' +
-            'storage (ETH LTS) and removes them from the object storage once ' +
+            'Packs all files of the project into tar parts on the archive ' +
+            'storage and removes them from the object storage once ' +
             'the parts are sealed. The project becomes read-only right away.',
     })
     @ApiCreatedResponse({
@@ -241,7 +241,7 @@ export class ProjectController {
     @ApiOperation({
         summary: 'Restore an archived project',
         description:
-            'Recalls the tar parts from tape, unpacks them and uploads the ' +
+            'Recalls the tar parts from the archive storage, unpacks them and uploads the ' +
             'files back to the object storage. The archive stays on the long ' +
             'term storage.',
     })

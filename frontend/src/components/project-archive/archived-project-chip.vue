@@ -40,7 +40,7 @@ const label = computed(() => {
 
 const tooltip = computed(() =>
     state === ProjectArchiveState.ARCHIVED
-        ? 'The files are on the ETH Long Term Storage (tape); metadata stays browsable'
+        ? 'The files are on the archive storage; metadata stays browsable'
         : `The project is read-only while ${label.value.toLowerCase()} runs`,
 );
 </script>

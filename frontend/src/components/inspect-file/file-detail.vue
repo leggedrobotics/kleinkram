@@ -16,7 +16,7 @@
     />
 
     <div v-if="file" class="q-my-lg">
-        <!-- Archived: the bytes are on tape, only the metadata is here -->
+        <!-- Archived: the bytes are on the archive storage, only the metadata is here -->
         <div v-if="isArchived">
             <FileTopicTable
                 v-if="file.topics.length > 0"

@@ -104,6 +104,10 @@ export default withMermaid({
                             link: '/usage/files/partial-download',
                         },
                         {
+                            text: 'Archive Projects',
+                            link: '/usage/files/archive',
+                        },
+                        {
                             text: 'Access Control',
                             link: '/usage/access-control/base-concepts',
                             items: [
@@ -200,6 +204,10 @@ export default withMermaid({
                         {
                             text: 'Database Schema',
                             link: '/development/application-structure/database-schema',
+                        },
+                        {
+                            text: 'Archive Storage',
+                            link: '/development/application-structure/archive-storage',
                         },
                         {
                             text: 'Access Control',

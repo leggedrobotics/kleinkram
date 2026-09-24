@@ -5,7 +5,7 @@ import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { DependencyUnavailableException } from '@backend-common/exceptions/dependency-unavailable.exception';
-import { assertProjectDataAvailable } from '@backend-common/modules/long-term-storage/archive-guard';
+import { assertProjectDataAvailable } from '@backend-common/modules/archive-storage/archive-guard';
 import { addActionQueue } from '@backend-common/scheduling-logic';
 import {
     ActionFailureOrigin,

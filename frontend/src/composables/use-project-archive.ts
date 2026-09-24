@@ -76,7 +76,7 @@ export const ARCHIVE_STEPS: ArchiveStep[] = [
     {
         state: ProjectArchiveJobState.PACKING,
         label: 'Packing',
-        hint: 'Streaming the files into tar parts on the long term storage',
+        hint: 'Streaming the files into tar parts on the archive storage',
     },
     {
         state: ProjectArchiveJobState.VERIFYING,
@@ -84,9 +84,9 @@ export const ARCHIVE_STEPS: ArchiveStep[] = [
         hint: 'Re-reading every part and comparing checksums',
     },
     {
-        state: ProjectArchiveJobState.AWAITING_TAPE,
-        label: 'Writing to tape',
-        hint: 'LTS seals the parts after its delay timer (1h) and copies them to tape at two sites',
+        state: ProjectArchiveJobState.AWAITING_SEAL,
+        label: 'Sealing',
+        hint: 'Waiting until the archive storage makes the parts read-only for good, which can take an hour',
     },
     {
         state: ProjectArchiveJobState.PURGING,
@@ -98,8 +98,8 @@ export const ARCHIVE_STEPS: ArchiveStep[] = [
 export const RESTORE_STEPS: ArchiveStep[] = [
     {
         state: ProjectArchiveJobState.RECALLING,
-        label: 'Recalling from tape',
-        hint: 'Mounting the tapes and copying the parts to a staging disk, this can take hours',
+        label: 'Recalling',
+        hint: 'Copying the parts to a staging disk; cold storage can take hours to start reading',
     },
     {
         state: ProjectArchiveJobState.UNPACKING,

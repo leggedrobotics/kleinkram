@@ -10,10 +10,15 @@ import { MissionEntity } from '@kleinkram/backend-common/entities/mission/missio
 import { ProjectArchiveEntity } from '@kleinkram/backend-common/entities/project/project-archive.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
+import environment from '@kleinkram/backend-common/environment';
+import {
+    loadArchiveConfig,
+    renderRestoreInstructions,
+} from '@kleinkram/backend-common/modules/archive-storage/archive-config';
 import {
     ARCHIVE_QUEUE,
     planArchiveParts,
-} from '@kleinkram/backend-common/modules/long-term-storage/long-term-storage';
+} from '@kleinkram/backend-common/modules/archive-storage/archive-storage';
 import {
     FileState,
     ProjectArchiveJobState,
@@ -30,9 +35,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Queue from 'bull';
 import { DataSource, In, Not, Repository } from 'typeorm';
 import logger from '../logger';
-
-/** ETH LTS price, CHF 40 per TB and year (as of 2017). */
-const CHF_PER_TB_YEAR = 40;
 
 /** Files that are still being written or converted. */
 const BUSY_FILE_STATES = new Set([FileState.UPLOADING, FileState.CONVERTING]);
@@ -62,12 +64,32 @@ export class ProjectArchiveService implements OnModuleInit {
         });
         const current = archives.at(0) ?? null;
 
+        const config = loadArchiveConfig();
+        const enabled = environment.ARCHIVE_ENABLED;
+
         return {
+            storage: {
+                enabled,
+                name: config.name,
+                description: config.description ?? null,
+                links: config.links,
+                costPerTbYear: config.costPerTbYear ?? null,
+                currency: config.currency,
+            },
             archiveState: project.archiveState,
             current: current ? this.toDto(current) : null,
             history: archives.map((archive) => this.toDto(archive)),
+            restoreInstructions: current
+                ? renderRestoreInstructions({
+                      projectName: current.projectName,
+                      projectUuid: project.uuid,
+                      archiveUuid: current.uuid,
+                      location: current.location,
+                      parts: current.parts.map((part) => part.name),
+                  })
+                : null,
             preflight:
-                project.archiveState === ProjectArchiveState.ACTIVE
+                enabled && project.archiveState === ProjectArchiveState.ACTIVE
                     ? await this.preflight(project, current)
                     : null,
         };
@@ -78,6 +100,7 @@ export class ProjectArchiveService implements OnModuleInit {
         user: UserEntity,
         reason?: string,
     ): Promise<ProjectArchiveStatusDto> {
+        this.assertEnabled();
         const archive = await this.dataSource.transaction(async (manager) => {
             // Lock the project row so that two requests cannot both pass
             const project = await manager.findOne(ProjectEntity, {
@@ -104,8 +127,8 @@ export class ProjectArchiveService implements OnModuleInit {
             await manager.save(project);
 
             if (preflight.reusesPreviousArchive && previous) {
-                // The copy on the LTS is still valid, only drop the S3 copy
-                previous.state = ProjectArchiveJobState.AWAITING_TAPE;
+                // The copy on the archive storage is still valid, only drop S3
+                previous.state = ProjectArchiveJobState.AWAITING_SEAL;
                 previous.reason = reason ?? previous.reason ?? null;
                 previous.requestedBy = user;
                 previous.error = null;
@@ -131,7 +154,7 @@ export class ProjectArchiveService implements OnModuleInit {
         await this.archiveQueue.add(
             archive.state === ProjectArchiveJobState.QUEUED
                 ? 'archive-project'
-                : 'await-tape',
+                : 'await-seal',
             { archiveUuid: archive.uuid },
             { jobId: `archive-${archive.uuid}-${Date.now().toString()}` },
         );
@@ -146,6 +169,7 @@ export class ProjectArchiveService implements OnModuleInit {
         user: UserEntity,
         reason: string,
     ): Promise<ProjectArchiveStatusDto> {
+        this.assertEnabled();
         const archive = await this.dataSource.transaction(async (manager) => {
             const project = await manager.findOne(ProjectEntity, {
                 where: { uuid: projectUuid },
@@ -190,6 +214,15 @@ export class ProjectArchiveService implements OnModuleInit {
             `Restore of archive ${archive.uuid} (project ${projectUuid}) requested by ${user.uuid}`,
         );
         return this.getStatus(projectUuid);
+    }
+
+    /** Archiving is opt-in per deployment, see ARCHIVE_ENABLED. */
+    private assertEnabled(): void {
+        if (!environment.ARCHIVE_ENABLED) {
+            throw new NotFoundException(
+                'Archiving projects is not enabled on this instance',
+            );
+        }
     }
 
     private async findProject(uuid: string): Promise<ProjectEntity> {
@@ -237,6 +270,7 @@ export class ProjectArchiveService implements OnModuleInit {
             );
         }
 
+        const costPerTbYear = loadArchiveConfig().costPerTbYear;
         const sizes = files.map((file) => ({ size: file.size ?? 0 }));
         const totalBytes = sizes.reduce((sum, file) => sum + file.size, 0);
 
@@ -245,8 +279,11 @@ export class ProjectArchiveService implements OnModuleInit {
             fileCount: files.length,
             totalBytes,
             estimatedParts: planArchiveParts(sizes).length,
-            estimatedYearlyCostChf:
-                Math.round((totalBytes / 1e12) * CHF_PER_TB_YEAR * 100) / 100,
+            estimatedYearlyCost:
+                costPerTbYear === undefined
+                    ? null
+                    : Math.round((totalBytes / 1e12) * costPerTbYear * 100) /
+                      100,
             reusesPreviousArchive: this.isUnchangedSince(previous, files),
             blockers,
         };

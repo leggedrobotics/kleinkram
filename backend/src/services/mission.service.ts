@@ -17,7 +17,7 @@ import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
-import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/long-term-storage/archive-guard';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import { UserRole } from '@kleinkram/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';

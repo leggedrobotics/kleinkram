@@ -8,9 +8,10 @@ import { ProjectEntity } from '@kleinkram/backend-common/entities/project/projec
 import environment from '@kleinkram/backend-common/environment';
 import {
     ARCHIVE_QUEUE,
-    FilesystemLongTermStorage,
+    ArchiveStorage,
+    FilesystemArchiveStorage,
     planArchiveParts,
-} from '@kleinkram/backend-common/modules/long-term-storage/long-term-storage';
+} from '@kleinkram/backend-common/modules/archive-storage/archive-storage';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { ProjectArchiveJobState, ProjectArchiveState } from '@kleinkram/shared';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
@@ -34,7 +35,7 @@ import {
     partMetadataYaml,
 } from './archive-metadata';
 
-/** How often to check whether the long term storage sealed the parts. */
+/** How often to check whether the archive storage sealed the parts. */
 const SEAL_POLL_MS = 10_000;
 
 interface ArchiveJob {
@@ -99,20 +100,25 @@ async function writeEntry(
     });
 }
 
+/** Name of the n-th (0 based) tar part of an archive. */
+const partName = (index: number): string =>
+    `part-${String(index + 1).padStart(4, '0')}.tar`;
+
 /** Tar entry names are not limited, but keep them portable. */
 const safeName = (name: string): string =>
     name.replaceAll(/[/\\\0]/g, '_').slice(0, 200);
 
 /**
- * Moves projects between the object storage (S3) and the long term storage.
+ * Moves projects between the object storage (S3) and the archive storage.
  *
- * Archive: S3 → tar parts on LTS → verify → wait for the seal → purge S3.
- * Restore: LTS → local staging disk → verify → unpack → S3.
+ * Archive: S3 → tar parts on the archive storage → verify → wait for the
+ * seal → purge S3.
+ * Restore: archive storage → local staging disk → verify → unpack → S3.
  */
 @Processor(ARCHIVE_QUEUE)
 @Injectable()
 export class ArchiveQueueProcessorProvider {
-    private readonly lts = new FilesystemLongTermStorage();
+    private readonly storage: ArchiveStorage = new FilesystemArchiveStorage();
 
     constructor(
         @InjectRepository(ProjectArchiveEntity)
@@ -135,20 +141,18 @@ export class ArchiveQueueProcessorProvider {
         try {
             await this.pack(archive, written);
             await this.verify(archive);
-            await this.setState(archive, ProjectArchiveJobState.AWAITING_TAPE);
-            await this.queue.add('await-tape', job.data);
+            await this.setState(archive, ProjectArchiveJobState.AWAITING_SEAL);
+            await this.queue.add('await-seal', job.data);
         } catch (error) {
             logger.error(`Archive ${archive.uuid} failed: ${String(error)}`);
             // Nothing was purged yet: drop the partial copy (still allowed,
             // sealed objects can be deleted) and give the project back.
             for (const key of written) {
-                await fs
-                    .rm(path.join(environment.LTS_ROOT, key), { force: true })
-                    .catch((rmError: unknown) => {
-                        logger.warn(
-                            `Could not remove ${key}: ${String(rmError)}`,
-                        );
-                    });
+                await this.storage.remove(key).catch((removeError: unknown) => {
+                    logger.warn(
+                        `Could not remove ${key}: ${String(removeError)}`,
+                    );
+                });
             }
             archive.error = String(error);
             await this.setState(archive, ProjectArchiveJobState.FAILED);
@@ -157,26 +161,27 @@ export class ArchiveQueueProcessorProvider {
     }
 
     /**
-     * Polls until the long term storage sealed all parts. The real LTS does
-     * so once its delay action timer (1h) ran out; the mock after a minute.
+     * Polls until the archive storage sealed all parts: at once with
+     * `ARCHIVE_SEAL_MODE=self`, after its delay timer on storage that seals
+     * objects itself (1 h on ETH LTS, a minute in the local mock).
      */
-    @Process({ name: 'await-tape', concurrency: 1 })
-    async awaitTape(job: Job<ArchiveJob>): Promise<void> {
+    @Process({ name: 'await-seal', concurrency: 1 })
+    async awaitSeal(job: Job<ArchiveJob>): Promise<void> {
         const archive = await this.load(job.data.archiveUuid);
         const keys = archive.parts.map(
             (part) => `${archive.location}/${part.name}`,
         );
         // Archives written before the manifest moved to YAML have none
         const manifestKey = `${archive.location}/${MANIFEST_FILE}`;
-        if (await this.lts.exists(manifestKey)) keys.push(manifestKey);
+        if (await this.storage.exists(manifestKey)) keys.push(manifestKey);
         const sealed = await Promise.all(
-            keys.map((key) => this.lts.isSealed(key)),
+            keys.map((key) => this.storage.isSealed(key)),
         );
         if (!sealed.every(Boolean)) {
             logger.debug(
                 `Archive ${archive.uuid}: ${sealed.filter(Boolean).length.toString()}/${keys.length.toString()} objects sealed`,
             );
-            await this.queue.add('await-tape', job.data, {
+            await this.queue.add('await-seal', job.data, {
                 delay: SEAL_POLL_MS,
             });
             return;
@@ -193,14 +198,17 @@ export class ArchiveQueueProcessorProvider {
         await this.setState(archive, ProjectArchiveJobState.ARCHIVED);
         await this.setProjectState(archive, ProjectArchiveState.ARCHIVED);
         logger.info(
-            `Archive ${archive.uuid}: ${entries.length.toString()} files moved to the long term storage`,
+            `Archive ${archive.uuid}: ${entries.length.toString()} files moved to the archive storage`,
         );
     }
 
     @Process({ name: 'restore-project', concurrency: 1 })
     async restoreProject(job: Job<ArchiveJob>): Promise<void> {
         const archive = await this.load(job.data.archiveUuid);
-        const staging = path.join(environment.LTS_STAGING_DIR, archive.uuid);
+        const staging = path.join(
+            environment.ARCHIVE_STAGING_DIR,
+            archive.uuid,
+        );
         try {
             await this.recall(archive, staging);
             await this.unpack(archive, staging);
@@ -209,7 +217,7 @@ export class ArchiveQueueProcessorProvider {
             await this.setProjectState(archive, ProjectArchiveState.ACTIVE);
         } catch (error) {
             logger.error(`Restore of ${archive.uuid} failed: ${String(error)}`);
-            // The data is still safe on the long term storage
+            // The data is still safe on the archive storage
             archive.error = String(error);
             await this.setState(archive, ProjectArchiveJobState.FAILED);
             await this.setProjectState(archive, ProjectArchiveState.ARCHIVED);
@@ -235,6 +243,7 @@ export class ArchiveQueueProcessorProvider {
         }
 
         const groups = planArchiveParts(present);
+        context.partNames = groups.map((_group, index) => partName(index));
 
         archive.fileCount = present.length;
         archive.totalBytes = present.reduce((sum, item) => sum + item.size, 0);
@@ -245,9 +254,9 @@ export class ArchiveQueueProcessorProvider {
         const usedPaths = new Set<string>([PART_METADATA_FILE]);
         let lastSave = Date.now();
         for (const [index, group] of groups.entries()) {
-            const name = `part-${String(index + 1).padStart(4, '0')}.tar`;
+            const name = partName(index);
             const key = `${archive.location}/${name}`;
-            const upload = await this.lts.upload(key);
+            const upload = await this.storage.upload(key);
             written.push(key);
             const partDigest = new Digest();
             const pack = tar.pack();
@@ -319,7 +328,7 @@ export class ArchiveQueueProcessorProvider {
         }
 
         const manifestKey = `${archive.location}/${MANIFEST_FILE}`;
-        await this.lts.writeFile(
+        await this.storage.writeFile(
             manifestKey,
             manifestYaml(context, archive.parts),
         );
@@ -348,6 +357,7 @@ export class ArchiveQueueProcessorProvider {
             project,
             missions,
             files: new Map(files.map((file) => [file.uuid, file])),
+            partNames: [],
         };
     }
 
@@ -356,7 +366,7 @@ export class ArchiveQueueProcessorProvider {
         await this.setState(archive, ProjectArchiveJobState.VERIFYING);
         for (const part of archive.parts) {
             const sha256 = await sha256Of(
-                this.lts.read(`${archive.location}/${part.name}`),
+                this.storage.read(`${archive.location}/${part.name}`),
             );
             if (sha256 !== part.sha256) {
                 throw new Error(`Checksum mismatch in ${part.name}`);
@@ -372,7 +382,7 @@ export class ArchiveQueueProcessorProvider {
         let done = 0;
         for (const part of archive.parts) {
             const destination = path.join(staging, part.name);
-            await this.lts.recall(
+            await this.storage.recall(
                 `${archive.location}/${part.name}`,
                 destination,
                 (bytes) => {

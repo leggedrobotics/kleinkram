@@ -1,18 +1,27 @@
 import { FileEntity } from '@backend-common/entities/file/file.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
+import { loadArchiveConfig } from '@backend-common/modules/archive-storage/archive-config';
 import { ProjectArchiveState } from '@kleinkram/shared';
 import { ConflictException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 
-const STATE_MESSAGES: Record<ProjectArchiveState, string> = {
-    [ProjectArchiveState.ACTIVE]: '',
-    [ProjectArchiveState.ARCHIVING]:
-        'is being moved to the long term storage and is read-only',
-    [ProjectArchiveState.ARCHIVED]:
-        'is archived on the long term storage; restore it to access its files',
-    [ProjectArchiveState.RESTORING]:
-        'is being restored from the long term storage, try again once the restore finished',
+const stateMessage = (state: ProjectArchiveState): string => {
+    const storage = loadArchiveConfig().name;
+    switch (state) {
+        case ProjectArchiveState.ARCHIVING: {
+            return `is being moved to the ${storage} and is read-only`;
+        }
+        case ProjectArchiveState.ARCHIVED: {
+            return `is archived on the ${storage}; restore it to access its files`;
+        }
+        case ProjectArchiveState.RESTORING: {
+            return `is being restored from the ${storage}, try again once the restore finished`;
+        }
+        default: {
+            return 'is available';
+        }
+    }
 };
 
 /**
@@ -21,7 +30,7 @@ const STATE_MESSAGES: Record<ProjectArchiveState, string> = {
  */
 export class ProjectArchivedException extends ConflictException {
     constructor(projectName: string, state: ProjectArchiveState) {
-        super(`Project "${projectName}" ${STATE_MESSAGES[state]}.`);
+        super(`Project "${projectName}" ${stateMessage(state)}.`);
     }
 }
 

@@ -17,7 +17,7 @@ export interface ArchivedFileEntry {
     sha256: string;
 }
 
-/** One packed object on the long term storage. */
+/** One packed object on the archive storage. */
 export interface ArchivePart {
     name: string;
     size: number;
@@ -32,7 +32,7 @@ const bigintTransformer = {
 };
 
 /**
- * A copy of all files of a project on the long term storage (ETH LTS).
+ * A copy of all files of a project on the archive storage.
  *
  * The parts are write-once: once the storage sealed them they can only be
  * deleted, never changed. The record is kept after a restore so that an
@@ -48,7 +48,7 @@ export class ProjectArchiveEntity extends BaseEntity {
 
     /**
      * Name of the project at archive time, kept in case the project is
-     * deleted while its copy remains on the long term storage.
+     * deleted while its copy remains on the archive storage.
      */
     @Column()
     projectName!: string;
@@ -60,7 +60,7 @@ export class ProjectArchiveEntity extends BaseEntity {
     })
     state!: ProjectArchiveJobState;
 
-    /** Directory of the archive, relative to the long term storage root. */
+    /** Directory of the archive, relative to the archive storage root. */
     @Column()
     location!: string;
 

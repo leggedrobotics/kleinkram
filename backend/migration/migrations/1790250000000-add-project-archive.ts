@@ -11,7 +11,7 @@ export class AddProjectArchive1790250000000 implements MigrationInterface {
             `ALTER TABLE "project" ADD "archiveState" "public"."project_archivestate_enum" NOT NULL DEFAULT 'ACTIVE'`,
         );
         await queryRunner.query(
-            `CREATE TYPE "public"."project_archive_state_enum" AS ENUM('QUEUED', 'PACKING', 'VERIFYING', 'AWAITING_TAPE', 'PURGING', 'ARCHIVED', 'RECALLING', 'UNPACKING', 'RESTORED', 'FAILED')`,
+            `CREATE TYPE "public"."project_archive_state_enum" AS ENUM('QUEUED', 'PACKING', 'VERIFYING', 'AWAITING_SEAL', 'PURGING', 'ARCHIVED', 'RECALLING', 'UNPACKING', 'RESTORED', 'FAILED')`,
         );
         await queryRunner.query(
             `CREATE TABLE "project_archive" ("uuid" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "projectName" character varying NOT NULL, "state" "public"."project_archive_state_enum" NOT NULL DEFAULT 'QUEUED', "location" character varying NOT NULL, "parts" jsonb NOT NULL DEFAULT '[]', "fileCount" integer NOT NULL DEFAULT '0', "totalBytes" bigint NOT NULL DEFAULT '0', "bytesProcessed" bigint NOT NULL DEFAULT '0', "reason" text, "archivedAt" TIMESTAMP, "restoreReason" text, "restoreRequestedAt" TIMESTAMP, "restoredAt" TIMESTAMP, "error" text, "projectUuid" uuid, "requestedByUuid" uuid, "restoreRequestedByUuid" uuid, CONSTRAINT "PK_project_archive_uuid" PRIMARY KEY ("uuid"))`,

@@ -61,6 +61,9 @@ function asOptionalString(key: string): string | undefined {
     return value;
 }
 
+/** Who makes archived objects read-only, see `ARCHIVE_SEAL_MODE`. */
+export type ArchiveSealMode = 'storage' | 'self';
+
 export default {
     /**
      * @returns database name
@@ -233,36 +236,69 @@ export default {
         return process.env.VITE_DOCKER_HUB_NAMESPACE ?? '';
     },
     /**
-     * @returns mount point of the long term storage (ETH LTS NFS export)
+     * @returns mount point of the archive storage, e.g. an NFS export of
+     *   ETH LTS, see `ArchiveStorage` for what the storage has to provide
      */
-    get LTS_ROOT(): string {
-        return asOptionalString('LTS_ROOT') ?? '/mnt/lts';
+    get ARCHIVE_ROOT(): string {
+        return asOptionalString('ARCHIVE_ROOT') ?? '/mnt/archive';
     },
 
     /**
      * @returns local scratch disk that recalled tar parts are copied to
-     *   before they are unpacked, as the LTS docs ask for
+     *   before they are unpacked; needs room for one part
      */
-    get LTS_STAGING_DIR(): string {
-        return asOptionalString('LTS_STAGING_DIR') ?? '/tmp/lts-staging';
+    get ARCHIVE_STAGING_DIR(): string {
+        return (
+            asOptionalString('ARCHIVE_STAGING_DIR') ?? '/tmp/archive-staging'
+        );
     },
 
     /**
-     * @returns target size of one tar part; ETH LTS wants 10-200 GB objects
+     * @returns target size of one tar part; tape libraries such as ETH LTS
+     *   want objects of 10-200 GB
      */
-    get LTS_PART_SIZE_BYTES(): number {
-        const value = asOptionalString('LTS_PART_SIZE_BYTES');
+    get ARCHIVE_PART_SIZE_BYTES(): number {
+        const value = asOptionalString('ARCHIVE_PART_SIZE_BYTES');
         return value === undefined
             ? 100 * 1024 ** 3
             : Number.parseInt(value, 10);
     },
 
     /**
-     * @returns seconds the mock waits to "mount a tape" before a recall,
-     *   0 against the real LTS, which recalls transparently on read
+     * @returns who seals archived objects: `storage` waits for the storage to
+     *   make them read-only (ETH LTS: after 1 h), `self` does it on write
      */
-    get LTS_SIMULATED_RECALL_SECONDS(): number {
-        const value = asOptionalString('LTS_SIMULATED_RECALL_SECONDS');
+    get ARCHIVE_SEAL_MODE(): ArchiveSealMode {
+        const value = asOptionalString('ARCHIVE_SEAL_MODE') ?? 'storage';
+        if (value !== 'storage' && value !== 'self') {
+            throw new Error(
+                `ARCHIVE_SEAL_MODE must be "storage" or "self", not ${value}`,
+            );
+        }
+        return value;
+    },
+
+    /**
+     * @returns seconds a mock waits to "mount a tape" before a recall; keep
+     *   0 against real storage, which is slow on its own
+     */
+    get ARCHIVE_SIMULATED_RECALL_SECONDS(): number {
+        const value = asOptionalString('ARCHIVE_SIMULATED_RECALL_SECONDS');
         return value === undefined ? 0 : Number.parseFloat(value);
+    },
+
+    /**
+     * @returns whether projects can be archived at all; off by default
+     */
+    get ARCHIVE_ENABLED(): boolean {
+        return asOptionalString('ARCHIVE_ENABLED') === 'true';
+    },
+
+    /**
+     * @returns path to the YAML file describing the archive storage to users
+     *   (name, cost, restore instructions); see `ArchiveConfig`
+     */
+    get ARCHIVE_CONFIG_PATH(): string | undefined {
+        return asOptionalString('ARCHIVE_CONFIG_PATH');
     },
 };

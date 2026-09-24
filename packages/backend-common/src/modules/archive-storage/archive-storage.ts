@@ -1,15 +1,15 @@
-import environment from '@backend-common/environment';
+import environment, { ArchiveSealMode } from '@backend-common/environment';
 import { createReadStream, createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Readable, Transform, Writable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
-/** Bull queue that moves projects to and from the long term storage. */
+/** Bull queue that moves projects to and from the archive storage. */
 export const ARCHIVE_QUEUE = 'archive-queue';
 
 /** A write-once object that becomes visible under its key on commit. */
-export interface LongTermStorageUpload {
+export interface ArchiveStorageUpload {
     stream: Writable;
     /** Moves the finished object to its final key. */
     commit(): Promise<void>;
@@ -18,29 +18,59 @@ export interface LongTermStorageUpload {
 }
 
 /**
- * Tape-backed, write-once storage mounted as a file system, modelled after
- * ETH LTS (StrongLink HSM behind an NFSv3/SMB share):
+ * What the archive needs from the storage it writes to. Anything that can be
+ * mounted as a file system and behaves like cold, write-once storage fits,
+ * for example ETH LTS (a tape library behind an NFSv3/SMB share):
  *
- * - Objects can be written and changed during the "delay action timer" (1h
- *   by default). Afterwards they are sealed (read-only), written to tape at
- *   two sites, and only a 4 MB stub stays on disk.
- * - Reading a sealed object recalls it from tape, which takes minutes. The
- *   docs ask to copy objects to a local disk instead of opening them in place.
- * - Objects should be packed archives of 10-200 GB (max. 2 TB).
+ * - **Write once:** an object can be written and renamed for a short while,
+ *   then it is *sealed*: read-only for good, it can only be deleted. Sealing
+ *   is signalled by the object losing its write permission bits. Until then
+ *   Kleinkram keeps its own copy of the data.
+ * - **Few, large objects:** data is handed over as tar files of a
+ *   configurable size (tape libraries like 10-200 GB), never as many small
+ *   files, and never modified in place.
+ * - **Slow reads:** reading a sealed object may take minutes to hours (tape
+ *   recall). Objects are only ever read sequentially, start to end, and copied
+ *   to a local staging disk before they are unpacked.
  *
- * The data store (SeaweedFS) cannot live on such a share: it keeps changing
- * its volume files in place and reads them at random offsets.
+ * This is also why the object storage itself (SeaweedFS) cannot run on such a
+ * share: it rewrites its volume files in place and reads them at random.
  */
-export class FilesystemLongTermStorage {
+export interface ArchiveStorage {
+    exists(key: string): Promise<boolean>;
+    upload(key: string): Promise<ArchiveStorageUpload>;
+    writeFile(key: string, content: string): Promise<void>;
+    /** Whether the storage made the object read-only for good. */
+    isSealed(key: string): Promise<boolean>;
+    /** Streams an object that was just written and is not sealed yet. */
+    read(key: string): Readable;
+    /** Copies an object to a local file; may be slow for sealed objects. */
+    recall(
+        key: string,
+        destination: string,
+        onProgress?: (bytes: number) => void,
+    ): Promise<void>;
+    remove(key: string): Promise<void>;
+}
+
+/**
+ * {@link ArchiveStorage} on a mounted directory (NFS, SMB or local disk).
+ *
+ * With `ARCHIVE_SEAL_MODE=storage` the storage seals objects itself (ETH LTS
+ * does so after its 1 h "delay action timer"). With `self`, for plain shares
+ * that never do, objects are sealed by dropping their write bits on commit.
+ */
+export class FilesystemArchiveStorage implements ArchiveStorage {
     constructor(
-        private readonly root: string = environment.LTS_ROOT,
-        private readonly simulatedRecallSeconds: number = environment.LTS_SIMULATED_RECALL_SECONDS,
+        private readonly root: string = environment.ARCHIVE_ROOT,
+        private readonly sealMode: ArchiveSealMode = environment.ARCHIVE_SEAL_MODE,
+        private readonly simulatedRecallSeconds: number = environment.ARCHIVE_SIMULATED_RECALL_SECONDS,
     ) {}
 
     private resolve(key: string): string {
         const resolved = path.resolve(this.root, key);
         if (!resolved.startsWith(path.resolve(this.root) + path.sep)) {
-            throw new Error(`Key ${key} escapes the long term storage root`);
+            throw new Error(`Key ${key} escapes the archive storage root`);
         }
         return resolved;
     }
@@ -52,20 +82,15 @@ export class FilesystemLongTermStorage {
             .catch(() => false);
     }
 
-    async size(key: string): Promise<number> {
-        const stat = await fs.stat(this.resolve(key));
-        return stat.size;
-    }
-
     /**
      * Writes to `<key>.partial` and renames on commit, so that a crashed
-     * upload never leaves an object that looks complete. Renaming is allowed
-     * because it happens well within the delay action timer.
+     * upload never leaves an object that looks complete. The rename happens
+     * right away, long before the storage seals the object.
      */
-    async upload(key: string): Promise<LongTermStorageUpload> {
+    async upload(key: string): Promise<ArchiveStorageUpload> {
         const target = this.resolve(key);
         if (await this.exists(key)) {
-            throw new Error(`${key} already exists on the long term storage`);
+            throw new Error(`${key} already exists on the archive storage`);
         }
         await fs.mkdir(path.dirname(target), { recursive: true });
         const partial = `${target}.partial`;
@@ -74,6 +99,7 @@ export class FilesystemLongTermStorage {
             stream,
             commit: async () => {
                 await fs.rename(partial, target);
+                if (this.sealMode === 'self') await fs.chmod(target, 0o444);
             },
             abort: async () => {
                 stream.destroy();
@@ -88,28 +114,19 @@ export class FilesystemLongTermStorage {
         await upload.commit();
     }
 
-    /**
-     * Whether the storage sealed the object, i.e. its delay action timer ran
-     * out and it is on its way to tape. Only then is it safe to drop other
-     * copies of the data.
-     */
     async isSealed(key: string): Promise<boolean> {
         const stat = await fs.stat(this.resolve(key));
         return (stat.mode & 0o222) === 0;
     }
 
-    /**
-     * Reads an object that was just written and is still in the disk cache.
-     * Do not use this for sealed objects, use {@link recall} instead.
-     */
     read(key: string): Readable {
         return createReadStream(this.resolve(key));
     }
 
     /**
-     * Copies an object to a local disk. On the real LTS the read itself
-     * triggers the tape recall and trickles the data in; the mock waits
-     * `LTS_SIMULATED_RECALL_SECONDS` to stand in for mounting the tape.
+     * On tape-backed storage the read itself triggers the recall and trickles
+     * the data in. `ARCHIVE_SIMULATED_RECALL_SECONDS` lets a mock stand in for
+     * mounting the tape.
      */
     async recall(
         key: string,
@@ -136,16 +153,20 @@ export class FilesystemLongTermStorage {
             createWriteStream(destination),
         );
     }
+
+    /** Sealed objects cannot change, but they can always be deleted. */
+    async remove(key: string): Promise<void> {
+        await fs.rm(this.resolve(key), { force: true });
+    }
 }
 
 /**
  * Groups items into tar parts of roughly `partSize` bytes, in order. An item
- * never spans two parts, so one larger than `partSize` gets a part of its own
- * (LTS accepts objects of up to 2 TB).
+ * never spans two parts, so one larger than `partSize` gets a part of its own.
  */
 export function planArchiveParts<T extends { size: number }>(
     items: T[],
-    partSize: number = environment.LTS_PART_SIZE_BYTES,
+    partSize: number = environment.ARCHIVE_PART_SIZE_BYTES,
 ): T[][] {
     const parts: T[][] = [];
     let current: T[] = [];

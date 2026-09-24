@@ -67,6 +67,17 @@
                 </div>
 
                 <div
+                    v-if="
+                        status.archiveState === ProjectArchiveState.ARCHIVED &&
+                        !status.storage.enabled
+                    "
+                    class="text-caption text-grey-7 q-mt-sm"
+                >
+                    Restoring is not enabled on this Kleinkram instance; ask its
+                    administrators to get the data back.
+                </div>
+
+                <div
                     v-if="current?.error"
                     class="text-caption text-negative q-mt-sm"
                 >
@@ -77,6 +88,7 @@
             <restore-project-dialog-opener
                 v-if="
                     status.archiveState === ProjectArchiveState.ARCHIVED &&
+                    status.storage.enabled &&
                     canManage
                 "
                 :project-uuid="projectUuid"
@@ -91,6 +103,41 @@
                 />
             </restore-project-dialog-opener>
         </div>
+
+        <q-expansion-item
+            v-if="status.restoreInstructions"
+            dense
+            dense-toggle
+            class="q-mt-sm archive-banner__details"
+            label="Access the files without Kleinkram"
+            header-class="text-caption text-grey-8 q-px-none"
+        >
+            <div
+                v-if="status.storage.description"
+                class="text-body2 text-grey-8 q-mt-xs"
+            >
+                {{ status.storage.description }}
+            </div>
+            <pre class="archive-banner__instructions q-mt-sm q-mb-none">{{
+                status.restoreInstructions
+            }}</pre>
+            <div
+                v-if="status.storage.links.length > 0"
+                class="row q-mt-sm"
+                style="gap: 16px"
+            >
+                <a
+                    v-for="link in status.storage.links"
+                    :key="link.url"
+                    :href="link.url"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-caption text-button-primary"
+                >
+                    {{ link.label }}
+                </a>
+            </div>
+        </q-expansion-item>
 
         <q-expansion-item
             v-if="current && current.parts.length > 0"
@@ -164,6 +211,9 @@ const canManage = computed(() =>
 );
 
 const current = computed(() => status.value?.current ?? null);
+const storageName = computed(
+    () => status.value?.storage.name ?? 'archive storage',
+);
 
 const steps = computed(() => {
     switch (status.value?.archiveState) {
@@ -217,10 +267,10 @@ const icon = computed(() => {
 const title = computed(() => {
     switch (status.value?.archiveState) {
         case ProjectArchiveState.ARCHIVING: {
-            return 'This project is being moved to the ETH Long Term Storage.';
+            return `This project is being moved to the ${storageName.value}.`;
         }
         case ProjectArchiveState.RESTORING: {
-            return 'This project is being restored from the ETH Long Term Storage.';
+            return `This project is being restored from the ${storageName.value}.`;
         }
         default: {
             const since = current.value?.archivedAt;
@@ -242,7 +292,7 @@ const description = computed(() => {
             return `${files.toString()} files (${size}). Downloads and uploads open up again once all files are back.`;
         }
         default: {
-            return `Its ${files.toString()} files (${size}) are stored on tape. Missions, metadata and topics stay searchable, but files cannot be downloaded, uploaded or processed until the project is restored.`;
+            return `Its ${files.toString()} files (${size}) are on the ${storageName.value}. Missions, metadata and topics stay searchable, but files cannot be downloaded, uploaded or processed until the project is restored.`;
         }
     }
 });
@@ -291,6 +341,15 @@ const description = computed(() => {
 .archive-step--active {
     color: #1d2733;
     font-weight: 600;
+}
+
+.archive-banner__instructions {
+    white-space: pre-wrap;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    padding: 10px 12px;
+    background: #f5f7fa;
+    border-radius: 3px;
 }
 
 .text-mono {

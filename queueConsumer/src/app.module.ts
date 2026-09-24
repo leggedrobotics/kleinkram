@@ -28,7 +28,7 @@ import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.enti
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
 import env from '@kleinkram/backend-common/environment';
-import { ARCHIVE_QUEUE } from '@kleinkram/backend-common/modules/long-term-storage/long-term-storage';
+import { ARCHIVE_QUEUE } from '@kleinkram/backend-common/modules/archive-storage/archive-storage';
 import configuration from '@kleinkram/backend-common/typeorm-config';
 import { MissionAccessViewEntity } from '@kleinkram/backend-common/viewEntities/mission-access-view.entity';
 import { ProjectAccessViewEntity } from '@kleinkram/backend-common/viewEntities/project-access-view.entity';
@@ -137,7 +137,8 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
     providers: [
         FileCleanupQueueProcessorProvider,
         AccessGroupExpiryProvider,
-        ArchiveQueueProcessorProvider,
+        // Archiving is opt-in per deployment
+        ...(env.ARCHIVE_ENABLED ? [ArchiveQueueProcessorProvider] : []),
     ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

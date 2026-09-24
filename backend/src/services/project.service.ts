@@ -51,7 +51,7 @@ import {
     ProjectStarEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
-import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/long-term-storage/archive-guard';
+import { assertProjectDataAvailable } from '@kleinkram/backend-common/modules/archive-storage/archive-guard';
 import {
     AccessGroupConfig,
     AccessGroupRights,
