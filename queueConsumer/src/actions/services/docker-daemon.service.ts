@@ -566,6 +566,7 @@ export class DockerDaemon {
         container: Dockerode.Container;
         repoDigests: string[];
         artifactMetadata?: { size: number; files: string[] } | undefined;
+        uploaderStderr: string;
         containerLimits: ContainerLimits;
         volumeName: string;
     }> {
@@ -640,6 +641,8 @@ export class DockerDaemon {
 
         // Stream logs to stdout/stderr for debugging and capture metadata
         let artifactMetadata: { size: number; files: string[] } | undefined;
+        // Kept so a failed upload can say why (see ArtifactService).
+        let uploaderStderr = '';
 
         const stream = await container.logs({
             follow: true,
@@ -686,6 +689,7 @@ export class DockerDaemon {
 
             const stderrWritable = {
                 write: (chunk: Buffer) => {
+                    uploaderStderr += chunk.toString();
                     logger.debug(
                         `[ArtifactUpload STDERR] ${chunk.toString().trim()}`,
                     );
@@ -729,6 +733,7 @@ export class DockerDaemon {
             container,
             repoDigests,
             artifactMetadata,
+            uploaderStderr,
             containerLimits: containerOptions.limits,
             volumeName,
         };
