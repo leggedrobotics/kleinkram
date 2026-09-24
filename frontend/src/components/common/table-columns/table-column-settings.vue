@@ -54,7 +54,9 @@
                     @dragover.prevent="
                         (event: DragEvent) => onDragOver(event, setting)
                     "
-                    @dragleave="() => onDragLeave(setting)"
+                    @dragleave="
+                        (event: DragEvent) => onDragLeave(event, setting)
+                    "
                     @drop.prevent="() => onDrop(setting)"
                     @dragend="onDragEnd"
                 >
@@ -115,7 +117,11 @@
                                     : 'sym_o_visibility_off'
                             "
                             :disable="setting.column.alwaysVisible"
-                            :aria-label="`Hide ${setting.column.label}`"
+                            :aria-label="
+                                setting.column.alwaysVisible
+                                    ? `${setting.column.label} cannot be hidden`
+                                    : `Hide ${setting.column.label}`
+                            "
                             @click="
                                 () =>
                                     layout.setVisible(
@@ -134,7 +140,7 @@
                 <template v-if="hidden.length > 0">
                     <q-separator class="q-my-xs" />
                     <div
-                        v-if="hidden.length > FILTER_THRESHOLD"
+                        v-if="hidden.length > FILTER_THRESHOLD || filter"
                         class="q-px-md q-pt-xs"
                     >
                         <q-input
@@ -271,7 +277,10 @@ function onDragOver(event: DragEvent, setting: ColumnSetting<C>): void {
     dropBefore.value = event.clientY < rect.top + rect.height / 2;
 }
 
-function onDragLeave(setting: ColumnSetting<C>): void {
+function onDragLeave(event: DragEvent, setting: ColumnSetting<C>): void {
+    // Moving onto a child of the item also fires dragleave on the item
+    const item = event.currentTarget as HTMLElement;
+    if (item.contains(event.relatedTarget as Node | null)) return;
     if (dropTarget.value === setting.column.name) dropTarget.value = undefined;
 }
 

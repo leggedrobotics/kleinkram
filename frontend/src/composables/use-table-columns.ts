@@ -319,12 +319,12 @@ export function useTableColumns<C extends ConfigurableColumn>(
     );
 
     function setVisible(name: string, visible: boolean): void {
-        const order = orderedNames.value.filter(
-            (candidate) => candidate !== name,
-        );
         if (visible) {
             // Newly shown columns go to the end of the visible ones, where
             // the user is most likely to look for them.
+            const order = orderedNames.value.filter(
+                (candidate) => candidate !== name,
+            );
             const visibleNames = new Set(
                 settings.value
                     .filter((setting) => setting.visible)
@@ -334,10 +334,12 @@ export function useTableColumns<C extends ConfigurableColumn>(
                 visibleNames.has(candidate),
             );
             order.splice(lastVisible + 1, 0, name);
-        } else {
-            order.splice(orderedNames.value.indexOf(name), 0, name);
+            // Only store an order that differs from the current one, so that
+            // an untouched order keeps following the column definitions.
+            if (order.join(',') !== orderedNames.value.join(',')) {
+                layout.value.order = order;
+            }
         }
-        layout.value.order = order;
         layout.value.visibility = {
             ...layout.value.visibility,
             [name]: visible,

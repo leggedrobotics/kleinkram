@@ -13,6 +13,11 @@
             tabindex="0"
             :aria-label="`Resize column ${cellProps.col.label}`"
             title="Drag to resize, double-click to reset"
+            :aria-valuemin="MIN_COLUMN_WIDTH"
+            :aria-valuenow="width"
+            :aria-valuetext="
+                width === undefined ? 'Automatic width' : `${width} pixels`
+            "
             @pointerdown.stop.prevent="startResize"
             @click.stop
             @dblclick.stop="resetWidth"
@@ -24,6 +29,7 @@
 
 <script setup lang="ts" generic="C extends ConfigurableColumn">
 import {
+    MIN_COLUMN_WIDTH,
     isConfigurable,
     type ConfigurableColumn,
     type TableColumnLayout,
@@ -46,6 +52,14 @@ const isResizable = computed(
     () =>
         properties.layout.isCustomizable &&
         isConfigurable(properties.cellProps.col),
+);
+
+/** The width the user gave this column, if any. */
+const width = computed(
+    () =>
+        properties.layout.settings.find(
+            (setting) => setting.column.name === properties.cellProps.col.name,
+        )?.width,
 );
 
 function headerWidth(handle: HTMLElement): number {
@@ -87,6 +101,7 @@ const widen = (event: KeyboardEvent): void => {
 };
 
 function startResize(event: PointerEvent): void {
+    if (event.button !== 0) return;
     const handle = event.currentTarget as HTMLElement;
     const startX = event.clientX;
     const startWidth = headerWidth(handle);
@@ -113,12 +128,15 @@ function startResize(event: PointerEvent): void {
         handle.removeEventListener('pointermove', onMove);
         handle.removeEventListener('pointerup', onEnd);
         handle.removeEventListener('pointercancel', onEnd);
+        handle.removeEventListener('lostpointercapture', onEnd);
         document.body.classList.remove('kk-col-resizing');
     };
 
     handle.addEventListener('pointermove', onMove);
     handle.addEventListener('pointerup', onEnd);
     handle.addEventListener('pointercancel', onEnd);
+    // Alt-Tab and the like end the capture without a pointerup
+    handle.addEventListener('lostpointercapture', onEnd);
 }
 </script>
 

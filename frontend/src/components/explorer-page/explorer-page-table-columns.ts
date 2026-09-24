@@ -233,9 +233,13 @@ function formatMetadataValue(
     value: MetadataDto['value'],
     datatype: DataType,
 ): string {
+    // Values are typed as always set, but come straight from user input
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (value === null || value === undefined || value === '') return '';
     switch (datatype) {
         case DataType.DATE: {
-            return formatDate(new Date(value as string));
+            const date = new Date(value as string);
+            return Number.isNaN(date.getTime()) ? '' : formatDate(date);
         }
         case DataType.BOOLEAN: {
             return value ? 'Yes' : 'No';
