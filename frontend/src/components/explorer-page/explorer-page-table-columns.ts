@@ -78,6 +78,7 @@ export const explorerPageTableColumns: ProjectColumnType[] = [
     },
     {
         name: 'createdAt',
+        classes: 'kk-nowrap',
         required: true,
         label: 'Created',
         align: 'left',
@@ -139,6 +140,7 @@ export const projectAccessColumns: ProjectColumnType[] = [
     },
     {
         name: 'createdAt',
+        classes: 'kk-nowrap',
         required: true,
         label: 'Created',
         align: 'left',
@@ -189,6 +191,7 @@ export const missionColumns: ProjectColumnType[] = [
     },
     {
         name: 'createdAt',
+        classes: 'kk-nowrap',
         required: true,
         label: 'Creation Date',
         align: 'left',
@@ -301,6 +304,7 @@ export const fileColumns: ProjectColumnType[] = [
     },
     {
         name: 'createdAt',
+        classes: 'kk-nowrap',
         required: true,
         label: 'Created',
         align: 'left',

@@ -280,6 +280,16 @@ label {
 .q-table .kk-col-sized {
     overflow: hidden;
     overflow-wrap: anywhere;
+    text-overflow: ellipsis;
+}
+
+/*
+ * Short values that read wrong when broken over two lines ("56.80 / MB",
+ * a date above its time) and only make rows uneven in height.
+ */
+.q-table td.kk-num,
+.q-table td.kk-nowrap {
+    white-space: nowrap;
 }
 
 /* While a column is dragged wider, the cursor must not flicker or select */

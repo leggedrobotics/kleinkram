@@ -42,6 +42,11 @@ interface StoredLayout {
 }
 
 const STORAGE_PREFIX = 'kleinkram:table-layout:';
+/**
+ * Takes up the space that sized columns leave free, so that resizing one
+ * column never makes its neighbours grow or shrink.
+ */
+export const FILL_COLUMN = '__fill';
 const SAVE_DELAY_MS = 250;
 export const MIN_COLUMN_WIDTH = 64;
 
@@ -120,6 +125,11 @@ export interface TableColumnLayout<C extends ConfigurableColumn> {
     /** Place column `name` right before or after column `target`. */
     move: (name: string, target: string, position: 'before' | 'after') => void;
     setWidth: (name: string, width: number | undefined) => void;
+    /**
+     * Pin the given widths for every column that has none yet, so that the
+     * next resize only moves the column being dragged.
+     */
+    freezeWidths: (widths: Record<string, number>) => void;
     reset: () => void;
 }
 
@@ -223,7 +233,7 @@ export function useTableColumns<C extends ConfigurableColumn>(
             ),
         ];
 
-        return arranged
+        const shown = arranged
             .filter((column) => !isConfigurable(column) || isVisible(column))
             .map((column) => {
                 const width = layout.value.widths[column.name];
@@ -242,6 +252,30 @@ export function useTableColumns<C extends ConfigurableColumn>(
                     ),
                 };
             });
+
+        // Once every shown column has a width, the remaining space goes to
+        // an empty column in front of the trailing utility columns instead
+        // of being spread over the sized ones.
+        const sizable = shown.filter((column) => isConfigurable(column));
+        const allSized =
+            sizable.length > 0 &&
+            sizable.every(
+                (column) => layout.value.widths[column.name] !== undefined,
+            );
+        if (!allSized) return shown;
+
+        const fill = {
+            name: FILL_COLUMN,
+            label: '',
+            align: 'left',
+            configurable: false,
+            style: 'width: 100%; padding: 0',
+            headerStyle: 'width: 100%; padding: 0',
+        } as unknown as C;
+        const lastSized = shown.findLastIndex((column) =>
+            isConfigurable(column),
+        );
+        return shown.toSpliced(lastSized + 1, 0, fill);
     });
 
     const isCustomized = computed(
@@ -304,6 +338,19 @@ export function useTableColumns<C extends ConfigurableColumn>(
         layout.value.widths = widths;
     }
 
+    function freezeWidths(widths: Record<string, number>): void {
+        const missing = Object.entries(widths).filter(
+            ([name]) => layout.value.widths[name] === undefined,
+        );
+        if (missing.length === 0) return;
+        layout.value.widths = {
+            ...layout.value.widths,
+            ...Object.fromEntries(
+                missing.map(([name, width]) => [name, Math.round(width)]),
+            ),
+        };
+    }
+
     function reset(): void {
         layout.value = emptyLayout();
     }
@@ -316,6 +363,7 @@ export function useTableColumns<C extends ConfigurableColumn>(
         setVisible,
         move,
         setWidth,
+        freezeWidths,
         reset,
     }) as TableColumnLayout<C>;
 }

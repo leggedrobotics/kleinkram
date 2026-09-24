@@ -1,5 +1,9 @@
 <template>
-    <q-th :props="cellProps" class="kk-th">
+    <q-th
+        :props="cellProps"
+        class="kk-th"
+        :data-column="isResizable ? cellProps.col.name : undefined"
+    >
         <slot>{{ cellProps.col.label }}</slot>
         <span
             v-if="isResizable"
@@ -8,16 +12,13 @@
             aria-orientation="vertical"
             tabindex="0"
             :aria-label="`Resize column ${cellProps.col.label}`"
+            title="Drag to resize, double-click to reset"
             @pointerdown.stop.prevent="startResize"
             @click.stop
             @dblclick.stop="resetWidth"
             @keydown.left.stop.prevent="narrow"
             @keydown.right.stop.prevent="widen"
-        >
-            <q-tooltip :delay="600">
-                Drag to resize, double-click to reset
-            </q-tooltip>
-        </span>
+        />
     </q-th>
 </template>
 
@@ -50,11 +51,29 @@ function headerWidth(handle: HTMLElement): number {
     return handle.closest('th')?.getBoundingClientRect().width ?? 0;
 }
 
+/**
+ * Pin every resizable column at its current width. Without this the browser
+ * redistributes the space of the dragged column over its neighbours, and the
+ * edge under the cursor does not follow it.
+ */
+function freezeHeaderRow(handle: HTMLElement): void {
+    const headers = handle
+        .closest('tr')
+        ?.querySelectorAll<HTMLElement>('th[data-column]');
+    const widths: Record<string, number> = {};
+    for (const header of headers ?? []) {
+        const name = header.dataset.column;
+        if (name) widths[name] = header.getBoundingClientRect().width;
+    }
+    properties.layout.freezeWidths(widths);
+}
+
 function resetWidth(): void {
     properties.layout.setWidth(properties.cellProps.col.name, undefined);
 }
 
 function nudge(event: KeyboardEvent, delta: number): void {
+    freezeHeaderRow(event.currentTarget as HTMLElement);
     const width = headerWidth(event.currentTarget as HTMLElement);
     properties.layout.setWidth(properties.cellProps.col.name, width + delta);
 }
@@ -72,6 +91,7 @@ function startResize(event: PointerEvent): void {
     const startWidth = headerWidth(handle);
     const name = properties.cellProps.col.name;
 
+    freezeHeaderRow(handle);
     handle.setPointerCapture(event.pointerId);
     document.body.classList.add('kk-col-resizing');
 
@@ -97,6 +117,19 @@ function startResize(event: PointerEvent): void {
 <style scoped>
 .kk-th {
     position: relative;
+    /* A wrapped label pushes the (hidden) sort arrow onto its own line */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Sortable headers are focusable; mouse clicks should not leave a ring */
+.kk-th:focus {
+    outline: none;
+}
+
+.kk-th:focus-visible {
+    box-shadow: inset 0 -2px 0 var(--q-primary);
 }
 
 .kk-th__resizer {
