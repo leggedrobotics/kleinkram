@@ -82,6 +82,9 @@ export const dockerDaemonErrorHandler = (error: unknown): void => {
     logger.error((error as { message: string }).message);
 };
 
+// Enough for the last lines of a Python traceback.
+const UPLOADER_STDERR_TAIL_LENGTH = 4096;
+
 const artifactUploaderImage =
     environment.ARTIFACTS_UPLOADER_IMAGE ||
     'rslethz/kleinkram:artifact-uploader-latest';
@@ -641,7 +644,8 @@ export class DockerDaemon {
 
         // Stream logs to stdout/stderr for debugging and capture metadata
         let artifactMetadata: { size: number; files: string[] } | undefined;
-        // Kept so a failed upload can say why (see ArtifactService).
+        // The tail is kept so a failed upload can say why (see
+        // ArtifactService); the rest only goes to the debug log.
         let uploaderStderr = '';
 
         const stream = await container.logs({
@@ -689,7 +693,9 @@ export class DockerDaemon {
 
             const stderrWritable = {
                 write: (chunk: Buffer) => {
-                    uploaderStderr += chunk.toString();
+                    uploaderStderr = (uploaderStderr + chunk.toString()).slice(
+                        -UPLOADER_STDERR_TAIL_LENGTH,
+                    );
                     logger.debug(
                         `[ArtifactUpload STDERR] ${chunk.toString().trim()}`,
                     );
