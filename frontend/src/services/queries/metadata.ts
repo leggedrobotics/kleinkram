@@ -7,8 +7,11 @@ import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
 export const getMetadataTypes = async (): Promise<MetadataTypeDto[]> => {
-    const response: AxiosResponse<MetadataTypesDto> =
-        await axios.get('/metadata-types');
+    // The endpoint is paginated (100 by default); callers expect every type.
+    const response: AxiosResponse<MetadataTypesDto> = await axios.get(
+        '/metadata-types',
+        { params: { take: 10_000 } },
+    );
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return response.data.data ?? [];
 };
