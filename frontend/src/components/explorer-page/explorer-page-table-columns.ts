@@ -246,6 +246,34 @@ function formatMetadataValue(
     }
 }
 
+const findMetadata = (
+    row: FlatMissionDto,
+    name: string,
+): MetadataDto | undefined =>
+    row.metadata.find((candidate) => candidate.type.name === name);
+
+const LINK_PROTOCOLS = new Set(['http:', 'https:']);
+
+/**
+ * The URL to link a mission's metadata value to, if it is a LINK and safe to
+ * open. Decided per value: types sharing a name can differ in datatype, and
+ * metadata values are user input, so `javascript:` and friends must never
+ * reach an `href`.
+ */
+export function metadataHref(
+    row: FlatMissionDto,
+    name: string,
+): string | undefined {
+    const metadata = findMetadata(row, name);
+    if (metadata?.type.datatype !== DataType.LINK) return undefined;
+    try {
+        const url = new URL(String(metadata.value));
+        return LINK_PROTOCOLS.has(url.protocol) ? url.href : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
 /**
  * An optional missions-table column showing the value of one metadata type.
  *
@@ -267,9 +295,7 @@ export function missionMetadataColumn(
         defaultHidden: true,
         metadataType,
         field: (row: FlatMissionDto) => {
-            const metadata = row.metadata.find(
-                (candidate) => candidate.type.name === metadataType.name,
-            );
+            const metadata = findMetadata(row, metadataType.name);
             return metadata
                 ? formatMetadataValue(metadata.value, metadata.type.datatype)
                 : '';

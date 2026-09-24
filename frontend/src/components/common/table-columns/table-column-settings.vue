@@ -59,7 +59,22 @@
                     @dragend="onDragEnd"
                 >
                     <q-item-section side class="column-settings__grip">
-                        <q-icon name="sym_o_drag_indicator" size="18px" />
+                        <button
+                            type="button"
+                            class="column-settings__grip-button"
+                            :data-column-grip="setting.column.name"
+                            :aria-label="`Move ${setting.column.label}, use the up and down arrow keys`"
+                            @keydown.up.prevent="
+                                (event: KeyboardEvent) =>
+                                    moveByKey(event, setting, -1)
+                            "
+                            @keydown.down.prevent="
+                                (event: KeyboardEvent) =>
+                                    moveByKey(event, setting, 1)
+                            "
+                        >
+                            <q-icon name="sym_o_drag_indicator" size="18px" />
+                        </button>
                     </q-item-section>
                     <q-item-section>
                         <q-item-label>{{ setting.column.label }}</q-item-label>
@@ -186,7 +201,7 @@ import type {
     ConfigurableColumn,
     TableColumnLayout,
 } from 'src/composables/use-table-columns';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 
 /**
  * Column picker for a table using `useTableColumns`: drag shown columns to
@@ -271,6 +286,32 @@ function onDrop(target: ColumnSetting<C>): void {
     onDragEnd();
 }
 
+/**
+ * Keyboard alternative to dragging: move the column one place up or down
+ * and keep the focus on its handle, so it can be moved again right away.
+ */
+async function moveByKey(
+    event: KeyboardEvent,
+    setting: ColumnSetting<C>,
+    direction: -1 | 1,
+): Promise<void> {
+    const index = shown.value.indexOf(setting);
+    const neighbour = shown.value[index + direction];
+    if (!neighbour) return;
+
+    properties.layout.move(
+        setting.column.name,
+        neighbour.column.name,
+        direction === -1 ? 'before' : 'after',
+    );
+
+    const list = (event.currentTarget as HTMLElement).closest('.q-list');
+    await nextTick();
+    list?.querySelector<HTMLElement>(
+        `[data-column-grip="${CSS.escape(setting.column.name)}"]`,
+    )?.focus();
+}
+
 function onDragEnd(): void {
     dragged.value = undefined;
     dropTarget.value = undefined;
@@ -312,6 +353,20 @@ function onDragEnd(): void {
 .column-settings__available {
     max-height: 280px;
     overflow-y: auto;
+}
+
+.column-settings__grip-button {
+    display: flex;
+    padding: 2px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: inherit;
+    cursor: grab;
+}
+
+.column-settings__grip-button:focus-visible {
+    outline: 2px solid var(--q-primary);
 }
 
 .column-settings__grip {

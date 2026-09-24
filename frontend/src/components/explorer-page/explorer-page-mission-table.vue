@@ -56,9 +56,11 @@
                     </span>
                     <a
                         v-else-if="
-                            props.col.metadataType.datatype === DataType.LINK
+                            metadataHref(props.row, props.col.metadataType.name)
                         "
-                        :href="props.value"
+                        :href="
+                            metadataHref(props.row, props.col.metadataType.name)
+                        "
                         target="_blank"
                         rel="noopener noreferrer"
                         @click.stop
@@ -365,12 +367,12 @@ import type {
     FlatMissionDto,
     MissionsDto,
 } from '@kleinkram/api-dto/types/mission/mission.dto';
-import { DataType } from '@kleinkram/shared';
 import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import SelectAllMatchingBanner from 'components/common/select-all-matching-banner.vue';
 import TableColumnSettings from 'components/common/table-columns/table-column-settings.vue';
 import TableHeaderCell from 'components/common/table-columns/table-header-cell.vue';
 import {
+    metadataHref,
     missionColumns,
     missionMetadataColumn,
 } from 'components/explorer-page/explorer-page-table-columns';

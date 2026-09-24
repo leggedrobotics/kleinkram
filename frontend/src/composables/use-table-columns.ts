@@ -56,18 +56,48 @@ const emptyLayout = (): StoredLayout => ({
     widths: {},
 });
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** Keep only the entries of `value` that pass `isValid`. */
+function pickEntries<T>(
+    value: unknown,
+    isValid: (entry: unknown) => entry is T,
+): Record<string, T> {
+    if (!isRecord(value)) return {};
+    return Object.fromEntries(
+        Object.entries(value).filter((entry): entry is [string, T] =>
+            isValid(entry[1]),
+        ),
+    );
+}
+
+const isBoolean = (value: unknown): value is boolean =>
+    typeof value === 'boolean';
+const isWidth = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0;
+
+/**
+ * Stored layouts come from an older release or a hand-edited storage entry
+ * as often as from this code, so every field is checked before use; a bad
+ * entry falls back to the default instead of taking the table down.
+ */
 function loadLayout(tableId: string): StoredLayout {
     try {
         const raw = localStorage.getItem(STORAGE_PREFIX + tableId);
         if (!raw) return emptyLayout();
-        const parsed = JSON.parse(raw) as Partial<StoredLayout>;
+        const parsed = JSON.parse(raw) as unknown;
+        if (!isRecord(parsed)) return emptyLayout();
         return {
-            order: Array.isArray(parsed.order) ? parsed.order : [],
-            visibility: parsed.visibility ?? {},
-            widths: parsed.widths ?? {},
+            order: Array.isArray(parsed.order)
+                ? parsed.order.filter(
+                      (name): name is string => typeof name === 'string',
+                  )
+                : [],
+            visibility: pickEntries(parsed.visibility, isBoolean),
+            widths: pickEntries(parsed.widths, isWidth),
         };
     } catch {
-        // A corrupt entry must not take the table down with it.
         return emptyLayout();
     }
 }
@@ -105,6 +135,9 @@ function widthStyle(width: number): string {
 
 const joinStyle = (base: string | undefined, extra: string): string =>
     base ? `${base}; ${extra}` : extra;
+
+const joinClasses = (base: string | undefined, extra: string): string =>
+    base ? `${base} ${extra}` : extra;
 
 export interface ColumnSetting<C extends ConfigurableColumn> {
     column: C;
@@ -245,8 +278,8 @@ export function useTableColumns<C extends ConfigurableColumn>(
                         column.headerStyle,
                         widthStyle(width),
                     ),
-                    classes: joinStyle(column.classes, 'kk-col-sized'),
-                    headerClasses: joinStyle(
+                    classes: joinClasses(column.classes, 'kk-col-sized'),
+                    headerClasses: joinClasses(
                         column.headerClasses,
                         'kk-col-sized',
                     ),

@@ -40,6 +40,7 @@ const properties = defineProps<{
 }>();
 
 const KEY_STEP = 16;
+const DRAG_THRESHOLD = 3;
 
 const isResizable = computed(
     () =>
@@ -91,11 +92,18 @@ function startResize(event: PointerEvent): void {
     const startWidth = headerWidth(handle);
     const name = properties.cellProps.col.name;
 
-    freezeHeaderRow(handle);
     handle.setPointerCapture(event.pointerId);
     document.body.classList.add('kk-col-resizing');
 
+    // A click or double-click on the handle must not pin the columns; only
+    // an actual drag does.
+    let isDragging = false;
     const onMove = (moveEvent: PointerEvent): void => {
+        if (!isDragging) {
+            if (Math.abs(moveEvent.clientX - startX) < DRAG_THRESHOLD) return;
+            isDragging = true;
+            freezeHeaderRow(handle);
+        }
         properties.layout.setWidth(
             name,
             startWidth + moveEvent.clientX - startX,
