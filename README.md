@@ -2,6 +2,11 @@
 
 # Kleinkram - Open Robotic Data Management
 
+[![Docker Image CI](https://github.com/leggedrobotics/kleinkram/actions/workflows/production-build.yml/badge.svg?branch=main)](https://github.com/leggedrobotics/kleinkram/actions/workflows/production-build.yml)
+[![PyPI](https://img.shields.io/pypi/v/kleinkram)](https://pypi.org/project/kleinkram/)
+[![License: MIT](https://img.shields.io/github/license/leggedrobotics/kleinkram)](https://github.com/leggedrobotics/kleinkram/blob/main/LICENSE)
+[![Docs](https://img.shields.io/badge/docs-online-blue)](https://docs.datasets.leggedrobotics.com/)
+
 Kleinkram is a self-hosted, open-source platform for managing and processing robotics data. It provides a structured way to store, organize, and act on your data.
 
 - **Organize**: Structure data in Projects and Missions.
