@@ -10,3 +10,4 @@ export * from './mcap-message-index';
 export * from './public-access';
 export * from './text-decoding';
 export * from './universal-http-reader';
+export * from './upload-limits';

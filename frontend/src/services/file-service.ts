@@ -12,7 +12,7 @@ import {
     MissionDto,
 } from '@kleinkram/api-dto/types/mission/mission.dto';
 import type { ProjectDto } from '@kleinkram/api-dto/types/project/base-project.dto';
-import { FileType } from '@kleinkram/shared';
+import { FileType, MAX_FILES_PER_UPLOAD_REQUEST } from '@kleinkram/shared';
 import { isValidFileName } from '@kleinkram/validation/frontend';
 import { QueryClient } from '@tanstack/vue-query';
 import { AxiosError } from 'axios';
@@ -145,6 +145,17 @@ async function _createFileAction(
             color: 'negative',
             spinner: false,
             timeout: 2000,
+        });
+        return;
+    }
+
+    if (files.length > MAX_FILES_PER_UPLOAD_REQUEST) {
+        Notify.create({
+            message: `Too many files selected (${files.length.toString()}). Upload at most ${MAX_FILES_PER_UPLOAD_REQUEST.toString()} files at once, or use the CLI.`,
+            color: 'negative',
+            spinner: false,
+            timeout: 10_000,
+            closeBtn: true,
         });
         return;
     }
