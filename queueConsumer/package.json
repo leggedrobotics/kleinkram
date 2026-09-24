@@ -72,7 +72,8 @@
         "typeorm-extension": "^4.1.0",
         "util": "^0.12.5",
         "winston": "3.19.0",
-        "winston-loki": "^6.1.7"
+        "winston-loki": "^6.1.7",
+        "yaml": "^2.9.0"
     },
     "devDependencies": {
         "@nestjs/cli": "^12.0.3",

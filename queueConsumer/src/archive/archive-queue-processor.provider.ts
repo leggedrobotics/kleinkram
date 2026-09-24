@@ -26,6 +26,13 @@ import { pipeline } from 'node:stream/promises';
 import tar from 'tar-stream';
 import { Repository } from 'typeorm';
 import logger from '../logger';
+import {
+    ArchiveContext,
+    MANIFEST_FILE,
+    manifestYaml,
+    PART_METADATA_FILE,
+    partMetadataYaml,
+} from './archive-metadata';
 
 /** How often to check whether the long term storage sealed the parts. */
 const SEAL_POLL_MS = 10_000;
@@ -75,13 +82,18 @@ async function sha256Of(stream: Readable): Promise<string> {
 async function writeEntry(
     pack: tar.Pack,
     header: Partial<tar.Header> & { name: string },
-    source: Readable,
+    source: Readable | Buffer,
 ): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-        const entry = pack.entry(header, (error) => {
+        const done = (error?: Error | null): void => {
             if (error) reject(error);
             else resolve();
-        });
+        };
+        if (Buffer.isBuffer(source)) {
+            pack.entry(header, source, done);
+            return;
+        }
+        const entry = pack.entry(header, done);
         source.on('error', reject);
         source.pipe(entry);
     });
@@ -151,10 +163,12 @@ export class ArchiveQueueProcessorProvider {
     @Process({ name: 'await-tape', concurrency: 1 })
     async awaitTape(job: Job<ArchiveJob>): Promise<void> {
         const archive = await this.load(job.data.archiveUuid);
-        const keys = [
-            ...archive.parts.map((part) => `${archive.location}/${part.name}`),
-            `${archive.location}/manifest.json`,
-        ];
+        const keys = archive.parts.map(
+            (part) => `${archive.location}/${part.name}`,
+        );
+        // Archives written before the manifest moved to YAML have none
+        const manifestKey = `${archive.location}/${MANIFEST_FILE}`;
+        if (await this.lts.exists(manifestKey)) keys.push(manifestKey);
         const sealed = await Promise.all(
             keys.map((key) => this.lts.isSealed(key)),
         );
@@ -209,12 +223,8 @@ export class ArchiveQueueProcessorProvider {
         written: string[],
     ): Promise<void> {
         await this.setState(archive, ProjectArchiveJobState.PACKING);
-        const projectUuid = archive.project?.uuid ?? '';
-        const files = await this.fileRepository.find({
-            where: { mission: { project: { uuid: projectUuid } } },
-            relations: { mission: true, topics: true },
-            order: { mission: { name: 'ASC' }, filename: 'ASC' },
-        });
+        const context = await this.loadContext(archive);
+        const files = [...context.files.values()];
 
         // Only what is actually in S3 can be archived
         const present: { file: FileEntity; size: number }[] = [];
@@ -232,7 +242,7 @@ export class ArchiveQueueProcessorProvider {
         archive.parts = [];
         await this.archiveRepository.save(archive);
 
-        const usedPaths = new Set<string>();
+        const usedPaths = new Set<string>([PART_METADATA_FILE]);
         let lastSave = Date.now();
         for (const [index, group] of groups.entries()) {
             const name = `part-${String(index + 1).padStart(4, '0')}.tar`;
@@ -283,6 +293,18 @@ export class ArchiveQueueProcessorProvider {
                     });
                 }
             }
+            // Last entry, so that the checksums of the files are known
+            await writeEntry(
+                pack,
+                { name: PART_METADATA_FILE, mtime: new Date() },
+                Buffer.from(
+                    partMetadataYaml(
+                        context,
+                        { name, index, count: groups.length },
+                        entries,
+                    ),
+                ),
+            );
             pack.finalize();
             await done;
             await upload.commit();
@@ -296,74 +318,36 @@ export class ArchiveQueueProcessorProvider {
             await this.archiveRepository.save(archive);
         }
 
-        const manifestKey = `${archive.location}/manifest.json`;
+        const manifestKey = `${archive.location}/${MANIFEST_FILE}`;
         await this.lts.writeFile(
             manifestKey,
-            JSON.stringify(await this.manifest(archive, files), null, 2),
+            manifestYaml(context, archive.parts),
         );
         written.push(manifestKey);
     }
 
-    /**
-     * Self-describing snapshot written next to the parts, so that the data
-     * stays usable even without this Kleinkram instance.
-     */
-    private async manifest(
+    private async loadContext(
         archive: ProjectArchiveEntity,
-        files: FileEntity[],
-    ): Promise<Record<string, unknown>> {
+    ): Promise<ArchiveContext> {
+        const projectUuid = archive.project?.uuid ?? '';
         const project = await this.projectRepository.findOneOrFail({
-            where: { uuid: archive.project?.uuid ?? '' },
+            where: { uuid: projectUuid },
         });
         const missions = await this.missionRepository.find({
-            where: { project: { uuid: project.uuid } },
+            where: { project: { uuid: projectUuid } },
             relations: { metadata: { metadataType: true } },
+            order: { name: 'ASC' },
         });
-        const byUuid = new Map(files.map((file) => [file.uuid, file]));
+        const files = await this.fileRepository.find({
+            where: { mission: { project: { uuid: projectUuid } } },
+            relations: { mission: true, topics: true, categories: true },
+            order: { mission: { name: 'ASC' }, filename: 'ASC' },
+        });
         return {
-            format: 'kleinkram-project-archive/v1',
-            createdAt: new Date().toISOString(),
-            archiveUuid: archive.uuid,
-            project: {
-                uuid: project.uuid,
-                name: project.name,
-                description: project.description,
-                createdAt: project.createdAt,
-            },
-            missions: missions.map((mission) => ({
-                uuid: mission.uuid,
-                name: mission.name,
-                createdAt: mission.createdAt,
-                metadata: (mission.metadata ?? []).map((metadata) => ({
-                    name: metadata.metadataType?.name,
-                    string: metadata.value_string,
-                    number: metadata.value_number,
-                    boolean: metadata.value_boolean,
-                    date: metadata.value_date,
-                    location: metadata.value_location,
-                })),
-            })),
-            parts: archive.parts.map((part) => ({
-                name: part.name,
-                size: part.size,
-                sha256: part.sha256,
-                files: part.files.map((entry) => {
-                    const file = byUuid.get(entry.fileUuid);
-                    return {
-                        ...entry,
-                        type: file?.type,
-                        date: file?.date,
-                        recordingStartDate: file?.recordingStartDate,
-                        recordingEndDate: file?.recordingEndDate,
-                        topics: (file?.topics ?? []).map((topic) => ({
-                            name: topic.name,
-                            type: topic.type,
-                            nrMessages: topic.nrMessages?.toString(),
-                            frequency: topic.frequency,
-                        })),
-                    };
-                }),
-            })),
+            archive,
+            project,
+            missions,
+            files: new Map(files.map((file) => [file.uuid, file])),
         };
     }
 
