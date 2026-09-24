@@ -594,13 +594,15 @@ export class FileLifecycleService implements OnModuleInit {
             }
         } catch (error: unknown) {
             // Mark the reserved files as canceled so a retry can reuse them
-            // instead of hitting "File already exists".
+            // instead of hitting "File already exists". Only touch rows still
+            // UPLOADING: a reused file may have been confirmed meanwhile by a
+            // previous uploader holding older credentials.
             const reservedUUIDs = entries
                 .map((entry) => entry.fileUUID)
                 .filter((uuid): uuid is string => uuid !== null);
             if (reservedUUIDs.length > 0) {
                 await this.fileRepository.update(
-                    { uuid: In(reservedUUIDs) },
+                    { uuid: In(reservedUUIDs), state: FileState.UPLOADING },
                     { state: FileState.CANCELED },
                 );
             }

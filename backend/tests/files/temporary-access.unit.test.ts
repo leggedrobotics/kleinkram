@@ -181,7 +181,7 @@ describe('FileLifecycleService.getTemporaryAccess credential issuing', () => {
         ).rejects.toThrow('sts down');
         expect(fileRepositoryUpdate).toHaveBeenCalledWith(
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            { uuid: expect.anything() },
+            { uuid: expect.anything(), state: FileState.UPLOADING },
             { state: FileState.CANCELED },
         );
     });

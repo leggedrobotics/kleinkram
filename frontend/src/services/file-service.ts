@@ -149,17 +149,6 @@ async function _createFileAction(
         return;
     }
 
-    if (files.length > MAX_FILES_PER_UPLOAD_REQUEST) {
-        Notify.create({
-            message: `Too many files selected (${files.length.toString()}). Upload at most ${MAX_FILES_PER_UPLOAD_REQUEST.toString()} files at once, or use the CLI.`,
-            color: 'negative',
-            spinner: false,
-            timeout: 10_000,
-            closeBtn: true,
-        });
-        return;
-    }
-
     const validFiles = files.filter(
         (file) => isValidFileTypeFilter(file.name) && hasValidFileSize(file),
     );
@@ -222,6 +211,17 @@ async function _createFileAction(
             timeout: 30_000,
             closeBtn: true,
         });
+    }
+
+    if (validFiles.length > MAX_FILES_PER_UPLOAD_REQUEST) {
+        Notify.create({
+            message: `Too many files to upload (${validFiles.length.toString()}). Upload at most ${MAX_FILES_PER_UPLOAD_REQUEST.toString()} files at once, or use the CLI.`,
+            color: 'negative',
+            spinner: false,
+            timeout: 10_000,
+            closeBtn: true,
+        });
+        return;
     }
 
     const fileItems = validFiles.map((file) => ({
