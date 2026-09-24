@@ -73,7 +73,7 @@ import {
 } from 'src/services/queries/user';
 import { allWorkers } from 'src/services/queries/worker';
 import { QueryURLHandler } from 'src/services/query-handler';
-import { computed, ComputedRef, ref, Ref, unref, watch } from 'vue';
+import { computed, ComputedRef, MaybeRef, ref, Ref, unref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 export const usePermissionsQuery = (): UseQueryReturnType<
@@ -519,17 +519,22 @@ export const useFileEvents = (
     });
 
 export const useFilteredMetadataTypes = (
-    nameSearch: string,
-    selectedDataType: DataType | undefined,
+    nameSearch: MaybeRef<string>,
+    selectedDataType: MaybeRef<DataType | undefined>,
 ): UseQueryReturnType<MetadataTypesDto | undefined, Error> => {
     return useQuery({
-        queryKey: computed(() => [
-            'metadataTypes',
-            nameSearch,
-            selectedDataType,
-        ]),
-        queryFn: async () => {
-            return getFilteredMetadataTypes(nameSearch, selectedDataType);
+        queryKey: computed(
+            () =>
+                [
+                    'metadataTypes',
+                    unref(nameSearch),
+                    unref(selectedDataType),
+                ] as const,
+        ),
+        // read the filters from the key, so a response is always cached
+        // under the search it was fetched for
+        queryFn: async ({ queryKey: [, name, dataType] }) => {
+            return getFilteredMetadataTypes(name, dataType);
         },
     });
 };
