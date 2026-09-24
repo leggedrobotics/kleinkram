@@ -87,6 +87,28 @@ const artifactUploaderImage =
     'rslethz/kleinkram:artifact-uploader-latest';
 
 /**
+ * The S3 URL handed to the artifact uploader, with an explicit scheme.
+ * The uploader prefixes a bare host with http://, but outside DEV the
+ * backend serves S3_ENDPOINT over https (storage-config.factory.ts), and
+ * the http endpoint answers PutObject with a 308 redirect that boto3 does
+ * not follow. Use the same scheme rule as the backend.
+ */
+const artifactUploaderS3Endpoint = (): string => {
+    let endpoint = environment.S3_ENDPOINT;
+    if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+        endpoint = `${environment.DEV ? 'http' : 'https'}://${endpoint}`;
+    }
+    const url = new URL(endpoint);
+    if (url.hostname === 'localhost') {
+        url.hostname = '127.0.0.1';
+    }
+    if (environment.DEV && !url.port) {
+        url.port = '9000';
+    }
+    return url.toString().replace(/\/$/, '');
+};
+
+/**
  * The DockerDaemon class is responsible for managing the Docker daemon.
  * It provides methods to start, stop, and get logs from containers.
  *
@@ -583,7 +605,7 @@ export class DockerDaemon {
             name: `kleinkram-artifact-uploader-${actionUuid}`,
             Env: [
                 `KLEINKRAM_ACTION_UUID=${actionUuid}`,
-                `S3_ENDPOINT=${environment.S3_ENDPOINT === 'localhost' ? '127.0.0.1' : environment.S3_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+                `S3_ENDPOINT=${artifactUploaderS3Endpoint()}`,
                 `S3_ACCESS_KEY=${environment.S3_ACCESS_KEY}`,
                 `S3_SECRET_KEY=${environment.S3_SECRET_KEY}`,
                 `S3_ARTIFACTS_BUCKET_NAME=${environment.S3_ARTIFACTS_BUCKET_NAME}`,

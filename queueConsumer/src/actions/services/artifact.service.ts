@@ -53,10 +53,27 @@ export class ArtifactService {
             runnerId,
         );
 
-        await artifactUploadContainer.wait();
+        const { StatusCode: exitCode } =
+            (await artifactUploadContainer.wait()) as {
+                StatusCode: number;
+            };
         this.dockerDaemon.removeContainer(artifactUploadContainer.id);
 
         await this.dockerDaemon.removeArtifactVolume(runnerId, actionUuid);
+
+        // The uploader prints ARTIFACT_METADATA only after the object is in
+        // the bucket. Without it there is nothing to download, so do not
+        // point the action at a key that was never written.
+        if (exitCode !== 0 || artifactMetadata === undefined) {
+            logger.error(
+                `Artifact upload failed for action ${actionUuid} (uploader exit code ${String(exitCode)})`,
+            );
+            await this.actionRepository.update(
+                { uuid: actionUuid },
+                { artifacts: ArtifactState.ERROR },
+            );
+            return { artifactPath: '', containerLimits, volumeName };
+        }
 
         const bucketName = environment.S3_ARTIFACTS_BUCKET_NAME;
         const filename = `${actionUuid}.tar.gz`;
@@ -65,37 +82,26 @@ export class ArtifactService {
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + 90);
 
-        const updateData: {
-            artifacts: ArtifactState;
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            artifact_path: string;
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            artifact_size?: number;
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            artifact_files?: string[];
-            artifactExpirationDate: Date;
-        } = {
-            artifacts: ArtifactState.UPLOADED,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            artifact_path: artifactPath,
-            artifactExpirationDate: expirationDate,
-        };
-
-        if (artifactMetadata?.size !== undefined) {
-            updateData.artifact_size = artifactMetadata.size;
-        }
-        if (artifactMetadata?.files !== undefined) {
-            updateData.artifact_files = artifactMetadata.files;
-        }
-
-        await this.actionRepository.update({ uuid: actionUuid }, updateData);
+        await this.actionRepository.update(
+            { uuid: actionUuid },
+            {
+                artifacts: ArtifactState.UPLOADED,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_path: artifactPath,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_size: artifactMetadata.size,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                artifact_files: artifactMetadata.files,
+                artifactExpirationDate: expirationDate,
+            },
+        );
 
         logger.debug(`Artifacts uploaded for action ${actionUuid}`);
 
         return {
             artifactPath,
-            artifactSize: artifactMetadata?.size,
-            artifactFiles: artifactMetadata?.files,
+            artifactSize: artifactMetadata.size,
+            artifactFiles: artifactMetadata.files,
             containerLimits,
             volumeName,
         };
