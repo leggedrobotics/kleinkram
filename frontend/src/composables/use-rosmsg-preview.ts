@@ -3,6 +3,10 @@ import { markRaw, reactive, Ref, ref, shallowRef } from 'vue';
 import { DecodingStrategy } from '../services/decoding-strategies';
 import { Db3Strategy } from '../services/decoding-strategies/db3-strategy';
 import { McapStrategy } from '../services/decoding-strategies/mcap-strategy';
+import type {
+    RecordingInsights,
+    RecordingMetadata,
+} from '../services/decoding-strategies/recording-insights';
 import { RosbagStrategy } from '../services/decoding-strategies/rosbag-strategy';
 import type { ReadOptions } from '../services/decoding-strategies/utilities';
 import { formatPayload } from './rosmsg-utilities.ts';
@@ -171,6 +175,9 @@ export function useRosmsgPreview(): {
     cancelTopic: (topicName: string) => void;
     reset: () => void;
     dbSchema?: Ref<string | null>;
+    insights: Ref<RecordingInsights | null>;
+    readAttachment: (index: number) => Promise<Uint8Array | undefined>;
+    readMetadata: () => Promise<RecordingMetadata[]>;
 } {
     const isReaderReady = ref(false);
     const readerError = ref<string | null>(null);
@@ -182,6 +189,9 @@ export function useRosmsgPreview(): {
 
     const strategy = shallowRef<DecodingStrategy | null>(null);
     const dbSchema = ref<string | null>(null);
+    // Holds bigints and large maps that nothing mutates, so it is not made
+    // deeply reactive.
+    const insights = shallowRef<RecordingInsights | null>(null);
     const abortControllers = new Map<string, AbortController>();
 
     function cancelTopic(topicName: string): void {
@@ -199,6 +209,8 @@ export function useRosmsgPreview(): {
         isReaderReady.value = false;
         readerError.value = null;
         dbSchema.value = null;
+        insights.value = null;
+        strategy.value = null;
         for (const controller of abortControllers.values()) {
             controller.abort();
         }
@@ -238,6 +250,7 @@ export function useRosmsgPreview(): {
             }
 
             strategy.value = impl;
+            insights.value = impl.getInsights();
             isReaderReady.value = true;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
@@ -363,6 +376,11 @@ export function useRosmsgPreview(): {
         topicLoadingState,
         topicErrors,
         dbSchema,
+        insights,
+        readAttachment: (index: number): Promise<Uint8Array | undefined> =>
+            strategy.value?.readAttachment(index) ?? Promise.resolve(undefined),
+        readMetadata: (): Promise<RecordingMetadata[]> =>
+            strategy.value?.readMetadata() ?? Promise.resolve([]),
         init,
         fetchTopicMessages,
         formatPayload,
