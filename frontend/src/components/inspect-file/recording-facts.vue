@@ -62,7 +62,7 @@
             <div class="text-placeholder">Embedded</div>
             <div class="recording-facts__value">
                 {{ plural(insights.attachments.length, 'attachment') }} ·
-                {{ insights.metadataNames.length }} metadata
+                {{ metadataCount }} metadata
             </div>
             <div class="text-caption text-grey-7">
                 {{ embeddedHint }}
@@ -105,6 +105,11 @@ const pauses = computed(() => properties.insights.coverage?.pauses ?? []);
 const longestPause = computed(
     () =>
         pauses.value.toSorted((a, b) => b.end - b.start - (a.end - a.start))[0],
+);
+
+// A record written several times counts once, as in the Metadata tab.
+const metadataCount = computed(
+    () => new Set(properties.insights.metadataNames).size,
 );
 
 const embeddedHint = computed(() => {
