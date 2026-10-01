@@ -29,6 +29,8 @@ from botocore.exceptions import ClientError
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.mcap_filter import filter_mcap_from_url
 from kleinkram.api.mcap_filter import is_mcap
+from kleinkram.api.mcap_summary import McapInfo
+from kleinkram.api.mcap_summary import read_mcap_info_from_url
 from kleinkram.api.retry import Retrier
 from kleinkram.api.retry import RetryPolicy
 from kleinkram.api.retry import describe_error
@@ -36,6 +38,7 @@ from kleinkram.api.retry import is_unsent
 from kleinkram.api.retry import retrying
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
+from kleinkram.errors import FileTypeNotSupported
 from kleinkram.errors import InsufficientStorageError
 from kleinkram.errors import TransferCancelledError
 from kleinkram.errors import transfer_interrupted
@@ -995,6 +998,16 @@ def _resolve_download_future(
 
     if on_overall_progress_cb is not None:
         on_overall_progress_cb()
+
+
+def read_mcap_info(client: AuthenticatedClient, *, file: File, metadata: bool = False) -> McapInfo:
+    """Read what a remote MCAP says about itself, without downloading its messages."""
+    if not is_mcap(Path(file.name)):
+        # Only MCAP keeps its index in one place at a known offset. `.bag` and
+        # `.db3` would have to be downloaded whole to learn the same.
+        raise FileTypeNotSupported(f"only .mcap files can be inspected without downloading them, got {file.name}")
+
+    return read_mcap_info_from_url(_get_file_download(client, file.id), metadata=metadata)
 
 
 def download_files(
