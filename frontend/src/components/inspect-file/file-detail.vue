@@ -54,7 +54,7 @@
                         />
                     </div>
                 </q-tab>
-                <q-tab name="history" label="History" style="color: #222" />
+                <q-tab name="history" label="File Events" style="color: #222" />
             </q-tabs>
         </template>
     </FileHeader>

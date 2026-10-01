@@ -17,8 +17,12 @@
                 <div v-for="line in tooltip" :key="line">{{ line }}</div>
             </q-tooltip>
         </div>
-        <div v-if="note" class="coverage__note text-warning-dark">
-            <q-icon name="sym_o_warning" size="14px" />
+        <div
+            v-if="note"
+            class="coverage__note"
+            :class="isIntermittent ? 'text-grey-7' : 'text-warning-dark'"
+        >
+            <q-icon v-if="!isIntermittent" name="sym_o_warning" size="14px" />
             {{ note }}
         </div>
     </div>
@@ -64,26 +68,54 @@ const describe = (span: TimeSpan): string =>
         span.start,
     )}`;
 
+/**
+ * A stream that drops out once or twice has a fault worth pointing at. A topic
+ * with many holes is event driven (`/parameter_events`, say): it publishes
+ * when something happens, and calling every silence "missing" would be wrong.
+ */
+const MAX_DROPOUTS = 3;
+const MAX_TOOLTIP_LINES = 8;
+
+const isIntermittent = computed(() => gaps.value.length > MAX_DROPOUTS);
+
+const longestGap = computed(
+    () => gaps.value.toSorted((a, b) => b.end - b.start - (a.end - a.start))[0],
+);
+
 const note = computed(() => {
-    const longest = gaps.value.toSorted(
-        (a, b) => b.end - b.start - (a.end - a.start),
-    )[0];
+    const longest = longestGap.value;
     if (!longest) return '';
+    if (isIntermittent.value) {
+        return `intermittent, longest gap ${formatSpan(longest.end - longest.start)}`;
+    }
     const more = gaps.value.length - 1;
     return more > 0
         ? `${describe(longest)}, ${more.toString()} more`
         : describe(longest);
 });
 
-const tooltip = computed(() => [
-    ...gaps.value.map((gap) => describe(gap)),
-    ...pauses.value.map(
-        (pause) =>
+const tooltip = computed(() => {
+    const lines = gaps.value
+        .slice(0, MAX_TOOLTIP_LINES)
+        .map((gap) =>
+            isIntermittent.value
+                ? `No messages for ${formatSpan(gap.end - gap.start)} at ${clockTime(properties.coverage.startTime, gap.start)}`
+                : describe(gap),
+        );
+    if (gaps.value.length > MAX_TOOLTIP_LINES) {
+        lines.push(
+            `and ${(gaps.value.length - MAX_TOOLTIP_LINES).toString()} more`,
+        );
+    }
+    for (const pause of pauses.value) {
+        lines.push(
             `Recording paused for about ${formatSpan(
                 pause.end - pause.start,
             )} around ${clockTime(properties.coverage.startTime, pause.start)}`,
-    ),
-]);
+        );
+    }
+    return lines;
+});
 </script>
 
 <style scoped>
