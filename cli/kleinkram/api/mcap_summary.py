@@ -109,6 +109,17 @@ class McapInfo:
         return (self.end_time - self.start_time) / 1e9
 
     @property
+    def latest_metadata(self) -> Dict[str, McapMetadata]:
+        """The last metadata record of each name.
+
+        A record cannot be changed once written, so a writer that wants to
+        update one appends another under the same name. rosbag2 does exactly
+        that: a placeholder when it opens the file, the real values when it
+        closes it. `metadata` keeps every record, in file order.
+        """
+        return {record.name: record for record in self.metadata}
+
+    @property
     def per_message_access(self) -> bool:
         """Whether a partial download can fetch single messages.
 
