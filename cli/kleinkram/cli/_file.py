@@ -33,8 +33,8 @@ Show what an .mcap says about itself, without downloading it.
 
 Reads only the file's header and summary section through range requests: \
 topics with types and message counts, the recorded time range, attachments, \
-and whether a partial download can address single messages. `klein file info` \
-shows what Kleinkram has stored about a file; this reads the file.
+and how the chunks are stored. `klein file info` shows what Kleinkram has \
+stored about a file; this reads the file.
 """
 
 

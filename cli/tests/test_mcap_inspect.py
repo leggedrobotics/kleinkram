@@ -8,6 +8,7 @@ from typing import Tuple
 from unittest.mock import MagicMock
 
 import pytest
+from rich.console import Console
 from typer.testing import CliRunner
 
 import kleinkram
@@ -17,7 +18,9 @@ from kleinkram.api.mcap_summary import McapSummaryUnavailable
 from kleinkram.api.mcap_summary import read_mcap_info_from_url
 from kleinkram.errors import FileTypeNotSupported
 from kleinkram.models import File
+from kleinkram.printing import _mcap_chunks_text
 from kleinkram.printing import format_log_time
+from kleinkram.printing import mcap_metadata_table
 from tests.test_mcap_partial_download import INTERVAL_NS
 from tests.test_mcap_partial_download import MESSAGES_PER_TOPIC
 from tests.test_mcap_partial_download import TOPICS
@@ -161,6 +164,7 @@ def test_chunks_without_message_indexes_cannot_be_addressed_per_message(tmp_path
     assert info.chunk_count > 0
     assert not info.message_indexed
     assert not info.per_message_access
+    assert "no message index" in _mcap_chunks_text(info)
     assert info.message_count == len(TOPICS) * MESSAGES_PER_TOPIC
 
 
@@ -202,6 +206,31 @@ def test_a_file_without_a_summary_section_is_reported_as_such(tmp_path: Path) ->
     with _serve(path) as (url, _):
         with pytest.raises(McapSummaryUnavailable, match="no summary section"):
             read_mcap_info_from_url(url)
+
+
+def test_a_metadata_record_written_twice_is_shown_once(tmp_path: Path) -> None:
+    """rosbag2 appends a placeholder at open and the real record at close."""
+    path = tmp_path / "rewritten.mcap"
+    with path.open("wb") as handle:
+        writer = mcap_writer.Writer(handle)
+        writer.start(profile="ros2", library="test")
+        writer.add_metadata(name="rosbag2", data={"message_count": "0"})
+        writer.add_metadata(name="rosbag2", data={"message_count": "6324"})
+        writer.finish()
+
+    with _serve(path) as (url, _):
+        info = read_mcap_info_from_url(url, metadata=True)
+
+    # Nothing is dropped from the data, only from the table.
+    assert [m.values for m in info.metadata] == [{"message_count": "0"}, {"message_count": "6324"}]
+    assert info.latest_metadata["rosbag2"].values == {"message_count": "6324"}
+
+    console = Console(record=True, width=120)
+    console.print(mcap_metadata_table(info))
+    output = console.export_text()
+    assert "last of 2 records" in output
+    assert "message_count: 6324" in output
+    assert "message_count: 0" not in output
 
 
 def test_format_log_time_keeps_nanoseconds() -> None:
@@ -262,7 +291,8 @@ def test_cli_inspect_prints_the_summary(cli_app, remote: File) -> None:
     assert "mcap summary: annotated.mcap" in output
     assert "2026-09-18T08:08:28.000000000Z" in output
     assert "uncompressed" in output
-    assert "--topics and a time window both cut the transfer" in output
+    assert "partial download" not in output
+    assert "transferred" not in output
     assert "/imu sensor_msgs/msg/Imu cdr 300" in output
     assert "calibration.yaml application/yaml" in output
     assert "pass --metadata to read" in output

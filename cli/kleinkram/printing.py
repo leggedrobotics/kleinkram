@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 import time
+from collections import Counter
 from dataclasses import asdict
 from datetime import datetime
 from datetime import timedelta
@@ -277,18 +278,12 @@ def _mcap_chunks_text(info: McapInfo) -> str:
 
     names = ", ".join("uncompressed" if name == "none" else name for name in sorted(info.compression))
     text = f"{info.chunk_count}, {names}"
+    if not info.message_indexed:
+        text += ", no message index"
     if info.compressed_size != info.uncompressed_size and info.compressed_size > 0:
         ratio = info.uncompressed_size / info.compressed_size
         return f"{text} ({format_bytes(info.compressed_size)}, {ratio:.1f}x)"
     return f"{text} ({format_bytes(info.uncompressed_size)})"
-
-
-def _mcap_slicing_text(info: McapInfo) -> Text:
-    if info.per_message_access:
-        return Text("--topics and a time window both cut the transfer", style="green")
-    if info.chunk_count == 0:
-        return Text("not possible, the file has no chunk index", style="red")
-    return Text("only a time window cuts the transfer, chunks are fetched whole", style="yellow")
 
 
 def mcap_info_table(info: McapInfo, *, name: str) -> Table:
@@ -302,19 +297,8 @@ def mcap_info_table(info: McapInfo, *, name: str) -> Table:
         table.add_row("end", format_log_time(info.end_time))
         table.add_row("duration", f"{timedelta(seconds=round(info.duration))} ({info.duration:.2f} s)")
     table.add_row("chunks", _mcap_chunks_text(info))
-    table.add_row("partial download", _mcap_slicing_text(info))
     table.add_row("attachments", str(len(info.attachments)))
-    table.add_row("metadata records", str(len(info.metadata)))
-
-    fraction = info.bytes_fetched / info.file_size if info.file_size > 0 else 0.0
-    table.add_row(
-        "transferred",
-        Text(
-            f"{format_bytes(info.bytes_fetched)} of {format_bytes(info.file_size)} "
-            f"({fraction:.2%}) in {info.requests} requests",
-            style="dim",
-        ),
-    )
+    table.add_row("metadata records", str(len(info.latest_metadata)))
     return table
 
 
@@ -369,12 +353,18 @@ def mcap_metadata_table(info: McapInfo) -> Table:
     table.add_column("name", overflow="fold")
     table.add_column("values", overflow="fold")
 
-    for record in info.metadata:
+    written = Counter(record.name for record in info.metadata)
+    for name, record in info.latest_metadata.items():
+        label = Text(name)
+        if written[name] > 1:
+            # Appended rather than updated: only the last one is current.
+            label.append(f"\nlast of {written[name]} records", style="dim")
+
         if record.values is None:
             values = Text("pass --metadata to read", style="dim")
         else:
             values = Text("\n".join(f"{key}: {value}" for key, value in record.values.items()))
-        table.add_row(record.name, values)
+        table.add_row(label, values)
     return table
 
 

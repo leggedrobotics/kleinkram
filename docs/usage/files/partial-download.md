@@ -32,7 +32,7 @@ klein file inspect <file>
 
 - topics, with message type, encoding, message count and mean rate
 - the first and last log time, in the format `--start-time` and `--end-time` take
-- how the chunks are stored, and so whether `--topics` will cut the transfer
+- how the chunks are stored: their count, compression, and whether they are indexed
 - attachments and metadata records
 - with `--schemas`, the message definitions
 - with `--metadata`, the content of the metadata records (one extra request each)
