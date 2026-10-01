@@ -73,6 +73,15 @@ const MIN_NOTABLE_SECONDS = 2;
 const MIN_CHUNKS_FOR_PAUSES = 8;
 /** Message periods a topic may stay silent before that counts as a gap. */
 const SILENT_PERIODS = 3;
+/**
+ * Chunks a topic has to appear in before its silences are reported.
+ *
+ * `/tf_static` and its like publish a handful of messages when the recording
+ * starts and then nothing, by design. That is a one-shot topic, not a stream
+ * that dropped out, and the chunk index tells the two apart: a stream shows up
+ * in chunk after chunk, a one-shot topic in one or two.
+ */
+const MIN_CHUNKS_FOR_GAPS = 5;
 
 const seconds = (time: bigint, origin: bigint): number =>
     Number(time - origin) / 1e9;
@@ -229,15 +238,14 @@ export function computeRecordingCoverage(
             MIN_NOTABLE_SECONDS,
         );
         const covered = mergeSpans(spans, tolerance);
-        // One message is a latched topic, not a topic that dropped out.
-        const latched = count !== undefined && count < 2;
+        const isStream = spans.length >= MIN_CHUNKS_FOR_GAPS;
         topics[topic] = {
             covered,
-            gaps: latched
-                ? []
-                : uncovered(covered, durationSeconds).filter(
+            gaps: isStream
+                ? uncovered(covered, durationSeconds).filter(
                       (hole) => hole.end - hole.start > tolerance,
-                  ),
+                  )
+                : [],
         };
     }
 

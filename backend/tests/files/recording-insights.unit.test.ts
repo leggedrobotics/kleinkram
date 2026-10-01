@@ -119,6 +119,23 @@ describe('computeRecordingCoverage', () => {
         });
     });
 
+    test('a topic published a few times at the start is not a dropout', () => {
+        // What /tf_static looks like in practice: seven messages in the
+        // first two chunks, then nothing for the rest of the recording.
+        const coverage = computeRecordingCoverage(
+            recording(100, (second) => (second < 2 ? [IMU, LIDAR] : [IMU])),
+            [
+                { id: IMU, topic: '/imu', messageCount: 40_000 },
+                { id: LIDAR, topic: '/tf_static', messageCount: 7 },
+            ],
+        );
+
+        expect(coverage?.topics['/tf_static']).toEqual({
+            covered: [{ start: 0, end: 2 }],
+            gaps: [],
+        });
+    });
+
     test('several channels of one topic are drawn as one topic', () => {
         const coverage = computeRecordingCoverage(
             recording(20, (second) => (second < 10 ? [IMU] : [LIDAR])),

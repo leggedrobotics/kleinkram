@@ -141,10 +141,13 @@
                                         (expandedView[props.row.name] = view)
                                 "
                             />
+                            <!-- eslint-disable vue/no-v-html -- the highlighter escapes its input -->
                             <pre
                                 v-if="viewOf(props.row.name) === 'definition'"
                                 class="topic-definition bg-white q-pa-md q-ma-none rounded-borders"
-                                >{{ definitionOf(props.row.name) }}</pre>
+                                v-html="definitionHtml(props.row.name)"
+                            ></pre>
+                            <!-- eslint-enable vue/no-v-html -->
                             <MessageViewer
                                 v-show="viewOf(props.row.name) === 'preview'"
                                 :topic-name="props.row.name"
@@ -185,6 +188,11 @@ import type { QTableColumn } from 'quasar';
 import { useQuasar } from 'quasar';
 import type { RecordingInsights } from 'src/services/decoding-strategies/recording-insights';
 import { clockTime } from 'src/services/decoding-strategies/recording-insights';
+import {
+    escapeDefinition,
+    highlightRosMessage,
+    isRosMessageEncoding,
+} from 'src/services/highlight-rosmsg';
 import { computed, ref } from 'vue';
 import { detectPreviewType, PreviewType } from '../../services/message-factory';
 import MessageViewer from './message-viewer.vue';
@@ -236,6 +244,13 @@ const viewOf = (topic: string): ExpandedView =>
     expandedView.value[topic] ?? 'preview';
 const definitionOf = (topic: string): string | undefined =>
     properties.insights?.schemasByTopic[topic]?.definition;
+const definitionHtml = (topic: string): string => {
+    const schema = properties.insights?.schemasByTopic[topic];
+    if (schema?.definition === undefined) return '';
+    return isRosMessageEncoding(schema.encoding)
+        ? highlightRosMessage(schema.definition)
+        : escapeDefinition(schema.definition);
+};
 
 const allColumns: QTableColumn[] = [
     {
@@ -637,6 +652,29 @@ const loadMore = (topicName: string): void => {
     font-size: 13px;
     white-space: pre;
     border: 1px solid #e0e0e0;
+}
+
+/* Same muted palette as the action script viewer. */
+.topic-definition :deep(.tok-comment) {
+    color: #8a8a8a;
+    font-style: italic;
+}
+.topic-definition :deep(.tok-string) {
+    color: #0a7c4a;
+}
+.topic-definition :deep(.tok-keyword) {
+    color: #0b5fa5;
+    font-weight: 600;
+}
+.topic-definition :deep(.tok-builtin) {
+    color: #7b4fb5;
+}
+.topic-definition :deep(.tok-number) {
+    color: #b35c00;
+}
+.topic-definition :deep(.tok-def) {
+    color: #a1237a;
+    font-weight: 600;
 }
 
 .coverage-axis {
