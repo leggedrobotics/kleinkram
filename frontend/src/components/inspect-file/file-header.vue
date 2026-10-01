@@ -230,6 +230,10 @@
                 </div>
             </div>
         </template>
+
+        <template v-if="$slots.tabs" #tabs>
+            <slot name="tabs" />
+        </template>
     </title-section>
 </template>
 
