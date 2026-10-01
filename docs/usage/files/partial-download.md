@@ -21,6 +21,39 @@ Only `.mcap` can be sliced. `.bag` and `.db3` have no equivalent index that the
 client can use over the network, so they are skipped when any filter is given.
 :::
 
+## Look before you download
+
+`klein file inspect` reads only the header and the summary section of a
+recording and prints what the file says about itself:
+
+```bash
+klein file inspect <file>
+```
+
+- topics, with message type, encoding, message count and mean rate
+- the first and last log time, in the format `--start-time` and `--end-time` take
+- how the chunks are stored, and so whether `--topics` will cut the transfer
+- attachments and metadata records
+- with `--schemas`, the message definitions
+- with `--metadata`, the content of the metadata records (one extra request each)
+
+That costs three range requests, whatever the size of the recording. On the
+2.15 GB file measured below it is the "read the index only" row: 1.67 MB.
+
+`klein file info` answers from Kleinkram's database, which holds the topic names
+extracted at upload. `klein file inspect` answers from the file. Use it to pick
+a time window and topics for a slice, or to check that a recording contains
+what you need before you start an action on it.
+
+With `--no-verbose` the command prints JSON, with times as nanoseconds:
+
+```bash
+klein --no-verbose file inspect <file> | jq '.topics[] | {name, message_count}'
+```
+
+A recording that was never closed has no summary section and cannot be
+inspected this way; the command says so instead of downloading the file.
+
 ## Options
 
 | Option         | Effect                                                 |
@@ -92,6 +125,23 @@ kleinkram.download(
 Passing any of `topics`, `start_time` or `end_time` switches to a partial
 download; non-MCAP files in the selection are skipped, and `overwrite=True` is
 needed to replace an existing local file.
+
+`inspect_file` returns the summary as a `McapInfo`, whose times can be passed
+straight on:
+
+```python
+info = kleinkram.inspect_file("38d7e53e-64d6-434e-a21a-f02017dc6290")
+
+print(info.duration, [t.name for t in info.topics])
+if info.per_message_access:   # uncompressed, indexed chunks
+    kleinkram.download(
+        file_ids=["38d7e53e-64d6-434e-a21a-f02017dc6290"],
+        dest="./slice",
+        topics=["/rosout"],
+        start_time=info.start_time,
+        end_time=info.start_time + 10 * 10**9,
+    )
+```
 
 ## When to slice and when not to
 

@@ -23,10 +23,19 @@ from kleinkram.config import get_shared_state
 from kleinkram.models import FileState
 from kleinkram.printing import print_file_info
 from kleinkram.printing import print_files
+from kleinkram.printing import print_mcap_info
 from kleinkram.utils import split_args
 
 INFO_HELP = "get information about a file"
 DELETE_HELP = "delete one or more files"
+INSPECT_HELP = """\
+Show what an .mcap says about itself, without downloading it.
+
+Reads only the file's header and summary section through range requests: \
+topics with types and message counts, the recorded time range, attachments, \
+and whether a partial download can address single messages. `klein file info` \
+shows what Kleinkram has stored about a file; this reads the file.
+"""
 
 
 file_typer = typer.Typer(no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]})
@@ -64,6 +73,20 @@ def info(
     client = AuthenticatedClient()
     file_parsed = get_file(client, _file_query([file], mission, project))
     print_file_info(file_parsed, pprint=get_shared_state().verbose)
+
+
+@file_typer.command(help=INSPECT_HELP)
+def inspect(
+    file: str = typer.Argument(..., metavar="FILE", help=FILE_ARG_HELP),
+    mission: Optional[str] = typer.Option(None, "--mission", "-m", help="mission id or name"),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
+    schemas: bool = typer.Option(False, "--schemas", help="also print the message definitions"),
+    metadata: bool = typer.Option(False, "--metadata", help="also read the metadata records (one request each)"),
+) -> None:
+    client = AuthenticatedClient()
+    file_parsed = get_file(client, _file_query([file], mission, project))
+    info = kleinkram.core.inspect_file(client=client, file=file_parsed, metadata=metadata)
+    print_mcap_info(info, file=file_parsed, schemas=schemas, pprint=get_shared_state().verbose)
 
 
 @file_typer.command(help=DELETE_HELP, cls=CompatCommand)

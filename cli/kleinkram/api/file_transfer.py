@@ -26,8 +26,11 @@ from botocore.exceptions import ClientError
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.mcap_filter import filter_mcap_from_url
 from kleinkram.api.mcap_filter import is_mcap
+from kleinkram.api.mcap_summary import McapInfo
+from kleinkram.api.mcap_summary import read_mcap_info_from_url
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
+from kleinkram.errors import FileTypeNotSupported
 from kleinkram.errors import InsufficientStorageError
 from kleinkram.models import File
 from kleinkram.models import FileState
@@ -687,6 +690,16 @@ def _download_mcap_slice(
     # A slice is a different file from the remote one, so the remote hash and
     # size deliberately are not checked here.
     return DownloadState.DOWNLOADED_PARTIAL, result.bytes_fetched
+
+
+def read_mcap_info(client: AuthenticatedClient, *, file: File, metadata: bool = False) -> McapInfo:
+    """Read what a remote MCAP says about itself, without downloading its messages."""
+    if not is_mcap(Path(file.name)):
+        # Only MCAP keeps its index in one place at a known offset. `.bag` and
+        # `.db3` would have to be downloaded whole to learn the same.
+        raise FileTypeNotSupported(f"only .mcap files can be inspected without downloading them, got {file.name}")
+
+    return read_mcap_info_from_url(_get_file_download(client, file.id), metadata=metadata)
 
 
 def download_files(
