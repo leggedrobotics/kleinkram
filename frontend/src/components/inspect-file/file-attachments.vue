@@ -60,8 +60,15 @@
                         </div>
                     </q-item-section>
                 </div>
+                <!-- eslint-disable vue/no-v-html -- the highlighter escapes its input -->
                 <pre
-                    v-if="shown[index] !== undefined"
+                    v-if="shown[index] !== undefined && isYaml(attachment)"
+                    class="attachment__content bg-grey-1 q-pa-md q-mt-sm q-mb-none rounded-borders"
+                    v-html="highlightYaml(shown[index] ?? '')"
+                ></pre>
+                <!-- eslint-enable vue/no-v-html -->
+                <pre
+                    v-else-if="shown[index] !== undefined"
                     class="attachment__content bg-grey-1 q-pa-md q-mt-sm q-mb-none rounded-borders"
                     >{{ shown[index] }}</pre>
             </q-item>
@@ -73,6 +80,7 @@
 import { Notify } from 'quasar';
 import type { RecordingAttachment } from 'src/services/decoding-strategies/recording-insights';
 import { formatSize } from 'src/services/general-formatting';
+import { highlightYaml } from 'src/services/highlight-yaml';
 import { reactive } from 'vue';
 
 const properties = defineProps<{
@@ -84,6 +92,9 @@ const properties = defineProps<{
 const MAX_INLINE_BYTES = 512 * 1024;
 const TEXT_TYPES = /^text\/|json|yaml|xml|urdf|toml/i;
 const TEXT_NAMES = /\.(ya?ml|json|txt|xml|urdf|xacro|toml|md|csv)$/i;
+
+const isYaml = (attachment: RecordingAttachment): boolean =>
+    /yaml/i.test(attachment.mediaType) || /\.ya?ml$/i.test(attachment.name);
 
 const shown = reactive<Record<number, string | undefined>>({});
 const busy = reactive<Record<number, 'view' | 'download' | undefined>>({});
@@ -146,6 +157,27 @@ async function download(index: number): Promise<void> {
 <style scoped>
 .attachment__name {
     overflow-wrap: anywhere;
+}
+
+/* Same muted palette as the action script viewer. */
+.attachment__content :deep(.tok-key) {
+    color: #0b5fa5;
+}
+.attachment__content :deep(.tok-punctuation) {
+    color: #8a8a8a;
+}
+.attachment__content :deep(.tok-number) {
+    color: #b35c00;
+}
+.attachment__content :deep(.tok-builtin) {
+    color: #7b4fb5;
+}
+.attachment__content :deep(.tok-string) {
+    color: #0a7c4a;
+}
+.attachment__content :deep(.tok-comment) {
+    color: #8a8a8a;
+    font-style: italic;
 }
 
 .attachment__content {
