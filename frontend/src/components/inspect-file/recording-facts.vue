@@ -17,48 +17,15 @@
             <div class="text-placeholder">Chunks</div>
             <div class="recording-facts__value">
                 {{ insights.storage.chunkCount }} · {{ compression }}
-            </div>
-            <div class="text-caption text-grey-7">{{ chunkDetail }}</div>
-        </div>
-
-        <div class="recording-facts__item col-12 col-sm-6 col-md">
-            <div class="text-placeholder">Partial download</div>
-            <div
-                class="recording-facts__value"
-                :class="
-                    insights.storage.perMessageAccess
-                        ? 'text-positive'
-                        : 'text-warning-dark'
-                "
-            >
-                <q-icon
-                    :name="
-                        insights.storage.perMessageAccess
-                            ? 'sym_o_check_circle'
-                            : 'sym_o_info'
-                    "
-                    size="18px"
-                />
-                {{
-                    insights.storage.perMessageAccess
-                        ? 'Topic and time filters'
-                        : 'Time filter only'
-                }}
                 <q-tooltip max-width="320px">
                     {{
                         insights.storage.perMessageAccess
-                            ? 'Chunks are uncompressed and indexed, so klein download can fetch single messages. Both --topics and a time window cut the transfer.'
-                            : 'Chunks are compressed or unindexed, so klein download fetches them whole. Only a time window cuts the transfer.'
+                            ? 'Uncompressed chunks with a message index: a partial download can fetch single messages.'
+                            : 'Compressed or unindexed chunks: a partial download fetches them whole.'
                     }}
                 </q-tooltip>
             </div>
-            <div class="text-caption text-grey-7">
-                {{
-                    insights.storage.perMessageAccess
-                        ? 'both cut the transfer'
-                        : 'chunks are fetched whole'
-                }}
-            </div>
+            <div class="text-caption text-grey-7">{{ chunkDetail }}</div>
         </div>
 
         <div
