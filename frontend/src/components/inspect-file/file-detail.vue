@@ -260,7 +260,10 @@ const tab = ref<FileTab>('content');
 
 const insights = computed(() => preview.insights.value);
 const attachments = computed(() => insights.value?.attachments ?? []);
-const metadataCount = computed(() => insights.value?.metadataNames.length ?? 0);
+// A record written several times counts once, as in the Metadata tab.
+const metadataCount = computed(
+    () => new Set(insights.value?.metadataNames).size,
+);
 
 const selectTab = (name: FileTab): void => {
     tab.value = name;
