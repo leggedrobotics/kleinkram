@@ -112,6 +112,7 @@ export const createMissionUsingPost = async (
             name: mission.name,
             projectUUID: mission.projectUUID,
             metadata: mission.metadata ?? {},
+            ignoreMissingMetadata: mission.ignoreMissingMetadata,
         }),
         credentials: 'include',
     });
