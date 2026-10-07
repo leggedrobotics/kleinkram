@@ -25,6 +25,7 @@ import {
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
+import { assertGrantableRights } from './grantable-rights';
 import { assertValidPublicAccessRights } from './public-access';
 import { UserService } from './user.service';
 
@@ -684,6 +685,7 @@ export class ProjectService {
         // checked up front: errors of the access group creation below are
         // reported as invalid uuids
         for (const accessGroup of project.accessGroups ?? []) {
+            assertGrantableRights(accessGroup.rights);
             if ('accessGroupUUID' in accessGroup) {
                 assertValidPublicAccessRights(
                     accessGroup.accessGroupUUID,

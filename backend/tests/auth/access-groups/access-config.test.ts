@@ -85,6 +85,22 @@ describe('Access config loading', () => {
         );
         expect(() => loadAccessConfig(file)).toThrow(/bare mail domain/);
     });
+
+    test('fails if a group has non-grantable rights', () => {
+        const file = writeConfig(
+            JSON.stringify({
+                emails: [],
+                access_groups: [
+                    {
+                        name: 'Admins',
+                        uuid: '11111111-1111-1111-1111-111111111111',
+                        rights: 100,
+                    },
+                ],
+            }),
+        );
+        expect(() => loadAccessConfig(file)).toThrow(/must be one of/);
+    });
 });
 
 describe('emailMatchesDomain', () => {
