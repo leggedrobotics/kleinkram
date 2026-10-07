@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import sys
 import time
+from collections import Counter
 from dataclasses import asdict
 from datetime import datetime
+from datetime import timedelta
 from datetime import timezone
 from enum import Enum
 from pathlib import Path
@@ -29,6 +31,7 @@ from rich.text import Text
 
 import kleinkram
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.mcap_summary import McapInfo
 from kleinkram.config import get_config
 from kleinkram.config import get_shared_state
 from kleinkram.core import FileVerificationStatus
@@ -260,6 +263,138 @@ def file_info_table(file: File) -> Table:
     table.add_row("date", str(file.date))
 
     return table
+
+
+def format_log_time(nanoseconds: int) -> str:
+    """An MCAP log time as ISO 8601, which `klein download --start-time` takes back."""
+    seconds, fraction = divmod(nanoseconds, 1_000_000_000)
+    moment = datetime.fromtimestamp(seconds, tz=timezone.utc)
+    return f"{moment:%Y-%m-%dT%H:%M:%S}.{fraction:09d}Z"
+
+
+def _mcap_chunks_text(info: McapInfo) -> str:
+    if info.chunk_count == 0:
+        return "none indexed"
+
+    names = ", ".join("uncompressed" if name == "none" else name for name in sorted(info.compression))
+    text = f"{info.chunk_count}, {names}"
+    if not info.message_indexed:
+        text += ", no message index"
+    if info.compressed_size != info.uncompressed_size and info.compressed_size > 0:
+        ratio = info.uncompressed_size / info.compressed_size
+        return f"{text} ({format_bytes(info.compressed_size)}, {ratio:.1f}x)"
+    return f"{text} ({format_bytes(info.uncompressed_size)})"
+
+
+def mcap_info_table(info: McapInfo, *, name: str) -> Table:
+    table = Table("k", "v", title=f"mcap summary: {name}", show_header=False)
+
+    table.add_row("profile", info.profile)
+    table.add_row("written by", info.library)
+    table.add_row("messages", f"{info.message_count:,}" if info.message_count is not None else "unknown")
+    if info.start_time is not None and info.end_time is not None and info.duration is not None:
+        table.add_row("start", format_log_time(info.start_time))
+        table.add_row("end", format_log_time(info.end_time))
+        table.add_row("duration", f"{timedelta(seconds=round(info.duration))} ({info.duration:.2f} s)")
+    table.add_row("chunks", _mcap_chunks_text(info))
+    table.add_row("attachments", str(len(info.attachments)))
+    table.add_row("metadata records", str(len(info.latest_metadata)))
+    return table
+
+
+def _format_frequency(frequency: Optional[float]) -> str:
+    if frequency is None:
+        return ""
+    return f"{frequency:.1f}" if frequency >= 10 else f"{frequency:.2f}"
+
+
+def mcap_topics_table(info: McapInfo) -> Table:
+    table = Table(title="topics", expand=True)
+    table.add_column("topic", overflow="fold")
+    table.add_column("type", overflow="fold")
+    table.add_column("encoding")
+    table.add_column("messages", justify="right")
+    table.add_column("Hz", justify="right")
+
+    max_table_size = get_shared_state().max_table_size
+    for topic in info.topics[:max_table_size]:
+        table.add_row(
+            topic.name,
+            topic.message_type,
+            topic.message_encoding,
+            f"{topic.message_count:,}" if topic.message_count is not None else "",
+            _format_frequency(topic.frequency),
+        )
+
+    if len(info.topics) > max_table_size:
+        _add_placeholder_row(table, skipped=len(info.topics) - max_table_size)
+    return table
+
+
+def mcap_attachments_table(info: McapInfo) -> Table:
+    table = Table(title="attachments", expand=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("media type")
+    table.add_column("size", justify="right")
+    table.add_column("log time")
+
+    for attachment in info.attachments:
+        table.add_row(
+            attachment.name,
+            attachment.media_type,
+            format_bytes(attachment.size),
+            format_log_time(attachment.log_time),
+        )
+    return table
+
+
+def mcap_metadata_table(info: McapInfo) -> Table:
+    table = Table(title="metadata records", expand=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("values", overflow="fold")
+
+    written = Counter(record.name for record in info.metadata)
+    for name, record in info.latest_metadata.items():
+        label = Text(name)
+        if written[name] > 1:
+            # Appended rather than updated: only the last one is current.
+            label.append(f"\nlast of {written[name]} records", style="dim")
+
+        if record.values is None:
+            values = Text("pass --metadata to read", style="dim")
+        else:
+            values = Text("\n".join(f"{key}: {value}" for key, value in record.values.items()))
+        table.add_row(label, values)
+    return table
+
+
+def print_mcap_info(info: McapInfo, *, file: File, schemas: bool, pprint: bool) -> None:
+    """\
+    prints the summary of an mcap to stdout
+    either using pprint or as json for piping
+    """
+    if not pprint:
+        payload = {
+            "id": file.id,
+            "name": file.name,
+            **asdict(info),
+            "duration": info.duration,
+            "per_message_access": info.per_message_access,
+        }
+        print(json.dumps(payload, default=kleinkram_json_default))
+        return
+
+    console = Console()
+    console.print(mcap_info_table(info, name=file.name))
+    console.print(mcap_topics_table(info))
+    if info.attachments:
+        console.print(mcap_attachments_table(info))
+    if info.metadata:
+        console.print(mcap_metadata_table(info))
+    if schemas:
+        for schema in info.schemas:
+            body = Text(schema.definition) if schema.definition is not None else Text("binary schema", style="dim")
+            console.print(Panel(body, title=f"{schema.name} ({schema.encoding})", title_align="left"))
 
 
 def mission_info_table(mission: Mission, print_metadata: bool = True) -> Tuple[Table, ...]:

@@ -36,6 +36,7 @@ import httpx
 from tqdm import tqdm
 
 import kleinkram.api.file_transfer
+import kleinkram.api.mcap_summary
 import kleinkram.api.routes
 import kleinkram.errors
 from kleinkram.api.client import AuthenticatedClient
@@ -220,6 +221,22 @@ def download(
         on_file_progress_cb=on_file_progress_cb,
         on_message_cb=on_message_cb,
     )
+
+
+def inspect_file(
+    *,
+    client: AuthenticatedClient,
+    file: kleinkram.models.File,
+    metadata: bool = False,
+) -> kleinkram.api.mcap_summary.McapInfo:
+    """\
+    reads the header and summary section of a remote `.mcap` through range
+    requests: topics, message counts, time range, schemas, attachments and how
+    the chunks are stored; the messages themselves are not transferred
+
+    `metadata` also reads the metadata records, one request each
+    """
+    return kleinkram.api.file_transfer.read_mcap_info(client, file=file, metadata=metadata)
 
 
 def upload(
