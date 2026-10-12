@@ -87,6 +87,15 @@ const sortLikeIds = (
     );
 };
 
+/**
+ * Whether a required metadata value counts as not provided. Clients send
+ * values of any JSON type, so `false` and `0` are valid values.
+ */
+const isMissingMetadataValue = (value: unknown): boolean =>
+    value === undefined ||
+    value === null ||
+    (typeof value === 'string' && value.trim() === '');
+
 @Injectable()
 export class MissionService {
     constructor(
@@ -129,11 +138,7 @@ export class MissionService {
         if (!ignoreMissingMetadata) {
             const missingMetadataTypes = project.requiredMetadataTypes.filter(
                 (metadataType: MetadataTypeEntity) =>
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    metadata[metadataType.uuid] === undefined &&
-                    metadata[metadataType.uuid] === '' &&
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    metadata[metadataType.uuid] === null,
+                    isMissingMetadataValue(metadata[metadataType.uuid]),
             );
             if (missingMetadataTypes.length > 0) {
                 const missingNames = missingMetadataTypes
