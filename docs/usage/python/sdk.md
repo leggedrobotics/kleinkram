@@ -147,7 +147,7 @@ kleinkram.update_project(project_id="...", description="Updated Description")
 # Update a mission's metadata
 kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
 
-# Rename a file (the new name has to keep the file's extension)
+# Rename a file
 kleinkram.update_file(file_id="...", new_name="run_2.bag")
 
 # Change a file's recording date
