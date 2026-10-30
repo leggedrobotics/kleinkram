@@ -394,7 +394,12 @@ def update_file(
         raise ValueError("at least one of new_name, date or mission_id must be provided")
 
     # the endpoint expects the full name and date, fill in what the caller left out
-    file = kleinkram.api.routes.get_file_by_id(client, file_id)
+    try:
+        file = kleinkram.api.routes.get_file_by_id(client, file_id)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 403:
+            raise kleinkram.errors.AccessDenied(f"cannot read file: {file_id}") from e
+        raise
     kleinkram.api.routes._update_file(
         client,
         file_id,
