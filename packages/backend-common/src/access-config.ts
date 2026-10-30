@@ -1,4 +1,4 @@
-import { AccessGroupConfig } from '@kleinkram/shared';
+import { AccessGroupConfig, AccessGroupRights } from '@kleinkram/shared';
 import * as fs from 'node:fs';
 import env from './environment';
 
@@ -59,6 +59,21 @@ export function validateAccessConfig(
         throw new TypeError(
             'Invalid access config: "emails" and "access_groups" must be arrays',
         );
+    }
+
+    // _ADMIN is a frontend-only marker and must never be stored on a project
+    const grantableRights = new Set<number>([
+        AccessGroupRights.READ,
+        AccessGroupRights.CREATE,
+        AccessGroupRights.WRITE,
+        AccessGroupRights.DELETE,
+    ]);
+    for (const group of config.access_groups) {
+        if (!grantableRights.has(group.rights)) {
+            throw new TypeError(
+                `Invalid access config: rights ${JSON.stringify(group.rights)} of group "${group.name}" must be one of ${[...grantableRights].join(', ')}`,
+            );
+        }
     }
 
     const groupUuids = new Set(config.access_groups.map((g) => g.uuid));

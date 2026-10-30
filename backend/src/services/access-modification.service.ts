@@ -27,6 +27,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
+import { assertGrantableRights } from './grantable-rights';
 import {
     assertNotPublicAccessGroup,
     assertValidPublicAccessRights,
@@ -92,6 +93,8 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectEntity> {
+        assertGrantableRights(rights);
+
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: {
@@ -125,7 +128,7 @@ export class AccessModificationService {
             auth,
             rights,
         );
-        if (rights === AccessGroupRights.DELETE && !canUpdate) {
+        if (rights >= AccessGroupRights.DELETE && !canUpdate) {
             throw new ConflictException(
                 'User cannot grant delete rights without having delete rights himself/herself',
             );
@@ -350,6 +353,7 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectDto> {
+        assertGrantableRights(rights);
         assertValidPublicAccessRights(accessGroupUUID, rights);
 
         const project = await this.projectRepository.findOneOrFail({
@@ -369,7 +373,7 @@ export class AccessModificationService {
             },
         });
 
-        if (rights === AccessGroupRights.DELETE) {
+        if (rights >= AccessGroupRights.DELETE) {
             const canDelete = await this.accessQueryService.hasProjectRights(
                 projectUUID,
                 auth,
@@ -596,6 +600,7 @@ export class AccessModificationService {
         authHeader: AuthHeader,
     ): Promise<ProjectAccessListDto> {
         for (const access of newProjectAccess) {
+            assertGrantableRights(access.rights);
             assertValidPublicAccessRights(access.uuid, access.rights);
         }
 
