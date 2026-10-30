@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import timezone
 from uuid import UUID
 
+import httpx
 import pytest
 
 import kleinkram.api.routes
@@ -110,3 +111,16 @@ def test_error_status_codes(monkeypatch, status_code, error):
     monkeypatch.setattr(kleinkram.api.routes, "get_file_by_id", lambda _client, _id: _file())
     with pytest.raises(error):
         kleinkram.core.update_file(client=_FakeClient(status_code), file_id=FILE_ID, new_name="renamed.bag")
+
+
+def test_denied_read_raises_access_denied(monkeypatch):
+    def denied(_client, file_id):
+        request = httpx.Request("GET", f"http://test/files/{file_id}")
+        response = httpx.Response(403, request=request)
+        raise httpx.HTTPStatusError("forbidden", request=request, response=response)
+
+    monkeypatch.setattr(kleinkram.api.routes, "get_file_by_id", denied)
+    client = _FakeClient()
+    with pytest.raises(kleinkram.errors.AccessDenied):
+        kleinkram.core.update_file(client=client, file_id=FILE_ID, new_name="renamed.bag")
+    assert client.puts == []
