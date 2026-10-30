@@ -1,10 +1,10 @@
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import {
@@ -31,9 +31,11 @@ const sdk = new NodeSDK({
         }),
     ],
 
-    metricReader: new PrometheusExporter({
-        prefix: 'backend_trace_',
-    }),
+    metricReaders: [
+        new PrometheusExporter({
+            prefix: 'backend_trace_',
+        }),
+    ],
     serviceName: 'backend',
     sampler: new ParentBasedSampler({
         // here you can adjust the sampling rate (currently 100%)
@@ -44,7 +46,7 @@ const sdk = new NodeSDK({
         new NestInstrumentation(),
         new ExpressInstrumentation(),
         new HttpInstrumentation(),
-        new FetchInstrumentation(),
+        new UndiciInstrumentation(),
         new WinstonInstrumentation(),
         new PgInstrumentation(),
     ],

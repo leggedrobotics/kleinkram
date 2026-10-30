@@ -21,7 +21,7 @@
         }
     },
     "dependencies": {
-        "@mcap/core": "^2.2.2",
+        "@mcap/core": "^2.3.0",
         "minimatch": "^10.2.6"
     },
     "devDependencies": {
