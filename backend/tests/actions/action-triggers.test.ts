@@ -73,6 +73,8 @@ describe('Action Triggers CRUD Tests', () => {
         expect(createdTrigger.name).toBe(createDto.name);
         expect(createdTrigger.type).toBe(createDto.type);
         expect(createdTrigger.uuid).toBeDefined();
+        expect(new Date(createdTrigger.createdAt).getTime()).not.toBeNaN();
+        expect(new Date(createdTrigger.updatedAt).getTime()).not.toBeNaN();
 
         const triggerUuid = createdTrigger.uuid;
 
@@ -118,6 +120,9 @@ describe('Action Triggers CRUD Tests', () => {
         const updatedTrigger: ActionTriggerDto =
             (await updateResponse.json()) as ActionTriggerDto;
         expect(updatedTrigger.name).toBe(updateDto.name);
+        expect(new Date(updatedTrigger.updatedAt).getTime()).toBeGreaterThan(
+            new Date(createdTrigger.updatedAt).getTime(),
+        );
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
         expect((updatedTrigger.config as any).patterns).toContain('*.png');
 

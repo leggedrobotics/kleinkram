@@ -220,6 +220,8 @@ export class TriggerService implements OnModuleInit {
             config: entity.config,
             creatorUuid: entity.creatorUuid,
             creatorName: entity.creator.name,
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt,
         };
     }
 
