@@ -1,7 +1,9 @@
 import { ActionDiagnosticService } from '@/services/action-diagnostic.service';
+import { ActionStateHistoryService } from '@/services/action-state-history.service';
 import { ActionService } from '@/services/action.service';
 import { AccessGroupEntity } from '@kleinkram/backend-common';
 import { ActionDiagnosticEntity } from '@kleinkram/backend-common/entities/action/action-diagnostic.entity';
+import { ActionStateTransitionEntity } from '@kleinkram/backend-common/entities/action/action-state-transition.entity';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { AccountEntity } from '@kleinkram/backend-common/entities/auth/account.entity';
@@ -23,6 +25,7 @@ import { ActionsController } from './action.controller';
         TypeOrmModule.forFeature([
             ActionEntity,
             ActionDiagnosticEntity,
+            ActionStateTransitionEntity,
             ActionTemplateEntity,
             AccessGroupEntity,
             ProjectEntity,
@@ -37,7 +40,12 @@ import { ActionsController } from './action.controller';
         ActionDispatcherModule,
         FileModule,
     ],
-    providers: [ActionService, ActionDiagnosticService, ActionGuardService],
+    providers: [
+        ActionService,
+        ActionDiagnosticService,
+        ActionStateHistoryService,
+        ActionGuardService,
+    ],
     exports: [ActionService, ActionDiagnosticService],
     controllers: [ActionsController],
 })

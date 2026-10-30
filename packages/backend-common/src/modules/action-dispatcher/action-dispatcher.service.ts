@@ -6,10 +6,11 @@ import { UserEntity } from '@backend-common/entities/user/user.entity';
 import { WorkerEntity } from '@backend-common/entities/worker/worker.entity';
 import { DependencyUnavailableException } from '@backend-common/exceptions/dependency-unavailable.exception';
 import { addActionQueue } from '@backend-common/scheduling-logic';
+import { transitionAction } from '@backend-common/services/action-state-transition';
 import {
-    ActionFailureOrigin,
     ActionSeverity,
     ActionState,
+    ActionStateCause,
     ActionTriggerSource,
     UserRole,
 } from '@kleinkram/shared';
@@ -171,6 +172,11 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
         });
 
         action = await this.actionRepository.save(action);
+        await transitionAction(this.actionRepository.manager, action.uuid, {
+            state: ActionState.PENDING,
+            cause: { code: ActionStateCause.SUBMITTED },
+            actorUuid: creator.uuid,
+        });
 
         try {
             const runtimeRequirements = {
@@ -217,12 +223,13 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
             return action.uuid;
         } catch (error) {
             this.logger.error(`Failed to queue action ${action.uuid}`, error);
-            await this.actionRepository.update(action.uuid, {
+            // Scheduling may already have said why (no worker with the
+            // hardware); that is more useful than the generic queue error.
+            await transitionAction(this.actionRepository.manager, action.uuid, {
                 state: ActionState.UNPROCESSABLE,
-                severity: ActionSeverity.ERROR,
-                failureOrigin: ActionFailureOrigin.SYSTEM,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause: 'Resources unavailable or queue error',
+                cause: { code: ActionStateCause.QUEUE_ERROR },
+                unlessIn: [ActionState.UNPROCESSABLE],
+                set: { severity: ActionSeverity.ERROR },
             });
             throw new ConflictException('No worker available');
         }
@@ -230,8 +237,10 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
 
     /**
      * Stops a running action by removing it from the specific worker queue
+     *
+     * @param actorUuid the user who cancelled it, recorded in its history
      */
-    async stopAction(actionRunId: string): Promise<void> {
+    async stopAction(actionRunId: string, actorUuid?: string): Promise<void> {
         let actionIdentifier: string | undefined;
 
         await this.actionRepository.manager.transaction(
@@ -246,9 +255,11 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
                 if (action?.worker === undefined)
                     throw new Error('No worker found for this action');
 
-                action.state = ActionState.CANCELLED;
-                action.state_cause = 'Action cancelled by user';
-                await manager.save(action);
+                await transitionAction(manager, action.uuid, {
+                    state: ActionState.CANCELLED,
+                    cause: { code: ActionStateCause.CANCELLED_BY_USER },
+                    actorUuid,
+                });
                 actionIdentifier = action.worker.identifier;
             },
         );

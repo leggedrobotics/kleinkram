@@ -1,5 +1,6 @@
 import { ApiCreatedResponse, ApiOkResponse, OutputDto } from '@/decorators';
 import { ActionDiagnosticService } from '@/services/action-diagnostic.service';
+import { ActionStateHistoryService } from '@/services/action-state-history.service';
 import { ActionService } from '@/services/action.service';
 import { FileQueryService } from '@/services/file-query.service';
 import { ParameterUuid } from '@/validation/parameter-decorators';
@@ -10,6 +11,7 @@ import {
     ActionQuery,
     ActionScriptDto,
     ActionsDto,
+    ActionStateHistoryDto,
     ActionSubmitResponseDto,
     CreateActionDiagnosticDto,
     FileEventsDto,
@@ -48,6 +50,7 @@ export class ActionsController {
     constructor(
         private readonly actionService: ActionService,
         private readonly actionDiagnosticService: ActionDiagnosticService,
+        private readonly actionStateHistoryService: ActionStateHistoryService,
         private readonly fileQueryService: FileQueryService,
     ) {}
 
@@ -153,6 +156,18 @@ export class ActionsController {
         return this.actionDiagnosticService.findAll(uuid);
     }
 
+    @Get(':uuid/state-history')
+    @CanReadAction()
+    @ApiOperation({
+        summary: 'Get every state an action went through, and why',
+    })
+    @ApiOkResponse({ type: ActionStateHistoryDto })
+    async getStateHistory(
+        @ParameterUuid('uuid') uuid: string,
+    ): Promise<ActionStateHistoryDto> {
+        return this.actionStateHistoryService.findAll(uuid);
+    }
+
     @Post(':uuid/diagnostics')
     @IsRunningAction()
     @HttpCode(204)
@@ -189,8 +204,9 @@ export class ActionsController {
     @OutputDto(SuccessResponseDto)
     async cancel(
         @ParameterUuid('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
     ): Promise<SuccessResponseDto> {
-        await this.actionService.cancel(uuid);
+        await this.actionService.cancel(uuid, user.user.uuid);
         return { success: true };
     }
 }

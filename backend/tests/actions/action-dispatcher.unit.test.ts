@@ -10,10 +10,11 @@ import {
 import { ActionDispatcherService } from '@kleinkram/backend-common/modules/action-dispatcher/action-dispatcher.service';
 import { LokiHealthService } from '@kleinkram/backend-common/modules/loki-health/loki-health.service';
 import * as schedulingLogic from '@kleinkram/backend-common/scheduling-logic';
+import { transitionAction } from '@kleinkram/backend-common/services/action-state-transition';
 import {
-    ActionFailureOrigin,
     ActionSeverity,
     ActionState,
+    ActionStateCause,
     ActionTriggerSource,
     UserRole,
 } from '@kleinkram/shared';
@@ -23,6 +24,12 @@ import { EntityManager, Repository } from 'typeorm';
 // Mock scheduling logic
 jest.mock('@kleinkram/backend-common/scheduling-logic', () => ({
     addActionQueue: jest.fn(),
+}));
+
+// State changes are written by transitionAction, tested against a real
+// database in action-state-history.test.ts; here only the requests matter.
+jest.mock('@kleinkram/backend-common/services/action-state-transition', () => ({
+    transitionAction: jest.fn().mockResolvedValue(true),
 }));
 
 // Mock ioredis
@@ -45,6 +52,7 @@ describe('ActionDispatcherService Unit Tests', () => {
     let gauge: Gauge;
 
     beforeEach(() => {
+        (transitionAction as jest.Mock).mockClear();
         actionRepo = {
             create: jest.fn(),
             save: jest.fn(),
@@ -114,9 +122,6 @@ describe('ActionDispatcherService Unit Tests', () => {
         const saveSpy = (actionRepo.save as jest.Mock).mockImplementation((d) =>
             Promise.resolve({ ...d, uuid: 'action-uuid' } as ActionEntity),
         );
-        const updateSpy = (actionRepo.update as jest.Mock).mockResolvedValue(
-            {},
-        );
 
         // Mock addActionQueue to return undefined (failure)
         const addActionQueueSpy = (
@@ -138,14 +143,26 @@ describe('ActionDispatcherService Unit Tests', () => {
             ),
         ).rejects.toThrow('No worker available');
 
-        expect(updateSpy).toHaveBeenCalledWith('action-uuid', {
-            state: ActionState.UNPROCESSABLE,
-            severity: ActionSeverity.ERROR,
-            // A queue rejection is ours, not the action author's.
-            failureOrigin: ActionFailureOrigin.SYSTEM,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            state_cause: 'Resources unavailable or queue error',
-        });
+        expect(transitionAction).toHaveBeenCalledWith(
+            actionRepo.manager,
+            'action-uuid',
+            {
+                state: ActionState.PENDING,
+                cause: { code: ActionStateCause.SUBMITTED },
+                actorUuid: 'user-uuid',
+            },
+        );
+        expect(transitionAction).toHaveBeenLastCalledWith(
+            actionRepo.manager,
+            'action-uuid',
+            {
+                state: ActionState.UNPROCESSABLE,
+                cause: { code: ActionStateCause.QUEUE_ERROR },
+                // a more specific reason from scheduling is kept
+                unlessIn: [ActionState.UNPROCESSABLE],
+                set: { severity: ActionSeverity.ERROR },
+            },
+        );
 
         expect(saveSpy).toHaveBeenCalled();
         expect(healthCheckSpy).toHaveBeenCalled();
@@ -233,19 +250,20 @@ describe('ActionDispatcherService Unit Tests', () => {
             (service as unknown as Record<string, unknown>).redisPublisher =
                 mockRedis;
 
-            await service.stopAction('action-uuid');
+            await service.stopAction('action-uuid', 'user-uuid');
 
             expect(mockManager.findOne).toHaveBeenCalledWith(ActionEntity, {
                 where: { uuid: 'action-uuid' },
                 relations: { worker: true },
             });
-            expect(mockManager.save).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    uuid: 'action-uuid',
+            expect(transitionAction).toHaveBeenCalledWith(
+                mockManager,
+                'action-uuid',
+                {
                     state: ActionState.CANCELLED,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    state_cause: 'Action cancelled by user',
-                }),
+                    cause: { code: ActionStateCause.CANCELLED_BY_USER },
+                    actorUuid: 'user-uuid',
+                },
             );
             expect(mockQueue.getJob).toHaveBeenCalledWith('action-uuid');
             expect(mockJob.remove).toHaveBeenCalled();

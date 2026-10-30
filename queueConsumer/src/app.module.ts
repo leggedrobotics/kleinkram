@@ -7,6 +7,7 @@ import {
 import { redis } from '@kleinkram/backend-common/consts';
 import { ActionDiagnosticEntity } from '@kleinkram/backend-common/entities/action/action-diagnostic.entity';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
+import { ActionStateTransitionEntity } from '@kleinkram/backend-common/entities/action/action-state-transition.entity';
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@kleinkram/backend-common/entities/action/action-trigger.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
@@ -93,6 +94,7 @@ import { TriggerProcessorModule } from './trigger-processor/trigger-processor.mo
                     ActionEntity,
                     ActionDiagnosticEntity,
                     ActionRunnerEntity,
+                    ActionStateTransitionEntity,
                     ActionTemplateEntity,
                     ActionTriggerEntity,
                     UserEntity,

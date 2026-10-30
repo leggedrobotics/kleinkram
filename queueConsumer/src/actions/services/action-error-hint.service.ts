@@ -1,5 +1,9 @@
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
-import { ActionErrorHint, ActionState } from '@kleinkram/shared';
+import {
+    ActionErrorHint,
+    ActionState,
+    ActionStateCause,
+} from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
@@ -31,6 +35,8 @@ export class ActionErrorHintService {
                     uuid: true,
                     state: true,
                     state_cause: true,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    state_cause_code: true,
                     template: true,
                     auditLogs: true,
                 },
@@ -99,12 +105,11 @@ export class ActionErrorHintService {
         action: ActionEntity,
         logs: LogEntry[],
     ): boolean {
-        const stateCause = action.state_cause;
-        if (
-            !stateCause?.includes(
-                'Container killed (SIGKILL). Exceeded memory or CPU limit.',
-            )
-        ) {
+        const killed: (string | null | undefined)[] = [
+            ActionStateCause.EXIT_SIGKILL,
+            ActionStateCause.OUT_OF_MEMORY,
+        ];
+        if (!killed.includes(action.state_cause_code)) {
             return false;
         }
 

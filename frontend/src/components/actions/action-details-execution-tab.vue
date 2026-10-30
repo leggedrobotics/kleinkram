@@ -118,6 +118,14 @@
                 <q-separator class="q-my-sm" />
             </div>
 
+            <!-- How the action got to its state -->
+            <div v-if="stateHistory.length > 0" class="col-12">
+                <ActionStateHistory :entries="stateHistory" />
+            </div>
+            <div v-if="stateHistory.length > 0" class="col-12">
+                <q-separator class="q-my-sm" />
+            </div>
+
             <!-- Artifacts -->
             <div class="col-12">
                 <div class="text-h6 q-mb-sm">
@@ -379,13 +387,18 @@ import {
     ActionTriggerSource,
     ArtifactState,
     ImageSource,
+    isTerminalActionState,
 } from '@kleinkram/shared';
 import ActionDiagnosticsPanel from 'components/actions/action-diagnostics-panel.vue';
 import ActionRuntime from 'components/actions/action-runtime.vue';
+import ActionStateHistory from 'components/actions/action-state-history.vue';
 import ArtifactFileTree from 'components/actions/artifact-file-tree.vue';
 import AppInput from 'components/common/app-input.vue';
 import { copyToClipboard } from 'quasar';
-import { useActionDiagnostics } from 'src/composables/use-actions-queries';
+import {
+    useActionDiagnostics,
+    useActionStateHistory,
+} from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
@@ -405,6 +418,12 @@ const { data: diagnosticsData } = useActionDiagnostics(
 );
 
 const diagnostics = computed(() => diagnosticsData.value?.data ?? []);
+
+const { data: stateHistoryData } = useActionStateHistory(
+    computed(() => props.action.uuid),
+    computed(() => props.action.state),
+);
+const stateHistory = computed(() => stateHistoryData.value?.data ?? []);
 const diagnosticsTruncated = computed(
     () => diagnosticsData.value?.truncated ?? false,
 );
@@ -478,6 +497,19 @@ const formatBytes = (bytes: number, decimals = 2) => {
 const artifactStateText = computed(() => {
     if (props.action.state === ActionState.UNPROCESSABLE) {
         return 'Action was unprocessable. No artifacts were generated.';
+    }
+
+    // Ended before a container ran (lost access, cancelled while pending, a
+    // failed image pull): there was never anything to upload.
+    const neverRan =
+        isTerminalActionState(props.action.state) &&
+        props.action.runtime === undefined;
+    if (
+        neverRan &&
+        (props.action.artifacts === ArtifactState.AWAITING_ACTION ||
+            props.action.artifacts === ArtifactState.ERROR)
+    ) {
+        return 'The action never started, so no artifacts were generated.';
     }
 
     switch (props.action.artifacts) {
