@@ -37,6 +37,37 @@
             bordered
             :pagination="{ rowsPerPage: 15 }"
         >
+            <template #header-cell-coverage="props">
+                <q-th :props="props">
+                    Coverage
+                    <q-icon
+                        name="sym_o_info"
+                        size="14px"
+                        class="q-ml-xs cursor-help"
+                    >
+                        <q-tooltip max-width="320px">
+                            Where in the recording the topic has data, read from
+                            the file's chunk index. The resolution is one chunk;
+                            hatched stretches are pauses of the whole recording.
+                        </q-tooltip>
+                    </q-icon>
+                    <div
+                        v-if="coverage"
+                        class="row justify-between text-caption text-grey-7 coverage-axis"
+                    >
+                        <span>{{ clockTime(coverage.startTime, 0) }}</span>
+                        <span>
+                            {{
+                                clockTime(
+                                    coverage.startTime,
+                                    coverage.durationSeconds,
+                                )
+                            }}
+                        </span>
+                    </div>
+                </q-th>
+            </template>
+
             <template #body="props">
                 <q-tr
                     :props="props"
@@ -78,6 +109,14 @@
                             </div>
                         </template>
 
+                        <template v-else-if="col.name === 'coverage'">
+                            <TopicCoverageStrip
+                                v-if="coverage?.topics[props.row.name]"
+                                :coverage="coverage"
+                                :topic="props.row.name"
+                            />
+                        </template>
+
                         <template v-else>
                             {{ col.value }}
                         </template>
@@ -87,7 +126,30 @@
                 <q-tr v-if="props.expand" :props="props">
                     <q-td colspan="100%" class="q-pa-none">
                         <div class="q-pa-md topic-expanded">
+                            <q-btn-toggle
+                                v-if="definitionOf(props.row.name)"
+                                :model-value="viewOf(props.row.name)"
+                                :options="EXPANDED_VIEWS"
+                                unelevated
+                                no-caps
+                                dense
+                                padding="2px 12px"
+                                toggle-color="dark"
+                                class="q-mb-sm topic-expanded__toggle"
+                                @update:model-value="
+                                    (view: ExpandedView) =>
+                                        (expandedView[props.row.name] = view)
+                                "
+                            />
+                            <!-- eslint-disable vue/no-v-html -- the highlighter escapes its input -->
+                            <pre
+                                v-if="viewOf(props.row.name) === 'definition'"
+                                class="topic-definition bg-white q-pa-md q-ma-none rounded-borders"
+                                v-html="definitionHtml(props.row.name)"
+                            ></pre>
+                            <!-- eslint-enable vue/no-v-html -->
                             <MessageViewer
+                                v-show="viewOf(props.row.name) === 'preview'"
                                 :topic-name="props.row.name"
                                 :message-type="props.row.type"
                                 :total-count="
@@ -124,9 +186,17 @@
 import AppSearchBar from 'components/common/app-search-bar.vue';
 import type { QTableColumn } from 'quasar';
 import { useQuasar } from 'quasar';
+import type { RecordingInsights } from 'src/services/decoding-strategies/recording-insights';
+import { clockTime } from 'src/services/decoding-strategies/recording-insights';
+import {
+    escapeDefinition,
+    highlightRosMessage,
+    isRosMessageEncoding,
+} from 'src/services/highlight-rosmsg';
 import { computed, ref } from 'vue';
 import { detectPreviewType, PreviewType } from '../../services/message-factory';
 import MessageViewer from './message-viewer.vue';
+import TopicCoverageStrip from './topic-coverage-strip.vue';
 
 export interface TopicRow {
     name: string;
@@ -144,6 +214,8 @@ const properties = defineProps<{
     loadingState: Record<string, boolean>;
     topicErrors: Record<string, string | null>;
     isLoading: boolean;
+    /** What the file's index says about the recording; MCAP only for now. */
+    insights?: RecordingInsights | null;
 }>();
 
 const emit = defineEmits(['load-preview', 'pause-preview', 'resume-preview']);
@@ -159,6 +231,26 @@ const filteredTopics = computed(() => {
             t.type.toLowerCase().includes(s),
     );
 });
+
+const coverage = computed(() => properties.insights?.coverage);
+
+type ExpandedView = 'preview' | 'definition';
+const EXPANDED_VIEWS: { label: string; value: ExpandedView }[] = [
+    { label: 'Preview', value: 'preview' },
+    { label: 'Definition', value: 'definition' },
+];
+const expandedView = ref<Record<string, ExpandedView>>({});
+const viewOf = (topic: string): ExpandedView =>
+    expandedView.value[topic] ?? 'preview';
+const definitionOf = (topic: string): string | undefined =>
+    properties.insights?.schemasByTopic[topic]?.definition;
+const definitionHtml = (topic: string): string => {
+    const schema = properties.insights?.schemasByTopic[topic];
+    if (schema?.definition === undefined) return '';
+    return isRosMessageEncoding(schema.encoding)
+        ? highlightRosMessage(schema.definition)
+        : escapeDefinition(schema.definition);
+};
 
 const allColumns: QTableColumn[] = [
     {
@@ -181,6 +273,14 @@ const allColumns: QTableColumn[] = [
         field: 'type',
         align: 'left',
         sortable: true,
+    },
+    {
+        name: 'coverage',
+        label: 'Coverage',
+        field: 'name',
+        align: 'left',
+        sortable: false,
+        headerStyle: 'width: 30%',
     },
     {
         name: 'count',
@@ -208,12 +308,17 @@ const allColumns: QTableColumn[] = [
  */
 const HIDDEN_COLUMNS_ON_PHONES = new Set(['type', 'freq']);
 
+/**
+ * The coverage strip needs room to be readable, and only exists for files
+ * whose index could be read, so the column comes and goes with both.
+ */
 const columns = computed<QTableColumn[]>(() =>
-    $q.screen.xs
-        ? allColumns.filter(
-              (column) => !HIDDEN_COLUMNS_ON_PHONES.has(column.name),
-          )
-        : allColumns,
+    allColumns.filter((column) => {
+        if (column.name === 'coverage') {
+            return coverage.value !== undefined && $q.screen.gt.sm;
+        }
+        return !($q.screen.xs && HIDDEN_COLUMNS_ON_PHONES.has(column.name));
+    }),
 );
 
 interface LoadPlan {
@@ -534,6 +639,46 @@ const loadMore = (topicName: string): void => {
    wrapping. Viewers that need unwrapped text set it on their own elements. */
 .topic-expanded {
     white-space: normal;
+}
+
+.topic-expanded__toggle {
+    border: 1px solid #ddd;
+}
+
+.topic-definition {
+    max-height: 420px;
+    overflow: auto;
+    font-family: monospace;
+    font-size: 13px;
+    white-space: pre;
+    border: 1px solid #e0e0e0;
+}
+
+/* Same muted palette as the action script viewer. */
+.topic-definition :deep(.tok-comment) {
+    color: #8a8a8a;
+    font-style: italic;
+}
+.topic-definition :deep(.tok-string) {
+    color: #0a7c4a;
+}
+.topic-definition :deep(.tok-keyword) {
+    color: #0b5fa5;
+    font-weight: 600;
+}
+.topic-definition :deep(.tok-builtin) {
+    color: #7b4fb5;
+}
+.topic-definition :deep(.tok-number) {
+    color: #b35c00;
+}
+.topic-definition :deep(.tok-def) {
+    color: #a1237a;
+    font-weight: 600;
+}
+
+.coverage-axis {
+    font-weight: 400;
 }
 
 @media (max-width: 599px) {

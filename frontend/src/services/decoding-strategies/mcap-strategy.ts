@@ -4,9 +4,12 @@ import { MessageReader as CdrReader } from '@foxglove/rosmsg2-serialization';
 import {
     chunkDataStart,
     coalesce,
+    computeRecordingCoverage,
     parseMessageIndexes,
     parseMessageRecord,
     planChunk,
+    RecordingChunk,
+    summarizeStorage,
     UniversalHttpReader,
 } from '@kleinkram/shared';
 import { McapIndexedReader } from '@mcap/core';
@@ -14,6 +17,11 @@ import * as fzstd from 'fzstd';
 import lz4js from 'lz4js';
 import { mapInOrder } from './fetch-pool';
 import { DecodingStrategy } from './index';
+import type {
+    RecordingInsights,
+    RecordingMetadata,
+    RecordingSchema,
+} from './recording-insights';
 import {
     coarseToFineOrder,
     LogMessage,
@@ -125,6 +133,99 @@ export class McapStrategy extends DecodingStrategy {
                 },
             },
         });
+    }
+
+    /**
+     * Read from the summary `init` has already loaded, so this costs nothing
+     * further: no request, and no message is touched.
+     */
+    override getInsights(): RecordingInsights | null {
+        const reader = this.reader;
+        if (!reader) return null;
+
+        const chunks: RecordingChunk[] = reader.chunkIndexes.map((chunk) => ({
+            startTime: chunk.messageStartTime,
+            endTime: chunk.messageEndTime,
+            compression: chunk.compression,
+            compressedSize: chunk.compressedSize,
+            uncompressedSize: chunk.uncompressedSize,
+            channelIds: [...chunk.messageIndexOffsets.keys()],
+            hasMessageIndex: chunk.messageIndexOffsets.size > 0,
+        }));
+
+        const counts = reader.statistics?.channelMessageCounts;
+        const channels = [...reader.channelsById.values()].map((channel) => {
+            const count = counts?.get(channel.id);
+            return {
+                id: channel.id,
+                topic: channel.topic,
+                messageCount: count === undefined ? undefined : Number(count),
+            };
+        });
+
+        const schemasByTopic: Record<string, RecordingSchema> = {};
+        for (const channel of reader.channelsById.values()) {
+            const schema = reader.schemasById.get(channel.schemaId);
+            if (!schema) continue;
+            let definition: string | undefined;
+            try {
+                definition = new TextDecoder('utf-8', { fatal: true }).decode(
+                    schema.data,
+                );
+            } catch {
+                // Binary schema: there is no text to show.
+            }
+            schemasByTopic[channel.topic] = {
+                name: schema.name,
+                encoding: schema.encoding,
+                definition,
+            };
+        }
+
+        return {
+            profile: reader.header.profile,
+            library: reader.header.library,
+            storage: summarizeStorage(chunks),
+            coverage: computeRecordingCoverage(chunks, channels),
+            schemasByTopic,
+            attachments: reader.attachmentIndexes.map((attachment) => ({
+                name: attachment.name,
+                mediaType: attachment.mediaType,
+                size: Number(attachment.dataSize),
+                logTime: attachment.logTime,
+            })),
+            metadataNames: reader.metadataIndexes.map((index) => index.name),
+        };
+    }
+
+    override async readAttachment(
+        index: number,
+    ): Promise<Uint8Array | undefined> {
+        const wanted = this.reader?.attachmentIndexes[index];
+        if (!this.reader || !wanted) return undefined;
+
+        // Names need not be unique, so the log time narrows the read to the
+        // attachment that was asked for.
+        for await (const attachment of this.reader.readAttachments({
+            name: wanted.name,
+            startTime: wanted.logTime,
+            endTime: wanted.logTime,
+        })) {
+            return attachment.data;
+        }
+        return undefined;
+    }
+
+    override async readMetadata(): Promise<RecordingMetadata[]> {
+        if (!this.reader) return [];
+        const records: RecordingMetadata[] = [];
+        for await (const record of this.reader.readMetadata()) {
+            records.push({
+                name: record.name,
+                values: Object.fromEntries(record.metadata),
+            });
+        }
+        return records;
     }
 
     async getMessages(
