@@ -30,6 +30,25 @@ describe('resolveStateCause', () => {
         );
     });
 
+    test.each(['Jane $&', 'Jane $$', "Jane $'", 'Jane $`'])(
+        'inserts the name %s literally',
+        (name) => {
+            const expected = `User ${name} lost access`;
+
+            expect(
+                resolveStateCause(`User ${userUuid} lost access`, {
+                    [userUuid]: name,
+                }),
+            ).toBe(expected);
+            expect(
+                resolveStateCause(
+                    `User ${stateCauseReference('user', userUuid)} lost access`,
+                    { [userUuid]: name },
+                ),
+            ).toBe(expected);
+        },
+    );
+
     test('leaves causes without uuids untouched', () => {
         expect(resolveStateCause('Action cancelled by user', names)).toBe(
             'Action cancelled by user',

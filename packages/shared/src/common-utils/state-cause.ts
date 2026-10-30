@@ -42,7 +42,8 @@ export const resolveStateCause = (
     );
 
     for (const [uuid, name] of Object.entries(names)) {
-        if (name) resolved = resolved.replaceAll(uuid, name);
+        // a replacer function inserts the name literally ($& etc. stay as-is)
+        if (name) resolved = resolved.replaceAll(uuid, () => name);
     }
     return resolved;
 };
