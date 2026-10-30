@@ -52,6 +52,8 @@ klein login --headless
 ::: details Authentication inside Actions
 Inside a Kleinkram action you don't need to run `klein login`. The action container sets `KLEINKRAM_API_KEY` (together with `KLEINKRAM_API_ENDPOINT` and `KLEINKRAM_S3_ENDPOINT`), and the CLI picks these up automatically, so commands like `klein upload` or `klein download` work out of the box.
 
+These variables are only used when there is no saved `~/.kleinkram.json`. If your action image ships one, remove it before running CLI commands, otherwise the CLI uses the saved endpoint and credentials instead.
+
 :::
 
 ### Customizing the OAuth Provider
