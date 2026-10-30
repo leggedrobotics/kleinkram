@@ -66,6 +66,7 @@ import { ParameterUuid as ParameterUID } from '../../validation/parameter-decora
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     AdminOnly,
+    CanConfirmFileUpload,
     CanCreateInMissionByBody,
     CanDeleteFile,
     CanDeleteMission,
@@ -425,7 +426,7 @@ export class FileController {
     }
 
     @Post('upload/confirm')
-    @LoggedIn()
+    @CanConfirmFileUpload()
     @ApiCreatedResponse({
         type: ConfirmUploadDto,
     })
