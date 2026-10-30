@@ -73,6 +73,16 @@ the transfer; with compressed chunks only the time window does. See
 [Partial Download](../files/partial-download.md) for the numbers and the
 caveats.
 
+To see what a recording holds before fetching any of it, read its summary:
+
+```bash
+klein file inspect <file>              # topics, counts, time range, chunk layout
+klein file inspect --schemas <file>    # also the message definitions
+klein file inspect --metadata <file>   # also the content of the metadata records
+```
+
+This transfers the file's index only, usually well under a percent of it.
+
 ### Uploading Resources
 
 Use the `upload` command to send local files to a mission.

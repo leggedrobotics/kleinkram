@@ -218,7 +218,7 @@ def _plan(
     index_ranges = [ByteRange(start, start + c.message_index_length) for start, c in by_index_start.items()]
 
     extents: List[MessageExtent] = []
-    for byte_range, blob in _fetch_ranges(stream, index_ranges, concurrency):
+    for byte_range, blob in fetch_ranges(stream, index_ranges, concurrency):
         chunk_index = by_index_start[byte_range.start]
         indexes = parse_message_indexes(blob)
         if not indexes:
@@ -243,7 +243,7 @@ def _plan(
     return extents
 
 
-def _fetch_ranges(
+def fetch_ranges(
     stream: HttpRangeReader,
     ranges: List[ByteRange],
     concurrency: int,
@@ -323,7 +323,7 @@ def _write_from_extents(
         # extents per range is quadratic, and a busy topic has tens of
         # thousands of each.)
         cursor = 0
-        for byte_range, buffer in _fetch_ranges(stream, ranges, concurrency):
+        for byte_range, buffer in fetch_ranges(stream, ranges, concurrency):
             if on_progress is not None:
                 on_progress(len(buffer))
 
