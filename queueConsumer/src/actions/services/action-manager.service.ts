@@ -17,6 +17,7 @@ import {
     resolveActionOutcome,
     resolveFinalVerdict,
     ResourceUsage,
+    stateCauseReference,
     TERMINAL_ACTION_STATES,
     UserRole,
 } from '@kleinkram/shared';
@@ -155,7 +156,7 @@ export class ActionManagerService implements OnModuleInit {
         );
         if (!hasWriteAccess) {
             throw new Error(
-                `User ${action.creator.uuid} lost access to mission ${action.mission.uuid}`,
+                `User ${stateCauseReference('user', action.creator.uuid)} lost access to mission ${stateCauseReference('mission', action.mission.uuid)}`,
             );
         }
 

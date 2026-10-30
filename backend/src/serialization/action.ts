@@ -6,7 +6,7 @@ import {
 } from '@kleinkram/api-dto';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
-import { ArtifactState } from '@kleinkram/shared';
+import { ArtifactState, resolveStateCause } from '@kleinkram/shared';
 import { actionTemplateEntityToDto } from './action-template';
 import { missionEntityToDto, userEntityToDto } from './index';
 
@@ -83,7 +83,10 @@ export const actionEntityToDto = (action: ActionEntity): ActionDto => {
         stateCause:
             action.state_cause === 'Container exited with code 0'
                 ? 'Completed Successfully'
-                : (action.state_cause ?? ''),
+                : resolveStateCause(action.state_cause ?? '', {
+                      [action.creator.uuid]: action.creator.name,
+                      [action.mission.uuid]: action.mission.name,
+                  }),
         template: actionTemplateEntityToDto(action.template),
         updatedAt: action.updatedAt,
         uuid: action.uuid,
