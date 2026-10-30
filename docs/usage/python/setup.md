@@ -50,11 +50,7 @@ klein login --headless
 :::
 
 ::: details Authentication inside Actions
-When running the CLI inside a Kleinkram automated action, the action exposes an environment variable `APIKEY` which bypasses the browser flow. In this scenario, authenticate using:
-
-```bash
-klein login --key $APIKEY
-```
+Inside a Kleinkram action you don't need to run `klein login`. The action container sets `KLEINKRAM_API_KEY` (together with `KLEINKRAM_API_ENDPOINT` and `KLEINKRAM_S3_ENDPOINT`), and the CLI picks these up automatically, so commands like `klein upload` or `klein download` work out of the box.
 
 :::
 

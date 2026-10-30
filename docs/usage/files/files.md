@@ -5,7 +5,7 @@ Kleinkram supports a variety of robotics data formats. All other files should be
 | Extension        | Description                                                      |
 | :--------------- | :--------------------------------------------------------------- |
 | `.mcap`          | Standard container format for multimodal data (ROS2, Foxglove).  |
-| `.bag`           | Legacy ROS1 bag file. Automatically converted to MCAP on upload. |
+| `.bag`           | Legacy ROS1 bag file. Optionally converted to MCAP on upload.    |
 | `.db3`           | ROS2 bag file (SQLite3).                                         |
 | `.svo2`          | ZED camera recording (v2)                                        |
 | `.tum`           | TUM dataset format                                               |
