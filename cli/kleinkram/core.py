@@ -20,6 +20,7 @@ import sys
 import tarfile
 import tempfile
 import warnings
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from typing import Collection
@@ -374,12 +375,38 @@ def list_templates(client: AuthenticatedClient, *, latest_only: bool = True) -> 
     return latest_templates
 
 
-def update_file(*, client: AuthenticatedClient, file_id: UUID) -> None:
+def update_file(
+    *,
+    client: AuthenticatedClient,
+    file_id: UUID,
+    new_name: Optional[str] = None,
+    date: Optional[datetime] = None,
+    mission_id: Optional[UUID] = None,
+) -> None:
     """\
-    TODO: what should this even do
+    rename a file, change its recording date or move it to another mission
+
+    fields that are not passed keep their current value. A new name has to keep
+    the file's extension (e.g. a `.bag` stays a `.bag`); the API rejects it
+    otherwise. API keys (e.g. inside an action) cannot move files.
     """
-    _ = client, file_id
-    raise NotImplementedError("if you have an idea what this should do, open an issue")
+    if new_name is None and date is None and mission_id is None:
+        raise ValueError("at least one of new_name, date or mission_id must be provided")
+
+    # the endpoint expects the full name and date, fill in what the caller left out
+    try:
+        file = kleinkram.api.routes.get_file_by_id(client, file_id)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 403:
+            raise kleinkram.errors.AccessDenied(f"cannot read file: {file_id}") from e
+        raise
+    kleinkram.api.routes._update_file(
+        client,
+        file_id,
+        filename=new_name if new_name is not None else file.name,
+        date=date if date is not None else file.date,
+        mission_id=mission_id,
+    )
 
 
 def _metadata_value_to_payload(value: MetadataValue) -> MetadataPayloadValue:
