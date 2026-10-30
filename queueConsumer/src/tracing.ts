@@ -11,7 +11,7 @@ import {
     BatchSpanProcessor,
     ParentBasedSampler,
     TraceIdRatioBasedSampler,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import logger from './logger';
 
 const exporter = new OTLPTraceExporter({
@@ -23,7 +23,8 @@ const exporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
     traceExporter: exporter,
     spanProcessors: [
-        new BatchSpanProcessor(exporter, {
+        new BatchSpanProcessor({
+            exporter,
             exportTimeoutMillis: 20_000,
             maxQueueSize: 512,
             scheduledDelayMillis: 5000,

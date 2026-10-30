@@ -49,7 +49,7 @@
         "@opentelemetry/instrumentation-undici": "^0.34.0",
         "@opentelemetry/instrumentation-winston": "^0.69.0",
         "@opentelemetry/sdk-node": "^0.300.0",
-        "@opentelemetry/sdk-trace-base": "^2.12.0",
+        "@opentelemetry/sdk-trace": "^3.0.0",
         "@willsoto/nestjs-prometheus": "^7.0.0",
         "axios": "^1.20.0",
         "bull": "^4.16.5",
