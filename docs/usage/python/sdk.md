@@ -229,7 +229,21 @@ kleinkram.update_project(project_id="...", description="Updated Description")
 
 # Update a mission's metadata
 kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
+
+# Rename a file (the new name has to keep the file's extension)
+kleinkram.update_file(file_id="...", new_name="run_2.bag")
+
+# Change a file's recording date
+from datetime import datetime, timezone
+kleinkram.update_file(file_id="...", date=datetime(2025, 6, 1, 8, 30, tzinfo=timezone.utc))
+
+# Move a file to another mission
+kleinkram.update_file(file_id="...", mission_id="...")
 ```
+
+`update_file` only changes the arguments you pass; everything else stays as it is. It does not re-process the file:
+the stored content and the extracted topics stay unchanged. Moving files is not possible from inside an action, because
+the action's API key only covers its own mission.
 
 ### Moving and Copying Files
 
@@ -306,7 +320,6 @@ kleinkram.update_trigger(
     config=FileConfig(patterns=("*.mcap",), event=(FileTriggerEvent.UPLOAD,)),
 )
 kleinkram.delete_trigger(trigger_id)
-```
 
 ### Reporting from Inside an Action
 
