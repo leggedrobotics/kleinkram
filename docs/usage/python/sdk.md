@@ -83,18 +83,18 @@ access rules, in particular the caveat on webhook trigger uuids.
 
 ### Creating Resources
 
-Programmatically set up your workspace by creating new projects and missions.
+Programmatically set up your workspace by creating new projects and missions. Names must follow the [naming rules](../getting-started.md#naming-rules).
 
 ```python
 # Create a new project
 kleinkram.create_project(
-    project_name="New Project",
+    project_name="new-project",
     description="My new project description"
 )
 
 # Create a mission within a specific project
 kleinkram.create_mission(
-    mission_name="New Mission",
+    mission_name="new-mission",
     project_id="...",
     metadata={"sensor": "lidar"}
 )

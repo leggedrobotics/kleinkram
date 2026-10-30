@@ -19,6 +19,7 @@ import re
 import sys
 import tarfile
 import tempfile
+import unicodedata
 import warnings
 from pathlib import Path
 from typing import Any
@@ -71,7 +72,15 @@ from kleinkram.utils import get_filename_map
 from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import split_args
 
-NAME_REGEX = re.compile(r"^[\w\-_]{3,50}$")
+# naming rules for projects, missions, templates and triggers, duplicated from
+# `packages/validation/src/name.validation.ts`, keep both in sync
+NAME_MIN_LENGTH = 3
+NAME_MAX_LENGTH = 100
+_NAME_ALLOWED_CHARACTERS = r"A-Za-z0-9_.\-"
+# must not start with a dot, so a name never becomes a hidden directory
+NAME_REGEX = re.compile(rf"^(?!\.)[{_NAME_ALLOWED_CHARACTERS}]{{{NAME_MIN_LENGTH},{NAME_MAX_LENGTH}}}$")
+_NAME_INVALID_CHARACTER_REGEX = re.compile(rf"[^{_NAME_ALLOWED_CHARACTERS}]")
+_UUID_REGEX = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 DOCKER_IMAGE_REGEX = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._\-/]*(?::[a-zA-Z0-9._\-]+)?(?:@sha256:[a-fA-F0-9]{64})?$")
 DOCKER_IMAGE_MAX_LENGTH = 256
 DOCKER_HUB_NAMESPACE_REGEX = re.compile(r"^[a-z0-9]+(?:[_-]+[a-z0-9]+)*$")
@@ -452,6 +461,11 @@ def update_project(
     description: Optional[str] = None,
     new_name: Optional[str] = None,
 ) -> None:
+    if new_name is not None:
+        error = get_name_validation_error(new_name, "Project name")
+        if error:
+            raise kleinkram.errors.ProjectValidationError(error)
+
     # TODO: this function should do more in the future
     kleinkram.api.routes._update_project(client, project_id, description=description, new_name=new_name)
 
@@ -941,6 +955,50 @@ def create_trigger(
     )
 
 
+def suggest_name(name: str) -> Optional[str]:
+    """\
+    turns an invalid name into a valid one, e.g. `My Project` into `My-Project`,
+    returns None if no valid name can be derived
+    """
+    # drop accents: ü -> u
+    suggestion = "".join(c for c in unicodedata.normalize("NFKD", name) if not unicodedata.combining(c))
+    suggestion = re.sub(rf"[^{_NAME_ALLOWED_CHARACTERS}]+", "-", suggestion)
+    suggestion = re.sub(r"-{2,}", "-", suggestion)
+    suggestion = re.sub(r"^[.-]+", "", suggestion)
+    suggestion = re.sub(r"-+$", "", suggestion)[:NAME_MAX_LENGTH]
+
+    if NAME_REGEX.fullmatch(suggestion) and not _UUID_REGEX.fullmatch(suggestion):
+        return suggestion
+    return None
+
+
+def get_name_validation_error(name: str, label: str = "Name") -> Optional[str]:
+    """\
+    returns a human-readable error for an invalid name or None if it is valid,
+    `label` is used as the subject of the message, e.g. "Project name"
+    """
+    if not name:
+        return f"{label} is required"
+    if len(name) < NAME_MIN_LENGTH:
+        return f"{label} must be at least {NAME_MIN_LENGTH} characters long"
+    if len(name) > NAME_MAX_LENGTH:
+        return f"{label} must be at most {NAME_MAX_LENGTH} characters long"
+    if _UUID_REGEX.fullmatch(name):
+        return f"{label} must not be a UUID"
+    if NAME_REGEX.fullmatch(name):
+        return None
+
+    invalid_characters = list(dict.fromkeys(_NAME_INVALID_CHARACTER_REGEX.findall(name)))
+    if invalid_characters:
+        found = ", ".join("space" if c == " " else f"'{c}'" for c in invalid_characters)
+        problem = f"{label} may only contain letters, digits, '.', '-' and '_' (found {found})"
+    else:
+        problem = f"{label} must not start with '.'"
+
+    suggestion = suggest_name(name)
+    return f'{problem}. Try "{suggestion}".' if suggestion else f"{problem}."
+
+
 def _mission_name_is_available(client: AuthenticatedClient, mission_name: str, project_id: UUID) -> bool:
     mission_query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project_id]))
     try:
@@ -951,16 +1009,12 @@ def _mission_name_is_available(client: AuthenticatedClient, mission_name: str, p
 
 
 def _validate_mission_name(client: AuthenticatedClient, project_id: UUID, mission_name: str) -> None:
-    if not NAME_REGEX.match(mission_name):
-        raise ValueError(
-            "Mission name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
-        )
+    error = get_name_validation_error(mission_name, "Mission name")
+    if error:
+        raise ValueError(error)
 
     if not _mission_name_is_available(client, mission_name, project_id):
         raise kleinkram.errors.MissionExists(f"Mission with name: `{mission_name}` already exists in project: {project_id}")
-
-    if is_valid_uuid4(mission_name):
-        raise ValueError(f"Mission name: `{mission_name}` is a valid UUIDv4, mission names must not be valid UUIDv4's")
 
 
 def _project_name_is_available(client: AuthenticatedClient, project_name: str) -> bool:
@@ -973,10 +1027,9 @@ def _project_name_is_available(client: AuthenticatedClient, project_name: str) -
 
 
 def _validate_project_name(client: AuthenticatedClient, project_name: str, description: str) -> None:
-    if not NAME_REGEX.match(project_name):
-        raise kleinkram.errors.ProjectValidationError(
-            "Project name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
-        )
+    error = get_name_validation_error(project_name, "Project name")
+    if error:
+        raise kleinkram.errors.ProjectValidationError(error)
 
     if not _project_name_is_available(client, project_name):
         raise kleinkram.errors.ProjectExists(f"Project with name: `{project_name}` already exists")
@@ -1040,18 +1093,9 @@ def _template_name_is_available(client: AuthenticatedClient, template_name: str)
 
 
 def _validate_template_name(client: AuthenticatedClient, template_name: str, description: str) -> None:
-    if not template_name:
-        raise kleinkram.errors.TemplateValidationError("Template name is required")
-
-    if template_name.endswith(" "):
-        raise kleinkram.errors.TemplateValidationError(
-            f"Template name must not end with a tailing whitespace: `{template_name}`"
-        )
-
-    if not NAME_REGEX.match(template_name):
-        raise kleinkram.errors.TemplateValidationError(
-            "Template name must be between 3 and 50 characters and contain only letters, numbers, dashes, and underscores."
-        )
+    error = get_name_validation_error(template_name, "Template name")
+    if error:
+        raise kleinkram.errors.TemplateValidationError(error)
 
     if not _template_name_is_available(client, template_name):
         raise kleinkram.errors.TemplateExists(f"Template with name: `{template_name}` already exists")
@@ -1079,16 +1123,9 @@ def _validate_trigger_type_and_config(type_: TriggerType, config: TriggerConfig)
 def _validate_trigger_name(
     client: AuthenticatedClient, trigger_name: str, mission_uuid: UUID, update_trigger_uuid: Optional[UUID] = None
 ) -> None:
-    if not trigger_name:
-        raise kleinkram.errors.TriggerValidationError("Trigger name is required")
-
-    if trigger_name.endswith(" "):
-        raise kleinkram.errors.TriggerValidationError(f"Trigger name must not end with a tailing whitespace: `{trigger_name}`")
-
-    if not NAME_REGEX.match(trigger_name):
-        raise kleinkram.errors.TriggerValidationError(
-            "Trigger name must be between 3 and 50 characters and contain only" " letters, numbers, dashes, and underscores."
-        )
+    error = get_name_validation_error(trigger_name, "Trigger name")
+    if error:
+        raise kleinkram.errors.TriggerValidationError(error)
 
     if not _trigger_name_is_available(client, trigger_name, mission_uuid, update_trigger_uuid):
         raise kleinkram.errors.TriggerValidationError(

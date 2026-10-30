@@ -10,8 +10,8 @@
                 v-model="name"
                 placeholder="Name..."
                 name="name"
-                :error-message="errorMessagesProjectName"
-                :error="isInErrorStateProjectName"
+                :error-message="nameError"
+                :error="!!name && !!nameError"
                 outlined
                 dense
                 autofocus
@@ -23,32 +23,23 @@
                 flat
                 label="Create Access Group"
                 class="bg-button-primary"
-                :disable="isInErrorStateProjectName"
+                :disable="!!nameError"
                 @click="createAccessGroup"
             />
         </template>
     </base-dialog>
 </template>
 <script setup lang="ts">
+import { getNameValidationError } from '@kleinkram/validation/frontend';
 import { QInput, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
-import { ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
-const isInErrorStateProjectName = ref(false);
-const errorMessagesProjectName = ref<string>();
 const name = ref('');
-
-watch(name, () => {
-    if (/^[\w\-_]{3,20}$/.test(name.value)) {
-        isInErrorStateProjectName.value = false;
-        errorMessagesProjectName.value = '';
-    } else {
-        isInErrorStateProjectName.value = true;
-        errorMessagesProjectName.value =
-            'Name must be between 3 and 20 characters and only contain letters, numbers, -, and _';
-    }
-});
+const nameError = computed(
+    () => getNameValidationError(name.value, 'Group name') ?? '',
+);
 
 const createAccessGroup = (): void => {
     onDialogOK(name);

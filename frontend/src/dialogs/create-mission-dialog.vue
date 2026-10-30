@@ -70,14 +70,10 @@
                                 dense
                                 placeholder="Name...."
                                 style="padding-bottom: 30px"
-                                :error="!isValidMissionName"
-                                :rules="MISSION_NAME_INPUT_VALIDATION"
-                                :error-message="errorMessage"
-                                @change="onMissionNameChange"
+                                :error="!!missionNameError"
+                                :error-message="missionNameError"
+                                @update:model-value="onMissionNameChange"
                             >
-                                <template #error>
-                                    {{ errorMessage }}
-                                </template>
                                 <template v-if="missionName" #append>
                                     <q-icon
                                         name="sym_o_cancel"
@@ -118,11 +114,7 @@
                 v-if="tab_selection === 'details'"
                 flat
                 label="Next"
-                :disable="
-                    !project ||
-                    missionName.length < MIN_MISSION_NAME_LENGTH ||
-                    missionName.length > MAX_MISSION_NAME_LENGTH
-                "
+                :disable="!project || !isValidName(missionName)"
                 class="bg-button-primary"
                 @click="navigateToMetadataTab"
             />
@@ -150,6 +142,10 @@
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
+import {
+    getNameValidationError,
+    isValidName,
+} from '@kleinkram/validation/frontend';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import ScopeSelector from 'components/common/scope-selector.vue';
 import CreateFile from 'components/create-file.vue';
@@ -161,21 +157,6 @@ import { canCreateMission, usePermissionsQuery } from 'src/hooks/query-hooks';
 import { createMission } from 'src/services/mutations/mission';
 import { filteredProjects } from 'src/services/queries/project';
 import { computed, ref, Ref } from 'vue';
-
-const MIN_MISSION_NAME_LENGTH = 3;
-const MAX_MISSION_NAME_LENGTH = 50;
-const MISSION_NAME_INPUT_VALIDATION: ((value: string) => boolean | string)[] = [
-    (value): boolean | string => !!value || 'Field is required',
-    (value): boolean | string =>
-        value.length >= MIN_MISSION_NAME_LENGTH ||
-        `Name must be at least ${MIN_MISSION_NAME_LENGTH.toString()} characters`,
-    (value): boolean | string =>
-        value.length <= MAX_MISSION_NAME_LENGTH ||
-        `Name must be at most ${MAX_MISSION_NAME_LENGTH.toString()} characters`,
-    (value): boolean | string =>
-        /^[\w\-_]+$/g.test(value) ||
-        'Name must be alphanumeric and contain only - and _',
-];
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();
 
@@ -199,8 +180,13 @@ const queryClient = useQueryClient();
 const { selectedProject: project } = useScopeSelection(projectUuid);
 
 const missionName = ref('');
-const isValidMissionName = ref(true);
-const errorMessage = ref('');
+// error returned by the server, e.g. if the name is already taken
+const serverErrorMessage = ref('');
+const missionNameError = computed(() => {
+    if (serverErrorMessage.value) return serverErrorMessage.value;
+    if (!missionName.value) return '';
+    return getNameValidationError(missionName.value, 'Mission name') ?? '';
+});
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const { data: all_projects } = useQuery<ProjectsDto>({
@@ -240,10 +226,9 @@ const submitNewMission = async (): Promise<void> => {
         metadataValues.value,
     ).catch((error: unknown) => {
         tab_selection.value = 'details';
-        isValidMissionName.value = false;
         // @ts-ignore
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        errorMessage.value = error.response.data.message[0];
+        serverErrorMessage.value = error.response.data.message[0];
     });
 
     // exit if the request failed
@@ -295,8 +280,7 @@ const uploadEventHandler = (): void => {
 };
 
 function onMissionNameChange(): void {
-    errorMessage.value = '';
-    isValidMissionName.value = true;
+    serverErrorMessage.value = '';
 }
 
 function navigateToMetadataTab(): void {
