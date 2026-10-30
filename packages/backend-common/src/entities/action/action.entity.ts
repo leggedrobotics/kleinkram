@@ -1,4 +1,5 @@
 import { ActionDiagnosticEntity } from '@backend-common/entities/action/action-diagnostic.entity';
+import { ActionStateTransitionEntity } from '@backend-common/entities/action/action-state-transition.entity';
 import { ActionTemplateEntity } from '@backend-common/entities/action/action-template.entity';
 import { ActionTriggerEntity } from '@backend-common/entities/action/action-trigger.entity';
 import { ApiKeyEntity } from '@backend-common/entities/auth/api-key.entity';
@@ -17,6 +18,7 @@ import {
     ImageSource,
     LogType,
     ResourceUsage,
+    StateCauseParams,
 } from '@kleinkram/shared';
 import {
     Column,
@@ -89,6 +91,12 @@ export class ActionEntity extends BaseEntity {
     @OneToMany(() => ActionDiagnosticEntity, (diagnostic) => diagnostic.action)
     diagnostics?: ActionDiagnosticEntity[];
 
+    @OneToMany(
+        () => ActionStateTransitionEntity,
+        (transition) => transition.action,
+    )
+    stateTransitions?: ActionStateTransitionEntity[];
+
     /**
      * Number of distinct diagnostics stored for this action.
      *
@@ -113,9 +121,26 @@ export class ActionEntity extends BaseEntity {
     })
     creator?: UserEntity;
 
+    /**
+     * The cause as text: the description at write time, or the raw message of
+     * an external error. Kept for search and for clients that predate
+     * {@link state_cause_code}.
+     */
     @Column({ nullable: true })
     // eslint-disable-next-line @typescript-eslint/naming-convention
     state_cause?: string;
+
+    /**
+     * Why the action is in its current state: an `ActionStateCause`, kept as
+     * text (see there). Mirrors the latest row of {@link stateTransitions}.
+     */
+    @Column({ type: 'varchar', length: 64, nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    state_cause_code?: string | null;
+
+    @Column({ type: 'jsonb', nullable: true })
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    state_cause_params?: StateCauseParams | null;
 
     @Column({ nullable: true })
     executionStartedAt?: Date;

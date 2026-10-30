@@ -6,18 +6,20 @@ import {
     Image,
 } from '@kleinkram/backend-common';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
+import { transitionAction } from '@kleinkram/backend-common/services/action-state-transition';
 import {
     AccessGroupRights,
-    ActionFailureOrigin,
+    ActionOutcome,
     ActionSeverity,
     ActionState,
+    ActionStateCause,
     ArtifactState,
     KeyTypes,
     maxActionSeverity,
     resolveActionOutcome,
-    resolveFinalVerdict,
     ResourceUsage,
-    stateCauseReference,
+    StateCauseError,
+    stateCauseOfError,
     TERMINAL_ACTION_STATES,
     UserRole,
 } from '@kleinkram/shared';
@@ -155,9 +157,9 @@ export class ActionManagerService implements OnModuleInit {
             AccessGroupRights.WRITE,
         );
         if (!hasWriteAccess) {
-            throw new Error(
-                `User ${stateCauseReference('user', action.creator.uuid)} lost access to mission ${stateCauseReference('mission', action.mission.uuid)}`,
-            );
+            throw new StateCauseError({
+                code: ActionStateCause.MISSION_ACCESS_LOST,
+            });
         }
 
         const apiKey = this.apikeyRepository.create({
@@ -235,26 +237,18 @@ export class ActionManagerService implements OnModuleInit {
 
         if (this.cancellationService.isCancelled(action.uuid)) {
             logger.info(`Action ${action.uuid} was cancelled before starting`);
-            await this.actionRepository.update(
-                { uuid: action.uuid },
-                {
-                    state: ActionState.CANCELLED,
-                    state_cause: 'Action cancelled by user',
-                },
-            );
+            await transitionAction(this.actionRepository.manager, action.uuid, {
+                state: ActionState.CANCELLED,
+                cause: { code: ActionStateCause.CANCELLED_BY_USER },
+            });
             this.cancellationService.cleanup(action.uuid);
             return true;
         }
 
-        // set state to 'STARTING'
-        await this.actionRepository.update(
-            { uuid: action.uuid },
-            {
-                state: ActionState.STARTING,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause: 'Action is currently running...',
-            },
-        );
+        await transitionAction(this.actionRepository.manager, action.uuid, {
+            state: ActionState.STARTING,
+            cause: { code: ActionStateCause.STARTING },
+        });
 
         if (action.mission === undefined) {
             throw new Error('Mission is undefined');
@@ -287,9 +281,13 @@ export class ActionManagerService implements OnModuleInit {
                 action,
                 apikey.apikey,
                 async () => {
-                    await this.actionRepository.update(
-                        { uuid: action.uuid },
-                        { state: ActionState.PROCESSING },
+                    await transitionAction(
+                        this.actionRepository.manager,
+                        action.uuid,
+                        {
+                            state: ActionState.PROCESSING,
+                            cause: { code: ActionStateCause.RUNNING },
+                        },
                     );
                 },
             );
@@ -421,15 +419,15 @@ export class ActionManagerService implements OnModuleInit {
                 // action - it is what killed the container we just stopped
                 // waiting on. Writing STOPPING unconditionally would erase that
                 // verdict before setActionState can read it back.
-                await this.actionRepository
-                    .createQueryBuilder()
-                    .update(ActionEntity)
-                    .set({ state: ActionState.STOPPING })
-                    .where('uuid = :uuid', { uuid: action.uuid })
-                    .andWhere('state NOT IN (:...terminal)', {
-                        terminal: TERMINAL_ACTION_STATES,
-                    })
-                    .execute();
+                await transitionAction(
+                    this.actionRepository.manager,
+                    action.uuid,
+                    {
+                        state: ActionState.STOPPING,
+                        cause: { code: ActionStateCause.STOPPING },
+                        unlessIn: TERMINAL_ACTION_STATES,
+                    },
+                );
             }
 
             this.containerLifecycleService.removeContainer(container.id, true);
@@ -526,29 +524,26 @@ export class ActionManagerService implements OnModuleInit {
             wideLog.flush('error');
 
             if (this.cancellationService.isCancelled(action.uuid)) {
-                await this.actionRepository.update(
-                    { uuid: action.uuid },
+                await transitionAction(
+                    this.actionRepository.manager,
+                    action.uuid,
                     {
                         state: ActionState.CANCELLED,
-                        state_cause: 'Action cancelled by user',
+                        cause: { code: ActionStateCause.CANCELLED_BY_USER },
                     },
                 );
                 this.cancellationService.cleanup(action.uuid);
             } else {
-                await this.actionRepository.update(
-                    { uuid: action.uuid },
+                // The run threw before or around the container rather than
+                // inside it: image pulls, storage, the daemon - or a cause that
+                // knows better, such as the creator having lost access.
+                await transitionAction(
+                    this.actionRepository.manager,
+                    action.uuid,
                     {
                         state: ActionState.FAILED,
-                        severity: ActionSeverity.ERROR,
-                        // The run threw before or around the container rather
-                        // than inside it: image pulls, storage, the daemon.
-                        // Nothing the action author can fix.
-                        failureOrigin: ActionFailureOrigin.SYSTEM,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        state_cause:
-                            error instanceof Error
-                                ? error.message
-                                : String(error),
+                        cause: stateCauseOfError(error),
+                        set: { severity: ActionSeverity.ERROR },
                     },
                 );
                 // Trigger hint assessment asynchronously
@@ -628,17 +623,31 @@ export class ActionManagerService implements OnModuleInit {
         const containerDetailsAfter = await container.inspect();
         const exitCode = containerDetailsAfter.State.ExitCode;
 
-        const outcome = this.cancellationService.isCancelled(action.uuid)
+        const outcome: ActionOutcome = this.cancellationService.isCancelled(
+            action.uuid,
+        )
             ? {
                   state: ActionState.CANCELLED,
                   severity: ActionSeverity.OK,
-                  failureOrigin: undefined,
-                  stateCause: 'Action cancelled by user',
+                  cause: { code: ActionStateCause.CANCELLED_BY_USER },
               }
             : resolveActionOutcome({
                   exitCode,
                   oomKilled: containerDetailsAfter.State.OOMKilled,
               });
+
+        // A verdict the janitor already recorded - time limit exceeded, runner
+        // replaced - wins over anything the exit code implies: by now the exit
+        // code only says how the container died, a 137 or a 143.
+        const applied = await transitionAction(
+            this.actionRepository.manager,
+            action.uuid,
+            {
+                state: outcome.state,
+                cause: outcome.cause,
+                unlessIn: TERMINAL_ACTION_STATES,
+            },
+        );
 
         // The container may have reported diagnostics while it ran, which
         // already raised the severity stored for the action. The exit code can
@@ -647,14 +656,7 @@ export class ActionManagerService implements OnModuleInit {
         // before the last diagnostic may have landed.
         const stored = await this.actionRepository.findOne({
             where: { uuid: action.uuid },
-            select: {
-                uuid: true,
-                severity: true,
-                state: true,
-                failureOrigin: true,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause: true,
-            },
+            select: { uuid: true, severity: true },
         });
         const severity = maxActionSeverity(
             stored?.severity ?? ActionSeverity.OK,
@@ -662,40 +664,27 @@ export class ActionManagerService implements OnModuleInit {
         );
         const raisesSeverity = outcome.severity !== ActionSeverity.OK;
 
-        // A verdict the janitor already recorded wins over anything the exit
-        // code implies - see resolveFinalVerdict.
-        const verdict = resolveFinalVerdict(
-            stored && {
-                state: stored.state,
-                failureOrigin: stored.failureOrigin,
-                stateCause: stored.state_cause,
-            },
-            outcome,
-        );
-
         wideLog.add({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             exit_code: exitCode,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            final_state: verdict.state,
+            final_state: outcome.state,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             final_severity: severity,
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            failure_origin: verdict.failureOrigin ?? '',
+            failure_origin: outcome.failureOrigin ?? '',
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            state_cause: verdict.stateCause,
+            state_cause: outcome.cause.code,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            recorded_verdict_kept: !applied,
         });
 
         await this.actionRepository.update(
             { uuid: action.uuid },
             {
-                state: verdict.state,
-                failureOrigin: verdict.failureOrigin,
                 ...(raisesSeverity && { severity }),
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 exit_code: exitCode,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause: verdict.stateCause,
             },
         );
     }

@@ -68,9 +68,18 @@ export class ActionDto {
     @Type(() => ActionTemplateDto)
     template!: ActionTemplateDto;
 
-    @ApiProperty()
+    @ApiProperty({ description: 'Why the action is in its state, as text.' })
     @IsString()
     stateCause!: string;
+
+    @ApiProperty({
+        nullable: true,
+        description:
+            'Machine-readable cause, an ActionStateCause. Treat as an open set: clients must fall back to `stateCause` for codes they do not know.',
+    })
+    @IsOptional()
+    @IsString()
+    stateCauseCode!: string | null;
 
     @ApiProperty()
     @IsDate()

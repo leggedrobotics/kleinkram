@@ -1,6 +1,10 @@
 import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
-import { ActionErrorHint, ActionState } from '@kleinkram/shared';
+import {
+    ActionErrorHint,
+    ActionState,
+    ActionStateCause,
+} from '@kleinkram/shared';
 import ROUTES from 'src/router/routes';
 import { computed, nextTick, type Ref } from 'vue';
 import type { Router } from 'vue-router';
@@ -93,7 +97,7 @@ const ERROR_HINTS: ErrorHint[] = [
         id: 'system-interruption',
         text: 'The action was interrupted by the scheduler. Please try again later or contact your administrator.',
         buttonLabel: 'View Documentation',
-        check: (act) => act.stateCause === 'Interrupted by new Runner Instance',
+        check: (act) => act.stateCauseCode === ActionStateCause.RUNNER_REPLACED,
         onClick: () => {
             window.open(
                 `${environment.DOCS_URL}/usage/actions/action-status`,

@@ -202,7 +202,7 @@ A failed action also records who is responsible, so you can tell a problem in yo
 
 | Failed by | Meaning                                                                                              | What to do                                         |
 | --------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `USER`    | Your script exited non-zero, crashed, or ran past the limits configured on its template.             | Fix the action or its template.                    |
+| `USER`    | Your script exited non-zero, crashed, ran past the limits on its template, or you lost write access. | Fix the action, its template, or your access.      |
 | `SYSTEM`  | Kleinkram could not run the action: a runner restart, a scheduling failure, an infrastructure error. | Retry. If it persists, contact your administrator. |
 
 An action failed by `SYSTEM` is shown as "FAILED · system" and is safe to simply run again.
@@ -224,6 +224,46 @@ klein execution info <execution-id>
 # every finding the action reported
 klein execution diagnostics <execution-id>
 ```
+
+#### State History and Cause Codes
+
+Every change of state is recorded with a timestamp and a reason. The **State History** on the action detail page shows
+them in order, for example _Submitted by Jane Doe_, _Pulling the image and starting the container_, _The action
+container is running_, _Cancelled by John Doe_. The API returns the same list from `GET /actions/{uuid}/state-history`.
+
+Next to the human-readable `stateCause`, the API returns a stable `stateCauseCode`. Match on the code rather than the
+text, which may be reworded:
+
+| Code                        | State           | Failed by | Meaning                                                           |
+| --------------------------- | --------------- | --------- | ----------------------------------------------------------------- |
+| `SUBMITTED`                 | `PENDING`       |           | The action was submitted.                                         |
+| `WAITING_FOR_RESOURCES`     | `PENDING`       |           | The runner is waiting for hardware; the message says what for.    |
+| `STARTING`                  | `STARTING`      |           | The image is pulled and the container started.                    |
+| `RUNNING`                   | `PROCESSING`    |           | The container is running.                                         |
+| `STOPPING`                  | `STOPPING`      |           | The container exited; results are being collected.                |
+| `COMPLETED`                 | `DONE`          |           | Exit code `0`.                                                    |
+| `COMPLETED_WITH_WARNINGS`   | `DONE`          |           | Exit code `75`.                                                   |
+| `EXIT_NONZERO`              | `FAILED`        | `USER`    | Any other non-zero exit code.                                     |
+| `EXIT_DOCKER_RUN_FAILED`    | `FAILED`        | `USER`    | Exit code `125`.                                                  |
+| `EXIT_PERMISSION_DENIED`    | `FAILED`        | `USER`    | Exit code `126`.                                                  |
+| `EXIT_COMMAND_NOT_FOUND`    | `FAILED`        | `USER`    | Exit code `127`.                                                  |
+| `EXIT_SIGKILL`              | `FAILED`        | `USER`    | Exit code `137`: memory or CPU limit.                             |
+| `OUT_OF_MEMORY`             | `FAILED`        | `USER`    | Exit code `137`, and Docker reports the container ran out of RAM. |
+| `EXIT_SEGFAULT`             | `FAILED`        | `USER`    | Exit code `139`.                                                  |
+| `EXIT_SIGTERM`              | `FAILED`        | `USER`    | Exit code `143`.                                                  |
+| `TIME_LIMIT_EXCEEDED`       | `FAILED`        | `USER`    | The action ran past the maximum runtime of its template.          |
+| `MISSION_ACCESS_LOST`       | `FAILED`        | `USER`    | Whoever submitted the action lost write access before it started. |
+| `RUNNER_REPLACED`           | `FAILED`        | `SYSTEM`  | Its runner became inactive and was replaced.                      |
+| `ORPHANED_CONTAINER_KILLED` | `FAILED`        | `SYSTEM`  | A container was left running for an action no longer active.      |
+| `CONTAINER_LOST`            | `FAILED`        | `SYSTEM`  | The container disappeared while the action was running.           |
+| `WORKER_NOT_FOUND`          | `FAILED`        | `SYSTEM`  | The worker the action was assigned to is gone.                    |
+| `INTERNAL_ERROR`            | `FAILED`        | `SYSTEM`  | Any other error; the message is the original error text.          |
+| `NO_WORKER_AVAILABLE`       | `UNPROCESSABLE` | `SYSTEM`  | No worker has the hardware the template asks for.                 |
+| `QUEUE_ERROR`               | `UNPROCESSABLE` | `SYSTEM`  | The action could not be queued.                                   |
+| `CANCELLED_BY_USER`         | `CANCELLED`     |           | Someone cancelled the action; the history says who.               |
+
+New codes are added over time. Treat the code as an open set: if your client does not know a code, show `stateCause`.
+Actions from before codes existed may have no code.
 
 ## Container Termination
 

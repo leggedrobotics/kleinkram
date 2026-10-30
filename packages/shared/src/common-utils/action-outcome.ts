@@ -1,6 +1,11 @@
 import { EXIT_CODE_WARNING } from './action-severity';
-import { isTerminalActionState } from './action-state';
 import { ActionFailureOrigin, ActionSeverity, ActionState } from './enum';
+import {
+    ActionStateCause,
+    failureOriginOf,
+    StateCause,
+    StateCauseParams,
+} from './state-cause';
 
 /**
  * What the runner observed when the action container stopped.
@@ -19,7 +24,7 @@ export interface ContainerExitFacts {
 
 /**
  * The full outcome of an action run: its lifecycle state, its verdict, who is
- * responsible if it failed, and a human-readable cause.
+ * responsible if it failed, and why.
  */
 export interface ActionOutcome {
     state: ActionState;
@@ -27,18 +32,21 @@ export interface ActionOutcome {
 
     /** Only set when `state` is `FAILED`. */
     failureOrigin?: ActionFailureOrigin;
-    stateCause: string;
+    cause: StateCause;
 }
 
 const failure = (
-    stateCause: string,
-    failureOrigin: ActionFailureOrigin,
-): ActionOutcome => ({
-    state: ActionState.FAILED,
-    severity: ActionSeverity.ERROR,
-    failureOrigin,
-    stateCause,
-});
+    code: ActionStateCause,
+    params?: StateCauseParams,
+): ActionOutcome => {
+    const cause: StateCause = { code, ...(params && { params }) };
+    return {
+        state: ActionState.FAILED,
+        severity: ActionSeverity.ERROR,
+        failureOrigin: failureOriginOf(cause),
+        cause,
+    };
+};
 
 /**
  * Turns what the runner saw at container exit into the outcome to record.
@@ -66,99 +74,46 @@ export const resolveActionOutcome = (
             return {
                 state: ActionState.DONE,
                 severity: ActionSeverity.OK,
-                stateCause: 'Container exited with code 0',
+                cause: { code: ActionStateCause.COMPLETED },
             };
         }
         case EXIT_CODE_WARNING: {
             return {
                 state: ActionState.DONE,
                 severity: ActionSeverity.WARNING,
-                stateCause: `Action completed with warnings (exit ${EXIT_CODE_WARNING.toString()}).`,
+                cause: {
+                    code: ActionStateCause.COMPLETED_WITH_WARNINGS,
+                    params: { exitCode },
+                },
             };
         }
         case 125: {
-            return failure(
-                'Container failed to run. Docker run command failed.',
-                ActionFailureOrigin.USER,
-            );
+            return failure(ActionStateCause.EXIT_DOCKER_RUN_FAILED);
         }
         case 126: {
-            return failure(
-                'Command cannot be invoked (Permission denied?).',
-                ActionFailureOrigin.USER,
-            );
+            return failure(ActionStateCause.EXIT_PERMISSION_DENIED);
         }
         case 127: {
-            return failure('Command not found.', ActionFailureOrigin.USER);
+            return failure(ActionStateCause.EXIT_COMMAND_NOT_FOUND);
         }
         case 139: {
-            return failure(
-                'Container crashed (SIGSEGV). Invalid memory access.',
-                ActionFailureOrigin.USER,
-            );
+            return failure(ActionStateCause.EXIT_SEGFAULT);
         }
         case 143: {
-            return failure(
-                'Container stopped (SIGTERM). Time limit approached.',
-                ActionFailureOrigin.USER,
-            );
+            return failure(ActionStateCause.EXIT_SIGTERM);
         }
         case 137: {
-            // Docker reports OOM kills explicitly. The original, ambiguous
-            // wording is kept as a prefix so that existing log analysis and
-            // the error hint service keep matching on it.
+            // Docker reports OOM kills explicitly; without that flag a SIGKILL
+            // may as well have come from the CPU limit.
             return failure(
                 oomKilled === true
-                    ? 'Container killed (SIGKILL). Exceeded memory or CPU limit. The container ran out of memory (OOMKilled).'
-                    : 'Container killed (SIGKILL). Exceeded memory or CPU limit.',
-                ActionFailureOrigin.USER,
+                    ? ActionStateCause.OUT_OF_MEMORY
+                    : ActionStateCause.EXIT_SIGKILL,
             );
         }
         default: {
             // A non-zero exit the action chose itself.
-            return failure(
-                `Container exited with code ${exitCode.toString()}`,
-                ActionFailureOrigin.USER,
-            );
+            return failure(ActionStateCause.EXIT_NONZERO, { exitCode });
         }
     }
 };
-
-/**
- * A verdict already stored for the action when the container stopped.
- */
-export interface RecordedVerdict {
-    state: ActionState;
-    failureOrigin?: ActionFailureOrigin;
-    stateCause?: string;
-}
-
-/**
- * Chooses between a verdict already recorded for the action and the one the
- * exit code implies.
- *
- * The janitor kills containers - for running past `maxRuntime`, or because a
- * newer runner took over - and records why before the runner ever inspects the
- * corpse. By then the exit code only describes *how* the container died, a 137
- * or a 143, so re-deriving from it would overwrite "Time limit exceeded" with a
- * guess about memory limits, and would pin a runner interrupt on the user. A
- * state that is already final therefore wins.
- *
- * Kept pure, and separate from the runner, so the precedence can be tested
- * directly rather than through a container lifecycle.
- *
- * @param recorded what the action row says, or null if it could not be read
- * @param outcome what the exit code implies
- * @returns the state, blame and cause to persist
- */
-export const resolveFinalVerdict = (
-    recorded: RecordedVerdict | null | undefined,
-    outcome: ActionOutcome,
-): Omit<ActionOutcome, 'severity'> =>
-    recorded && isTerminalActionState(recorded.state)
-        ? {
-              state: recorded.state,
-              failureOrigin: recorded.failureOrigin,
-              stateCause: recorded.stateCause ?? outcome.stateCause,
-          }
-        : outcome;

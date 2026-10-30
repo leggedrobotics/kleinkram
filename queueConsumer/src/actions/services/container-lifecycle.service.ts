@@ -1,17 +1,18 @@
 import { ActionEntity, environment } from '@kleinkram/backend-common';
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
+import { transitionAction } from '@kleinkram/backend-common/services/action-state-transition';
 import {
-    ActionFailureOrigin,
     ActionSeverity,
     ActionState,
+    ActionStateCause,
     ImageSource,
 } from '@kleinkram/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Dockerode from 'dockerode';
 import si from 'systeminformation';
-import { In, Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import logger from '../../logger';
 import {
     ContainerEnvironment,
@@ -236,8 +237,7 @@ export class ContainerLifecycleService {
                         );
                         await this.markActionAsFailed(
                             containerActionUuid,
-                            'Time limit exceeded',
-                            ActionFailureOrigin.USER,
+                            ActionStateCause.TIME_LIMIT_EXCEEDED,
                             143, // SIGTERM equivalent or custom exit code for timeout
                         );
                         continue;
@@ -247,22 +247,14 @@ export class ContainerLifecycleService {
                 if (!activeActionUuids.has(containerActionUuid)) {
                     // Re-check atomically by attempting to mark as FAILED only if NOT in an active state.
                     // This prevents killing a container for an action that just started or moved to processing.
-                    const affected = await this.markActionAsFailed(
+                    const failed = await this.markActionAsFailed(
                         containerActionUuid,
-                        'Container killed by Janitor: action no longer active',
-                        ActionFailureOrigin.SYSTEM,
+                        ActionStateCause.ORPHANED_CONTAINER_KILLED,
                         undefined,
-                        {
-                            state: Not(
-                                In([
-                                    ActionState.PROCESSING,
-                                    ActionState.STARTING,
-                                ]),
-                            ),
-                        },
+                        [ActionState.PROCESSING, ActionState.STARTING],
                     );
 
-                    if (affected > 0) {
+                    if (failed) {
                         logger.info(
                             `[Janitor] Killing zombie container ${containerInfo.Id} (action ${containerActionUuid} confirmed not active)`,
                         );
@@ -294,8 +286,7 @@ export class ContainerLifecycleService {
                     );
                     await this.markActionAsFailed(
                         containerActionUuid,
-                        'Interrupted by new Runner Instance (old runner inactive)',
-                        ActionFailureOrigin.SYSTEM,
+                        ActionStateCause.RUNNER_REPLACED,
                         137,
                     );
                 } else {
@@ -331,8 +322,7 @@ export class ContainerLifecycleService {
                 );
                 await this.markActionAsFailed(
                     action.uuid,
-                    'Container crashed, no container found',
-                    ActionFailureOrigin.SYSTEM,
+                    ActionStateCause.CONTAINER_LOST,
                 );
             }
         }
@@ -366,34 +356,32 @@ export class ContainerLifecycleService {
     /**
      * Mark an action as failed in the database.
      *
-     * @param origin who is responsible. The janitor is the only component that
-     * knows whether it killed a container because we restarted the runner
-     * (`SYSTEM`) or because the action outstayed its own limits (`USER`), so it
-     * has to record that verdict here rather than leave it to be guessed from
-     * the exit code later.
+     * @param cause why. The janitor is the only component that knows whether
+     * it killed a container because we restarted the runner or because the
+     * action outstayed its own limits, so it has to record that verdict here
+     * rather than leave it to be guessed from the exit code later. Who is to
+     * blame follows from the cause.
+     * @param unlessIn leave the action alone when it is in one of these states
+     * @returns whether the action was marked as failed
      */
     private async markActionAsFailed(
         actionUuid: string,
-        cause: string,
-        origin: ActionFailureOrigin,
+        cause: ActionStateCause,
         exitCode?: number,
-        extraCriteria: object = {},
-    ): Promise<number> {
-        const result = await this.actionRepository.update(
-            { uuid: actionUuid, ...extraCriteria },
-            {
-                state: ActionState.FAILED,
+        unlessIn?: readonly ActionState[],
+    ): Promise<boolean> {
+        return transitionAction(this.actionRepository.manager, actionUuid, {
+            state: ActionState.FAILED,
+            cause: { code: cause },
+            unlessIn,
+            set: {
                 severity: ActionSeverity.ERROR,
-                failureOrigin: origin,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                state_cause: cause,
                 ...(exitCode !== undefined && {
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     exit_code: exitCode,
                 }),
             },
-        );
-        return result.affected ?? 0;
+        });
     }
 
     /**

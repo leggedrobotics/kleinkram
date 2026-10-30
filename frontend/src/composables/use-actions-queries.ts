@@ -1,5 +1,6 @@
 import type { ActionDiagnosticsDto } from '@kleinkram/api-dto/types/actions/action-diagnostic.dto';
 import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
+import type { ActionStateHistoryDto } from '@kleinkram/api-dto/types/actions/action-state-history.dto';
 import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import type { ActionsDto } from '@kleinkram/api-dto/types/actions/actions.dto';
@@ -126,6 +127,27 @@ export function useActionDiagnostics(
         queryFn: () => ActionService.getDiagnostics(unref(uuid)),
         enabled: computed(() => !!unref(uuid)),
         refetchInterval: computed(() => (unref(isRunning) ? 5000 : false)),
+    });
+}
+
+/**
+ * Every state an action went through, and why.
+ *
+ * Keyed by the current state, so the timeline catches up whenever the action
+ * itself is seen to change.
+ */
+export function useActionStateHistory(
+    uuid: MaybeRef<string>,
+    state: MaybeRef<ActionState>,
+): UseQueryReturnType<ActionStateHistoryDto, Error> {
+    return useQuery({
+        queryKey: computed(() => [
+            ...actionKeys.detail(unref(uuid)),
+            'state-history',
+            unref(state),
+        ]),
+        queryFn: () => ActionService.getStateHistory(unref(uuid)),
+        enabled: computed(() => !!unref(uuid)),
     });
 }
 

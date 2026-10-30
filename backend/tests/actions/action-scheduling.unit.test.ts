@@ -3,8 +3,17 @@ import {
     addActionQueue,
     findWorkerForAction,
 } from '@kleinkram/backend-common/scheduling-logic';
-import { ActionState } from '@kleinkram/shared';
+import { transitionAction } from '@kleinkram/backend-common/services/action-state-transition';
+import {
+    ActionSeverity,
+    ActionState,
+    ActionStateCause,
+} from '@kleinkram/shared';
 import { MoreThanOrEqual, Repository } from 'typeorm';
+
+jest.mock('@kleinkram/backend-common/services/action-state-transition', () => ({
+    transitionAction: jest.fn().mockResolvedValue(true),
+}));
 
 describe('Action Scheduling Logic Unit Tests', () => {
     let mockWorkerRepository: Record<string, jest.Mock>;
@@ -18,6 +27,7 @@ describe('Action Scheduling Logic Unit Tests', () => {
         };
 
         mockActionRepository = {
+            manager: jest.fn(),
             save: jest.fn(),
             createQueryBuilder: jest.fn().mockReturnThis(),
             update: jest.fn().mockReturnThis(),
@@ -137,9 +147,15 @@ describe('Action Scheduling Logic Unit Tests', () => {
                 mockLogger as unknown,
             );
 
-            expect(action.state).toBe(ActionState.UNPROCESSABLE);
-            expect(action.state_cause).toContain('No worker available');
-            expect(mockActionRepository.save).toHaveBeenCalledWith(action);
+            expect(transitionAction).toHaveBeenCalledWith(
+                mockActionRepository.manager,
+                'action-uuid-1',
+                {
+                    state: ActionState.UNPROCESSABLE,
+                    cause: { code: ActionStateCause.NO_WORKER_AVAILABLE },
+                    set: { severity: ActionSeverity.ERROR },
+                },
+            );
         });
 
         test('should assign worker and add job to queue if worker is found', async () => {

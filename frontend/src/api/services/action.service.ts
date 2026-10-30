@@ -1,6 +1,7 @@
 import type { ActionDiagnosticsDto } from '@kleinkram/api-dto/types/actions/action-diagnostic.dto';
 import type { ActionLogsDto } from '@kleinkram/api-dto/types/actions/action-logs.dto';
 import type { ActionScriptDto } from '@kleinkram/api-dto/types/actions/action-script.dto';
+import type { ActionStateHistoryDto } from '@kleinkram/api-dto/types/actions/action-state-history.dto';
 import type { ActionTemplateAvailabilityDto } from '@kleinkram/api-dto/types/actions/action-template-availability.dto';
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
 import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
@@ -174,6 +175,13 @@ export const ActionService = {
     async getDiagnostics(uuid: string): Promise<ActionDiagnosticsDto> {
         const { data } = await axios.get<ActionDiagnosticsDto>(
             `/actions/${uuid}/diagnostics`,
+        );
+        return data;
+    },
+
+    async getStateHistory(uuid: string): Promise<ActionStateHistoryDto> {
+        const { data } = await axios.get<ActionStateHistoryDto>(
+            `/actions/${uuid}/state-history`,
         );
         return data;
     },
