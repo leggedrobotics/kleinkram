@@ -169,7 +169,7 @@ def test_trigger_crud_webhook(empty_mission, action_template):
     "invalid_name",
     [
         "ab",  # Too short (< 3 chars)
-        "this-trigger-name-is-way-too-long-to-be-allowed-by-validation-regex-fifty-chars",  # Too long (> 50 chars)
+        "t" * 101,  # Too long (> 100 chars)
         "trigger name with spaces",  # Invalid characters
         "trigger_name_trailing ",  # Trailing whitespace
     ],

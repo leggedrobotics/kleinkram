@@ -8,7 +8,7 @@ import {
     IsString,
     IsUUID,
 } from 'class-validator';
-import { IsNoValidUUID, IsValidName } from './property-decorator';
+import { IsValidName } from './property-decorator';
 import { IsRecordStringString } from './record-validation';
 import { IsSkip } from './skip-validation';
 import { IsTake } from './take-validation';
@@ -61,7 +61,6 @@ export class NameValidate {
     @IsString()
     @IsNotEmpty()
     @IsValidName()
-    @IsNoValidUUID()
     value!: string;
 }
 

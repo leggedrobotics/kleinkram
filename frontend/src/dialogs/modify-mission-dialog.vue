@@ -10,9 +10,10 @@
                 outlined
                 autofocus
                 style="padding-bottom: 30px"
-                :error="!isNameValid"
-                :error-message="nameErrorMessage"
+                :error="!!missionNameError"
+                :error-message="missionNameError"
                 placeholder="Name..."
+                @update:model-value="onMissionNameUpdate"
             />
         </template>
 
@@ -21,6 +22,7 @@
                 flat
                 label="Save Mission"
                 class="bg-button-primary"
+                :disable="!!missionNameError"
                 @click="saveMissionName"
             />
         </template>
@@ -28,29 +30,39 @@
 </template>
 <script setup lang="ts">
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
+import { getNameValidationError } from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
 import { QInput, useDialogPluginComponent, useQuasar } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
 import { getErrorMessage, getErrorStatus } from 'src/services/error-handling';
 import { updateMissionName } from 'src/services/mutations/mission';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const DEFAULT_NAME_ERROR = 'Please enter a valid mission name';
 
 const { dialogRef } = useDialogPluginComponent();
 const $q = useQuasar();
 const queryClient = useQueryClient();
-const isNameValid = ref(true);
-const nameErrorMessage = ref(DEFAULT_NAME_ERROR);
+// error returned by the server for a rejected name
+const serverErrorMessage = ref('');
 
 const properties = defineProps<{
     mission: MissionWithFilesDto;
 }>();
 
 const missionName = ref(properties.mission.name);
+const missionNameError = computed(
+    () =>
+        serverErrorMessage.value ||
+        (getNameValidationError(missionName.value, 'Mission name') ?? ''),
+);
+
+const onMissionNameUpdate = (): void => {
+    serverErrorMessage.value = '';
+};
 
 const saveMissionName = async () => {
-    isNameValid.value = true;
+    serverErrorMessage.value = '';
     await updateMissionName(properties.mission.uuid, missionName.value)
         .then(async () => {
             $q.notify({
@@ -83,8 +95,10 @@ const saveMissionName = async () => {
                 return;
             }
 
-            nameErrorMessage.value = getErrorMessage(error, DEFAULT_NAME_ERROR);
-            isNameValid.value = false;
+            serverErrorMessage.value = getErrorMessage(
+                error,
+                DEFAULT_NAME_ERROR,
+            );
         });
 };
 </script>
