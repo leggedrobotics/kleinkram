@@ -14,7 +14,7 @@ If you wish to use the CLI follow the [Getting Started](../../usage/python/cli.m
 First you need to follow the steps described in the [Getting Started (For Developers)](../getting-started.md) guide.
 
 Next make sure to navigate to the `/cli` directory of repository.
-Now setup a `python3.10` virtual enviroment and install the dependencies:
+Now setup a `python3.10` virtual environment and install the dependencies:
 
 ```bash
 virtualenv -p python3.10 .venv
@@ -87,7 +87,7 @@ cli/
 ### Packaging
 
 For packaging we use [declarative metadata](https://www.youtube.com/watch?v=GaWs-LenLYE) inside the `setup.cfg`.
-Depending on the python distrubution you are using you might need to install `setuptools` seperately ([read more here](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/)).
+Depending on the python distribution you are using you might need to install `setuptools` separately ([read more here](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/)).
 
 ### Source Code
 
@@ -125,7 +125,7 @@ In this folder we have all the bindings for the kleinkram API. This includes:
 - `pagination.py` wrapper around the HTTP client that supports paginated requests via generators.
 - `deser.py` deserialization of the API responses (serialization should also go here).
 - `routes.py` all the api routes and low level functions that interact with those endpoints
-- `query.py` abstractions for specificying resources on the backend (e.g. querying projects, missions and files)
+- `query.py` abstractions for specifying resources on the backend (e.g. querying projects, missions and files)
 - `file_transfer.py` implementation of the uploading and downloading. For the uploads we use [`boto3`](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) to interact with the S3 compatible storage.
 
 #### `cli/`
