@@ -6,6 +6,7 @@ import threading
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
+from concurrent.futures import wait
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
@@ -16,6 +17,7 @@ from typing import Callable
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
+from typing import Set
 from typing import Tuple
 from uuid import UUID
 
@@ -560,6 +562,11 @@ def download_file(
     # request a download url
     download_url = _get_file_download(client, file.id)
 
+    # Nothing has been touched yet. Past this point a cancel removes the target,
+    # so with --overwrite a Ctrl+C during the URL request would delete the old copy.
+    if cancel_event is not None and cancel_event.is_set():
+        return DownloadState.CANCELED, 0
+
     # create parent directories
     if create_parents:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -693,14 +700,20 @@ def _resolve_upload_future(
     path: Path,
     result: UploadResult,
     cancel_event: threading.Event,
+    recorded: Set[Future],
     executor: Optional[ThreadPoolExecutor] = None,
     on_message_cb: Optional[OnMessageCb] = None,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
     is_cleanup: bool = False,
 ) -> None:
-    """Resolves an upload future, updates telemetry, and triggers callbacks."""
+    """Resolves an upload future, updates telemetry, and triggers callbacks.
+
+    The future goes into `recorded` as soon as it is counted, before any
+    callback runs, so a Ctrl+C inside a callback does not count it twice.
+    """
     if future.cancelled():
         result.canceled += 1
+        recorded.add(future)
         if on_overall_progress_cb is not None:
             on_overall_progress_cb()
         return
@@ -717,31 +730,48 @@ def _resolve_upload_future(
             raise e
         return
     except Exception as e:
+        result.failed += 1
+        recorded.add(future)
         logger.error(format_traceback(e))
         if on_message_cb is not None:
             on_message_cb(f"Error uploading {path}: {e}", True)
-        result.failed += 1
         if on_overall_progress_cb is not None:
             on_overall_progress_cb()
         return
 
     result.total_bytes += size_bytes
-
     if state == UploadState.UPLOADED:
         result.uploaded += 1
-        if on_message_cb is not None:
-            on_message_cb(f"uploaded {path}", False)
+        message = f"uploaded {path}"
     elif state == UploadState.EXISTS:
         result.skipped += 1
-        if on_message_cb is not None:
-            on_message_cb(f"skipped {path} (already uploaded)", False)
-    elif state == UploadState.CANCELED:
+        message = f"skipped {path} (already uploaded)"
+    else:
         result.canceled += 1
-        if on_message_cb is not None:
-            on_message_cb(f"canceled {path} upload", False)
+        message = f"canceled {path} upload"
+    recorded.add(future)
+
+    if on_message_cb is not None:
+        on_message_cb(message, False)
 
     if on_overall_progress_cb is not None:
         on_overall_progress_cb()
+
+
+def _wait_for_cancelled_workers(futures: Dict[Future, object]) -> None:
+    """After Ctrl+C, wait until the running workers have seen the cancel event.
+
+    They stop at their next chunk or callback, cancel unconfirmed uploads and
+    remove partial downloads, so their final state is known before the summary
+    is built. A second Ctrl+C stops waiting.
+    """
+    # Futures that `shutdown(cancel_futures=True)` cancelled never count as
+    # done for `wait()` on older Pythons, so only wait for the running ones.
+    running = [f for f in futures if not f.cancelled()]
+    try:
+        wait(running)
+    except KeyboardInterrupt:
+        logger.info("Interrupted again, not waiting for running transfers")
 
 
 def upload_files(
@@ -761,7 +791,7 @@ def upload_files(
     result = UploadResult()
     cancel_event = threading.Event()
     interrupted = False
-    processed_futures: set = set()
+    recorded: Set[Future] = set()
 
     executor = ThreadPoolExecutor(max_workers=n_workers)
     try:
@@ -788,32 +818,29 @@ def upload_files(
             futures[future] = path
 
         for future in as_completed(futures):
-            try:
-                processed_futures.add(future)
-                _resolve_upload_future(
-                    future=future,
-                    path=futures[future],
-                    result=result,
-                    cancel_event=cancel_event,
-                    executor=executor,
-                    on_message_cb=on_message_cb,
-                    on_overall_progress_cb=on_overall_progress_cb,
-                )
-            except KeyboardInterrupt:
-                processed_futures.discard(future)
-                raise
+            _resolve_upload_future(
+                future=future,
+                path=futures[future],
+                result=result,
+                cancel_event=cancel_event,
+                recorded=recorded,
+                executor=executor,
+                on_message_cb=on_message_cb,
+                on_overall_progress_cb=on_overall_progress_cb,
+            )
 
     except KeyboardInterrupt:
         logger.info("Upload interrupted by user, cancelling...")
         interrupted = True
         cancel_event.set()
         executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
     else:
         executor.shutdown(wait=True)
 
     if interrupted:
         for future, path in futures.items():
-            if future in processed_futures:
+            if future in recorded:
                 continue
             if not future.done():
                 result.canceled += 1
@@ -825,6 +852,7 @@ def upload_files(
                 path=path,
                 result=result,
                 cancel_event=cancel_event,
+                recorded=recorded,
                 on_message_cb=on_message_cb,
                 on_overall_progress_cb=on_overall_progress_cb,
                 is_cleanup=True,
@@ -903,12 +931,18 @@ def _resolve_download_future(
     path: Path,
     file: File,
     result: DownloadResult,
+    recorded: Set[Future],
     on_message_cb: Optional[OnMessageCb] = None,
     on_overall_progress_cb: Optional[OnOverallProgressCb] = None,
 ) -> None:
-    """Resolves a download future, updates telemetry, and triggers callbacks."""
+    """Resolves a download future, updates telemetry, and triggers callbacks.
+
+    Like `_resolve_upload_future`, it adds the future to `recorded` before
+    any callback runs.
+    """
     if future.cancelled():
         result.state_counts[DownloadState.CANCELED] = result.state_counts.get(DownloadState.CANCELED, 0) + 1
+        recorded.add(future)
         if on_overall_progress_cb is not None:
             on_overall_progress_cb()
         return
@@ -916,10 +950,11 @@ def _resolve_download_future(
     try:
         state, size_bytes = future.result()
     except Exception as e:
+        result.failed += 1
+        recorded.add(future)
         logger.error(format_traceback(e))
         if on_message_cb is not None:
             on_message_cb(f"Error downloading {path}: {e}", True)
-        result.failed += 1
         if on_overall_progress_cb is not None:
             on_overall_progress_cb()
         return
@@ -935,6 +970,7 @@ def _resolve_download_future(
         DownloadState.OVERWRITTEN_CORRUPTED,
     ):
         result.total_bytes += size_bytes
+    recorded.add(future)
 
     if on_message_cb is not None:
         msg = _download_state_message(state, path, file)
@@ -964,7 +1000,7 @@ def download_files(
     result = DownloadResult()
     cancel_event = threading.Event()
     interrupted = False
-    processed_futures: set = set()
+    recorded: Set[Future] = set()
 
     executor = ThreadPoolExecutor(max_workers=n_workers)
     try:
@@ -985,32 +1021,29 @@ def download_files(
             futures[future] = (file, path)
 
         for future in as_completed(futures):
-            try:
-                processed_futures.add(future)
-                file, path = futures[future]
-                _resolve_download_future(
-                    future=future,
-                    path=path,
-                    file=file,
-                    result=result,
-                    on_message_cb=on_message_cb,
-                    on_overall_progress_cb=on_overall_progress_cb,
-                )
-            except KeyboardInterrupt:
-                processed_futures.discard(future)
-                raise
+            file, path = futures[future]
+            _resolve_download_future(
+                future=future,
+                path=path,
+                file=file,
+                result=result,
+                recorded=recorded,
+                on_message_cb=on_message_cb,
+                on_overall_progress_cb=on_overall_progress_cb,
+            )
 
     except KeyboardInterrupt:
         logger.info("Download interrupted by user, cancelling...")
         interrupted = True
         cancel_event.set()
         executor.shutdown(wait=False, cancel_futures=True)
+        _wait_for_cancelled_workers(futures)
     else:
         executor.shutdown(wait=True)
 
     if interrupted:
         for future, (file, path) in futures.items():
-            if future in processed_futures:
+            if future in recorded:
                 continue
             if not future.done():
                 result.state_counts[DownloadState.CANCELED] = result.state_counts.get(DownloadState.CANCELED, 0) + 1
@@ -1022,6 +1055,7 @@ def download_files(
                 path=path,
                 file=file,
                 result=result,
+                recorded=recorded,
                 on_message_cb=on_message_cb,
                 on_overall_progress_cb=on_overall_progress_cb,
             )

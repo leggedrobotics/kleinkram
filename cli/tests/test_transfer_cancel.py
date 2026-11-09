@@ -315,3 +315,74 @@ def test_cli_download_without_ctrl_c_exits_0(runner, monkeypatch, tmp_path) -> N
     res = runner.invoke(app, ["--no-verbose", "download", "-p", "p1", "-m", "m1", "--dest", str(tmp_path)])
 
     assert res.exit_code == 0, res.output
+
+
+def test_upload_that_finishes_after_ctrl_c_is_counted_as_uploaded(tmp_path: Path, monkeypatch) -> None:
+    """A worker past its last cancel check still confirms its upload; the summary must say so."""
+    first_done = threading.Event()
+
+    def transfer(*, path: Path, cancel_event: threading.Event, **_):
+        if path.name == "a.mcap":
+            return UploadState.UPLOADED, 5
+        assert first_done.wait(WAIT)
+        _ctrl_c()
+        assert cancel_event.wait(WAIT)
+        return UploadState.UPLOADED, 3  # e.g. hashing had just finished, so it was confirmed
+
+    monkeypatch.setattr(file_transfer, "upload_file", transfer)
+    files = {}
+    for name in ("a.mcap", "b.mcap"):
+        (tmp_path / name).write_bytes(b"x")
+        files[name] = tmp_path / name
+
+    with pytest.raises(KeyboardInterrupt) as excinfo:
+        upload_files(MagicMock(), files, uuid4(), n_workers=2, on_overall_progress_cb=first_done.set)
+
+    result = get_transfer_result(excinfo.value)
+    assert (result.uploaded, result.canceled, result.total_bytes) == (2, 0, 8)
+
+
+@pytest.mark.parametrize("kind", ["upload", "download"])
+def test_ctrl_c_inside_a_result_callback_counts_the_file_once(tmp_path: Path, monkeypatch, kind: str) -> None:
+    def message_cb(msg: str, _is_error: bool) -> None:
+        if msg.startswith(("uploaded", "downloaded")):
+            raise KeyboardInterrupt  # Ctrl+C while the CLI prints the line for a.mcap
+
+    if kind == "upload":
+        monkeypatch.setattr(file_transfer, "upload_file", lambda **_: (UploadState.UPLOADED, 5))
+        (tmp_path / "a.mcap").write_bytes(b"x")
+        with pytest.raises(KeyboardInterrupt) as excinfo:
+            upload_files(MagicMock(), {"a.mcap": tmp_path / "a.mcap"}, uuid4(), n_workers=1, on_message_cb=message_cb)
+        result = get_transfer_result(excinfo.value)
+        assert (result.uploaded, result.canceled, result.total_bytes) == (1, 0, 5)
+    else:
+        monkeypatch.setattr(file_transfer, "download_file", lambda **_: (DownloadState.DOWNLOADED_OK, 7))
+        files = {tmp_path / "a.mcap": _remote_file("a.mcap")}
+        with pytest.raises(KeyboardInterrupt) as excinfo:
+            download_files(MagicMock(), files, n_workers=1, on_message_cb=message_cb)
+        result = get_transfer_result(excinfo.value)
+        assert result.state_counts == {DownloadState.DOWNLOADED_OK: 1}
+        assert result.total_bytes == 7
+
+
+def test_overwrite_download_cancelled_before_it_starts_keeps_existing_file(tmp_path: Path, monkeypatch) -> None:
+    """Ctrl+C while the download URL is requested must not delete the file being overwritten."""
+    path = tmp_path / "a.mcap"
+    path.write_bytes(b"old contents")
+    cancel_event = threading.Event()
+
+    def get_url(*_args, **_kwargs) -> str:
+        cancel_event.set()
+        return "http://unused.invalid/a.mcap"
+
+    monkeypatch.setattr(file_transfer, "_get_file_download", get_url)
+    stream = MagicMock(side_effect=AssertionError("no request after cancel"))
+    monkeypatch.setattr(file_transfer.httpx, "stream", stream)
+
+    state, size = download_file(
+        MagicMock(), file=_remote_file("a.mcap", size=99), path=path, overwrite=True, cancel_event=cancel_event
+    )
+
+    assert (state, size) == (DownloadState.CANCELED, 0)
+    assert path.read_bytes() == b"old contents"
+    stream.assert_not_called()
