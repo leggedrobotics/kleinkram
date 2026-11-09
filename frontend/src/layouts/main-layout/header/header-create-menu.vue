@@ -1,5 +1,5 @@
 <template>
-    <q-btn flat color="white" class="q-pa-none">
+    <q-btn v-if="hasAnyEntry" flat color="white" class="q-pa-none">
         <header-create-new-button />
 
         <q-menu auto-close style="width: 280px">
@@ -50,9 +50,19 @@
 </template>
 
 <script setup lang="ts">
+import { AccessGroupRights } from '@kleinkram/shared';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import CreateMetadataTypeDialogOpener from 'components/button-wrapper/dialog-opener-create-metadata-type.vue';
 import CreateMissionDialogOpener from 'components/button-wrapper/dialog-opener-create-mission.vue';
 import CreateProjectDialogOpener from 'components/button-wrapper/dialog-opener-create-project.vue';
+import { hasRightsAnywhere, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { computed } from 'vue';
 import HeaderCreateNewButton from './header-create-button.vue';
+
+// Every entry needs CREATE somewhere (globally, on a project or on a mission).
+// Without it the menu would open empty, so hide the button too.
+const { data: permissions } = usePermissionsQuery();
+const hasAnyEntry = computed(() =>
+    hasRightsAnywhere(AccessGroupRights.CREATE, permissions.value),
+);
 </script>
