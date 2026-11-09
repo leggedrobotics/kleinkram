@@ -108,7 +108,9 @@
                 <q-separator class="q-my-lg" />
 
                 <div
-                    v-if="canSubmit && !hasLaunchPermission"
+                    v-if="
+                        canSubmit && isPermissionChecked && !hasLaunchPermission
+                    "
                     class="row no-wrap items-center q-pa-sm q-mb-md rounded-borders bg-orange-1 text-orange-10"
                     role="status"
                 >
@@ -168,6 +170,7 @@ import { useScopeSelection } from 'src/composables/use-scope-selection';
 import {
     canCreateActionTemplate,
     canLaunchActionOnMissions,
+    resolveLaunchTargets,
     useManyMissions,
     usePermissionsQuery,
 } from 'src/hooks/query-hooks';
@@ -231,12 +234,13 @@ const canCreateTemplate = computed(() =>
     canCreateActionTemplate(permissions.value),
 );
 
+// undefined while the selected missions are still loading.
 const targetMissions = computed(() => {
     if (hasMissionUUIDs.value) {
-        return (selectedMissionsData.value?.data ?? []).map((m) => ({
-            missionUuid: m.uuid,
-            projectUuid: m.project.uuid,
-        }));
+        return resolveLaunchTargets(
+            allMissionUUIDs.value,
+            selectedMissionsData.value?.data,
+        );
     }
     if (!selectedMission.value) return [];
     return [
@@ -247,9 +251,14 @@ const targetMissions = computed(() => {
     ];
 });
 
+const isPermissionChecked = computed(
+    () => targetMissions.value !== undefined && !!permissions.value,
+);
+
 const hasLaunchPermission = computed(
     () =>
         !!props.template &&
+        targetMissions.value !== undefined &&
         canLaunchActionOnMissions(
             targetMissions.value,
             props.template.accessRights,

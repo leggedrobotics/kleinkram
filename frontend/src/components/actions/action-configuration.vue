@@ -251,7 +251,11 @@
                         flat
                         class="bg-button-secondary text-on-color"
                         label="Submit Action"
-                        :disable="!isNameSelected || !!launchBlockedReason"
+                        :disable="
+                            !isNameSelected ||
+                            isPermissionPending ||
+                            !!launchBlockedReason
+                        "
                         :loading="isSubmitting"
                         @click="submitAnalysis"
                     >
@@ -281,6 +285,7 @@ import { Notify } from 'quasar';
 import {
     canCreateActionTemplate,
     canLaunchActionOnMissions,
+    resolveLaunchTargets,
     useFilteredProjects,
     useHandler,
     useManyMissions,
@@ -450,12 +455,13 @@ const canCreateTemplate = computed(() =>
     canCreateActionTemplate(permissions.value),
 );
 
+// undefined while the selected missions are still loading.
 const targetMissions = computed(() => {
     if (hasMissionUUIDs.value) {
-        return (selectedMissions.value?.data ?? []).map((m) => ({
-            missionUuid: m.uuid,
-            projectUuid: m.project.uuid,
-        }));
+        return resolveLaunchTargets(
+            allMissionUUIDs.value,
+            selectedMissions.value?.data,
+        );
     }
     if (!selectedMission.value) return [];
     return [
@@ -466,6 +472,11 @@ const targetMissions = computed(() => {
     ];
 });
 
+// Submitting stays disabled until the launch rights could be checked.
+const isPermissionPending = computed(
+    () => targetMissions.value === undefined || !permissions.value,
+);
+
 /**
  * Why the selected action can't be launched on the selected missions, or
  * undefined. Launching needs the template's access rights on every target
@@ -473,7 +484,9 @@ const targetMissions = computed(() => {
  * selects, so the button stays visible and the reason is shown next to it.
  */
 const launchBlockedReason = computed((): string | undefined => {
-    if (targetMissions.value.length === 0) return undefined;
+    if (!targetMissions.value || targetMissions.value.length === 0) {
+        return undefined;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const requiredRights: AccessGroupRights =
@@ -495,7 +508,7 @@ const launchBlockedReason = computed((): string | undefined => {
  * template create rights on top of the launch rights.
  */
 function canSubmit(): boolean {
-    if (launchBlockedReason.value) return false;
+    if (isPermissionPending.value || launchBlockedReason.value) return false;
     const needsTemplateSave = !editingTemplate.value?.uuid || isModified.value;
     return !needsTemplateSave || canCreateTemplate.value;
 }

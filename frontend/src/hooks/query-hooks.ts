@@ -143,15 +143,15 @@ export const getPermissionForProject = (
 ): AccessGroupRights => {
     if (permissions === undefined) return 0;
     if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
-    const defaultPermission = permissions.defaultPermission;
 
+    // Only actual grants count, as in the backend `canAccessProject`.
+    // `defaultPermission` describes global rights (e.g. creating projects),
+    // not a floor on every project.
     const project = permissions.projects.find(
         (p: ProjectPermissions) => p.uuid === projectUuid,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const projectPermission = (project?.access as number) ?? 0;
-    return Math.max(defaultPermission, projectPermission);
+    return (project?.access as AccessGroupRights | undefined) ?? 0;
 };
 
 export const getPermissionForMission = (
@@ -160,15 +160,13 @@ export const getPermissionForMission = (
 ): AccessGroupRights => {
     if (permissions === undefined) return 0;
     if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
-    const defaultPermission = permissions.defaultPermission;
 
+    // Only actual grants count, as in the backend `canUserAccessMission`.
     const mission = permissions.missions.find(
         (m: { uuid: string; access: number }) => m.uuid === missionUuid,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const missionPermission = (mission?.access as number) ?? 0;
-    return Math.max(defaultPermission, missionPermission);
+    return (mission?.access as AccessGroupRights | undefined) ?? 0;
 };
 
 export const canCreateProject = (
@@ -265,10 +263,27 @@ export const hasProjectRightsAnywhere = (
 ): boolean => {
     if (!permissions) return false;
     if (permissions.role === UserRole.ADMIN) return true;
-    if (permissions.defaultPermission >= rights) return true;
     return permissions.projects.some(
         (p) => (p.access as AccessGroupRights) >= rights,
     );
+};
+
+/**
+ * Maps the requested mission UUIDs to launch targets, or returns undefined
+ * until every one of them has been loaded. Checking only the loaded subset
+ * could enable a launch the backend rejects for a mission not yet seen.
+ */
+export const resolveLaunchTargets = (
+    requestedUuids: string[],
+    loaded: { uuid: string; project: { uuid: string } }[] | undefined,
+): { missionUuid: string; projectUuid: string }[] | undefined => {
+    if (!loaded) return undefined;
+    const byUuid = new Map(loaded.map((m) => [m.uuid, m.project.uuid]));
+    if (!requestedUuids.every((uuid) => byUuid.has(uuid))) return undefined;
+    return requestedUuids.map((uuid) => ({
+        missionUuid: uuid,
+        projectUuid: byUuid.get(uuid) ?? '',
+    }));
 };
 
 /**

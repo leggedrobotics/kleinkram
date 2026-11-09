@@ -55,14 +55,21 @@ import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-crea
 import CreateMetadataTypeDialogOpener from 'components/button-wrapper/dialog-opener-create-metadata-type.vue';
 import CreateMissionDialogOpener from 'components/button-wrapper/dialog-opener-create-mission.vue';
 import CreateProjectDialogOpener from 'components/button-wrapper/dialog-opener-create-project.vue';
-import { hasRightsAnywhere, usePermissionsQuery } from 'src/hooks/query-hooks';
+import {
+    canCreateProject,
+    hasRightsAnywhere,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 import HeaderCreateNewButton from './header-create-button.vue';
 
-// Every entry needs CREATE somewhere (globally, on a project or on a mission).
-// Without it the menu would open empty, so hide the button too.
+// Every entry needs CREATE: globally (project, metadata type) or on some
+// project or mission (mission, upload). Without any, the menu would open
+// empty, so hide the button too.
 const { data: permissions } = usePermissionsQuery();
-const hasAnyEntry = computed(() =>
-    hasRightsAnywhere(AccessGroupRights.CREATE, permissions.value),
+const hasAnyEntry = computed(
+    () =>
+        canCreateProject(permissions.value) ||
+        hasRightsAnywhere(AccessGroupRights.CREATE, permissions.value),
 );
 </script>
