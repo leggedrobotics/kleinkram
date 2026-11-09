@@ -67,7 +67,6 @@
             "@scarf/scarf",
             "@swc/core",
             "core-js",
-            "cpu-features",
             "esbuild",
             "msgpackr-extract",
             "protobufjs",
