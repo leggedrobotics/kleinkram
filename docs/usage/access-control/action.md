@@ -4,21 +4,33 @@
 
 The valid operations that can be performed on an action are:
 
-| **Operation**                        | **Description**         | **Access Level**      |
-| ------------------------------------ | ----------------------- | --------------------- |
-| view                                 | View an existing Action | <Read />              |
-| launch                               | Launch an Action        | <Create />            |
-| delete                               | delete an Action        | <Delete /> <Creator/> |
-| - **Delete**: Can delete the action. |
+| **Operation** | **Description**              | **Access Level**                                                                               |
+| ------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| view          | View an existing Action      | <Read />                                                                                       |
+| launch        | Launch an Action             | <Modify hint="Or the template's access rights, if those are higher (e.g. Delete)"/>            |
+| stop          | Stop a queued/running Action | <Modify hint="Or the template's access rights, if those are higher (e.g. Delete)"/> <Creator/> |
+| delete        | Delete a finished Action     | <Delete /> <Creator/>                                                                          |
+
+Running an action counts as a write operation on the mission, so launching one needs at least <Modify/> on the
+mission, even when the template only asks for <Read/>.
+
+A template's access rights are the rights of the API key the action container gets. They can raise what you need to
+launch the action but never lower it: a template that asks for <Delete/> can only be launched by someone who holds
+<Delete/> on the mission. This way nobody can hand an action more rights than they hold themselves.
+
+The check runs twice: when you submit the action, and again when a worker starts it. If you lose access while the
+action is still queued, it fails with `MISSION_ACCESS_LOST` instead of running.
 
 ### Example
 
-**Scenario**: A custom action "Convert to TUM Format" is developed by the "Perception Team".
+**Scenario**: A custom action "Convert to TUM Format" reads the raw recordings of a mission and uploads the converted
+files to it. Its template asks for `Write` access.
 
-- **Developers**: The "Perception Team" needs to update the action definition. They get `Write` access.
-- **Users**: All users in the "Robotics Corp" project need to _run_ this action. They get `Read` access (which allows execution).
-- **Restricted Action**: An experimental "Delete Outliers" action might be restricted to senior engineers only, so only they are granted `Read` access to it.
-  | stop | Stop an Action | <Delete /> <Creator/> |
+- **Researchers** in the project have `Write` access, so they can launch the conversion.
+- **External reviewers** only have `Read` access. They can see the action, its logs and its artifacts, but they cannot
+  launch it.
+- **Restricted Action**: An experimental "Delete Outliers" action asks for `Delete` access, so only users who already
+  hold `Delete` on the mission can launch it.
 
 ## Action Template
 
@@ -33,13 +45,15 @@ The valid operations that can be performed on an action template are:
 ## Action Trigger
 
 Triggers hang off a mission, so their access level is the access level you hold
-on that mission. The valid operations are:
+on that mission. A trigger launches actions as its creator, so creating one
+needs the same <Modify /> access as launching an action. The valid operations
+are:
 
 | **Operation** | **Description**                | **Access Level**    |
 | ------------- | ------------------------------ | ------------------- |
 | view          | View a single Trigger          | <Read /> <Creator/> |
 | list          | List the Triggers of a Mission | <Read />            |
-| create        | Create a new Trigger           | <Create />          |
+| create        | Create a new Trigger           | <Modify />          |
 | update        | Change an existing Trigger     | <Creator/>          |
 | delete        | Delete a Trigger               | <Creator/>          |
 
@@ -65,8 +79,9 @@ nothing else, even when its owner can reach far more through the web app.
 
 `POST /hooks/actions/:uuid` is unauthenticated, and `:uuid` is the trigger's
 uuid. Anyone who learns it can fire the action, and the action runs as the
-trigger's creator. Granting <Read /> on a mission therefore lets someone run
-that mission's webhook actions, whatever rights the action template itself
-asks for. Treat webhook trigger uuids as secrets.
+trigger's creator, with the creator's access checked, not the caller's. A
+caller needs no rights on the mission at all, so even someone with only
+<Read /> access (or none) can start that mission's webhook actions. Treat
+webhook trigger uuids as secrets.
 
 :::

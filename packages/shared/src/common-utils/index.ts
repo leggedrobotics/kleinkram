@@ -1,3 +1,4 @@
+export * from './action-access';
 export * from './action-error-hint';
 export * from './action-outcome';
 export * from './action-script';

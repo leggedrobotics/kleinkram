@@ -8,7 +8,6 @@ import {
 import { ActionRunnerEntity } from '@kleinkram/backend-common/entities/action/action-runner.entity';
 import { transitionAction } from '@kleinkram/backend-common/services/action-state-transition';
 import {
-    AccessGroupRights,
     ActionOutcome,
     ActionSeverity,
     ActionState,
@@ -18,6 +17,7 @@ import {
     maxActionSeverity,
     resolveActionOutcome,
     ResourceUsage,
+    rightsRequiredToRunAction,
     StateCauseError,
     stateCauseOfError,
     TERMINAL_ACTION_STATES,
@@ -148,15 +148,20 @@ export class ActionManagerService implements OnModuleInit {
             throw new Error('User is undefined');
         }
 
-        const hasWriteAccess = await this.accessControlService.canAccessMission(
+        // Re-checks what the submit guard already checked, because the creator
+        // may have lost access while the action sat in the queue. Running an
+        // action counts as a write operation on the mission, so Write is the
+        // floor even for a Read-level template; a higher template level raises
+        // it, since the key below must never carry more than its creator holds.
+        const canRunAction = await this.accessControlService.canAccessMission(
             {
                 uuid: action.creator.uuid,
                 role: action.creator.role ?? UserRole.USER,
             },
             action.mission,
-            AccessGroupRights.WRITE,
+            rightsRequiredToRunAction(action.template.accessRights),
         );
-        if (!hasWriteAccess) {
+        if (!canRunAction) {
             throw new StateCauseError({
                 code: ActionStateCause.MISSION_ACCESS_LOST,
             });

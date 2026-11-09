@@ -7,6 +7,7 @@ import {
     AccessGroupRights,
     isTerminalActionState,
     KeyTypes,
+    rightsRequiredToRunAction,
     SCRIPT_RUNNER_TEMPLATE_NAME,
     UserRole,
 } from '@kleinkram/shared';
@@ -200,6 +201,14 @@ export class ReadActionGuard extends BaseGuard {
     }
 }
 
+/**
+ * Guards `POST /actions`.
+ *
+ * Running an action is a write operation on the mission, so the caller needs at
+ * least Write there, or the template's own level if that is higher. See
+ * {@link rightsRequiredToRunAction}. The queue consumer checks the creator for
+ * Write again when the action starts, so access lost in between still stops it.
+ */
 @Injectable()
 export class CreateActionGuard extends BaseGuard {
     constructor(
@@ -230,13 +239,13 @@ export class CreateActionGuard extends BaseGuard {
             return this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
-                actionTemplate.accessRights,
+                rightsRequiredToRunAction(actionTemplate.accessRights),
             );
         }
         return this.missionGuardService.canAccessMission(
             user,
             missionUUID,
-            actionTemplate.accessRights,
+            rightsRequiredToRunAction(actionTemplate.accessRights),
         );
     }
 }
@@ -291,13 +300,13 @@ export class CreateScriptActionGuard extends BaseGuard {
             return this.missionGuardService.canKeyAccessMission(
                 apiKey,
                 missionUUID,
-                actionTemplate.accessRights,
+                rightsRequiredToRunAction(actionTemplate.accessRights),
             );
         }
         return this.missionGuardService.canAccessMission(
             user,
             missionUUID,
-            actionTemplate.accessRights,
+            rightsRequiredToRunAction(actionTemplate.accessRights),
         );
     }
 }
@@ -428,15 +437,20 @@ export class CancelActionGuard extends BaseActionModificationGuard {
             return true;
         }
 
+        // Whoever could have launched the action may also stop it.
         const missionUUID = action.mission.uuid;
         return this.missionGuardService.canAccessMission(
             user,
             missionUUID,
-            action.template.accessRights,
+            rightsRequiredToRunAction(action.template.accessRights),
         );
     }
 }
 
+/**
+ * Guards `POST /actions/batch`: the {@link CreateActionGuard} check, applied to
+ * every mission in the batch.
+ */
 @Injectable()
 export class CreateActionsGuard extends BaseGuard {
     constructor(
@@ -469,7 +483,7 @@ export class CreateActionsGuard extends BaseGuard {
                 this.missionGuardService.canKeyAccessMission(
                     apiKey,
                     missionUUID,
-                    actionTemplate.accessRights,
+                    rightsRequiredToRunAction(actionTemplate.accessRights),
                 ),
             );
         }
@@ -478,7 +492,7 @@ export class CreateActionsGuard extends BaseGuard {
             this.missionGuardService.canAccessMission(
                 user,
                 missionUUID,
-                actionTemplate.accessRights,
+                rightsRequiredToRunAction(actionTemplate.accessRights),
             ),
         );
         const allCanAccess = await Promise.all(userCanAccessResults);
