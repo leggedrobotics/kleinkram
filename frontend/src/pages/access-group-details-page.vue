@@ -898,7 +898,11 @@
 </template>
 <script setup lang="ts">
 import type { GroupMembershipDto } from '@kleinkram/api-dto/types/access-control/group-membership.dto';
-import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
+import {
+    AccessGroupRights,
+    AccessGroupType,
+    UserRole,
+} from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import DialogOpenerAddUser from 'components/button-wrapper/dialog-opener-add-user.vue';
 import ChangeProjectRightsDialogOpener from 'components/button-wrapper/dialog-opener-change-project-rights.vue';
@@ -1155,7 +1159,9 @@ const projectCols = computed(() => {
     }
 });
 
+// Admins may edit any group (canEditAccessGroupByGroupUuid in the backend).
 const currentUserCanEdit = computed(() => {
+    if (user.data.value?.role === UserRole.ADMIN) return true;
     return (
         accessGroup.value?.memberships.some(
             (m) => m.user.uuid === user.data.value?.uuid && m.canEditGroup,
