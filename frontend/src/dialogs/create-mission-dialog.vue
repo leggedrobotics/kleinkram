@@ -25,7 +25,9 @@
                             : '')
                     "
                     style="color: #222"
-                    :disable="!project || missionCreated"
+                    :disable="
+                        !project || !isValidName(missionName) || missionCreated
+                    "
                 />
                 <q-tab
                     name="upload"
@@ -123,7 +125,7 @@
                 flat
                 label="Create Mission"
                 class="bg-button-primary"
-                :disable="!allRequiredMetadataSet"
+                :disable="!allRequiredMetadataSet || !isValidName(missionName)"
                 @click="submitNewMission"
             />
             <q-btn
@@ -217,6 +219,11 @@ const missionCreated = computed(() => {
 
 const submitNewMission = async (): Promise<void> => {
     if (!project.value) {
+        return;
+    }
+    if (!isValidName(missionName.value)) {
+        // the details tab shows why the name is invalid
+        tab_selection.value = 'details';
         return;
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

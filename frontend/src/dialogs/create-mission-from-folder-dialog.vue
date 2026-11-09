@@ -25,7 +25,7 @@
                             : '')
                     "
                     style="color: #222"
-                    :disable="missionCreated"
+                    :disable="!isValidName(missionName) || missionCreated"
                 />
             </q-tabs>
         </template>
@@ -100,7 +100,7 @@
                 flat
                 label="Create Mission"
                 class="bg-button-primary"
-                :disable="!allRequiredMetadataSet"
+                :disable="!allRequiredMetadataSet || !isValidName(missionName)"
                 @click="submitNewMission"
             />
         </template>
@@ -193,6 +193,11 @@ function transferClick(event: any): void {
 
 const submitNewMission = async () => {
     if (project.value === undefined) {
+        return;
+    }
+    if (!isValidName(missionName.value)) {
+        // the details tab shows why the name is invalid
+        tab_selection.value = 'details';
         return;
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
