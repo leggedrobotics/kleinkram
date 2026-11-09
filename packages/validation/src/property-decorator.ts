@@ -6,11 +6,8 @@ import {
 import { ValidationOptions } from 'class-validator/types/decorator/ValidationOptions';
 import { isValidDockerImageName } from './docker-image.validation';
 import { FILE_NAME_REGEX } from './filename.validation';
-import {
-    MISSION_NAME_REGEX,
-    NON_UUID_REGEX,
-    PROJECT_NAME_REGEX,
-} from './validation-logic';
+import { getNameValidationError } from './name.validation';
+import { NON_UUID_REGEX } from './validation-logic';
 
 export const IsNoValidUUID = (
     validationOptions?: ValidationOptions,
@@ -41,48 +38,43 @@ export const IsValidFileName = (
     });
 
 /**
- * Validates that the property is a valid project name.
+ * Validates that the property is a valid project, mission or access group
+ * name, see `name.validation.ts` for the rules.
  *
- * numbers [0-9]
- * letters [A-Z, a-z]
- * underscore [_]
- * dash [-]
- *
- * A valid project name is between 3 and 20 characters long.
- *
+ * @param label the subject used in the error message, e.g. "Project name"
  * @param validationOptions
- * @constructor
  */
-
-export const IsValidName = (
+export function IsValidName(
+    label = 'Name',
     validationOptions?: ValidationOptions,
-): PropertyDecorator =>
-    Matches(PROJECT_NAME_REGEX, {
-        message: 'Project name is not valid!',
-        ...validationOptions,
-    });
-
-/**
- * Validates that the property is a valid mission name.
- *
- * numbers [0-9]
- * letters [A-Z, a-z]
- * underscore [_]
- * dash [-]
- *
- * A valid mission name is between 3 and 40 characters long.
- *
- * @param validationOptions
- * @constructor
- */
-
-export const IsValidMissionName = (
-    validationOptions?: ValidationOptions,
-): PropertyDecorator =>
-    Matches(MISSION_NAME_REGEX, {
-        message: 'Mission name is not valid!',
-        ...validationOptions,
-    });
+): PropertyDecorator {
+    return function (object: object, propertyName: string | symbol) {
+        registerDecorator({
+            name: 'isValidName',
+            target: object.constructor,
+            propertyName: propertyName as string,
+            options: validationOptions,
+            validator: {
+                validate(value: unknown) {
+                    return (
+                        typeof value === 'string' &&
+                        getNameValidationError(value, label) === undefined
+                    );
+                },
+                defaultMessage(validationArguments: ValidationArguments) {
+                    return (
+                        getNameValidationError(
+                            typeof validationArguments.value === 'string'
+                                ? validationArguments.value
+                                : '',
+                            label,
+                        ) ?? `${label} is not valid`
+                    );
+                },
+            },
+        });
+    };
+}
 
 export function IsDockerImage(validationOptions?: ValidationOptions) {
     return function (object: object, propertyName: string) {

@@ -5,7 +5,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class CreateAccessGroupDto {
     @IsString()
     @IsNotEmpty()
-    @IsValidName()
+    @IsValidName('Group name')
     @ApiProperty({ description: 'Name of the access group' })
     name!: string;
 }
