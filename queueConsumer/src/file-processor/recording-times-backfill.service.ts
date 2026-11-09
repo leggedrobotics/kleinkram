@@ -1,3 +1,4 @@
+import { KEEP_UPDATED_AT } from '@kleinkram/backend-common/entities/base-entity.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { FileType } from '@kleinkram/shared';
@@ -58,11 +59,15 @@ export class RecordingTimesBackfillService {
         // moved or rehashed in the meantime, so only the columns this job owns
         // are written rather than the entity we loaded before the read. The
         // `IsNull` guard makes that a no-op if another worker got there first.
+        // `updatedAt` is left alone: the backfill only recovers data the file
+        // always had, and bumping it made every project with a backfilled file
+        // show up as just updated.
         await this.fileRepo.update(
             { uuid: file.uuid, recordingStartDate: IsNull() },
             {
                 ...recordingTimeColumns(recordingTimes ?? {}),
                 recordingTimesCheckedAt: new Date(),
+                ...KEEP_UPDATED_AT,
             },
         );
 
