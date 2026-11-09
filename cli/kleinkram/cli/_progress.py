@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Callable
 from typing import Dict
 from typing import Iterator
 from typing import NamedTuple
 from typing import Optional
+from typing import Tuple
+from typing import TypeVar
 
 from rich.console import Console
 from rich.console import Group
@@ -24,6 +27,25 @@ from kleinkram.api.file_transfer import OnFileProgressCb
 from kleinkram.api.file_transfer import OnFileStartCb
 from kleinkram.api.file_transfer import OnMessageCb
 from kleinkram.api.file_transfer import OnOverallProgressCb
+from kleinkram.errors import get_transfer_result
+
+T = TypeVar("T")
+
+
+def run_interruptible(transfer: Callable[[], T]) -> Tuple[T, bool]:
+    """Run an upload or download; on Ctrl+C return its partial result instead of raising.
+
+    The library re-raises Ctrl+C so scripts stop. The CLI still wants to
+    print what finished, then exit with 130. A Ctrl+C without a result
+    attached (e.g. while resolving the query) propagates as usual.
+    """
+    try:
+        return transfer(), False
+    except KeyboardInterrupt as e:
+        result = get_transfer_result(e)
+        if result is None:
+            raise
+        return result, True
 
 
 class TransferCallbacks(NamedTuple):

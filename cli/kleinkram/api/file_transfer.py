@@ -31,6 +31,7 @@ from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
 from kleinkram.errors import InsufficientStorageError
 from kleinkram.errors import TransferCancelledError
+from kleinkram.errors import transfer_interrupted
 from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.utils import b64_md5
@@ -294,7 +295,17 @@ def upload_file(
                 raise
 
         else:
-            _confirm_file_upload(client, creds.file_id, b64_md5(path))
+            try:
+                file_hash = b64_md5(path, cancel_event=cancel_event)
+            except TransferCancelledError:
+                # The bytes are in S3 but unconfirmed; drop them like any other cancel.
+                logger.info(f"Upload cancelled for {path} while hashing")
+                try:
+                    _cancel_file_upload(client, creds.file_id, mission_id)
+                except Exception as cancel_e:
+                    logger.warning(f"Failed to cancel server-side upload for {creds.file_id}: {cancel_e}")
+                return UploadState.CANCELED, 0
+            _confirm_file_upload(client, creds.file_id, file_hash)
             return UploadState.UPLOADED, total_size
 
 
@@ -479,7 +490,10 @@ def download_file(
 
         # compare file size
         if file.size == path.stat().st_size:
-            local_hash = b64_md5(path)
+            try:
+                local_hash = b64_md5(path, cancel_event=cancel_event)
+            except TransferCancelledError:
+                return DownloadState.CANCELED, 0
             if local_hash != file.hash and not overwrite and file.hash is not None:
                 return DownloadState.SKIPPED_INVALID_HASH, 0
 
@@ -538,7 +552,13 @@ def download_file(
                 logger.error(f"Could not remove partial file {path}: {unlink_e}")
         raise e  # Re-raise to be caught by handler
 
-    observed_hash = b64_md5(path)
+    try:
+        observed_hash = b64_md5(path, cancel_event=cancel_event)
+    except TransferCancelledError:
+        # The download itself finished, so keep the file: the next run checks
+        # its hash and skips it if it is fine.
+        logger.info(f"Download cancelled for {path} while verifying its hash")
+        return DownloadState.CANCELED, 0
     if file.hash is not None and observed_hash != file.hash:
         logger.warning(f"HASH MISMATCH: {path} expected={file.hash} observed={observed_hash}")
         # Download completed but hash failed
@@ -560,7 +580,6 @@ class UploadResult:
     canceled: int = 0
     total_bytes: int = 0
     elapsed_seconds: float = 0.0
-    interrupted: bool = False
 
 
 @dataclass
@@ -569,7 +588,6 @@ class DownloadResult:
     failed: int = 0
     total_bytes: int = 0
     elapsed_seconds: float = 0.0
-    interrupted: bool = False
 
 
 def _download_state_message(state: DownloadState, path: Path, file: File) -> Optional[Tuple[str, bool]]:
@@ -767,9 +785,11 @@ def upload_files(
             )
 
     result.elapsed_seconds = monotonic() - start
-    if interrupted and on_message_cb is not None:
-        on_message_cb("Upload interrupted by user", True)
-    result.interrupted = interrupted
+    if interrupted:
+        if on_message_cb is not None:
+            on_message_cb("Upload interrupted by user", True)
+        # Cleanup is done; hand the Ctrl+C back to the caller.
+        raise transfer_interrupted(result)
     return result
 
 
@@ -961,7 +981,9 @@ def download_files(
             )
 
     result.elapsed_seconds = monotonic() - start
-    if interrupted and on_message_cb is not None:
-        on_message_cb("Download interrupted by user", True)
-    result.interrupted = interrupted
+    if interrupted:
+        if on_message_cb is not None:
+            on_message_cb("Download interrupted by user", True)
+        # Cleanup is done; hand the Ctrl+C back to the caller.
+        raise transfer_interrupted(result)
     return result

@@ -18,6 +18,7 @@ from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
 from kleinkram.utils import format_bytes
@@ -184,18 +185,20 @@ def download(
         # We don't know total file count upfront (core.download resolves the query),
         # so we use an indeterminate overall task (total=None)
         with transfer_progress("Downloading files", total=None) as cbs:
-            result = kleinkram.core.download(
-                client=AuthenticatedClient(),
-                query=file_query,
-                allow_corrupt_files=include_corrupt_files,
-                base_dir=dest_dir,
-                nested=nested,
-                overwrite=overwrite,
-                mcap_slice=mcap_slice if mcap_slice else None,
-                on_overall_progress_cb=cbs.on_overall_progress,
-                on_file_start_cb=cbs.on_file_start,
-                on_file_progress_cb=cbs.on_file_progress,
-                on_message_cb=cbs.on_message,
+            result, interrupted = run_interruptible(
+                lambda: kleinkram.core.download(
+                    client=AuthenticatedClient(),
+                    query=file_query,
+                    allow_corrupt_files=include_corrupt_files,
+                    base_dir=dest_dir,
+                    nested=nested,
+                    overwrite=overwrite,
+                    mcap_slice=mcap_slice if mcap_slice else None,
+                    on_overall_progress_cb=cbs.on_overall_progress,
+                    on_file_start_cb=cbs.on_file_start,
+                    on_file_progress_cb=cbs.on_file_progress,
+                    on_message_cb=cbs.on_message,
+                )
             )
 
         # Print summary
@@ -225,14 +228,16 @@ def download(
         )
     else:
         # No verbose: no progress bars, no callbacks
-        result = kleinkram.core.download(
-            client=AuthenticatedClient(),
-            query=file_query,
-            allow_corrupt_files=include_corrupt_files,
-            base_dir=dest_dir,
-            nested=nested,
-            overwrite=overwrite,
-            mcap_slice=mcap_slice if mcap_slice else None,
+        result, interrupted = run_interruptible(
+            lambda: kleinkram.core.download(
+                client=AuthenticatedClient(),
+                query=file_query,
+                allow_corrupt_files=include_corrupt_files,
+                base_dir=dest_dir,
+                nested=nested,
+                overwrite=overwrite,
+                mcap_slice=mcap_slice if mcap_slice else None,
+            )
         )
 
         downloaded = (
@@ -264,6 +269,5 @@ def download(
                 )
             )
 
-    canceled = result.state_counts.get(DownloadState.CANCELED, 0)
-    if result.interrupted or canceled > 0:
-        raise typer.Exit(code=130)
+    if interrupted:
+        raise typer.Exit(code=130)  # 128 + SIGINT, the shell convention for Ctrl+C

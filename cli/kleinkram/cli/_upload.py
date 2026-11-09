@@ -14,6 +14,7 @@ from kleinkram.api.query import ProjectQuery
 from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
+from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
 from kleinkram.errors import MissionNotFound
@@ -109,18 +110,20 @@ def upload(
     try:
         if verbose:
             with transfer_progress("Uploading files", total=len(files_to_upload)) as cbs:
-                result = kleinkram.core.upload(
-                    client=AuthenticatedClient(),
-                    query=mission_query,
-                    file_paths=files_to_upload,
-                    create=create,
-                    fix_filenames=fix_filenames,
-                    metadata=load_metadata(Path(metadata)) if metadata else None,
-                    ignore_missing_metadata=ignore_missing_metadata,
-                    on_overall_progress_cb=cbs.on_overall_progress,
-                    on_file_start_cb=cbs.on_file_start,
-                    on_file_progress_cb=cbs.on_file_progress,
-                    on_message_cb=cbs.on_message,
+                result, interrupted = run_interruptible(
+                    lambda: kleinkram.core.upload(
+                        client=AuthenticatedClient(),
+                        query=mission_query,
+                        file_paths=files_to_upload,
+                        create=create,
+                        fix_filenames=fix_filenames,
+                        metadata=load_metadata(Path(metadata)) if metadata else None,
+                        ignore_missing_metadata=ignore_missing_metadata,
+                        on_overall_progress_cb=cbs.on_overall_progress,
+                        on_file_start_cb=cbs.on_file_start,
+                        on_file_progress_cb=cbs.on_file_progress,
+                        on_message_cb=cbs.on_message,
+                    )
                 )
 
             # Print summary after progress context closes
@@ -150,14 +153,16 @@ def upload(
                 typer.echo(f"\n{', '.join(parts)}")
         else:
             # No verbose: no progress bars, no callbacks
-            result = kleinkram.core.upload(
-                client=AuthenticatedClient(),
-                query=mission_query,
-                file_paths=files_to_upload,
-                create=create,
-                fix_filenames=fix_filenames,
-                metadata=load_metadata(Path(metadata)) if metadata else None,
-                ignore_missing_metadata=ignore_missing_metadata,
+            result, interrupted = run_interruptible(
+                lambda: kleinkram.core.upload(
+                    client=AuthenticatedClient(),
+                    query=mission_query,
+                    file_paths=files_to_upload,
+                    create=create,
+                    fix_filenames=fix_filenames,
+                    metadata=load_metadata(Path(metadata)) if metadata else None,
+                    ignore_missing_metadata=ignore_missing_metadata,
+                )
             )
             if result.failed > 0 or result.canceled > 0:
                 parts = [f"Uploaded {result.uploaded} file(s)"]
@@ -191,5 +196,5 @@ def upload(
         raise MissionNotFound("Mission not found. Use `--create` to create it.")
 
     else:
-        if result.interrupted or result.canceled > 0:
-            raise typer.Exit(code=130)
+        if interrupted:
+            raise typer.Exit(code=130)  # 128 + SIGINT, the shell convention for Ctrl+C
