@@ -39,3 +39,17 @@ export class BaseEntity {
     @DeleteDateColumn({ select: false })
     deletedAt?: Date;
 }
+
+/**
+ * Spread into the values of a `Repository.update()` to leave `updatedAt` as it
+ * is. Without it TypeORM sets `updatedAt = CURRENT_TIMESTAMP` on every update.
+ *
+ * Use it for writes the system makes on its own, such as backfills or repair
+ * jobs. Those fill in derived data and do not change what a user sees as the
+ * entity's content. `updatedAt` feeds "last updated" in the UI (the recently
+ * used projects on the dashboard, for example), so a backfill that runs over
+ * thousands of files must not make all their projects look freshly edited.
+ */
+export const KEEP_UPDATED_AT = {
+    updatedAt: (): string => '"updatedAt"',
+} as const;
