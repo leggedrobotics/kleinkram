@@ -173,7 +173,7 @@
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
-import { FileType } from '@kleinkram/shared';
+import { AccessGroupRights, FileType } from '@kleinkram/shared';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import CreateFileDialogOpener from 'components/button-wrapper/dialog-opener-create-file.vue';
 import OpenMultCategoryAdd from 'components/buttons/open-mult-category-add-dialog-button.vue';
@@ -197,11 +197,12 @@ import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue'
 import CreateFileDialog from 'src/dialogs/create-file-dialog.vue';
 import {
     canCreateInMission,
-    canDeleteMission,
+    canModifyFiles,
     registerNoPermissionErrorHandler,
     useHandler,
     useMission,
     usePermissionsQuery,
+    useUser,
 } from 'src/hooks/query-hooks';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import { _downloadFiles } from 'src/services/generic';
@@ -219,8 +220,16 @@ const missionUuid = useMissionUUID();
 
 const { data: permissions } = usePermissionsQuery();
 // Deleting files needs DELETE on the mission, uploading needs CREATE.
+const { data: user } = useUser();
 const canDeleteFiles = computed(() =>
-    canDeleteMission(missionUuid.value, projectUuid.value, permissions.value),
+    canModifyFiles(
+        selectedFiles.value,
+        missionUuid.value,
+        projectUuid.value,
+        AccessGroupRights.DELETE,
+        user.value?.uuid,
+        permissions.value,
+    ),
 );
 const canUploadFiles = computed(() =>
     canCreateInMission(missionUuid.value, projectUuid.value, permissions.value),

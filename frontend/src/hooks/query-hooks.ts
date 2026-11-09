@@ -322,6 +322,33 @@ export const canModifyProject = (
     return permission >= AccessGroupRights.WRITE;
 };
 
+/**
+ * Rights on a set of files, as the backend's FileGuardService checks them:
+ * admins and each file's creator always pass, everyone else needs `rights`
+ * on the files' mission or project.
+ */
+export const canModifyFiles = (
+    files: { creator?: { uuid: string } | null }[],
+    missionUuid: string | undefined,
+    projectUuid: string | undefined,
+    rights: AccessGroupRights,
+    userUuid: string | undefined,
+    permissions: PermissionsDto | null | undefined,
+): boolean => {
+    if (!permissions || files.length === 0) return false;
+    if (permissions.role === UserRole.ADMIN) return true;
+    if (
+        getEffectiveMissionRights(missionUuid, projectUuid, permissions) >=
+        rights
+    ) {
+        return true;
+    }
+    return (
+        userUuid !== undefined &&
+        files.every((file) => file.creator?.uuid === userUuid)
+    );
+};
+
 export const canModifyMission = (
     missionUuid: string | undefined,
     projectUuid: string | undefined,
