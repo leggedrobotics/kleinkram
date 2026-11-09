@@ -1,4 +1,4 @@
-import { BinaryLike, createHash } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { Transform, TransformCallback } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -13,9 +13,12 @@ export function createHashingStream(algorithm = 'md5'): {
 } {
     const hash = createHash(algorithm);
 
+    // A binary-mode Transform only ever emits Buffers (or strings when an
+    // encoding is set), which is also all Hash.update() accepts: @types/node 26
+    // widened BinaryLike to include ArrayBufferLike, which update() rejects.
     const stream = new Transform({
         transform(
-            chunk: BinaryLike,
+            chunk: string | NodeJS.ArrayBufferView,
             _encoding: BufferEncoding,
             callback: TransformCallback,
         ): void {

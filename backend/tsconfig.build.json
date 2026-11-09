@@ -1,7 +1,7 @@
 {
     "extends": "./tsconfig.json",
     "exclude": ["node_modules", "tests", "dist", "**/*spec.ts"],
-    "include": ["src/**/*", "../packages/**/*", "src/access_config.json"],
+    "include": ["src/**/*", "../packages/**/*"],
     "compilerOptions": {
         "baseUrl": ".",
         "rootDir": ".."

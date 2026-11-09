@@ -36,7 +36,11 @@ export class ActionGuardService {
         }
         const action = await this.actionRepository.findOne({
             where: { uuid: actionUuid },
-            relations: ['mission', 'mission.project'],
+            relations: {
+                mission: {
+                    project: true,
+                },
+            },
         });
 
         if (!action) return false;
@@ -73,7 +77,9 @@ export class ActionGuardService {
         }
         const action = await this.actionRepository.findOne({
             where: { uuid: actionUuid },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         if (!action) {
             return false;

@@ -67,13 +67,10 @@ export class GroupMembershipDto {
     @ValidateNested()
     @Type(() => AccessGroupDto)
     @Expose()
-    @Transform(({ obj, options }) => {
+    @Transform(({ value, options }) => {
         // Check if accessGroup should be included
-        if (
-            options?.groups?.includes('includeAccessGroup') &&
-            obj.accessGroup
-        ) {
-            return obj.accessGroup;
+        if (options?.groups?.includes('includeAccessGroup') && value) {
+            return value;
         }
         return null;
     })

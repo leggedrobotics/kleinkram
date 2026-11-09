@@ -79,7 +79,7 @@ describe('Comprehensive Soft Delete Behavior', () => {
         const projectRequest = {
             name: projectName,
             description: 'A project to be soft-deleted',
-            requiredTags: [],
+            requiredMetadataTypes: [],
             accessGroups: [
                 {
                     rights: AccessGroupRights.DELETE,
@@ -144,7 +144,7 @@ describe('Comprehensive Soft Delete Behavior', () => {
             {
                 name: 'MissionProject',
                 description: 'desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
@@ -159,8 +159,8 @@ describe('Comprehensive Soft Delete Behavior', () => {
         const missionRequest = {
             name: missionName,
             projectUUID: projectUuid,
-            tags: {},
-            ignoreTags: true,
+            metadata: {},
+            ignoreMissingMetadata: true,
         };
 
         // 1. Create Mission
@@ -212,7 +212,7 @@ describe('Comprehensive Soft Delete Behavior', () => {
             {
                 name: 'FileProject',
                 description: 'desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -221,8 +221,8 @@ describe('Comprehensive Soft Delete Behavior', () => {
             {
                 name: 'FileMission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -305,15 +305,19 @@ describe('Comprehensive Soft Delete Behavior', () => {
     test('ApiKey soft delete and re-creation', async () => {
         const apiKeyRepo = database.getRepository(ApiKeyEntity);
         const projectUuid = await createProjectUsingPost(
-            { name: 'KeyProject', description: 'desc', requiredTags: [] },
+            {
+                name: 'KeyProject',
+                description: 'desc',
+                requiredMetadataTypes: [],
+            },
             admin,
         );
         const missionUuid = await createMissionUsingPost(
             {
                 name: 'KeyMission',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             admin,
         );
@@ -348,7 +352,11 @@ describe('Comprehensive Soft Delete Behavior', () => {
     test('Category soft delete and re-creation', async () => {
         const categoryRepo = database.getRepository(CategoryEntity);
         const projectUuid = await createProjectUsingPost(
-            { name: 'CatProject', description: 'desc', requiredTags: [] },
+            {
+                name: 'CatProject',
+                description: 'desc',
+                requiredMetadataTypes: [],
+            },
             admin,
         );
         const project = { uuid: projectUuid } as ProjectEntity;
@@ -437,5 +445,108 @@ describe('Comprehensive Soft Delete Behavior', () => {
             withDeleted: true,
         });
         expect(all.length).toBe(2);
+    });
+    test('Project missionCount excludes soft-deleted missions and allows project deletion', async () => {
+        // 1. Create a project
+        const projectName = 'ProjectWithSoftDeletedMission';
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: projectName,
+                description: 'desc',
+                requiredMetadataTypes: [],
+                accessGroups: [
+                    {
+                        rights: AccessGroupRights.DELETE,
+                        accessGroupUUID: accessGroupCreator.uuid,
+                    },
+                ],
+            },
+            creator,
+        );
+
+        const header = new HeaderCreator(creator);
+
+        // 2. Fetch project: missionCount should be 0 for a brand new project
+        const getResponse1 = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}`,
+            {
+                method: 'GET',
+                headers: header.getHeaders(),
+            },
+        );
+        expect(getResponse1.status).toBe(200);
+        const projectDto1 = (await getResponse1.json()) as {
+            missionCount: number;
+        };
+        expect(projectDto1.missionCount).toBe(0);
+
+        // 3. Create a mission in the project
+        const missionUuid = await createMissionUsingPost(
+            {
+                name: 'ActiveMission',
+                projectUUID: projectUuid,
+                metadata: {},
+                ignoreMissingMetadata: true,
+            },
+            creator,
+        );
+
+        // 4. Fetch project: missionCount should now be 1
+        const getResponse2 = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}`,
+            {
+                method: 'GET',
+                headers: header.getHeaders(),
+            },
+        );
+        expect(getResponse2.status).toBe(200);
+        const projectDto2 = (await getResponse2.json()) as {
+            missionCount: number;
+        };
+        expect(projectDto2.missionCount).toBe(1);
+
+        // 5. Deleting project while it has an active mission should fail with 409 Conflict
+        const deleteProjectFail = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}`,
+            {
+                method: 'DELETE',
+                headers: header.getHeaders(),
+            },
+        );
+        expect(deleteProjectFail.status).toBe(409);
+
+        // 6. Soft-delete the mission
+        const deleteMissionResponse = await fetch(
+            `${DEFAULT_URL}/missions/${missionUuid}`,
+            {
+                method: 'DELETE',
+                headers: header.getHeaders(),
+            },
+        );
+        expect(deleteMissionResponse.status).toBe(200);
+
+        // 7. Fetch project: missionCount should be 0 again (soft-deleted mission not counted)
+        const getResponse3 = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}`,
+            {
+                method: 'GET',
+                headers: header.getHeaders(),
+            },
+        );
+        expect(getResponse3.status).toBe(200);
+        const projectDto3 = (await getResponse3.json()) as {
+            missionCount: number;
+        };
+        expect(projectDto3.missionCount).toBe(0);
+
+        // 8. Now deleting the project should succeed
+        const deleteProjectSuccess = await fetch(
+            `${DEFAULT_URL}/projects/${projectUuid}`,
+            {
+                method: 'DELETE',
+                headers: header.getHeaders(),
+            },
+        );
+        expect(deleteProjectSuccess.status).toBe(200);
     });
 });

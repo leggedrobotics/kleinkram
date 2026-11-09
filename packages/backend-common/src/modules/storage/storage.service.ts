@@ -21,6 +21,7 @@ import { StorageAuthService } from './storage-auth.service';
 import { S3ClientContainer } from './storage-config.factory';
 import { StorageMetricsService } from './storage-metrics.service';
 import {
+    PresignedResponseHeaders,
     StorageCredentials,
     StorageItem,
     StorageItemStat,
@@ -159,13 +160,13 @@ export class StorageService implements OnModuleInit {
         objectName: string,
         expirySeconds: number,
         isInternal: boolean,
-        responseDisposition?: Record<string, string>,
+        responseHeaders?: PresignedResponseHeaders,
     ): Promise<string> {
         const command = new GetObjectCommand({
             Bucket: bucketName,
             Key: objectName,
-            ResponseContentDisposition:
-                responseDisposition?.['response-content-disposition'],
+            ResponseContentType: responseHeaders?.contentType,
+            ResponseContentDisposition: responseHeaders?.contentDisposition,
         });
         const client = isInternal
             ? this.clients.internal
@@ -179,14 +180,14 @@ export class StorageService implements OnModuleInit {
         bucketName: string,
         objectName: string,
         expirySeconds: number,
-        responseDisposition?: Record<string, string>,
+        responseHeaders?: PresignedResponseHeaders,
     ): Promise<string> {
         return this.generatePresignedUrl(
             bucketName,
             objectName,
             expirySeconds,
             false,
-            responseDisposition,
+            responseHeaders,
         );
     }
 
@@ -194,14 +195,14 @@ export class StorageService implements OnModuleInit {
         bucketName: string,
         objectName: string,
         expirySeconds: number,
-        responseDisposition?: Record<string, string>,
+        responseHeaders?: PresignedResponseHeaders,
     ): Promise<string> {
         return this.generatePresignedUrl(
             bucketName,
             objectName,
             expirySeconds,
             true,
-            responseDisposition,
+            responseHeaders,
         );
     }
 

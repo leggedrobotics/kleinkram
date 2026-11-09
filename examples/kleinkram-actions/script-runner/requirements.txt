@@ -1,0 +1,21 @@
+# The dependency set of the script runner is FIXED.
+#
+# A single-file action cannot bring its own dependencies, so everything a
+# submitted script may import has to be listed here. Keep this list in sync
+# with `RUNNER_DEPENDENCIES` in `cli/kleinkram/cli/_action.py`, which is what
+# `klein action deps` prints, and with README.md.
+#
+# Adding an entry changes the image for every user of `run-script`, so prefer a
+# real Docker action over growing this list.
+kleinkram
+matplotlib
+mcap
+mcap-ros2-support
+numpy
+pandas
+pyarrow
+pyproj
+pyyaml
+rosbags
+scipy
+transforms3d

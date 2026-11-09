@@ -3,6 +3,7 @@ import { FileState } from '@kleinkram/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { toStateComment } from '../helper/state-comment';
 import { Db3MetadataService } from './db3-metadata.service';
 import { FileHandler, FileProcessingContext } from './file-handler.interface';
 
@@ -27,6 +28,10 @@ export class Db3Handler implements FileHandler {
             );
         } catch (error) {
             primaryFile.state = FileState.CORRUPTED;
+            primaryFile.stateComment = toStateComment(
+                'Failed to read the DB3 file',
+                error,
+            );
             await this.fileRepo.save(primaryFile);
             throw error;
         }

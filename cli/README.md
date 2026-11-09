@@ -21,7 +21,7 @@ Here are some basic examples of how to use the CLI.
 To list all files in a mission:
 
 ```bash
-klein list -p project-name -m mission-name
+klein file list -p project-name -m mission-name
 ```
 
 ### Uploading Files

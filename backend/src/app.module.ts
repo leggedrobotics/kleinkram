@@ -1,3 +1,4 @@
+import { loadAccessConfig } from '@kleinkram/backend-common';
 import env from '@kleinkram/backend-common/environment';
 import { StorageModule } from '@kleinkram/backend-common/modules/storage/storage.module';
 import configuration from '@kleinkram/backend-common/typeorm-config';
@@ -8,7 +9,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import accessConfig from './access_config.json';
+import * as pg from 'pg';
 import { appVersion } from './app-version';
 import { AccessModule } from './endpoints/access/access.module';
 import { ActionModule } from './endpoints/action/action.module';
@@ -47,13 +48,17 @@ import { DBDumper } from './services/dbdumper.service';
                 configuration,
                 (): {
                     accessConfig: AccessGroupConfig;
-                } => ({ accessConfig: accessConfig }),
+                } => ({ accessConfig: loadAccessConfig() }),
             ],
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             useFactory: (configService: ConfigService) => ({
                 type: 'postgres',
+                // TypeORM v1 loads its driver package through a dynamic
+                // `require()` that webpack cannot resolve when the app is
+                // bundled, so hand it the already bundled `pg` module.
+                driver: pg,
                 host: configService.getOrThrow<string>('database.host'),
                 port: configService.getOrThrow<number>('database.port'),
                 username: configService.getOrThrow<string>('database.username'),

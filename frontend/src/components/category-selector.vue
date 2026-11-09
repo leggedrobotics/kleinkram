@@ -25,6 +25,9 @@
                 @remove="() => props.removeAtIndex(props.index)"
             >
                 {{ props.opt.name }}
+                <q-tooltip v-if="props.opt.description">
+                    {{ props.opt.description }}
+                </q-tooltip>
             </q-chip>
         </template>
         <template #option="props">
@@ -45,6 +48,13 @@
                             {{ props.opt.name }}
                         </q-chip>
                     </div>
+                    <q-item-label
+                        v-if="props.opt.description"
+                        caption
+                        class="q-px-sm"
+                    >
+                        {{ props.opt.description }}
+                    </q-item-label>
                 </q-item-section>
             </q-item>
         </template>

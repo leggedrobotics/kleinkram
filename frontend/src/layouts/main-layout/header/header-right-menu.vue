@@ -7,7 +7,14 @@
         <div v-else class="flex row justify-end" style="height: 56px">
             <header-create-menu />
 
-            <div style="margin: auto 10px auto 30px" @click="showOverlay">
+            <div
+                :style="{
+                    margin: $q.screen.gt.xs
+                        ? 'auto 10px auto 30px'
+                        : 'auto 0 auto 8px',
+                }"
+                @click="showOverlay"
+            >
                 <q-btn round flat color="grey-8" icon="sym_o_export_notes">
                     <q-tooltip>Processing Uploads</q-tooltip>
                     <q-linear-progress
@@ -19,10 +26,18 @@
                     />
                     <q-menu
                         v-model="isOverlayVisible"
-                        :offset="[110, 20]"
-                        style="width: 400px; overflow: hidden"
+                        :offset="$q.screen.gt.xs ? [110, 20] : [0, 20]"
+                        :style="{
+                            width: $q.screen.gt.xs ? '400px' : '100vw',
+                            maxWidth: '100vw',
+                            overflow: 'hidden',
+                        }"
                     >
-                        <div style="width: 400px">
+                        <div
+                            :style="{
+                                width: $q.screen.gt.xs ? '400px' : '100%',
+                            }"
+                        >
                             <q-card-section
                                 style="
                                     padding-bottom: 5px;
@@ -143,11 +158,14 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query';
 import DocumentationIcon from 'components/documentation-icon.vue';
+import { useQuasar } from 'quasar';
 import { useIsUploading, useUser } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { computed, inject, ref, watch } from 'vue';
 import HeaderCreateMenu from './header-create-menu.vue';
 import HeaderProfileMenu from './header-profile-menu.vue';
+
+const $q = useQuasar();
 
 const isUploading = useIsUploading();
 const { data: user } = useUser();

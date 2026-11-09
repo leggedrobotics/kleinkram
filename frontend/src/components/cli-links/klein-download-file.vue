@@ -11,27 +11,22 @@
         >
             Kleinkram CLI:
         </p>
-        <div class="button-border">
+        <div class="button-border klein-command__box">
             <div class="q-ml-sm row items-center no-wrap">
-                <div
-                    class="text-truncate"
-                    style="
-                        flex: 1 1 auto;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        font-size: smaller;
-                    "
-                >
+                <div class="klein-command">
                     klein download
                     <span style="opacity: 0.8"> --dest=. {{ file.uuid }} </span>
                 </div>
                 <q-btn
                     icon="sym_o_content_copy"
                     flat
+                    aria-label="Copy CLI command"
+                    class="klein-command__copy"
                     style="padding: 3px; color: #0f62fe; rotate: 180deg"
                     @click.stop="copyCommandAction"
-                />
+                >
+                    <q-tooltip>Copy CLI command</q-tooltip>
+                </q-btn>
             </div>
         </div>
     </div>
@@ -49,3 +44,34 @@ const copyCommandAction = async (): Promise<void> => {
     await navigator.clipboard.writeText(text);
 };
 </script>
+
+<style scoped>
+.klein-command__box {
+    max-width: 100%;
+}
+
+/* One truncated line, as before, but it can no longer push the box wider */
+.klein-command {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: smaller;
+}
+
+.klein-command__copy {
+    flex: 0 0 auto;
+}
+
+/* On phones the command wraps instead of overflowing the page */
+@media (max-width: 599px) {
+    .klein-command {
+        overflow: visible;
+        white-space: normal;
+        word-break: break-all;
+        text-overflow: clip;
+        padding: 4px 0;
+    }
+}
+</style>

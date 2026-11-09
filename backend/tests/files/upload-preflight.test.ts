@@ -16,6 +16,7 @@ import { FileAuditService } from '@kleinkram/backend-common/audit/file-audit.ser
 import { IStorageBucket } from '@kleinkram/backend-common/modules/storage/types';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
+import { MissionGuardService } from '../../src/endpoints/auth/mission-guard.service';
 import { FileLifecycleService } from '../../src/services/file-lifecycle.service';
 import { TriggerService } from '../../src/services/trigger.service';
 
@@ -88,6 +89,9 @@ describe('File Upload Pre-Flight Capacity Check', () => {
             {
                 addFileEvent: jest.fn(),
             } as unknown as jest.Mocked<TriggerService>,
+            {
+                canAccessMission: jest.fn().mockResolvedValue(true),
+            } as unknown as jest.Mocked<MissionGuardService>,
         );
     });
 
@@ -197,6 +201,9 @@ describe('File Upload Pre-Flight Capacity Check', () => {
             {
                 addFileEvent: jest.fn(),
             } as unknown as jest.Mocked<TriggerService>,
+            {
+                canAccessMission: jest.fn().mockResolvedValue(true),
+            } as unknown as jest.Mocked<MissionGuardService>,
         );
 
         const result = await serviceNoMetrics.getTemporaryAccess(

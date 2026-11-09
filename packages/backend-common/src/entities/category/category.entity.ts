@@ -13,6 +13,13 @@ export class CategoryEntity extends BaseEntity {
     @Column()
     name!: string;
 
+    /**
+     * Optional, human readable explanation of what the category is used for.
+     * Empty string if no description was provided.
+     */
+    @Column({ default: '' })
+    description!: string;
+
     @ManyToOne(() => ProjectEntity, (project) => project.categories, {
         onDelete: 'CASCADE',
     })

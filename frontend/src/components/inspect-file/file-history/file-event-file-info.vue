@@ -1,5 +1,9 @@
 <template>
-    <span v-if="file" class="text-grey-6 text-caption q-ml-md">
+    <span
+        v-if="file"
+        class="text-grey-6 text-caption file-event-file-info"
+        :class="$q.screen.xs ? 'q-ml-none' : 'q-ml-md'"
+    >
         File:
         <span v-if="file.projectName"> {{ file.projectName }} / </span>
         <span v-if="file.missionName"> {{ file.missionName }} / </span>
@@ -24,8 +28,17 @@
 
 <script setup lang="ts">
 import type { FileEventDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import { useQuasar } from 'quasar';
 
 defineProps<{
     file?: FileEventDto['file'];
 }>();
+
+const $q = useQuasar();
 </script>
+
+<style scoped>
+.file-event-file-info {
+    overflow-wrap: anywhere;
+}
+</style>

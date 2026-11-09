@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
+import { MetadataDto } from '@api-dto/metadata/metadata.dto';
 import { Paginated } from '@api-dto/pagination';
 import { ProjectDto } from '@api-dto/project/base-project.dto';
-import { TagDto } from '@api-dto/tags/tags.dto';
 import { UserDto } from '@api-dto/user/user.dto';
 import { IsSkip, IsTake } from '@kleinkram/validation';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform, Type, plainToInstance } from 'class-transformer';
 import {
     IsDate,
     IsInt,
@@ -50,13 +50,30 @@ export class MissionDto extends MinimumMissionDto {
     updatedAt!: Date;
 
     @ApiProperty({
-        description: 'List of tags',
-        type: () => [TagDto],
+        description: 'Metadata of the mission',
+        type: () => [MetadataDto],
     })
     @ValidateNested()
-    @Type(() => TagDto)
+    @Type(() => MetadataDto)
     @Expose()
-    tags!: TagDto[];
+    metadata!: MetadataDto[];
+
+    @ApiProperty({
+        description: 'Deprecated alias for metadata.',
+        type: () => [MetadataDto],
+        deprecated: true,
+    })
+    @ValidateNested()
+    @Type(() => MetadataDto)
+    @Expose()
+    @Transform(({ obj }) =>
+        obj.metadata
+            ? plainToInstance(MetadataDto, obj.metadata as object[], {
+                  excludeExtraneousValues: true,
+              })
+            : undefined,
+    )
+    tags!: MetadataDto[];
 }
 
 @Expose()

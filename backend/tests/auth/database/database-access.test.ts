@@ -11,14 +11,19 @@ describe('Verify Database User Persistence', () => {
     setupDatabaseHooks();
 
     test('if user is correctly stored and retrievable after creation', async () => {
-        const email = 'db-access-test@kleinkram.dev';
+        const email = 'db-access-test@leggedrobotics.com';
         const username = 'DB Access User';
         const userId = await mockDatabaseUser(email, username, UserRole.USER);
 
         const userRepo = database.getRepository(UserEntity);
         const user = await userRepo.findOneOrFail({
             where: { uuid: userId },
-            select: ['uuid', 'email', 'name', 'role'],
+            select: {
+                uuid: true,
+                email: true,
+                name: true,
+                role: true,
+            },
         });
         expect(user).toBeDefined();
         expect(user.uuid).toBe(userId);

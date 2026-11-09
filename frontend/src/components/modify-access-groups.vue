@@ -94,7 +94,6 @@ const emit = defineEmits(['addAccessGroupToProject', 'addUsersToProject']);
 
 const search = ref('');
 const options = Object.keys(accessGroupRightsMap).map((key) => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const right = Number.parseInt(key, 10) as AccessGroupRights;
     return {
         label: accessGroupRightsMap[right],

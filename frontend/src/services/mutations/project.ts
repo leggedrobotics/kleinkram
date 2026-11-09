@@ -1,10 +1,11 @@
+import type { ProjectStarDto } from '@kleinkram/api-dto/types/project/project-star.dto';
 import { AccessGroupRights } from '@kleinkram/shared';
 import axios from 'src/api/axios';
 
 export const createProject = async (
     name: string,
     description: string,
-    requiredTags: string[],
+    requiredMetadataTypes: string[],
     accessGroups: (
         | { accessGroupUUID: string; rights: AccessGroupRights }
         | { userUUID: string; rights: AccessGroupRights }
@@ -14,7 +15,7 @@ export const createProject = async (
     const response = await axios.post('/projects', {
         name,
         description,
-        requiredTags,
+        requiredMetadataTypes,
         accessGroups,
         removedDefaultGroups,
     });
@@ -43,14 +44,32 @@ export const deleteProject = async (projectUUID: string) => {
     return response.data;
 };
 
-export const updateTagTypes = async (
+export const updateProjectMetadataTypes = async (
     projectUUID: string,
-    tagTypeUUIDs: string[],
+    metadataTypeUUIDs: string[],
 ) => {
     const response = await axios.put(
         `/projects/${projectUUID}/metadata-types`,
-        { tagTypeUUIDs },
+        { metadataTypeUUIDs },
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return response.data;
+};
+
+export const starProject = async (
+    projectUUID: string,
+): Promise<ProjectStarDto> => {
+    const response = await axios.post<ProjectStarDto>(
+        `/projects/${projectUUID}/star`,
+    );
+    return response.data;
+};
+
+export const unstarProject = async (
+    projectUUID: string,
+): Promise<ProjectStarDto> => {
+    const response = await axios.delete<ProjectStarDto>(
+        `/projects/${projectUUID}/star`,
+    );
     return response.data;
 };

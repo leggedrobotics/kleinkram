@@ -18,7 +18,7 @@ RUN chown node:node /app
 USER node
 
 # Install dependencies using pnpm fetch for caching
-COPY --chown=node:node pnpm-lock.yaml ./
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch
 
 # Only copy manifest files needed for installation, NOT source code

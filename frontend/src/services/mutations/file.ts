@@ -27,14 +27,20 @@ export type GenerateTemporaryCredentialsResponse = {
     } | null;
 }[];
 
+/**
+ * Updates a file. Passing a `missionUuid` of another mission moves the file
+ * into that mission (see `PUT /files/:uuid`).
+ */
 export const updateFile = async ({
     file,
+    missionUuid,
 }: {
     file: FileWithTopicDto;
+    missionUuid: string;
 }): Promise<FileDto> => {
     const response = await axios.put<FileDto>(`/files/${file.uuid}`, {
         uuid: file.uuid,
-        missionUuid: file.missionUUID,
+        missionUuid,
         filename: file.filename,
         date: file.date,
         categories: file.categories.map(

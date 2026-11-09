@@ -34,14 +34,22 @@ export const seedUsers = async (
         // eslint-disable-next-line no-console
         console.log('Users exist in DB, skipping seeding.');
         const users = await dataSource.getRepository(UserEntity).find({
-            select: ['uuid', 'email', 'name', 'role', 'avatarUrl'],
+            select: {
+                uuid: true,
+                email: true,
+                name: true,
+                role: true,
+                avatarUrl: true,
+            },
         });
         // eslint-disable-next-line no-console
         console.log('Existing users:', users.map((u) => u.email).join(', '));
 
-        const adminUser = users.find((u) => u.email === 'admin@kleinkram.dev');
+        const adminUser = users.find(
+            (u) => u.email === 'admin@leggedrobotics.com',
+        );
         const internalUser = users.find(
-            (u) => u.email === 'internal-user@kleinkram.dev',
+            (u) => u.email === 'internal-user@leggedrobotics.com',
         );
         const externalUser = users.find(
             (u) => u.email === 'external-user@example.com',
@@ -80,16 +88,19 @@ export const seedUsers = async (
         return factoryManager.get(UserEntity).setMeta(context).save();
     };
 
-    const adminUser = await createOrGetUser('admin@kleinkram.dev', {
-        mail: 'admin@kleinkram.dev',
+    const adminUser = await createOrGetUser('admin@leggedrobotics.com', {
+        mail: 'admin@leggedrobotics.com',
         role: UserRole.ADMIN,
         defaultGroupIds: ['00000000-0000-0000-0000-000000000000'],
     } as UserContext);
 
-    const internalUser = await createOrGetUser('internal-user@kleinkram.dev', {
-        mail: 'internal-user@kleinkram.dev',
-        role: UserRole.USER,
-    } as UserContext);
+    const internalUser = await createOrGetUser(
+        'internal-user@leggedrobotics.com',
+        {
+            mail: 'internal-user@leggedrobotics.com',
+            role: UserRole.USER,
+        } as UserContext,
+    );
 
     const externalUser = await createOrGetUser('external-user@example.com', {
         mail: 'external-user@example.com',
@@ -106,7 +117,11 @@ export const seedUsers = async (
                 .getRepository(UserEntity)
                 .findOne({
                     where: { uuid: user.uuid },
-                    relations: ['memberships', 'memberships.accessGroup'],
+                    relations: {
+                        memberships: {
+                            accessGroup: true,
+                        },
+                    },
                 });
 
             const hasPrimary = userWithGroups?.memberships?.some(

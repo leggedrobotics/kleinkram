@@ -2,7 +2,7 @@
     <div class="column q-gutter-y-xs">
         <label class="text-weight-bold">Mission Metadata</label>
         <!-- eslint-disable-next-line vue/no-mutating-props -->
-        <MetadataFilterBuilder v-model="state.tagFilter" />
+        <MetadataFilterBuilder v-model="state.metadataFilter" />
     </div>
 </template>
 

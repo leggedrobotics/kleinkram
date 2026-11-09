@@ -1,6 +1,10 @@
 import { ContainerLog } from '@kleinkram/backend-common/entities/action/action.entity';
 import environment from '@kleinkram/backend-common/environment';
 import { ImageSource, LogType } from '@kleinkram/shared';
+import {
+    isImageInDockerNamespace,
+    normalizeDockerNamespace,
+} from '@kleinkram/validation';
 import { Injectable } from '@nestjs/common';
 import Dockerode, { Image } from 'dockerode';
 import process from 'node:process';
@@ -78,9 +82,34 @@ export const dockerDaemonErrorHandler = (error: unknown): void => {
     logger.error((error as { message: string }).message);
 };
 
+// Enough for the last lines of a Python traceback.
+const UPLOADER_STDERR_TAIL_LENGTH = 4096;
+
 const artifactUploaderImage =
     environment.ARTIFACTS_UPLOADER_IMAGE ||
     'rslethz/kleinkram:artifact-uploader-latest';
+
+/**
+ * The S3 URL handed to the artifact uploader, with an explicit scheme.
+ * The uploader prefixes a bare host with http://, but outside DEV the
+ * backend serves S3_ENDPOINT over https (storage-config.factory.ts), and
+ * the http endpoint answers PutObject with a 308 redirect that boto3 does
+ * not follow. Use the same scheme rule as the backend.
+ */
+const artifactUploaderS3Endpoint = (): string => {
+    let endpoint = environment.S3_ENDPOINT;
+    if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+        endpoint = `${environment.DEV ? 'http' : 'https'}://${endpoint}`;
+    }
+    const url = new URL(endpoint);
+    if (url.hostname === 'localhost') {
+        url.hostname = '127.0.0.1';
+    }
+    if (environment.DEV && !url.port) {
+        url.port = '9000';
+    }
+    return url.toString().replace(/\/$/, '');
+};
 
 /**
  * The DockerDaemon class is responsible for managing the Docker daemon.
@@ -309,12 +338,11 @@ export class DockerDaemon {
         remoteCreatedAt: Date | undefined;
     }> {
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        const dockerhub_namespace = process.env.VITE_DOCKER_HUB_NAMESPACE;
+        const dockerhub_namespace = normalizeDockerNamespace(
+            process.env.VITE_DOCKER_HUB_NAMESPACE,
+        );
         // assert that we only run images from a specified namespace
-        if (
-            dockerhub_namespace !== undefined &&
-            !dockerImage.startsWith(dockerhub_namespace)
-        ) {
+        if (!isImageInDockerNamespace(dockerImage, dockerhub_namespace)) {
             throw new Error(
                 `Only images from the ${dockerhub_namespace} namespace are allowed`,
             );
@@ -541,6 +569,7 @@ export class DockerDaemon {
         container: Dockerode.Container;
         repoDigests: string[];
         artifactMetadata?: { size: number; files: string[] } | undefined;
+        uploaderStderr: string;
         containerLimits: ContainerLimits;
         volumeName: string;
     }> {
@@ -580,7 +609,7 @@ export class DockerDaemon {
             name: `kleinkram-artifact-uploader-${actionUuid}`,
             Env: [
                 `KLEINKRAM_ACTION_UUID=${actionUuid}`,
-                `S3_ENDPOINT=${environment.S3_ENDPOINT === 'localhost' ? '127.0.0.1' : environment.S3_ENDPOINT}${environment.DEV ? ':9000' : ''}`,
+                `S3_ENDPOINT=${artifactUploaderS3Endpoint()}`,
                 `S3_ACCESS_KEY=${environment.S3_ACCESS_KEY}`,
                 `S3_SECRET_KEY=${environment.S3_SECRET_KEY}`,
                 `S3_ARTIFACTS_BUCKET_NAME=${environment.S3_ARTIFACTS_BUCKET_NAME}`,
@@ -615,6 +644,9 @@ export class DockerDaemon {
 
         // Stream logs to stdout/stderr for debugging and capture metadata
         let artifactMetadata: { size: number; files: string[] } | undefined;
+        // The tail is kept so a failed upload can say why (see
+        // ArtifactService); the rest only goes to the debug log.
+        let uploaderStderr = '';
 
         const stream = await container.logs({
             follow: true,
@@ -661,6 +693,9 @@ export class DockerDaemon {
 
             const stderrWritable = {
                 write: (chunk: Buffer) => {
+                    uploaderStderr = (uploaderStderr + chunk.toString()).slice(
+                        -UPLOADER_STDERR_TAIL_LENGTH,
+                    );
                     logger.debug(
                         `[ArtifactUpload STDERR] ${chunk.toString().trim()}`,
                     );
@@ -704,6 +739,7 @@ export class DockerDaemon {
             container,
             repoDigests,
             artifactMetadata,
+            uploaderStderr,
             containerLimits: containerOptions.limits,
             volumeName,
         };

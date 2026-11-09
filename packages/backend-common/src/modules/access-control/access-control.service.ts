@@ -44,7 +44,9 @@ export class AccessControlService {
             // Need to fetch mission to get project uuid
             const missionWithProject = await this.missionRepository.findOne({
                 where: { uuid: mission.uuid },
-                relations: ['project'],
+                relations: {
+                    project: true,
+                },
             });
 
             if (missionWithProject?.project) {

@@ -68,10 +68,11 @@
     </div>
 </template>
 <script setup lang="ts">
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import { useQueryClient } from '@tanstack/vue-query';
 import { Notify, QInput } from 'quasar';
 import { useProjectQuery } from 'src/hooks/query-hooks';
+import { getErrorMessage } from 'src/services/error-handling';
 import { updateProject } from 'src/services/mutations/project';
 import { computed, Ref, ref, watch } from 'vue';
 
@@ -91,7 +92,7 @@ const { data: project } = useProjectQuery(computed(() => projectUuid));
 
 watch(
     () => project.value,
-    (newVale: ProjectWithRequiredTagsDto | undefined) => {
+    (newVale: ProjectWithRequiredMetadataTypesDto | undefined) => {
         if (newVale) {
             projectName.value = newVale.name;
             projectDescription.value = newVale.description;
@@ -128,28 +129,12 @@ async function save_changes(): Promise<void> {
         projectDescription.value,
         autoConvert.value,
     ).catch((error: unknown) => {
-        let errorMessage = '';
-        errorMessage =
-            error instanceof Error
-                ? error.message
-                : ((error as { response?: { data?: { message?: string } } })
-                      .response?.data?.message ?? 'Unknown error');
-
-        if (errorMessage.includes('Project')) {
-            Notify.create({
-                message: `Error updating project: ${errorMessage}`,
-                color: 'negative',
-                position: 'bottom',
-                timeout: 5000,
-            });
-        } else {
-            Notify.create({
-                message: `Error updating project: ${errorMessage}`,
-                color: 'negative',
-                position: 'bottom',
-                timeout: 5000,
-            });
-        }
+        Notify.create({
+            message: `Error updating project: ${getErrorMessage(error)}`,
+            color: 'negative',
+            position: 'bottom',
+            timeout: 5000,
+        });
 
         throw error as Error;
     });

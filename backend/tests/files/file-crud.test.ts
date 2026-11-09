@@ -17,7 +17,7 @@ describe('File Management Tests', () => {
 
     test('should upload and download a file', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-file@kleinkram.dev',
+            'test-file@leggedrobotics.com',
             'File User',
             UserRole.ADMIN,
         );
@@ -30,7 +30,9 @@ describe('File Management Tests', () => {
         const fileRepo = database.getRepository(FileEntity);
         const file = await fileRepo.findOne({
             where: { filename: 'test.bag' },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         expect(file).not.toBeNull();
         expect(file?.mission?.uuid).toBe(missionUuid);
@@ -51,7 +53,7 @@ describe('File Management Tests', () => {
 
     test('should delete a file', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-delete@kleinkram.dev',
+            'test-delete@leggedrobotics.com',
             'Delete User',
             UserRole.ADMIN,
         );
@@ -79,7 +81,7 @@ describe('File Management Tests', () => {
 
     test('should delete multiple files', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'test-multi-delete@kleinkram.dev',
+            'test-multi-delete@leggedrobotics.com',
             'Multi Delete User',
             UserRole.ADMIN,
         );
@@ -121,7 +123,7 @@ describe('File Management Tests', () => {
 
     test('should move file to another mission', async () => {
         const { user, missionUuid, projectUuid } = await setupTestEnvironment(
-            'test-move@kleinkram.dev',
+            'test-move@leggedrobotics.com',
             'Move User',
             UserRole.ADMIN,
         );
@@ -131,8 +133,8 @@ describe('File Management Tests', () => {
             {
                 name: 'mission_2',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );
@@ -141,7 +143,9 @@ describe('File Management Tests', () => {
         const fileRepo = database.getRepository(FileEntity);
         const file = await fileRepo.findOneOrFail({
             where: { filename: 'move_me.bag' },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(file?.mission?.uuid).toBe(mission1Uuid);
@@ -163,7 +167,9 @@ describe('File Management Tests', () => {
 
         const movedFile = await fileRepo.findOneOrFail({
             where: { uuid: file.uuid },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         expect(movedFile?.mission?.uuid).toBe(mission2Uuid);

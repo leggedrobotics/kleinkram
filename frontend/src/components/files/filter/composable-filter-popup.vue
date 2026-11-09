@@ -1,5 +1,5 @@
 <template>
-    <div class="column q-gutter-y-md" style="min-width: 300px; padding: 16px">
+    <div class="column q-gutter-y-md filter-popup">
         <div class="text-h6">Advanced Filters</div>
 
         <!-- Render each filter's advanced component -->
@@ -59,3 +59,21 @@ function onReset() {
     emit('reset');
 }
 </script>
+
+<style scoped>
+.filter-popup {
+    min-width: 300px;
+    padding: 16px;
+}
+
+/*
+ * The 300px floor is wider than the content area of a small phone, which
+ * would push the whole page sideways.
+ */
+@media (max-width: 599px) {
+    .filter-popup {
+        min-width: 0;
+        padding: 8px 0;
+    }
+}
+</style>

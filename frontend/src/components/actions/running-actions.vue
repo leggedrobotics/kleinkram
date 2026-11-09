@@ -22,11 +22,75 @@
             <q-table
                 :rows="actions?.data"
                 :columns="columns as any"
+                :visible-columns="visibleColumns"
+                :grid="$q.screen.xs"
                 hide-pagination
                 flat
-                class="q-pa-md cursor-pointer"
+                class="cursor-pointer"
+                :class="$q.screen.xs ? 'q-pa-sm' : 'q-pa-md'"
                 @row-click="handleRowClick"
             >
+                <!--
+                    On phones the table becomes a compact list of cards, so the
+                    panel never scrolls sideways.
+                -->
+                <template #item="itemProps">
+                    <div class="col-12 q-pa-xs">
+                        <q-card
+                            flat
+                            bordered
+                            class="cursor-pointer"
+                            @click="() => openAction(itemProps.row.uuid)"
+                        >
+                            <q-card-section
+                                class="row items-center no-wrap q-py-sm"
+                            >
+                                <div class="col" style="min-width: 0">
+                                    <div class="text-weight-medium ellipsis">
+                                        {{ actionName(itemProps.row) }}
+                                    </div>
+                                    <div
+                                        class="text-caption text-grey-7 ellipsis"
+                                    >
+                                        {{ itemProps.row.mission.name }}
+                                    </div>
+                                </div>
+
+                                <div class="col-auto q-ml-sm">
+                                    <template
+                                        v-if="
+                                            itemProps.row.state ===
+                                                ActionState.PROCESSING ||
+                                            itemProps.row.state ===
+                                                ActionState.PENDING
+                                        "
+                                    >
+                                        <q-skeleton
+                                            class="q-pa-none q-ma-none"
+                                            style="background: none"
+                                        >
+                                            <q-badge
+                                                :color="
+                                                    getActionColor(
+                                                        itemProps.row.state,
+                                                    )
+                                                "
+                                                class="q-pa-sm"
+                                            >
+                                                {{ itemProps.row.state }}
+                                            </q-badge>
+                                        </q-skeleton>
+                                    </template>
+
+                                    <template v-else>
+                                        <ActionBadge :action="itemProps.row" />
+                                    </template>
+                                </div>
+                            </q-card-section>
+                        </q-card>
+                    </div>
+                </template>
+
                 <template #body-cell-state="props">
                     <q-td :props="props">
                         <template
@@ -74,12 +138,15 @@
 import type { ActionDto } from '@kleinkram/api-dto/types/actions/action.dto';
 import { ActionState } from '@kleinkram/shared';
 import ActionBadge from 'components/action-badge.vue';
+import { useQuasar } from 'quasar';
 import { useRunningActions } from 'src/composables/use-actions-queries';
 import ROUTES from 'src/router/routes';
 import { getActionColor } from 'src/services/generic';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+const $q = useQuasar();
 
 const { data: actions, isFetched } = useRunningActions();
 
@@ -125,17 +192,36 @@ const columns = [
     },
 ];
 
+/**
+ * The docker image and the submitter do not fit on a small screen; the state,
+ * the mission and the action name are the ones worth keeping.
+ */
+const visibleColumns = computed(() =>
+    $q.screen.lt.md
+        ? ['state', 'mission', 'name']
+        : columns.map((column) => column.name),
+);
+
+const actionName = (action: ActionDto): string =>
+    action.template.name === ''
+        ? 'N/A'
+        : `${action.template.name} v${action.template.version}`;
+
 const toActions = async (): Promise<void> => {
     await router.push('/actions/runs');
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const handleRowClick = async (_: Event, row: any): Promise<void> => {
+const openAction = async (uuid: string): Promise<void> => {
     await router.push({
         name: ROUTES.ANALYSIS_DETAILS.routeName,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        params: { id: row.uuid },
+        params: { id: uuid },
     });
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const handleRowClick = async (_: Event, row: any): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+    await openAction(row.uuid);
 };
 </script>
 
@@ -189,5 +275,12 @@ const handleRowClick = async (_: Event, row: any): Promise<void> => {
     align-items: center;
     justify-content: center;
     text-align: center;
+}
+
+/* The card list already fits the panel width on a phone */
+@media (max-width: 599px) {
+    .card-wrapper {
+        overflow-x: hidden;
+    }
 }
 </style>

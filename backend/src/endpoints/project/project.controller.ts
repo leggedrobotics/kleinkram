@@ -22,13 +22,15 @@ import {
     ProjectDto,
     ProjectQueryDto,
     ProjectsDto,
-    ProjectWithRequiredTagsDto,
-    RemoveTagTypeDto,
+    ProjectStarDto,
+    ProjectWithRequiredMetadataTypesDto,
+    RemoveMetadataTypeDto,
     ResentProjectsDto,
     UpdateMetadataTypesBodyDto,
     UpdateMetadataTypesDto,
 } from '@kleinkram/api-dto';
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -119,12 +121,13 @@ export class ProjectController {
     @CanReadProject()
     @ApiOkResponse({
         description: 'Returns the project macthing the uuid.',
-        type: ProjectWithRequiredTagsDto,
+        type: ProjectWithRequiredMetadataTypesDto,
     })
     async getProjectById(
         @ParameterUID('uuid') uuid: string,
-    ): Promise<ProjectWithRequiredTagsDto> {
-        return this.projectService.findOne(uuid);
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectWithRequiredMetadataTypesDto> {
+        return this.projectService.findOne(uuid, user.user.uuid);
     }
 
     @Put(':uuid')
@@ -164,6 +167,8 @@ export class ProjectController {
     ): Promise<ProjectsDto> {
         // Convert string 'true'/'false' to boolean
         const exactMatch = query.exactMatch === 'true';
+        const starredOnly = query.starred === 'true';
+        const publicOnly = query.public === 'true';
 
         return await this.projectService.findMany(
             query.projectUuids ?? [],
@@ -175,7 +180,51 @@ export class ProjectController {
             query.creatorUuid,
             user.user.uuid,
             exactMatch,
+            starredOnly,
+            publicOnly,
         );
+    }
+
+    @Post(':uuid/star')
+    @UserOnly()
+    @CanReadProject()
+    @ApiOperation({
+        summary: 'Star a project',
+        description:
+            'Marks the project as a favorite of the current user. Stars are ' +
+            'private to the user and do not change who can access the ' +
+            'project. Starring an already starred project succeeds without ' +
+            'creating a second star.',
+    })
+    @ApiCreatedResponse({
+        description: 'Returns the resulting star state',
+        type: ProjectStarDto,
+    })
+    async starProject(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectStarDto> {
+        return this.projectService.starProject(uuid, user.user.uuid);
+    }
+
+    @Delete(':uuid/star')
+    @UserOnly()
+    @CanReadProject()
+    @ApiOperation({
+        summary: 'Remove the star from a project',
+        description:
+            "Removes the current user's star from the project. Un-starring " +
+            'a project that is not starred succeeds without doing anything.',
+    })
+    @ApiOkResponse({
+        description: 'Returns the resulting star state',
+        type: ProjectStarDto,
+    })
+    async unstarProject(
+        @ParameterUID('uuid') uuid: string,
+        @AddUser() user: AuthHeader,
+    ): Promise<ProjectStarDto> {
+        return this.projectService.unstarProject(uuid, user.user.uuid);
     }
 
     @ApiOperation({
@@ -206,45 +255,84 @@ export class ProjectController {
 
     @Post(':uuid/metadata-types')
     @CanWriteProject()
+    @ApiOperation({
+        summary: 'Add a required metadata type to a project',
+        description:
+            'At least one of the `metadataTypeUUID` / `tagTypeUUID` query ' +
+            'parameters must be given (`tagTypeUUID` is the deprecated ' +
+            'alias; if both are given, `metadataTypeUUID` wins). Requests ' +
+            'providing neither are rejected with 400.',
+    })
     @ApiCreatedResponse({
         description: 'Empty response',
         type: AddMetadataTypeDto,
     })
-    async addTagType(
+    async addMetadataType(
         @ParameterUID('uuid') uuid: string,
         @Query() query: AddMetadataTypeQueryDto,
     ): Promise<AddMetadataTypeDto> {
-        const typeUuid = query.metadataTypeUUID ?? query.tagTypeUUID ?? '';
-        await this.projectService.addTagType(uuid, typeUuid);
+        const typeUuid = query.metadataTypeUUID ?? query.tagTypeUUID;
+
+        // `AddMetadataTypeQueryDto` already enforces this, but defaulting to a
+        // bogus uuid here would turn a client mistake into a 500, so guard
+        // explicitly instead of falling back to ''.
+        if (typeUuid === undefined) {
+            throw new BadRequestException(
+                'Either metadataTypeUUID or tagTypeUUID must be provided',
+            );
+        }
+
+        await this.projectService.addMetadataType(uuid, typeUuid);
         return {};
     }
 
     @Delete(':uuid/metadata-types/:typeUuid')
     @CanWriteProject()
     @ApiOkResponse({
-        type: RemoveTagTypeDto,
+        type: RemoveMetadataTypeDto,
         description: 'Empty response',
     })
-    async removeTagType(
+    async removeMetadataType(
         @ParameterUID('uuid') uuid: string,
         @ParameterUID('typeUuid') typeUuid: string,
-    ): Promise<RemoveTagTypeDto> {
-        await this.projectService.removeTagType(uuid, typeUuid);
+    ): Promise<RemoveMetadataTypeDto> {
+        await this.projectService.removeMetadataType(uuid, typeUuid);
         return {};
     }
 
     @Put(':uuid/metadata-types')
     @CanWriteProject()
+    @ApiOperation({
+        summary: "Replace a project's required metadata types",
+        description:
+            'Replaces the full set of required metadata types. At least one ' +
+            'of `metadataTypeUUIDs` / `tagTypeUUIDs` must be given in the ' +
+            'body (`tagTypeUUIDs` is the deprecated alias; if both are ' +
+            'given, `metadataTypeUUIDs` wins); a body providing ' +
+            'neither — `{}`, or one that only carries a misspelled key — is ' +
+            'rejected with 400 rather than clearing the project. Passing an ' +
+            'explicit empty array clears the required metadata types.',
+    })
     @ApiOkResponse({
         description: 'Empty response',
         type: UpdateMetadataTypesDto,
     })
-    async updateTagTypes(
+    async updateMetadataTypes(
         @ParameterUID('uuid') uuid: string,
         @Body() body: UpdateMetadataTypesBodyDto,
     ): Promise<UpdateMetadataTypesDto> {
-        const uuids = body.metadataTypeUUIDs ?? body.tagTypeUUIDs ?? [];
-        await this.projectService.updateTagTypes(uuid, uuids);
+        const uuids = body.metadataTypeUUIDs ?? body.tagTypeUUIDs;
+
+        // `UpdateMetadataTypesBodyDto` already enforces this, but defaulting
+        // to [] here would silently wipe the project's required metadata
+        // types, so guard explicitly instead.
+        if (uuids === undefined) {
+            throw new BadRequestException(
+                'Either metadataTypeUUIDs or tagTypeUUIDs must be provided',
+            );
+        }
+
+        await this.projectService.updateMetadataTypes(uuid, uuids);
         return {
             success: true,
         };

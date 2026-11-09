@@ -3,7 +3,7 @@ import {
     FileEntity,
     MissionEntity,
 } from '@kleinkram/backend-common';
-import { AccessGroupRights, KeyTypes } from '@kleinkram/shared';
+import { AccessGroupRights, FileType, KeyTypes } from '@kleinkram/shared';
 import { DEFAULT_URL } from '../auth/utilities';
 import {
     createMissionUsingPost,
@@ -22,7 +22,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support all project query parameters (take, skip, sortBy, sortOrder, projectUuids, projectPatterns, creatorUuid, exactMatch)', async () => {
         const { user, projectUuid } = await setupTestEnvironment(
-            'proj-params@kleinkram.dev',
+            'proj-params@leggedrobotics.com',
             'Project Params User',
         );
 
@@ -31,7 +31,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
             {
                 name: 'another_project_for_sorting',
                 description: 'another desc',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             user,
         );
@@ -127,9 +127,190 @@ describe('Comprehensive API Query Parameters Tests', () => {
         expect(json5.data.length).toBe(1);
     });
 
+    test('should sort projects by size (sortBy=size)', async () => {
+        const { user, projectUuid, missionUuid } = await setupTestEnvironment(
+            'proj-size@leggedrobotics.com',
+            'Project Size User',
+        );
+
+        // A second project, holding a considerably bigger file than the first
+        const biggerProjectUuid = await createProjectUsingPost(
+            {
+                name: 'bigger_project',
+                description: 'holds the bigger file',
+                requiredMetadataTypes: [],
+            },
+            user,
+        );
+        const biggerMissionUuid = await createMissionUsingPost(
+            {
+                name: 'bigger_mission',
+                projectUUID: biggerProjectUuid,
+                metadata: {},
+                ignoreMissingMetadata: true,
+            },
+            user,
+        );
+
+        const fileRepository = database.getRepository(FileEntity);
+        await fileRepository.save(
+            fileRepository.create({
+                filename: 'small.bag',
+                mission: { uuid: missionUuid },
+                creator: { uuid: user.uuid },
+                date: new Date(),
+                type: FileType.BAG,
+                size: 1024,
+            }),
+        );
+        await fileRepository.save(
+            fileRepository.create({
+                filename: 'big.bag',
+                mission: { uuid: biggerMissionUuid },
+                creator: { uuid: user.uuid },
+                date: new Date(),
+                type: FileType.BAG,
+                size: 2048,
+            }),
+        );
+
+        const fetchSorted = async (
+            sortOrder: string,
+            take = 10,
+            skip = 0,
+        ): Promise<{ uuid: string; size: number }[]> => {
+            const response = await fetch(
+                `${DEFAULT_URL}/projects?take=${String(take)}&skip=${String(skip)}&sortBy=size&sortOrder=${sortOrder}`,
+                {
+                    method: 'GET',
+                    headers: getAuthHeaders(user),
+                },
+            );
+            expect(response.status).toBe(200);
+            const json = (await response.json()) as {
+                data: { uuid: string; size: number }[];
+            };
+            return json.data;
+        };
+
+        const ascending = await fetchSorted('asc');
+        expect(ascending.map((project) => project.uuid)).toEqual([
+            projectUuid,
+            biggerProjectUuid,
+        ]);
+        expect(ascending.map((project) => project.size)).toEqual([1024, 2048]);
+
+        const descending = await fetchSorted('desc');
+        expect(descending.map((project) => project.uuid)).toEqual([
+            biggerProjectUuid,
+            projectUuid,
+        ]);
+        expect(descending.map((project) => project.size)).toEqual([2048, 1024]);
+
+        // Two more projects without any files, so that half the projects tie at
+        // a size of zero: paging has to stay stable despite the tie.
+        for (const name of ['empty_project_a', 'empty_project_b']) {
+            await createProjectUsingPost(
+                { name, description: 'no files', requiredMetadataTypes: [] },
+                user,
+            );
+        }
+
+        const pagedUuids = [
+            ...(await fetchSorted('asc', 2, 0)),
+            ...(await fetchSorted('asc', 2, 2)),
+        ].map((project) => project.uuid);
+        expect(pagedUuids).toHaveLength(4);
+        expect(new Set(pagedUuids).size).toBe(4);
+        expect(pagedUuids.slice(2)).toEqual([projectUuid, biggerProjectUuid]);
+    });
+
+    test('should sort projects by mission count (sortBy=nrOfMissions)', async () => {
+        // The setup project holds a single mission
+        const { user, projectUuid } = await setupTestEnvironment(
+            'proj-missions@leggedrobotics.com',
+            'Project Mission Count User',
+        );
+
+        // A second project, holding two missions
+        const busyProjectUuid = await createProjectUsingPost(
+            {
+                name: 'busy_project',
+                description: 'holds two missions',
+                requiredMetadataTypes: [],
+            },
+            user,
+        );
+        for (const name of ['busy_mission_a', 'busy_mission_b']) {
+            await createMissionUsingPost(
+                {
+                    name,
+                    projectUUID: busyProjectUuid,
+                    metadata: {},
+                    ignoreMissingMetadata: true,
+                },
+                user,
+            );
+        }
+
+        const fetchSorted = async (
+            sortOrder: string,
+            take = 10,
+            skip = 0,
+        ): Promise<{ uuid: string; missionCount: number }[]> => {
+            const response = await fetch(
+                `${DEFAULT_URL}/projects?take=${String(take)}&skip=${String(skip)}&sortBy=nrOfMissions&sortOrder=${sortOrder}`,
+                {
+                    method: 'GET',
+                    headers: getAuthHeaders(user),
+                },
+            );
+            expect(response.status).toBe(200);
+            const json = (await response.json()) as {
+                data: { uuid: string; missionCount: number }[];
+            };
+            return json.data;
+        };
+
+        const ascending = await fetchSorted('asc');
+        expect(ascending.map((project) => project.uuid)).toEqual([
+            projectUuid,
+            busyProjectUuid,
+        ]);
+        expect(ascending.map((project) => project.missionCount)).toEqual([
+            1, 2,
+        ]);
+
+        const descending = await fetchSorted('desc');
+        expect(descending.map((project) => project.uuid)).toEqual([
+            busyProjectUuid,
+            projectUuid,
+        ]);
+        expect(descending.map((project) => project.missionCount)).toEqual([
+            2, 1,
+        ]);
+
+        // Two more projects without any mission, so that half the projects tie
+        // at a count of zero: paging has to stay stable despite the tie.
+        for (const name of ['empty_project_a', 'empty_project_b']) {
+            await createProjectUsingPost(
+                { name, description: 'no missions', requiredMetadataTypes: [] },
+                user,
+            );
+        }
+
+        const pagedUuids = [
+            ...(await fetchSorted('asc', 2, 0)),
+            ...(await fetchSorted('asc', 2, 2)),
+        ].map((project) => project.uuid);
+        expect(pagedUuids).toHaveLength(4);
+        expect(new Set(pagedUuids).size).toBe(4);
+        expect(pagedUuids.slice(2)).toEqual([projectUuid, busyProjectUuid]);
+    });
+
     test('should support all mission query parameters (take, skip, sortBy, sortDirection, projectUuid, uuid, missionUuids, missionPatterns, minimal)', async () => {
         const { user, projectUuid, missionUuid } = await setupTestEnvironment(
-            'mission-params@kleinkram.dev',
+            'mission-params@leggedrobotics.com',
             'Mission Params User',
         );
 
@@ -138,8 +319,8 @@ describe('Comprehensive API Query Parameters Tests', () => {
             {
                 name: 'another_mission_for_sorting',
                 projectUUID: projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );
@@ -214,7 +395,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support all file query parameters (fileUuids, filePatterns, fileExtensions, topicPatterns, categoryPatterns, fileName, projectUUID, missionUUID, startDate, endDate, sort)', async () => {
         const { user, projectUuid, missionUuid } = await setupTestEnvironment(
-            'file-params@kleinkram.dev',
+            'file-params@leggedrobotics.com',
             'File Params User',
         );
 
@@ -323,7 +504,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support file storage/upload/queue endpoints (isUploading, queue, storage)', async () => {
         const { user } = await setupTestEnvironment(
-            'file-endpoints@kleinkram.dev',
+            'file-endpoints@leggedrobotics.com',
             'File Endpoints User',
         );
 
@@ -357,7 +538,7 @@ describe('Comprehensive API Query Parameters Tests', () => {
 
     test('should support API keys query parameters (take, skip, sortBy, sortOrder)', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'api-keys-params@kleinkram.dev',
+            'api-keys-params@leggedrobotics.com',
             'API Keys Params User',
         );
 

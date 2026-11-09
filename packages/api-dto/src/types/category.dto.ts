@@ -15,6 +15,14 @@ export class CategoryDto {
     @IsString()
     @Expose()
     name!: string;
+
+    @ApiProperty({
+        description:
+            'Description of the category, empty string if not provided',
+    })
+    @IsString()
+    @Expose()
+    description!: string;
 }
 
 export class CategoriesDto implements Paginated<CategoryDto> {

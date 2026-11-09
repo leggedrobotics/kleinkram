@@ -16,8 +16,11 @@
             <q-item-label v-if="event.details?.sourceFilename" caption>
                 &larr; {{ event.details.sourceFilename }}
             </q-item-label>
+            <q-item-label v-if="$q.screen.xs" caption class="text-grey-6">
+                {{ formatDate(event.createdAt) }}
+            </q-item-label>
         </q-item-section>
-        <q-item-section side style="padding-right: 40px">
+        <q-item-section v-if="!$q.screen.xs" side style="padding-right: 40px">
             <div class="text-caption text-grey-6">
                 {{ formatDate(event.createdAt) }}
             </div>
@@ -27,6 +30,7 @@
 
 <script setup lang="ts">
 import type { FileEventDto } from '@kleinkram/api-dto/types/file/file-event.dto';
+import { useQuasar } from 'quasar';
 import { formatDate } from 'src/services/date-formating';
 import FileEventAttribution from './file-event-attribution.vue';
 import FileEventFileInfo from './file-event-file-info.vue';
@@ -37,4 +41,6 @@ defineProps<{
     event: FileEventDto;
     hideActionAttribution?: boolean;
 }>();
+
+const $q = useQuasar();
 </script>

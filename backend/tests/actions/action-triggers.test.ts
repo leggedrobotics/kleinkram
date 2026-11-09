@@ -25,7 +25,7 @@ describe('Action Triggers CRUD Tests', () => {
 
     test('should create, retrieve, update, and delete an action trigger', async () => {
         const { user, missionUuid } = await setupTestEnvironment(
-            'trigger-user@kleinkram.dev',
+            'trigger-user@leggedrobotics.com',
             'Trigger User',
         );
 
@@ -73,6 +73,8 @@ describe('Action Triggers CRUD Tests', () => {
         expect(createdTrigger.name).toBe(createDto.name);
         expect(createdTrigger.type).toBe(createDto.type);
         expect(createdTrigger.uuid).toBeDefined();
+        expect(new Date(createdTrigger.createdAt).getTime()).not.toBeNaN();
+        expect(new Date(createdTrigger.updatedAt).getTime()).not.toBeNaN();
 
         const triggerUuid = createdTrigger.uuid;
 
@@ -118,6 +120,9 @@ describe('Action Triggers CRUD Tests', () => {
         const updatedTrigger: ActionTriggerDto =
             (await updateResponse.json()) as ActionTriggerDto;
         expect(updatedTrigger.name).toBe(updateDto.name);
+        expect(new Date(updatedTrigger.updatedAt).getTime()).toBeGreaterThan(
+            new Date(createdTrigger.updatedAt).getTime(),
+        );
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
         expect((updatedTrigger.config as any).patterns).toContain('*.png');
 
@@ -151,7 +156,7 @@ describe('Action Triggers CRUD Tests', () => {
 
     test('should deny access to unauthorized users for triggers', async () => {
         const creatorEnvironment = await setupTestEnvironment(
-            'trigger-creator@kleinkram.dev',
+            'trigger-creator@leggedrobotics.com',
             'Trigger Creator',
         );
 

@@ -2,13 +2,21 @@
 
 Kleinkram comes with a set of example actions that cover common use cases:
 
-| Action                | Image Name                               | Description                                                | Input           | Output             |
-| :-------------------- | :--------------------------------------- | :--------------------------------------------------------- | :-------------- | :----------------- |
-| **Validate Data**     | `rslethz/action:validate-data-latest`    | Calculates SHA256 checksums of all files in a mission.     | Any             | `.txt` (checksums) |
-| **Convert Formats**   | `rslethz/action:convert-formats-latest`  | Converts MCAP files to CSV.                                | `.mcap`         | `.csv`             |
-| **Extract Metadata**  | `rslethz/action:extract-metadata-latest` | Extracts metadata from bag files (topics, duration, etc.). | `.bag`, `.mcap` | Metadata tags      |
-| **Python Script**     | `rslethz/action:python-template-latest`  | Run a custom Python script on your data.                   | Any             | Any                |
-| **GPU Python Script** | `rslethz/action:gpu-example-latest`      | Run a custom Python script with GPU acceleration.          | Any             | Any                |
+| Action                | Image Name                               | Description                                                  | Input           | Output             |
+| :-------------------- | :--------------------------------------- | :----------------------------------------------------------- | :-------------- | :----------------- |
+| **Validate Data**     | `rslethz/action:validate-data-latest`    | Calculates SHA256 checksums of all files in a mission.       | Any             | `.txt` (checksums) |
+| **Convert Formats**   | `rslethz/action:convert-formats-latest`  | Converts MCAP files to CSV.                                  | `.mcap`         | `.csv`             |
+| **Extract Metadata**  | `rslethz/action:extract-metadata-latest` | Extracts metadata from bag files (topics, duration, etc.).   | `.bag`, `.mcap` | `.json` (metadata) |
+| **Python Script**     | `rslethz/action:python-template-latest`  | Run a custom Python script on your data.                     | Any             | Any                |
+| **GPU Python Script** | `rslethz/action:gpu-example-latest`      | Run a custom Python script with GPU acceleration.            | Any             | Any                |
+| **Script Runner**     | `rslethz/action:script-runner-latest`    | Runs a single file submitted with `klein action run-script`. | Any             | Any                |
+
+::: tip Validate Data Reports Warnings
+**Validate Data** is also the worked example of [action findings](./write-actions.md#action-outcome). It flags empty
+files and duplicated content with `klein action warn` rather than failing, so a mission with a recording uploaded twice
+finishes as `DONE` in amber with the offending filenames listed, instead of either going green or failing a run that
+produced its checksums.
+:::
 
 ::: tip Source Code for Example Actions
 The source code of these example actions is available in the
@@ -54,7 +62,7 @@ klein login --key <API_KEY>
 klein download -m <MISSION_UUID> --dest <DIR>
 
 # List files in a mission
-klein list files -m <MISSION_UUID>
+klein file list -m <MISSION_UUID>
 ```
 
 ## Kleinkram CLI Example

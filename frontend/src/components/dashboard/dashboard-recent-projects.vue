@@ -4,12 +4,13 @@
         <q-card class="full-width q-pa-md header-row" flat>
             <span style="font-size: larger">Recently used projects</span>
             <div class="arrow-buttons">
-                <template v-if="projects.length > 0">
+                <template v-if="projects.length > 0 && !isMobile">
                     <q-btn
                         :disable="!canScrollLeft"
                         flat
                         icon="sym_o_arrow_back"
                         class="scroll-button"
+                        aria-label="Scroll projects left"
                         @click="scrollLeft"
                     />
                     <q-btn
@@ -17,6 +18,7 @@
                         flat
                         icon="sym_o_arrow_forward"
                         class="scroll-button"
+                        aria-label="Scroll projects right"
                         @click="scrollRight"
                     />
                 </template>
@@ -24,16 +26,48 @@
                     flat
                     icon="sym_o_arrow_outward"
                     class="scroll-button"
+                    aria-label="Show all projects"
                     @click="toProjects"
-                />
+                >
+                    <q-tooltip>Show all projects</q-tooltip>
+                </q-btn>
             </div>
         </q-card>
 
         <q-separator />
 
+        <!-- Compact list on phones and tablets -->
+        <q-list
+            v-if="projects.length > 0 && isMobile"
+            separator
+            class="project-list"
+        >
+            <q-item
+                v-for="project in projects"
+                :key="project.uuid"
+                v-ripple
+                clickable
+                class="project-list-item"
+                @click="() => goToProject(project.uuid)"
+            >
+                <q-item-section>
+                    <q-item-label lines="1">{{ project.name }}</q-item-label>
+                    <q-item-label caption lines="2">
+                        {{ project.description }}
+                    </q-item-label>
+                    <q-item-label caption class="text-grey-6">
+                        Updated {{ timeAgo(project) }}
+                    </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                    <q-icon name="sym_o_chevron_right" size="20px" />
+                </q-item-section>
+            </q-item>
+        </q-list>
+
         <!-- Scrollable Card Section -->
         <div
-            v-if="projects.length > 0"
+            v-else-if="projects.length > 0"
             ref="cardWrapper"
             class="card-wrapper"
             @scroll="checkScroll"
@@ -100,11 +134,20 @@ import {
 } from '@kleinkram/api-dto/types/project/recent-projects.dto';
 import { useQuery } from '@tanstack/vue-query';
 import { formatDistanceToNow } from 'date-fns';
+import { useQuasar } from 'quasar';
 import { recentProjects } from 'src/services/queries/project';
 import { computed, ComputedRef, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+const $q = useQuasar();
+
+/**
+ * Below 1024px the horizontal card carousel is replaced by a compact,
+ * tappable list: the cards are 300px wide and swiping them sideways inside a
+ * vertically scrolling page is awkward on touch devices.
+ */
+const isMobile = computed(() => $q.screen.lt.md);
 
 const { data } = useQuery<ResentProjectsDto | undefined>({
     queryKey: ['projects', 5],
@@ -199,6 +242,19 @@ onMounted(() => {
 .card {
     min-width: 300px; /* Prevent card from shrinking */
     cursor: pointer;
+}
+
+/*
+ * Tablets keep the fixed 350px dashboard row, so the list has to scroll
+ * inside the panel; on phones the panel grows with its content instead.
+ */
+.project-list {
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.project-list-item {
+    min-height: 48px;
 }
 
 .card .q-card:hover {

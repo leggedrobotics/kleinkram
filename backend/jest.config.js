@@ -2,6 +2,17 @@
 module.exports = {
     testEnvironment: 'node',
     transform: {
+        // Nest v12 (and typeorm-extension v4) ship ESM-only builds. Jest runs
+        // them as CommonJS, so they have to be downlevelled: ts-jest leaves
+        // `import.meta` in place, which throws at parse time, while swc rewrites
+        // it. Project sources keep going through ts-jest.
+        '[/\\\\]node_modules[/\\\\].+\\.[cm]?js$': [
+            '@swc/jest',
+            {
+                module: { type: 'commonjs' },
+                jsc: { target: 'es2022' },
+            },
+        ],
         '^.+\\.[tj]sx?$': [
             'ts-jest',
             {

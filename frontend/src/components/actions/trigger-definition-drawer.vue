@@ -2,10 +2,10 @@
     <q-drawer
         v-model="internalOpen"
         side="right"
-        :width="600"
+        :width="$q.screen.lt.md ? $q.screen.width : 600"
         bordered
         overlay
-        behavior="desktop"
+        :behavior="$q.screen.lt.md ? 'mobile' : 'desktop'"
     >
         <div class="column full-height">
             <!-- Header -->
@@ -18,6 +18,7 @@
                     round
                     dense
                     icon="sym_o_close"
+                    aria-label="Close"
                     @click="closeDrawer"
                 />
             </div>

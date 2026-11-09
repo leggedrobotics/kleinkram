@@ -27,7 +27,7 @@ As Marie is only a student and not a part of the RoboticsCorp, she does not get 
 but only <Read hint="While against the schema of inherited rights, this is needed so that she can do anything with the mission"/> rights.
 
 Marie can now upload files to the "_Decaf_" mission, and also delete them as she then is the creator of the files.
-Also she can add & remove tags to the mission. Or she could rename the mission, but she does not have the rights to delete it.
+Also she can add & remove metadata on the mission. Or she could rename the mission, but she does not have the rights to delete it.
 
 To run compute on the files Marie uploaded to the mission, she can create an Action Template and launch it as an Action on the mission.
 But Marie can also view & use the Action Templates of Hans, as those only require <Any/> rights. The Action Marie launches can
@@ -42,7 +42,7 @@ where she could move them to. Thus she cannot move the files out of the mission.
 
 As the results of the "_Normal_" mission are promising, Hans wants to get more people involved. He creates an Access Group called "Caffeine" and adds Patrik and Peter to it.
 Patrik and Peter were already part of the RoboticsCorp, so they already had <Create/> rights on the project but couldn't contribute easily.
-Now, by linking the Access Group "Caffeine" to the project "**AnyCoffee**" with <Modify/> rights, they can also for example add & remove tags to the project.
+Now, by linking the Access Group "Caffeine" to the project "**AnyCoffee**" with <Modify/> rights, they can also for example change which metadata types the project requires.
 
 To share their results with the external collaborator, the company "Berger Coffee", Patrik creates a new Access Group called "Berger" and adds the external collaborators to it.
 Patrik links the Access Group "Berger" to the project "**AnyCoffee**" with <Read/> rights, so the external collaborator can view the results but not change them.

@@ -1,17 +1,17 @@
 import { Exception, trace } from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import {
     BatchSpanProcessor,
     ParentBasedSampler,
     TraceIdRatioBasedSampler,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import logger from './logger';
 
 const exporter = new OTLPTraceExporter({
@@ -23,7 +23,8 @@ const exporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
     traceExporter: exporter,
     spanProcessors: [
-        new BatchSpanProcessor(exporter, {
+        new BatchSpanProcessor({
+            exporter,
             exportTimeoutMillis: 20_000,
             maxQueueSize: 512,
             scheduledDelayMillis: 5000,
@@ -40,7 +41,7 @@ const sdk = new NodeSDK({
         new NestInstrumentation(),
         new ExpressInstrumentation(),
         new HttpInstrumentation(),
-        new FetchInstrumentation(),
+        new UndiciInstrumentation(),
         new WinstonInstrumentation(),
         new PgInstrumentation(),
     ],
@@ -86,7 +87,7 @@ export const traceWrapper =
                 let result: U | Promise<any>;
 
                 // capture some metadata about the function call
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, unicorn/no-array-for-each
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, unicorn/no-for-each
                 arguments_.forEach((argument: any) => {
                     // check if arg is of type Job or QueueEntity and add metadata
                     if (
@@ -161,7 +162,8 @@ export function tracing<A extends unknown[], C>(
         target: new (...arguments_: A) => C,
         propertyKey?: string | symbol,
         descriptor?: TypedPropertyDescriptor<(...arguments_: A) => C>,
-    ): // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    ):
+        // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
         | void
         | (new (...arguments_: A) => C)
         | TypedPropertyDescriptor<(...arguments_: A) => C> {

@@ -1,6 +1,6 @@
 <template>
     <div class="h-full column">
-        <div class="flex justify-between items-center q-mb-lg">
+        <div class="flex justify-between items-center q-mb-lg store-toolbar">
             <ButtonGroup>
                 <q-toggle
                     v-model="showArchived"
@@ -12,7 +12,7 @@
                 />
             </ButtonGroup>
 
-            <ButtonGroup>
+            <ButtonGroup class="store-toolbar__actions">
                 <app-search-bar
                     ref="searchInput"
                     v-model="searchTerm"
@@ -54,7 +54,7 @@
                         :key="col.name"
                         :props="props"
                     >
-                        <div class="row items-center full-width">
+                        <div class="row items-center full-width template-row">
                             <q-avatar
                                 :color="
                                     props.row.archived ? 'grey-4' : 'grey-2'
@@ -66,8 +66,10 @@
                                 class="q-mr-md"
                             />
 
-                            <div class="column">
-                                <div class="text-weight-bold">
+                            <div class="column template-row__info">
+                                <div
+                                    class="text-weight-bold template-row__name"
+                                >
                                     {{ props.row.name }}
                                     <q-badge
                                         v-if="props.row.archived"
@@ -108,13 +110,16 @@
                                 </span>
                             </div>
 
-                            <div class="row q-gutter-x-sm">
+                            <div
+                                class="row q-gutter-x-sm template-row__actions"
+                            >
                                 <q-btn
                                     flat
                                     round
-                                    dense
+                                    :dense="!$q.screen.xs"
                                     icon="sym_o_history"
                                     color="grey-7"
+                                    aria-label="Version history"
                                     @click.stop="
                                         () => handleRevisions(props.row)
                                     "
@@ -124,9 +129,10 @@
                                 <q-btn
                                     flat
                                     round
-                                    dense
+                                    :dense="!$q.screen.xs"
                                     icon="sym_o_edit"
                                     color="grey-7"
+                                    aria-label="Edit action template"
                                     @click.stop="() => handleEdit(props.row)"
                                 >
                                     <q-tooltip>Edit</q-tooltip>
@@ -135,9 +141,10 @@
                                     v-if="!props.row.archived"
                                     flat
                                     round
-                                    dense
+                                    :dense="!$q.screen.xs"
                                     icon="sym_o_play_arrow"
                                     color="primary"
+                                    aria-label="Launch action"
                                     @click.stop="() => handleSelect(props.row)"
                                 >
                                     <q-tooltip>Launch</q-tooltip>
@@ -146,9 +153,10 @@
                                     v-if="!props.row.archived"
                                     flat
                                     round
-                                    dense
+                                    :dense="!$q.screen.xs"
                                     icon="sym_o_delete"
                                     color="negative"
+                                    aria-label="Delete action template"
                                     @click.stop="() => confirmDelete(props.row)"
                                 >
                                     <q-tooltip>Delete</q-tooltip>
@@ -384,3 +392,42 @@ const confirmDelete = (template: ActionTemplateDto): void => {
     });
 };
 </script>
+
+<style scoped>
+.template-row__info {
+    min-width: 0;
+}
+
+/*
+ * On phones the row turns into two lines: the template on the first one and
+ * the row actions, with comfortable touch targets, below it.
+ */
+@media (max-width: 599px) {
+    .template-row {
+        flex-wrap: wrap;
+    }
+
+    .template-row__name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .template-row__actions {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 4px;
+    }
+
+    .store-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .store-toolbar__actions .app-search-bar {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+}
+</style>

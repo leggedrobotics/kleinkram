@@ -2,7 +2,7 @@
     <div>
         <span class="text-h5">Compute Resources</span>
         <div class="row q-col-gutter-md q-mt-xs">
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     v-model.number="model.cpuMemory"
                     label="Memory (GB)"
@@ -17,7 +17,7 @@
                 </AppInput>
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     v-model.number="model.cpuCores"
                     label="CPU Cores"
@@ -31,7 +31,7 @@
                 </AppInput>
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     v-model.number="model.maxRuntime"
                     label="Max Runtime (h)"
@@ -48,7 +48,7 @@
                 />
             </div>
 
-            <div v-if="readonly" class="col-6">
+            <div v-if="readonly" class="col-12 col-sm-6">
                 <AppInput
                     :model-value="hasGpu ? 'Enabled' : 'Disabled'"
                     label="GPU Acceleration"
@@ -56,7 +56,10 @@
                 />
             </div>
 
-            <div v-if="hasGpu || (!readonly && gpuEnabled)" class="col-6">
+            <div
+                v-if="hasGpu || (!readonly && gpuEnabled)"
+                class="col-12 col-sm-6"
+            >
                 <AppInput
                     v-model.number="model.gpuMemory"
                     label="GPU Memory (GB)"

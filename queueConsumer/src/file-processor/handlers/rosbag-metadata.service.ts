@@ -10,7 +10,12 @@ import * as fsPromises from 'node:fs/promises';
 import { Repository } from 'typeorm';
 import { AbstractMetadataService } from './abstract-metadata.service';
 import { ExtractedTopicInfo } from './file-handler.interface';
-import { getDurationSeconds, toNanoseconds } from './time';
+import {
+    getDurationSeconds,
+    RecordingTimes,
+    toNanoseconds,
+    toRecordingTimes,
+} from './time';
 
 /**
  * Interface compatible with @foxglove/rosbag BagReader
@@ -114,6 +119,28 @@ export class RosBagMetadataService extends AbstractMetadataService {
     }
 
     /**
+     * Reads only the recording window of a stored ROS bag.
+     *
+     * `Bag.open()` parses the index at the end of the file rather than the
+     * messages, so this stays cheap enough to run over every existing file
+     * during a backfill.
+     */
+    async probeRecordingTimesFromUrl(
+        presignedUrl: string,
+    ): Promise<RecordingTimes> {
+        const httpReader = new UniversalHttpReader(presignedUrl);
+        await httpReader.init();
+
+        const bag = new Bag(new HttpBagReader(httpReader));
+        await bag.open();
+
+        return toRecordingTimes(
+            toNanoseconds(bag.startTime),
+            toNanoseconds(bag.endTime),
+        );
+    }
+
+    /**
      * Shared logic for processing the bag structure
      */
     private async processBag(
@@ -163,20 +190,12 @@ export class RosBagMetadataService extends AbstractMetadataService {
             });
         }
 
-        // Determine Date
-        let fileDate: Date | undefined;
-        if (bag.startTime) {
-            fileDate = new Date(
-                Math.round(bag.startTime.sec * 1000 + bag.startTime.nsec / 1e6),
-            );
-        }
-
         // Finalize (Deduplicate, Save, Create Event)
         await this.finishExtraction(
             targetEntity,
             rawTopics,
             bagReader.size(),
-            fileDate,
+            toRecordingTimes(startNs, endNs),
             method,
             startTime,
             actor,

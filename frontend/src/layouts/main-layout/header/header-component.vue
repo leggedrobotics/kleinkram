@@ -1,17 +1,25 @@
 <template>
-    <q-header class="bg-default text-grey-8 q-px-lg">
-        <q-toolbar class="q-pa-none height-xxl">
+    <q-header
+        class="bg-default text-grey-8"
+        style="padding: 0 var(--page-gutter)"
+    >
+        <q-toolbar class="q-pa-none height-xxl no-wrap">
             <q-toolbar-title
                 shrink
                 class="q-pa-none"
                 @click="navigateBackToHome"
             >
-                <kleinkram-logo class="q-pr-lg" />
+                <kleinkram-logo
+                    :class="$q.screen.gt.xs ? 'q-pr-lg' : 'q-pr-sm'"
+                />
             </q-toolbar-title>
 
             <q-separator vertical />
 
-            <header-tabs :main-menu="mainMenu" class="q-ml-lg" />
+            <header-tabs
+                :main-menu="mainMenu"
+                :class="$q.screen.gt.xs ? 'q-ml-lg' : 'q-ml-xs'"
+            />
 
             <q-space />
 
@@ -24,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import KleinkramLogo from 'src/components/images/kleinkram-logo.vue';
 import ROUTES from 'src/router/routes';
 import { useRouter } from 'vue-router';
@@ -32,6 +41,7 @@ import HeaderRightMenu from './header-right-menu.vue';
 import HeaderTabs, { MainMenu } from './header-tabs.vue';
 
 const $router = useRouter();
+const $q = useQuasar();
 
 const mainMenu: MainMenu[] = [
     {

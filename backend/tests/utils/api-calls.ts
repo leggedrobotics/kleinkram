@@ -4,7 +4,7 @@ import { CreateTemplateDto } from '@kleinkram/api-dto/types/actions/create-templ
 import { CreateAccessGroupDto } from '@kleinkram/api-dto/types/create-access-group.dto';
 import { CreateMission } from '@kleinkram/api-dto/types/create-mission.dto';
 import { CreateProject } from '@kleinkram/api-dto/types/create-project.dto';
-import { CreateTagTypeDto } from '@kleinkram/api-dto/types/tags/create-tag-type.dto';
+import { CreateMetadataTypeDto } from '@kleinkram/api-dto/types/metadata/create-metadata-type.dto';
 import {
     AccessGroupEntity,
     GroupMembershipEntity,
@@ -111,7 +111,7 @@ export const createMissionUsingPost = async (
         body: JSON.stringify({
             name: mission.name,
             projectUUID: mission.projectUUID,
-            tags: {},
+            metadata: mission.metadata ?? {},
         }),
         credentials: 'include',
     });
@@ -239,8 +239,8 @@ export async function uploadFile(
     return fileHash;
 }
 
-export const createMetadataUsingPost = async (
-    tagType: CreateTagTypeDto,
+export const createMetadataTypeUsingPost = async (
+    metadataType: CreateMetadataTypeDto,
     user: UserEntity,
 ): Promise<string> => {
     const headersBuilder = new HeaderCreator(user);
@@ -250,14 +250,14 @@ export const createMetadataUsingPost = async (
         method: 'POST',
         headers: headersBuilder.getHeaders(),
         body: JSON.stringify({
-            name: tagType.name,
-            type: tagType.type,
+            name: metadataType.name,
+            type: metadataType.type,
         }),
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const json = await response.json();
-    console.log(`['DEBUG'] Created tag:`, json);
+    console.log(`['DEBUG'] Created metadata type:`, json);
     expect(response.status).toBeLessThan(300);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return json.uuid;

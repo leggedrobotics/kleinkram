@@ -22,7 +22,15 @@ the user is created. Only the user itself is member of this group. No other user
 ### Affiliation Groups
 
 Affiliation groups are groups to which user are added automatically based on their mail domain.
-These default groups can be configured in the configuration file: `backend/src/access_config.json`.
+These groups are configured per deployment in an `access_config.json`; it is not part of the Docker image.
+The backend reads it from `ACCESS_CONFIG_PATH` and refuses to start if it is missing or invalid.
+The deployment compose files mount the file from `ACCESS_CONFIG_FILE` (default: `./access_config.json` next to the
+compose file). Local development and tests use `backend/access_config.dev.json`.
+
+A user matches an entry if their email ends with `@<email>`; subdomains do not match. On every start, the backend
+syncs the affiliation groups and memberships of all users with the config: missing groups and memberships are
+created, groups are renamed, and groups and memberships no longer covered by the config are removed. Each change is
+logged by `AffiliationGroupService`.
 
 #### Example
 
@@ -30,7 +38,7 @@ These default groups can be configured in the configuration file: `backend/src/a
 {
     "emails": [
         {
-            "email": "kleinkram.dev",
+            "email": "leggedrobotics.com",
             "access_groups": ["00000000-0000-0000-0000-000000000000"]
         }
     ],
@@ -38,8 +46,7 @@ These default groups can be configured in the configuration file: `backend/src/a
         {
             "name": "Kleinkram Developers",
             "uuid": "00000000-0000-0000-0000-000000000000",
-            // read only
-            "rights": 0
+            "rights": 10
         }
     ]
 }

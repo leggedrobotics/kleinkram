@@ -1,8 +1,7 @@
 <template>
     <q-btn
         flat
-        style="height: 100%"
-        class="bg-button-secondary text-on-color"
+        class="bg-button-secondary text-on-color app-create-button"
         :icon="icon"
         :label="label"
         :disable="disable"
@@ -31,3 +30,16 @@ const onClick = (event: Event): void => {
     emit('click', event);
 };
 </script>
+
+<style scoped>
+.app-create-button {
+    height: 100%;
+}
+
+/* Touch target on small screens */
+@media (max-width: 1023px) {
+    .app-create-button {
+        min-height: 40px;
+    }
+}
+</style>

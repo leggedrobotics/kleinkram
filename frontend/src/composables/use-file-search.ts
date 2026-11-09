@@ -1,7 +1,7 @@
 import { FileType } from '@kleinkram/shared';
 import { useQuery } from '@tanstack/vue-query';
 import {
-    useAllTags,
+    useAllMetadataTypes,
     useFilteredProjects,
     useMissionsOfProjectMinimal,
     useProjectQuery,
@@ -21,7 +21,7 @@ import { allTopicsNames, allTopicTypes } from 'src/services/queries/topic';
 import { CompositeFilterProvider } from 'src/services/suggestions/strategies/composite-filter-provider';
 import { KeywordStrategy } from 'src/services/suggestions/strategies/keyword-strategy';
 import {
-    MetadataTag,
+    MetadataTypeOption,
     SuggestionProvider,
 } from 'src/services/suggestions/suggestion-types';
 import { computed, Ref } from 'vue';
@@ -34,7 +34,7 @@ export interface FileSearchContextData extends FilterParserContext {
     topics: string[];
     datatypes: string[];
     fileTypes: string[];
-    availableTags: MetadataTag[];
+    availableMetadataTypes: MetadataTypeOption[];
     hasProjectSelected: boolean;
     projectUuid?: string | undefined;
     missionUuid?: string | undefined;
@@ -61,15 +61,14 @@ export function useFileSearch(
                 uuid: p.uuid,
             })) ?? [];
 
-        if (currentProjectUuid.value) {
-            const p = list.find((x) => x.uuid === currentProjectUuid.value);
-            if (!p) {
-                list.push({
-                    name:
-                        selectedProject.value?.name ?? currentProjectUuid.value,
-                    uuid: currentProjectUuid.value,
-                });
-            }
+        if (
+            currentProjectUuid.value &&
+            !list.some((x) => x.uuid === currentProjectUuid.value)
+        ) {
+            list.push({
+                name: selectedProject.value?.name ?? currentProjectUuid.value,
+                uuid: currentProjectUuid.value,
+            });
         }
         return list;
     });
@@ -87,14 +86,14 @@ export function useFileSearch(
                 uuid: m.uuid,
             })) ?? [];
 
-        if (currentMissionUuid?.value) {
-            const m = list.find((x) => x.uuid === currentMissionUuid.value);
-            if (!m) {
-                list.push({
-                    name: currentMissionUuid.value, // We don't have a mission query yet, so just use UUID
-                    uuid: currentMissionUuid.value,
-                });
-            }
+        if (
+            currentMissionUuid?.value &&
+            !list.some((x) => x.uuid === currentMissionUuid.value)
+        ) {
+            list.push({
+                name: currentMissionUuid.value, // We don't have a mission query yet, so just use UUID
+                uuid: currentMissionUuid.value,
+            });
         }
         return list;
     });
@@ -111,8 +110,8 @@ export function useFileSearch(
         queryFn: allTopicTypes,
     });
 
-    // Tags
-    const { data: allTags } = useAllTags();
+    // Metadata types
+    const { data: allMetadataTypes } = useAllMetadataTypes();
 
     // FileTypes (Static)
     const allFileTypes = Object.values(FileType).filter(
@@ -127,8 +126,8 @@ export function useFileSearch(
         topics: allTopics.value ?? [],
         datatypes: allDatatypes.value ?? [],
         fileTypes: allFileTypes,
-        availableTags:
-            allTags.value?.map((t) => ({
+        availableMetadataTypes:
+            allMetadataTypes.value?.map((t) => ({
                 name: t.name,
                 uuid: t.uuid,
                 datatype: t.datatype,
@@ -188,7 +187,7 @@ export function useFileSearch(
         missions,
         allTopics,
         allDatatypes,
-        allTags,
+        allMetadataTypes,
         allFileTypes,
     };
 }

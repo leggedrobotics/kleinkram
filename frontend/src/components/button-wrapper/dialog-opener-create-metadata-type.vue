@@ -1,0 +1,31 @@
+<template>
+    <div
+        :class="{
+            disabled: !canCreate,
+            'cursor-pointer': !canCreate,
+            'cursor-not-allowed': canCreate,
+        }"
+        @click="createNewMetadataType"
+    >
+        <slot />
+    </div>
+</template>
+
+<script setup lang="ts">
+import { useQuasar } from 'quasar';
+import CreateMetadataTypeDialog from 'src/dialogs/create-metadata-type-dialog.vue';
+import { canCreateProject, usePermissionsQuery } from 'src/hooks/query-hooks';
+import { computed } from 'vue';
+
+const $q = useQuasar();
+const { data: permissions } = usePermissionsQuery();
+const canCreate = computed(() => canCreateProject(permissions.value));
+
+const createNewMetadataType = (): void => {
+    if (!canCreate.value) return;
+    $q.dialog({
+        title: 'Create new metadata type',
+        component: CreateMetadataTypeDialog,
+    });
+};
+</script>

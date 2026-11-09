@@ -6,7 +6,7 @@ import type { FilesDto } from '@kleinkram/api-dto/types/file/files.dto';
 import type { FoxgloveLinkResponseDto } from '@kleinkram/api-dto/types/file/foxglove-link-response.dto';
 import type { IsUploadingDto } from '@kleinkram/api-dto/types/file/is-uploading.dto';
 import type { StorageOverviewDto } from '@kleinkram/api-dto/types/storage-overview.dto';
-import { FileType, HealthStatus } from '@kleinkram/shared';
+import { FileState, FileType, HealthStatus } from '@kleinkram/shared';
 import { AxiosResponse } from 'axios';
 import axios from 'src/api/axios';
 
@@ -21,12 +21,14 @@ export interface FilteredFilesConfig {
     categories?: string[] | undefined;
     matchAllTopics?: boolean | undefined;
     fileTypes?: FileType[] | undefined;
-    tag?: Record<string, unknown> | undefined;
+    metadataByTypeUuid?: Record<string, unknown> | undefined;
     take?: number | undefined;
     skip?: number | undefined;
     sort?: string | undefined;
     desc?: boolean | undefined;
     health?: HealthStatus | undefined;
+    includeStates?: FileState[] | undefined;
+    excludeStates?: FileState[] | undefined;
 }
 
 export const fetchFilteredFiles = async (
@@ -44,12 +46,14 @@ export const fetchFilteredFiles = async (
         categories,
         matchAllTopics,
         fileTypes,
-        tag,
+        metadataByTypeUuid,
         take,
         skip,
         sort,
         desc,
         health,
+        includeStates,
+        excludeStates,
     } = config;
     try {
         const parameters: Record<string, string> = {};
@@ -67,15 +71,23 @@ export const fetchFilteredFiles = async (
         if (matchAllTopics !== undefined)
             parameters.matchAllTopics = matchAllTopics.toString();
         if (fileTypes !== undefined) parameters.fileTypes = fileTypes.join(',');
-        if (tag) parameters.tags = JSON.stringify(tag);
+        if (metadataByTypeUuid)
+            parameters.metadataByTypeUuid = JSON.stringify(metadataByTypeUuid);
         if (take) parameters.take = take.toString();
         if (skip) parameters.skip = skip.toString();
         if (sort) parameters.sort = sort;
         if (desc !== undefined)
             parameters.sortDirection = desc ? 'DESC' : 'ASC';
         if (health) parameters.health = health;
+        const stateParameters = new URLSearchParams(parameters);
+        for (const state of includeStates ?? []) {
+            stateParameters.append('includeStates', state);
+        }
+        for (const state of excludeStates ?? []) {
+            stateParameters.append('excludeStates', state);
+        }
 
-        const queryParameters = new URLSearchParams(parameters).toString();
+        const queryParameters = stateParameters.toString();
         const response: AxiosResponse<FilesDto> = await axios.get<FilesDto>(
             `/files?${queryParameters}`,
         );
@@ -131,16 +143,15 @@ export const filesOfMission = async (
     topics?: string[],
     messageDatatypes?: string[],
     matchAllTopics = true,
+    includeStates?: FileState[],
+    excludeStates?: FileState[],
 ): Promise<FilesDto> => {
-    const tag: Record<string, unknown> = {};
-
     return fetchFilteredFiles({
         filename: filename ?? '',
         missionUUID,
         categories,
         matchAllTopics,
         fileTypes,
-        tag: Object.keys(tag).length > 0 ? tag : undefined,
         take,
         skip,
         sort,
@@ -150,6 +161,8 @@ export const filesOfMission = async (
         endDate,
         topics,
         messageDatatypes,
+        includeStates,
+        excludeStates,
     });
 };
 

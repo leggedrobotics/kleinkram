@@ -5,7 +5,8 @@ import {
     DefaultRights,
     ProjectDto,
     ProjectsDto,
-    ProjectWithRequiredTagsDto,
+    ProjectStarDto,
+    ProjectWithRequiredMetadataTypesDto,
     ResentProjectDto,
     SortOrder,
 } from '@kleinkram/api-dto';
@@ -16,11 +17,18 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, ILike, Not, Repository } from 'typeorm';
+import {
+    DataSource,
+    EntityManager,
+    ILike,
+    Not,
+    Repository,
+    SelectQueryBuilder,
+} from 'typeorm';
+import { assertValidPublicAccessRights } from './public-access';
 import { UserService } from './user.service';
 
 import {
-    addMissionCount,
     addProjectCreatorFilter,
     addProjectFilters,
     addSort,
@@ -29,17 +37,18 @@ import {
 import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     projectEntityToDto,
-    projectEntityToDtoWithMissionCountAndTags,
-    projectEntityToDtoWithRequiredTags,
+    projectEntityToDtoWithMissionCountAndMetadataTypes,
+    projectEntityToDtoWithRequiredMetadataTypes,
 } from '@/serialization';
 import {
     AccessGroupEntity,
     CategoryEntity,
+    MetadataTypeEntity,
     MissionEntity,
     ProjectAccessEntity,
     ProjectAccessViewEntity,
     ProjectEntity,
-    TagTypeEntity,
+    ProjectStarEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import {
@@ -50,6 +59,21 @@ import {
 } from '@kleinkram/shared';
 import { ConfigService } from '@nestjs/config';
 
+/**
+ * Alias of the computed column holding the total file size of a project, see
+ * {@link ProjectService._addProjectSizeForSorting}. The ORDER BY refers to the
+ * column by this alias, which is what makes TypeORM carry the sort over into
+ * the distinct-ids query it runs for paginated queries with joins.
+ */
+const PROJECT_SIZE_SORT_ALIAS = 'project_total_size';
+
+/**
+ * Alias of the computed column holding the number of missions of a project, see
+ * {@link ProjectService._addMissionCountForSorting}. Same reasoning as
+ * {@link PROJECT_SIZE_SORT_ALIAS}.
+ */
+const PROJECT_MISSION_COUNT_SORT_ALIAS = 'project_mission_count';
+
 const FIND_MANY_SORT_KEYS = {
     projectName: 'project.name',
     description: 'project.description',
@@ -58,6 +82,8 @@ const FIND_MANY_SORT_KEYS = {
     updatedAt: 'project.updatedAt',
     creator: 'creator.name',
     rights: 'projectAccessView.rights',
+    size: PROJECT_SIZE_SORT_ALIAS,
+    nrOfMissions: PROJECT_MISSION_COUNT_SORT_ALIAS,
 };
 
 @Injectable()
@@ -70,10 +96,12 @@ export class ProjectService {
         private userService: UserService,
         @InjectRepository(ProjectAccessEntity)
         private projectAccessRepository: Repository<ProjectAccessEntity>,
-        @InjectRepository(TagTypeEntity)
-        private tagTypeRepository: Repository<TagTypeEntity>,
+        @InjectRepository(MetadataTypeEntity)
+        private metadataTypeRepository: Repository<MetadataTypeEntity>,
         @InjectRepository(AccessGroupEntity)
         private accessGroupRepository: Repository<AccessGroupEntity>,
+        @InjectRepository(ProjectStarEntity)
+        private projectStarRepository: Repository<ProjectStarEntity>,
         private configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {
@@ -113,6 +141,194 @@ export class ProjectService {
         return sizeMap;
     }
 
+    /**
+     * Counts the (non-deleted) missions of the given projects.
+     *
+     * TypeORM v1 removed `QueryBuilder.loadRelationCountAndMap()`, so the counts
+     * are fetched with a dedicated aggregate query (the same shape as
+     * `_getProjectSizes`) instead of being mapped onto the entity.
+     */
+    private async _getMissionCounts(
+        projectUuids: string[],
+    ): Promise<Map<string, number>> {
+        if (projectUuids.length === 0) {
+            return new Map();
+        }
+
+        const rawResults = await this.projectRepository
+            .createQueryBuilder('project')
+            .select('project.uuid', 'projectUuid')
+            .addSelect('COUNT(mission.uuid)', 'missionCount')
+            .leftJoin(
+                'project.missions',
+                'mission',
+                'mission.deletedAt IS NULL',
+            )
+            .where('project.uuid IN (:...projectUuids)', { projectUuids })
+            .groupBy('project.uuid')
+            .getRawMany<{ projectUuid: string; missionCount: string }>();
+
+        const countMap = new Map<string, number>();
+        for (const raw of rawResults) {
+            countMap.set(
+                raw.projectUuid,
+                Number.parseInt(raw.missionCount) || 0,
+            );
+        }
+        return countMap;
+    }
+
+    /**
+     * Returns the subset of `projectUuids` that `userUuid` has starred.
+     *
+     * Stars are per user, so they cannot be joined onto the project rows of a
+     * shared query without duplicating them; they are fetched for the rows of
+     * the current page instead, the same way sizes and mission counts are.
+     */
+    private async _getStarredProjectUuids(
+        projectUuids: string[],
+        userUuid: string,
+    ): Promise<Set<string>> {
+        if (projectUuids.length === 0) {
+            return new Set();
+        }
+
+        const stars = await this.projectStarRepository
+            .createQueryBuilder('star')
+            .select('star.projectUuid', 'projectUuid')
+            .where('star.userUuid = :userUuid', { userUuid })
+            .andWhere('star.projectUuid IN (:...projectUuids)', {
+                projectUuids,
+            })
+            .getRawMany<{ projectUuid: string }>();
+
+        return new Set(stars.map((star) => star.projectUuid));
+    }
+
+    /**
+     * Restricts the query to the projects `userUuid` has starred.
+     *
+     * Implemented as a semi-join (`IN (...)`) rather than a join so that the
+     * row count of the outer query — and with it the pagination — is not
+     * affected.
+     */
+    private _addStarredFilter(
+        query: SelectQueryBuilder<ProjectEntity>,
+        userUuid: string,
+    ): SelectQueryBuilder<ProjectEntity> {
+        const starredUuids = this.projectStarRepository
+            .createQueryBuilder('starFilter')
+            .select('starFilter.projectUuid')
+            .where('starFilter.userUuid = :starredByUserUuid');
+
+        return query
+            .andWhere(`project.uuid IN (${starredUuids.getQuery()})`)
+            .setParameter('starredByUserUuid', userUuid);
+    }
+
+    /**
+     * Returns the subset of `projectUuids` that are public, i.e. grant the
+     * public access group access.
+     */
+    private async _getPublicProjectUuids(
+        projectUuids: string[],
+    ): Promise<Set<string>> {
+        if (projectUuids.length === 0) {
+            return new Set();
+        }
+
+        const publicAccesses = await this.projectAccessRepository
+            .createQueryBuilder('access')
+            .innerJoin('access.accessGroup', 'accessGroup')
+            .innerJoin('access.project', 'accessProject')
+            .select('accessProject.uuid', 'projectUuid')
+            .where('accessGroup.type = :publicType', {
+                publicType: AccessGroupType.PUBLIC,
+            })
+            .andWhere('accessProject.uuid IN (:...projectUuids)', {
+                projectUuids,
+            })
+            .getRawMany<{ projectUuid: string }>();
+
+        return new Set(publicAccesses.map((access) => access.projectUuid));
+    }
+
+    /**
+     * Restricts the query to public projects. A semi-join for the same
+     * reason as `_addStarredFilter`.
+     */
+    private _addPublicFilter(
+        query: SelectQueryBuilder<ProjectEntity>,
+    ): SelectQueryBuilder<ProjectEntity> {
+        const publicUuids = this.projectAccessRepository
+            .createQueryBuilder('publicAccess')
+            .innerJoin('publicAccess.accessGroup', 'publicGroup')
+            .select('"publicAccess"."projectUuid"')
+            .where('publicGroup.type = :publicGroupType');
+
+        return query
+            .andWhere(`project.uuid IN (${publicUuids.getQuery()})`)
+            .setParameter('publicGroupType', AccessGroupType.PUBLIC);
+    }
+
+    /**
+     * Adds the total size of a project (the summed size of all files of all its
+     * non-deleted missions) as a computed column, so that the database can sort
+     * by it.
+     *
+     * The size is not stored on the project and `_getProjectSizes` only fetches
+     * it for the rows of the current page, which is too late for sorting.
+     */
+    private _addProjectSizeForSorting(
+        query: SelectQueryBuilder<ProjectEntity>,
+    ): SelectQueryBuilder<ProjectEntity> {
+        // Correlated on purpose: the aggregate is evaluated for the projects
+        // that survive the access constraints and filters of the outer query,
+        // and not at all for the count query, which drops the select list.
+        const totalSize = this.projectRepository.manager
+            .createQueryBuilder()
+            .select('COALESCE(SUM(sizeFile.size), 0)')
+            .from(MissionEntity, 'sizeMission')
+            .leftJoin(
+                'sizeMission.files',
+                'sizeFile',
+                'sizeFile.deletedAt IS NULL',
+            )
+            .where('"sizeMission"."projectUuid" = "project"."uuid"')
+            .andWhere('sizeMission.deletedAt IS NULL');
+
+        return query.addSelect(
+            `(${totalSize.getQuery()})`,
+            PROJECT_SIZE_SORT_ALIAS,
+        );
+    }
+
+    /**
+     * Adds the number of (non-deleted) missions of a project as a computed
+     * column, so that the database can sort by it.
+     *
+     * The count is not stored on the project and `_getMissionCounts` only
+     * fetches it for the rows of the current page, which is too late for
+     * sorting.
+     */
+    private _addMissionCountForSorting(
+        query: SelectQueryBuilder<ProjectEntity>,
+    ): SelectQueryBuilder<ProjectEntity> {
+        // Correlated for the same reason as the size aggregate, see
+        // `_addProjectSizeForSorting`.
+        const missionCount = this.projectRepository.manager
+            .createQueryBuilder()
+            .select('COUNT(countMission.uuid)')
+            .from(MissionEntity, 'countMission')
+            .where('"countMission"."projectUuid" = "project"."uuid"')
+            .andWhere('countMission.deletedAt IS NULL');
+
+        return query.addSelect(
+            `(${missionCount.getQuery()})`,
+            PROJECT_MISSION_COUNT_SORT_ALIAS,
+        );
+    }
+
     async findMany(
         projectUuids: string[],
         projectPatterns: string[],
@@ -123,11 +339,16 @@ export class ProjectService {
         creatorUuid: string | undefined,
         userUuid: string,
         exactMatch = false,
+        starredOnly = false,
+        publicOnly = false,
     ): Promise<ProjectsDto> {
         let query = this.projectRepository
             .createQueryBuilder('project')
             .leftJoinAndSelect('project.creator', 'creator')
-            .leftJoinAndSelect('project.requiredTags', 'requiredTags');
+            .leftJoinAndSelect(
+                'project.requiredMetadataTypes',
+                'requiredMetadataTypes',
+            );
 
         query = addAccessConstraintsToProjectQuery(query, userUuid);
 
@@ -139,6 +360,14 @@ export class ProjectService {
             exactMatch,
         );
 
+        if (starredOnly) {
+            query = this._addStarredFilter(query, userUuid);
+        }
+
+        if (publicOnly) {
+            query = this._addPublicFilter(query);
+        }
+
         if (sortBy === 'rights') {
             query = query.leftJoinAndSelect(
                 ProjectAccessViewEntity,
@@ -148,23 +377,47 @@ export class ProjectService {
             );
         }
 
+        if (sortBy === 'size') {
+            query = this._addProjectSizeForSorting(query);
+        }
+
+        if (sortBy === 'nrOfMissions') {
+            query = this._addMissionCountForSorting(query);
+        }
+
         if (sortBy !== undefined) {
             query = addSort(query, FIND_MANY_SORT_KEYS, sortBy, sortOrder);
+
+            // Stable tie-breaker: rows that compare equal on the sort column
+            // (projects of the same size or mission count, most notably the
+            // empty ones) would otherwise be free to swap places between two
+            // requests, which duplicates and drops rows across LIMIT/OFFSET
+            // pages.
+            query.addOrderBy('project.uuid', 'ASC');
         }
 
         query = addProjectCreatorFilter(query, creatorUuid);
-        query = addMissionCount(query);
 
         query.skip(skip).take(take);
         const [projects, count] = await query.getManyAndCount();
 
         const foundProjectUuids = projects.map((p) => p.uuid);
-        const sizes = await this._getProjectSizes(foundProjectUuids);
+        const [sizes, missionCounts, starredUuids, publicUuids] =
+            await Promise.all([
+                this._getProjectSizes(foundProjectUuids),
+                this._getMissionCounts(foundProjectUuids),
+                this._getStarredProjectUuids(foundProjectUuids, userUuid),
+                this._getPublicProjectUuids(foundProjectUuids),
+            ]);
 
         return {
             data: projects.map((element) => {
-                const dto = projectEntityToDtoWithMissionCountAndTags(element);
+                const dto =
+                    projectEntityToDtoWithMissionCountAndMetadataTypes(element);
                 dto.size = sizes.get(element.uuid) ?? 0;
+                dto.missionCount = missionCounts.get(element.uuid) ?? 0;
+                dto.isStarred = starredUuids.has(element.uuid);
+                dto.isPublic = publicUuids.has(element.uuid);
                 return dto;
             }),
             count,
@@ -173,32 +426,102 @@ export class ProjectService {
         };
     }
 
-    async findOne(uuid: string): Promise<ProjectWithRequiredTagsDto> {
+    async findOne(
+        uuid: string,
+        userUuid?: string,
+    ): Promise<ProjectWithRequiredMetadataTypesDto> {
         const missionPromise = this.projectRepository
             .createQueryBuilder('project')
             .where('project.uuid = :uuid', { uuid })
             .leftJoinAndSelect('project.creator', 'creator')
-            .leftJoinAndSelect('project.requiredTags', 'requiredTags')
+            .leftJoinAndSelect(
+                'project.requiredMetadataTypes',
+                'requiredMetadataTypes',
+            )
             .leftJoinAndSelect('project.project_accesses', 'project_accesses')
             .leftJoinAndSelect('project_accesses.accessGroup', 'accessGroup')
             .leftJoinAndSelect('accessGroup.memberships', 'memberships')
             .leftJoinAndSelect('memberships.user', 'user')
             .getOneOrFail();
 
-        const missionCountPromise = this.projectRepository
-            .createQueryBuilder('project')
-            .leftJoin('project.missions', 'missions')
-            .where('project.uuid = :uuid', { uuid })
-            .getCount();
+        const missionCountPromise = this.projectRepository.manager.count(
+            MissionEntity,
+            { where: { project: { uuid } } },
+        );
 
         const [mission, missionCount] = await Promise.all([
             missionPromise,
             missionCountPromise,
         ]);
-        const sizes = await this._getProjectSizes([uuid]);
-        const dto = projectEntityToDtoWithRequiredTags(mission, missionCount);
+        const [sizes, publicUuids] = await Promise.all([
+            this._getProjectSizes([uuid]),
+            this._getPublicProjectUuids([uuid]),
+        ]);
+        const starredUuids =
+            userUuid === undefined
+                ? new Set<string>()
+                : await this._getStarredProjectUuids([uuid], userUuid);
+
+        const dto = projectEntityToDtoWithRequiredMetadataTypes(
+            mission,
+            missionCount,
+        );
         dto.size = sizes.get(uuid) ?? 0;
+        dto.isStarred = starredUuids.has(uuid);
+        dto.isPublic = publicUuids.has(uuid);
         return dto;
+    }
+
+    /**
+     * Stars a project for a user. Starring an already starred project is a
+     * no-op, so that a client that lost the response of an earlier request can
+     * safely retry.
+     */
+    async starProject(
+        projectUuid: string,
+        userUuid: string,
+    ): Promise<ProjectStarDto> {
+        const project = await this.projectRepository.findOne({
+            where: { uuid: projectUuid },
+        });
+        if (project === null) {
+            throw new NotFoundException('Project not found');
+        }
+
+        // The unique index on (user, project) is what actually rules out
+        // duplicates; two concurrent requests can both pass the check above.
+        await this.projectStarRepository
+            .createQueryBuilder()
+            .insert()
+            .into(ProjectStarEntity)
+            .values({
+                user: { uuid: userUuid },
+                project: { uuid: projectUuid },
+            })
+            .orIgnore()
+            .execute();
+
+        return { projectUuid, isStarred: true };
+    }
+
+    /**
+     * Removes a user's star from a project. Un-starring a project that is not
+     * starred is a no-op, for the same reason as in {@link starProject}.
+     *
+     * The star is deleted for good rather than soft-deleted: it carries no
+     * history worth keeping, and leaving tombstones around would collide with
+     * the partial unique index the next time the project is starred.
+     */
+    async unstarProject(
+        projectUuid: string,
+        userUuid: string,
+    ): Promise<ProjectStarDto> {
+        await this.projectStarRepository.delete({
+            user: { uuid: userUuid },
+            project: { uuid: projectUuid },
+        });
+
+        return { projectUuid, isStarred: false };
     }
 
     async getRecentProjects(
@@ -255,7 +578,7 @@ export class ProjectService {
                     '        "project"."deletedAt" IS NULL\n' +
                     '        )\n' +
                     'ORDER BY\n' +
-                    '    "latestUpdate" DESC\n' +
+                    '    "latestUpdate" DESC NULLS LAST\n' +
                     'LIMIT $1',
                 [take],
             );
@@ -309,9 +632,10 @@ export class ProjectService {
                     '   (\n' +
                     '      "projectAccessView"."rights" >= $1 \n' +
                     '      AND "projectAccessView"."useruuid" = $2 \n' +
+                    '      AND "project"."deletedAt" IS NULL \n' +
                     '   )\n' +
                     'ORDER BY\n' +
-                    '   "latestUpdate" DESC \n' +
+                    '   "latestUpdate" DESC NULLS LAST \n' +
                     'LIMIT $3',
                 [AccessGroupRights.READ, user.uuid, take],
             );
@@ -337,11 +661,6 @@ export class ProjectService {
                         createdAt: project.project_createdAt as Date,
                     };
                 })
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/no-array-sort
-                .sort(
-                    (a: ResentProjectDto, b: ResentProjectDto) =>
-                        b.updatedAt.getTime() - a.updatedAt.getTime(),
-                )
         );
     }
 
@@ -357,6 +676,18 @@ export class ProjectService {
                 'Project with that name already exists',
             );
         }
+
+        // checked up front: errors of the access group creation below are
+        // reported as invalid uuids
+        for (const accessGroup of project.accessGroups ?? []) {
+            if ('accessGroupUUID' in accessGroup) {
+                assertValidPublicAccessRights(
+                    accessGroup.accessGroupUUID,
+                    accessGroup.rights,
+                );
+            }
+        }
+
         const creator = await this.userService.findOneByUUID(
             auth.user.uuid,
             {},
@@ -375,11 +706,14 @@ export class ProjectService {
             .map((ag) => ag.accessGroup)
             .filter((ag) => ag !== undefined);
 
-        project.requiredTags ??= [];
-        const tagTypes = await Promise.all(
-            project.requiredTags.map((tag) => {
-                return this.tagTypeRepository.findOneOrFail({
-                    where: { uuid: tag },
+        // `requiredTags` is a deprecated alias kept for old clients; the
+        // canonical field wins when both are given.
+        const requiredMetadataTypeUUIDs =
+            project.requiredMetadataTypes ?? project.requiredTags ?? [];
+        const requiredMetadataTypes = await Promise.all(
+            requiredMetadataTypeUUIDs.map((metadataTypeUUID) => {
+                return this.metadataTypeRepository.findOneOrFail({
+                    where: { uuid: metadataTypeUUID },
                 });
             }),
         );
@@ -387,7 +721,7 @@ export class ProjectService {
             name: project.name,
             description: project.description,
             creator: creator,
-            requiredTags: tagTypes,
+            requiredMetadataTypes,
         });
 
         const accessGroupsDefaultIds = new Set(
@@ -468,38 +802,49 @@ export class ProjectService {
         return projectEntityToDto(updatedProject);
     }
 
-    async addTagType(uuid: string, tagTypeUUID: string): Promise<void> {
+    async addMetadataType(
+        uuid: string,
+        metadataTypeUUID: string,
+    ): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
         });
-        const tagType = await this.tagTypeRepository.findOneOrFail({
-            where: { uuid: tagTypeUUID },
+        const metadataType = await this.metadataTypeRepository.findOneOrFail({
+            where: { uuid: metadataTypeUUID },
         });
-        project.requiredTags.push(tagType);
+        project.requiredMetadataTypes.push(metadataType);
         await this.projectRepository.save(project);
     }
 
-    async updateTagTypes(uuid: string, tagTypeUUIDs: string[]): Promise<void> {
+    async updateMetadataTypes(
+        uuid: string,
+        metadataTypeUUIDs: string[],
+    ): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
-            relations: ['requiredTags'],
+            relations: {
+                requiredMetadataTypes: true,
+            },
         });
-        project.requiredTags = await Promise.all(
-            tagTypeUUIDs.map((tag) => {
-                return this.tagTypeRepository.findOneOrFail({
-                    where: { uuid: tag },
+        project.requiredMetadataTypes = await Promise.all(
+            metadataTypeUUIDs.map((metadataTypeUUID) => {
+                return this.metadataTypeRepository.findOneOrFail({
+                    where: { uuid: metadataTypeUUID },
                 });
             }),
         );
         await this.projectRepository.save(project);
     }
 
-    async removeTagType(uuid: string, tagTypeUUID: string): Promise<void> {
+    async removeMetadataType(
+        uuid: string,
+        metadataTypeUUID: string,
+    ): Promise<void> {
         const project = await this.projectRepository.findOneOrFail({
             where: { uuid },
         });
-        project.requiredTags = project.requiredTags.filter(
-            (tagType) => tagType.uuid !== tagTypeUUID,
+        project.requiredMetadataTypes = project.requiredMetadataTypes.filter(
+            (metadataType) => metadataType.uuid !== metadataTypeUUID,
         );
         await this.projectRepository.save(project);
     }

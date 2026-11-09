@@ -10,6 +10,7 @@ export const actionTemplateEntityToDto = (
         uuid: actionTemplate.uuid,
         description: actionTemplate.description,
         archived: actionTemplate.isArchived,
+        isSystem: actionTemplate.isSystem,
         accessRights: actionTemplate.accessRights,
         command: actionTemplate.command ?? '',
         cpuCores: actionTemplate.cpuCores,

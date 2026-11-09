@@ -12,6 +12,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { makeGaugeProvider } from '@willsoto/nestjs-prometheus';
 import { AccessControlModule } from '../access-control/access-control.module';
+import { LokiHealthModule } from '../loki-health/loki-health.module';
 import { ActionDispatcherService } from './action-dispatcher.service';
 
 @Module({
@@ -29,6 +30,7 @@ import { ActionDispatcherService } from './action-dispatcher.service';
             ProjectAccessViewEntity,
         ]),
         AccessControlModule,
+        LokiHealthModule,
     ],
     providers: [
         ActionDispatcherService,

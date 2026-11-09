@@ -2,6 +2,7 @@ import {
     AccessGroupEntity,
     AccessGroupEventEntity,
     GroupMembershipEntity,
+    ProjectEntity,
     UserEntity,
 } from '@kleinkram/backend-common';
 import {
@@ -53,15 +54,22 @@ describe('Verify Access Groups External', () => {
     setupDatabaseHooks();
 
     // user: external
-    test('Non "kleinkram.dev" email is not added to default group', async () => {
+    test('Non "leggedrobotics.com" email is not added to default group', async () => {
         const mockEmail = 'external-user@third-party.com';
         const externalUuid = await mockDatabaseUser(mockEmail, 'external-user');
 
         const userRepository = database.getRepository(UserEntity);
         const user = await userRepository.findOneOrFail({
             where: { uuid: externalUuid },
-            relations: ['memberships', 'memberships.accessGroup'],
-            select: ['uuid', 'email'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
+            select: {
+                uuid: true,
+                email: true,
+            },
         });
         expect(user.email).toBe(mockEmail);
 
@@ -106,14 +114,21 @@ describe('Verify Access Groups Internal', () => {
 
     // user: internal
     test('if leggedrobotics email is added to default group', async () => {
-        const mockEmail = 'internal-user@kleinkram.dev';
+        const mockEmail = 'internal-user@leggedrobotics.com';
         const internalUuid = await mockDatabaseUser(mockEmail, 'internal-user');
 
         const userRepository = database.getRepository(UserEntity);
         const user = await userRepository.findOneOrFail({
             where: { uuid: internalUuid },
-            relations: ['memberships', 'memberships.accessGroup'],
-            select: ['uuid', 'email'],
+            relations: {
+                memberships: {
+                    accessGroup: true,
+                },
+            },
+            select: {
+                uuid: true,
+                email: true,
+            },
         });
         expect(user.email).toBe(mockEmail);
 
@@ -141,7 +156,11 @@ describe('Verify Access Groups Internal', () => {
             .getRepository(UserEntity)
             .findOneOrFail({
                 where: { uuid: user.uuid },
-                relations: ['memberships', 'memberships.accessGroup'],
+                relations: {
+                    memberships: {
+                        accessGroup: true,
+                    },
+                },
             });
 
         const primaryGroup = userEntity.memberships?.find(
@@ -176,7 +195,11 @@ describe('Verify Access Groups Internal', () => {
             .getRepository(UserEntity)
             .findOneOrFail({
                 where: { uuid: otherUser.uuid },
-                relations: ['memberships', 'memberships.accessGroup'],
+                relations: {
+                    memberships: {
+                        accessGroup: true,
+                    },
+                },
             });
 
         const primaryGroup = userEntity.memberships?.find(
@@ -209,7 +232,11 @@ describe('Verify Access Groups Internal', () => {
             .getRepository(UserEntity)
             .findOneOrFail({
                 where: { uuid: user.uuid },
-                relations: ['memberships', 'memberships.accessGroup'],
+                relations: {
+                    memberships: {
+                        accessGroup: true,
+                    },
+                },
             });
 
         const primaryGroup = userEntity.memberships?.find(
@@ -243,6 +270,47 @@ describe('Verify Access Groups Internal', () => {
         expect(data.data.length).toBeGreaterThan(0);
     });
 
+    test('if listed access groups carry their project accesses', async () => {
+        const { user } = await generateAndFetchDatabaseUser('internal', 'user');
+
+        // creating a project grants the creator's primary group access to it
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'project_access_listing',
+                description: 'project for access group listing',
+                requiredMetadataTypes: [],
+            },
+            user,
+        );
+
+        const headers = new HeaderCreator(user);
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups?search=&skip=0&take=100`,
+            { method: 'GET', headers: headers.getHeaders() },
+        );
+        expect(response.status).toBeLessThan(300);
+
+        const body = (await response.json()) as {
+            data: {
+                uuid: string;
+                projectAccesses: { uuid: string; rights: number }[];
+            }[];
+        };
+
+        // #2179: the list used to return an empty projectAccesses array for
+        // every group, so the "# Projects" column always showed 0
+        const groupsWithProject = body.data.filter((group) =>
+            group.projectAccesses.some((access) => access.uuid === projectUuid),
+        );
+        expect(groupsWithProject.length).toBeGreaterThan(0);
+        for (const group of groupsWithProject) {
+            for (const access of group.projectAccesses) {
+                expect(access.uuid).toBeDefined();
+                expect(typeof access.rights).toBe('number');
+            }
+        }
+    });
+
     test('if a single access group can be linked to multiple users', async () => {
         const { user: creator } = await generateAndFetchDatabaseUser(
             'internal',
@@ -264,7 +332,11 @@ describe('Verify Access Groups Internal', () => {
         const groupRepo = database.getRepository(AccessGroupEntity);
         const group = await groupRepo.findOneOrFail({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
 
         expect(group.memberships?.length).toBeGreaterThanOrEqual(2);
@@ -295,7 +367,7 @@ describe('Verify Access Groups Internal', () => {
             {
                 name: 'project_1',
                 description: 'First project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -310,7 +382,7 @@ describe('Verify Access Groups Internal', () => {
             {
                 name: 'project_2',
                 description: 'Second project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -325,7 +397,11 @@ describe('Verify Access Groups Internal', () => {
         const groupRepo = database.getRepository(AccessGroupEntity);
         const group = await groupRepo.findOneOrFail({
             where: { uuid: groupUuid },
-            relations: ['project_accesses', 'project_accesses.project'],
+            relations: {
+                project_accesses: {
+                    project: true,
+                },
+            },
         });
 
         expect(group.project_accesses?.length).toBeGreaterThanOrEqual(2);
@@ -468,7 +544,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'test_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             creator,
         );
@@ -507,7 +583,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'test_project',
                 description: 'Test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -712,7 +788,11 @@ describe('Verify Access Groups Internal User Access', () => {
         const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const group = await accessGroupRepository.findOne({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
         expect(group).not.toBeNull();
         const memberUuids = group?.memberships?.map((m) => m.user?.uuid) ?? [];
@@ -756,7 +836,11 @@ describe('Verify Access Groups Internal User Access', () => {
         const accessGroupRepository = database.getRepository(AccessGroupEntity);
         const group = await accessGroupRepository.findOne({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
         expect(group).not.toBeNull();
         const memberUuids = group?.memberships?.map((m) => m.user?.uuid) ?? [];
@@ -786,7 +870,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'read_only_project',
                 description: 'Project with READ for readUser',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: readUser.uuid,
@@ -832,7 +916,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'write_access_project',
                 description: 'Project with WRITE for writeUser',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         userUuid: writeUser.uuid,
@@ -880,7 +964,7 @@ describe('Verify Access Groups Internal User Access', () => {
             {
                 name: 'no_remove_project',
                 description: 'Project for remove test',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -965,7 +1049,11 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const groupRepo = database.getRepository(AccessGroupEntity);
         const group = await groupRepo.findOneOrFail({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
         expect(group.name).toBe('test_access_group');
         expect(group.memberships?.length).toBeGreaterThanOrEqual(2);
@@ -1073,7 +1161,11 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         const groupRepo = database.getRepository(AccessGroupEntity);
         const group = await groupRepo.findOneOrFail({
             where: { uuid: groupUuid },
-            relations: ['memberships', 'memberships.user'],
+            relations: {
+                memberships: {
+                    user: true,
+                },
+            },
         });
         const memberUuids = group.memberships?.map((m) => m.user?.uuid) ?? [];
         expect(memberUuids).toContain(newMember.uuid);
@@ -1227,7 +1319,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
             {
                 name: 'admin_project',
                 description: 'Admin test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
             },
             admin,
         );
@@ -1263,7 +1355,7 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
             {
                 name: 'admin_remove_project',
                 description: 'Admin test project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         accessGroupUUID: groupUuid,
@@ -1612,5 +1704,88 @@ describe('Verify Access Groups Internal User Access - CRUD and Admin', () => {
         expect(data.message).toBe(
             'User is already a member of this access group',
         );
+    });
+
+    test('if audit logs resolve user and project UUIDs to their current names', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: member } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'audit_names_group' },
+            creator,
+            [creator, member],
+        );
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'audit_names_project',
+                description: 'Project for audit log name resolution',
+                requiredTags: [],
+            },
+            creator,
+        );
+
+        // events only store UUIDs; the legacy one carries an outdated snapshot
+        const eventRepo = database.getRepository(AccessGroupEventEntity);
+        await eventRepo.save([
+            eventRepo.create({
+                accessGroup: { uuid: groupUuid },
+                actor: { uuid: creator.uuid },
+                type: AccessGroupEventType.UPDATE_PROJECT_ACCESS,
+                details: { projectUuid, rights: AccessGroupRights.DELETE },
+            }),
+            eventRepo.create({
+                accessGroup: { uuid: groupUuid },
+                actor: { uuid: creator.uuid },
+                type: AccessGroupEventType.PROMOTE_USER,
+                details: {
+                    userUuid: member.uuid,
+                    userName: 'outdated name',
+                    canEditGroup: true,
+                },
+            }),
+            eventRepo.create({
+                accessGroup: { uuid: groupUuid },
+                actor: { uuid: creator.uuid },
+                type: AccessGroupEventType.REMOVE_USER,
+                details: { userUuids: [member.uuid] },
+            }),
+        ]);
+
+        // renames must show up in existing log entries
+        await database
+            .getRepository(ProjectEntity)
+            .update({ uuid: projectUuid }, { name: 'renamed_project' });
+
+        const headers = new HeaderCreator(creator);
+        const response = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/audit-logs`,
+            { headers: headers.getHeaders() },
+        );
+        expect(response.status).toBe(200);
+        const { data } = (await response.json()) as {
+            data: {
+                type: AccessGroupEventType;
+                details: Record<string, unknown>;
+            }[];
+        };
+        const byType = (type: AccessGroupEventType) =>
+            data.find((entry) => entry.type === type)?.details;
+
+        expect(
+            byType(AccessGroupEventType.UPDATE_PROJECT_ACCESS),
+        ).toMatchObject({ projectUuid, projectName: 'renamed_project' });
+        expect(byType(AccessGroupEventType.PROMOTE_USER)).toMatchObject({
+            userUuid: member.uuid,
+            userName: member.name,
+        });
+        expect(byType(AccessGroupEventType.REMOVE_USER)).toMatchObject({
+            affectedUsers: [{ uuid: member.uuid, name: member.name }],
+        });
     });
 });

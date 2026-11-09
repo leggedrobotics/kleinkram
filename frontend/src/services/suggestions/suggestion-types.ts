@@ -19,7 +19,7 @@ export interface SuggestionProvider<T = unknown> {
     getSuggestions(context: SuggestionContext<T>): Suggestion[];
 }
 
-export interface MetadataTag {
+export interface MetadataTypeOption {
     name: string;
     uuid: string;
     datatype: string;

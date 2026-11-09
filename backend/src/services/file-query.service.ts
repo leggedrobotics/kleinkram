@@ -14,9 +14,9 @@ import {
 } from '@kleinkram/api-dto';
 import { FileEventEntity } from '@kleinkram/backend-common/entities/file/file-event.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
+import { MetadataTypeEntity } from '@kleinkram/backend-common/entities/metadata/metadata-type.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
 import { ProjectEntity } from '@kleinkram/backend-common/entities/project/project.entity';
-import { TagTypeEntity } from '@kleinkram/backend-common/entities/tagType/tag-type.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import {
     DataType,
@@ -25,7 +25,11 @@ import {
     HealthStatus,
     UserRole,
 } from '@kleinkram/shared';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, In, Repository, SelectQueryBuilder } from 'typeorm';
 import logger from '../logger';
@@ -42,7 +46,7 @@ const FIND_MANY_SORT_KEYS = {
     filename: 'file.filename',
     createdAt: 'file.createdAt',
     updatedAt: 'file.updatedAt',
-    creator: 'user.name',
+    creator: 'creator.name',
     size: 'file.size',
     state: 'file.state',
     date: 'file.date',
@@ -61,6 +65,13 @@ const FIND_MANY_SORT_KEYS = {
     'file.state': 'file.state',
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'file.date': 'file.date',
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'creator.name': 'creator.name',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'mission.name': 'mission.name',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'project.name': 'project.name',
 };
 
 @Injectable()
@@ -74,11 +85,56 @@ export class FileQueryService {
         private projectRepository: Repository<ProjectEntity>,
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
-        @InjectRepository(TagTypeEntity)
-        private tagTypeRepository: Repository<TagTypeEntity>,
+        @InjectRepository(MetadataTypeEntity)
+        private metadataTypeRepository: Repository<MetadataTypeEntity>,
         @InjectRepository(FileEventEntity)
         private eventRepo: Repository<FileEventEntity>,
     ) {}
+
+    /**
+     * Normalizes the mission filter of a file query.
+     *
+     * A request authenticated with a mission scoped API key may only ever see
+     * files of that one mission. Naming a different mission in the query is
+     * rejected instead of silently widening (or narrowing) the result set, so
+     * that controller and service can never disagree on what the key may see.
+     *
+     * @param query the (untrusted) file query of the request
+     * @param apiKeyMissionUuid the mission of the API key, `undefined` for cookie authenticated users
+     *
+     * @returns the mission uuids to filter by and, for API keys, the mission the
+     *          query has to be hard-restricted to
+     *
+     * @throws ForbiddenException if a mission scoped API key asks for another mission
+     */
+    resolveMissionScope(
+        query: FileQueryDto,
+        apiKeyMissionUuid?: string,
+    ): { missionUuids: string[]; enforcedMissionUuid?: string } {
+        const requestedMissionUuids =
+            query.missionUuids ??
+            (query.missionUUID ? [query.missionUUID] : []);
+
+        if (apiKeyMissionUuid === undefined) {
+            return { missionUuids: requestedMissionUuids };
+        }
+
+        const foreignMissionUuids = requestedMissionUuids.filter(
+            (missionUuid) => missionUuid !== apiKeyMissionUuid,
+        );
+
+        if (foreignMissionUuids.length > 0) {
+            throw new ForbiddenException(
+                `API key is scoped to mission ${apiKeyMissionUuid} and cannot access ` +
+                    `the following missions: ${foreignMissionUuids.join(', ')}`,
+            );
+        }
+
+        return {
+            missionUuids: [apiKeyMissionUuid],
+            enforcedMissionUuid: apiKeyMissionUuid,
+        };
+    }
 
     async findMany(
         query: FileQueryDto,
@@ -121,13 +177,21 @@ export class FileQueryService {
         }
 
         // Apply mission filters
-        const missionUuids =
-            query.missionUuids ??
-            (query.missionUUID
-                ? [query.missionUUID]
-                : apiKeyMissionUuid
-                  ? [apiKeyMissionUuid]
-                  : []);
+        const { missionUuids, enforcedMissionUuid } = this.resolveMissionScope(
+            query,
+            apiKeyMissionUuid,
+        );
+
+        // A mission scoped API key is restricted to its own mission with a
+        // separate AND constraint: mission uuids, name patterns and metadata are
+        // OR-ed inside `addMissionFilters`, so a pattern would otherwise widen
+        // the query beyond the mission the key is scoped to.
+        if (enforcedMissionUuid !== undefined) {
+            idQuery.andWhere('mission.uuid = :enforcedMissionUuid', {
+                enforcedMissionUuid,
+            });
+        }
+
         if (
             missionUuids.length > 0 ||
             (query.missionPatterns && query.missionPatterns.length > 0) ||
@@ -257,6 +321,18 @@ export class FileQueryService {
             }
         }
 
+        if (query.includeStates && query.includeStates.length > 0) {
+            idQuery.andWhere('file.state IN (:...includeStates)', {
+                includeStates: query.includeStates,
+            });
+        }
+
+        if (query.excludeStates && query.excludeStates.length > 0) {
+            idQuery.andWhere('file.state NOT IN (:...excludeStates)', {
+                excludeStates: query.excludeStates,
+            });
+        }
+
         const categoryUUIDs = query.categories
             ? query.categories.split(',')
             : [];
@@ -290,13 +366,16 @@ export class FileQueryService {
             );
         }
 
-        // The tag filter is async, so it must be awaited
-        if (query.tags && Object.keys(query.tags).length > 0) {
-            await this._applyTagFilter(idQuery, query.tags);
+        // `tags` is a deprecated alias kept for old clients; the canonical
+        // field wins when both are given. The filter is async, so it must be
+        // awaited.
+        const metadataByTypeUuid = query.metadataByTypeUuid ?? query.tags;
+        if (metadataByTypeUuid && Object.keys(metadataByTypeUuid).length > 0) {
+            await this._applyMetadataFilter(idQuery, metadataByTypeUuid);
         }
 
         // Group by file.uuid to deduplicate results from joins
-        // and allow 'HAVING' clauses for topics and tags
+        // and allow 'HAVING' clauses for topics and metadata
         idQuery.groupBy('file.uuid');
 
         const sortField = query.sort ?? query.sortBy ?? 'createdAt';
@@ -307,6 +386,19 @@ export class FileQueryService {
         }
 
         idQuery = addSort(idQuery, FIND_MANY_SORT_KEYS, sortField, order);
+
+        // The id query groups by file.uuid, which only makes the file's own
+        // columns available to ORDER BY. Sorting by a joined relation therefore
+        // has to add that column to the GROUP BY; all of the joined relations
+        // used for sorting are many-to-one, so this does not change the number
+        // of groups (and thus neither the page nor the count).
+        // `addSort` already rejected anything that is not a known sort key
+        const sortColumn = (FIND_MANY_SORT_KEYS as Record<string, string>)[
+            sortField
+        ];
+        if (!sortColumn.startsWith('file.')) {
+            idQuery.addGroupBy(sortColumn);
+        }
 
         const take = query.take;
         const skip = query.skip;
@@ -351,17 +443,23 @@ export class FileQueryService {
     async findOne(uuid: string): Promise<FileWithTopicDto> {
         const file = await this.fileRepository.findOneOrFail({
             where: { uuid },
-            relations: [
-                'mission',
-                'topics',
-                'mission.project',
-                'creator',
-                'categories',
-                'parent',
-                'parent.topics',
-                'derivedFiles',
-                'derivedFiles.topics',
-            ],
+            relations: {
+                mission: {
+                    project: true,
+                },
+
+                topics: true,
+                creator: true,
+                categories: true,
+
+                parent: {
+                    topics: true,
+                },
+
+                derivedFiles: {
+                    topics: true,
+                },
+            },
         });
 
         return fileEntityToDtoWithTopic(file);
@@ -373,7 +471,9 @@ export class FileQueryService {
     ): Promise<FileEntity | null> {
         return this.fileRepository.findOne({
             where: { mission: { uuid: missionUUID }, filename: name },
-            relations: ['creator'],
+            relations: {
+                creator: true,
+            },
         });
     }
 
@@ -539,7 +639,14 @@ export class FileQueryService {
             where: {
                 file: { uuid: fileUuid },
             },
-            relations: ['actor', 'action', 'action.template', 'action.creator'],
+            relations: {
+                actor: true,
+
+                action: {
+                    template: true,
+                    creator: true,
+                },
+            },
             order: { createdAt: 'DESC' },
         });
 
@@ -586,14 +693,19 @@ export class FileQueryService {
             where: {
                 action: { uuid: actionUuid },
             },
-            relations: [
-                'actor',
-                'action',
-                'action.template',
-                'file',
-                'file.mission',
-                'file.mission.project',
-            ],
+            relations: {
+                actor: true,
+
+                action: {
+                    template: true,
+                },
+
+                file: {
+                    mission: {
+                        project: true,
+                    },
+                },
+            },
             order: { createdAt: 'DESC' },
         });
 
@@ -738,89 +850,90 @@ export class FileQueryService {
         });
     }
 
-    private async _applyTagFilter(
+    private async _applyMetadataFilter(
         query: SelectQueryBuilder<FileEntity>,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tags: Record<string, any>,
+        metadataByTypeUuid: Record<string, any>,
     ): Promise<void> {
-        const tagTypeUUIDs = Object.keys(tags);
-        if (tagTypeUUIDs.length === 0) {
+        const metadataTypeUUIDs = Object.keys(metadataByTypeUuid);
+        if (metadataTypeUUIDs.length === 0) {
             return;
         }
 
-        const tagTypes = await this.tagTypeRepository.find({
-            where: { uuid: In(tagTypeUUIDs) },
+        const metadataTypes = await this.metadataTypeRepository.find({
+            where: { uuid: In(metadataTypeUUIDs) },
         });
-        const tagTypeMap = new Map(tagTypes.map((t) => [t.uuid, t]));
+        const metadataTypeMap = new Map(metadataTypes.map((t) => [t.uuid, t]));
 
-        // Add the necessary joins for tag filtering
+        // Add the necessary joins for metadata filtering
         query
-            .leftJoin('mission.tags', 'tag')
-            .leftJoin('tag.tagType', 'tagtype');
+            .leftJoin('mission.metadata', 'metadata')
+            .leftJoin('metadata.metadataType', 'metadataType');
 
-        const tagWhereClauses: string[] = [];
+        const metadataWhereClauses: string[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tagParameters: Record<string, any> = {};
-        const validTagNames = new Set<string>();
-        let validTagCount = 0;
+        const metadataParameters: Record<string, any> = {};
+        const validMetadataTypeNames = new Set<string>();
+        let validMetadataCount = 0;
 
-        for (const uuid of tagTypeUUIDs) {
-            const tagtype = tagTypeMap.get(uuid);
-            if (!tagtype) {
-                logger.warn(`Invalid tag type UUID in filter: ${uuid}`);
+        for (const uuid of metadataTypeUUIDs) {
+            const metadataType = metadataTypeMap.get(uuid);
+            if (!metadataType) {
+                logger.warn(`Invalid metadata type UUID in filter: ${uuid}`);
                 continue;
             }
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const value = tags[uuid];
+            const value = metadataByTypeUuid[uuid];
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const [column, processedValue] = this._getTagColumnAndValue(
-                tagtype.datatype,
+            const [column, processedValue] = this._getMetadataColumnAndValue(
+                metadataType.datatype,
                 value,
             );
 
             if (!column) {
-                logger.warn(`Unknown data type for tag type ${uuid}`);
+                logger.warn(`Unknown data type for metadata type ${uuid}`);
                 continue;
             }
 
             // Create unique parameter names for this condition
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            const uuidParameter = `tagtype${validTagCount}`;
+            const uuidParameter = `metadataType${validMetadataCount}`;
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            const valueParameter = `tagval${validTagCount}`;
+            const valueParameter = `metadataValue${validMetadataCount}`;
 
-            // Build the clause: (tagtype.uuid = :uuid AND tag.VALUE_COLUMN = :value)
-            tagWhereClauses.push(
-                `(tagtype.uuid = :${uuidParameter} AND tag.${column} = :${valueParameter})`,
+            // Build the clause:
+            // (metadataType.uuid = :uuid AND metadata.VALUE_COLUMN = :value)
+            metadataWhereClauses.push(
+                `(metadataType.uuid = :${uuidParameter} AND metadata.${column} = :${valueParameter})`,
             );
-            tagParameters[uuidParameter] = uuid;
+            metadataParameters[uuidParameter] = uuid;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            tagParameters[valueParameter] = processedValue;
+            metadataParameters[valueParameter] = processedValue;
 
-            validTagCount++;
-            validTagNames.add(tagtype.name);
+            validMetadataCount++;
+            validMetadataTypeNames.add(metadataType.name);
         }
 
-        if (validTagCount === 0) {
-            // All provided tag filters were invalid
+        if (validMetadataCount === 0) {
+            // All provided metadata filters were invalid
             query.andWhere('1 = 0'); // Return no results
             return;
         }
 
         query.andWhere(
             new Brackets((qb) => {
-                for (const clause of tagWhereClauses) qb.orWhere(clause);
+                for (const clause of metadataWhereClauses) qb.orWhere(clause);
             }),
-            tagParameters,
+            metadataParameters,
         );
 
-        query.having('COUNT(DISTINCT tagtype.name) = :tagCount', {
-            tagCount: validTagNames.size,
+        query.having('COUNT(DISTINCT metadataType.name) = :metadataTypeCount', {
+            metadataTypeCount: validMetadataTypeNames.size,
         });
     }
 
-    private _getTagColumnAndValue<T>(
+    private _getMetadataColumnAndValue<T>(
         dataType: DataType,
         value: T,
     ): [string | null, T | undefined] {

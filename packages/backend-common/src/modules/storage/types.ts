@@ -27,17 +27,28 @@ export interface StorageCredentials {
     sessionToken: string;
 }
 
+/**
+ * Response headers the storage should return for a presigned GET, overriding
+ * what it would otherwise infer from the object itself.
+ */
+export interface PresignedResponseHeaders {
+    /** Pins the content type instead of letting the backend sniff one. */
+    contentType?: string;
+    /** Full `Content-Disposition` value, see `contentDisposition()`. */
+    contentDisposition?: string;
+}
+
 export interface IStorageBucket {
     getPresignedDownloadUrl(
         objectName: string,
         expirySeconds: number,
-        responseDisposition?: Record<string, string>,
+        responseHeaders?: PresignedResponseHeaders,
     ): Promise<string>;
 
     getInternalPresignedDownloadUrl(
         objectName: string,
         expirySeconds: number,
-        responseDisposition?: Record<string, string>,
+        responseHeaders?: PresignedResponseHeaders,
     ): Promise<string>;
 
     downloadFile(objectName: string, destinationPath: string): Promise<void>;

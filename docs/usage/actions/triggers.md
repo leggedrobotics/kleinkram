@@ -43,10 +43,10 @@ Kleinkram will generate a unique **Webhook URL** for this trigger. You can now s
 
 ### Triggering the Webhook
 
-Send a POST request to the webhook URL to trigger the action.
+Send a POST request to the webhook URL to trigger the action. The URL points at the Kleinkram API (not the web app) and has the form `<API_URL>/hooks/actions/<TRIGGER_UUID>`.
 
 ```bash
-curl -X POST https://your-kleinkram-instance.com/api/v1/hooks/trigger/YOUR_WEBHOOK_ID
+curl -X POST https://<your-kleinkram-api>/hooks/actions/<TRIGGER_UUID>
 ```
 
 ## File Pattern Triggers

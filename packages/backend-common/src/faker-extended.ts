@@ -18,12 +18,12 @@ type ExtendedFaker = typeof faker & {
     project: {
         name: () => string;
     };
-    tagType: {
-        tagType: () => [string, DataType, string];
+    metadataType: {
+        metadataType: () => [string, DataType, string];
     };
 };
 
-const tags: [string, DataType, string][] = [
+const metadataTypes: [string, DataType, string][] = [
     ['coordinates', DataType.LOCATION, 'coordinates of the data capture'],
     ['location', DataType.STRING, 'location of the data capture'],
     ['time', DataType.DATE, 'time of the data capture'],
@@ -244,8 +244,8 @@ extendedFaker.mission = {
     },
 };
 
-extendedFaker.tagType = {
-    tagType: () => faker.helpers.arrayElement(tags),
+extendedFaker.metadataType = {
+    metadataType: () => faker.helpers.arrayElement(metadataTypes),
 };
 
 extendedFaker.project = {

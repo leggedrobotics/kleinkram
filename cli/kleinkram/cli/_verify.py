@@ -9,6 +9,7 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
 from kleinkram.cli._upload import _build_mission_query
@@ -21,7 +22,7 @@ HELP = """\
 Verify if files were uploaded correctly.
 """
 
-verify_typer = typer.Typer(name="verify", invoke_without_command=True, help=HELP)
+verify_typer = typer.Typer(name="verify", no_args_is_help=True, invoke_without_command=True, help=HELP)
 
 
 def _handle_no_files_to_process(original_count: int, processed_count: int, action: str = "verify") -> None:
@@ -54,7 +55,6 @@ def verify(
         help="skip unsupported file types, badly named files, or directories instead of erroring",
     ),
     experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
-    skip_hash: bool = typer.Option(None, help="skip hash check"),
     check_file_hash: bool = typer.Option(
         True,
         help="check file hash. If True, file names and file hashes are checked.",
@@ -63,7 +63,12 @@ def verify(
         True,
         help="check file size. If True, file names and file sizes are checked.",
     ),
+    skip_hash: Optional[bool] = typer.Option(None, hidden=True),
 ) -> None:
+    if skip_hash is not None:
+        warn_deprecated("--skip-hash/--no-skip-hash", "--no-check-file-hash/--check-file-hash")
+        check_file_hash = not skip_hash
+
     # get all filepaths
     original_file_paths = [Path(file) for file in files]
 
@@ -91,7 +96,6 @@ def verify(
         client=AuthenticatedClient(),
         query=mission_query,
         file_paths=files_to_verify,
-        skip_hash=skip_hash,
         check_file_hash=check_file_hash,
         check_file_size=check_file_size,
         verbose=verbose,

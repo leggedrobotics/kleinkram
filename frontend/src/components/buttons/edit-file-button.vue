@@ -4,7 +4,8 @@
         flat
         color="primary"
         icon="sym_o_edit"
-        label="Edit File"
+        :label="$q.screen.xs ? undefined : 'Edit File'"
+        aria-label="Edit file"
         :disable="!isEnabled"
         @click="editFile"
     >

@@ -49,13 +49,13 @@ describe('Action File Events', () => {
                     {
                         name: 'test_project',
                         description: 'desc',
-                        requiredTags: [],
+                        requiredMetadataTypes: [],
                         accessGroups: [],
                     },
                     user,
                 ),
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             user,
         );
@@ -204,7 +204,7 @@ describe('Action File Events', () => {
         expect(events.count).toBeGreaterThan(0);
 
         const downloadEvent = events.data.find(
-            // eslint-disable-next-line unicorn/prevent-abbreviations
+            // eslint-disable-next-line unicorn/name-replacements
             (e) => e.type === FileEventType.DOWNLOADED,
         );
         expect(downloadEvent).toBeDefined();

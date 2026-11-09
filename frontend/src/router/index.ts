@@ -1,9 +1,7 @@
-// @ts-ignore
-import { defineRouter } from '#q-app/wrappers';
+import { defineRouter } from '#q-app';
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import routes from './routes';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineRouter(() => {
     const routeArray: RouteRecordRaw[] = Object.values(routes).filter(
         (r) => 'path' in r,

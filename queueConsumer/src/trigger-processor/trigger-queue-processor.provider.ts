@@ -38,7 +38,9 @@ export class TriggerQueueProcessorProvider {
 
         const file = await this.fileRepository.findOne({
             where: { uuid: fileUuid },
-            relations: ['mission'],
+            relations: {
+                mission: true,
+            },
         });
 
         if (!file?.mission) {
@@ -51,7 +53,11 @@ export class TriggerQueueProcessorProvider {
                 mission: { uuid: file.mission.uuid },
                 type: TriggerType.FILE,
             },
-            relations: ['template', 'mission', 'creator'],
+            relations: {
+                template: true,
+                mission: true,
+                creator: true,
+            },
         });
 
         for (const trigger of triggers) {
@@ -99,7 +105,11 @@ export class TriggerQueueProcessorProvider {
 
         const triggers = await this.triggerRepository.find({
             where: { type: TriggerType.TIME },
-            relations: ['template', 'mission', 'creator'],
+            relations: {
+                template: true,
+                mission: true,
+                creator: true,
+            },
         });
 
         for (const trigger of triggers) {

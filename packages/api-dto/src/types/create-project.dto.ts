@@ -23,6 +23,15 @@ export class CreateProject {
     @IsBoolean()
     autoConvert?: boolean;
 
+    /** Uuids of the metadata types every mission of the project must set. */
+    @IsArray()
+    @IsOptional()
+    requiredMetadataTypes?: string[];
+
+    /**
+     * Deprecated alias for `requiredMetadataTypes`. Ignored when
+     * `requiredMetadataTypes` is given.
+     */
     @IsArray()
     @IsOptional()
     requiredTags?: string[];

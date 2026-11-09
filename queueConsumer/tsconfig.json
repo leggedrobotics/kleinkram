@@ -20,7 +20,7 @@
             "@backend-common/*": ["../packages/backend-common/src/*"]
         }
     },
-    "include": ["src/**/*", "../packages/**/*"],
+    "include": ["src/**/*", "tests/**/*", "../packages/**/*"],
     "exclude": ["node_modules", "dist"],
     "references": [
         {

@@ -152,8 +152,7 @@ const onTabChange = (value: string | number | null) => {
     if (typeof value !== 'string') return;
 
     const tabSlug = TAB_MAPPING[value as keyof typeof TAB_MAPPING] as
-        | string
-        | undefined;
+        string | undefined;
 
     if (
         route.name === ROUTES.ACTION.routeName &&
@@ -171,6 +170,12 @@ const isLaunchOpen = ref(false);
 const isCreateOpen = ref(false);
 const drawerMode = ref<ActionDrawerMode>(ActionDrawerMode.ACTION_CREATE);
 const selectedTemplate = ref<ActionTemplateDto | undefined>(undefined);
+
+/**
+ * Version picked in the history drawer that should be opened in the definition
+ * drawer (in restore mode) after leaving the history route.
+ */
+const pendingRestore = ref<ActionTemplateDto | undefined>(undefined);
 
 const isHistoryOpen = ref(false);
 const selectedHistoryVersions = ref<ActionTemplatesDto>({
@@ -194,10 +199,14 @@ const openHistoryDrawer = async (
 };
 
 const onRestoreVersion = (oldVersion: ActionTemplateDto): void => {
-    selectedTemplate.value = oldVersion;
-    drawerMode.value = ActionDrawerMode.ACTION_RESTORE;
+    // Closing the history drawer navigates back to the templates route, and
+    // `handleRouteUpdate()` closes every drawer on such a navigation. Opening
+    // the definition drawer here would therefore be undone again right away, so
+    // we remember the version and let `handleRouteUpdate()` open the drawer once
+    // the navigation has settled.
+    pendingRestore.value = oldVersion;
     isHistoryOpen.value = false;
-    isCreateOpen.value = true;
+    void closeDrawers();
 };
 
 const openLaunchConfiguration = async (template: ActionTemplateDto) => {
@@ -209,6 +218,10 @@ const openLaunchConfiguration = async (template: ActionTemplateDto) => {
 };
 
 const closeDrawers = async () => {
+    isCreateOpen.value = false;
+    isLaunchOpen.value = false;
+    isHistoryOpen.value = false;
+
     await router.push({
         name: ROUTES.ACTION.routeName,
         params: { tab: 'templates' },
@@ -242,12 +255,20 @@ const openEditConfiguration = async (template: ActionTemplateDto) => {
 const handleRouteUpdate = async () => {
     const { templateId } = route.params;
     const drawerAction = route.meta.drawerAction as
-        | ActionDrawerMode
-        | undefined;
+        ActionDrawerMode | undefined;
 
     isCreateOpen.value = false;
     isLaunchOpen.value = false;
     isHistoryOpen.value = false;
+
+    const restoreTarget = pendingRestore.value;
+    pendingRestore.value = undefined;
+    if (restoreTarget && !drawerAction) {
+        selectedTemplate.value = restoreTarget;
+        drawerMode.value = ActionDrawerMode.ACTION_RESTORE;
+        isCreateOpen.value = true;
+        return;
+    }
 
     if (!drawerAction || typeof templateId !== 'string') {
         return;
@@ -279,7 +300,7 @@ const handleRouteUpdate = async () => {
         case ActionDrawerMode.ACTION_HISTORY: {
             try {
                 const uuid = selectedTemplate.value.uuid;
-                selectedHistoryVersions.value = await queryClient.fetchQuery({
+                selectedHistoryVersions.value = await queryClient.query({
                     queryKey: actionKeys.templates.revisions(uuid),
                     queryFn: () => ActionService.getTemplateRevisions(uuid),
                 });

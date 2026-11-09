@@ -8,7 +8,7 @@
                 v-ripple
                 flat
                 bordered
-                class="col cursor-pointer transition-all"
+                class="col cursor-pointer transition-all preset-card"
                 :class="{
                     'bg-button-primary text-white':
                         selectedPreset === preset.name,
@@ -51,7 +51,7 @@
                 v-ripple
                 flat
                 bordered
-                class="col cursor-pointer transition-all"
+                class="col cursor-pointer transition-all preset-card"
                 :class="{
                     'bg-button-primary text-white': selectedPreset === 'Custom',
                     'bg-white text-grey-9': selectedPreset !== 'Custom',
@@ -89,7 +89,7 @@
             v-if="selectedPreset === 'Custom'"
             class="row q-col-gutter-md q-mt-xs"
         >
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label>
                     Memory (GB) <span class="text-negative">*</span>
                 </label>
@@ -107,7 +107,7 @@
                     @update:model-value="updateCpuMemory"
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label> CPU Cores <span class="text-negative">*</span> </label>
                 <q-input
                     :model-value="cpuCores"
@@ -123,7 +123,7 @@
                     @update:model-value="updateCpuCores"
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label>
                     Max Runtime (h) <span class="text-negative">*</span>
                 </label>
@@ -150,7 +150,7 @@
                 />
             </div>
 
-            <div v-if="isGpuEnabled" class="col-6">
+            <div v-if="isGpuEnabled" class="col-12 col-sm-6">
                 <label>
                     GPU Memory (GB) <span class="text-negative">*</span>
                 </label>
@@ -322,6 +322,16 @@ function updateGpuMemory(value: number | string | null) {
 </script>
 
 <style scoped>
+/*
+ * Four presets side by side do not fit on a phone; they wrap into a
+ * two-column grid instead (unchanged from `sm` upwards).
+ */
+@media (max-width: 599px) {
+    .preset-card {
+        flex: 0 1 calc(50% - 16px);
+    }
+}
+
 .transition-all {
     transition: all 0.2s ease-in-out;
 }

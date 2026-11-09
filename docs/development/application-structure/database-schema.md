@@ -186,12 +186,13 @@ Defined in: `category/category.entity.ts`
 
 ### Columns
 
-| Column    | Type                                    | Constraints  | Description |
-| :-------- | :-------------------------------------- | :----------- | :---------- |
-| `name`    | `string`                                | Not Null     |             |
-| `project` | [ProjectEntity](#projectentity-project) | FK, Nullable |             |
-| `files`   | [FileEntity](#fileentity-file_entity)[] | ManyToMany   |             |
-| `creator` | [UserEntity](#userentity-user)          | FK, Nullable |             |
+| Column        | Type                                    | Constraints  | Description                                                                                          |
+| :------------ | :-------------------------------------- | :----------- | :--------------------------------------------------------------------------------------------------- |
+| `name`        | `string`                                | Not Null     |                                                                                                      |
+| `description` | `string`                                | Not Null     | Optional, human readable explanation of what the category is used for. Empty string if not provided. |
+| `project`     | [ProjectEntity](#projectentity-project) | FK, Nullable |                                                                                                      |
+| `files`       | [FileEntity](#fileentity-file_entity)[] | ManyToMany   |                                                                                                      |
+| `creator`     | [UserEntity](#userentity-user)          | FK, Nullable |                                                                                                      |
 
 ---
 
@@ -201,21 +202,24 @@ Defined in: `file/file.entity.ts`
 
 ### Columns
 
-| Column         | Type                                         | Constraints  | Description                                                                                                         |
-| :------------- | :------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
-| `mission`      | [MissionEntity](#missionentity-mission)      | FK, Nullable |                                                                                                                     |
-| `date`         | `Date`                                       | Not Null     |                                                                                                                     |
-| `topics`       | [TopicEntity](#topicentity-topic)[]          | OneToMany    |                                                                                                                     |
-| `filename`     | `string`                                     | Not Null     |                                                                                                                     |
-| `size`         | `bigint`                                     | Nullable     |                                                                                                                     |
-| `creator`      | [UserEntity](#userentity-user)               | FK, Nullable | The user who uploaded the file.                                                                                     |
-| `type`         | `enum`                                       | Not Null     |                                                                                                                     |
-| `state`        | `enum`                                       | Not Null     |                                                                                                                     |
-| `hash`         | `string`                                     | Nullable     |                                                                                                                     |
-| `categories`   | [CategoryEntity](#categoryentity-category)[] | ManyToMany   |                                                                                                                     |
-| `parent`       | [FileEntity](#fileentity-file_entity)        | FK, Nullable | The parent file this file was derived from. e.g., If this is a .mcap converted from a .bag, the .bag is the parent. |
-| `derivedFiles` | [FileEntity](#fileentity-file_entity)[]      | OneToMany    | Files derived from this file.                                                                                       |
-| `origin`       | `enum`                                       | Nullable     |                                                                                                                     |
+| Column                    | Type                                         | Constraints  | Description                                                                                                         |
+| :------------------------ | :------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
+| `mission`                 | [MissionEntity](#missionentity-mission)      | FK, Nullable |                                                                                                                     |
+| `date`                    | `Date`                                       | Not Null     | The date the file is sorted and filtered by. Mirrors `recordingStartDate` once known, otherwise the upload time.    |
+| `recordingStartDate`      | `timestamp`                                  | Nullable     | Timestamp of the first message in the recording. Null while unknown.                                                |
+| `recordingEndDate`        | `timestamp`                                  | Nullable     | Timestamp of the last message in the recording. Null while unknown.                                                 |
+| `recordingTimesCheckedAt` | `timestamp`                                  | Nullable     | When the recording window of this file was last looked for, whether or not one was found.                           |
+| `topics`                  | [TopicEntity](#topicentity-topic)[]          | OneToMany    |                                                                                                                     |
+| `filename`                | `string`                                     | Not Null     |                                                                                                                     |
+| `size`                    | `bigint`                                     | Nullable     |                                                                                                                     |
+| `creator`                 | [UserEntity](#userentity-user)               | FK, Nullable | The user who uploaded the file.                                                                                     |
+| `type`                    | `enum`                                       | Not Null     |                                                                                                                     |
+| `state`                   | `enum`                                       | Not Null     |                                                                                                                     |
+| `hash`                    | `string`                                     | Nullable     |                                                                                                                     |
+| `categories`              | [CategoryEntity](#categoryentity-category)[] | ManyToMany   |                                                                                                                     |
+| `parent`                  | [FileEntity](#fileentity-file_entity)        | FK, Nullable | The parent file this file was derived from. e.g., If this is a .mcap converted from a .bag, the .bag is the parent. |
+| `derivedFiles`            | [FileEntity](#fileentity-file_entity)[]      | OneToMany    | Files derived from this file.                                                                                       |
+| `origin`                  | `enum`                                       | Nullable     |                                                                                                                     |
 
 ---
 
@@ -280,22 +284,38 @@ Defined in: `file/ingestion-job.entity.ts`
 
 ---
 
-<h2 id="metadataentity-tag">MetadataEntity (tag)</h2>
+<h2 id="metadataentity-metadata">MetadataEntity (metadata)</h2>
 
 Defined in: `metadata/metadata.entity.ts`
 
 ### Columns
 
-| Column           | Type                                     | Constraints  | Description |
-| :--------------- | :--------------------------------------- | :----------- | :---------- |
-| `value_string`   | `string`                                 | Nullable     |             |
-| `value_number`   | `number`                                 | Nullable     |             |
-| `value_boolean`  | `boolean`                                | Nullable     |             |
-| `value_date`     | `Date`                                   | Nullable     |             |
-| `value_location` | `string`                                 | Nullable     |             |
-| `mission`        | [MissionEntity](#missionentity-mission)  | FK, Nullable |             |
-| `tagType`        | [TagTypeEntity](#tagtypeentity-tag_type) | FK, Nullable |             |
-| `creator`        | [UserEntity](#userentity-user)           | FK, Nullable |             |
+| Column           | Type                                                    | Constraints  | Description |
+| :--------------- | :------------------------------------------------------ | :----------- | :---------- |
+| `value_string`   | `string`                                                | Nullable     |             |
+| `value_number`   | `number`                                                | Nullable     |             |
+| `value_boolean`  | `boolean`                                               | Nullable     |             |
+| `value_date`     | `Date`                                                  | Nullable     |             |
+| `value_location` | `string`                                                | Nullable     |             |
+| `mission`        | [MissionEntity](#missionentity-mission)                 | FK, Nullable |             |
+| `metadataType`   | [MetadataTypeEntity](#metadatatypeentity-metadata_type) | FK, Nullable |             |
+| `creator`        | [UserEntity](#userentity-user)                          | FK, Nullable |             |
+
+---
+
+<h2 id="metadatatypeentity-metadata_type">MetadataTypeEntity (metadata_type)</h2>
+
+Defined in: `metadata/metadata-type.entity.ts`
+
+### Columns
+
+| Column        | Type                                         | Constraints | Description |
+| :------------ | :------------------------------------------- | :---------- | :---------- |
+| `name`        | `string`                                     | Not Null    |             |
+| `description` | `string`                                     | Nullable    |             |
+| `datatype`    | `enum`                                       | Not Null    |             |
+| `projects`    | [ProjectEntity](#projectentity-project)[]    | ManyToMany  |             |
+| `metadata`    | [MetadataEntity](#metadataentity-metadata)[] | OneToMany   |             |
 
 ---
 
@@ -329,7 +349,7 @@ Defined in: `mission/mission.entity.ts`
 | `creator`          | [UserEntity](#userentity-user)                               | FK, Nullable |             |
 | `api_keys`         | [ApiKeyEntity](#apikeyentity-apikey)[]                       | OneToMany    |             |
 | `mission_accesses` | [MissionAccessEntity](#missionaccessentity-mission_access)[] | OneToMany    |             |
-| `tags`             | [MetadataEntity](#metadataentity-tag)[]                      | OneToMany    |             |
+| `metadata`         | [MetadataEntity](#metadataentity-metadata)[]                 | OneToMany    |             |
 
 ---
 
@@ -353,32 +373,16 @@ Defined in: `project/project.entity.ts`
 
 ### Columns
 
-| Column             | Type                                                         | Constraints  | Description                                                                                                   |
-| :----------------- | :----------------------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------ |
-| `name`             | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be globally unique. |
-| `missions`         | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                               |
-| `project_accesses` | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                               |
-| `description`      | `string`                                                     | Not Null     |                                                                                                               |
-| `creator`          | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                               |
-| `requiredTags`     | [TagTypeEntity](#tagtypeentity-tag_type)[]                   | ManyToMany   |                                                                                                               |
-| `categories`       | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                               |
-| `autoConvert`      | `boolean`                                                    | Nullable     |                                                                                                               |
-
----
-
-<h2 id="tagtypeentity-tag_type">TagTypeEntity (tag_type)</h2>
-
-Defined in: `tagType/tag-type.entity.ts`
-
-### Columns
-
-| Column        | Type                                      | Constraints | Description |
-| :------------ | :---------------------------------------- | :---------- | :---------- |
-| `name`        | `string`                                  | Not Null    |             |
-| `description` | `string`                                  | Nullable    |             |
-| `datatype`    | `enum`                                    | Not Null    |             |
-| `project`     | [ProjectEntity](#projectentity-project)[] | ManyToMany  |             |
-| `tags`        | [MetadataEntity](#metadataentity-tag)[]   | OneToMany   |             |
+| Column                  | Type                                                         | Constraints  | Description                                                                                                   |
+| :---------------------- | :----------------------------------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------ |
+| `name`                  | `string`                                                     | Not Null     | The name of the project. This is the name that will be displayed in the UI. The name must be globally unique. |
+| `missions`              | [MissionEntity](#missionentity-mission)[]                    | OneToMany    |                                                                                                               |
+| `project_accesses`      | [ProjectAccessEntity](#projectaccessentity-project_access)[] | OneToMany    |                                                                                                               |
+| `description`           | `string`                                                     | Not Null     |                                                                                                               |
+| `creator`               | [UserEntity](#userentity-user)                               | FK, Nullable |                                                                                                               |
+| `requiredMetadataTypes` | [MetadataTypeEntity](#metadatatypeentity-metadata_type)[]    | ManyToMany   |                                                                                                               |
+| `categories`            | [CategoryEntity](#categoryentity-category)[]                 | OneToMany    |                                                                                                               |
+| `autoConvert`           | `boolean`                                                    | Nullable     |                                                                                                               |
 
 ---
 
@@ -420,7 +424,7 @@ Defined in: `user/user.entity.ts`
 | `queues`           | [IngestionJobEntity](#ingestionjobentity-ingestion_job)[]          | OneToMany   |                                                                                                                                                                                                                       |
 | `submittedActions` | [ActionEntity](#actionentity-action)[]                             | OneToMany   |                                                                                                                                                                                                                       |
 | `templates`        | [ActionTemplateEntity](#actiontemplateentity-action_template)[]    | OneToMany   |                                                                                                                                                                                                                       |
-| `tags`             | [MetadataEntity](#metadataentity-tag)[]                            | OneToMany   |                                                                                                                                                                                                                       |
+| `metadata`         | [MetadataEntity](#metadataentity-metadata)[]                       | OneToMany   |                                                                                                                                                                                                                       |
 | `api_keys`         | [ApiKeyEntity](#apikeyentity-apikey)[]                             | OneToMany   |                                                                                                                                                                                                                       |
 | `categories`       | [CategoryEntity](#categoryentity-category)[]                       | OneToMany   |                                                                                                                                                                                                                       |
 | `triggers`         | [ActionTriggerEntity](#actiontriggerentity-action_trigger)[]       | OneToMany   |                                                                                                                                                                                                                       |

@@ -46,7 +46,11 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
 
                 const files = await this.fileRepository.find({
                     where: { hash: IsNull(), state: Not(FileState.LOST) },
-                    relations: ['mission', 'mission.project'],
+                    relations: {
+                        mission: {
+                            project: true,
+                        },
+                    },
                 });
                 for (const file of files) {
                     const hash = crypto.createHash('md5');
@@ -114,6 +118,8 @@ export class FileCleanupQueueProcessorProvider implements OnModuleInit {
                 await Promise.all(
                     failedUploads.map(async (file) => {
                         file.state = FileState.ERROR;
+                        file.stateComment =
+                            'Upload timed out (remained in UPLOADING state for over 12 hours)';
                         await this.fileRepository.save(file);
 
                         if (file.mission === undefined) {

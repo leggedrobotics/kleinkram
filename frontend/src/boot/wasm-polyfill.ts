@@ -1,7 +1,7 @@
 // src/boot/wasm-polyfill.ts
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 
-export default boot(() => {
+export default defineBoot(() => {
     // Hack: The Foxglove libraries use a pattern where they try to `require` the .wasm file.
     // vite-plugin-wasm transforms imports, but if any 'require' remains in the excluded code, this catches it.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-condition

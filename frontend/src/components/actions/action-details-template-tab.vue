@@ -1,28 +1,28 @@
 <template>
-    <div class="q-pa-md">
+    <div :class="$q.screen.xs ? 'q-py-md' : 'q-pa-md'">
         <div class="row q-col-gutter-md">
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Template Name"
                     :model-value="template.name"
                     readonly
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Version"
                     :model-value="template.version"
                     readonly
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Creator"
                     :model-value="template.creator?.name || 'N/A'"
                     readonly
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Created At"
                     :model-value="formatDate(template.createdAt)"
@@ -30,7 +30,7 @@
                 />
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Docker Image"
                     :model-value="template.imageName"
@@ -50,21 +50,21 @@
                     </template>
                 </AppInput>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Command"
                     :model-value="template.command || 'Default'"
                     readonly
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Entrypoint"
                     :model-value="template.entrypoint || 'Default'"
                     readonly
                 />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <AppInput
                     label="Access Rights"
                     :model-value="

@@ -2,6 +2,7 @@ boto3
 botocore
 click
 httpx
+mcap
 python-dateutil
 pyyaml
 requests

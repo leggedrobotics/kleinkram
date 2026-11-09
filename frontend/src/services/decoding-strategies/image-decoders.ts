@@ -5,6 +5,7 @@ export function renderCompressed(
     bytes: Uint8Array,
     canvas: HTMLCanvasElement,
     onRender?: () => void,
+    onError?: (error: Error) => void,
 ): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const blob = new Blob([bytes as any]);
@@ -30,6 +31,11 @@ export function renderCompressed(
     img.onerror = (): void => {
         URL.revokeObjectURL(url);
         console.error('Failed to decode compressed image blob');
+        onError?.(
+            new Error(
+                'The browser could not decode this compressed image (unsupported or corrupt format)',
+            ),
+        );
     };
 
     img.src = url;

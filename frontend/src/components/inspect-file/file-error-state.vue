@@ -1,6 +1,6 @@
 <template>
     <div
-        class="text-center q-pa-xl bg-grey-1 rounded-borders border-dashed text-grey-7"
+        class="text-center q-pa-xl bg-grey-1 rounded-borders border-dashed text-grey-7 file-error-state"
     >
         <div v-if="file.state === FileState.CORRUPTED">
             <q-icon name="sym_o_broken_image" size="4em" class="q-mb-md" />
@@ -35,6 +35,19 @@
                 <span class="text-weight-bold">.{{ fileExtension }}</span>
             </div>
         </div>
+
+        <div
+            v-if="file.stateComment"
+            class="text-caption q-mt-md text-red"
+            style="
+                max-width: 600px;
+                word-break: break-word;
+                margin-left: auto;
+                margin-right: auto;
+            "
+        >
+            {{ file.stateComment }}
+        </div>
     </div>
 </template>
 
@@ -56,5 +69,11 @@ const fileExtension = computed(
 <style scoped>
 .border-dashed {
     border: 2px dashed #e0e0e0;
+}
+
+@media (max-width: 599px) {
+    .file-error-state {
+        padding: 32px 16px;
+    }
 }
 </style>

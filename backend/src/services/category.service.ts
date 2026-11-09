@@ -2,7 +2,7 @@ import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import { CategoriesDto } from '@kleinkram/api-dto';
 import { CategoryEntity } from '@kleinkram/backend-common/entities/category/category.entity';
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import logger from '../logger';
@@ -32,15 +32,22 @@ export class CategoryService {
             data: categories.map((category) => ({
                 uuid: category.uuid,
                 name: category.name,
+                description: category.description,
             })),
             take: count,
             skip: 0,
         };
     }
 
-    async create(name: string, projectUUID: string, user: AuthHeader) {
+    async create(
+        name: string,
+        projectUUID: string,
+        user: AuthHeader,
+        description = '',
+    ) {
         const category = this.categoryRepository.create({
             name,
+            description,
             project: { uuid: projectUUID },
             creator: user.user,
         });
@@ -48,6 +55,31 @@ export class CategoryService {
         return this.categoryRepository.findOneOrFail({
             where: { uuid: saved.uuid },
         });
+    }
+
+    /**
+     * Updates the description of a category.
+     *
+     * The project uuid is the resource the caller was authorized against, so
+     * the category is only updated if it actually belongs to that project.
+     */
+    async updateDescription(
+        uuid: string,
+        projectUUID: string,
+        description: string,
+    ) {
+        const category = await this.categoryRepository.findOne({
+            where: { uuid, project: { uuid: projectUUID } },
+        });
+
+        if (!category) {
+            throw new NotFoundException(
+                'Category not found in the given project',
+            );
+        }
+
+        category.description = description;
+        return this.categoryRepository.save(category);
     }
 
     async addManyCategories(

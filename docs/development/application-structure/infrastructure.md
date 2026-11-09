@@ -43,6 +43,17 @@ Redis is an in-memory key-value store used primarily for managing the job queue.
 
 Loki is a log aggregation system. It collects logs from all actions and stores them in a time series database.
 
+Because action logs are only readable through Loki, the API refuses to dispatch an action while Loki is unavailable;
+such a run would execute with no retrievable logs. The rejection is a `503` with a `Retry-After` header, since it says
+nothing about the submitted action itself.
+
+Loki reports `/ready` as `503` for roughly 15 seconds after startup (ring join, WAL replay, `min_ready_duration`). The
+compose setups therefore gate `api-server` and `queue-consumer` on a one-shot `loki-ready` container rather than on
+`loki` itself, so a freshly started stack never accepts submissions it is going to reject.
+
+`LOKI_URL` points the services at Loki and defaults to `http://loki:3100`, the address inside the compose network. When
+running the API on the host (`pnpm dev`), set `LOKI_URL=http://localhost:3100` in your `.env`.
+
 ## Monitoring & Observability
 
 The platform uses a comprehensive stack for monitoring, logging, and tracing.

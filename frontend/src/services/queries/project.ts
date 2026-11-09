@@ -1,5 +1,5 @@
 import type { DefaultRights } from '@kleinkram/api-dto/types/access-control/default-rights';
-import type { ProjectWithRequiredTagsDto } from '@kleinkram/api-dto/types/project/project-with-required-tags.dto';
+import type { ProjectWithRequiredMetadataTypesDto } from '@kleinkram/api-dto/types/project/project-with-required-metadata-types.dto';
 import type { ProjectsDto } from '@kleinkram/api-dto/types/project/projects.dto';
 import type { ResentProjectsDto } from '@kleinkram/api-dto/types/project/recent-projects.dto';
 import { AxiosResponse } from 'axios';
@@ -26,6 +26,14 @@ export const filteredProjects = async (
         parameters.creatorUuid = searchParameters['creator.uuid'];
     }
 
+    if (searchParameters?.starred === 'true') {
+        parameters.starred = 'true';
+    }
+
+    if (searchParameters?.public === 'true') {
+        parameters.public = 'true';
+    }
+
     const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
         '/projects',
         {
@@ -37,9 +45,11 @@ export const filteredProjects = async (
 
 export const getProject = async (
     uuid: string,
-): Promise<ProjectWithRequiredTagsDto> => {
-    const response: AxiosResponse<ProjectWithRequiredTagsDto> =
-        await axios.get<ProjectWithRequiredTagsDto>(`/projects/${uuid}`);
+): Promise<ProjectWithRequiredMetadataTypesDto> => {
+    const response: AxiosResponse<ProjectWithRequiredMetadataTypesDto> =
+        await axios.get<ProjectWithRequiredMetadataTypesDto>(
+            `/projects/${uuid}`,
+        );
     return response.data;
 };
 
@@ -56,5 +66,21 @@ export const recentProjects = async (
     const response = await axios.get<ResentProjectsDto>('/projects/recent', {
         params: { take },
     });
+    return response.data;
+};
+
+export const starredProjects = async (take: number): Promise<ProjectsDto> => {
+    const response: AxiosResponse<ProjectsDto> = await axios.get<ProjectsDto>(
+        '/projects',
+        {
+            params: {
+                take: take.toString(),
+                skip: '0',
+                sortBy: 'name',
+                sortOrder: 'ASC',
+                starred: 'true',
+            },
+        },
+    );
     return response.data;
 };

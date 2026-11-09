@@ -297,12 +297,8 @@ export class QueryURLHandler extends QueryHandler {
         this.descending = route.query.descending
             ? route.query.descending === 'true'
             : DEFAULT_SORT.descending;
-        this.projectUuid = route.query.projectUuid
-            ? (route.query.projectUuid as string)
-            : '';
-        this.missionUuid = route.query.missionUuid
-            ? (route.query.missionUuid as string)
-            : '';
+        this.projectUuid = (route.query.projectUuid as string | null) ?? '';
+        this.missionUuid = (route.query.missionUuid as string | null) ?? '';
 
         const searchParameters = {} as Record<string, string>;
 

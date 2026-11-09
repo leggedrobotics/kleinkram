@@ -2,6 +2,7 @@
     <q-btn
         flat
         dense
+        padding="6px"
         label="Move"
         icon="sym_o_move_down"
         color="white"
@@ -10,7 +11,6 @@
     >
         <q-tooltip> Move Files to another Mission</q-tooltip>
     </q-btn>
-    Move
 </template>
 <script setup lang="ts">
 import type { MissionWithFilesDto } from '@kleinkram/api-dto/types/mission/mission-with-files.dto';

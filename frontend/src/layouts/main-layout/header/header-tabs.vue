@@ -5,8 +5,9 @@
             key="menu"
             no-caps
             class="q-py-none q-px-sm q-mx-sm text-secondary"
-            label="Menu"
+            :label="$q.screen.gt.xs ? 'Menu' : undefined"
             icon="sym_o_menu"
+            aria-label="Menu"
         >
             <q-menu auto-close style="width: 280px">
                 <q-list>

@@ -146,4 +146,15 @@ const option = computed(() => {
     };
 });
 </script>
-<style scoped></style>
+<style scoped>
+/*
+ * On phones the dashboard stacks its panels in a flex column, so the card no
+ * longer inherits a height from the grid row. Give the chart an explicit box
+ * to render into, otherwise its `height: 100%` collapses to zero.
+ */
+@media (max-width: 599px) {
+    .dashboard-card {
+        height: 280px;
+    }
+}
+</style>

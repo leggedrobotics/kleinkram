@@ -9,6 +9,7 @@ import { FileEntity } from '@backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@backend-common/entities/file/ingestion-job.entity';
 import { MetadataEntity } from '@backend-common/entities/metadata/metadata.entity';
 import { MissionEntity } from '@backend-common/entities/mission/mission.entity';
+import { ProjectStarEntity } from '@backend-common/entities/project/project-star.entity';
 import { ProjectEntity } from '@backend-common/entities/project/project.entity';
 import { UserRole } from '@kleinkram/shared';
 import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
@@ -90,6 +91,9 @@ export class UserEntity extends BaseEntity {
     @OneToMany(() => ProjectEntity, (project: ProjectEntity) => project.creator)
     projects?: ProjectEntity[];
 
+    @OneToMany(() => ProjectStarEntity, (star: ProjectStarEntity) => star.user)
+    starredProjects?: ProjectStarEntity[];
+
     @OneToMany(() => MissionEntity, (mission: MissionEntity) => mission.creator)
     missions?: MissionEntity[];
 
@@ -111,8 +115,11 @@ export class UserEntity extends BaseEntity {
     )
     templates?: ActionTemplateEntity[];
 
-    @OneToMany(() => MetadataEntity, (tag: MetadataEntity) => tag.creator)
-    tags?: MetadataEntity[];
+    @OneToMany(
+        () => MetadataEntity,
+        (metadata: MetadataEntity) => metadata.creator,
+    )
+    metadata?: MetadataEntity[];
 
     @OneToMany(() => ApiKeyEntity, (apikey: ApiKeyEntity) => apikey.user)
 

@@ -4,6 +4,103 @@ export interface LogMessage {
     data: any;
 }
 
+export interface ReadOptions {
+    /** Keep only every n-th message of the topic (1 = keep all). */
+    stride?: number;
+    /**
+     * Read the file's chunks coarse-to-fine (first, last, middle, quarters,
+     * ...) instead of front-to-back, so that a preview covering the whole
+     * recording appears after the first few chunks and refines as more data
+     * streams in. Messages are then emitted out of time order.
+     */
+    progressive?: boolean;
+    /**
+     * Messages for which this returns true are skipped before decoding.
+     * Used when refining an already loaded sampled topic, so that frames
+     * that are in memory already are not decoded a second time.
+     */
+    skip?: (logTime: bigint) => boolean;
+    /**
+     * Total number of messages of the topic in the file, if known. Lets
+     * progressive reading sample uniformly across chunks even when a chunk
+     * holds only one message of the topic (typical for images).
+     */
+    totalMessages?: number;
+}
+
+/**
+ * Hands the thread back to the browser for one task.
+ *
+ * `await`ing a plain value only queues a microtask, and microtasks are
+ * drained before the browser gets to paint or to handle input. A decode
+ * loop built from those never releases the main thread. A `MessageChannel`
+ * message is a real task, and unlike `setTimeout(0)` it is not clamped to
+ * 4ms once the loop nests, so yielding stays cheap.
+ */
+const yieldToBrowser = (): Promise<void> => {
+    const scheduling = (
+        globalThis as {
+            scheduler?: { yield?: () => Promise<void> };
+        }
+    ).scheduler;
+    if (scheduling?.yield) return scheduling.yield();
+    return new Promise((resolve) => {
+        const channel = new MessageChannel();
+        channel.port1.addEventListener('message', () => {
+            channel.port1.close();
+            resolve();
+        });
+        channel.port1.start();
+        channel.port2.postMessage(undefined);
+    });
+};
+
+/** How long a decode loop may hold the main thread between two yields. */
+const BUDGET_MS = 8;
+
+/**
+ * Time budget for a decode loop running on the main thread. Call
+ * `yieldIfNeeded()` once per decoded message: it is a clock read in the
+ * common case and only gives up the thread once the budget is spent, so
+ * the page keeps painting and responding while a topic loads.
+ */
+export class MainThreadBudget {
+    private deadline = performance.now() + BUDGET_MS;
+
+    async yieldIfNeeded(): Promise<void> {
+        if (performance.now() < this.deadline) return;
+        await yieldToBrowser();
+        this.deadline = performance.now() + BUDGET_MS;
+    }
+}
+
+/**
+ * Returns the indices 0..count-1 in a coarse-to-fine order: the two ends
+ * first, then the middle, then the quarter points, and so on. Reading
+ * chunks in this order makes partial data cover the whole time range.
+ */
+export const coarseToFineOrder = (count: number): number[] => {
+    if (count <= 0) return [];
+    if (count === 1) return [0];
+    const order: number[] = [0, count - 1];
+    const taken = new Set(order);
+    // Breadth-first bisection of the remaining intervals
+    const queue: [number, number][] = [[0, count - 1]];
+    while (queue.length > 0) {
+        const interval = queue.shift();
+        if (!interval) break;
+        const [low, high] = interval;
+        if (high - low < 2) continue;
+        const mid = Math.floor((low + high) / 2);
+        if (!taken.has(mid)) {
+            taken.add(mid);
+            order.push(mid);
+        }
+        queue.push([low, mid], [mid, high]);
+    }
+    return order;
+};
+
 export const STANDARD_ROS2_DEFINITIONS: Record<string, string> = {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     'sensor_msgs/msg/Image': `

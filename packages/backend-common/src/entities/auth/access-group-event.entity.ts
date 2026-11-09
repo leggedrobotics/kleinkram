@@ -22,7 +22,8 @@ export class AccessGroupEventEntity {
 
     /**
      * JSON payload for specific details.
-     * e.g. { projectUuid: "...", projectName: "...", rights: 10 }
+     * e.g. { projectUuid: "...", rights: 10 }
+     * Only store UUIDs here, names are resolved when the log is read.
      */
     @Column({ type: 'jsonb', default: {} })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

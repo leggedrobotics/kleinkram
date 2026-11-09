@@ -74,7 +74,7 @@ describe('Verify Action API Key Scope', () => {
             {
                 name: 'scope_test_project',
                 description: 'Project for scope testing',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [
                     {
                         rights: AccessGroupRights.DELETE,
@@ -91,8 +91,8 @@ describe('Verify Action API Key Scope', () => {
             {
                 name: 'scope_test_mission',
                 projectUUID: globalThis.projectUuid,
-                tags: {},
-                ignoreTags: true,
+                metadata: {},
+                ignoreMissingMetadata: true,
             },
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             globalThis.creator,
@@ -234,7 +234,7 @@ describe('Verify Action API Key Scope', () => {
             {
                 name: 'alien_project',
                 description: 'Alien project',
-                requiredTags: [],
+                requiredMetadataTypes: [],
                 accessGroups: [], // No access for creator needed for this test specifically, but api requires it usually.
                 // Actually, let's just create it with creator so it exists.
             },

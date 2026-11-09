@@ -22,7 +22,7 @@ jobs:
                   run_install: false
 
             - name: Use Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: '22.22.0'
                   cache: 'pnpm'
@@ -33,8 +33,12 @@ jobs:
             - name: Build workspace packages
               run: pnpm -r run build
 
+            - name: Queue consumer unit tests
+              working-directory: ./queueConsumer
+              run: pnpm test --ci
+
             - name: Set up Python
-              uses: actions/setup-python@v6
+              uses: actions/setup-python@v7
               with:
                   python-version: '3.10'
 

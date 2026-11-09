@@ -63,6 +63,20 @@ On top of that, affiliation groups can be used to
 Each user has a primary group. This group has the same name as the user and is automatically created when the user is
 created. The primary group is used to assign access rights to a single user.
 
+## Public Projects
+
+A project can be made public under **Manage Access → General access** by switching from _Restricted_ to
+_All Kleinkram users_. Every user who can log in, including users who sign up later, then gets <Read/> on the
+project and can find, view and download it without being added to a group. Public projects are marked with a
+_Public_ badge and can be listed with the _Public Projects_ filter of the project list.
+
+Public access is always limited to <Read/>. To let someone upload or change data, add them (or one of their groups)
+to the project as usual. Making a project public requires the right to manage its access (<Delete/>), and it can be
+made restricted again at any time.
+
+Internally, public access is granted through a system access group (_All Kleinkram Users_) that every user belongs
+to implicitly. It is hidden from the group search and its members cannot be changed.
+
 ## User and Admin
 
 By default, all individuals who access the system are classified as "Users." Users can only perform actions that they

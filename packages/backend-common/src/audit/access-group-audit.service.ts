@@ -59,7 +59,9 @@ export class AccessGroupAuditService {
     ): Promise<[AccessGroupEventEntity[], number]> {
         return this.eventRepo.findAndCount({
             where: { accessGroup: { uuid: accessGroupUuid } },
-            relations: ['actor'],
+            relations: {
+                actor: true,
+            },
             order: { createdAt: 'DESC' },
             skip: 0,
             take: MAX_ACCESS_GROUP_LOGS,

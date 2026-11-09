@@ -1,25 +1,44 @@
 <template>
     <div class="column q-gutter-y-md">
-        <div class="flex justify-between items-center">
-            <div class="row q-gutter-x-md items-center">
+        <!--
+            Below `md` the filters do not fit next to each other, so they stack
+            into a single full width column.
+        -->
+        <div
+            :class="
+                $q.screen.lt.md
+                    ? 'column q-gutter-y-sm'
+                    : 'flex justify-between items-center'
+            "
+        >
+            <div
+                :class="
+                    $q.screen.lt.md
+                        ? 'column q-gutter-y-sm'
+                        : 'row q-gutter-x-md items-center'
+                "
+            >
                 <ScopeSelector
-                    layout="row"
+                    :layout="$q.screen.lt.md ? 'column' : 'row'"
                     mode="filter"
                     :show-labels="false"
                     project-placeholder="All Projects"
                     mission-placeholder="All Missions"
-                    select-width="220px"
+                    :select-width="$q.screen.lt.md ? undefined : '220px'"
                     bg-color="transparent"
                 />
 
                 <AppSearchBar
                     v-model="searchName"
                     placeholder="Filter by Action Name"
-                    style="min-width: 200px"
+                    :style="$q.screen.lt.md ? undefined : 'min-width: 200px'"
                 />
             </div>
 
-            <app-refresh-button @click="refetchData" />
+            <app-refresh-button
+                :class="$q.screen.lt.md ? 'self-end' : ''"
+                @click="refetchData"
+            />
         </div>
 
         <ActionsTable :handler="handler" />

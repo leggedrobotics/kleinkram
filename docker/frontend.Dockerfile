@@ -24,7 +24,7 @@ ENV VITE_S3_ENDPOINT=$VITE_S3_ENDPOINT
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch
 
 COPY . .
@@ -39,6 +39,8 @@ RUN pnpm --filter @kleinkram/shared build
 RUN pnpm --filter @kleinkram/validation build
 RUN pnpm --filter @kleinkram/api-dto build
 RUN pnpm --filter kleinkram-frontend build
+# Fail the image build if the configured backend URL did not make it into the bundle
+RUN sh ./frontend/scripts/check-backend-url.sh frontend/dist/spa
 
 FROM debian:bookworm-slim AS nginx-base
 RUN apt-get update && \

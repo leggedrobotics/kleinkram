@@ -37,6 +37,8 @@
                         <q-btn
                             flat
                             dense
+                            class="worker-toggle"
+                            :aria-label="`Toggle details of ${singleWorker.hostname}`"
                             @click="() => extendWorker(singleWorker.uuid)"
                         >
                             <q-icon
@@ -53,7 +55,8 @@
                         <q-icon
                             name="sym_o_dns"
                             size="20px"
-                            @click="extendWorker"
+                            class="cursor-pointer"
+                            @click="() => extendWorker(singleWorker.uuid)"
                         />
                         <span class="worker-name">{{
                             singleWorker.hostname
@@ -96,19 +99,19 @@
                         "
                     >
                         <div class="row">
-                            <div class="q-mt-md col-6">
+                            <div class="q-mt-md col-12 col-md-6">
                                 <q-icon name="sym_o_psychology" size="20px" />
                                 <span class="worker-name">{{
                                     singleWorker.cpuModel
                                 }}</span>
                             </div>
-                            <div class="q-mt-md col-3">
+                            <div class="q-mt-md col-12 col-md-3">
                                 <q-icon name="sym_o_hub" size="20px" />
                                 <span class="worker-name"
                                     >{{ singleWorker.cpuCores }} Cores</span
                                 >
                             </div>
-                            <div class="q-mt-md col-3">
+                            <div class="q-mt-md col-12 col-md-3">
                                 <q-icon name="sym_o_memory" size="20px" />
                                 <span class="worker-name"
                                     >{{ singleWorker.cpuMemory }}GB</span
@@ -210,6 +213,30 @@ const extendWorker = (uuid: string): void => {
 
 .crossed-out {
     position: relative;
+}
+
+/*
+ * On narrow screens the worker row has to fit a button, three icons, the
+ * hostname and the status side by side: let the hostname shrink and truncate
+ * instead of pushing the status out of the panel, and give the expand button
+ * a comfortable touch target.
+ */
+@media (max-width: 1023px) {
+    .worker-name {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .worker-toggle {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .worker-status {
+        white-space: nowrap;
+    }
 }
 
 .crossed-out::before {

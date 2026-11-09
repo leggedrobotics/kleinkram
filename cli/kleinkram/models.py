@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
@@ -11,6 +12,7 @@ from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Tuple
+from typing import Union
 from uuid import UUID
 
 
@@ -27,6 +29,16 @@ class MetadataValueType(str, Enum):
 class MetadataValue:
     value: str
     type_: MetadataValueType
+
+    # uuid of the metadata type this value belongs to, as reported by the API;
+    # `None` when the response did not carry it. Metadata type *names* are not
+    # a safe key: resolving one goes through a substring search.
+    type_id: Optional[UUID] = None
+
+
+# a metadata value as it is sent to the API; numbers and booleans are sent as
+# native JSON values so the API does not have to parse them out of a string
+MetadataPayloadValue = Union[str, float, bool]
 
 
 class FileState(str, Enum):
@@ -48,7 +60,21 @@ class Project:
     description: str
     created_at: datetime
     updated_at: datetime
-    required_tags: List[str]
+    # names of the metadata types every mission of the project has to set
+    required_metadata_types: List[str]
+
+    @property
+    def required_tags(self) -> List[str]:
+        """\
+        deprecated alias of `required_metadata_types`, removed in kleinkram 1.0.0
+        """
+        warnings.warn(
+            "Project.required_tags is deprecated and will be removed in kleinkram 1.0.0, "
+            "use Project.required_metadata_types instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.required_metadata_types
 
 
 @dataclass(frozen=True)
@@ -81,6 +107,7 @@ class File:
     categories: List[str] = field(default_factory=list)
     topics: List[str] = field(default_factory=list)
     state: FileState = FileState.OK
+    state_comment: Optional[str] = None
 
 
 class ExecutionStatus(str, Enum):
@@ -107,6 +134,19 @@ class LogEntry:
 
 
 @dataclass(frozen=True)
+class Diagnostic:
+    """A single finding an action reported about itself while running."""
+
+    uuid: UUID
+    severity: str
+    message: str
+    code: str | None
+    file: str | None
+    count: int
+    created_at: datetime
+
+
+@dataclass(frozen=True)
 class Execution:
     uuid: UUID
     state: str
@@ -122,6 +162,11 @@ class Execution:
     template_id: UUID
     template_name: str
     logs: List[LogEntry] = field(default_factory=list)
+
+    # Reported by backends that support action severity; None against older ones.
+    severity: str | None = None
+    failure_origin: str | None = None
+    diagnostic_count: int = 0
 
 
 @dataclass(frozen=True)

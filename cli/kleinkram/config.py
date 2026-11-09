@@ -78,6 +78,15 @@ def get_env() -> Environment:
 ACTION_API_KEY = "KLEINKRAM_API_KEY"
 ACTION_API = "KLEINKRAM_API_ENDPOINT"
 ACTION_S3 = "KLEINKRAM_S3_ENDPOINT"
+ACTION_UUID = "KLEINKRAM_ACTION_UUID"
+
+
+def get_running_action_uuid() -> Optional[str]:
+    """
+    The action this process is running inside, or None when it is not running
+    inside a Kleinkram action container.
+    """
+    return os.getenv(ACTION_UUID)
 
 
 def _get_endpoint_from_action_env_vars() -> Optional[Endpoint]:

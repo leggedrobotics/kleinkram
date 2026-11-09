@@ -12,7 +12,7 @@
                 <q-tab name="add" label="Add" style="color: #222" />
                 <q-tab
                     name="create"
-                    label="Create Categories"
+                    label="Manage Categories"
                     style="color: #222"
                 />
             </q-tabs>
@@ -29,6 +29,7 @@
                 </q-tab-panel>
                 <q-tab-panel name="create" style="min-height: 180px">
                     <CategoryCreator :project-uuid="projectUuid" />
+                    <CategoryManager :project-uuid="projectUuid" />
                 </q-tab-panel>
             </q-tab-panels>
         </template>
@@ -52,6 +53,7 @@ import { Ref, ref } from 'vue';
 
 import type { FileWithTopicDto } from '@kleinkram/api-dto/types/file/file.dto';
 import CategoryCreator from 'components/category-creator.vue';
+import CategoryManager from 'components/category-manager.vue';
 import CategorySelector from 'components/category-selector.vue';
 
 const { dialogRef, onDialogOK } = useDialogPluginComponent();

@@ -85,9 +85,9 @@ export function useFilterParser<TContext extends FilterParserContext>(
         }
 
         if (keys.has(KEYWORDS.METADATA)) {
-            for (const tag of Object.values(state.tagFilter)) {
+            for (const entry of Object.values(state.metadataFilter)) {
                 parts.push(
-                    `${KEYWORDS.METADATA}${quote(`${tag.name}=${tag.value}`)}`,
+                    `${KEYWORDS.METADATA}${quote(`${entry.name}=${entry.value}`)}`,
                 );
             }
         }
@@ -153,7 +153,7 @@ export function useFilterParser<TContext extends FilterParserContext>(
         // Reset State
         state.selectedTopics = [];
         state.selectedDatatypes = [];
-        state.tagFilter = {};
+        state.metadataFilter = {};
         state.filter = '';
         state.health = undefined;
         if (defaults?.defaultStartDate)
@@ -221,13 +221,13 @@ export function useFilterParser<TContext extends FilterParserContext>(
         for (const token of tokens) {
             if (!token.key) continue;
             const fullKey = token.key + ':';
-            const filter = filters.find(
+            const hasFilter = filters.some(
                 (f) =>
                     f.key === fullKey ||
                     (fullKey === KEYWORDS.TOPIC_AND &&
                         f.key === KEYWORDS.TOPIC),
             );
-            if (!filter) {
+            if (!hasFilter) {
                 extraFreeText += (extraFreeText ? ' ' : '') + token.original;
             }
         }

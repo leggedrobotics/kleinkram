@@ -9,7 +9,8 @@
     >
         <slot />
         <q-tooltip v-if="!canDelete && !actionInDeletableState">
-            You can only delete actions if they're DONE, FAILED or UNPROCESSABLE
+            You can only delete actions if they're DONE, FAILED, UNPROCESSABLE
+            or CANCELLED
         </q-tooltip>
         <q-tooltip v-else-if="!canDelete">
             You do not have permission to delete this action
@@ -18,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { ActionState } from '@kleinkram/shared';
+import { isTerminalActionState } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
 import DeleteActionDialog from 'src/dialogs/delete-action-dialog.vue';
 import {
@@ -43,14 +44,9 @@ const canDelete = computed(
         (deletePermissions.value >= 30 || isCreator.value),
 );
 
-const actionInDeletableState = computed(() => {
-    const state = action.state;
-    return (
-        state === ActionState.FAILED ||
-        state === ActionState.DONE ||
-        state === ActionState.UNPROCESSABLE
-    );
-});
+const actionInDeletableState = computed(() =>
+    isTerminalActionState(action.state),
+);
 
 const { data: user } = useUser();
 const isCreator = computed(() => action.creator.uuid === user.value?.uuid);

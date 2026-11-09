@@ -1,11 +1,11 @@
 import { ApiCreatedResponse, ApiOkResponse } from '@/decorators';
 import { MetadataService } from '@/services/metadata.service';
 import {
-    CreateTagTypeDto,
+    CreateMetadataTypeDto,
     FilteredMetadataTypesQueryDto,
+    MetadataTypeDto,
+    MetadataTypesDto,
     PaginatedQueryDto,
-    TagTypeDto,
-    TagTypesDto,
 } from '@kleinkram/api-dto';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { CanCreate, LoggedIn } from '../auth/roles.decorator';
@@ -17,32 +17,37 @@ export class MetadataTypeController {
     @Post()
     @CanCreate()
     @ApiCreatedResponse({
-        description: 'Returns the created TagType',
-        type: TagTypeDto,
+        description: 'Returns the created metadata type',
+        type: MetadataTypeDto,
     })
-    async createTagType(@Body() body: CreateTagTypeDto): Promise<TagTypeDto> {
-        return await this.metadataService.create(body.name, body.type);
+    async createMetadataType(
+        @Body() body: CreateMetadataTypeDto,
+    ): Promise<MetadataTypeDto> {
+        return await this.metadataService.createMetadataType(
+            body.name,
+            body.type,
+        );
     }
 
     @Get()
     @LoggedIn()
     @ApiOkResponse({
-        description: 'Returns all TagTypes',
-        type: TagTypesDto,
+        description: 'Returns all metadata types',
+        type: MetadataTypesDto,
     })
-    async getAll(@Query() query: PaginatedQueryDto): Promise<TagTypesDto> {
+    async getAll(@Query() query: PaginatedQueryDto): Promise<MetadataTypesDto> {
         return this.metadataService.getAll(query.skip, query.take);
     }
 
     @Get('filtered')
     @LoggedIn()
     @ApiOkResponse({
-        description: 'Returns all TagTypes',
-        type: TagTypesDto,
+        description: 'Returns all metadata types',
+        type: MetadataTypesDto,
     })
     async getFiltered(
         @Query() query: FilteredMetadataTypesQueryDto,
-    ): Promise<TagTypesDto> {
+    ): Promise<MetadataTypesDto> {
         return this.metadataService.getFiltered(
             query.name,
             query.type,

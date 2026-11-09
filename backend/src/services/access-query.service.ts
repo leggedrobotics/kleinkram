@@ -2,6 +2,7 @@ import { AuthHeader } from '@/endpoints/auth/parameter-decorator';
 import {
     groupMembershipEntityToDto,
     projectAccessEntityToDto,
+    projectAccessesToProjectDtos,
     userEntityToDto,
 } from '@/serialization';
 import {
@@ -9,7 +10,6 @@ import {
     AccessGroupDto,
     AccessGroupsDto,
     ProjectAccessListDto,
-    ProjectWithAccessRightsDto,
 } from '@kleinkram/api-dto';
 import {
     AccessGroupAuditService,
@@ -28,9 +28,23 @@ import {
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
 import logger from '../logger';
 import { UserService } from './user.service';
+
+/**
+ * Prefer the live name, then a name snapshot stored by older versions
+ * ('Unknown' was written when the lookup failed), then the raw UUID.
+ */
+const pickName = (
+    resolved: string | undefined,
+    snapshot: unknown,
+    fallback: string,
+): string =>
+    resolved ??
+    (typeof snapshot === 'string' && snapshot !== 'Unknown'
+        ? snapshot
+        : fallback);
 
 @Injectable()
 export class AccessQueryService {
@@ -138,19 +152,9 @@ export class AccessQueryService {
             type: rawAccessGroup.type,
             updatedAt: rawAccessGroup.updatedAt,
             uuid: rawAccessGroup.uuid,
-            projectAccesses:
-                rawAccessGroup.project_accesses?.map(
-                    (value) =>
-                        ({
-                            createdAt: value.project?.createdAt,
-                            description: value.project?.description,
-                            updatedAt: value.project?.updatedAt,
-                            name: value.project?.name,
-                            uuid: value.project?.uuid,
-                            rights: value.rights,
-                            autoConvert: value.project?.autoConvert ?? false,
-                        }) as ProjectWithAccessRightsDto,
-                ) ?? [],
+            projectAccesses: projectAccessesToProjectDtos(
+                rawAccessGroup.project_accesses,
+            ),
             emailPattern:
                 rawAccessGroup.type === AccessGroupType.AFFILIATION
                     ? this.configService
@@ -218,13 +222,17 @@ export class AccessQueryService {
                 where,
                 skip,
                 take,
-                relations: [
-                    'memberships',
-                    'memberships.user',
-                    'project_accesses',
-                    'project_accesses.project',
-                    'creator',
-                ],
+                relations: {
+                    memberships: {
+                        user: true,
+                    },
+
+                    project_accesses: {
+                        project: true,
+                    },
+
+                    creator: true,
+                },
             });
 
         logger.debug(`Search access group with name containing '${search}'`);
@@ -246,7 +254,9 @@ export class AccessQueryService {
                     name: accessGroup.name,
                     type: accessGroup.type,
                     hidden: accessGroup.hidden,
-                    projectAccesses: [],
+                    projectAccesses: projectAccessesToProjectDtos(
+                        accessGroup.project_accesses,
+                    ),
                     emailPattern:
                         accessGroup.type === AccessGroupType.AFFILIATION
                             ? this.configService
@@ -271,11 +281,13 @@ export class AccessQueryService {
             {
                 where: { project: { uuid: projectUUID } },
                 order: { accessGroup: { name: 'ASC' } },
-                relations: [
-                    'project',
-                    'accessGroup',
-                    'accessGroup.memberships',
-                ],
+                relations: {
+                    project: true,
+
+                    accessGroup: {
+                        memberships: true,
+                    },
+                },
             },
         );
 
@@ -287,44 +299,76 @@ export class AccessQueryService {
         };
     }
 
+    /**
+     * Audit log entries only persist UUIDs. Names are resolved at read time so
+     * renamed users / projects show up with their current name. Name snapshots
+     * written by older versions are only used as fallback (e.g. hard-deleted
+     * entities), and the raw UUID as last resort.
+     */
     async getAuditLogs(uuid: string): Promise<AccessGroupAuditLogsDto> {
         const [logs, count] =
             await this.accessGroupAuditService.getLogsForGroup(uuid);
 
-        // Extract all unique UUIDs that need resolving
-        const uuidsToResolve = new Set<string>();
-        for (const log of logs) {
-            const details = log.details;
-            if (details.userUuid && !details.userName) {
-                uuidsToResolve.add(details.userUuid as string);
+        const userUuids = new Set<string>();
+        const projectUuids = new Set<string>();
+        for (const { details } of logs) {
+            if (typeof details.userUuid === 'string') {
+                userUuids.add(details.userUuid);
             }
             if (Array.isArray(details.userUuids)) {
                 for (const id of details.userUuids as string[]) {
-                    uuidsToResolve.add(id);
+                    userUuids.add(id);
                 }
+            }
+            if (typeof details.projectUuid === 'string') {
+                projectUuids.add(details.projectUuid);
             }
         }
 
-        const resolvedUsers = await this.userService.resolveUsers([
-            ...uuidsToResolve,
+        const [userNames, projectNames] = await Promise.all([
+            this.userService.resolveUsers([...userUuids]),
+            this.resolveProjectNames([...projectUuids]),
         ]);
 
         return {
             data: logs.map((log) => {
                 const details = { ...log.details };
-                if (details.userUuid && !details.userName) {
-                    details.userName =
-                        resolvedUsers[details.userUuid as string] ??
-                        details.userUuid;
+                if (typeof details.userUuid === 'string') {
+                    details.userName = pickName(
+                        userNames[details.userUuid],
+                        details.userName,
+                        details.userUuid,
+                    );
                 }
                 if (Array.isArray(details.userUuids)) {
+                    const snapshots = new Map<string, unknown>(
+                        Array.isArray(details.affectedUsers)
+                            ? (
+                                  details.affectedUsers as {
+                                      uuid: string;
+                                      name: unknown;
+                                  }[]
+                              ).map((u) => [u.uuid, u.name])
+                            : [],
+                    );
                     details.affectedUsers = (details.userUuids as string[]).map(
                         (id) => ({
                             uuid: id,
-                            name: resolvedUsers[id] ?? id,
+                            name: pickName(
+                                userNames[id],
+                                snapshots.get(id),
+                                id,
+                            ),
                         }),
                     );
                     delete details.userUuids;
+                }
+                if (typeof details.projectUuid === 'string') {
+                    details.projectName = pickName(
+                        projectNames[details.projectUuid],
+                        details.projectName,
+                        details.projectUuid,
+                    );
                 }
 
                 return {
@@ -337,5 +381,18 @@ export class AccessQueryService {
             }),
             count,
         };
+    }
+
+    private async resolveProjectNames(
+        uuids: string[],
+    ): Promise<Record<string, string>> {
+        if (uuids.length === 0) return {};
+        // include soft-deleted projects, the audit log outlives them
+        const projects = await this.projectRepository.find({
+            where: { uuid: In(uuids) },
+            select: { uuid: true, name: true },
+            withDeleted: true,
+        });
+        return Object.fromEntries(projects.map((p) => [p.uuid, p.name]));
     }
 }
