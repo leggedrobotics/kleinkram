@@ -24,14 +24,10 @@
                 </app-search-bar>
 
                 <app-create-button
+                    v-if="canCreateTemplate"
                     label="New Action"
-                    :disable="!canCreateTemplate"
                     @click="handleCreate"
-                >
-                    <q-tooltip v-if="!canCreateTemplate">
-                        You don't have permission to create action templates
-                    </q-tooltip>
-                </app-create-button>
+                />
             </ButtonGroup>
         </div>
 
@@ -135,6 +131,7 @@
                                     <q-tooltip>History</q-tooltip>
                                 </q-btn>
                                 <q-btn
+                                    v-if="canCreateTemplate"
                                     flat
                                     round
                                     :dense="!$q.screen.xs"
@@ -158,7 +155,9 @@
                                     <q-tooltip>Launch</q-tooltip>
                                 </q-btn>
                                 <q-btn
-                                    v-if="!props.row.archived"
+                                    v-if="
+                                        !props.row.archived && canCreateTemplate
+                                    "
                                     flat
                                     round
                                     :dense="!$q.screen.xs"
@@ -192,9 +191,6 @@
 
                 <q-btn
                     v-if="emptyState.actionLabel"
-                    :disable="
-                        emptyState.action === handleCreate && !canCreateTemplate
-                    "
                     unelevated
                     color="primary"
                     :label="emptyState.actionLabel"
@@ -373,9 +369,10 @@ const emptyState = computed(() => {
     return {
         icon: 'sym_o_rocket_launch',
         title: 'No actions defined',
-        description:
-            'Create your first action template to start automating your workflow.',
-        actionLabel: 'Create New Action',
+        description: canCreateTemplate.value
+            ? 'Create your first action template to start automating your workflow.'
+            : 'No action templates have been created yet.',
+        actionLabel: canCreateTemplate.value ? 'Create New Action' : undefined,
         action: handleCreate,
     };
 });

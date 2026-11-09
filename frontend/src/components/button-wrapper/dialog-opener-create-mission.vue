@@ -1,10 +1,7 @@
 <template>
     <div
-        :class="{
-            disabled: !canCreate,
-            'cursor-pointer': !canCreate,
-            'cursor-not-allowed': canCreate,
-        }"
+        v-if="canCreate"
+        class="cursor-pointer"
         style="height: 100%"
         @click="createNewMission"
     >

@@ -107,6 +107,19 @@
 
                 <q-separator class="q-my-lg" />
 
+                <div
+                    v-if="canSubmit && !hasLaunchPermission"
+                    class="row no-wrap items-center q-pa-sm q-mb-md rounded-borders bg-orange-1 text-orange-10"
+                    role="status"
+                >
+                    <q-icon name="sym_o_lock" size="sm" class="q-mr-sm" />
+                    <span>
+                        This action needs {{ permissionLevel }} access, which
+                        you don't have on all selected missions. Pick other
+                        missions or ask a project admin for access.
+                    </span>
+                </div>
+
                 <div class="row justify-end q-gutter-x-sm">
                     <q-btn
                         flat
@@ -126,10 +139,6 @@
                         />
                         <q-tooltip v-if="!canSubmit">
                             Please select a mission to launch this action
-                        </q-tooltip>
-                        <q-tooltip v-else-if="!hasLaunchPermission">
-                            You need {{ permissionLevel }} access on the
-                            selected mission(s) to launch this action
                         </q-tooltip>
                     </div>
                 </div>

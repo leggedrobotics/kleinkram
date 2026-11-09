@@ -42,6 +42,7 @@
                             ref="myElement"
                             v-model="selectedTemplate"
                             :action-templates="actionTemplates"
+                            :only-existing="!canCreateTemplate"
                         />
                     </div>
 
@@ -96,11 +97,12 @@
                         <label for="dockerImage">Docker Image</label>
                         <q-input
                             v-model="editingTemplate.imageName"
+                            :readonly="!canCreateTemplate"
                             name="dockerImage"
                             outlined
                             dense
                             class="q-mb-sm"
-                            clearable
+                            :clearable="canCreateTemplate"
                             placeholder="Docker Image"
                         />
                     </div>
@@ -123,11 +125,12 @@
                         <q-input
                             v-if="editingTemplate"
                             v-model="editingTemplate.command"
+                            :readonly="!canCreateTemplate"
                             name="action_command"
                             outlined
                             dense
                             class="q-mb-sm"
-                            clearable
+                            :clearable="canCreateTemplate"
                             placeholder="Command"
                         />
                     </div>
@@ -136,11 +139,12 @@
                         <q-input
                             v-if="editingTemplate"
                             v-model="editingTemplate.entrypoint"
+                            :readonly="!canCreateTemplate"
                             name="action_entrypoint"
                             outlined
                             dense
                             class="q-mb-sm"
-                            clearable
+                            :clearable="canCreateTemplate"
                             placeholder="Entrypoint"
                         />
                     </div>
@@ -148,6 +152,7 @@
                         <label>Access Rights</label>
                         <q-select
                             v-model="selectedAccessRights"
+                            :readonly="!canCreateTemplate"
                             :options="accessOptions"
                             outlined
                             dense
@@ -164,6 +169,7 @@
                         <label for="memory">Memory Allocation (GB)</label>
                         <q-input
                             v-model="editingTemplate.cpuMemory"
+                            :readonly="!canCreateTemplate"
                             name="memory"
                             type="number"
                             class="q-mt-xs"
@@ -175,6 +181,7 @@
                         <label for="cpu">CPU Core Allocation</label>
                         <q-input
                             v-model="editingTemplate.cpuCores"
+                            :readonly="!canCreateTemplate"
                             name="cpu"
                             type="number"
                             class="q-mt-xs"
@@ -187,6 +194,7 @@
                         <q-input
                             v-if="editingTemplate"
                             v-model="editingTemplate.gpuMemory"
+                            :readonly="!canCreateTemplate"
                             name="gpu"
                             type="number"
                             emit-value
@@ -200,6 +208,7 @@
                         <q-input
                             v-if="editingTemplate"
                             v-model="editingTemplate.maxRuntime"
+                            :readonly="!canCreateTemplate"
                             name="maxRuntime"
                             type="number"
                             class="q-mt-xs"
@@ -212,21 +221,26 @@
 
                 <q-separator class="q-my-md" />
 
+                <div
+                    v-if="launchBlockedReason"
+                    class="row no-wrap items-center q-pa-sm q-mt-lg rounded-borders bg-orange-1 text-orange-10"
+                    role="status"
+                >
+                    <q-icon name="sym_o_lock" size="sm" class="q-mr-sm" />
+                    <span>{{ launchBlockedReason }}</span>
+                </div>
+
                 <div class="flex row justify-end q-mt-lg">
                     <q-btn
+                        v-if="canCreateTemplate"
                         flat
                         class="bg-button-secondary text-on-color q-mx-sm"
                         :label="saveButtonLabel"
-                        :disable="
-                            !isModified || !isNameSelected || !canCreateTemplate
-                        "
+                        :disable="!isModified || !isNameSelected"
                         :loading="isCreating || isUpdating"
                         @click="saveAsTemplate"
                     >
-                        <q-tooltip v-if="!canCreateTemplate">
-                            You don't have permission to create action templates
-                        </q-tooltip>
-                        <q-tooltip v-else-if="!isNameSelected">
+                        <q-tooltip v-if="!isNameSelected">
                             Cant save Template without a Name
                         </q-tooltip>
                         <q-tooltip v-else-if="!isModified">
@@ -237,15 +251,12 @@
                         flat
                         class="bg-button-secondary text-on-color"
                         label="Submit Action"
-                        :disable="!isNameSelected || !!submitBlockedReason"
+                        :disable="!isNameSelected || !!launchBlockedReason"
                         :loading="isSubmitting"
                         @click="submitAnalysis"
                     >
                         <q-tooltip v-if="!isNameSelected">
                             Cant submit Action without a name
-                        </q-tooltip>
-                        <q-tooltip v-else-if="submitBlockedReason">
-                            {{ submitBlockedReason }}
                         </q-tooltip>
                     </q-btn>
                 </div>
@@ -456,32 +467,38 @@ const targetMissions = computed(() => {
 });
 
 /**
- * Why "Submit Action" is unavailable, or undefined if it can be submitted.
- * Submitting first saves the template when it is new or modified, which needs
- * template create rights; launching needs the template's access rights on
- * every target mission.
+ * Why the selected action can't be launched on the selected missions, or
+ * undefined. Launching needs the template's access rights on every target
+ * mission (CreateActionGuard in the backend). This depends on what the user
+ * selects, so the button stays visible and the reason is shown next to it.
  */
-const submitBlockedReason = computed((): string | undefined => {
-    const needsTemplateSave = !editingTemplate.value?.uuid || isModified.value;
-    if (needsTemplateSave && !canCreateTemplate.value) {
-        return "You don't have permission to create action templates. Select an existing action without changes to launch it.";
-    }
+const launchBlockedReason = computed((): string | undefined => {
     if (targetMissions.value.length === 0) return undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const requiredRights: AccessGroupRights =
         editingTemplate.value?.accessRights ?? AccessGroupRights.READ;
     if (
-        !canLaunchActionOnMissions(
+        canLaunchActionOnMissions(
             targetMissions.value,
             requiredRights,
             permissions.value,
         )
     ) {
-        return `You need ${accessGroupRightsMap[requiredRights]} access on the selected mission(s) to launch this action`;
+        return undefined;
     }
-    return undefined;
+    return `This action needs ${accessGroupRightsMap[requiredRights]} access, which you don't have on all selected missions. Pick a different action or ask a project admin for access.`;
 });
+
+/**
+ * Submitting saves the template first when it is new or modified, which needs
+ * template create rights on top of the launch rights.
+ */
+function canSubmit(): boolean {
+    if (launchBlockedReason.value) return false;
+    const needsTemplateSave = !editingTemplate.value?.uuid || isModified.value;
+    return !needsTemplateSave || canCreateTemplate.value;
+}
 
 // --- Actions ---
 function closeDrawer(): void {
@@ -530,13 +547,7 @@ async function saveAsTemplate(): Promise<void> {
 
 async function submitAnalysis(): Promise<void> {
     // 1. Validation
-    if (submitBlockedReason.value) {
-        Notify.create({
-            message: submitBlockedReason.value,
-            color: 'negative',
-        });
-        return;
-    }
+    if (!canSubmit()) return;
     if (
         !hasMissionUUIDs.value &&
         (!selectedProject.value || !selectedMission.value)

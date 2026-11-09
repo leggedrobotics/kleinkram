@@ -1,17 +1,11 @@
 <template>
     <div
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': !canModify,
-        }"
+        v-if="canModify"
+        class="cursor-pointer"
         style="height: 100%"
         @click="editMission"
     >
         <slot />
-        <q-tooltip v-if="!canModify">
-            You do not have permission to modify this mission
-        </q-tooltip>
     </div>
 </template>
 
@@ -50,9 +44,3 @@ const editMission = (): void => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>

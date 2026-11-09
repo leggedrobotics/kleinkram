@@ -1,16 +1,6 @@
 <template>
-    <div
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': !canModify,
-        }"
-        @click="deleteFile"
-    >
+    <div v-if="canModify" class="cursor-pointer" @click="deleteFile">
         <slot />
-        <q-tooltip v-if="!canModify">
-            You do not have permission to delete this file
-        </q-tooltip>
     </div>
 </template>
 <script setup lang="ts">
@@ -44,5 +34,3 @@ const deleteFile = (): void => {
     });
 };
 </script>
-
-<style scoped></style>

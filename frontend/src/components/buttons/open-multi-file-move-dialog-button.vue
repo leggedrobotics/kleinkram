@@ -1,12 +1,12 @@
 <template>
     <q-btn
+        v-if="canModify"
         flat
         dense
         padding="6px"
         label="Move"
         icon="sym_o_move_down"
         color="white"
-        :disable="!canModify"
         @click="moveFiles"
     >
         <q-tooltip> Move Files to another Mission</q-tooltip>

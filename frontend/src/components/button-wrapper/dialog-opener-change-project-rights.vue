@@ -1,17 +1,6 @@
 <template>
-    <div
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': canModify,
-        }"
-        @click="changeRights"
-    >
+    <div v-if="canModify" class="cursor-pointer" @click="changeRights">
         <slot />
-
-        <q-tooltip v-if="!canModify">
-            You need delete rights on the project to modify its access rights
-        </q-tooltip>
     </div>
 </template>
 
@@ -47,11 +36,3 @@ const changeRights = (): void => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
-<style scoped></style>

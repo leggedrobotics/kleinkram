@@ -1,17 +1,11 @@
 <template>
     <div
-        :class="{
-            disabled: !canModify,
-            'cursor-not-allowed': !canModify,
-        }"
+        v-if="canModify"
+        class="cursor-pointer"
         style="height: 100%"
         @click="openMetadataDialog"
     >
         <slot />
-
-        <q-tooltip v-if="!canModify">
-            You need modify rights on the mission to edit its metadata
-        </q-tooltip>
     </div>
 </template>
 
@@ -45,9 +39,3 @@ const openMetadataDialog = (): void => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>

@@ -1,16 +1,6 @@
 <template>
-    <div
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': canModify,
-            'cursor-not-allowed': !canModify,
-        }"
-        @click="moveFiles"
-    >
+    <div v-if="canModify" class="cursor-pointer" @click="moveFiles">
         <slot />
-        <q-tooltip v-if="!canModify">
-            You do not have permission to move these files / this file
-        </q-tooltip>
     </div>
 </template>
 
@@ -49,9 +39,3 @@ const moveFiles = (): void => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
