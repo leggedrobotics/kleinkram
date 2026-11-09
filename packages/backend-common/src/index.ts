@@ -4,6 +4,7 @@ export * from './audit/audit.types';
 export * from './audit/file-audit.service';
 export * from './consts';
 export * from './entities/action/action-diagnostic.entity';
+export * from './entities/action/action-state-transition.entity';
 export * from './entities/action/action-template.entity';
 export * from './entities/action/action-trigger.entity';
 export * from './entities/action/action.entity';
@@ -41,6 +42,7 @@ export * from './modules/storage/storage-metrics.service';
 export * from './modules/storage/storage.module';
 export * from './scheduling-logic';
 export * from './seeds/user/seed-users';
+export * from './services/action-state-transition';
 export * from './services/affiliation-group.service';
 export * from './services/recording-times-backfill';
 export * from './typeorm-config';
@@ -49,6 +51,7 @@ export * from './viewEntities/mission-access-view.entity';
 export * from './viewEntities/project-access-view.entity';
 
 import { ActionDiagnosticEntity } from './entities/action/action-diagnostic.entity';
+import { ActionStateTransitionEntity } from './entities/action/action-state-transition.entity';
 import { ActionTemplateEntity } from './entities/action/action-template.entity';
 import { ActionTriggerEntity } from './entities/action/action-trigger.entity';
 import { ActionEntity } from './entities/action/action.entity';
@@ -76,6 +79,7 @@ import { ProjectAccessViewEntity } from './viewEntities/project-access-view.enti
 
 export const ALL_ENTITIES = [
     ActionDiagnosticEntity,
+    ActionStateTransitionEntity,
     ActionTemplateEntity,
     ActionTriggerEntity,
     ActionEntity,
