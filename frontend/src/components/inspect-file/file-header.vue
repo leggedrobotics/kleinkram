@@ -84,23 +84,23 @@
                                     </q-item-section>
                                     <q-item-section>Copy UUID</q-item-section>
                                 </q-item>
-                                <q-item
-                                    v-ripple
-                                    clickable
-                                    class="text-negative"
+                                <DeleteFileDialogOpener
+                                    v-if="file"
+                                    :file="file"
                                 >
-                                    <q-item-section avatar>
-                                        <q-icon name="sym_o_delete" />
-                                    </q-item-section>
-                                    <q-item-section>
-                                        <DeleteFileDialogOpener
-                                            v-if="file"
-                                            :file="file"
-                                        >
+                                    <q-item
+                                        v-ripple
+                                        clickable
+                                        class="text-negative"
+                                    >
+                                        <q-item-section avatar>
+                                            <q-icon name="sym_o_delete" />
+                                        </q-item-section>
+                                        <q-item-section>
                                             Delete File
-                                        </DeleteFileDialogOpener>
-                                    </q-item-section>
-                                </q-item>
+                                        </q-item-section>
+                                    </q-item>
+                                </DeleteFileDialogOpener>
                             </q-list>
                         </q-menu>
                     </q-btn>

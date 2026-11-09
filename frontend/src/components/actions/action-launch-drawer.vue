@@ -19,6 +19,7 @@
 
         <div :class="$q.screen.xs ? 'q-pa-md' : 'q-pa-lg'">
             <InfoBanner
+                v-if="canCreateTemplate"
                 text="Need a different action configuration?"
                 button-label="Create New Action"
                 @click="createAction"
@@ -106,6 +107,21 @@
 
                 <q-separator class="q-my-lg" />
 
+                <div
+                    v-if="
+                        canSubmit && isPermissionChecked && !hasLaunchPermission
+                    "
+                    class="row no-wrap items-center q-pa-sm q-mb-md rounded-borders bg-orange-1 text-orange-10"
+                    role="status"
+                >
+                    <q-icon name="sym_o_lock" size="sm" class="q-mr-sm" />
+                    <span>
+                        This action needs {{ permissionLevel }} access, which
+                        you don't have on all selected missions. Pick other
+                        missions or ask a project admin for access.
+                    </span>
+                </div>
+
                 <div class="row justify-end q-gutter-x-sm">
                     <q-btn
                         flat
@@ -121,7 +137,7 @@
                             icon="sym_o_rocket_launch"
                             type="submit"
                             :loading="isSubmitting"
-                            :disable="!canSubmit"
+                            :disable="!canSubmit || !hasLaunchPermission"
                         />
                         <q-tooltip v-if="!canSubmit">
                             Please select a mission to launch this action
@@ -151,7 +167,13 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { actionKeys } from 'src/api/keys/action-keys';
 import { useSubmitAction } from 'src/composables/use-action-mutations';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
-import { useManyMissions } from 'src/hooks/query-hooks';
+import {
+    canCreateActionTemplate,
+    canLaunchActionOnMissions,
+    resolveLaunchTargets,
+    useManyMissions,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 
 // --- Types ---
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
@@ -205,6 +227,45 @@ const permissionLevel = computed(() => {
     return AccessGroupRights[props.template.accessRights];
 });
 
+// --- Permissions ---
+const { data: permissions } = usePermissionsQuery();
+
+const canCreateTemplate = computed(() =>
+    canCreateActionTemplate(permissions.value),
+);
+
+// undefined while the selected missions are still loading.
+const targetMissions = computed(() => {
+    if (hasMissionUUIDs.value) {
+        return resolveLaunchTargets(
+            allMissionUUIDs.value,
+            selectedMissionsData.value?.data,
+        );
+    }
+    if (!selectedMission.value) return [];
+    return [
+        {
+            missionUuid: selectedMission.value.uuid,
+            projectUuid: selectedProject.value?.uuid,
+        },
+    ];
+});
+
+const isPermissionChecked = computed(
+    () => targetMissions.value !== undefined && !!permissions.value,
+);
+
+const hasLaunchPermission = computed(
+    () =>
+        !!props.template &&
+        targetMissions.value !== undefined &&
+        canLaunchActionOnMissions(
+            targetMissions.value,
+            props.template.accessRights,
+            permissions.value,
+        ),
+);
+
 // --- Watchers ---
 watch(
     () => props.open,
@@ -252,7 +313,7 @@ const canSubmit = computed(() => {
 });
 
 async function submitAnalysis(): Promise<void> {
-    if (!props.template) return;
+    if (!props.template || !hasLaunchPermission.value) return;
 
     if (
         props.template.accessRights === AccessGroupRights.WRITE ||

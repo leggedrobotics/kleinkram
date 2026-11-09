@@ -101,6 +101,7 @@
                     />
                     <app-refresh-button @click="refetchOnClick" />
                     <app-create-button
+                        v-if="canAddProject"
                         label="Add Project"
                         @click="openAddProject"
                     />
@@ -257,6 +258,7 @@
                                 yet.
                             </div>
                             <app-create-button
+                                v-if="canAddProject"
                                 class="q-mt-md"
                                 label="Assign Project"
                                 @click="openAddProject"
@@ -355,18 +357,15 @@
                 @clear="deselectUsers"
             >
                 <q-btn
+                    v-if="currentUserCanEdit"
                     flat
                     dense
                     padding="6px"
                     icon="sym_o_delete"
                     color="white"
-                    :disable="!currentUserCanEdit"
                     @click="deleteSelectedUsers"
                 >
                     Delete
-                    <q-tooltip v-if="!currentUserCanEdit">
-                        You cannot edit this group
-                    </q-tooltip>
                 </q-btn>
             </table-selection-bar>
             <q-table
@@ -416,6 +415,7 @@
                                         </div>
                                     </div>
                                     <q-btn
+                                        v-if="currentUserCanEdit"
                                         flat
                                         round
                                         dense
@@ -431,9 +431,6 @@
                                                 <q-item
                                                     v-ripple
                                                     clickable
-                                                    :disable="
-                                                        !currentUserCanEdit
-                                                    "
                                                     @click="
                                                         () =>
                                                             toggleUserRole(
@@ -453,9 +450,6 @@
                                                 <q-item
                                                     v-ripple
                                                     clickable
-                                                    :disable="
-                                                        !currentUserCanEdit
-                                                    "
                                                     @click="
                                                         () =>
                                                             removeSingleUser(
@@ -643,9 +637,9 @@
                                         </q-tooltip>
                                     </q-item>
                                     <q-item
+                                        v-if="currentUserCanEdit"
                                         v-ripple
                                         clickable
-                                        :disable="!currentUserCanEdit"
                                         @click="() => toggleUserRole(props.row)"
                                     >
                                         <q-item-section>
@@ -655,14 +649,11 @@
                                                     : 'Promote to Owner'
                                             }}
                                         </q-item-section>
-                                        <q-tooltip v-if="!currentUserCanEdit">
-                                            You can't edit a user!
-                                        </q-tooltip>
                                     </q-item>
                                     <q-item
+                                        v-if="currentUserCanEdit"
                                         v-ripple
                                         clickable
-                                        :disable="!currentUserCanEdit"
                                         @click="
                                             () =>
                                                 removeSingleUser(
@@ -919,8 +910,10 @@ import { projectAccessColumns } from 'src/components/explorer-page/explorer-page
 import AddProjectToAccessGroupDialog from 'src/dialogs/add-project-access-group-dialog.vue';
 import SetAccessGroupExpirationDialog from 'src/dialogs/modify-membership-expiration-date-dialog.vue';
 import {
+    hasProjectRightsAnywhere,
     useAccessGroup,
     useAccessGroupAuditLogs,
+    usePermissionsQuery,
     useUser,
 } from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
@@ -1168,6 +1161,13 @@ const currentUserCanEdit = computed(() => {
         ) ?? false
     );
 });
+
+// Adding a project to a group needs WRITE on that project
+// (CanWriteProject in the backend).
+const { data: permissions } = usePermissionsQuery();
+const canAddProject = computed(() =>
+    hasProjectRightsAnywhere(AccessGroupRights.WRITE, permissions.value),
+);
 
 const auditLogsQueryEnabled = computed(
     () => !personal.value && currentUserCanEdit.value,

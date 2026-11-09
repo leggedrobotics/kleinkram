@@ -1,18 +1,13 @@
 <template>
     <div
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': canModify,
-        }"
+        v-if="hasPermission"
+        :class="hasFiles ? 'disabled cursor-not-allowed' : 'cursor-pointer'"
         @click="deleteMission"
     >
         <slot />
-        <q-tooltip v-if="!canModify && fileCount === 0">
-            You do not have permission to delete this mission
-        </q-tooltip>
-        <q-tooltip v-if="!canModify && fileCount > 0">
-            You cannot delete a mission with files
+        <q-tooltip v-if="hasFiles">
+            A mission with files cannot be deleted. Delete or move its files
+            first.
         </q-tooltip>
     </div>
 </template>
@@ -40,22 +35,21 @@ const fileCount = computed(() => {
     return 'filesCount' in mission ? mission.filesCount : mission.files.length;
 });
 
-const canModify = computed(() => {
-    if (fileCount.value > 0) {
-        return false;
-    }
-    // Deleting a mission needs DELETE rights (CanDeleteMission in the backend).
-    return canDeleteMission(
+const hasFiles = computed(() => fileCount.value > 0);
+
+// Deleting a mission needs DELETE rights (CanDeleteMission in the backend).
+const hasPermission = computed(() =>
+    canDeleteMission(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         mission.uuid,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         mission.project.uuid,
         permissions.value,
-    );
-});
+    ),
+);
 
 const deleteMission = (): void => {
-    if (!canModify.value) return;
+    if (!hasPermission.value || hasFiles.value) return;
     $q.dialog({
         title: 'Delete Mission',
         component: DeleteMissionDialog,
@@ -66,11 +60,3 @@ const deleteMission = (): void => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
-<style scoped></style>

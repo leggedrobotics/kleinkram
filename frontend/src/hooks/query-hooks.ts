@@ -143,15 +143,15 @@ export const getPermissionForProject = (
 ): AccessGroupRights => {
     if (permissions === undefined) return 0;
     if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
-    const defaultPermission = permissions.defaultPermission;
 
+    // Only actual grants count, as in the backend `canAccessProject`.
+    // `defaultPermission` describes global rights (e.g. creating projects),
+    // not a floor on every project.
     const project = permissions.projects.find(
         (p: ProjectPermissions) => p.uuid === projectUuid,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const projectPermission = (project?.access as number) ?? 0;
-    return Math.max(defaultPermission, projectPermission);
+    return (project?.access as AccessGroupRights | undefined) ?? 0;
 };
 
 export const getPermissionForMission = (
@@ -160,15 +160,13 @@ export const getPermissionForMission = (
 ): AccessGroupRights => {
     if (permissions === undefined) return 0;
     if (permissions.role === UserRole.ADMIN) return AccessGroupRights._ADMIN;
-    const defaultPermission = permissions.defaultPermission;
 
+    // Only actual grants count, as in the backend `canUserAccessMission`.
     const mission = permissions.missions.find(
         (m: { uuid: string; access: number }) => m.uuid === missionUuid,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const missionPermission = (mission?.access as number) ?? 0;
-    return Math.max(defaultPermission, missionPermission);
+    return (mission?.access as AccessGroupRights | undefined) ?? 0;
 };
 
 export const canCreateProject = (
@@ -190,6 +188,129 @@ export const canCreateMission = (
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.CREATE;
 };
+
+/**
+ * Creating an action template, or a new version of one, needs the same global
+ * create permission as creating a project (`CreateGuard` in the backend).
+ */
+export const canCreateActionTemplate = (
+    permissions: PermissionsDto | null | undefined,
+): boolean => canCreateProject(permissions);
+
+/**
+ * Whether the user may launch an action that requires `requiredRights` on
+ * every given mission. Mirrors the backend `CreateActionGuard`: the rights
+ * granted through the project or through the mission itself must reach the
+ * template's access rights.
+ */
+export const canLaunchActionOnMissions = (
+    missions: { missionUuid: string; projectUuid: string | undefined }[],
+    requiredRights: AccessGroupRights,
+    permissions: PermissionsDto | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (missions.length === 0) return false;
+
+    return missions.every(({ missionUuid, projectUuid }) => {
+        const permission: AccessGroupRights = Math.max(
+            getPermissionForProject(projectUuid, permissions),
+            getPermissionForMission(missionUuid, permissions),
+        );
+        return permission >= requiredRights;
+    });
+};
+
+/**
+ * Effective rights on a mission: the higher of what the project and the
+ * mission itself grant (as in the backend `canUserAccessMission`).
+ */
+export const getEffectiveMissionRights = (
+    missionUuid: string | undefined,
+    projectUuid: string | undefined,
+    permissions: PermissionsDto | null | undefined,
+): AccessGroupRights => {
+    if (!permissions) return 0;
+    return Math.max(
+        getPermissionForProject(projectUuid, permissions),
+        getPermissionForMission(missionUuid, permissions),
+    );
+};
+
+/** CREATE on a mission, e.g. to upload files into it. */
+export const canCreateInMission = (
+    missionUuid: string | undefined,
+    projectUuid: string | undefined,
+    permissions: PermissionsDto | null | undefined,
+): boolean =>
+    getEffectiveMissionRights(missionUuid, projectUuid, permissions) >=
+    AccessGroupRights.CREATE;
+
+/**
+ * Whether the user holds `rights` on at least one project or mission. Used
+ * for entry points that pick the target later (e.g. the global "New" menu).
+ */
+export const hasRightsAnywhere = (
+    rights: AccessGroupRights,
+    permissions: PermissionsDto | null | undefined,
+): boolean =>
+    hasProjectRightsAnywhere(rights, permissions) ||
+    (permissions?.missions.some((m) => m.access >= rights) ?? false);
+
+/** Like {@link hasRightsAnywhere}, but only counts project-level rights. */
+export const hasProjectRightsAnywhere = (
+    rights: AccessGroupRights,
+    permissions: PermissionsDto | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (permissions.role === UserRole.ADMIN) return true;
+    return permissions.projects.some(
+        (p) => (p.access as AccessGroupRights) >= rights,
+    );
+};
+
+/**
+ * Maps the requested mission UUIDs to launch targets, or returns undefined
+ * until every one of them has been loaded. Checking only the loaded subset
+ * could enable a launch the backend rejects for a mission not yet seen.
+ */
+export const resolveLaunchTargets = (
+    requestedUuids: string[],
+    loaded: { uuid: string; project: { uuid: string } }[] | undefined,
+): { missionUuid: string; projectUuid: string }[] | undefined => {
+    if (!loaded) return undefined;
+    const byUuid = new Map(loaded.map((m) => [m.uuid, m.project.uuid]));
+    if (!requestedUuids.every((uuid) => byUuid.has(uuid))) return undefined;
+    return requestedUuids.map((uuid) => ({
+        missionUuid: uuid,
+        projectUuid: byUuid.get(uuid) ?? '',
+    }));
+};
+
+/**
+ * Cancelling an action: admins, its creator, or anyone with the template's
+ * access rights on the mission (CancelActionGuard in the backend).
+ */
+export const canCancelAction = (
+    action: {
+        creator: { uuid: string };
+        mission: { uuid: string; project: { uuid: string } };
+        template: { accessRights: AccessGroupRights };
+    },
+    userUuid: string | undefined,
+    permissions: PermissionsDto | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (permissions.role === UserRole.ADMIN) return true;
+    if (userUuid !== undefined && action.creator.uuid === userUuid) return true;
+    return (
+        getEffectiveMissionRights(
+            action.mission.uuid,
+            action.mission.project.uuid,
+            permissions,
+        ) >= action.template.accessRights
+    );
+};
+
 export const canModifyProject = (
     projectUuid: string | undefined,
     permissions: PermissionsDto | null | undefined,
@@ -199,6 +320,33 @@ export const canModifyProject = (
     if (projectUuid === null) return false;
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.WRITE;
+};
+
+/**
+ * Rights on a set of files, as the backend's FileGuardService checks them:
+ * admins and each file's creator always pass, everyone else needs `rights`
+ * on the files' mission or project.
+ */
+export const canModifyFiles = (
+    files: { creator?: { uuid: string } | null }[],
+    missionUuid: string | undefined,
+    projectUuid: string | undefined,
+    rights: AccessGroupRights,
+    userUuid: string | undefined,
+    permissions: PermissionsDto | null | undefined,
+): boolean => {
+    if (!permissions || files.length === 0) return false;
+    if (permissions.role === UserRole.ADMIN) return true;
+    if (
+        getEffectiveMissionRights(missionUuid, projectUuid, permissions) >=
+        rights
+    ) {
+        return true;
+    }
+    return (
+        userUuid !== undefined &&
+        files.every((file) => file.creator?.uuid === userUuid)
+    );
 };
 
 export const canModifyMission = (

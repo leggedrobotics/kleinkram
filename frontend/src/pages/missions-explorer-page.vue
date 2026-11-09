@@ -249,7 +249,7 @@
                 </q-btn>
 
                 <q-btn
-                    v-if="!isReadOnlyPublicView"
+                    v-if="!isReadOnlyPublicView && canDeleteSelectedMissions"
                     flat
                     dense
                     padding="6px"
@@ -330,6 +330,7 @@ import { copyToClipboard, useQuasar } from 'quasar';
 import { usePublicReadOnlyView } from 'src/composables/use-public-read-only-view';
 import DeleteMissionDialog from 'src/dialogs/delete-mission-dialog.vue';
 import {
+    canDeleteMission,
     canDeleteProject,
     registerNoPermissionErrorHandler,
     useHandler,
@@ -349,6 +350,13 @@ const createAction = ref(false);
 registerNoPermissionErrorHandler(isLoadingError, projectUuid, 'project', error);
 
 const { data: permissions } = usePermissionsQuery();
+
+// Deleting a mission needs DELETE rights (CanDeleteMission in the backend).
+const canDeleteSelectedMissions = computed(() =>
+    selectedMissions.value.every((m) =>
+        canDeleteMission(m.uuid, projectUuid.value, permissions.value),
+    ),
+);
 const isReadOnlyPublicView = usePublicReadOnlyView(projectUuid);
 
 /** Tells the users who manage access that the project is public. */

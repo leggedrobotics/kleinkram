@@ -158,8 +158,11 @@ import { computed, Ref, ref } from 'vue';
 const newActionTemplate = ref<ActionTemplateDto | undefined>(undefined);
 
 //gets passed as input
-const { actionTemplates } = defineProps<{
+const { actionTemplates, onlyExisting } = defineProps<{
     actionTemplates: ActionTemplateDto[];
+    // Don't offer the typed name as a new template. Set for users who can't
+    // create templates, so they can only pick an existing one.
+    onlyExisting?: boolean;
 }>();
 
 //template that gets written
@@ -180,7 +183,7 @@ const options = computed(() => {
     const filteredNames: string[] = filteredActionTemplates.value.map(
         (x) => x.name,
     );
-    return filteredNames.includes(suggestedName)
+    return onlyExisting || filteredNames.includes(suggestedName)
         ? [...filteredActionTemplates.value]
         : [newActionTemplate.value, ...filteredActionTemplates.value];
 });

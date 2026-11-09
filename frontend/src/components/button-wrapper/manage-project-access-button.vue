@@ -1,16 +1,6 @@
 <template>
-    <div
-        :class="{
-            disabled: !canModify,
-            'cursor-pointer': !canModify,
-            'cursor-not-allowed': canModify,
-        }"
-        @click="manageProjectAccess"
-    >
+    <div v-if="canModify" class="cursor-pointer" @click="manageProjectAccess">
         <slot />
-        <q-tooltip v-if="!canModify">
-            You do not have permission to modify this project
-        </q-tooltip>
     </div>
 </template>
 
@@ -44,9 +34,3 @@ const manageProjectAccess = () => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>

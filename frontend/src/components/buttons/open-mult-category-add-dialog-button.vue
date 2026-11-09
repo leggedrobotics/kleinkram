@@ -1,12 +1,12 @@
 <template>
     <q-btn
+        v-if="canModify"
         flat
         dense
         padding="6px"
         color="white"
         icon="sym_o_category"
         label="Add Categories"
-        :disable="!canModify"
         @click="addCategories"
     >
         <q-tooltip> Add Categories</q-tooltip>

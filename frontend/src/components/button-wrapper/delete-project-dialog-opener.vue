@@ -1,19 +1,13 @@
 <template>
     <div
-        :class="{
-            disabled: !canDelete,
-            'cursor-pointer': canDelete,
-            'cursor-not-allowed': !canDelete,
-        }"
+        v-if="hasPermission"
+        :class="hasMissions ? 'disabled cursor-not-allowed' : 'cursor-pointer'"
         @click="deleteProject"
     >
         <slot />
-
-        <q-tooltip v-if="!canDelete && !hasMissions">
-            You do not have permission to delete this project
-        </q-tooltip>
-        <q-tooltip v-else-if="hasMissions">
-            You cannot delete a project with missions
+        <q-tooltip v-if="hasMissions">
+            A project with missions cannot be deleted. Delete or move its
+            missions first.
         </q-tooltip>
     </div>
 </template>
@@ -30,15 +24,15 @@ const { projectUuid, hasMissions } = defineProps<{
 }>();
 
 const { data: permissions } = usePermissionsQuery();
-const canDelete = computed(
-    () => canDeleteProject(projectUuid, permissions.value) && !hasMissions,
+const hasPermission = computed(() =>
+    canDeleteProject(projectUuid, permissions.value),
 );
 
 const $q = useQuasar();
 
 const deleteProject = (): void => {
     // abort if the user cannot modify the project
-    if (!canDelete.value) return;
+    if (!hasPermission.value || hasMissions) return;
 
     // open the dialog
     $q.dialog({
@@ -50,9 +44,3 @@ const deleteProject = (): void => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>

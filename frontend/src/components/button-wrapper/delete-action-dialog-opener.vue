@@ -1,25 +1,23 @@
 <template>
     <div
-        :class="{
-            disabled: !canDelete,
-            'cursor-pointer': !canDelete,
-            'cursor-not-allowed': canDelete,
-        }"
+        v-if="hasPermission"
+        :class="
+            actionInDeletableState
+                ? 'cursor-pointer'
+                : 'disabled cursor-not-allowed'
+        "
         @click="openDeleteActionDialog"
     >
         <slot />
-        <q-tooltip v-if="!canDelete && !actionInDeletableState">
+        <q-tooltip v-if="!actionInDeletableState">
             You can only delete actions if they're DONE, FAILED, UNPROCESSABLE
             or CANCELLED
-        </q-tooltip>
-        <q-tooltip v-else-if="!canDelete">
-            You do not have permission to delete this action
         </q-tooltip>
     </div>
 </template>
 
 <script setup lang="ts">
-import { isTerminalActionState } from '@kleinkram/shared';
+import { AccessGroupRights, isTerminalActionState } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
 import DeleteActionDialog from 'src/dialogs/delete-action-dialog.vue';
 import {
@@ -38,10 +36,9 @@ const { action } = defineProps<{ action: ActionDto }>();
 
 const { data: permissions } = usePermissionsQuery();
 
-const canDelete = computed(
+const hasPermission = computed(
     () =>
-        actionInDeletableState.value &&
-        (deletePermissions.value >= 30 || isCreator.value),
+        deletePermissions.value >= AccessGroupRights.DELETE || isCreator.value,
 );
 
 const actionInDeletableState = computed(() =>
@@ -51,7 +48,7 @@ const actionInDeletableState = computed(() =>
 const { data: user } = useUser();
 const isCreator = computed(() => action.creator.uuid === user.value?.uuid);
 
-const deletePermissions = computed(() => {
+const deletePermissions = computed((): AccessGroupRights => {
     const projectPermissions = getPermissionForProject(
         action.mission.project.uuid,
         permissions.value ?? undefined,
@@ -66,7 +63,7 @@ const deletePermissions = computed(() => {
 
 const openDeleteActionDialog = (): void => {
     // abort if the user cannot modify the project
-    if (!canDelete.value) return;
+    if (!hasPermission.value || !actionInDeletableState.value) return;
 
     // open the dialog
     $q.dialog({
@@ -77,9 +74,3 @@ const openDeleteActionDialog = (): void => {
     });
 };
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>
