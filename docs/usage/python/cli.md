@@ -40,6 +40,23 @@ klein mission info testMission -p testProject
 klein file delete data.bag -p testProject -m testMission --yes
 ```
 
+## Global Options
+
+These options go before the command, e.g. `klein --no-verbose file list -m testMission`.
+
+| Option                | Effect                                                                                                                                                                                                                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--no-verbose`        | Output for scripts: `list` commands print one ID per line instead of a table, `info` commands print JSON, `upload` and `download` show no progress bars, and errors are shorter. When listing files, files that are not in the `OK` state are printed to stderr instead of stdout. |
+| `--max-lines <n>`     | Maximum number of rows in a table. `-1` prints all rows.                                                                                                                                                                                                                           |
+| `--debug`             | Show the Python traceback when a command fails, and write the log file at `DEBUG` level.                                                                                                                                                                                           |
+| `--log-level <level>` | Log level for the log file (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Each run writes a log file to `~/.local/state/kleinkram/` (on Windows `%LOCALAPPDATA%\kleinkram`).                                                                                                   |
+| `--version`, `-v`     | Print the CLI version.                                                                                                                                                                                                                                                             |
+
+```bash
+# the IDs of all bag files in a mission, for use in a script
+klein --no-verbose file list -p testProject -m testMission "*.bag"
+```
+
 ## Core Workflows
 
 ### Listing Resources
@@ -97,6 +114,25 @@ klein upload --create --project testProject --mission testMission *.bag
 ```
 
 :::
+
+The other options of `upload`:
+
+| Option                      | Effect                                                                                                                                                                                                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--metadata <file>`         | A JSON or YAML file with the metadata of the mission, as `name: value` pairs. It is only used together with `--create`, when the mission is created; the metadata of an existing mission is not changed. To change it, use `klein mission update --metadata`. |
+| `--ignore-missing-metadata` | Create the mission (with `--create`) even if the project requires metadata that is not in `--metadata`.                                                                                                                                                       |
+| `--fix-filenames`           | Upload files whose names Kleinkram does not accept under a fixed name, instead of failing. The local files are not renamed. See below.                                                                                                                        |
+| `--skip`, `-s`              | Skip files that cannot be uploaded (unsupported type, bad name, directories) instead of failing, and upload the rest.                                                                                                                                         |
+
+A file name (without the extension) may only contain letters, digits, `_` and `-`, and may be at most 50 characters
+long. With `--fix-filenames`, every other character is replaced by `_`, and a name that is still longer than 50
+characters is cut to 40 characters followed by 10 characters of a hash of the original name. The hash keeps names that
+start the same apart, and the same file always gets the same name.
+
+```bash
+# "run 1 (left).bag" is uploaded as "run_1__left_.bag"
+klein upload --create --metadata mission.yaml --fix-filenames -p testProject -m testMission "run 1 (left).bag"
+```
 
 ### Downloading Resources
 
@@ -181,10 +217,11 @@ See [Use Kleinkram Actions](../actions/use-actions.md) for the concepts behind t
 
 ```bash
 # templates, given by name (latest version) or ID
-klein template list
+klein template list                        # --all lists every version, not only the latest
 klein template create my-action --description "Extracts metadata" --docker-image rslethz/action:extract-metadata-latest
 klein template revisions my-action
 klein template create-version my-action --cpu-memory 4
+klein template delete my-action            # archived instead if it already has executions
 
 # executions
 klein execution launch my-action --project testProject --mission testMission
@@ -193,13 +230,28 @@ klein execution info <EXECUTION_ID>         # state, cause and number of finding
 klein execution diagnostics <EXECUTION_ID>  # every warning and error the action reported
 klein execution logs <EXECUTION_ID> --follow
 klein execution download <EXECUTION_ID> --output-dir ./artifacts --extract
+klein execution cancel <EXECUTION_ID>      # stop a pending or running execution
+klein execution delete <EXECUTION_ID>
 
 # triggers
 klein trigger create on-upload --template my-action --project testProject --mission testMission \
     --type FILE --file-patterns "*.bag" --file-events UPLOAD
+klein trigger create nightly --template my-action -p testProject -m testMission --type TIME --cron "0 0 * * *"
+klein trigger create from-ci --template my-action -p testProject -m testMission --type WEBHOOK
 klein trigger list --project testProject --mission testMission
+klein trigger info <TRIGGER_UUID>
+klein trigger update <TRIGGER_UUID> --type FILE --file-patterns "*.mcap" --file-events UPLOAD --file-events MOVE
 klein trigger delete <TRIGGER_UUID>
 ```
+
+`template create` and `create-version` take the resources of the action: `--cpu-cores`, `--cpu-memory` and
+`--gpu-memory` (in GB, `-1` for no GPU), `--max-runtime` (in minutes), `--access-rights` (`0` read, `10` create,
+`20` modify, `30` delete), and optionally `--command` and `--entrypoint`. `create-version` only changes the values you
+pass.
+
+A file trigger takes one or more `--file-patterns` (globs on the file name) and `--file-events` (`UPLOAD`, `RENAME`,
+`MOVE`, `DELETE`). A time trigger takes a `--cron` expression. `trigger update` needs `--type` whenever it changes
+these values. See [Action Triggers](../actions/triggers.md).
 
 ## Supported File Types
 

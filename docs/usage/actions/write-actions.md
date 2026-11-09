@@ -52,7 +52,20 @@ To persist data beyond the lifetime of the action, Kleinkram provides two approa
     :::
 
 2. You can write files to the special `/out` directory inside the container. All files written to this directory
-   are automatically uploaded as artifacts to the current action execution after the action completes.
+   are automatically uploaded as artifacts to the current action execution after the action completes. See
+   [Artifacts](#artifacts) for how they are packaged.
+
+#### Artifacts
+
+When the action's container has stopped, Kleinkram packs the `/out` directory into a single `<execution-id>.tar.gz`
+archive and stores it with the execution. This happens whether the action succeeded or failed, but not when the
+execution was cancelled. Inside the archive, the files are in an `out/` directory. Download the archive from the
+execution page, with `klein execution download <EXECUTION_ID>` (`--extract` unpacks it), or with
+`kleinkram.download_artifact()`. Artifacts are deleted after 90 days.
+
+If the upload of the artifacts fails, the execution keeps its state, but gets a warning with the code
+`ARTIFACT_UPLOAD_FAILED` and the last line of the uploader's error output. It then shows as done with a warning, and
+`klein execution diagnostics` lists the warning.
 
 #### Temporary Storage During Action Execution
 
