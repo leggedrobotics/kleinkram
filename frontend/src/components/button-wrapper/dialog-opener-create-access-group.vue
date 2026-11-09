@@ -1,13 +1,9 @@
 <template>
     <app-create-button
+        v-if="canCreate"
         label="Create Access Group"
-        :disable="!canCreate"
         @click="createAccessGroupDialog"
-    >
-        <q-tooltip v-if="!canCreate">
-            You do not have permission to create a new Access Group
-        </q-tooltip>
-    </app-create-button>
+    />
 </template>
 
 <script setup lang="ts">

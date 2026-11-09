@@ -1,5 +1,5 @@
 import { AccessGroupRights } from '@kleinkram/shared';
-import { IsNoValidUUID, IsValidName } from '@kleinkram/validation';
+import { IsValidName } from '@kleinkram/validation';
 import {
     IsArray,
     IsBoolean,
@@ -11,8 +11,7 @@ import {
 export class CreateProject {
     @IsString()
     @IsNotEmpty()
-    @IsValidName()
-    @IsNoValidUUID()
+    @IsValidName('Project name')
     name!: string;
 
     @IsNotEmpty()

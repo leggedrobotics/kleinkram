@@ -46,16 +46,9 @@
                         :error-message="errorMessagesProjectName"
                         :error="isInErrorStateProjectName"
                         :rules="[
-                            (val) => !!val || 'Field is required',
-                            (val) =>
-                                val.length >= 3 ||
-                                'Name must be at least 3 characters',
-                            (val) =>
-                                val.length <= 20 ||
-                                'Name must be at most 20 characters',
-                            (val) =>
-                                /^[\w\-_]+$/g.test(val) ||
-                                'Name must be alphanumeric and contain only - and _',
+                            (val: string) =>
+                                getNameValidationError(val, 'Project name') ??
+                                true,
                         ]"
                         @update:model-value="verifyInput"
                     />
@@ -114,6 +107,10 @@ import BaseDialog from 'src/dialogs/base-dialog.vue';
 
 import type { DefaultRightDto } from '@kleinkram/api-dto/types/access-control/default-right.dto';
 import type { MetadataTypeDto } from '@kleinkram/api-dto/types/metadata/metadata.dto';
+import {
+    getNameValidationError,
+    isValidName,
+} from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
 import AccessRightsManager from 'components/configure-access-rights/access-rights-manager.vue';
 import ConfigureMetadata from 'components/configure-metadata.vue';
@@ -150,11 +147,9 @@ watch(defaultRights, () => {
 
 const verifyInput = () => {
     formIsValid.value =
-        !!newProjectName.value &&
+        isValidName(newProjectName.value) &&
         !!newProjectDescription.value &&
-        !invalidProjectNames.value.includes(newProjectName.value) &&
-        !!newProjectName.value &&
-        !!newProjectDescription.value;
+        !invalidProjectNames.value.includes(newProjectName.value);
 
     // client side verification
     if (

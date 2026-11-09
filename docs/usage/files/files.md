@@ -2,16 +2,16 @@
 
 Kleinkram supports a variety of robotics data formats. All other files should be stored in a different Cloud Storage Solution like Google Drive.
 
-| Extension        | Description                                                      |
-| :--------------- | :--------------------------------------------------------------- |
-| `.mcap`          | Standard container format for multimodal data (ROS2, Foxglove).  |
-| `.bag`           | Legacy ROS1 bag file. Automatically converted to MCAP on upload. |
-| `.db3`           | ROS2 bag file (SQLite3).                                         |
-| `.svo2`          | ZED camera recording (v2)                                        |
-| `.tum`           | TUM dataset format                                               |
-| `.yaml` / `.yml` | YAML configuration files                                         |
-| `.md`            | Markdown notes, rendered in the file preview                     |
-| `.csv`           | Comma/semicolon/tab separated tables, shown as a table preview   |
+| Extension        | Description                                                     |
+| :--------------- | :-------------------------------------------------------------- |
+| `.mcap`          | Standard container format for multimodal data (ROS2, Foxglove). |
+| `.bag`           | Legacy ROS1 bag file. Optionally converted to MCAP on upload.   |
+| `.db3`           | ROS2 bag file (SQLite3).                                        |
+| `.svo2`          | ZED camera recording (v2)                                       |
+| `.tum`           | TUM dataset format                                              |
+| `.yaml` / `.yml` | YAML configuration files                                        |
+| `.md`            | Markdown notes, rendered in the file preview                    |
+| `.csv`           | Comma/semicolon/tab separated tables, shown as a table preview  |
 
 ::: tip Requesting New File Types
 If you need support for additional file types, please [open a new issue](https://github.com/leggedrobotics/kleinkram/issues/new) on GitHub.

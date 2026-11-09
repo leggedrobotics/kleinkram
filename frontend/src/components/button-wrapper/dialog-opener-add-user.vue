@@ -1,9 +1,11 @@
 <template>
-    <div :class="classObject" style="height: 100%" @click="openAddUser">
+    <div
+        v-if="canModify"
+        class="cursor-pointer"
+        style="height: 100%"
+        @click="openAddUser"
+    >
         <slot />
-        <q-tooltip v-if="!canModify">
-            You don't have permission to modify this group.
-        </q-tooltip>
     </div>
 </template>
 
@@ -13,7 +15,7 @@ import { UserRole } from '@kleinkram/shared';
 import { useQuasar } from 'quasar';
 import AddUserToAccessGroupDialog from 'src/dialogs/add-user-access-group-dialog.vue';
 import { useUser } from 'src/hooks/query-hooks';
-import { computed, reactive } from 'vue';
+import { computed } from 'vue';
 
 const $q = useQuasar();
 const { accessGroup } = defineProps<{ accessGroup: AccessGroupDto }>();
@@ -30,16 +32,6 @@ const canModify = computed(() => {
     );
 });
 
-const classObject = reactive({
-    disabled: !canModify.value,
-
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    'cursor-pointer': !canModify.value,
-
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    'cursor-not-allowed': canModify.value,
-});
-
 function openAddUser(): void {
     if (!canModify.value) {
         return;
@@ -52,12 +44,3 @@ function openAddUser(): void {
     });
 }
 </script>
-
-<style scoped>
-/* used as conditional styling */
-.disabled {
-    opacity: 0.5;
-}
-</style>
-
-<style scoped></style>

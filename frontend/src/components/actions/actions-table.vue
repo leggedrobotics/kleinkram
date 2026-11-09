@@ -126,9 +126,14 @@
                                         </q-item>
 
                                         <q-item
+                                            v-if="
+                                                hasCancelPermission(
+                                                    itemProps.row,
+                                                )
+                                            "
                                             v-ripple
                                             clickable
-                                            :disabled="
+                                            :disable="
                                                 !canCancel(itemProps.row.state)
                                             "
                                             @click="
@@ -254,9 +259,10 @@
                             </q-item>
 
                             <q-item
+                                v-if="hasCancelPermission(props.row)"
                                 v-ripple
                                 clickable
-                                :disabled="!canCancel(props.row.state)"
+                                :disable="!canCancel(props.row.state)"
                                 @click="() => handleCancel(props.row.uuid)"
                             >
                                 <q-item-section>Cancel Action</q-item-section>
@@ -283,6 +289,11 @@ import ActionBadge from 'components/action-badge.vue';
 import { QTable, useQuasar } from 'quasar';
 import { useCancelAction } from 'src/composables/use-action-mutations';
 import { useActionList } from 'src/composables/use-actions-queries';
+import {
+    canCancelAction,
+    usePermissionsQuery,
+    useUser,
+} from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate, formatDuration } from 'src/services/date-formating';
 import { getActionColor } from 'src/services/generic';
@@ -297,6 +308,11 @@ const $q = useQuasar();
 const { mutateAsync: cancelAction } = useCancelAction();
 
 const canCancel = (state: ActionState) => isCancellableActionState(state);
+
+const { data: permissions } = usePermissionsQuery();
+const { data: currentUser } = useUser();
+const hasCancelPermission = (action: ActionDto): boolean =>
+    canCancelAction(action, currentUser.value?.uuid, permissions.value);
 
 const handleCancel = async (uuid: string) => {
     try {

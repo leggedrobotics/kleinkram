@@ -212,13 +212,11 @@
                             >
                                 <q-item-section>View</q-item-section>
                             </q-item>
-                            <q-item v-ripple clickable>
-                                <q-item-section>
-                                    <edit-file-dialog-opener :file="props.row">
-                                        Edit
-                                    </edit-file-dialog-opener>
-                                </q-item-section>
-                            </q-item>
+                            <edit-file-dialog-opener :file="props.row">
+                                <q-item v-ripple clickable>
+                                    <q-item-section>Edit</q-item-section>
+                                </q-item>
+                            </edit-file-dialog-opener>
                             <q-item
                                 v-ripple
                                 clickable
@@ -232,26 +230,22 @@
                             >
                                 <q-item-section>Download</q-item-section>
                             </q-item>
-                            <q-item v-ripple clickable>
-                                <q-item-section>
-                                    <MoveFileDialogOpener
-                                        :files="[props.row]"
-                                        :mission="props.row.mission"
-                                    >
-                                        Move
-                                    </MoveFileDialogOpener>
-                                </q-item-section>
-                            </q-item>
-                            <q-item v-ripple clickable>
-                                <q-item-section>
-                                    <DeleteFileDialogOpener
-                                        v-if="props.row"
-                                        :file="props.row"
-                                    >
-                                        Delete File
-                                    </DeleteFileDialogOpener>
-                                </q-item-section>
-                            </q-item>
+                            <MoveFileDialogOpener
+                                :files="[props.row]"
+                                :mission="props.row.mission"
+                            >
+                                <q-item v-ripple clickable>
+                                    <q-item-section>Move</q-item-section>
+                                </q-item>
+                            </MoveFileDialogOpener>
+                            <DeleteFileDialogOpener
+                                v-if="props.row"
+                                :file="props.row"
+                            >
+                                <q-item v-ripple clickable>
+                                    <q-item-section>Delete File</q-item-section>
+                                </q-item>
+                            </DeleteFileDialogOpener>
                         </q-list>
                     </q-menu>
                 </q-btn>
@@ -312,15 +306,15 @@
                                                 View
                                             </q-item-section>
                                         </q-item>
-                                        <q-item v-ripple clickable>
-                                            <q-item-section>
-                                                <edit-file-dialog-opener
-                                                    :file="props.row"
-                                                >
+                                        <edit-file-dialog-opener
+                                            :file="props.row"
+                                        >
+                                            <q-item v-ripple clickable>
+                                                <q-item-section>
                                                     Edit
-                                                </edit-file-dialog-opener>
-                                            </q-item-section>
-                                        </q-item>
+                                                </q-item-section>
+                                            </q-item>
+                                        </edit-file-dialog-opener>
                                         <q-item
                                             v-ripple
                                             clickable
@@ -336,25 +330,25 @@
                                                 Download
                                             </q-item-section>
                                         </q-item>
-                                        <q-item v-ripple clickable>
-                                            <q-item-section>
-                                                <MoveFileDialogOpener
-                                                    :files="[props.row]"
-                                                    :mission="props.row.mission"
-                                                >
+                                        <MoveFileDialogOpener
+                                            :files="[props.row]"
+                                            :mission="props.row.mission"
+                                        >
+                                            <q-item v-ripple clickable>
+                                                <q-item-section>
                                                     Move
-                                                </MoveFileDialogOpener>
-                                            </q-item-section>
-                                        </q-item>
-                                        <q-item v-ripple clickable>
-                                            <q-item-section>
-                                                <DeleteFileDialogOpener
-                                                    :file="props.row"
-                                                >
+                                                </q-item-section>
+                                            </q-item>
+                                        </MoveFileDialogOpener>
+                                        <DeleteFileDialogOpener
+                                            :file="props.row"
+                                        >
+                                            <q-item v-ripple clickable>
+                                                <q-item-section>
                                                     Delete File
-                                                </DeleteFileDialogOpener>
-                                            </q-item-section>
-                                        </q-item>
+                                                </q-item-section>
+                                            </q-item>
+                                        </DeleteFileDialogOpener>
                                     </q-list>
                                 </q-menu>
                             </q-btn>

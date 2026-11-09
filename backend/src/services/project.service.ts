@@ -578,7 +578,7 @@ export class ProjectService {
                     '        "project"."deletedAt" IS NULL\n' +
                     '        )\n' +
                     'ORDER BY\n' +
-                    '    "latestUpdate" DESC\n' +
+                    '    "latestUpdate" DESC NULLS LAST\n' +
                     'LIMIT $1',
                 [take],
             );
@@ -632,9 +632,10 @@ export class ProjectService {
                     '   (\n' +
                     '      "projectAccessView"."rights" >= $1 \n' +
                     '      AND "projectAccessView"."useruuid" = $2 \n' +
+                    '      AND "project"."deletedAt" IS NULL \n' +
                     '   )\n' +
                     'ORDER BY\n' +
-                    '   "latestUpdate" DESC \n' +
+                    '   "latestUpdate" DESC NULLS LAST \n' +
                     'LIMIT $3',
                 [AccessGroupRights.READ, user.uuid, take],
             );
@@ -660,11 +661,6 @@ export class ProjectService {
                         createdAt: project.project_createdAt as Date,
                     };
                 })
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, unicorn/no-array-sort
-                .sort(
-                    (a: ResentProjectDto, b: ResentProjectDto) =>
-                        b.updatedAt.getTime() - a.updatedAt.getTime(),
-                )
         );
     }
 

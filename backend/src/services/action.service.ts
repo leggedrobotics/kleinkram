@@ -601,7 +601,10 @@ export class ActionService {
         });
     }
 
-    async cancel(actionUUID: string): Promise<void> {
+    /**
+     * @param actorUuid the user cancelling, recorded in the action's history
+     */
+    async cancel(actionUUID: string, actorUuid: string): Promise<void> {
         const action = await this.actionRepository.findOneOrFail({
             where: { uuid: actionUUID },
         });
@@ -612,7 +615,7 @@ export class ActionService {
             );
         }
 
-        await this.actionDispatcher.stopAction(actionUUID);
+        await this.actionDispatcher.stopAction(actionUUID, actorUuid);
     }
 
     async writeAuditLog(

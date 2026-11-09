@@ -1,27 +1,12 @@
 <template>
     <div
-        :class="
-            {
-                disabled: !canModify,
-                'cursor-pointer': !canModify,
-                'cursor-not-allowed': canModify,
-            } as any
-        "
-        @click="
-            // eslint-disable-next-line vue/v-on-handler-style
-            () => {
-                // @ts-ignore
-                _deleteAccessGroup();
-            }
-        "
+        v-if="canModify"
+        :class="isPrimary ? 'disabled cursor-not-allowed' : 'cursor-pointer'"
+        @click="onClick"
     >
         <slot />
-        <q-tooltip v-if="accessGroup.type === AccessGroupType.PRIMARY">
+        <q-tooltip v-if="isPrimary">
             You can't delete the primary access group
-        </q-tooltip>
-        <q-tooltip v-else-if="!canModify">
-            Only the creator can delete this access group. You are not the
-            creator.
         </q-tooltip>
     </div>
 </template>
@@ -52,6 +37,7 @@ const canModify = computed(() => {
     }
     return accessGroup.creator?.uuid === me.value.uuid;
 });
+const isPrimary = computed(() => accessGroup.type === AccessGroupType.PRIMARY);
 const queryClient = useQueryClient();
 
 const { mutate: _deleteAccessGroup } = useMutation({
@@ -78,12 +64,9 @@ const { mutate: _deleteAccessGroup } = useMutation({
         });
     },
 });
-</script>
 
-<style scoped>
-.disabled {
-    opacity: 0.5;
+function onClick(): void {
+    if (!canModify.value || isPrimary.value) return;
+    _deleteAccessGroup();
 }
-</style>
-
-<style scoped></style>
+</script>

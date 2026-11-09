@@ -23,7 +23,11 @@
                     </template>
                 </app-search-bar>
 
-                <app-create-button label="New Action" @click="handleCreate" />
+                <app-create-button
+                    v-if="canCreateTemplate"
+                    label="New Action"
+                    @click="handleCreate"
+                />
             </ButtonGroup>
         </div>
 
@@ -127,6 +131,7 @@
                                     <q-tooltip>History</q-tooltip>
                                 </q-btn>
                                 <q-btn
+                                    v-if="canCreateTemplate"
                                     flat
                                     round
                                     :dense="!$q.screen.xs"
@@ -150,7 +155,9 @@
                                     <q-tooltip>Launch</q-tooltip>
                                 </q-btn>
                                 <q-btn
-                                    v-if="!props.row.archived"
+                                    v-if="
+                                        !props.row.archived && canCreateTemplate
+                                    "
                                     flat
                                     round
                                     :dense="!$q.screen.xs"
@@ -204,6 +211,10 @@ import { useDeleteTemplate } from 'src/composables/use-action-mutations';
 import { useTemplateList } from 'src/composables/use-actions-queries';
 import { DEFAULT_PAGINATION_SIZE } from 'src/constants';
 import DeleteActionTemplateDialog from 'src/dialogs/delete-action-template-dialog.vue';
+import {
+    canCreateActionTemplate,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 import { useRoute, useRouter } from 'vue-router';
@@ -299,6 +310,11 @@ const clearSearch = (): void => {
     searchTerm.value = '';
 };
 
+const { data: permissions } = usePermissionsQuery();
+const canCreateTemplate = computed(() =>
+    canCreateActionTemplate(permissions.value),
+);
+
 const handleCreate = (): void => {
     emits('create');
 };
@@ -353,9 +369,10 @@ const emptyState = computed(() => {
     return {
         icon: 'sym_o_rocket_launch',
         title: 'No actions defined',
-        description:
-            'Create your first action template to start automating your workflow.',
-        actionLabel: 'Create New Action',
+        description: canCreateTemplate.value
+            ? 'Create your first action template to start automating your workflow.'
+            : 'No action templates have been created yet.',
+        actionLabel: canCreateTemplate.value ? 'Create New Action' : undefined,
         action: handleCreate,
     };
 });

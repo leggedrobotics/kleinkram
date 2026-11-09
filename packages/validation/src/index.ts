@@ -4,6 +4,7 @@ export * from './filename.validation';
 export * from './files/google-drive.validator';
 export * from './is-not-undefined';
 export * from './metadata-applier';
+export * from './name.validation';
 export * from './property-decorator';
 export * from './query-transform';
 export * from './record-validation';

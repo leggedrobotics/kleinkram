@@ -1,18 +1,6 @@
 <template>
-    <div
-        :class="{
-            disabled: !canDelete,
-            'cursor-pointer': !canDelete,
-            'cursor-not-allowed': canDelete,
-        }"
-        @click="removeProject"
-    >
+    <div v-if="canDelete" class="cursor-pointer" @click="removeProject">
         <slot />
-
-        <q-tooltip v-if="!canDelete">
-            You need delete rights on the project to remove it from this access
-            group
-        </q-tooltip>
     </div>
 </template>
 
@@ -62,9 +50,3 @@ const { mutate: _removeProject } = useMutation({
     },
 });
 </script>
-
-<style scoped>
-.disabled {
-    opacity: 0.5;
-}
-</style>

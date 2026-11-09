@@ -152,16 +152,14 @@
                             >
                                 <q-item-section>View File</q-item-section>
                             </q-item>
-                            <q-item v-ripple clickable>
-                                <q-item-section>
-                                    <DeleteFileDialogOpener
-                                        v-if="props.row"
-                                        :file="props.row"
-                                    >
-                                        Delete File
-                                    </DeleteFileDialogOpener>
-                                </q-item-section>
-                            </q-item>
+                            <DeleteFileDialogOpener
+                                v-if="props.row"
+                                :file="props.row"
+                            >
+                                <q-item v-ripple clickable>
+                                    <q-item-section>Delete File</q-item-section>
+                                </q-item>
+                            </DeleteFileDialogOpener>
                         </q-list>
                     </q-menu>
                 </q-btn>
@@ -231,15 +229,15 @@
                                                 View File
                                             </q-item-section>
                                         </q-item>
-                                        <q-item v-ripple clickable>
-                                            <q-item-section>
-                                                <DeleteFileDialogOpener
-                                                    :file="props.row"
-                                                >
+                                        <DeleteFileDialogOpener
+                                            :file="props.row"
+                                        >
+                                            <q-item v-ripple clickable>
+                                                <q-item-section>
                                                     Delete File
-                                                </DeleteFileDialogOpener>
-                                            </q-item-section>
-                                        </q-item>
+                                                </q-item-section>
+                                            </q-item>
+                                        </DeleteFileDialogOpener>
                                     </q-list>
                                 </q-menu>
                             </q-btn>

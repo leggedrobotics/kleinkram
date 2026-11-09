@@ -1,17 +1,11 @@
 <template>
     <div
-        :class="{
-            disabled: !canCreate,
-            'cursor-pointer': !canCreate,
-            'cursor-not-allowed': canCreate,
-        }"
+        v-if="canCreate"
+        class="cursor-pointer"
         style="height: 100%"
         @click="createNewProject"
     >
         <slot />
-        <q-tooltip v-if="!canCreate">
-            You do not have permission to create a new project
-        </q-tooltip>
     </div>
 </template>
 

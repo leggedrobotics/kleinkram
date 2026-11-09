@@ -1,12 +1,5 @@
 <template>
-    <div
-        :class="{
-            disabled: !canCreate,
-            'cursor-pointer': !canCreate,
-            'cursor-not-allowed': canCreate,
-        }"
-        @click="createNewMetadataType"
-    >
+    <div v-if="canCreate" class="cursor-pointer" @click="createNewMetadataType">
         <slot />
     </div>
 </template>
