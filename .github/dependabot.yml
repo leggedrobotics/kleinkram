@@ -4,7 +4,7 @@ updates:
       directory: '/cli'
       schedule:
           interval: 'weekly'
-      target-branch: 'staging'
+      target-branch: 'dev'
       groups:
           python-dependencies:
               patterns:
@@ -14,7 +14,11 @@ updates:
       directory: '/frontend'
       schedule:
           interval: 'weekly'
-      target-branch: 'staging'
+      target-branch: 'dev'
+      ignore:
+          # TS 7.0 has no compiler API (nest-cli, ts-jest, vue-tsc need it), see #2531
+          - dependency-name: 'typescript'
+            versions: ['>=7.0.0']
       groups:
           frontend-dependencies:
               patterns:
@@ -24,7 +28,11 @@ updates:
       directory: '/backend'
       schedule:
           interval: 'weekly'
-      target-branch: 'staging'
+      target-branch: 'dev'
+      ignore:
+          # TS 7.0 has no compiler API (nest-cli, ts-jest, vue-tsc need it), see #2531
+          - dependency-name: 'typescript'
+            versions: ['>=7.0.0']
       groups:
           backend-dependencies:
               patterns:
@@ -34,7 +42,11 @@ updates:
       directory: '/queueConsumer'
       schedule:
           interval: 'weekly'
-      target-branch: 'staging'
+      target-branch: 'dev'
+      ignore:
+          # TS 7.0 has no compiler API (nest-cli, ts-jest, vue-tsc need it), see #2531
+          - dependency-name: 'typescript'
+            versions: ['>=7.0.0']
       groups:
           queue-consumer-dependencies:
               patterns:
@@ -44,7 +56,7 @@ updates:
       directory: '/docs'
       schedule:
           interval: 'weekly'
-      target-branch: 'staging'
+      target-branch: 'dev'
       groups:
           docs-dependencies:
               patterns:
@@ -54,7 +66,7 @@ updates:
       directory: '/'
       schedule:
           interval: 'weekly'
-      target-branch: 'staging'
+      target-branch: 'dev'
       groups:
           github-actions-dependencies:
               patterns:

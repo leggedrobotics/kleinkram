@@ -25,7 +25,7 @@
                             : '')
                     "
                     style="color: #222"
-                    :disable="missionCreated"
+                    :disable="!isValidName(missionName) || missionCreated"
                 />
             </q-tabs>
         </template>
@@ -50,8 +50,8 @@
                         dense
                         placeholder="Name...."
                         style="padding-bottom: 30px"
-                        :error="isInErrorState"
-                        :error-message="errorMessage"
+                        :error="!!missionNameError"
+                        :error-message="missionNameError"
                         @update:model-value="onModelValueUpdate"
                     />
                     <input
@@ -91,7 +91,7 @@
                 v-if="tab_selection === 'details'"
                 flat
                 label="Next"
-                :disable="missionName.length < 3"
+                :disable="!isValidName(missionName)"
                 class="bg-button-primary"
                 @click="goToMetadataTab"
             />
@@ -100,7 +100,7 @@
                 flat
                 label="Create Mission"
                 class="bg-button-primary"
-                :disable="!allRequiredMetadataSet"
+                :disable="!allRequiredMetadataSet || !isValidName(missionName)"
                 @click="submitNewMission"
             />
         </template>
@@ -110,6 +110,11 @@
 <script setup lang="ts">
 import type { FlatMissionDto } from '@kleinkram/api-dto/types/mission/mission.dto';
 import type { FileUploadDto } from '@kleinkram/api-dto/types/upload.dto';
+import {
+    getNameValidationError,
+    isValidName,
+    suggestName,
+} from '@kleinkram/validation/frontend';
 import { useQueryClient } from '@tanstack/vue-query';
 import SelectMissionMetadata from 'components/select-mission-metadata.vue';
 import { Notify, QInput, useDialogPluginComponent } from 'quasar';
@@ -141,8 +146,13 @@ const { data: project, refetch } = useProjectQuery(projectUuid);
 watch(projectUuid, () => refetch());
 
 const missionName = ref('');
-const isInErrorState = ref(false);
-const errorMessage = ref('');
+// error returned by the server, e.g. if the name is already taken
+const serverErrorMessage = ref('');
+const missionNameError = computed(() => {
+    if (serverErrorMessage.value) return serverErrorMessage.value;
+    if (!missionName.value) return '';
+    return getNameValidationError(missionName.value, 'Mission name') ?? '';
+});
 const uploadingFiles = ref<Record<string, Record<string, string>>>({});
 
 const metadataValues: Ref<Record<string, string>> = ref({});
@@ -164,8 +174,12 @@ const handle = (a: any): void => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     files.value = a.target.files;
     if (files.value.length > 0) {
-        missionName.value =
+        const folderName =
             files.value[0]?.webkitRelativePath.split('/')[0] ?? '';
+        // folder names often contain spaces, propose a valid name instead
+        missionName.value = isValidName(folderName)
+            ? folderName
+            : (suggestName(folderName) ?? folderName);
     }
 };
 
@@ -181,6 +195,11 @@ const submitNewMission = async () => {
     if (project.value === undefined) {
         return;
     }
+    if (!isValidName(missionName.value)) {
+        // the details tab shows why the name is invalid
+        tab_selection.value = 'details';
+        return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const resp = await createMission(
         missionName.value,
@@ -188,8 +207,7 @@ const submitNewMission = async () => {
         metadataValues.value,
     ).catch((error: unknown) => {
         tab_selection.value = 'details';
-        isInErrorState.value = true;
-        errorMessage.value =
+        serverErrorMessage.value =
             (
                 error as {
                     response?: { data?: { message?: string } };
@@ -250,7 +268,7 @@ const goToMetadataTab = (): void => {
 };
 
 const onModelValueUpdate = (): void => {
-    isInErrorState.value = false;
+    serverErrorMessage.value = '';
 };
 
 const onCancel = (): void => {
