@@ -471,6 +471,7 @@ def download_file(
             create_parents=create_parents,
             on_file_start_cb=on_file_start_cb,
             on_file_progress_cb=on_file_progress_cb,
+            cancel_event=cancel_event,
         )
 
     was_overwritten = False
@@ -781,19 +782,33 @@ def _download_mcap_slice(
     create_parents: bool = False,
     on_file_start_cb: Optional[OnFileStartCb] = None,
     on_file_progress_cb: Optional[OnFileProgressCb] = None,
+    cancel_event: Optional[threading.Event] = None,
 ) -> Tuple[DownloadState, int]:
     """Write a filtered copy of a remote MCAP, fetching only the bytes it needs.
 
     `filter_mcap_from_url` only replaces `path` once the slice is complete, so
-    a failure leaves whatever was there before untouched.
+    a failure or cancellation leaves whatever was there before untouched.
     """
     download_url = _get_file_download(client, file.id)
 
     if create_parents:
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    on_start = None if on_file_start_cb is None else (lambda total: on_file_start_cb(path, total))
-    on_progress = None if on_file_progress_cb is None else (lambda n: on_file_progress_cb(path, n))
+    def check_cancel() -> None:
+        if cancel_event is not None and cancel_event.is_set():
+            raise TransferCancelledError("Transfer cancelled by user")
+
+    def on_start(total: int) -> None:
+        check_cancel()
+        if on_file_start_cb is not None:
+            on_file_start_cb(path, total)
+
+    # Progress is reported per fetched range, so checking here lets Ctrl+C stop
+    # a slice download between requests instead of only once it is complete.
+    def on_progress(n: int) -> None:
+        check_cancel()
+        if on_file_progress_cb is not None:
+            on_file_progress_cb(path, n)
 
     try:
         result = filter_mcap_from_url(
@@ -806,6 +821,9 @@ def _download_mcap_slice(
             on_progress=on_progress,
         )
     except Exception as e:
+        if cancel_event is not None and cancel_event.is_set():
+            logger.info(f"Partial download cancelled for {path}")
+            return DownloadState.CANCELED, 0
         logger.error(f"Error during partial download of {path}: {e}")
         raise
 

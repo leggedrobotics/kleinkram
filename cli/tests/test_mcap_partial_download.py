@@ -757,6 +757,28 @@ def test_download_file_slice_does_not_replace_existing_file_unless_asked(remote_
     assert {topic for topic, *_rest in _messages(path)} == {"/tf"}
 
 
+def test_download_file_slice_cancel_keeps_existing_file(remote_mcap: File, tmp_path: Path) -> None:
+    """Ctrl+C mid-slice reports CANCELED and leaves the target as it was."""
+    path = tmp_path / "local" / "recording.mcap"
+    path.parent.mkdir()
+    path.write_bytes(b"the full recording")
+    cancel_event = threading.Event()
+
+    state, transferred = download_file(
+        MagicMock(),
+        file=remote_mcap,
+        path=path,
+        mcap_slice=McapSlice(topics=("/tf",)),
+        overwrite=True,
+        on_file_start_cb=lambda p, total: cancel_event.set(),
+        cancel_event=cancel_event,
+    )
+
+    assert (state, transferred) == (DownloadState.CANCELED, 0)
+    assert path.read_bytes() == b"the full recording"
+    assert list(path.parent.iterdir()) == [path]
+
+
 def test_download_file_without_range_support_fails_cleanly(mcap_file: Path, tmp_path: Path, monkeypatch) -> None:
     path = tmp_path / "local" / "recording.mcap"
     path.parent.mkdir()
