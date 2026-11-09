@@ -84,7 +84,10 @@
                     </div>
 
                     <div
-                        v-if="ver.version !== currentVersion || ver.archived"
+                        v-if="
+                            canCreateTemplate &&
+                            (ver.version !== currentVersion || ver.archived)
+                        "
                         class="row q-gutter-x-sm q-mt-sm"
                     >
                         <q-btn
@@ -104,6 +107,10 @@
 
 <script setup lang="ts">
 import type { ActionTemplatesDto } from '@kleinkram/api-dto/types/actions/action-templates.dto';
+import {
+    canCreateActionTemplate,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -112,6 +119,13 @@ const props = defineProps<{
 }>();
 
 const emits = defineEmits(['close', 'restore']);
+
+// Restoring creates a new template version, which needs template create
+// rights (CreateGuard in the backend).
+const { data: permissions } = usePermissionsQuery();
+const canCreateTemplate = computed(() =>
+    canCreateActionTemplate(permissions.value),
+);
 
 const _open = ref(false);
 

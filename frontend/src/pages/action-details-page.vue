@@ -85,7 +85,7 @@
                     <q-tooltip> Analyze Actions</q-tooltip>
                 </q-btn>
                 <q-btn
-                    v-if="canCancel"
+                    v-if="canCancel && hasCancelPermission"
                     class="button-border"
                     flat
                     color="negative"
@@ -96,6 +96,7 @@
                     <q-tooltip>Cancel running action</q-tooltip>
                 </q-btn>
                 <q-btn
+                    v-if="canRestart"
                     class="button-border"
                     flat
                     color="primary"
@@ -396,6 +397,12 @@ import {
     useActionFileEvents,
     useActionLogs,
 } from 'src/composables/use-actions-queries';
+import {
+    canCancelAction,
+    canLaunchActionOnMissions,
+    usePermissionsQuery,
+    useUser,
+} from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
 import { formatDate } from 'src/services/date-formating';
 import { computed, ref, watch } from 'vue';
@@ -547,6 +554,36 @@ const canCancel = computed(() => {
         state === ActionState.PROCESSING
     );
 });
+
+const { data: permissions } = usePermissionsQuery();
+const { data: currentUser } = useUser();
+
+const hasCancelPermission = computed(
+    () =>
+        !!action.value &&
+        canCancelAction(
+            action.value,
+            currentUser.value?.uuid,
+            permissions.value,
+        ),
+);
+
+// Restarting launches the action again, which needs the template's access
+// rights on the mission (CreateActionGuard in the backend).
+const canRestart = computed(
+    () =>
+        !!action.value &&
+        canLaunchActionOnMissions(
+            [
+                {
+                    missionUuid: action.value.mission.uuid,
+                    projectUuid: action.value.mission.project.uuid,
+                },
+            ],
+            action.value.template.accessRights,
+            permissions.value,
+        ),
+);
 
 const cancelAction = async (): Promise<void> => {
     if (!action.value) return;

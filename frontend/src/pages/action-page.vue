@@ -99,6 +99,10 @@ import ActionLaunchDrawer from 'components/actions/action-launch-drawer.vue';
 import ActionRevisionsDrawer from 'components/actions/action-revisions-drawer.vue';
 import ActionStore from 'components/actions/action-store.vue';
 import ActionTriggers from 'components/actions/action-triggers.vue';
+import {
+    canCreateActionTemplate,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 
 import TitleSection from 'components/title-section.vue';
 import { Notify } from 'quasar';
@@ -186,6 +190,7 @@ const selectedHistoryVersions = ref<ActionTemplatesDto>({
 } as ActionTemplatesDto);
 
 const queryClient = useQueryClient();
+const { data: permissions } = usePermissionsQuery();
 
 // --- Handlers ---
 const openHistoryDrawer = async (
@@ -293,6 +298,9 @@ const handleRouteUpdate = async () => {
 
     switch (drawerAction) {
         case ActionDrawerMode.ACTION_EDIT: {
+            // Editing creates a new template version, which needs template
+            // create rights; don't open the editor from a direct link without.
+            if (!canCreateActionTemplate(permissions.value)) break;
             drawerMode.value = ActionDrawerMode.ACTION_EDIT;
             isCreateOpen.value = true;
             break;
@@ -321,7 +329,9 @@ const handleRouteUpdate = async () => {
 };
 
 watch(
-    () => route.fullPath,
+    // Permissions load asynchronously; re-run once they arrive so a direct
+    // edit link still opens for users who may edit.
+    [() => route.fullPath, permissions],
     () => {
         void handleRouteUpdate();
     },

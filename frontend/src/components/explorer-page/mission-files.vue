@@ -128,6 +128,7 @@
                     Download
                 </q-btn>
                 <q-btn
+                    v-if="canDeleteFiles"
                     flat
                     dense
                     padding="6px"
@@ -195,9 +196,12 @@ import ConfirmDeleteDialog from 'src/dialogs/confirm-delete-dialog.vue';
 import ConfirmDeleteFileDialog from 'src/dialogs/confirm-delete-file-dialog.vue';
 import CreateFileDialog from 'src/dialogs/create-file-dialog.vue';
 import {
+    canCreateInMission,
+    canDeleteMission,
     registerNoPermissionErrorHandler,
     useHandler,
     useMission,
+    usePermissionsQuery,
 } from 'src/hooks/query-hooks';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import { _downloadFiles } from 'src/services/generic';
@@ -212,6 +216,15 @@ const $q = useQuasar();
 
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
+
+const { data: permissions } = usePermissionsQuery();
+// Deleting files needs DELETE on the mission, uploading needs CREATE.
+const canDeleteFiles = computed(() =>
+    canDeleteMission(missionUuid.value, projectUuid.value, permissions.value),
+);
+const canUploadFiles = computed(() =>
+    canCreateInMission(missionUuid.value, projectUuid.value, permissions.value),
+);
 
 /**
  * Below 1024px the search panel is stacked under the section title and the
@@ -494,6 +507,7 @@ const downloadCallback = async (): Promise<void> => {
 const isDragging = ref(false);
 
 const onDragOver = () => {
+    if (!canUploadFiles.value) return;
     isDragging.value = true;
 };
 
@@ -514,6 +528,7 @@ const onDragLeave = (event: DragEvent) => {
 
 const onDrop = (event: DragEvent) => {
     isDragging.value = false;
+    if (!canUploadFiles.value) return;
     const dt = event.dataTransfer;
     if (dt?.files && dt.files.length > 0) {
         const droppedFiles = [...dt.files];

@@ -222,6 +222,80 @@ export const canLaunchActionOnMissions = (
     });
 };
 
+/**
+ * Effective rights on a mission: the higher of what the project and the
+ * mission itself grant (as in the backend `canUserAccessMission`).
+ */
+export const getEffectiveMissionRights = (
+    missionUuid: string | undefined,
+    projectUuid: string | undefined,
+    permissions: PermissionsDto | null | undefined,
+): AccessGroupRights => {
+    if (!permissions) return 0;
+    return Math.max(
+        getPermissionForProject(projectUuid, permissions),
+        getPermissionForMission(missionUuid, permissions),
+    );
+};
+
+/** CREATE on a mission, e.g. to upload files into it. */
+export const canCreateInMission = (
+    missionUuid: string | undefined,
+    projectUuid: string | undefined,
+    permissions: PermissionsDto | null | undefined,
+): boolean =>
+    getEffectiveMissionRights(missionUuid, projectUuid, permissions) >=
+    AccessGroupRights.CREATE;
+
+/**
+ * Whether the user holds `rights` on at least one project or mission. Used
+ * for entry points that pick the target later (e.g. the global "New" menu).
+ */
+export const hasRightsAnywhere = (
+    rights: AccessGroupRights,
+    permissions: PermissionsDto | null | undefined,
+): boolean =>
+    hasProjectRightsAnywhere(rights, permissions) ||
+    (permissions?.missions.some((m) => m.access >= rights) ?? false);
+
+/** Like {@link hasRightsAnywhere}, but only counts project-level rights. */
+export const hasProjectRightsAnywhere = (
+    rights: AccessGroupRights,
+    permissions: PermissionsDto | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (permissions.role === UserRole.ADMIN) return true;
+    if (permissions.defaultPermission >= rights) return true;
+    return permissions.projects.some(
+        (p) => (p.access as AccessGroupRights) >= rights,
+    );
+};
+
+/**
+ * Cancelling an action: admins, its creator, or anyone with the template's
+ * access rights on the mission (CancelActionGuard in the backend).
+ */
+export const canCancelAction = (
+    action: {
+        creator: { uuid: string };
+        mission: { uuid: string; project: { uuid: string } };
+        template: { accessRights: AccessGroupRights };
+    },
+    userUuid: string | undefined,
+    permissions: PermissionsDto | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (permissions.role === UserRole.ADMIN) return true;
+    if (userUuid !== undefined && action.creator.uuid === userUuid) return true;
+    return (
+        getEffectiveMissionRights(
+            action.mission.uuid,
+            action.mission.project.uuid,
+            permissions,
+        ) >= action.template.accessRights
+    );
+};
+
 export const canModifyProject = (
     projectUuid: string | undefined,
     permissions: PermissionsDto | null | undefined,
