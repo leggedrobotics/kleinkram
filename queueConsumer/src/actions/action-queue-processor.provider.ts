@@ -3,12 +3,15 @@ import {
     SubmittedAction,
 } from '@kleinkram/backend-common/entities/action/action.entity';
 import { WorkerEntity } from '@kleinkram/backend-common/entities/worker/worker.entity';
+import { transitionAction } from '@kleinkram/backend-common/services/action-state-transition';
 import {
-    ActionFailureOrigin,
     ActionSeverity,
     ActionState,
+    ActionStateCause,
     ArtifactState,
-    resolveCompletedActionState,
+    StateCauseError,
+    stateCauseOfError,
+    TERMINAL_ACTION_STATES,
 } from '@kleinkram/shared';
 import {
     InjectQueue,
@@ -103,7 +106,9 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
 
         if (this.worker === undefined || action.worker === undefined) {
             logger.error('Worker not found');
-            throw new Error('Worker not found');
+            throw new StateCauseError({
+                code: ActionStateCause.WORKER_NOT_FOUND,
+            });
         }
         if (this.worker.uuid !== action.worker.uuid) {
             await this.actionRepository
@@ -183,9 +188,13 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             );
             return;
         }
-        action.state = ActionState.PENDING;
-        action.state_cause = `Pending... ${error.message}`;
-        await this.actionRepository.save(action);
+        await transitionAction(this.actionRepository.manager, action.uuid, {
+            state: ActionState.PENDING,
+            cause: {
+                code: ActionStateCause.WAITING_FOR_RESOURCES,
+                message: error.message,
+            },
+        });
     }
 
     /**
@@ -222,13 +231,21 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
                 return;
             }
 
-            action.state = ActionState.FAILED;
-            action.severity = ActionSeverity.ERROR;
-            // The job itself failed, not the action's own script.
-            action.failureOrigin = ActionFailureOrigin.SYSTEM;
-            action.state_cause = error.message;
-            action.artifacts = ArtifactState.ERROR;
-            await this.actionRepository.save(action);
+            // A cancelled action also ends up here, as the error that
+            // stopped it; it stays cancelled.
+            await transitionAction(this.actionRepository.manager, action.uuid, {
+                state: ActionState.FAILED,
+                cause: stateCauseOfError(error),
+                unlessIn: [ActionState.CANCELLED],
+                set: {
+                    severity: ActionSeverity.ERROR,
+                    // Before a container ran there was nothing to upload, and
+                    // the action page says so; ERROR would claim an upload failed.
+                    ...(action.actionContainerStartedAt && {
+                        artifacts: ArtifactState.ERROR,
+                    }),
+                },
+            });
         } catch (error_: unknown) {
             logger.error(
                 `Failed to update action state in database: ${(error_ as { message: string }).message}`,
@@ -257,22 +274,20 @@ export class ActionQueueProcessorProvider implements OnModuleInit {
             return;
         }
 
+        if (action.executionEndedAt) {
+            await this.actionRepository.update(
+                { uuid: action.uuid },
+                { executionEndedAt: new Date() },
+            );
+        }
+
         // keep a state that is already final (e.g. FAILED or CANCELLED);
         // only a non-terminal action is promoted to DONE
-        const resolvedState = resolveCompletedActionState(action.state);
-
-        let isActionDirty = false;
-        if (action.executionEndedAt) {
-            action.executionEndedAt = new Date();
-            isActionDirty = true;
-        }
-        if (action.state !== resolvedState) {
-            action.state = resolvedState;
-            isActionDirty = true;
-        }
-        if (isActionDirty) {
-            await this.actionRepository.save(action);
-        }
+        await transitionAction(this.actionRepository.manager, action.uuid, {
+            state: ActionState.DONE,
+            cause: { code: ActionStateCause.COMPLETED },
+            unlessIn: TERMINAL_ACTION_STATES,
+        });
     }
 
     @Cron(CronExpression.EVERY_MINUTE)

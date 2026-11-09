@@ -1,5 +1,5 @@
 import { IsAtLeastOnePresent } from '@api-dto/metadata/update-mission-metadata.dto';
-import { IsNoValidUUID, IsValidMissionName } from '@kleinkram/validation';
+import { IsValidName } from '@kleinkram/validation';
 import {
     IsBoolean,
     IsNotEmpty,
@@ -13,8 +13,7 @@ import {
 export class CreateMission {
     @IsString()
     @IsNotEmpty()
-    @IsValidMissionName()
-    @IsNoValidUUID()
+    @IsValidName('Mission name')
     name!: string;
 
     @IsUUID()
@@ -47,7 +46,6 @@ export class CreateMission {
 export class UpdateMissionNameDto {
     @IsString()
     @IsNotEmpty()
-    @IsValidMissionName()
-    @IsNoValidUUID()
+    @IsValidName('Mission name')
     name!: string;
 }

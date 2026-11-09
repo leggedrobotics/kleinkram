@@ -17,9 +17,21 @@ Kleinkram organizes data in a three-level hierarchy: **Project**, **Mission**, a
 
 ### Data Hierarchy
 
-- **Project**: The top-level container. Projects are used to group related missions together. For example, a project could be "Field Testing 2024" or "Warehouse Logistics". Access control is typically managed at the project level.
-- **Mission**: A specific data collection event or experiment. A mission belongs to exactly one project. For example, "Mission 1: Calibration Run" or "Mission 2: Obstacle Avoidance".
+- **Project**: The top-level container. Projects are used to group related missions together. For example, a project could be `field-testing-2024` or `warehouse_logistics`. Access control is typically managed at the project level.
+- **Mission**: A specific data collection event or experiment. A mission belongs to exactly one project. For example, `2024-05-14_calibration-run` or `obstacle-avoidance-v1.2`.
 - **File**: The actual data files (e.g., `.bag`, `.mcap`, `.db3`, `.yaml`) collected during a mission. Files belong to exactly one mission.
+
+### Naming Rules
+
+Project and mission names are used as identifiers in the CLI and SDK (for example `klein upload -p <project> -m <mission>`), so they follow a strict format:
+
+- 3 to 100 characters long.
+- Only ASCII letters (`a-z`, `A-Z`), digits (`0-9`), dots (`.`), underscores (`_`) and hyphens (`-`). Spaces, slashes and accented characters are not allowed.
+- Must not start with a dot.
+- Must not be a UUID, so a name can never be mistaken for an id.
+- Project names must be unique across the instance. Mission names must be unique within their project.
+
+Use `-` or `_` where you would use a space: `Field Testing 2024` becomes `field-testing-2024`. If a name is invalid, the web interface, the CLI and the API suggest a valid alternative. Access group names follow the same rules.
 
 ### Metadata and Categories
 
@@ -63,8 +75,8 @@ The primary way to upload data to Kleinkram is using the **Kleinkram CLI**.
 
 3.  **Upload Data**:
     ```bash
-    klein project create "My Project" --description "Data of my robot"
-    klein upload -p "My Project" -m "Mission 1" --create ./data/*.bag
+    klein project create my-project --description "Data of my robot"
+    klein upload -p my-project -m mission-1 --create ./data/*.bag
     ```
 
 For more details on installation and usage, see the [CLI Documentation](python/cli.md).
