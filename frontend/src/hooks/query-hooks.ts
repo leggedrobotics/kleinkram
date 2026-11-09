@@ -190,6 +190,38 @@ export const canCreateMission = (
     const permission = getPermissionForProject(projectUuid, permissions);
     return permission >= AccessGroupRights.CREATE;
 };
+
+/**
+ * Creating an action template, or a new version of one, needs the same global
+ * create permission as creating a project (`CreateGuard` in the backend).
+ */
+export const canCreateActionTemplate = (
+    permissions: PermissionsDto | null | undefined,
+): boolean => canCreateProject(permissions);
+
+/**
+ * Whether the user may launch an action that requires `requiredRights` on
+ * every given mission. Mirrors the backend `CreateActionGuard`: the rights
+ * granted through the project or through the mission itself must reach the
+ * template's access rights.
+ */
+export const canLaunchActionOnMissions = (
+    missions: { missionUuid: string; projectUuid: string | undefined }[],
+    requiredRights: AccessGroupRights,
+    permissions: PermissionsDto | null | undefined,
+): boolean => {
+    if (!permissions) return false;
+    if (missions.length === 0) return false;
+
+    return missions.every(({ missionUuid, projectUuid }) => {
+        const permission: AccessGroupRights = Math.max(
+            getPermissionForProject(projectUuid, permissions),
+            getPermissionForMission(missionUuid, permissions),
+        );
+        return permission >= requiredRights;
+    });
+};
+
 export const canModifyProject = (
     projectUuid: string | undefined,
     permissions: PermissionsDto | null | undefined,

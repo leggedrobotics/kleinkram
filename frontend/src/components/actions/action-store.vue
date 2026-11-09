@@ -23,7 +23,15 @@
                     </template>
                 </app-search-bar>
 
-                <app-create-button label="New Action" @click="handleCreate" />
+                <app-create-button
+                    label="New Action"
+                    :disable="!canCreateTemplate"
+                    @click="handleCreate"
+                >
+                    <q-tooltip v-if="!canCreateTemplate">
+                        You don't have permission to create action templates
+                    </q-tooltip>
+                </app-create-button>
             </ButtonGroup>
         </div>
 
@@ -184,6 +192,9 @@
 
                 <q-btn
                     v-if="emptyState.actionLabel"
+                    :disable="
+                        emptyState.action === handleCreate && !canCreateTemplate
+                    "
                     unelevated
                     color="primary"
                     :label="emptyState.actionLabel"
@@ -204,6 +215,10 @@ import { useDeleteTemplate } from 'src/composables/use-action-mutations';
 import { useTemplateList } from 'src/composables/use-actions-queries';
 import { DEFAULT_PAGINATION_SIZE } from 'src/constants';
 import DeleteActionTemplateDialog from 'src/dialogs/delete-action-template-dialog.vue';
+import {
+    canCreateActionTemplate,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 import { useRoute, useRouter } from 'vue-router';
@@ -298,6 +313,11 @@ const filteredTemplates = computed(() => {
 const clearSearch = (): void => {
     searchTerm.value = '';
 };
+
+const { data: permissions } = usePermissionsQuery();
+const canCreateTemplate = computed(() =>
+    canCreateActionTemplate(permissions.value),
+);
 
 const handleCreate = (): void => {
     emits('create');

@@ -19,6 +19,7 @@
 
         <div :class="$q.screen.xs ? 'q-pa-md' : 'q-pa-lg'">
             <InfoBanner
+                v-if="canCreateTemplate"
                 text="Need a different action configuration?"
                 button-label="Create New Action"
                 @click="createAction"
@@ -121,10 +122,14 @@
                             icon="sym_o_rocket_launch"
                             type="submit"
                             :loading="isSubmitting"
-                            :disable="!canSubmit"
+                            :disable="!canSubmit || !hasLaunchPermission"
                         />
                         <q-tooltip v-if="!canSubmit">
                             Please select a mission to launch this action
+                        </q-tooltip>
+                        <q-tooltip v-else-if="!hasLaunchPermission">
+                            You need {{ permissionLevel }} access on the
+                            selected mission(s) to launch this action
                         </q-tooltip>
                     </div>
                 </div>
@@ -151,7 +156,12 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { actionKeys } from 'src/api/keys/action-keys';
 import { useSubmitAction } from 'src/composables/use-action-mutations';
 import { useScopeSelection } from 'src/composables/use-scope-selection';
-import { useManyMissions } from 'src/hooks/query-hooks';
+import {
+    canCreateActionTemplate,
+    canLaunchActionOnMissions,
+    useManyMissions,
+    usePermissionsQuery,
+} from 'src/hooks/query-hooks';
 
 // --- Types ---
 import type { ActionTemplateDto } from '@kleinkram/api-dto/types/actions/action-template.dto';
@@ -205,6 +215,39 @@ const permissionLevel = computed(() => {
     return AccessGroupRights[props.template.accessRights];
 });
 
+// --- Permissions ---
+const { data: permissions } = usePermissionsQuery();
+
+const canCreateTemplate = computed(() =>
+    canCreateActionTemplate(permissions.value),
+);
+
+const targetMissions = computed(() => {
+    if (hasMissionUUIDs.value) {
+        return (selectedMissionsData.value?.data ?? []).map((m) => ({
+            missionUuid: m.uuid,
+            projectUuid: m.project.uuid,
+        }));
+    }
+    if (!selectedMission.value) return [];
+    return [
+        {
+            missionUuid: selectedMission.value.uuid,
+            projectUuid: selectedProject.value?.uuid,
+        },
+    ];
+});
+
+const hasLaunchPermission = computed(
+    () =>
+        !!props.template &&
+        canLaunchActionOnMissions(
+            targetMissions.value,
+            props.template.accessRights,
+            permissions.value,
+        ),
+);
+
 // --- Watchers ---
 watch(
     () => props.open,
@@ -252,7 +295,7 @@ const canSubmit = computed(() => {
 });
 
 async function submitAnalysis(): Promise<void> {
-    if (!props.template) return;
+    if (!props.template || !hasLaunchPermission.value) return;
 
     if (
         props.template.accessRights === AccessGroupRights.WRITE ||

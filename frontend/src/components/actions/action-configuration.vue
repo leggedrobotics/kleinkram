@@ -217,11 +217,16 @@
                         flat
                         class="bg-button-secondary text-on-color q-mx-sm"
                         :label="saveButtonLabel"
-                        :disable="!isModified || !isNameSelected"
+                        :disable="
+                            !isModified || !isNameSelected || !canCreateTemplate
+                        "
                         :loading="isCreating || isUpdating"
                         @click="saveAsTemplate"
                     >
-                        <q-tooltip v-if="!isNameSelected">
+                        <q-tooltip v-if="!canCreateTemplate">
+                            You don't have permission to create action templates
+                        </q-tooltip>
+                        <q-tooltip v-else-if="!isNameSelected">
                             Cant save Template without a Name
                         </q-tooltip>
                         <q-tooltip v-else-if="!isModified">
@@ -232,12 +237,15 @@
                         flat
                         class="bg-button-secondary text-on-color"
                         label="Submit Action"
-                        :disable="!isNameSelected"
+                        :disable="!isNameSelected || !!submitBlockedReason"
                         :loading="isSubmitting"
                         @click="submitAnalysis"
                     >
                         <q-tooltip v-if="!isNameSelected">
                             Cant submit Action without a name
+                        </q-tooltip>
+                        <q-tooltip v-else-if="submitBlockedReason">
+                            {{ submitBlockedReason }}
                         </q-tooltip>
                     </q-btn>
                 </div>
@@ -260,10 +268,13 @@ import {
 import ActionSelector from 'components/action-selector.vue';
 import { Notify } from 'quasar';
 import {
+    canCreateActionTemplate,
+    canLaunchActionOnMissions,
     useFilteredProjects,
     useHandler,
     useManyMissions,
     useMissionsOfProjectMinimal,
+    usePermissionsQuery,
 } from 'src/hooks/query-hooks';
 import { accessGroupRightsMap } from 'src/services/generic';
 import { computed, Ref, ref, watch } from 'vue';
@@ -421,6 +432,57 @@ const { mutateAsync: updateTemplate, isPending: isUpdating } =
     useUpdateTemplateVersion();
 const { mutateAsync: runAction, isPending: isSubmitting } = useSubmitAction();
 
+// --- Permissions ---
+const { data: permissions } = usePermissionsQuery();
+
+const canCreateTemplate = computed(() =>
+    canCreateActionTemplate(permissions.value),
+);
+
+const targetMissions = computed(() => {
+    if (hasMissionUUIDs.value) {
+        return (selectedMissions.value?.data ?? []).map((m) => ({
+            missionUuid: m.uuid,
+            projectUuid: m.project.uuid,
+        }));
+    }
+    if (!selectedMission.value) return [];
+    return [
+        {
+            missionUuid: selectedMission.value.uuid,
+            projectUuid: selectedProject.value?.uuid,
+        },
+    ];
+});
+
+/**
+ * Why "Submit Action" is unavailable, or undefined if it can be submitted.
+ * Submitting first saves the template when it is new or modified, which needs
+ * template create rights; launching needs the template's access rights on
+ * every target mission.
+ */
+const submitBlockedReason = computed((): string | undefined => {
+    const needsTemplateSave = !editingTemplate.value?.uuid || isModified.value;
+    if (needsTemplateSave && !canCreateTemplate.value) {
+        return "You don't have permission to create action templates. Select an existing action without changes to launch it.";
+    }
+    if (targetMissions.value.length === 0) return undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const requiredRights: AccessGroupRights =
+        editingTemplate.value?.accessRights ?? AccessGroupRights.READ;
+    if (
+        !canLaunchActionOnMissions(
+            targetMissions.value,
+            requiredRights,
+            permissions.value,
+        )
+    ) {
+        return `You need ${accessGroupRightsMap[requiredRights]} access on the selected mission(s) to launch this action`;
+    }
+    return undefined;
+});
+
 // --- Actions ---
 function closeDrawer(): void {
     _open.value = false;
@@ -468,6 +530,13 @@ async function saveAsTemplate(): Promise<void> {
 
 async function submitAnalysis(): Promise<void> {
     // 1. Validation
+    if (submitBlockedReason.value) {
+        Notify.create({
+            message: submitBlockedReason.value,
+            color: 'negative',
+        });
+        return;
+    }
     if (
         !hasMissionUUIDs.value &&
         (!selectedProject.value || !selectedMission.value)
