@@ -78,6 +78,8 @@ export class AddActionStateTransitions1793367277852 implements MigrationInterfac
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        // Lost-access failures keep the USER origin `up` gave them: it is
+        // correct for the old code as well.
         // Waiting causes are stored as the bare error now; give them back the
         // prefix the code before this migration wrote and reads.
         await queryRunner.query(
@@ -134,10 +136,13 @@ export class AddActionStateTransitions1793367277852 implements MigrationInterfac
 
         // Written with the creator's and mission's uuids, either bare or as
         // {user:…} references (#2516). The text stays as it was: with the code
-        // set, it is rebuilt from the current names and never shown.
+        // set, it is rebuilt from the current names and never shown. These
+        // failures were recorded as Kleinkram's; losing access is the user's.
         await queryRunner.query(
             `UPDATE "action"
-             SET "state_cause_code" = 'MISSION_ACCESS_LOST'
+             SET "state_cause_code" = 'MISSION_ACCESS_LOST',
+                 "failureOrigin" = CASE WHEN "state" IN ('FAILED', 'UNPROCESSABLE')
+                                        THEN 'USER' ELSE "failureOrigin" END
              WHERE "state_cause" ~ '^User (\\{user:)?${UUID}\\}? lost access to mission (\\{mission:)?${UUID}\\}?$'`,
         );
 

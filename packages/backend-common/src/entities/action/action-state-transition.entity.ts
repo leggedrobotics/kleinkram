@@ -37,7 +37,10 @@ export class ActionStateTransitionEntity {
     @Column({ type: 'jsonb', nullable: true })
     causeParams?: StateCauseParams | null;
 
-    /** Raw text of an external error, shown as-is and never parsed. */
+    /**
+     * The raw message if there is one, otherwise the text at write time. Shown
+     * only for codes the reader does not know; never parsed.
+     */
     @Column({ type: 'text', nullable: true })
     message?: string | null;
 

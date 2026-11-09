@@ -133,18 +133,21 @@ export function useActionDiagnostics(
 /**
  * Every state an action went through, and why.
  *
- * Keyed by the current state, so the timeline catches up whenever the action
- * itself is seen to change.
+ * Keyed by the current state and cause code: an entry is added exactly when
+ * one of them changes, so the timeline catches up whenever the polled action
+ * does.
  */
 export function useActionStateHistory(
     uuid: MaybeRef<string>,
     state: MaybeRef<ActionState>,
+    causeCode: MaybeRef<string | null>,
 ): UseQueryReturnType<ActionStateHistoryDto, Error> {
     return useQuery({
         queryKey: computed(() => [
             ...actionKeys.detail(unref(uuid)),
             'state-history',
             unref(state),
+            unref(causeCode),
         ]),
         queryFn: () => ActionService.getStateHistory(unref(uuid)),
         enabled: computed(() => !!unref(uuid)),

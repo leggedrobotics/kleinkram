@@ -96,7 +96,9 @@ export const transitionAction = async (
                 state,
                 causeCode: cause.code,
                 causeParams: cause.params ?? null,
-                message: cause.message ?? null,
+                // As on the action: the text at write time, so that a reader
+                // that does not know the code yet still has something to show.
+                message: cause.message ?? describeStateCause(cause) ?? null,
                 actorUuid: transition.actorUuid ?? null,
             });
         }

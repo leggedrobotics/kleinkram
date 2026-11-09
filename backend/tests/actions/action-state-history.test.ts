@@ -186,6 +186,8 @@ describe('Action state history', () => {
             codes.filter((c) => c === ActionStateCause.TIME_LIMIT_EXCEEDED),
         ).toHaveLength(1);
         expect(codes).not.toContain(ActionStateCause.EXIT_SIGTERM);
+        // the text at write time, for readers that do not know the code yet
+        expect(transitions.at(-1)?.message).toBe('Time limit exceeded');
 
         const stored = await database
             .getRepository(ActionEntity)

@@ -422,6 +422,7 @@ const diagnostics = computed(() => diagnosticsData.value?.data ?? []);
 const { data: stateHistoryData } = useActionStateHistory(
     computed(() => props.action.uuid),
     computed(() => props.action.state),
+    computed(() => props.action.stateCauseCode),
 );
 const stateHistory = computed(() => stateHistoryData.value?.data ?? []);
 const diagnosticsTruncated = computed(
