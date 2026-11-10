@@ -40,16 +40,22 @@
 <script setup lang="ts">
 import type { FileDto } from '@kleinkram/api-dto/types/file/file.dto';
 import MarkdownViewer from 'components/inspect-file/viewers/markdown-viewer.vue';
+import { useReadmeContent } from 'src/composables/use-mission-readme';
 import { useMissionUUID, useProjectUUID } from 'src/hooks/router-hooks';
 import ROUTES from 'src/router/routes';
-import type { TextPreview } from 'src/services/text-preview';
+import { toRef } from 'vue';
 
-defineProps<{
+const properties = defineProps<{
     readme: FileDto | undefined;
-    content: TextPreview | undefined;
-    isContentLoading: boolean;
-    contentError: Error | null;
 }>();
+
+// Loaded here rather than on the page: the panel only mounts while Mission
+// Info is the active tab, so other tabs never download the README.
+const {
+    content,
+    isLoading: isContentLoading,
+    error: contentError,
+} = useReadmeContent(toRef(properties, 'readme'));
 
 const projectUuid = useProjectUUID();
 const missionUuid = useMissionUUID();
