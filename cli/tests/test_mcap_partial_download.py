@@ -27,6 +27,7 @@ import kleinkram.api.routes
 import kleinkram.core
 from kleinkram.api import file_transfer
 from kleinkram.api import mcap_filter
+from kleinkram.api import retry
 from kleinkram.api.file_transfer import DownloadState
 from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.file_transfer import download_file
@@ -53,6 +54,12 @@ TOPICS = ("/tf", "/odom", "/camera")
 PAYLOAD_SIZES = {"/tf": 64, "/odom": 128, "/camera": 4096}
 MESSAGES_PER_TOPIC = 400
 INTERVAL_NS = 10_000_000  # 100 Hz
+
+
+@pytest.fixture(autouse=True)
+def no_retry_backoff(monkeypatch) -> None:
+    """Storage failures here are permanent; retrying them should not cost real seconds."""
+    monkeypatch.setattr(retry, "_sleep", lambda seconds, cancel_event: False)
 
 
 def _payload(topic: str, index: int) -> bytes:
