@@ -1,6 +1,7 @@
 """Retrying HTTP calls: which errors are worth another attempt, and how long to wait.
 
-Every retry in the CLI goes through `Retrier`, so the rules live in one place:
+Retries of the HTTP requests the CLI makes itself go through `Retrier`, so the
+rules live in one place (boto3 retries S3 uploads internally):
 
 - Only transient errors are retried (`is_transient`). A 4xx or a local error
   such as `PermissionError` fails the same way on every attempt.
@@ -95,7 +96,7 @@ class Retrier:
                 ...
                 retrier.reset()  # progress was made
             except Exception as e:
-                if not retrier.should_retry(e):
+                if not retrier.record_failure(e):
                     raise
                 retrier.wait(e)
 
@@ -114,20 +115,19 @@ class Retrier:
         self.name = name
         self.attempt = 0
 
-    @property
-    def exhausted(self) -> bool:
-        return self.attempt >= self.policy.max_attempts
-
     def reset(self) -> None:
         """Start counting again, e.g. after a download made progress."""
         self.attempt = 0
 
-    def should_retry(self, e: BaseException) -> bool:
-        """Record a failed attempt; True if `e` is worth another one."""
+    def record_failure(self, e: BaseException) -> bool:
+        """Count a failed attempt; return True if another one is worth making.
+
+        A cancelled transfer is never retried, whatever the policy says.
+        """
         self.attempt += 1
         if isinstance(e, TransferCancelledError):
             return False
-        return self.policy.retry_on(e) and not self.exhausted
+        return self.policy.retry_on(e) and self.attempt < self.policy.max_attempts
 
     def wait(self, e: BaseException) -> None:
         """Back off before the next attempt; raise `TransferCancelledError` on Ctrl+C."""
@@ -149,7 +149,7 @@ class Retrier:
             try:
                 return fn(*args, **kwargs)
             except Exception as e:
-                if not self.should_retry(e):
+                if not self.record_failure(e):
                     raise
                 self.wait(e)
 

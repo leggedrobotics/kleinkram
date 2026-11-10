@@ -125,11 +125,10 @@ def test_reset_starts_counting_again(sleeps) -> None:
     retrier = Retrier(RetryPolicy(max_attempts=2, jitter=0))
     error = httpx.ConnectError("refused")
 
-    assert retrier.should_retry(error)
+    assert retrier.record_failure(error)
     retrier.reset()
-    assert retrier.should_retry(error)
-    assert not retrier.should_retry(error)
-    assert retrier.exhausted
+    assert retrier.record_failure(error)
+    assert not retrier.record_failure(error)
 
 
 def test_cancel_event_ends_the_wait(sleeps) -> None:

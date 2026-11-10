@@ -60,7 +60,8 @@ RETRY_BACKOFF_BASE = 2  # exponential backoff base
 
 # Requests to the Kleinkram API that are safe to repeat.
 API_RETRY = RetryPolicy(max_attempts=3)
-# Downloads resume where they stopped, so a retry costs little.
+# Downloads resume where they stopped, so a retry costs little: the first
+# attempt plus five retries.
 DOWNLOAD_RETRY = RetryPolicy(max_attempts=6)
 
 
@@ -353,10 +354,11 @@ def _get_filename_from_cd(cd: str | None) -> Optional[str]:
     return fname[0].strip().strip('"')
 
 
-def _download_error(e: Exception, retrier: Retrier) -> Exception:
+def _download_error(e: Exception) -> Exception:
     """The exception to raise once a download error is final."""
-    if retrier.exhausted:
-        return RuntimeError(f"Download failed after {retrier.attempt} attempts: {describe_error(e)}")
+    if DOWNLOAD_RETRY.retry_on(e):
+        # Worth retrying, so the only reason to stop is that the attempts ran out.
+        return RuntimeError(f"Download failed after {DOWNLOAD_RETRY.max_attempts} attempts: {describe_error(e)}")
     if not isinstance(e, httpx.HTTPStatusError):
         return e
     message = f"Download failed: {describe_error(e)}"
@@ -415,8 +417,8 @@ def _url_download(
         except TransferCancelledError:
             raise
         except Exception as e:
-            if not retrier.should_retry(e):
-                raise _download_error(e, retrier) from e
+            if not retrier.record_failure(e):
+                raise _download_error(e) from e
             retrier.wait(e)
 
 

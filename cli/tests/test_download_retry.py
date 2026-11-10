@@ -126,6 +126,20 @@ def test_persistent_server_error_gives_up_after_max_retries(tmp_path: Path, monk
     assert "secret" not in caplog.text
 
 
+@pytest.mark.parametrize("final_status, error_type", [(403, AccessDenied), (404, RuntimeError)])
+def test_final_error_on_the_last_attempt_keeps_its_own_message(
+    tmp_path: Path, monkeypatch, sleeps, final_status: int, error_type: type
+) -> None:
+    transient = [httpx.Response(503)] * (file_transfer.DOWNLOAD_RETRY.max_attempts - 1)
+    responses = iter(transient + [httpx.Response(final_status)])
+    serve(monkeypatch, lambda _: next(responses))
+
+    with pytest.raises(error_type, match=f"HTTP {final_status}") as exc:
+        download(tmp_path / "file.mcap")
+
+    assert "attempts" not in str(exc.value)
+
+
 def test_retry_after_is_honoured_and_capped(tmp_path: Path, monkeypatch, sleeps) -> None:
     responses = iter(
         [
