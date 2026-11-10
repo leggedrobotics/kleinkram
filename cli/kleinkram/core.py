@@ -256,6 +256,8 @@ def upload(
     """
     # check that file paths are for valid files and have valid suffixes
     check_file_paths(file_paths, check_filename=not fix_filenames)
+    # fail on clashing upload names before touching the server
+    filename_map = get_filename_map(file_paths)
 
     try:
         mission = kleinkram.api.routes.get_mission(client, query=query)
@@ -282,7 +284,6 @@ def upload(
 
     assert mission is not None, "unreachable"
 
-    filename_map = get_filename_map(file_paths)
     return kleinkram.api.file_transfer.upload_files(
         client,
         filename_map,
@@ -315,12 +316,12 @@ def verify(
 
     # check that file paths are for valid files and have valid suffixes
     check_file_paths(file_paths)
+    filename_map = get_filename_map(file_paths)
 
     # check that the mission exists
     _ = kleinkram.api.routes.get_mission(client, query)
 
     remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=FileQuery(mission_query=query))}
-    filename_map = get_filename_map(file_paths)
 
     # verify files
     file_status: Dict[Path, FileVerificationStatus] = {}
