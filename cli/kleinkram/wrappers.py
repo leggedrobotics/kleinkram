@@ -33,6 +33,7 @@ from kleinkram.api.file_transfer import OnFileStartCb
 from kleinkram.api.file_transfer import OnMessageCb
 from kleinkram.api.file_transfer import OnOverallProgressCb
 from kleinkram.api.file_transfer import UploadResult
+from kleinkram.api.mcap_summary import McapInfo
 from kleinkram.api.query import ExecutionQuery
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
@@ -212,6 +213,29 @@ def download(
         on_file_progress_cb=on_file_progress_cb,
         on_message_cb=on_message_cb,
     )
+
+
+def inspect_file(
+    file_id: IdLike,
+    *,
+    metadata: bool = False,
+    client: Optional[AuthenticatedClient] = None,
+) -> McapInfo:
+    """Read what a remote `.mcap` says about itself, without downloading it.
+
+    The header and summary section are fetched through HTTP range requests:
+    topics with their types and message counts, the recorded time range,
+    schemas, attachments, and how the chunks are stored. That is three requests
+    and usually well under a percent of the file.
+
+    `metadata=True` also reads the metadata records, at one request each.
+
+    Times in the result are nanoseconds since the epoch, so `start_time` and
+    `end_time` can be passed straight on to `download`.
+    """
+    client = client or AuthenticatedClient()
+    file = kleinkram.api.routes.get_file(client, FileQuery(ids=[parse_uuid_like(file_id)]))
+    return kleinkram.core.inspect_file(client=client, file=file, metadata=metadata)
 
 
 def download_artifact(
