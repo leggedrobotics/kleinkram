@@ -159,6 +159,16 @@
                     dense
                     class="text-grey"
                 >
+                    <q-tab
+                        name="info"
+                        label="Mission Info"
+                        :disable="!readme"
+                        :style="readme ? 'color: #222' : undefined"
+                    >
+                        <q-tooltip v-if="!readme && !isReadmeLookupPending">
+                            Add a README.md to this mission to describe it here
+                        </q-tooltip>
+                    </q-tab>
                     <q-tab name="files" label="Files" style="color: #222" />
                     <q-tab
                         name="actions"
@@ -169,11 +179,25 @@
             </template>
         </title-section>
 
+        <div v-if="!activeTab" class="row justify-center q-mt-xl text-grey-7">
+            <q-spinner-dots size="2em" />
+        </div>
+
         <q-tab-panels
+            v-else
             v-model="activeTab"
             class="q-mt-lg"
             style="background: transparent"
         >
+            <q-tab-panel name="info" class="q-pa-none">
+                <MissionInfo
+                    :readme="readme"
+                    :content="readmeContent"
+                    :is-content-loading="isReadmeContentLoading"
+                    :content-error="readmeContentError"
+                />
+            </q-tab-panel>
+
             <q-tab-panel name="files" class="q-pa-none">
                 <MissionFiles />
             </q-tab-panel>
@@ -199,9 +223,11 @@ import ButtonGroup from 'components/buttons/button-group.vue';
 import KleinDownloadMission from 'components/cli-links/klein-download-mission.vue';
 import MissionActions from 'components/explorer-page/mission-actions.vue';
 import MissionFiles from 'components/explorer-page/mission-files.vue';
+import MissionInfo from 'components/explorer-page/mission-info.vue';
 import MissionMetadataDrawer from 'components/explorer-page/mission-metadata-drawer.vue';
 import TitleSection from 'components/title-section.vue';
 import { copyToClipboard, Notify, useQuasar } from 'quasar';
+import { useMissionReadme } from 'src/composables/use-mission-readme';
 import {
     registerNoPermissionErrorHandler,
     useMission,
@@ -229,8 +255,31 @@ const openMetadataDrawer = () => {
     isMetadataDrawerOpen.value = true;
 };
 
+const {
+    readme,
+    isLookupPending: isReadmeLookupPending,
+    content: readmeContent,
+    isContentLoading: isReadmeContentLoading,
+    contentError: readmeContentError,
+} = useMissionReadme(missionUuid);
+
+/**
+ * Without a tab in the URL the mission opens on its README, or on the file
+ * list when it has none. Until the lookup answers there is no tab to show,
+ * which renders a spinner instead of flashing the files first.
+ */
 const activeTab = computed({
-    get: () => ($route.params.tab as string) || 'files',
+    get: (): string => {
+        const requested = $route.params.tab as string | undefined;
+        if (requested && requested !== 'info') return requested;
+        // Query parameters only come from the file list (filters, paging,
+        // sorting). A link carrying them is a saved file view, so it opens
+        // on Files; showing Mission Info first would drop them on the way.
+        if (!requested && Object.keys($route.query).length > 0) return 'files';
+        if (isReadmeLookupPending.value) return '';
+        if (readme.value) return 'info';
+        return 'files';
+    },
     set: (value: string) => {
         void $router.replace({
             params: { ...$route.params, tab: value },

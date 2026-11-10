@@ -80,9 +80,24 @@ const markdown = new MarkdownIt({
     typographer: true,
 });
 
+// Images are not rendered. The browser fetches an image as soon as the page
+// renders, so a README pointing at a remote image would tell its host who
+// opened the mission and when. An image shows as a placeholder with its alt
+// text instead, and DOMPurify drops any `<img>` that slips through.
+markdown.renderer.rules.image = (tokens, index, options, environment) => {
+    const alt = markdown.renderer.renderInlineAsText(
+        tokens[index]?.children ?? [],
+        options,
+        environment,
+    );
+    const label = alt ? `Image: ${alt}` : 'Image';
+    return `<span class="image-placeholder">[${markdown.utils.escapeHtml(label)}]</span>`;
+};
+
 const renderedHtml = computed(() =>
     DOMPurify.sanitize(markdown.render(properties.content), {
         ADD_ATTR: ['target', 'rel'],
+        FORBID_TAGS: ['img', 'picture', 'source', 'image'],
     }),
 );
 
@@ -183,8 +198,9 @@ async function copyRaw(): Promise<void> {
 .markdown-body :deep(th) {
     background: #fafafa;
 }
-.markdown-body :deep(img) {
-    max-width: 100%;
+.markdown-body :deep(.image-placeholder) {
+    color: #757575;
+    font-style: italic;
 }
 .markdown-body :deep(hr) {
     border: none;
