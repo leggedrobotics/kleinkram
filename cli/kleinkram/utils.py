@@ -8,6 +8,7 @@ import math
 import random
 import re
 import string
+import threading
 import time
 import traceback
 from hashlib import md5
@@ -27,6 +28,7 @@ from rich.console import Console
 from kleinkram._version import __version__
 from kleinkram.errors import FileNameNotSupported
 from kleinkram.errors import FileTypeNotSupported
+from kleinkram.errors import TransferCancelledError
 from kleinkram.models import File
 from kleinkram.types import IdLike
 from kleinkram.types import PathLike
@@ -244,10 +246,20 @@ def get_filename_map(file_paths: Sequence[Path]) -> Dict[str, Path]:
     return internal_file_map
 
 
-def b64_md5(file: Path) -> str:
+HASH_CHUNK_SIZE = 1024 * 1024
+
+
+def b64_md5(file: Path, cancel_event: Optional[threading.Event] = None) -> str:
+    """Base64 MD5 of a file, as the server stores it.
+
+    Hashing a large file takes seconds, so with `cancel_event` it stops
+    between chunks and raises `TransferCancelledError` once the event is set.
+    """
     hash_md5 = hashlib.md5()
     with open(file, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
+        for chunk in iter(lambda: f.read(HASH_CHUNK_SIZE), b""):
+            if cancel_event is not None and cancel_event.is_set():
+                raise TransferCancelledError("Transfer cancelled by user")
             hash_md5.update(chunk)
     binary_digest = hash_md5.digest()
     return base64.b64encode(binary_digest).decode("utf-8")

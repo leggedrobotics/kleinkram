@@ -14,6 +14,7 @@ from kleinkram.api.query import ProjectQuery
 from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
+from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
 from kleinkram.errors import MissionNotFound
@@ -109,18 +110,20 @@ def upload(
     try:
         if verbose:
             with transfer_progress("Uploading files", total=len(files_to_upload)) as cbs:
-                result = kleinkram.core.upload(
-                    client=AuthenticatedClient(),
-                    query=mission_query,
-                    file_paths=files_to_upload,
-                    create=create,
-                    fix_filenames=fix_filenames,
-                    metadata=load_metadata(Path(metadata)) if metadata else None,
-                    ignore_missing_metadata=ignore_missing_metadata,
-                    on_overall_progress_cb=cbs.on_overall_progress,
-                    on_file_start_cb=cbs.on_file_start,
-                    on_file_progress_cb=cbs.on_file_progress,
-                    on_message_cb=cbs.on_message,
+                result, interrupted = run_interruptible(
+                    lambda: kleinkram.core.upload(
+                        client=AuthenticatedClient(),
+                        query=mission_query,
+                        file_paths=files_to_upload,
+                        create=create,
+                        fix_filenames=fix_filenames,
+                        metadata=load_metadata(Path(metadata)) if metadata else None,
+                        ignore_missing_metadata=ignore_missing_metadata,
+                        on_overall_progress_cb=cbs.on_overall_progress,
+                        on_file_start_cb=cbs.on_file_start,
+                        on_file_progress_cb=cbs.on_file_progress,
+                        on_message_cb=cbs.on_message,
+                    )
                 )
 
             # Print summary after progress context closes
@@ -128,39 +131,61 @@ def upload(
             typer.echo(f"\nUpload took {result.elapsed_seconds:.2f} seconds")
             typer.echo(f"Total uploaded: {format_bytes(result.total_bytes)}")
             typer.echo(f"Average speed: {format_bytes(avg_speed, speed=True)}")
-            if result.failed > 0:
+            if result.failed > 0 or result.canceled > 0:
+                parts = [f"Uploaded {result.uploaded} files"]
+                if result.skipped > 0:
+                    parts.append(f"{result.skipped} skipped")
+                if result.canceled > 0:
+                    parts.append(f"{result.canceled} canceled")
+                if result.failed > 0:
+                    parts.append(f"{result.failed} failed")
                 typer.echo(
                     typer.style(
-                        f"\nUploaded {result.uploaded} files, {result.skipped} skipped, {result.failed} failed",
-                        fg=typer.colors.RED,
+                        f"\n{', '.join(parts)}",
+                        fg=typer.colors.YELLOW if result.failed == 0 else typer.colors.RED,
                     ),
                     err=True,
                 )
             else:
-                typer.echo(f"\nUploaded {result.uploaded} files, {result.skipped} skipped")
+                parts = [f"Uploaded {result.uploaded} files"]
+                if result.skipped > 0:
+                    parts.append(f"{result.skipped} skipped")
+                typer.echo(f"\n{', '.join(parts)}")
         else:
             # No verbose: no progress bars, no callbacks
-            result = kleinkram.core.upload(
-                client=AuthenticatedClient(),
-                query=mission_query,
-                file_paths=files_to_upload,
-                create=create,
-                fix_filenames=fix_filenames,
-                metadata=load_metadata(Path(metadata)) if metadata else None,
-                ignore_missing_metadata=ignore_missing_metadata,
+            result, interrupted = run_interruptible(
+                lambda: kleinkram.core.upload(
+                    client=AuthenticatedClient(),
+                    query=mission_query,
+                    file_paths=files_to_upload,
+                    create=create,
+                    fix_filenames=fix_filenames,
+                    metadata=load_metadata(Path(metadata)) if metadata else None,
+                    ignore_missing_metadata=ignore_missing_metadata,
+                )
             )
-            if result.failed > 0:
+            if result.failed > 0 or result.canceled > 0:
+                parts = [f"Uploaded {result.uploaded} file(s)"]
+                if result.skipped > 0:
+                    parts.append(f"{result.skipped} skipped")
+                if result.canceled > 0:
+                    parts.append(f"{result.canceled} canceled")
+                if result.failed > 0:
+                    parts.append(f"{result.failed} failed")
                 typer.echo(
                     typer.style(
-                        f"\nUploaded {result.uploaded} file(s), {result.skipped} skipped, {result.failed} failed.",
-                        fg=typer.colors.RED,
+                        f"\n{', '.join(parts)}.",
+                        fg=typer.colors.YELLOW if result.failed == 0 else typer.colors.RED,
                     ),
                     err=True,
                 )
             else:
+                parts = [f"Uploaded {result.uploaded} file(s)"]
+                if result.skipped > 0:
+                    parts.append(f"{result.skipped} skipped")
                 typer.echo(
                     typer.style(
-                        f"\nSuccessfully uploaded {result.uploaded} file(s).",
+                        f"\n{', '.join(parts)}.",
                         fg=typer.colors.GREEN,
                     )
                 )
@@ -169,3 +194,7 @@ def upload(
         if create:
             raise  # dont change the error message
         raise MissionNotFound("Mission not found. Use `--create` to create it.")
+
+    else:
+        if interrupted:
+            raise typer.Exit(code=130)  # 128 + SIGINT, the shell convention for Ctrl+C

@@ -18,6 +18,7 @@ import pytest
 from typer.testing import CliRunner
 
 import kleinkram.cli.app
+from kleinkram.api.file_transfer import UploadResult
 from kleinkram.cli._deprecation import REMOVED_IN
 from kleinkram.cli._deprecation import prefer_new
 from kleinkram.cli.app import app
@@ -347,7 +348,7 @@ def test_mission_create_ignore_missing_metadata_and_legacy_flag(runner, monkeypa
 def test_upload_ignore_missing_metadata_and_legacy_flag(runner, monkeypatch, tmp_path):
     bag = tmp_path / "a.bag"
     bag.write_bytes(b"")
-    upload = MagicMock(return_value=SimpleNamespace(uploaded=1, skipped=0, failed=0))
+    upload = MagicMock(return_value=UploadResult(uploaded=1))
     monkeypatch.setattr("kleinkram.cli._upload.AuthenticatedClient", MagicMock)
     monkeypatch.setattr("kleinkram.core.upload", upload)
 

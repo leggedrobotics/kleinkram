@@ -179,6 +179,10 @@ def download(
     window still saves bandwidth, because chunks are ordered by log time, but
     `topics` alone usually does not, since a chunk normally holds several
     topics.
+
+    On Ctrl+C, running downloads stop, partial files are removed, and
+    `KeyboardInterrupt` is re-raised. What finished before the interrupt is
+    available via `kleinkram.errors.get_transfer_result(exc)`.
     """
     if isinstance(topics, str):
         # A bare string is a sequence too; without this, "/tf" would become
@@ -416,6 +420,12 @@ def upload(
     on_message_cb: Optional[OnMessageCb] = None,
     client: Optional[AuthenticatedClient] = None,
 ) -> UploadResult:
+    """Upload files to a mission.
+
+    On Ctrl+C, running uploads stop and are cancelled on the server, and
+    `KeyboardInterrupt` is re-raised. What finished before the interrupt is
+    available via `kleinkram.errors.get_transfer_result(exc)`.
+    """
     parsed_file_paths = [parse_path_like(f) for f in files]
     if not fix_filenames:
         for file in parsed_file_paths:
