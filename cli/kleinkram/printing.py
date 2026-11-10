@@ -46,6 +46,8 @@ from kleinkram.models import Mission
 from kleinkram.models import Project
 from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerType
+from kleinkram.models import UploadAction
+from kleinkram.models import UploadPlan
 from kleinkram.models import WebhookConfig
 
 FILE_STATE_COLOR = {
@@ -323,6 +325,80 @@ def print_file_verification_status(file_status: Mapping[Path, FileVerificationSt
         for path, status in file_status.items():
             stream = sys.stdout if status == FileVerificationStatus.UPLOADED else sys.stderr
             print(path, file=stream, flush=True)
+
+
+UPLOAD_ACTION_STYLES = {
+    UploadAction.UPLOAD: "green",
+    UploadAction.SKIP_SAME: "dim",
+    UploadAction.SKIP_DIFFERENT: "bold red",
+    UploadAction.SKIP_UNCHECKED: "yellow",
+}
+
+
+def upload_action_token(action: UploadAction) -> str:
+    """stable, machine readable name of an action, e.g. `skip-different`"""
+    return action.name.lower().replace("_", "-")
+
+
+def upload_plan_table(plan: UploadPlan) -> Table:
+    table = Table("local path", "name in mission", "size", "action", title="dry run")
+    for entry in plan.files:
+        action = entry.action.value
+        if entry.action == UploadAction.SKIP_UNCHECKED and entry.remote_state is not None:
+            action = f"{action}, remote state {entry.remote_state.value}"
+        table.add_row(
+            str(entry.path),
+            entry.name,
+            format_bytes(entry.size),
+            Text(action, style=UPLOAD_ACTION_STYLES[entry.action]),
+        )
+    return table
+
+
+def print_upload_plan(plan: UploadPlan, *, pprint: bool) -> None:
+    """\
+    prints what `klein upload` would do
+
+    with `pprint` a table for humans, otherwise one tab separated line
+    `<action>\t<local path>\t<name in mission>` per file on stdout for
+    scripts; the summary goes to stderr then
+    """
+    mission = f"{plan.project_name}/{plan.mission_name}"
+    to_upload = [e for e in plan.files if e.action == UploadAction.UPLOAD]
+    different = [e for e in plan.files if e.action == UploadAction.SKIP_DIFFERENT]
+    unchecked = [e for e in plan.files if e.action == UploadAction.SKIP_UNCHECKED]
+    n_skipped = len(plan.files) - len(to_upload)
+
+    lines = ["Dry run: nothing was uploaded or created."]
+    lines.append(f"Mission {mission} would be created." if plan.creates_mission else f"Mission {mission} exists.")
+    summary = f"Would upload {len(to_upload)} file(s) ({format_bytes(sum(e.size for e in to_upload))}), skip {n_skipped}."
+
+    warnings = []
+    if different:
+        warnings.append(
+            f"{len(different)} file(s) would be skipped although a different file with the same name is in the "
+            "mission. Rename them, or delete the file in the mission first."
+        )
+    if unchecked:
+        warnings.append(
+            f"{len(unchecked)} file(s) would be skipped because a file with the same name is in the mission, "
+            "but its content could not be compared (it is not in state OK yet)."
+        )
+
+    if pprint:
+        console = Console()
+        for line in lines:
+            console.print(line)
+        console.print(upload_plan_table(plan))
+        console.print(summary)
+        for warning in warnings:
+            console.print(warning, style="bold red")
+        return
+
+    for entry in plan.files:
+        print(f"{upload_action_token(entry.action)}\t{entry.path}\t{entry.name}", flush=True)
+    for line in [*lines, summary, *warnings]:
+        print(line, file=sys.stderr, flush=True)
 
 
 def print_files(files: Sequence[File], *, pprint: bool) -> None:

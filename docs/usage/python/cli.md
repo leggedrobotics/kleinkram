@@ -114,6 +114,18 @@ name (e.g. `run1/data.mcap` and `run2/data.mcap`), the upload is refused before 
 
 `klein verify` accepts the same directories, `--recursive` and patterns.
 
+To see what an upload would do before running it, add `--dry-run`. It runs the same checks as a real upload and lists
+every file with the name it gets in the mission, but uploads nothing and creates no mission:
+
+```bash
+klein upload --project testProject --mission testMission --dry-run --recursive ./recordings
+```
+
+A file whose name is already used in the mission is always skipped, even if its content changed. The dry run compares
+the content and marks those files as `skip, name taken by a different file`. With `--no-verbose`, it prints one
+tab-separated line per file instead (`<action>`, `<local path>`, `<name in mission>`), with the action being one of
+`upload`, `skip-same`, `skip-different` or `skip-unchecked`.
+
 ::: tip Creating Missions on Upload
 To create a mission automatically during upload if it doesn't already exist, use the `--create` flag. Note that the target project must already exist.
 

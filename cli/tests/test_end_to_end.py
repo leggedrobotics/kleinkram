@@ -300,3 +300,41 @@ def test_upload_recursive_name_clash_creates_nothing(project, tmp_path, api):
     assert res.returncode != 0
     assert "same name" in res.stderr + res.stdout
     assert kleinkram.wrappers.list_missions(project_ids=[project.id], mission_names=[mission_name]) == []
+
+
+@pytest.mark.slow
+def test_upload_dry_run_changes_nothing(project, tmp_path, api):
+    assert api
+    tree = tmp_path / "tree"
+    expected = _nested_tree(tree)
+
+    mission_name = secrets.token_hex(8)
+    base = [CLI, "--no-verbose", "upload", "-p", project.name, "-m", mission_name]
+
+    # the mission does not exist yet: nothing is created
+    res = subprocess.run([*base, "--create", "--dry-run", "-r", str(tree)], capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+    assert "would be created" in res.stderr
+    planned = [line.split("\t") for line in res.stdout.splitlines()]
+    assert sorted(name for _, _, name in planned) == expected
+    assert {action for action, _, _ in planned} == {"upload"}
+    assert kleinkram.wrappers.list_missions(project_ids=[project.id], mission_names=[mission_name]) == []
+
+    # upload for real, then change one file locally and add one
+    assert run_cmd(f"{CLI} upload -p {project.name} -m {mission_name} --create -r {tree}") == 0
+    with open(tree / "top.bag", "ab") as f:
+        f.write(b"changed")
+    shutil.copy(DATA_PATH / "10_KB.bag", tree / "run2" / "run2_b.bag")
+
+    res = subprocess.run([*base, "--dry-run", "-r", str(tree)], capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+    actions = {name: action for action, _, name in (line.split("\t") for line in res.stdout.splitlines())}
+    assert actions == {
+        "top.bag": "skip-different",
+        "run1_a.bag": "skip-same",
+        "run1_deep.bag": "skip-same",
+        "run2_a.bag": "skip-same",
+        "run2_b.bag": "upload",
+    }
+    assert "different file with the same name" in res.stderr
+    assert _remote_file_names(project, mission_name) == expected
