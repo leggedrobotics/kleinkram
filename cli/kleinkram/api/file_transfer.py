@@ -29,6 +29,10 @@ from botocore.exceptions import ClientError
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.mcap_filter import filter_mcap_from_url
 from kleinkram.api.mcap_filter import is_mcap
+from kleinkram.api.retry import Retrier
+from kleinkram.api.retry import RetryPolicy
+from kleinkram.api.retry import describe_error
+from kleinkram.api.retry import retrying
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
 from kleinkram.errors import InsufficientStorageError
@@ -38,7 +42,6 @@ from kleinkram.models import File
 from kleinkram.models import FileState
 from kleinkram.utils import b64_md5
 from kleinkram.utils import format_traceback
-from kleinkram.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +57,20 @@ S3_MAX_RETRIES = 60  # same as frontend
 S3_READ_TIMEOUT = 60 * 5  # 5 minutes
 
 RETRY_BACKOFF_BASE = 2  # exponential backoff base
-MAX_RETRIES = 5
+
+# Requests to the Kleinkram API that are safe to repeat.
+API_RETRY = RetryPolicy(max_attempts=3)
+# Downloads resume where they stopped, so a retry costs little.
+DOWNLOAD_RETRY = RetryPolicy(max_attempts=6)
+
+
+def _is_transport_error(e: BaseException) -> bool:
+    return isinstance(e, httpx.TransportError)
+
+
+# Requesting upload credentials creates the file on the server, so a 5xx is not
+# retried; whether a timed-out request should be is a separate question.
+UPLOAD_CREDENTIALS_RETRY = RetryPolicy(max_attempts=5, retry_on=_is_transport_error)
 
 # Callback type aliases
 OnFileStartCb = Callable[[Path, int], None]  # (path, total_bytes)
@@ -71,7 +87,7 @@ class UploadCredentials(NamedTuple):
     bucket: str
 
 
-@retry(max_attempts=3, exceptions=(httpx.TransportError,))
+@retrying(API_RETRY)
 def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: str) -> None:
     data = {
         "uuid": str(file_id),
@@ -82,7 +98,7 @@ def _confirm_file_upload(client: AuthenticatedClient, file_id: UUID, file_hash: 
     resp.raise_for_status()
 
 
-@retry(max_attempts=3, exceptions=(httpx.TransportError,))
+@retrying(API_RETRY)
 def _cancel_file_upload(client: AuthenticatedClient, file_id: UUID, mission_id: UUID) -> None:
     data = {
         "uuids": [str(file_id)],
@@ -104,7 +120,7 @@ FILE_ID_FIELD = "fileUUID"
 BUCKET_FIELD = "bucket"
 
 
-@retry(max_attempts=5, exceptions=(httpx.TransportError,), exclude_exceptions=(FileExistsError, InsufficientStorageError))
+@retrying(UPLOAD_CREDENTIALS_RETRY)
 def _get_upload_creditials(
     client: AuthenticatedClient, internal_filename: str, mission_id: UUID, file_size: int
 ) -> UploadCredentials:
@@ -337,48 +353,16 @@ def _get_filename_from_cd(cd: str | None) -> Optional[str]:
     return fname[0].strip().strip('"')
 
 
-# 408 and 429 ask the client to come back later; any other 4xx (expired or
-# forbidden URL, missing object, bad range) fails the same way on every retry.
-RETRYABLE_CLIENT_STATUS_CODES = frozenset({408, 429})
-MAX_RETRY_AFTER_SECONDS = 60
-
-
-def _is_retryable_download_error(e: Exception) -> bool:
-    """Only retry what can go away by itself: network trouble and server-side errors.
-
-    Local errors (`PermissionError`, a full disk) and 4xx responses are final.
-    """
-    if isinstance(e, httpx.HTTPStatusError):
-        status = e.response.status_code
-        return status >= 500 or status in RETRYABLE_CLIENT_STATUS_CODES
-    return isinstance(e, httpx.TransportError)
-
-
-def _describe_download_error(e: Exception) -> str:
-    """`str(e)` of an `HTTPStatusError` contains the presigned URL, signature included."""
-    if isinstance(e, httpx.HTTPStatusError):
-        return f"HTTP {e.response.status_code} {e.response.reason_phrase}"
-    return str(e)
-
-
-def _download_error(e: Exception) -> Exception:
-    """The exception to raise for an error that is not worth retrying."""
+def _download_error(e: Exception, retrier: Retrier) -> Exception:
+    """The exception to raise once a download error is final."""
+    if retrier.exhausted:
+        return RuntimeError(f"Download failed after {retrier.attempt} attempts: {describe_error(e)}")
     if not isinstance(e, httpx.HTTPStatusError):
         return e
-    message = f"Download failed: {_describe_download_error(e)}"
+    message = f"Download failed: {describe_error(e)}"
     if e.response.status_code in (401, 403):
         return AccessDenied(f"{message} (the download link may have expired or access was revoked)")
     return RuntimeError(message)
-
-
-def _retry_delay(e: Exception, attempt: int) -> float:
-    """Exponential backoff, or the server's `Retry-After` if it asks for longer."""
-    delay = float(RETRY_BACKOFF_BASE**attempt)
-    if isinstance(e, httpx.HTTPStatusError):
-        retry_after = e.response.headers.get("Retry-After", "")
-        if retry_after.isdigit():
-            delay = max(delay, min(float(retry_after), MAX_RETRY_AFTER_SECONDS))
-    return delay
 
 
 def _url_download(
@@ -405,7 +389,7 @@ def _url_download(
     if on_file_start_cb is not None:
         on_file_start_cb(path, size)
 
-    attempt = 0
+    retrier = Retrier(DOWNLOAD_RETRY, cancel_event=cancel_event, name=f"download of {path.name}")
     while downloaded < size:
         try:
             headers = {"Range": f"bytes={downloaded}-"}
@@ -420,7 +404,7 @@ def _url_download(
                     for chunk in response.iter_bytes(chunk_size=DOWNLOAD_CHUNK_SIZE):
                         if cancel_event is not None and cancel_event.is_set():
                             raise TransferCancelledError("Transfer cancelled by user")
-                        attempt = 0  # reset attempt counter on successful download of non-empty chunk
+                        retrier.reset()  # progress was made, so start counting failures again
                         if not chunk:
                             break
                         f.write(chunk)
@@ -431,19 +415,9 @@ def _url_download(
         except TransferCancelledError:
             raise
         except Exception as e:
-            if not _is_retryable_download_error(e):
-                raise _download_error(e) from e
-            reason = _describe_download_error(e)
-            attempt += 1
-            if attempt > MAX_RETRIES:
-                raise RuntimeError(f"Download failed after {MAX_RETRIES} retries: {reason}") from e
-            logger.warning(f"{reason} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff...")
-            sleep_time = _retry_delay(e, attempt)
-            if cancel_event is not None:
-                if cancel_event.wait(sleep_time):
-                    raise TransferCancelledError("Transfer cancelled by user")
-            else:
-                sleep(sleep_time)
+            if not retrier.should_retry(e):
+                raise _download_error(e, retrier) from e
+            retrier.wait(e)
 
 
 @dataclass(frozen=True)
@@ -913,6 +887,7 @@ def _download_mcap_slice(
             end_time=mcap_slice.end_time,
             on_start=on_start,
             on_progress=on_progress,
+            cancel_event=cancel_event,
         )
     except Exception as e:
         if cancel_event is not None and cancel_event.is_set():

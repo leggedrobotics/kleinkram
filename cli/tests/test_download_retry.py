@@ -11,6 +11,7 @@ import httpx
 import pytest
 
 from kleinkram.api import file_transfer
+from kleinkram.api import retry
 from kleinkram.errors import AccessDenied
 
 URL = "https://s3.example.com/bucket/file.mcap?X-Amz-Signature=secret"
@@ -21,7 +22,12 @@ CONTENT = b"0123456789"
 def sleeps(monkeypatch) -> List[float]:
     """Record backoff delays instead of sleeping."""
     recorded: List[float] = []
-    monkeypatch.setattr(file_transfer, "sleep", recorded.append)
+
+    def fake_sleep(seconds: float, cancel_event) -> bool:
+        recorded.append(seconds)
+        return False
+
+    monkeypatch.setattr(retry, "_sleep", fake_sleep)
     return recorded
 
 
@@ -111,11 +117,11 @@ def test_network_error_is_retried(tmp_path: Path, monkeypatch, sleeps) -> None:
 def test_persistent_server_error_gives_up_after_max_retries(tmp_path: Path, monkeypatch, sleeps, caplog) -> None:
     requests = serve(monkeypatch, lambda _: httpx.Response(503))
 
-    with pytest.raises(RuntimeError, match="retries") as exc:
+    with pytest.raises(RuntimeError, match="after 6 attempts: HTTP 503") as exc:
         download(tmp_path / "file.mcap")
 
-    assert len(requests) == file_transfer.MAX_RETRIES + 1
-    assert len(sleeps) == file_transfer.MAX_RETRIES
+    assert len(requests) == file_transfer.DOWNLOAD_RETRY.max_attempts
+    assert len(sleeps) == file_transfer.DOWNLOAD_RETRY.max_attempts - 1
     assert "secret" not in str(exc.value)
     assert "secret" not in caplog.text
 
@@ -132,4 +138,4 @@ def test_retry_after_is_honoured_and_capped(tmp_path: Path, monkeypatch, sleeps)
 
     download(tmp_path / "file.mcap")
 
-    assert sleeps == [30, file_transfer.MAX_RETRY_AFTER_SECONDS]
+    assert sleeps == [30, file_transfer.DOWNLOAD_RETRY.max_delay]
