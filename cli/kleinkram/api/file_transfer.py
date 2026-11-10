@@ -335,6 +335,50 @@ def _get_filename_from_cd(cd: str | None) -> Optional[str]:
     return fname[0].strip().strip('"')
 
 
+# 408 and 429 ask the client to come back later; any other 4xx (expired or
+# forbidden URL, missing object, bad range) fails the same way on every retry.
+RETRYABLE_CLIENT_STATUS_CODES = frozenset({408, 429})
+MAX_RETRY_AFTER_SECONDS = 60
+
+
+def _is_retryable_download_error(e: Exception) -> bool:
+    """Only retry what can go away by itself: network trouble and server-side errors.
+
+    Local errors (`PermissionError`, a full disk) and 4xx responses are final.
+    """
+    if isinstance(e, httpx.HTTPStatusError):
+        status = e.response.status_code
+        return status >= 500 or status in RETRYABLE_CLIENT_STATUS_CODES
+    return isinstance(e, httpx.TransportError)
+
+
+def _describe_download_error(e: Exception) -> str:
+    """`str(e)` of an `HTTPStatusError` contains the presigned URL, signature included."""
+    if isinstance(e, httpx.HTTPStatusError):
+        return f"HTTP {e.response.status_code} {e.response.reason_phrase}"
+    return str(e)
+
+
+def _download_error(e: Exception) -> Exception:
+    """The exception to raise for an error that is not worth retrying."""
+    if not isinstance(e, httpx.HTTPStatusError):
+        return e
+    message = f"Download failed: {_describe_download_error(e)}"
+    if e.response.status_code in (401, 403):
+        return AccessDenied(f"{message} (the download link may have expired or access was revoked)")
+    return RuntimeError(message)
+
+
+def _retry_delay(e: Exception, attempt: int) -> float:
+    """Exponential backoff, or the server's `Retry-After` if it asks for longer."""
+    delay = float(RETRY_BACKOFF_BASE**attempt)
+    if isinstance(e, httpx.HTTPStatusError):
+        retry_after = e.response.headers.get("Retry-After", "")
+        if retry_after.isdigit():
+            delay = max(delay, min(float(retry_after), MAX_RETRY_AFTER_SECONDS))
+    return delay
+
+
 def _url_download(
     url: str,
     *,
@@ -385,12 +429,14 @@ def _url_download(
         except TransferCancelledError:
             raise
         except Exception as e:
-            logger.info(f"Error: {e}, retrying...")
+            if not _is_retryable_download_error(e):
+                raise _download_error(e) from e
+            reason = _describe_download_error(e)
             attempt += 1
             if attempt > MAX_RETRIES:
-                raise RuntimeError(f"Download failed after {MAX_RETRIES} retries due to {e}") from e
-            logger.warning(f"{e} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff...")
-            sleep_time = RETRY_BACKOFF_BASE**attempt
+                raise RuntimeError(f"Download failed after {MAX_RETRIES} retries: {reason}") from e
+            logger.warning(f"{reason} on attempt {attempt}/{MAX_RETRIES}, retrying after backoff...")
+            sleep_time = _retry_delay(e, attempt)
             if cancel_event is not None:
                 if cancel_event.wait(sleep_time):
                     raise TransferCancelledError("Transfer cancelled by user")
