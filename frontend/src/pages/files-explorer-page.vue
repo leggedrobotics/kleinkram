@@ -272,6 +272,10 @@ const activeTab = computed({
     get: (): string => {
         const requested = $route.params.tab as string | undefined;
         if (requested && requested !== 'info') return requested;
+        // Query parameters only come from the file list (filters, paging,
+        // sorting). A link carrying them is a saved file view, so it opens
+        // on Files; showing Mission Info first would drop them on the way.
+        if (!requested && Object.keys($route.query).length > 0) return 'files';
         if (isReadmeLookupPending.value) return '';
         if (readme.value) return 'info';
         return 'files';

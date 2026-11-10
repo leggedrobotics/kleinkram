@@ -8,9 +8,9 @@ import { computed, Ref } from 'vue';
 const README_PATTERN = /^readme\.md$/i;
 
 /**
- * Picks the mission's readme from the files whose name contains "readme".
- * The backend filter is a substring match, so `old-readme.md` comes back
- * too and is dropped here. With several casings present, `README.md` wins.
+ * Picks the mission's readme from the lookup's candidates, keeping only an
+ * exact `readme.md` name in any casing. With several casings present,
+ * `README.md` wins.
  */
 export function pickReadme(files: FileDto[]): FileDto | undefined {
     const candidates = files.filter((file) =>
@@ -20,6 +20,37 @@ export function pickReadme(files: FileDto[]): FileDto | undefined {
         candidates.find((file) => file.filename === 'README.md') ??
         candidates.toSorted((a, b) => a.filename.localeCompare(b.filename))[0]
     );
+}
+
+const PAGE_SIZE = 100;
+
+/**
+ * Every OK markdown file whose name contains "readme.md". The filter is a
+ * substring match, so names like `old-readme.md` come back too. All pages
+ * are read: stopping early could leave the real README.md out of the
+ * candidates.
+ */
+async function fetchReadmeCandidates(missionUuid: string): Promise<FileDto[]> {
+    const candidates: FileDto[] = [];
+    let total = 0;
+    let lastPageSize = 0;
+    do {
+        const page = await fetchFilteredFiles({
+            missionUUID: missionUuid,
+            filename: 'readme.md',
+            fileTypes: [FileType.MD],
+            includeStates: [FileState.OK],
+            take: PAGE_SIZE,
+            skip: candidates.length,
+            // A fixed order keeps pages from overlapping or skipping files.
+            sort: 'filename',
+            desc: false,
+        });
+        candidates.push(...page.data);
+        total = page.count;
+        lastPageSize = page.data.length;
+    } while (lastPageSize === PAGE_SIZE && candidates.length < total);
+    return candidates;
 }
 
 /**
@@ -32,15 +63,9 @@ export function useMissionReadme(missionUuid: Ref<string | undefined>) {
         // invalidate the file list re-check for a readme as well.
         queryKey: computed(() => ['files', missionUuid.value, 'readme']),
         queryFn: async () => {
-            const files = await fetchFilteredFiles({
-                missionUUID: missionUuid.value ?? '',
-                filename: 'readme',
-                fileTypes: [FileType.MD],
-                includeStates: [FileState.OK],
-                take: 50,
-            });
+            const files = await fetchReadmeCandidates(missionUuid.value ?? '');
             // `null` rather than `undefined`: vue-query rejects undefined data.
-            return pickReadme(files.data) ?? null;
+            return pickReadme(files) ?? null;
         },
         enabled: computed(() => !!missionUuid.value),
     });
