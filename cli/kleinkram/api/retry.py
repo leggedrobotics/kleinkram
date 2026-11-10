@@ -61,13 +61,13 @@ class RetryPolicy:
     """Total attempts, the first one included."""
     backoff_base: float = 2.0
     max_delay: float = 60.0
-    """Upper bound for both the backoff and a server's `Retry-After`."""
+    """Upper bound for every wait: backoff with jitter, and a server's `Retry-After`."""
     jitter: float = 0.5
     retry_on: Callable[[BaseException], bool] = is_transient
 
     def delay(self, e: BaseException, attempt: int) -> float:
         """Seconds to wait after failed attempt number `attempt` (1-based)."""
-        delay = min(self.backoff_base**attempt, self.max_delay) + random.uniform(0, self.jitter)
+        delay = min(self.backoff_base**attempt + random.uniform(0, self.jitter), self.max_delay)
         if isinstance(e, httpx.HTTPStatusError):
             # Only the delta-seconds form; an HTTP-date falls back to backoff.
             retry_after = e.response.headers.get("Retry-After", "")

@@ -72,6 +72,14 @@ def test_backoff_grows_and_is_capped() -> None:
     assert [policy.delay(httpx.ConnectError(""), n) for n in range(1, 6)] == [2, 4, 8, 10, 10]
 
 
+def test_jitter_never_pushes_a_wait_past_max_delay(monkeypatch) -> None:
+    monkeypatch.setattr(retry.random, "uniform", lambda low, high: high)  # the largest jitter
+    policy = RetryPolicy(backoff_base=2, max_delay=10, jitter=0.5)
+
+    assert [policy.delay(httpx.ConnectError(""), n) for n in range(1, 5)] == [2.5, 4.5, 8.5, 10]
+    assert policy.delay(status_error(429, {"Retry-After": "3600"}), 1) == 10
+
+
 def test_retry_after_raises_the_delay_but_is_capped() -> None:
     policy = RetryPolicy(max_delay=60, jitter=0)
     assert policy.delay(status_error(429, {"Retry-After": "30"}), 1) == 30
