@@ -69,12 +69,14 @@ UPLOAD_CREDENTIALS_RETRY = RetryPolicy(max_attempts=5, retry_on=is_unsent)
 def _is_worth_restarting_upload(e: BaseException) -> bool:
     """Whether to start an upload again, with fresh credentials, after boto3 gave up.
 
-    boto3 already retries network and server errors itself (`S3_MAX_RETRIES`).
-    A restart still helps where the credentials were the problem, e.g. they
-    expired during a very long upload, but not when the local file cannot be
-    read: that fails the same way every time.
+    boto3 already retries network and server errors itself (`S3_MAX_RETRIES`),
+    so this sees what is left: mostly problems a new attempt with new
+    credentials can fix (they expired during a very long upload, the storage
+    backend restarted). That is why this lists what *not* to restart rather
+    than what to restart: the local file cannot be read, which fails the same
+    way every time.
     """
-    return not isinstance(e, (FileNotFoundError, PermissionError, IsADirectoryError, TransferCancelledError))
+    return not isinstance(e, (FileNotFoundError, PermissionError, IsADirectoryError))
 
 
 # Each restart sits on top of boto3's own retries, so keep the count low.
@@ -308,7 +310,7 @@ def upload_file(
                 logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
                 raise RuntimeError(f"Upload failed and cancellation failed for {creds.file_id}: {cancel_e}") from e
 
-            if not retrier.should_retry(e):
+            if not retrier.record_failure(e):
                 logger.error(f"Giving up on upload of {path} after {retrier.attempt} attempt(s)")
                 raise
             try:
