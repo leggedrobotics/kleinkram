@@ -12,8 +12,10 @@ from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.cli._deprecation import warn_deprecated
+from kleinkram.cli._file_expansion import expand_file_args
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
+from kleinkram.cli._file_validator import supported_suffixes
 from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
@@ -64,7 +66,9 @@ def _handle_no_files_to_upload(original_count: int, uploaded_count: int) -> None
 
 @upload_typer.callback()
 def upload(
-    files: List[str] = typer.Argument(help="files to upload"),
+    files: List[str] = typer.Argument(
+        help="files, directories (with --recursive) or quoted glob patterns such as '**/*.mcap'"
+    ),
     project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
     create: bool = typer.Option(False, help="create mission if it does not exist"),
@@ -79,6 +83,12 @@ def upload(
         "-s",
         help="skip unsupported file types, badly named files, or directories instead of erroring",
     ),
+    recursive: bool = typer.Option(
+        False,
+        "--recursive",
+        "-r",
+        help="include all supported files in the given directories and their subdirectories",
+    ),
     experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
     ignore_missing_metadata: bool = typer.Option(False, help="ignore missing required metadata"),
     ignore_missing_tags: Optional[bool] = typer.Option(None, "--ignore-missing-tags/--no-ignore-missing-tags", hidden=True),
@@ -89,7 +99,9 @@ def upload(
         )
         ignore_missing_metadata = ignore_missing_tags
 
-    original_file_paths = [Path(file) for file in files]
+    original_file_paths = expand_file_args(
+        files, recursive=recursive, suffixes=supported_suffixes(experimental_datatypes=experimental_datatypes)
+    )
     mission_query = _build_mission_query(mission, project)
 
     validator = FileValidator(

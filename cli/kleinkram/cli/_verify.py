@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import List
 from typing import Optional
 
@@ -10,8 +9,10 @@ import typer
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.cli._deprecation import warn_deprecated
+from kleinkram.cli._file_expansion import expand_file_args
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
+from kleinkram.cli._file_validator import supported_suffixes
 from kleinkram.cli._upload import _build_mission_query
 from kleinkram.config import get_shared_state
 from kleinkram.printing import print_file_verification_status
@@ -45,7 +46,9 @@ def _handle_no_files_to_process(original_count: int, processed_count: int, actio
 
 @verify_typer.callback()
 def verify(
-    files: List[str] = typer.Argument(help="files to verify"),
+    files: List[str] = typer.Argument(
+        help="files, directories (with --recursive) or quoted glob patterns such as '**/*.mcap'"
+    ),
     project: Optional[str] = typer.Option(None, "--project", "-p", help="project id or name"),
     mission: str = typer.Option(..., "--mission", "-m", help="mission id or name"),
     skip: bool = typer.Option(
@@ -53,6 +56,12 @@ def verify(
         "--skip",
         "-s",
         help="skip unsupported file types, badly named files, or directories instead of erroring",
+    ),
+    recursive: bool = typer.Option(
+        False,
+        "--recursive",
+        "-r",
+        help="include all supported files in the given directories and their subdirectories",
     ),
     experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
     check_file_hash: bool = typer.Option(
@@ -70,7 +79,9 @@ def verify(
         check_file_hash = not skip_hash
 
     # get all filepaths
-    original_file_paths = [Path(file) for file in files]
+    original_file_paths = expand_file_args(
+        files, recursive=recursive, suffixes=supported_suffixes(experimental_datatypes=experimental_datatypes)
+    )
 
     # get mission query
     mission_query = _build_mission_query(mission, project)
