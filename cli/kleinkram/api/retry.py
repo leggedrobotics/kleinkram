@@ -44,6 +44,15 @@ def is_transient(e: BaseException) -> bool:
     return isinstance(e, httpx.TransportError)
 
 
+def is_unsent(e: BaseException) -> bool:
+    """The request never reached the server, so sending it again is always safe.
+
+    Use this instead of `is_transient` for a request that is not idempotent: after
+    a read timeout or a 5xx the server may already have acted on it.
+    """
+    return isinstance(e, (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout))
+
+
 def describe_error(e: BaseException) -> str:
     """A one-line description that is safe to log.
 

@@ -12,7 +12,6 @@ from dataclasses import field
 from enum import Enum
 from pathlib import Path
 from time import monotonic
-from time import sleep
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
@@ -32,6 +31,7 @@ from kleinkram.api.mcap_filter import is_mcap
 from kleinkram.api.retry import Retrier
 from kleinkram.api.retry import RetryPolicy
 from kleinkram.api.retry import describe_error
+from kleinkram.api.retry import is_unsent
 from kleinkram.api.retry import retrying
 from kleinkram.config import get_config
 from kleinkram.errors import AccessDenied
@@ -52,11 +52,8 @@ UPLOAD_CANCEL = "/files/uploads"
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024 * 16
 DOWNLOAD_URL = "/files/{}/download"
 
-MAX_UPLOAD_RETRIES = 3
 S3_MAX_RETRIES = 60  # same as frontend
 S3_READ_TIMEOUT = 60 * 5  # 5 minutes
-
-RETRY_BACKOFF_BASE = 2  # exponential backoff base
 
 # Requests to the Kleinkram API that are safe to repeat.
 API_RETRY = RetryPolicy(max_attempts=3)
@@ -64,12 +61,24 @@ API_RETRY = RetryPolicy(max_attempts=3)
 DOWNLOAD_RETRY = RetryPolicy(max_attempts=6)
 
 
-def _is_transport_error(e: BaseException) -> bool:
-    return isinstance(e, httpx.TransportError)
+# Only unsent requests: the request reserves the file name, so a resend the
+# server already handled gets 409 and is reported as "already uploaded".
+UPLOAD_CREDENTIALS_RETRY = RetryPolicy(max_attempts=5, retry_on=is_unsent)
 
 
-# Not on 5xx: the request creates the file on the server.
-UPLOAD_CREDENTIALS_RETRY = RetryPolicy(max_attempts=5, retry_on=_is_transport_error)
+def _is_worth_restarting_upload(e: BaseException) -> bool:
+    """Whether to start an upload again, with fresh credentials, after boto3 gave up.
+
+    boto3 already retries network and server errors itself (`S3_MAX_RETRIES`).
+    A restart still helps where the credentials were the problem, e.g. they
+    expired during a very long upload, but not when the local file cannot be
+    read: that fails the same way every time.
+    """
+    return not isinstance(e, (FileNotFoundError, PermissionError, IsADirectoryError, TransferCancelledError))
+
+
+# Each restart sits on top of boto3's own retries, so keep the count low.
+UPLOAD_RESTART_RETRY = RetryPolicy(max_attempts=3, retry_on=_is_worth_restarting_upload)
 
 # Callback type aliases
 OnFileStartCb = Callable[[Path, int], None]  # (path, total_bytes)
@@ -238,14 +247,15 @@ def upload_file(
 ) -> Tuple[UploadState, int]:
     """
     returns UploadState and bytes uploaded (0 if not uploaded)
-    Retries up to 3 times on failure.
+    Starts again with fresh credentials when boto3 gives up (`UPLOAD_RESTART_RETRY`).
     """
     if s3_endpoint is None:
         s3_endpoint = get_config().endpoint.s3
 
     total_size = path.stat().st_size
 
-    for attempt in range(MAX_UPLOAD_RETRIES):
+    retrier = Retrier(UPLOAD_RESTART_RETRY, cancel_event=cancel_event, name=f"upload of {path.name}")
+    while True:
         if cancel_event is not None and cancel_event.is_set():
             return UploadState.CANCELED, 0
 
@@ -298,18 +308,14 @@ def upload_file(
                 logger.error(f"Failed to cancel upload for {creds.file_id}: {cancel_e}")
                 raise RuntimeError(f"Upload failed and cancellation failed for {creds.file_id}: {cancel_e}") from e
 
-            if attempt < MAX_UPLOAD_RETRIES - 1:  # Retry if not the last attempt
-                logger.warning(f"Retrying upload for {path} (attempt {attempt + 1}), retrying after backoff...")
-                sleep_time = RETRY_BACKOFF_BASE**attempt
-                if cancel_event is not None:
-                    if cancel_event.wait(sleep_time):
-                        return UploadState.CANCELED, 0
-                else:
-                    sleep(sleep_time)
-                continue
-            else:
-                logger.error(f"Cancelling upload for {path} after {attempt + 1} attempts")
+            if not retrier.should_retry(e):
+                logger.error(f"Giving up on upload of {path} after {retrier.attempt} attempt(s)")
                 raise
+            try:
+                retrier.wait(e)
+            except TransferCancelledError:
+                return UploadState.CANCELED, 0
+            continue
 
         else:
             try:
