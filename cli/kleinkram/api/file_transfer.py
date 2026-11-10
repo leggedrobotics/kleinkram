@@ -60,8 +60,7 @@ RETRY_BACKOFF_BASE = 2  # exponential backoff base
 
 # Requests to the Kleinkram API that are safe to repeat.
 API_RETRY = RetryPolicy(max_attempts=3)
-# Downloads resume where they stopped, so a retry costs little: the first
-# attempt plus five retries.
+# Downloads resume where they stopped.
 DOWNLOAD_RETRY = RetryPolicy(max_attempts=6)
 
 
@@ -69,8 +68,7 @@ def _is_transport_error(e: BaseException) -> bool:
     return isinstance(e, httpx.TransportError)
 
 
-# Requesting upload credentials creates the file on the server, so a 5xx is not
-# retried; whether a timed-out request should be is a separate question.
+# Not on 5xx: the request creates the file on the server.
 UPLOAD_CREDENTIALS_RETRY = RetryPolicy(max_attempts=5, retry_on=_is_transport_error)
 
 # Callback type aliases
