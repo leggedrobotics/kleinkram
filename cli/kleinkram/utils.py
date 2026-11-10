@@ -233,17 +233,22 @@ def get_filename_map(file_paths: Sequence[Path]) -> Dict[str, Path]:
     if len(file_paths) != len(set(file_paths)):
         raise ValueError("files paths must be unique")
 
-    internal_file_map = {}
+    paths_by_name: Dict[str, List[Path]] = {}
     for file in file_paths:
         if file.is_dir():
             raise ValueError(f"got dir {file} expected file")
 
-        internal_file_map[get_filename(file)] = file
+        paths_by_name.setdefault(get_filename(file), []).append(file)
 
-    if len(internal_file_map) != len(set(internal_file_map.values())):
-        raise RuntimeError("hash collision")
+    # files in different directories (e.g. `run1/data.mcap` and `run2/data.mcap`)
+    # or names that sanitize to the same value (e.g. `a b.mcap` and `a_b.mcap`)
+    # would otherwise silently overwrite each other
+    clashes = {name: paths for name, paths in paths_by_name.items() if len(paths) > 1}
+    if clashes:
+        details = "; ".join(f"{name}: {', '.join(str(p) for p in paths)}" for name, paths in clashes.items())
+        raise ValueError(f"multiple files would be uploaded under the same name: {details}")
 
-    return internal_file_map
+    return {name: paths[0] for name, paths in paths_by_name.items()}
 
 
 HASH_CHUNK_SIZE = 1024 * 1024

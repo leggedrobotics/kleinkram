@@ -123,6 +123,24 @@ def test_get_filename_map():
     assert get_filename_map(unique) == {get_filename(Path(p)): Path(p) for p in unique}
 
 
+@pytest.mark.parametrize(
+    "paths",
+    [
+        # same basename in different directories
+        [Path("run1/data.mcap"), Path("run2/data.mcap")],
+        # different names that sanitize to the same internal name
+        [Path("a b.mcap"), Path("a_b.mcap")],
+    ],
+)
+def test_get_filename_map_raises_on_name_clash(paths):
+    with pytest.raises(ValueError) as exc_info:
+        get_filename_map(paths)
+
+    message = str(exc_info.value)
+    for path in paths:
+        assert str(path) in message
+
+
 def test_b64_md5():
     with TemporaryDirectory() as temp_dir:
         file = Path(temp_dir) / "file.txt"
