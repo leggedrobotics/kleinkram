@@ -47,7 +47,7 @@ There are some known iessues related to Safari when running Kleinkram locally.
 By default we only offer fake-oauth for local development (this mocks the oauth flow) and allows you to choose between different users with
 different permissions.
 
-If you want to sign-in using GitHub or Google OAuth, you need to set the correspoding env variables in your `.env` file.
+If you want to sign-in using GitHub or Google OAuth, you need to set the corresponding env variables in your `.env` file.
 This is however not recommended for local development.
 :::
 
