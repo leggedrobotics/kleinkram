@@ -72,8 +72,8 @@ black .
 # Format TypeScript/JavaScript/JSON/Markdown
 pnpm run prettier
 
-# Run Linting
-pnpm run eslint-full:quiet
+# Type-check and lint (CI runs the same: `pnpm run eslint:check`)
+pnpm run eslint
 ```
 
 ### Testing
