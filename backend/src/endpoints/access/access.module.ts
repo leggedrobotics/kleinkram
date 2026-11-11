@@ -13,6 +13,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
 import { AccessController } from './access.controller';
+import { MyAccessGroupsController } from './my-access-groups.controller';
 
 @Module({
     imports: [
@@ -31,7 +32,7 @@ import { AccessController } from './access.controller';
         AccessModificationService,
         AccessGroupAuditService,
     ],
-    controllers: [AccessController],
+    controllers: [AccessController, MyAccessGroupsController],
     exports: [
         AccessQueryService,
         AccessModificationService,
