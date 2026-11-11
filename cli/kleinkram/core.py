@@ -328,7 +328,7 @@ def _check_existing_files(
     file_query = FileQuery(mission_query=MissionQuery(ids=[mission_id]))
     try:
         remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=file_query)}
-    except httpx.HTTPError as e:
+    except Exception as e:  # the uploads are done, never lose their result over this check
         # report them as not compared, also when nobody listens to messages
         result.unchecked.extend(result.existing)
         if on_message_cb is not None:
@@ -336,12 +336,22 @@ def _check_existing_files(
         return
 
     for path in result.existing:
-        action = _planned_action(path, remote_files.get(names[path]))
+        try:
+            action = _planned_action(path, remote_files.get(names[path]))
+        except OSError as e:  # e.g. the local file vanished or became unreadable while hashing
+            result.unchecked.append(path)
+            if on_message_cb is not None:
+                on_message_cb(f"could not compare {path} with the mission: {e}", True)
+            continue
+
         if action == UploadAction.SKIP_DIFFERENT:
             result.conflicts.append(path)
             if on_message_cb is not None:
                 on_message_cb(f"NOT uploaded {path}: a different file named {names[path]} is in the mission", True)
-        elif action == UploadAction.SKIP_UNCHECKED:
+        elif action in (UploadAction.SKIP_UNCHECKED, UploadAction.UPLOAD):
+            # UPLOAD: the file that blocked the name is gone (deleted or its
+            # upload canceled) since the server refused ours; nothing uploads
+            # it now, so it is not in the mission and must not pass silently
             result.unchecked.append(path)
 
 

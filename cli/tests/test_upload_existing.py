@@ -20,6 +20,7 @@ from typer.testing import CliRunner
 import kleinkram.api.file_transfer
 import kleinkram.cli.app
 import kleinkram.core
+import kleinkram.errors
 from kleinkram.api.file_transfer import UploadResult
 from kleinkram.api.file_transfer import UploadState
 from kleinkram.cli.app import app
@@ -225,3 +226,43 @@ def test_cli_identical_existing_files_are_fine(runner, cli, files):
     assert result.exit_code == 0, result.output
     assert "NOT uploaded" not in result.stderr
     assert "could not be compared" not in result.stderr
+
+
+def test_upload_keeps_result_when_the_compare_fails_otherwise(monkeypatch, routes, files):
+    """not only network errors: e.g. a failed token refresh raises NotAuthenticated"""
+    routes.get_files.side_effect = kleinkram.errors.NotAuthenticated()
+    monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", fake_upload_files([files[1]]))
+
+    result = kleinkram.core.upload(client=MagicMock(), query=QUERY, file_paths=files)
+
+    assert result.uploaded == 1
+    assert result.unchecked == [files[1]]
+
+
+def test_upload_unreadable_local_file_during_compare_is_unchecked(monkeypatch, routes, files):
+    same, changed = files[0], files[1]
+    monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", fake_upload_files([same, changed]))
+    real_b64_md5 = kleinkram.core.b64_md5
+
+    def flaky_md5(path):
+        if path == same:
+            raise PermissionError("denied")
+        return real_b64_md5(path)
+
+    monkeypatch.setattr(kleinkram.core, "b64_md5", flaky_md5)
+
+    result = kleinkram.core.upload(client=MagicMock(), query=QUERY, file_paths=files)
+
+    assert result.unchecked == [same]
+    assert result.conflicts == [changed]
+
+
+def test_upload_blocking_file_gone_before_compare_is_unchecked(monkeypatch, routes, remote, files):
+    """the server refused `same.mcap`, but by the time we compare that file was deleted or canceled"""
+    routes.get_files.return_value = [f for f in remote if f.name != "same.mcap"]
+    monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", fake_upload_files([files[0]]))
+
+    result = kleinkram.core.upload(client=MagicMock(), query=QUERY, file_paths=files)
+
+    assert result.unchecked == [files[0]]
+    assert result.conflicts == []
