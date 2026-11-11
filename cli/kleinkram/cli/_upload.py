@@ -91,14 +91,15 @@ def _report_existing_files(result: UploadResult) -> None:
         typer.echo(
             typer.style(
                 f"\n{len(result.unchecked)} file(s) were skipped because a file with the same name is in the mission, "
-                "but it is not in state OK yet, so the content could not be compared:",
+                "but the content could not be compared (the file in the mission is not processed yet, "
+                "or the mission could not be read):",
                 fg=typer.colors.YELLOW,
             ),
             err=True,
         )
         for path in result.unchecked:
             typer.echo(f"  {path}", err=True)
-        typer.echo("Run `klein verify` once it is processed.", err=True)
+        typer.echo("Run `klein verify` later to compare them.", err=True)
 
 
 @upload_typer.callback()

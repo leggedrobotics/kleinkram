@@ -53,6 +53,7 @@ from kleinkram.api.query import check_mission_query_is_creatable
 from kleinkram.errors import InvalidFileQuery
 from kleinkram.errors import MissionNotFound
 from kleinkram.errors import TemplateNotFound
+from kleinkram.errors import transfer_interrupted
 from kleinkram.models import ArtifactState
 from kleinkram.models import Diagnostic
 from kleinkram.models import FileConfig
@@ -296,7 +297,13 @@ def upload(
         on_file_progress_cb=on_file_progress_cb,
         on_message_cb=on_message_cb,
     )
-    _check_existing_files(client, mission_id=mission.id, filename_map=filename_map, result=result, on_message_cb=on_message_cb)
+    try:
+        _check_existing_files(
+            client, mission_id=mission.id, filename_map=filename_map, result=result, on_message_cb=on_message_cb
+        )
+    except KeyboardInterrupt:
+        # the uploads are done: keep their result, like a Ctrl+C during the transfer
+        raise transfer_interrupted(result) from None
     return result
 
 
@@ -322,6 +329,8 @@ def _check_existing_files(
     try:
         remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=file_query)}
     except httpx.HTTPError as e:
+        # report them as not compared, also when nobody listens to messages
+        result.unchecked.extend(result.existing)
         if on_message_cb is not None:
             on_message_cb(f"could not compare skipped files with the mission: {e}", True)
         return

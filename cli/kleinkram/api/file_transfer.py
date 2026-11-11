@@ -639,8 +639,9 @@ class UploadResult:
     # of `existing`: the content differs from the file in the mission, so the
     # local file was NOT uploaded (filled in by `kleinkram.core.upload`)
     conflicts: List[Path] = field(default_factory=list)
-    # of `existing`: the file in the mission is not in state OK yet, so the
-    # content could not be compared (filled in by `kleinkram.core.upload`)
+    # of `existing`: the content could not be compared, because the file in the
+    # mission is not in state OK yet or the mission's files could not be read
+    # (filled in by `kleinkram.core.upload`)
     unchecked: List[Path] = field(default_factory=list)
 
 

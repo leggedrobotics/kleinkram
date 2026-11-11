@@ -23,6 +23,7 @@ import kleinkram.core
 from kleinkram.api.file_transfer import UploadResult
 from kleinkram.api.file_transfer import UploadState
 from kleinkram.cli.app import app
+from kleinkram.errors import get_transfer_result
 from kleinkram.models import FileState
 from tests.test_upload_plan import MISSION
 from tests.test_upload_plan import QUERY
@@ -123,7 +124,41 @@ def test_upload_compare_failure_does_not_fail_the_upload(monkeypatch, routes, fi
     )
 
     assert result.uploaded == 1 and result.conflicts == []
+    assert result.unchecked == [files[1]]
     assert messages == [("could not compare skipped files with the mission: down", True)]
+
+
+def test_upload_ctrl_c_during_compare_keeps_the_result(monkeypatch, routes, files):
+    routes.get_files.side_effect = KeyboardInterrupt
+    monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", fake_upload_files([files[1]]))
+
+    with pytest.raises(KeyboardInterrupt) as exc_info:
+        kleinkram.core.upload(client=MagicMock(), query=QUERY, file_paths=files)
+
+    assert type(exc_info.value) is KeyboardInterrupt  # exit code 130 needs the exact type
+    partial = get_transfer_result(exc_info.value)
+    assert partial is not None and partial.uploaded == 1
+
+
+def test_cli_quiet_mode_reports_a_failed_compare(runner, offline_cli, monkeypatch, routes, files):
+    """no message callback with --no-verbose: the warning must still be printed"""
+    routes.get_files.side_effect = httpx.ConnectError("down")
+    monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", fake_upload_files([files[1]]))
+
+    result = runner.invoke(app, ["--no-verbose", "upload", "-p", "proj", "-m", "run42", *map(str, files)])
+
+    assert result.exit_code == 0, result.output
+    assert "could not be compared" in result.stderr
+    assert f"  {files[1]}\n" in result.stderr
+
+
+def test_cli_ctrl_c_during_compare_exits_130(runner, offline_cli, monkeypatch, routes, files):
+    routes.get_files.side_effect = KeyboardInterrupt
+    monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", fake_upload_files([files[1]]))
+
+    result = runner.invoke(app, ["--no-verbose", "upload", "-p", "proj", "-m", "run42", *map(str, files)])
+
+    assert result.exit_code == 130, result.output
 
 
 # --------------------------------------------------------------------------
@@ -140,13 +175,16 @@ def runner() -> CliRunner:
 
 
 @pytest.fixture
-def cli(monkeypatch, tmp_path):
+def offline_cli(monkeypatch, tmp_path):
     monkeypatch.setattr(kleinkram.cli.app, "check_version_compatibility", lambda: None)
     monkeypatch.setattr(kleinkram.cli.app, "check_config_compatibility", lambda: True)
     monkeypatch.setattr(kleinkram.cli.app, "LOG_DIR", tmp_path)
     monkeypatch.setattr(kleinkram.cli.app, "LOG_FILE", tmp_path / "log")
     monkeypatch.setattr("kleinkram.cli._upload.AuthenticatedClient", MagicMock)
 
+
+@pytest.fixture
+def cli(monkeypatch, offline_cli):
     def set_result(result: UploadResult) -> None:
         monkeypatch.setattr("kleinkram.core.upload", MagicMock(return_value=result))
 
