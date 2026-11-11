@@ -76,6 +76,40 @@ describe('Access config loading', () => {
         expect(() => loadAccessConfig(file)).toThrow(/is not defined/);
     });
 
+    test.each([
+        ['missing', undefined],
+        ['a string', '"10"'],
+        ['not a rights value', '15'],
+        ['the internal admin value', '100'],
+    ])('fails if the rights of a group are %s', (_, rights) => {
+        const group =
+            rights === undefined
+                ? '{ "name": "Group", "uuid": "11111111-1111-1111-1111-111111111111" }'
+                : `{ "name": "Group", "uuid": "11111111-1111-1111-1111-111111111111", "rights": ${rights} }`;
+        const file = writeConfig(
+            `{ "emails": [], "access_groups": [${group}] }`,
+        );
+        expect(() => loadAccessConfig(file)).toThrow(
+            /"rights" of group "11111111-1111-1111-1111-111111111111" must be one of 0, 10, 20, 30/,
+        );
+    });
+
+    test.each([0, 10, 20, 30])('accepts %d as rights of a group', (rights) => {
+        const file = writeConfig(
+            JSON.stringify({
+                emails: [],
+                access_groups: [
+                    {
+                        name: 'Group',
+                        uuid: '11111111-1111-1111-1111-111111111111',
+                        rights,
+                    },
+                ],
+            }),
+        );
+        expect(loadAccessConfig(file).access_groups[0]?.rights).toBe(rights);
+    });
+
     test('fails if an email entry is not a bare domain', () => {
         const file = writeConfig(
             JSON.stringify({
