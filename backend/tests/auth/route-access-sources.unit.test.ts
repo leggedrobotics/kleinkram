@@ -51,6 +51,7 @@ const EXPECTED_ACCESS_SOURCES = new Map<string, AccessSource>([
     ['FileController.download', fromParameter('uuid')],
     ['FileController.update', fromParameter('uuid')],
     ['FileController.getOneFileByName', fromQuery('uuid')],
+    ['FileController.existingFilenames', fromBody('missionUUID')],
     ['FileController.deleteFile', fromParameter('uuid')],
     ['FileController.getTemporaryAccess', fromBody('missionUUID')],
     ['FileController.deleteMultiple', fromBody('missionUUID')],

@@ -15,6 +15,7 @@ from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Literal
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -716,6 +717,50 @@ def delete_files(
     kleinkram.core.delete_files(
         client=client,
         file_ids=[parse_uuid_like(_id) for _id in file_ids],
+    )
+
+
+def move_files(
+    file_ids: Collection[IdLike],
+    mission_id: IdLike,
+    *,
+    renames: Optional[Mapping[IdLike, str]] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> None:
+    """\
+    move files into another mission, which may belong to another project
+
+    `renames` maps file ids to a new name in the target mission. on a name
+    conflict nothing is moved
+    """
+    client = client or AuthenticatedClient()
+    kleinkram.core.move_files(
+        client=client,
+        file_ids=[parse_uuid_like(_id) for _id in file_ids],
+        mission_id=parse_uuid_like(mission_id),
+        renames={parse_uuid_like(_id): name for _id, name in (renames or {}).items()},
+    )
+
+
+def copy_files(
+    file_ids: Collection[IdLike],
+    mission_id: IdLike,
+    *,
+    renames: Optional[Mapping[IdLike, str]] = None,
+    client: Optional[AuthenticatedClient] = None,
+) -> List[UUID]:
+    """\
+    copy files into another mission, the originals stay where they are
+
+    returns the ids of the copies. `renames` maps file ids to a new name in
+    the target mission. on a name conflict nothing is copied
+    """
+    client = client or AuthenticatedClient()
+    return kleinkram.core.copy_files(
+        client=client,
+        file_ids=[parse_uuid_like(_id) for _id in file_ids],
+        mission_id=parse_uuid_like(mission_id),
+        renames={parse_uuid_like(_id): name for _id, name in (renames or {}).items()},
     )
 
 

@@ -9,7 +9,7 @@
         color="white"
         @click="moveFiles"
     >
-        <q-tooltip> Move Files to another Mission</q-tooltip>
+        <q-tooltip> Move or copy files to another mission</q-tooltip>
     </q-btn>
 </template>
 <script setup lang="ts">
