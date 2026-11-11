@@ -102,13 +102,17 @@ describe('List own access groups', () => {
             [creator, external],
         );
 
-        await database.getRepository(GroupMembershipEntity).update(
-            {
+        const membershipRepo = database.getRepository(GroupMembershipEntity);
+        const membership = await membershipRepo.findOneOrFail({
+            where: {
                 accessGroup: { uuid: groupUuid },
                 user: { uuid: external.uuid },
             },
-            { expirationDate: new Date(Date.now() - 60_000) },
-        );
+        });
+        membership.expirationDate =
+            // a full day: the column has no time zone and NOW() runs in UTC
+            new Date(Date.now() - 24 * 60 * 60 * 1000);
+        await membershipRepo.save(membership);
 
         const { body } = await listMine(external);
         expect(body.data.map((group) => group.uuid)).not.toContain(groupUuid);
