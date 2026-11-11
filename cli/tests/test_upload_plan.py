@@ -341,3 +341,15 @@ def test_cli_dry_run_script_output_ignores_max_lines(runner, cli, files):
     )
     assert result.exit_code == 0, result.output
     assert len(result.stdout.splitlines()) == len(files)
+
+
+def test_cli_dry_run_table_unlimited_max_lines_shows_every_file(runner, cli, files):
+    result = runner.invoke(
+        app,
+        ["--verbose", "--max-lines", "-1", "upload", "-p", "proj", "-m", "run42", "--dry-run", *map(str, files)],
+        env={"COLUMNS": "250"},
+    )
+    assert result.exit_code == 0, result.output
+    for file in files:
+        assert file.name in result.stdout
+    assert "..." not in result.stdout
