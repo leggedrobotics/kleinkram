@@ -15,6 +15,7 @@ shell, the CLI
 from __future__ import annotations
 
 import glob
+import os
 from pathlib import Path
 from typing import Collection
 from typing import List
@@ -30,21 +31,24 @@ def _has_glob_chars(arg: str) -> bool:
     return any(char in GLOB_CHARS for char in arg)
 
 
-def _is_hidden(path: Path, root: Path) -> bool:
-    return any(part.startswith(".") for part in path.relative_to(root).parts)
-
-
 def _walk_directory(directory: Path, suffixes: Collection[str]) -> List[Path]:
     """\
-    all files below `directory` with one of `suffixes` (case-insensitive),
-    sorted, skipping hidden files and anything inside hidden directories
+    all files below `directory` with one of `suffixes`, sorted, skipping
+    hidden files; hidden directories (`.git`, `.venv`, ...) are not entered
+
+    the suffix match is case-sensitive like the upload itself (`check_file_paths`
+    and the server accept `.mcap`, not `.MCAP`), so a recursive walk never picks
+    a file that would then stop the whole upload
     """
-    wanted = {suffix.lower() for suffix in suffixes}
-    return sorted(
-        path
-        for path in directory.rglob("*")
-        if path.is_file() and path.suffix.lower() in wanted and not _is_hidden(path, directory)
-    )
+    wanted = set(suffixes)
+    found = []
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = [name for name in dirs if not name.startswith(".")]
+        for name in files:
+            path = Path(root) / name
+            if not name.startswith(".") and path.suffix in wanted and path.is_file():
+                found.append(path)
+    return sorted(found)
 
 
 def expand_file_args(args: Sequence[str], *, recursive: bool, suffixes: Collection[str]) -> List[Path]:

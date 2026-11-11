@@ -126,7 +126,8 @@ the content and marks those files as `skip, name taken by a different file`. A r
 afterwards: it lists such files as **NOT uploaded** and exits with code 1, so rename the local file or delete the file in
 the mission first. With `--no-verbose`, it prints one
 tab-separated line per file instead (`<action>`, `<local path>`, `<name in mission>`), with the action being one of
-`upload`, `skip-same`, `skip-different` or `skip-unchecked`.
+`upload`, `skip-same`, `skip-different` or `skip-unchecked`. Backslashes, tabs and line breaks in paths are escaped as `\\`, `\t`,
+`\n` and `\r`, so every file stays on one line.
 
 ::: tip Creating Missions on Upload
 To create a mission automatically during upload if it doesn't already exist, use the `--create` flag. Note that the target project must already exist.

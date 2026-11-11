@@ -111,7 +111,7 @@ class FileValidator:
 
 
 def _report_skipped_files(skipped_files: List[tuple[Path, str]]) -> None:
-    """Prints a formatted report of all skipped files."""
+    """Prints a formatted report of all skipped files to stderr, keeping stdout for script output."""
     if skipped_files:
         debug = get_shared_state().debug
 
@@ -121,17 +121,19 @@ def _report_skipped_files(skipped_files: List[tuple[Path, str]]) -> None:
                 typer.style(
                     f"--- Skipped {len(skipped_files)} path(s) ---",
                     fg=typer.colors.YELLOW,
-                )
+                ),
+                err=True,
             )
             for file, reason in skipped_files:
-                typer.echo(f"Skipped: {file} (Reason: {reason})")
-            typer.echo("---------------------------\n")
+                typer.echo(f"Skipped: {file} (Reason: {reason})", err=True)
+            typer.echo("---------------------------\n", err=True)
         else:
             # Summary report
             typer.echo(
                 typer.style(
                     f"Skipped {len(skipped_files)} path(s) due to errors. Use `klein --debug [...]` for details.",
                     fg=typer.colors.YELLOW,
-                )
+                ),
+                err=True,
             )
-            typer.echo("")
+            typer.echo("", err=True)
