@@ -10,6 +10,10 @@ import {
 import type { TriggerConfig } from './action-trigger.dto';
 
 export class UpdateActionTriggerDto {
+    /**
+     * A changed name follows the naming rules, see `TriggerService.update`;
+     * triggers created before the rules keep their name when other fields change.
+     */
     @ApiPropertyOptional()
     @IsOptional()
     @IsString()

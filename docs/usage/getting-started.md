@@ -31,14 +31,14 @@ Project and mission names are used as identifiers in the CLI and SDK (for exampl
 - Must not be a UUID, so a name can never be mistaken for an id.
 - Project names must be unique across the instance. Mission names must be unique within their project.
 
-Use `-` or `_` where you would use a space: `Field Testing 2024` becomes `field-testing-2024`. If a name is invalid, the web interface, the CLI and the API suggest a valid alternative. Access group names follow the same rules.
+Use `-` or `_` where you would use a space: `Field Testing 2024` becomes `field-testing-2024`. If a name is invalid, the web interface, the CLI and the API suggest a valid alternative. Access group, action template and trigger names follow the same rules.
 
 File names follow the same rules for the part before the extension, which is 3 to 50 characters long. The extension
 must be one of the [supported file types](../files/files.md), in lowercase: `run_01.mcap` and `calib.2024-05-14.bag`
 are valid, `a.bag`, `run 1.bag` and `REC.MCAP` are not. The web interface lowercases the extension for you, and
 `klein upload --fix-filenames` turns any name into a valid one.
 
-These rules apply to new names. Existing projects, missions and files keep their names.
+These rules apply to new names. Existing projects, missions, files, action templates and triggers keep their names: a new version of an action template keeps the name of the template, and a trigger can be edited without renaming it. Only a new name is checked.
 
 ### Metadata and Categories
 

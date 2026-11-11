@@ -648,7 +648,8 @@ def update_trigger(
     if mission_uuid is None:
         mission_uuid = trigger.mission_uuid
 
-    if trigger_name is not None:
+    # like the server: an unchanged name is kept even if it predates the naming rules
+    if trigger_name is not None and trigger_name != trigger.name:
         _validate_trigger_name(client, trigger_name, mission_uuid, trigger_uuid)
 
     if template_uuid is not None:

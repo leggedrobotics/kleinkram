@@ -1,10 +1,14 @@
 import {
     CreateAccessGroupDto,
+    CreateActionTriggerDto,
     CreateMission,
     CreateProject,
+    CreateTemplateDto,
     TemporaryAccessRequestDto,
+    UpdateActionTriggerDto,
     UpdateFile,
     UpdateMissionNameDto,
+    UpdateTemplateDto,
 } from '@kleinkram/api-dto';
 import {
     getFileNameValidationError,
@@ -212,5 +216,80 @@ describe('File name validation in requests', () => {
         ).toEqual([
             "File name may only contain letters, digits, '.', '-' and '_' (found '(', ')'). Try \"log-1.bag\".",
         ]);
+    });
+});
+
+describe('Action template and trigger names in requests', () => {
+    const pipe = new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        forbidUnknownValues: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+    });
+
+    const validate = async (
+        metatype: ArgumentMetadata['metatype'],
+        value: unknown,
+    ): Promise<string[]> => {
+        try {
+            await pipe.transform(value, { type: 'body', metatype });
+            return [];
+        } catch (error) {
+            return (
+                (error as { response?: { message?: string[] } }).response
+                    ?.message ?? ['unknown error']
+            );
+        }
+    };
+
+    const templateFields = {
+        description: 'desc',
+        dockerImage: 'hello-world',
+        cpuCores: 1,
+        cpuMemory: 2,
+        gpuMemory: 0,
+        maxRuntime: 10,
+        accessRights: 0,
+    };
+
+    it('applies the naming rules to new templates and triggers', async () => {
+        expect(
+            await validate(CreateTemplateDto, {
+                name: 'lidar-validation',
+                ...templateFields,
+            }),
+        ).toEqual([]);
+        expect(
+            await validate(CreateTemplateDto, {
+                name: 'Lidar Validation',
+                ...templateFields,
+            }),
+        ).toEqual([
+            "Template name may only contain letters, digits, '.', '-' and '_' (found space). Try \"Lidar-Validation\".",
+        ]);
+        expect(
+            await validate(CreateActionTriggerDto, {
+                name: 'ab',
+                description: 'desc',
+                type: 'TIME',
+                missionUuid: SOME_UUID,
+                templateUuid: SOME_UUID,
+                config: { cron: '0 0 * * *' },
+            }),
+        ).toEqual(['Trigger name must be at least 3 characters long']);
+    });
+
+    it('leaves names in updates to the services, which keep names from before the rules', async () => {
+        expect(
+            await validate(UpdateTemplateDto, {
+                uuid: SOME_UUID,
+                name: 'Legacy Template',
+                ...templateFields,
+            }),
+        ).toEqual([]);
+        expect(
+            await validate(UpdateActionTriggerDto, { name: 'Legacy Trigger' }),
+        ).toEqual([]);
     });
 });

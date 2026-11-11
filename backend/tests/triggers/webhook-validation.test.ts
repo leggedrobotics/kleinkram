@@ -79,7 +79,7 @@ describe('Webhook Validation Tests', () => {
 
         templateUuid = await createActionUsingPost(
             {
-                name: 'Test Action',
+                name: 'Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -110,7 +110,7 @@ describe('Webhook Validation Tests', () => {
 
     test('should trigger action via webhook with valid payload', async () => {
         const trigger = await createTrigger({
-            name: 'Webhook Trigger',
+            name: 'Webhook-Trigger',
             description: 'Triggers via webhook',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -137,7 +137,7 @@ describe('Webhook Validation Tests', () => {
 
     test('should fail when payload is an array', async () => {
         const trigger = await createTrigger({
-            name: 'Webhook Trigger',
+            name: 'Webhook-Trigger',
             description: 'Triggers via webhook',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,
@@ -166,7 +166,7 @@ describe('Webhook Validation Tests', () => {
 
     test('should fail when payload is too large', async () => {
         const trigger = await createTrigger({
-            name: 'Webhook Trigger',
+            name: 'Webhook-Trigger',
             description: 'Triggers via webhook',
             type: TriggerType.WEBHOOK,
             missionUuid: missionUuid,

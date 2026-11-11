@@ -10,11 +10,13 @@ import {
 import { ActionTemplateEntity } from '@kleinkram/backend-common/entities/action/action-template.entity';
 import { ActionEntity } from '@kleinkram/backend-common/entities/action/action.entity';
 import {
+    getNameValidationError,
     isImageInDockerNamespace,
     normalizeDockerNamespace,
     validateDockerImageName,
 } from '@kleinkram/validation';
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     Injectable,
@@ -82,6 +84,13 @@ export class TemplateService {
         auth: AuthHeader,
     ): Promise<ActionTemplateDto> {
         await this.assertNotSystemTemplate(data.name);
+
+        // a version of an existing template keeps its name, even one from before
+        // the naming rules; a name that does not exist yet starts a new template
+        if (await this.isNameAvailable(data.name)) {
+            const error = getNameValidationError(data.name, 'Template name');
+            if (error !== undefined) throw new BadRequestException(error);
+        }
 
         const nextVersion = await this.calculateNextVersion(data.name);
 

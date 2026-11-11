@@ -23,7 +23,7 @@ describe('Action Management Tests', () => {
         // Create Action Template
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Archive Test Action',
+                name: 'Archive-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -70,7 +70,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Run Test Action',
+                name: 'Run-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -111,7 +111,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Cancel Test Action',
+                name: 'Cancel-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -181,7 +181,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Cancel Running Test Action',
+                name: 'Cancel-Running-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -249,7 +249,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Cancel Starting Test Action',
+                name: 'Cancel-Starting-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -317,7 +317,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Cancel Done Test Action',
+                name: 'Cancel-Done-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -384,7 +384,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Delete Cancelled Test Action',
+                name: 'Delete-Cancelled-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -446,7 +446,7 @@ describe('Action Management Tests', () => {
 
         const templateUuid = await createActionUsingPost(
             {
-                name: 'Delete Running Test Action',
+                name: 'Delete-Running-Test-Action',
                 description: 'desc',
                 accessRights: AccessGroupRights.READ,
                 dockerImage: 'hello-world',
@@ -512,7 +512,7 @@ describe('Action Management Tests', () => {
         };
 
         const versionOnePayload = {
-            name: 'Restore Test Action',
+            name: 'Restore-Test-Action',
             description: 'version one',
             accessRights: AccessGroupRights.READ,
             dockerImage: 'hello-world',
