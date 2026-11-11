@@ -25,8 +25,9 @@ All commands follow the same conventions:
 
 - **The thing a command acts on is a positional argument**, for example the mission in `klein mission info <mission>`
   or the files in `klein upload <files>...`.
-- **For `upload`, `download` and `verify`, put the options before the files.** These commands take a variable number
-  of files, so write `klein upload --project p --mission m data.mcap`, not `klein upload data.mcap --mission m`.
+- **Options can go before or after the files.** `klein upload -p p -m m data.mcap` and
+  `klein upload data.mcap -p p -m m` do the same. To pass a file whose name starts with `-`, put `--` before it:
+  everything after `--` is a file, e.g. `klein upload -p p -m m -- -weird-name.mcap`.
 - **The scope is given with flags.** A mission always belongs to a project, so `--project` (`-p`) narrows down
   which mission you mean, and `--mission` (`-m`) narrows down which file you mean.
 - **Projects, missions and templates can be given by name or by ID.** Wherever a command expects one, both work.

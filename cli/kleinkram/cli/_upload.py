@@ -11,6 +11,7 @@ import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.cli._context import OPTIONS_ANYWHERE
 from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
@@ -31,6 +32,7 @@ upload_typer = typer.Typer(
     no_args_is_help=True,
     invoke_without_command=True,
     help=HELP,
+    context_settings=OPTIONS_ANYWHERE,
 )
 
 

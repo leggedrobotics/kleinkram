@@ -9,6 +9,7 @@ import typer
 
 import kleinkram.core
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.cli._context import OPTIONS_ANYWHERE
 from kleinkram.cli._deprecation import warn_deprecated
 from kleinkram.cli._file_validator import FileValidator
 from kleinkram.cli._file_validator import _report_skipped_files
@@ -22,7 +23,13 @@ HELP = """\
 Verify if files were uploaded correctly.
 """
 
-verify_typer = typer.Typer(name="verify", no_args_is_help=True, invoke_without_command=True, help=HELP)
+verify_typer = typer.Typer(
+    name="verify",
+    no_args_is_help=True,
+    invoke_without_command=True,
+    help=HELP,
+    context_settings=OPTIONS_ANYWHERE,
+)
 
 
 def _handle_no_files_to_process(original_count: int, processed_count: int, action: str = "verify") -> None:
