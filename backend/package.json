@@ -21,8 +21,8 @@
         "gen:docs": "node -r ts-node/register -r tsconfig-paths/register ./scripts/generate-openapi.ts"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1163.0",
-        "@aws-sdk/client-sts": "3.1163.0",
+        "@aws-sdk/client-s3": "3.1164.0",
+        "@aws-sdk/client-sts": "3.1164.0",
         "@kleinkram/api-dto": "workspace:*",
         "@kleinkram/backend-common": "workspace:*",
         "@kleinkram/shared": "workspace:*",
@@ -82,7 +82,7 @@
     },
     "devDependencies": {
         "@jest/globals": "^30.5.2",
-        "@nestjs/cli": "^12.0.11",
+        "@nestjs/cli": "^12.0.12",
         "@nestjs/schematics": "^12.0.13",
         "@nestjs/testing": "^12.4.0",
         "@swc/core": "^1.16.21",
@@ -102,7 +102,7 @@
         "@types/supertest": "^7.2.1",
         "@typescript-eslint/eslint-plugin": "^8.72.1",
         "@typescript-eslint/parser": "^8.72.1",
-        "concurrently": "^10.0.6",
+        "concurrently": "^10.0.7",
         "eslint": "^10.14.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.7",
@@ -113,7 +113,7 @@
         "prettier": "^3.9.10",
         "run-script-webpack-plugin": "^0.2.3",
         "source-map-support": "^0.5.21",
-        "supertest": "^7.3.1",
+        "supertest": "^7.3.2",
         "ts-jest": "^29.4.15",
         "ts-loader": "^9.6.2",
         "ts-node": "^10.9.2",
