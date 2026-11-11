@@ -51,7 +51,7 @@ describe('Affiliation Group Sync on Auth Early Returns', () => {
     });
 
     beforeEach(async () => {
-        await affiliationGroupService.createAccessGroups(config);
+        await affiliationGroupService.upsertAccessGroups(config);
     });
 
     test('should sync affiliation groups when account is linked to existing user (createNewUser)', async () => {
@@ -268,7 +268,7 @@ describe('syncAccessGroups', () => {
     });
 
     beforeEach(async () => {
-        await affiliationGroupService.createAccessGroups(testConfig);
+        await affiliationGroupService.upsertAccessGroups(testConfig);
     });
 
     test('adds missing memberships for matching users', async () => {

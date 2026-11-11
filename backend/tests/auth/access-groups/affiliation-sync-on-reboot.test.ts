@@ -63,7 +63,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(initialConfig);
+        await affiliationGroupService.upsertAccessGroups(initialConfig);
         await createUser('alice@leggedrobotics.com', initialConfig);
 
         // Now add Group B to config and sync
@@ -112,7 +112,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(initialConfig);
+        await affiliationGroupService.upsertAccessGroups(initialConfig);
         await createUser('bob@leggedrobotics.com', initialConfig);
 
         // Remove Group B from config
@@ -198,7 +198,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(initialConfig);
+        await affiliationGroupService.upsertAccessGroups(initialConfig);
         await createUser('carol@leggedrobotics.com', initialConfig);
 
         // Change email pattern so carol no longer matches
@@ -239,7 +239,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(config);
+        await affiliationGroupService.upsertAccessGroups(config);
         await createUser('dave@leggedrobotics.com', config);
 
         await affiliationGroupService.syncAccessGroups(config, userRepository);
@@ -269,7 +269,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(config);
+        await affiliationGroupService.upsertAccessGroups(config);
         await createUser('eve@leggedrobotics.com', config);
 
         // Verify user has a primary group
@@ -319,7 +319,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(config);
+        await affiliationGroupService.upsertAccessGroups(config);
 
         // Create an external user (non-matching email)
         await createUser('frank@external.com', config);
@@ -356,7 +356,7 @@ describe('Affiliation Group Sync on Reboot', () => {
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
         };
-        await affiliationGroupService.createAccessGroups(emptyConfig);
+        await affiliationGroupService.upsertAccessGroups(emptyConfig);
         await createUser('mallory@evilleggedrobotics.com', emptyConfig);
         await createUser('trent@sub.leggedrobotics.com', emptyConfig);
 
