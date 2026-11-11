@@ -14,7 +14,7 @@ const listMine = async (
 ): Promise<{ status: number; body: AccessGroupsDto }> => {
     const headers = new HeaderCreator(user);
     const response = await fetch(
-        `${DEFAULT_URL}/access-groups/mine?search=&skip=0&take=50`,
+        `${DEFAULT_URL}/users/me/access-groups?search=&skip=0&take=50`,
         { method: 'GET', headers: headers.getHeaders() },
     );
     return {
@@ -24,7 +24,7 @@ const listMine = async (
 };
 
 /**
- * GET /access-groups/mine: every user, including external ones, can list the
+ * GET /users/me/access-groups: every user, including external ones, can list the
  * groups they belong to (issue #792) without learning anything else.
  */
 describe('List own access groups', () => {
