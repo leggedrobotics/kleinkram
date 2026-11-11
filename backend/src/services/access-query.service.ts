@@ -46,6 +46,13 @@ const pickName = (
         ? snapshot
         : fallback);
 
+/**
+ * SQL condition for a membership that has not expired yet. Expired rows are
+ * only removed by a periodic queue job, so reads must filter them too.
+ */
+const ACTIVE_MEMBERSHIP = (alias: string): string =>
+    `(${alias}.expirationDate IS NULL OR ${alias}.expirationDate > NOW())`;
+
 @Injectable()
 export class AccessQueryService {
     constructor(
@@ -80,6 +87,7 @@ export class AccessQueryService {
                     .leftJoin('groupMembership.accessGroup', 'accessGroup')
                     .where('accessGroup.uuid = :uuid', { uuid })
                     .andWhere('user.uuid = :userUuid', { userUuid })
+                    .andWhere(ACTIVE_MEMBERSHIP('groupMembership'))
                     .getCount()) > 0;
 
             if (!isMember) {
@@ -117,6 +125,7 @@ export class AccessQueryService {
                     userUuid,
                 })
                 .andWhere('groupMembership.canEditGroup = true')
+                .andWhere(ACTIVE_MEMBERSHIP('groupMembership'))
                 .getCount()) > 0;
 
         let accessGroupQuery = this.accessGroupRepository
@@ -238,40 +247,97 @@ export class AccessQueryService {
         logger.debug(`Search access group with name containing '${search}'`);
         logger.debug(`Found ${count.toString()} access groups`);
 
-        const data: AccessGroupDto[] = accessGroups.map(
-            (accessGroup: AccessGroupEntity): AccessGroupDto => {
-                return {
-                    creator: accessGroup.creator
-                        ? userEntityToDto(accessGroup.creator)
-                        : null,
-                    memberships:
-                        accessGroup.memberships?.map((membership) =>
-                            groupMembershipEntityToDto(membership),
-                        ) ?? [],
-                    createdAt: accessGroup.createdAt,
-                    updatedAt: accessGroup.updatedAt,
-                    uuid: accessGroup.uuid,
-                    name: accessGroup.name,
-                    type: accessGroup.type,
-                    hidden: accessGroup.hidden,
-                    projectAccesses: projectAccessesToProjectDtos(
-                        accessGroup.project_accesses,
-                    ),
-                    emailPattern:
-                        accessGroup.type === AccessGroupType.AFFILIATION
-                            ? this.configService
-                                  .getOrThrow<AccessGroupConfig>('accessConfig')
-                                  .emails.find((emailConfig) =>
-                                      emailConfig.access_groups.includes(
-                                          accessGroup.uuid,
-                                      ),
-                                  )?.email
-                            : undefined,
-                };
-            },
+        const data = accessGroups.map((accessGroup) =>
+            this.toListDto(accessGroup),
         );
 
         return { data, count, skip, take };
+    }
+
+    /**
+     * Lists the access groups the user is an active member of, including
+     * hidden ones such as their own primary group.
+     *
+     * Unlike {@link searchAccessGroup} this needs no create permission, so it
+     * also works for external users. Member emails are never included; they
+     * are only exposed by {@link getAccessGroup} to group editors.
+     */
+    async listMyAccessGroups(
+        userUuid: string,
+        search: string,
+        type: AccessGroupType | undefined,
+        skip: number,
+        take: number,
+    ): Promise<AccessGroupsDto> {
+        let query = this.accessGroupRepository
+            .createQueryBuilder('accessGroup')
+            .innerJoin(
+                'accessGroup.memberships',
+                'ownMembership',
+                `ownMembership.user = :userUuid AND ${ACTIVE_MEMBERSHIP('ownMembership')}`,
+                { userUuid },
+            )
+            .leftJoinAndSelect('accessGroup.memberships', 'memberships')
+            .leftJoinAndSelect('memberships.user', 'user')
+            .leftJoinAndSelect(
+                'accessGroup.project_accesses',
+                'project_accesses',
+            )
+            .leftJoinAndSelect('project_accesses.project', 'project')
+            .leftJoinAndSelect('accessGroup.creator', 'creator')
+            .orderBy('accessGroup.name', 'ASC')
+            .skip(skip)
+            .take(take);
+
+        if (type !== undefined) {
+            query = query.andWhere('accessGroup.type = :type', { type });
+        }
+        if (search !== '') {
+            query = query.andWhere('accessGroup.name ILIKE :search', {
+                search: `%${search}%`,
+            });
+        }
+
+        const [accessGroups, count] = await query.getManyAndCount();
+        return {
+            data: accessGroups.map((accessGroup) =>
+                this.toListDto(accessGroup),
+            ),
+            count,
+            skip,
+            take,
+        };
+    }
+
+    private toListDto(accessGroup: AccessGroupEntity): AccessGroupDto {
+        return {
+            creator: accessGroup.creator
+                ? userEntityToDto(accessGroup.creator)
+                : null,
+            memberships:
+                accessGroup.memberships?.map((membership) =>
+                    groupMembershipEntityToDto(membership),
+                ) ?? [],
+            createdAt: accessGroup.createdAt,
+            updatedAt: accessGroup.updatedAt,
+            uuid: accessGroup.uuid,
+            name: accessGroup.name,
+            type: accessGroup.type,
+            hidden: accessGroup.hidden,
+            projectAccesses: projectAccessesToProjectDtos(
+                accessGroup.project_accesses,
+            ),
+            emailPattern:
+                accessGroup.type === AccessGroupType.AFFILIATION
+                    ? this.configService
+                          .getOrThrow<AccessGroupConfig>('accessConfig')
+                          .emails.find((emailConfig) =>
+                              emailConfig.access_groups.includes(
+                                  accessGroup.uuid,
+                              ),
+                          )?.email
+                    : undefined,
+        };
     }
 
     async getProjectAccesses(

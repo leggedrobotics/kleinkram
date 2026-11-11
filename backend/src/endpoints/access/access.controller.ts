@@ -75,6 +75,30 @@ export class AccessController {
         );
     }
 
+    @ApiOperation({
+        summary: 'List own AccessGroups',
+        description:
+            'Lists the access groups the requesting user is an active member of, including their primary group. Available to all users (including external users). Member emails are not included.',
+    })
+    @ApiOkResponse({
+        description: 'Returns the AccessGroups of the requesting user',
+        type: AccessGroupsDto,
+    })
+    @Get('mine')
+    @UserOnly()
+    async listMine(
+        @Query() query: GetFilteredAccessGroupsDto,
+        @AddUser() user: AuthHeader,
+    ): Promise<AccessGroupsDto> {
+        return this.accessQueryService.listMyAccessGroups(
+            user.user.uuid,
+            query.search,
+            query.type,
+            query.skip,
+            query.take,
+        );
+    }
+
     @Get(':uuid')
     @UserOnly()
     @ApiOkResponse({
