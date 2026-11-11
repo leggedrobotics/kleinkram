@@ -64,8 +64,8 @@ execution page, with `klein execution download <EXECUTION_ID>` (`--extract` unpa
 `kleinkram.download_artifact()`. Artifacts are deleted after 90 days.
 
 If the upload of the artifacts fails, the execution keeps its state, but gets a warning with the code
-`ARTIFACT_UPLOAD_FAILED` and the last line of the uploader's error output. It then shows as done with a warning, and
-`klein execution diagnostics` lists the warning.
+`ARTIFACT_UPLOAD_FAILED` and the last line of the uploader's error output. A successful run then shows as done with a
+warning; a failed run stays failed. In both cases `klein execution diagnostics` lists the warning.
 
 #### Temporary Storage During Action Execution
 
