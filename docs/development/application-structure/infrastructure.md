@@ -61,6 +61,7 @@ aws --endpoint-url "$S3_ENDPOINT" s3 cp s3://dbdumps/grandtour_2026-11-11T060000
 
 # restore into an empty database (here a throwaway container)
 docker run -d --name restore-test -e POSTGRES_PASSWORD=test postgres:17
+until docker exec restore-test pg_isready -U postgres -q; do sleep 1; done
 docker cp grandtour_2026-11-11T060000Z.dump restore-test:/tmp/
 docker exec restore-test createdb -U postgres grandtour
 docker exec restore-test pg_restore -U postgres -d grandtour --no-owner /tmp/grandtour_2026-11-11T060000Z.dump
