@@ -19,7 +19,6 @@ import re
 import sys
 import tarfile
 import tempfile
-import unicodedata
 import warnings
 from pathlib import Path
 from typing import Any
@@ -69,6 +68,14 @@ from kleinkram.models import TriggerType
 from kleinkram.models import UploadAction
 from kleinkram.models import UploadPlan
 from kleinkram.models import WebhookConfig
+from kleinkram.naming import (  # noqa: F401 (part of the public interface of core)
+    NAME_MAX_LENGTH,
+)
+from kleinkram.naming import NAME_MIN_LENGTH  # noqa: F401
+from kleinkram.naming import NAME_REGEX  # noqa: F401
+from kleinkram.naming import SCRIPT_FILENAME_PATTERN
+from kleinkram.naming import get_name_validation_error
+from kleinkram.naming import suggest_name  # noqa: F401
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
 from kleinkram.utils import file_paths_from_files
@@ -76,15 +83,7 @@ from kleinkram.utils import get_filename_map
 from kleinkram.utils import is_valid_uuid4
 from kleinkram.utils import split_args
 
-# naming rules for projects, missions, templates and triggers, duplicated from
-# `packages/validation/src/name.validation.ts`, keep both in sync
-NAME_MIN_LENGTH = 3
-NAME_MAX_LENGTH = 100
-_NAME_ALLOWED_CHARACTERS = r"A-Za-z0-9_.\-"
-# must not start with a dot, so a name never becomes a hidden directory
-NAME_REGEX = re.compile(rf"^(?!\.)[{_NAME_ALLOWED_CHARACTERS}]{{{NAME_MIN_LENGTH},{NAME_MAX_LENGTH}}}$")
-_NAME_INVALID_CHARACTER_REGEX = re.compile(rf"[^{_NAME_ALLOWED_CHARACTERS}]")
-_UUID_REGEX = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+# naming rules (projects, missions, templates, triggers, files): see `kleinkram/naming.py`
 DOCKER_IMAGE_REGEX = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._\-/]*(?::[a-zA-Z0-9._\-]+)?(?:@sha256:[a-fA-F0-9]{64})?$")
 DOCKER_IMAGE_MAX_LENGTH = 256
 DOCKER_HUB_NAMESPACE_REGEX = re.compile(r"^[a-z0-9]+(?:[_-]+[a-z0-9]+)*$")
@@ -852,7 +851,6 @@ def launch_execution(
 
 
 MAX_SCRIPT_BYTES = 1024 * 1024
-SCRIPT_FILENAME_PATTERN = re.compile(r"^[\w.-]{1,96}\.py$")
 
 
 def run_script(
@@ -886,7 +884,7 @@ def _read_script(script_path: Path) -> str:
     if script_path.suffix != ".py":
         raise kleinkram.errors.ExecutionValidationError(f"`{script_path}` is not a Python file (expected a `.py` suffix).")
 
-    if not SCRIPT_FILENAME_PATTERN.match(script_path.name):
+    if not SCRIPT_FILENAME_PATTERN.fullmatch(script_path.name):
         raise kleinkram.errors.ExecutionValidationError(
             f"`{script_path.name}` is not a usable script name; use letters, digits, `.`, `-` and `_` only."
         )
@@ -1097,50 +1095,6 @@ def create_trigger(
         type_,
         config,
     )
-
-
-def suggest_name(name: str) -> Optional[str]:
-    """\
-    turns an invalid name into a valid one, e.g. `My Project` into `My-Project`,
-    returns None if no valid name can be derived
-    """
-    # drop accents: ü -> u
-    suggestion = "".join(c for c in unicodedata.normalize("NFKD", name) if not unicodedata.combining(c))
-    suggestion = re.sub(rf"[^{_NAME_ALLOWED_CHARACTERS}]+", "-", suggestion)
-    suggestion = re.sub(r"-{2,}", "-", suggestion)
-    suggestion = re.sub(r"^[.-]+", "", suggestion)
-    suggestion = re.sub(r"-+$", "", suggestion)[:NAME_MAX_LENGTH]
-
-    if NAME_REGEX.fullmatch(suggestion) and not _UUID_REGEX.fullmatch(suggestion):
-        return suggestion
-    return None
-
-
-def get_name_validation_error(name: str, label: str = "Name") -> Optional[str]:
-    """\
-    returns a human-readable error for an invalid name or None if it is valid,
-    `label` is used as the subject of the message, e.g. "Project name"
-    """
-    if not name:
-        return f"{label} is required"
-    if len(name) < NAME_MIN_LENGTH:
-        return f"{label} must be at least {NAME_MIN_LENGTH} characters long"
-    if len(name) > NAME_MAX_LENGTH:
-        return f"{label} must be at most {NAME_MAX_LENGTH} characters long"
-    if _UUID_REGEX.fullmatch(name):
-        return f"{label} must not be a UUID"
-    if NAME_REGEX.fullmatch(name):
-        return None
-
-    invalid_characters = list(dict.fromkeys(_NAME_INVALID_CHARACTER_REGEX.findall(name)))
-    if invalid_characters:
-        found = ", ".join("space" if c == " " else f"'{c}'" for c in invalid_characters)
-        problem = f"{label} may only contain letters, digits, '.', '-' and '_' (found {found})"
-    else:
-        problem = f"{label} must not start with '.'"
-
-    suggestion = suggest_name(name)
-    return f'{problem}. Try "{suggestion}".' if suggestion else f"{problem}."
 
 
 def _mission_name_is_available(client: AuthenticatedClient, mission_name: str, project_id: UUID) -> bool:

@@ -27,7 +27,8 @@ All commands follow the same conventions:
   or the files in `klein upload <files>...`.
 - **Options can go before or after the files.** `klein upload -p p -m m data.mcap` and
   `klein upload data.mcap -p p -m m` do the same. To pass a file whose name starts with `-`, put `--` before it:
-  everything after `--` is a file, e.g. `klein upload -p p -m m -- -weird-name.mcap`.
+  everything after `--` is a file, e.g. `klein upload -p p -m m --fix-filenames -- -weird-name.mcap` (a name in a
+  mission must not start with `-`, so `--fix-filenames` uploads it as `_weird-name.mcap`).
 - **The scope is given with flags.** A mission always belongs to a project, so `--project` (`-p`) narrows down
   which mission you mean, and `--mission` (`-m`) narrows down which file you mean.
 - **Projects, missions and templates can be given by name or by ID.** Wherever a command expects one, both work.
@@ -165,10 +166,18 @@ The other options of `upload`:
 | `--fix-filenames`           | Upload files whose names Kleinkram does not accept under a fixed name, instead of failing. The local files are not renamed. See below.                                                                                                                                                                 |
 | `--skip`, `-s`              | Skip files that cannot be uploaded (unsupported type, bad name, directories) instead of failing, and upload the rest.                                                                                                                                                                                  |
 
-A file name (without the extension) may only contain letters, digits, `_` and `-`, and may be at most 50 characters
-long. With `--fix-filenames`, every other character is replaced by `_`, and a name that is still longer than 50
-characters is cut to 40 characters followed by 10 characters of a hash of the original name. The hash keeps names that
-start the same apart, and the same file always gets the same name.
+File names follow the [naming rules](../getting-started.md#naming-rules): the part before the extension is 3 to 50
+characters of letters, digits, `.`, `_` and `-`, not starting with `.` or `-`, and the extension is lowercase. The CLI
+checks them before it uploads anything and says what is wrong. With `--fix-filenames`, files are uploaded under a
+valid name instead:
+
+- every other character, and a leading `.` or `-`, is replaced by `_`
+- the extension is lowercased: `REC.MCAP` becomes `REC.mcap`
+- a name longer than 50 characters is cut to 40 characters followed by 10 characters of a hash of the original name
+- a name shorter than 3 characters gets `_` and 4 characters of that hash appended: `a.bag` becomes `a_1fef.bag`
+
+The hash keeps names that start the same apart, and the same file always gets the same name. Use `--dry-run` to see
+the names before uploading.
 
 ```bash
 # "run 1 (left).bag" is uploaded as "run_1__left_.bag"

@@ -11,9 +11,9 @@ import typer
 from kleinkram.config import get_shared_state
 from kleinkram.errors import DatatypeNotSupported
 from kleinkram.errors import FileNameNotSupported
+from kleinkram.naming import get_file_name_validation_error
 from kleinkram.utils import EXPERIMENTAL_FILE_TYPES
 from kleinkram.utils import SUPPORT_FILE_TYPES
-from kleinkram.utils import check_filename_is_sanatized
 
 
 def supported_suffixes(*, experimental_datatypes: bool) -> Sequence[str]:
@@ -89,9 +89,9 @@ class FileValidator:
         if self.fix_filenames:
             return
 
-        is_bad_name = not check_filename_is_sanatized(file.stem)
-        if is_bad_name:
-            raise FileNameNotSupported(f"Badly formed filename for file {file}")
+        error = get_file_name_validation_error(file.name)
+        if error is not None:
+            raise FileNameNotSupported(f"{file}: {error}")
 
     def _raise_with_skip_hint(self, e: Exception) -> None:
         """Re-raises a validation error with a hint to use --skip."""

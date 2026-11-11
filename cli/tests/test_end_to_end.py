@@ -363,3 +363,34 @@ def test_upload_changed_file_with_taken_name_fails(project, tmp_path, api):
     assert res.returncode == 1
     assert "1 file(s) were NOT uploaded" in res.stderr
     assert str(tree / "top.bag") in res.stderr
+
+
+@pytest.mark.slow
+def test_file_name_rules_match_the_server(project, tmp_path, api):
+    """\
+    the CLI refuses what the server would refuse, before anything is created,
+    and every name --fix-filenames produces is accepted by the server
+    """
+    assert api
+    local = tmp_path / "local"
+    local.mkdir()
+    names = ["a.bag", "REC.MCAP", "-dash.bag", "log(1).bag", "run.2024-05-14.bag"]
+    for name in names:
+        shutil.copy(DATA_PATH / "10_KB.bag", local / name)
+
+    mission_name = secrets.token_hex(8)
+    scope = ["-p", project.name, "-m", mission_name, "--create"]
+    res = subprocess.run([CLI, "upload", *scope, str(local / "a.bag")], capture_output=True, text=True)
+    assert res.returncode != 0
+    assert "at least 3 characters" in res.stderr + res.stdout
+    assert kleinkram.wrappers.list_missions(project_ids=[project.id], mission_names=[mission_name]) == []
+
+    res = subprocess.run(
+        [CLI, "upload", *scope, "--fix-filenames", "--", *(str(local / name) for name in names)],
+        capture_output=True,
+        text=True,
+    )
+    assert res.returncode == 0, res.stderr
+    assert _remote_file_names(project, mission_name) == sorted(
+        ["a_1fef.bag", "REC.mcap", "_dash.bag", "log_1_.bag", "run.2024-05-14.bag"]
+    )
