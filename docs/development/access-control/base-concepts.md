@@ -54,6 +54,11 @@ logged by `AffiliationGroupService`.
 
 `rights` is the default access the group gets on newly created projects. Changing it does not update existing projects.
 
+Being a member of any affiliation group is also what lets a user create projects, access groups, metadata types and
+action templates (everything guarded by `@CanCreate()`, see `ProjectGuardService.canCreate`). The group's `rights` do not
+matter here: members of a group with `"rights": 0` can still create projects. Users who are in no affiliation group
+cannot create any of these, unless they are admins.
+
 ## How Access is Checked?
 
 Below is the default check for access rights. For the case of authentication using Api Keys, as used in actions, a
