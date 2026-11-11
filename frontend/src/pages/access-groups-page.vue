@@ -8,8 +8,17 @@
                 dense
                 class="text-grey"
             >
-                <q-tab name="users" label="Users" style="color: #222" />
-                <q-tab name="groups" label="Groups" style="color: #222" />
+                <q-tab
+                    v-if="canCreate"
+                    name="users"
+                    label="Users"
+                    style="color: #222"
+                />
+                <q-tab
+                    name="groups"
+                    :label="canCreate ? 'Groups' : 'My Groups'"
+                    style="color: #222"
+                />
             </q-tabs>
         </template>
     </title-section>
@@ -18,7 +27,7 @@
         <div class="flex justify-between items-center ag-toolbar">
             <button-group class="ag-toolbar__filters">
                 <div
-                    v-if="tab === 'groups'"
+                    v-if="tab === 'groups' && prefilterOptions.length > 1"
                     class="self-stretch flex items-center scroll-x-nowrap"
                 >
                     <q-btn-toggle
@@ -47,9 +56,26 @@
 
                 <app-refresh-button @click="refetchAccessGroup" />
 
-                <CreateAccessGroupDialogOpener v-if="tab === 'groups'" />
+                <CreateAccessGroupDialogOpener
+                    v-if="tab === 'groups' && canCreate"
+                />
             </button-group>
         </div>
+
+        <q-banner
+            v-if="isMine && !canCreate"
+            dense
+            rounded
+            class="q-mt-lg bg-amber-1 text-grey-9"
+            style="border: 1px solid #ffe082"
+        >
+            <template #avatar>
+                <q-icon name="sym_o_info" color="grey-8" />
+            </template>
+            You see the groups you are a member of. To join or leave a group,
+            ask one of its <b>group editors</b>. Creating groups requires an
+            affiliated account.
+        </q-banner>
 
         <!-- TODO: bulk actions go in the default slot as they arrive -->
         <table-selection-bar
@@ -253,6 +279,59 @@
                     />
                 </q-td>
             </template>
+            <template #body-cell-Type="props">
+                <q-td :props="props">
+                    <q-chip
+                        dense
+                        square
+                        size="sm"
+                        class="q-ma-none text-weight-medium"
+                        :class="typeChipClass(props.row.type)"
+                    >
+                        {{ typeLabel(props.row.type) }}
+                    </q-chip>
+                </q-td>
+            </template>
+            <template #body-cell-YourRole="props">
+                <q-td :props="props">
+                    <q-chip
+                        dense
+                        square
+                        size="sm"
+                        class="q-ma-none text-weight-medium"
+                        :color="
+                            ownMembership(props.row)?.canEditGroup
+                                ? 'grey-10'
+                                : 'grey-3'
+                        "
+                        :text-color="
+                            ownMembership(props.row)?.canEditGroup
+                                ? 'white'
+                                : 'grey-9'
+                        "
+                    >
+                        {{
+                            ownMembership(props.row)?.canEditGroup
+                                ? 'Editor'
+                                : 'Member'
+                        }}
+                    </q-chip>
+                </q-td>
+            </template>
+            <template #body-cell-Membership="props">
+                <q-td :props="props">
+                    <span class="row inline items-center no-wrap">
+                        <span
+                            class="ag-dot"
+                            :class="{
+                                'ag-dot--expiring': !!ownMembership(props.row)
+                                    ?.expirationDate,
+                            }"
+                        />
+                        {{ membershipLabel(props.row) }}
+                    </span>
+                </q-td>
+            </template>
             <template #body-cell-accessgroupaction="props">
                 <q-td :props="props">
                     <q-btn
@@ -279,22 +358,29 @@
                                     </q-item-section>
                                 </q-item>
 
-                                <q-item v-ripple clickable disabled>
-                                    <q-tooltip
-                                        v-if="
-                                            filterOptions.type ===
-                                            AccessGroupType.PRIMARY
-                                        "
-                                    >
-                                        You can't edit personal access groups
-                                    </q-tooltip>
-                                    <q-item-section>Edit</q-item-section>
-                                </q-item>
-                                <DeleteAccessGroup :access-group="props.row">
-                                    <q-item v-ripple clickable>
-                                        <q-item-section>Delete</q-item-section>
+                                <template v-if="!isMine">
+                                    <q-item v-ripple clickable disabled>
+                                        <q-tooltip
+                                            v-if="
+                                                filterOptions.type ===
+                                                AccessGroupType.PRIMARY
+                                            "
+                                        >
+                                            You can't edit personal access
+                                            groups
+                                        </q-tooltip>
+                                        <q-item-section>Edit</q-item-section>
                                     </q-item>
-                                </DeleteAccessGroup>
+                                    <DeleteAccessGroup
+                                        :access-group="props.row"
+                                    >
+                                        <q-item v-ripple clickable>
+                                            <q-item-section>
+                                                Delete
+                                            </q-item-section>
+                                        </q-item>
+                                    </DeleteAccessGroup>
+                                </template>
                             </q-list>
                         </q-menu>
                     </q-btn>
@@ -323,8 +409,16 @@ import TableSelectionBar from 'components/common/table-selection-bar.vue';
 import TitleSection from 'components/title-section.vue';
 import { QTable, useQuasar } from 'quasar';
 import { useRowActivation } from 'src/composables/use-row-activation';
+import {
+    canCreateProject,
+    usePermissionsQuery,
+    useUser,
+} from 'src/hooks/query-hooks';
 import ROUTES from 'src/router/routes';
-import { searchAccessGroups } from 'src/services/queries/access';
+import {
+    listMyAccessGroups,
+    searchAccessGroups,
+} from 'src/services/queries/access';
 import { useRoute, useRouter } from 'vue-router';
 
 interface AccessGroupColumn {
@@ -345,18 +439,32 @@ const $router = useRouter();
 const route = useRoute();
 const tab = ref((route.query.tab as string) || 'groups');
 
+// Listing all groups needs create rights (CanCreate in the backend). Everyone
+// else, e.g. external users, only gets the groups they are a member of.
+const { data: permissions } = usePermissionsQuery();
+const canCreate = computed(() => canCreateProject(permissions.value));
+const currentUser = useUser();
+
+const MINE = 'mine';
+type Prefilter = AccessGroupType | typeof MINE;
+
 // the long labels do not fit next to each other on a phone
 const prefilterOptions = computed(() => [
-    {
-        label: $q.screen.xs ? 'Custom' : 'Custom Groups',
-        value: AccessGroupType.CUSTOM,
-    },
-    {
-        label: $q.screen.xs ? 'Affiliation' : 'Affiliation Groups',
-        value: AccessGroupType.AFFILIATION,
-    },
+    { label: 'My Groups', value: MINE },
+    ...(canCreate.value
+        ? [
+              {
+                  label: $q.screen.xs ? 'Custom' : 'Custom Groups',
+                  value: AccessGroupType.CUSTOM,
+              },
+              {
+                  label: $q.screen.xs ? 'Affiliation' : 'Affiliation Groups',
+                  value: AccessGroupType.AFFILIATION,
+              },
+          ]
+        : []),
 ]);
-const prefilter = ref<AccessGroupType>(AccessGroupType.CUSTOM);
+const prefilter = ref<Prefilter>(MINE);
 
 const selectedAccessGroups: Ref<ProjectWithMissionsDto[]> = ref([]);
 
@@ -365,16 +473,30 @@ function deselectAccessGroups() {
 }
 
 const filterOptions: Ref<{
-    type: AccessGroupType;
+    type: AccessGroupType | undefined;
     search: string;
     creator: boolean;
     member: boolean;
 }> = ref({
-    type: AccessGroupType.CUSTOM,
+    type: undefined,
     search: '',
     creator: false,
-    member: false,
+    member: true,
 });
+
+const isMine = computed(
+    () => tab.value === 'groups' && filterOptions.value.member,
+);
+
+// the users tab is not available without create rights
+watch(
+    () => [canCreate.value, permissions.value] as const,
+    ([allowed, loaded]) => {
+        if (loaded !== undefined && !allowed && tab.value === 'users') {
+            tab.value = 'groups';
+        }
+    },
+);
 
 watch(
     () => tab.value,
@@ -401,22 +523,37 @@ watch(
     },
 );
 
-function applyPrefilter(value: AccessGroupType | undefined) {
+function applyPrefilter(value: Prefilter | undefined) {
     if (!value) return;
-    if (value === AccessGroupType.CUSTOM) {
-        filterOptions.value.type = AccessGroupType.CUSTOM;
-        filterOptions.value.creator = false;
-        filterOptions.value.member = false;
-    } else if (value === AccessGroupType.AFFILIATION) {
-        filterOptions.value.type = AccessGroupType.AFFILIATION;
-        filterOptions.value.creator = true;
-        filterOptions.value.member = false;
+    switch (value) {
+        case MINE: {
+            filterOptions.value.type = undefined;
+            filterOptions.value.creator = false;
+            filterOptions.value.member = true;
+
+            break;
+        }
+        case AccessGroupType.CUSTOM: {
+            filterOptions.value.type = AccessGroupType.CUSTOM;
+            filterOptions.value.creator = false;
+            filterOptions.value.member = false;
+
+            break;
+        }
+        case AccessGroupType.AFFILIATION: {
+            filterOptions.value.type = AccessGroupType.AFFILIATION;
+            filterOptions.value.creator = true;
+            filterOptions.value.member = false;
+
+            break;
+        }
+        // No default
     }
 }
 
 function updatePrefilter(value: string | string[]) {
     if (typeof value === 'string') {
-        prefilter.value = value as AccessGroupType;
+        prefilter.value = value as Prefilter;
     }
 }
 
@@ -434,14 +571,44 @@ const accessGroupKey = computed(() => [
 
 const { data: foundAccessGroups, refetch } = useQuery<AccessGroupsDto>({
     queryKey: accessGroupKey,
-    queryFn: () =>
-        searchAccessGroups(
-            filterOptions.value.search,
-            filterOptions.value.type,
-            (pagination.value.page - 1) * pagination.value.rowsPerPage,
-            pagination.value.rowsPerPage,
-        ),
+    queryFn: () => {
+        const skip = (pagination.value.page - 1) * pagination.value.rowsPerPage;
+        const take = pagination.value.rowsPerPage;
+        return isMine.value
+            ? listMyAccessGroups(filterOptions.value.search, skip, take)
+            : searchAccessGroups(
+                  filterOptions.value.search,
+                  filterOptions.value.type,
+                  skip,
+                  take,
+              );
+    },
+    // wait for the permissions so users without create rights never hit the
+    // (forbidden) global search
+    enabled: computed(() => isMine.value || canCreate.value),
 });
+
+function ownMembership(row: AccessGroupDto) {
+    return row.memberships.find(
+        (membership) => membership.user.uuid === currentUser.data.value?.uuid,
+    );
+}
+
+function membershipLabel(row: AccessGroupDto): string {
+    const expiration = ownMembership(row)?.expirationDate;
+    return expiration
+        ? `Expires ${formatDate(new Date(expiration))}`
+        : 'Permanent';
+}
+
+const TYPE_LABELS: Partial<Record<AccessGroupType, string>> = {
+    [AccessGroupType.PRIMARY]: 'Primary',
+    [AccessGroupType.CUSTOM]: 'Custom',
+    [AccessGroupType.AFFILIATION]: 'Affiliation',
+};
+const typeLabel = (type: AccessGroupType): string => TYPE_LABELS[type] ?? type;
+const typeChipClass = (type: AccessGroupType): string =>
+    `ag-type--${type.toLowerCase()}`;
 
 const refetchAccessGroup: (event_: Event) => Promise<void> = async () => {
     await refetch();
@@ -590,9 +757,24 @@ const accessGroupsColumns: AccessGroupColumn[] = [
     },
 ];
 
-const allColumns = computed(() =>
-    tab.value === 'users' ? usersColumns : accessGroupsColumns,
-);
+const myGroupsColumns: AccessGroupColumn[] = [
+    ...accessGroupsColumns.slice(0, 1),
+    {
+        name: 'Type',
+        label: 'Type',
+        align: 'left',
+        field: (row: AccessGroupDto): string => row.type,
+        sortable: true,
+    },
+    { name: 'YourRole', label: 'Your Role', align: 'left' },
+    { name: 'Membership', label: 'Membership', align: 'left' },
+    ...accessGroupsColumns.slice(3),
+];
+
+const allColumns = computed(() => {
+    if (tab.value === 'users') return usersColumns;
+    return isMine.value ? myGroupsColumns : accessGroupsColumns;
+});
 
 // secondary columns are dropped on tablet-sized screens, on phones the table
 // is replaced by a card list and the columns are only used for sorting
@@ -632,6 +814,34 @@ const setSort = (columnName: string): void => {
 </script>
 
 <style scoped>
+.ag-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    background: #2e7d32;
+}
+
+.ag-dot--expiring {
+    background: #ef6c00;
+}
+
+.ag-type--primary {
+    background: #ede7f6;
+    color: #4527a0;
+}
+
+.ag-type--custom {
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+
+.ag-type--affiliation {
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
 .button-border {
     border: 1px solid #e0e0e0;
     border-radius: 4px;
