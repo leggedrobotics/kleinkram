@@ -400,7 +400,7 @@ export function CanCreateAction() {
             status: 403,
             type: ForbiddenException,
             description:
-                'User does not have Create permissions on the specified project.',
+                'User does not have Write permissions (or the higher level the template requires) on the specified mission.',
         }),
     );
 }
@@ -426,7 +426,7 @@ export function CanCreateActions() {
             status: 403,
             type: ForbiddenException,
             description:
-                'User does not have Create permissions on the specified project.',
+                'User does not have Write permissions (or the higher level the template requires) on the specified mission.',
         }),
     );
 }

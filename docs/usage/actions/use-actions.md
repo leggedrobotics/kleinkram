@@ -44,6 +44,12 @@ action templates. By default, Kleinkram comes with several pre-defined action te
 out of the box to try out the functionality of the Kleinkram Actions system.
 :::
 
+::: info Who Can Launch an Action
+Launching an action counts as a write operation, so you need at least `Write` access to the mission, even for a
+template that only asks for `Read`. A template that asks for more (e.g. `Delete`) needs that level instead. See
+[Access Control for Actions](../access-control/action.md).
+:::
+
 ### Version Control for Action Templates
 
 Action Templates are version-controlled. When you create or modify an action template, a new version is created. This

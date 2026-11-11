@@ -135,6 +135,32 @@ describe('Trigger Ownership API Tests', () => {
         return apiKeyEntity.apikey;
     }
 
+    test('creating a trigger needs Write on the mission, not just Create', async () => {
+        // A trigger runs actions as its creator, and running an action is a
+        // write operation, so Create alone must not be enough.
+        await grantProjectAccess(userB, projectUuid, AccessGroupRights.CREATE);
+
+        const headersBuilder = new HeaderCreator(userB);
+        headersBuilder.addHeader('Content-Type', 'application/json');
+        const payload = {
+            name: 'Create-level Trigger',
+            description: 'desc',
+            type: TriggerType.WEBHOOK,
+            missionUuid,
+            templateUuid,
+            config: {},
+        };
+
+        const denied = await fetch(`${DEFAULT_URL}/triggers`, {
+            method: 'POST',
+            headers: headersBuilder.getHeaders(),
+            body: JSON.stringify(payload),
+        });
+        // The Write case is covered by the API key test below, which creates
+        // a trigger as userB with Write.
+        expect(denied.status).toBe(403);
+    });
+
     test('User B should NOT be able to update User A trigger', async () => {
         // 1. User A creates a trigger
         const trigger = await createTrigger(userA, {
@@ -500,7 +526,7 @@ describe('Trigger Ownership API Tests', () => {
 
     test('API key cannot read a trigger its own owner created in another mission', async () => {
         // userB may create triggers anywhere in the project ...
-        await grantProjectAccess(userB, projectUuid, AccessGroupRights.CREATE);
+        await grantProjectAccess(userB, projectUuid, AccessGroupRights.WRITE);
 
         const missionUuid2 = await createMissionUsingPost(
             {

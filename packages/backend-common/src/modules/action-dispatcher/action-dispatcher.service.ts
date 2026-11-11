@@ -12,6 +12,7 @@ import {
     ActionState,
     ActionStateCause,
     ActionTriggerSource,
+    rightsRequiredToRunAction,
     UserRole,
 } from '@kleinkram/shared';
 import {
@@ -130,7 +131,9 @@ export class ActionDispatcherService implements OnModuleInit, OnModuleDestroy {
                 role: creator.role ?? UserRole.USER,
             },
             mission,
-            template.accessRights,
+            // Running an action is a write operation: Write at least, more if
+            // the template asks for it.
+            rightsRequiredToRunAction(template.accessRights),
         );
 
         if (!canAccess) {
