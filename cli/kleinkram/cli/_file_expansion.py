@@ -31,6 +31,10 @@ def _has_glob_chars(arg: str) -> bool:
     return any(char in GLOB_CHARS for char in arg)
 
 
+def _raise(error: OSError) -> None:
+    raise error
+
+
 def _walk_directory(directory: Path, suffixes: Collection[str]) -> List[Path]:
     """\
     all files below `directory` with one of `suffixes`, sorted, skipping
@@ -39,10 +43,13 @@ def _walk_directory(directory: Path, suffixes: Collection[str]) -> List[Path]:
     the suffix match is case-sensitive like the upload itself (`check_file_paths`
     and the server accept `.mcap`, not `.MCAP`), so a recursive walk never picks
     a file that would then stop the whole upload
+
+    a directory that cannot be read raises instead of being left out, so a
+    recursive upload or verify never silently covers only part of the tree
     """
     wanted = set(suffixes)
     found = []
-    for root, dirs, files in os.walk(directory):
+    for root, dirs, files in os.walk(directory, onerror=_raise):
         dirs[:] = [name for name in dirs if not name.startswith(".")]
         for name in files:
             path = Path(root) / name

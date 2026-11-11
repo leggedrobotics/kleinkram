@@ -34,6 +34,22 @@ export const searchAccessGroups = async (
     return response.data;
 };
 
+/**
+ * The access groups the current user is an active member of. Works for every
+ * user, unlike {@link searchAccessGroups} which needs create rights.
+ */
+export const listMyAccessGroups = async (
+    search: string,
+    skip: number,
+    take: number,
+): Promise<AccessGroupsDto> => {
+    const response: AxiosResponse<AccessGroupsDto> = await axios.get(
+        '/users/me/access-groups',
+        { params: { search, skip, take } },
+    );
+    return response.data;
+};
+
 export const getAccessGroup = async (uuid: string): Promise<AccessGroupDto> => {
     const response = await axios.get(`/access-groups/${uuid}`);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
