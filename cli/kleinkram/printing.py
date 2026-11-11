@@ -355,13 +355,25 @@ def upload_plan_table(plan: UploadPlan) -> Table:
     return table
 
 
+TSV_ESCAPES = str.maketrans({"\\": "\\\\", "\t": "\\t", "\n": "\\n", "\r": "\\r"})
+
+
+def tsv_field(value: object) -> str:
+    """\
+    one field of a tab separated line: backslash, tab, newline and carriage
+    return are escaped as `\\\\`, `\\t`, `\\n` and `\\r`, so every value stays
+    one field on one line (directory names may contain them)
+    """
+    return str(value).translate(TSV_ESCAPES)
+
+
 def print_upload_plan(plan: UploadPlan, *, pprint: bool) -> None:
     """\
     prints what `klein upload` would do
 
     with `pprint` a table for humans, otherwise one tab separated line
     `<action>\t<local path>\t<name in mission>` per file on stdout for
-    scripts; the summary goes to stderr then
+    scripts (fields escaped with `tsv_field`); the summary goes to stderr then
     """
     mission = f"{plan.project_name}/{plan.mission_name}"
     to_upload = [e for e in plan.files if e.action == UploadAction.UPLOAD]
@@ -396,7 +408,8 @@ def print_upload_plan(plan: UploadPlan, *, pprint: bool) -> None:
         return
 
     for entry in plan.files:
-        print(f"{upload_action_token(entry.action)}\t{entry.path}\t{entry.name}", flush=True)
+        fields = (upload_action_token(entry.action), entry.path, entry.name)
+        print("\t".join(tsv_field(field) for field in fields), flush=True)
     for line in [*lines, summary, *warnings]:
         print(line, file=sys.stderr, flush=True)
 

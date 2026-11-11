@@ -291,3 +291,33 @@ def test_cli_dry_run_missing_mission_fails_like_upload(runner, cli, server, file
     result = runner.invoke(app, ["--no-verbose", "upload", "-p", "proj", "-m", "run42", "--dry-run", str(files[0])])
     assert result.exit_code != 0
     assert isinstance(result.exception, MissionNotFound)
+
+
+@pytest.mark.parametrize("debug", ["--debug", "--no-debug"])
+def test_cli_dry_run_stdout_stays_parsable_with_skipped_inputs(runner, cli, files, tmp_path, debug):
+    """the --skip report goes to stderr, stdout only holds the plan lines"""
+    unsupported = tmp_path / "notes.txt"
+    unsupported.write_text("x")
+    args = [debug, "--no-verbose", "upload", "-p", "proj", "-m", "run42", "--dry-run", "--skip"]
+    result = runner.invoke(app, [*args, str(unsupported), *map(str, files)])
+
+    assert result.exit_code == 0, result.output
+    lines = result.stdout.splitlines()
+    assert len(lines) == len(files)
+    assert all(len(line.split("\t")) == 3 for line in lines)
+    assert "Skipped 1 path(s)" in result.stderr or "Skipped: " in result.stderr
+
+
+def test_cli_dry_run_escapes_tabs_and_newlines_in_paths(runner, cli, tmp_path):
+    odd_dir = tmp_path / "with\ttab and\nnewline\\"
+    odd_dir.mkdir()
+    file = odd_dir / "new.mcap"
+    file.write_bytes(b"x")
+
+    result = runner.invoke(app, ["--no-verbose", "upload", "-p", "proj", "-m", "run42", "--dry-run", str(file)])
+
+    assert result.exit_code == 0, result.output
+    (line,) = result.stdout.splitlines()
+    action, path, name = line.split("\t")
+    assert (action, name) == ("upload", "new.mcap")
+    assert path == str(file).replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n")

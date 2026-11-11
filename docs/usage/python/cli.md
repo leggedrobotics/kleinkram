@@ -124,7 +124,8 @@ klein upload --project testProject --mission testMission --dry-run --recursive .
 A file whose name is already used in the mission is always skipped, even if its content changed. The dry run compares
 the content and marks those files as `skip, name taken by a different file`. With `--no-verbose`, it prints one
 tab-separated line per file instead (`<action>`, `<local path>`, `<name in mission>`), with the action being one of
-`upload`, `skip-same`, `skip-different` or `skip-unchecked`.
+`upload`, `skip-same`, `skip-different` or `skip-unchecked`. Backslashes, tabs and line breaks in paths are escaped as `\\`, `\t`,
+`\n` and `\r`, so every file stays on one line.
 
 ::: tip Creating Missions on Upload
 To create a mission automatically during upload if it doesn't already exist, use the `--create` flag. Note that the target project must already exist.
