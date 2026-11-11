@@ -55,11 +55,26 @@ jobs:
                   node-version: 22
                   cache: pnpm
 
+            - name: Generate Build Info
+              run: bash create_build_info.sh
+              working-directory: frontend
+
             - name: Install Dependencies
               run: pnpm install --no-frozen-lockfile
 
+            # Within the ranges in each package.json. Majors stay a manual step.
             - name: Update Monorepo Dependencies
               run: pnpm update -r
+
+            # The AWS SDK is pinned to exact versions (so client-s3, client-sts and
+            # s3-request-presigner always match), which `pnpm update -r` leaves alone.
+            - name: Update AWS SDK pins
+              run: pnpm update -r --latest '@aws-sdk/*'
+
+            # Collapse duplicate copies left behind by the update (two vite
+            # versions break `tsc -b` on frontend/quasar.config.ts).
+            - name: Dedupe lockfile
+              run: pnpm dedupe
 
             - name: Setup Python
               uses: actions/setup-python@v7
@@ -70,10 +85,51 @@ jobs:
               run: |
                   pnpm run bump:patch
 
-            - name: Run Linter & Formatter
+            # Generates frontend/.quasar/tsconfig.json. Without it `tsc -b` fails
+            # (and emits stray .js files next to the frontend sources).
+            - name: Prepare Quasar
+              run: pnpm exec quasar prepare
+              working-directory: frontend
+
+            - name: Apply lint and format fixes
               run: |
-                  pnpm run eslint
+                  pnpm run lint || true
                   pnpm run prettier
+
+            # Failures here must not stop the PR: an update that needs code
+            # changes should still reach a human, with the results in the body.
+            - name: Type Check
+              id: type_check
+              continue-on-error: true
+              run: pnpm run type-check
+
+            - name: Lint Check
+              id: lint_check
+              continue-on-error: true
+              run: pnpm run lint:check
+
+            - name: Summarize checks
+              id: summary
+              run: |
+                  icon() { [ "$1" = "success" ] && echo "✅ passed" || echo "❌ failed, needs fixes before merging"; }
+                  {
+                    echo "body<<EOF"
+                    echo "Automated weekly update of the npm workspace dependencies, plus a patch version bump."
+                    echo ""
+                    echo "- \`pnpm update -r\` (within the ranges in each package.json; majors are not touched)"
+                    echo "- \`pnpm update -r --latest '@aws-sdk/*'\` (exact pins)"
+                    echo "- \`pnpm dedupe\`, lint and prettier autofixes"
+                    echo ""
+                    echo "| Check | Result |"
+                    echo "|---|---|"
+                    echo "| \`pnpm run type-check\` | $(icon "${{ steps.type_check.outcome }}") |"
+                    echo "| \`pnpm run lint:check\` | $(icon "${{ steps.lint_check.outcome }}") |"
+                    echo ""
+                    echo "Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    echo ""
+                    echo "**CI does not start on its own for this PR**: it was opened with \`GITHUB_TOKEN\`, and GitHub does not trigger workflows for that token's events. Close and reopen the PR to run the checks."
+                    echo "EOF"
+                  } >> "$GITHUB_OUTPUT"
 
             - name: Create Pull Request
               uses: peter-evans/create-pull-request@v8
@@ -81,12 +137,7 @@ jobs:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   commit-message: 'chore(release): bump version and update dependencies'
                   title: 'chore(release): automated dependency update & version bump'
-                  body: |
-                      This is an automated pull request updating repository-wide dependencies and incrementing the project version (patch).
-
-                      - Workspace packages bumped to the next patch version.
-                      - Monorepo package dependencies updated.
-                      - Linters and formatters executed successfully.
+                  body: ${{ steps.summary.outputs.body }}
                   branch: deps/automated-update
                   base: dev
                   delete-branch: true
