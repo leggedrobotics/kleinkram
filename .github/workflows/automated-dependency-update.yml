@@ -66,10 +66,13 @@ jobs:
             - name: Update Monorepo Dependencies
               run: pnpm update -r
 
-            # The AWS SDK is pinned to exact versions (so client-s3, client-sts and
-            # s3-request-presigner always match), which `pnpm update -r` leaves alone.
-            - name: Update AWS SDK pins
-              run: pnpm update -r --latest '@aws-sdk/*'
+            # `pnpm update -r` leaves exact pins (AWS SDK, webpack, winston, ...)
+            # alone. Move them to the newest release in the same major; the
+            # install afterwards updates the lockfile.
+            - name: Update exact pins
+              run: |
+                  node .github/scripts/update-exact-pins.mjs
+                  pnpm install --no-frozen-lockfile
 
             # Collapse duplicate copies left behind by the update (two vite
             # versions break `tsc -b` on frontend/quasar.config.ts).
@@ -117,7 +120,7 @@ jobs:
                     echo "Automated weekly update of the npm workspace dependencies, plus a patch version bump."
                     echo ""
                     echo "- \`pnpm update -r\` (within the ranges in each package.json; majors are not touched)"
-                    echo "- \`pnpm update -r --latest '@aws-sdk/*'\` (exact pins)"
+                    echo "- exact pins moved to the newest release in the same major (\`.github/scripts/update-exact-pins.mjs\`; pre-release pins untouched)"
                     echo "- \`pnpm dedupe\`, lint and prettier autofixes"
                     echo ""
                     echo "| Check | Result |"
