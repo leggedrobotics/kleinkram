@@ -1,5 +1,9 @@
 import {
     _Object,
+    AbortMultipartUploadCommand,
+    CompleteMultipartUploadCommand,
+    CopyObjectCommand,
+    CreateMultipartUploadCommand,
     DeleteObjectCommand,
     DeleteObjectTaggingCommand,
     GetObjectCommand,
@@ -9,6 +13,7 @@ import {
     NotFound,
     PutObjectCommand,
     PutObjectTaggingCommand,
+    UploadPartCopyCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Logger } from '@nestjs/common';
@@ -29,6 +34,11 @@ import {
     StorageItemStat,
     StorageSystemMetrics,
 } from './types';
+
+/** S3 copies objects up to 5 GiB in one request, larger ones in parts. */
+const SINGLE_COPY_LIMIT_BYTES = 5 * 1024 ** 3;
+const COPY_PART_SIZE_BYTES = 512 * 1024 ** 2;
+const COPY_PART_CONCURRENCY = 4;
 
 export class S3StorageBucket implements IStorageBucket {
     constructor(
@@ -206,6 +216,104 @@ export class S3StorageBucket implements IStorageBucket {
             Key: objectName,
         });
         await this.clients.internal.send(command, metadataRequestOptions());
+    }
+
+    async copyFile(
+        sourceObjectName: string,
+        targetObjectName: string,
+    ): Promise<void> {
+        const copySource = `${this.bucketName}/${encodeURIComponent(sourceObjectName)}`;
+        const info = await this.getFileInfo(sourceObjectName);
+        if (!info) {
+            throw new Error(`Object ${sourceObjectName} not found`);
+        }
+
+        if (info.size <= SINGLE_COPY_LIMIT_BYTES) {
+            await this.clients.internal.send(
+                new CopyObjectCommand({
+                    Bucket: this.bucketName,
+                    Key: targetObjectName,
+                    CopySource: copySource,
+                }),
+            );
+            return;
+        }
+
+        const { UploadId: uploadId } = await this.clients.internal.send(
+            new CreateMultipartUploadCommand({
+                Bucket: this.bucketName,
+                Key: targetObjectName,
+            }),
+        );
+        if (!uploadId) throw new Error('S3 returned no multipart upload id');
+
+        const ranges: { partNumber: number; start: number; end: number }[] = [];
+        for (
+            let start = 0, partNumber = 1;
+            start < info.size;
+            start += COPY_PART_SIZE_BYTES, partNumber++
+        ) {
+            const end = Math.min(start + COPY_PART_SIZE_BYTES, info.size) - 1;
+            ranges.push({ partNumber, start, end });
+        }
+
+        try {
+            const parts: { ETag: string; PartNumber: number }[] = [];
+            for (
+                let index = 0;
+                index < ranges.length;
+                index += COPY_PART_CONCURRENCY
+            ) {
+                const batch = ranges.slice(
+                    index,
+                    index + COPY_PART_CONCURRENCY,
+                );
+                const results = await Promise.all(
+                    batch.map(async ({ partNumber, start, end }) => {
+                        const result = await this.clients.internal.send(
+                            new UploadPartCopyCommand({
+                                Bucket: this.bucketName,
+                                Key: targetObjectName,
+                                UploadId: uploadId,
+                                PartNumber: partNumber,
+                                CopySource: copySource,
+                                CopySourceRange: `bytes=${String(start)}-${String(end)}`,
+                            }),
+                        );
+                        const entityTag = result.CopyPartResult?.ETag;
+                        if (!entityTag) {
+                            throw new Error('S3 returned no part ETag');
+                        }
+                        return { ETag: entityTag, PartNumber: partNumber };
+                    }),
+                );
+                parts.push(...results);
+            }
+
+            await this.clients.internal.send(
+                new CompleteMultipartUploadCommand({
+                    Bucket: this.bucketName,
+                    Key: targetObjectName,
+                    UploadId: uploadId,
+                    MultipartUpload: { Parts: parts },
+                }),
+            );
+        } catch (error) {
+            await this.clients.internal
+                .send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: this.bucketName,
+                        Key: targetObjectName,
+                        UploadId: uploadId,
+                    }),
+                )
+                .catch((abortError: unknown) => {
+                    Logger.warn(
+                        `Aborting the multipart copy to ${targetObjectName} failed: ${String(abortError)}`,
+                    );
+                });
+            throw error;
+        }
     }
 
     async getSystemMetrics(): Promise<StorageSystemMetrics> {

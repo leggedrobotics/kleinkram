@@ -21,6 +21,7 @@ import {
     CanModifyTriggerGuard,
     CanReadManyMissionsGuard,
     CanReadTriggerGuard,
+    CopyFilesGuard,
     CreateActionGuard,
     CreateActionsGuard,
     CreateGuard,
@@ -256,6 +257,19 @@ export function CanMoveFiles() {
             type: ForbiddenException,
             description:
                 'User does not have Write permissions on the specified project.',
+        }),
+    );
+}
+
+export function CanCopyFiles() {
+    return applyDecorators(
+        SetMetadata('CanReadFile', true),
+        UseGuards(CopyFilesGuard),
+        ApiResponse({
+            status: 403,
+            type: ForbiddenException,
+            description:
+                'User cannot read the files or create files in the target mission.',
         }),
     );
 }

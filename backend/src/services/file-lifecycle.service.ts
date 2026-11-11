@@ -9,6 +9,7 @@ import { CategoryEntity } from '@kleinkram/backend-common/entities/category/cate
 import { FileEntity } from '@kleinkram/backend-common/entities/file/file.entity';
 import { IngestionJobEntity } from '@kleinkram/backend-common/entities/file/ingestion-job.entity';
 import { MissionEntity } from '@kleinkram/backend-common/entities/mission/mission.entity';
+import { TopicEntity } from '@kleinkram/backend-common/entities/topic/topic.entity';
 import { UserEntity } from '@kleinkram/backend-common/entities/user/user.entity';
 import env from '@kleinkram/backend-common/environment';
 import {
@@ -26,6 +27,7 @@ import {
     TriggerEvent,
     UserRole,
 } from '@kleinkram/shared';
+import { isValidFileName, splitFileName } from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
@@ -185,8 +187,11 @@ export class FileLifecycleService implements OnModuleInit {
                 await transactionalEntityManager.save(FileEntity, databaseFile);
             })
             .catch((error: unknown) => {
-                // [Existing Error Handling]
-                throw error;
+                // a file of the same name already exists in the mission
+                throw this.toConflictOnDuplicateName(
+                    error,
+                    databaseFile.mission,
+                );
             });
 
         // Log Rename Event
@@ -248,18 +253,24 @@ export class FileLifecycleService implements OnModuleInit {
     }
 
     /**
-     * Moves files into another mission, which may belong to another project.
+     * Loads and validates the files and the target mission of a move or copy.
      *
-     * The move is all-or-nothing: if any file does not exist, or if a moved
-     * file would clash with the name of a file in the target mission (or with
-     * another moved file), the request fails and no file is moved.
+     * Every file must exist. `renames` may give a file a new name in the
+     * target mission; the extension must stay the same. No resulting name may
+     * clash with a file of the target mission or with another file of the
+     * request. Nothing is changed here: a failed check throws before any file
+     * is touched.
      */
-    async moveFiles(
+    private async prepareTransfer(
         fileUUIDs: string[],
         missionUUID: string,
-        actor?: UserEntity,
-        action?: ActionEntity,
-    ): Promise<void> {
+        renames: Record<string, string>,
+        { skipFilesInTarget }: { skipFilesInTarget: boolean },
+    ): Promise<{
+        targetMission: MissionEntity;
+        files: FileEntity[];
+        targetNames: Map<string, string>;
+    }> {
         const uniqueFileUuids = [...new Set(fileUUIDs)];
 
         const targetMission = await this.missionRepository.findOne({
@@ -270,81 +281,146 @@ export class FileLifecycleService implements OnModuleInit {
             throw new NotFoundException('Target mission not found');
         }
 
-        const files = await this.fileRepository.find({
+        const unknownRenames = Object.keys(renames).filter(
+            (uuid) => !uniqueFileUuids.includes(uuid),
+        );
+        if (unknownRenames.length > 0) {
+            throw new BadRequestException(
+                `Renames name files that are not part of the request: ${unknownRenames.join(', ')}`,
+            );
+        }
+
+        const loaded = await this.fileRepository.find({
             where: { uuid: In(uniqueFileUuids) },
             relations: { mission: true },
         });
-        if (files.length !== uniqueFileUuids.length) {
-            const found = new Set(files.map((file) => file.uuid));
+        if (loaded.length !== uniqueFileUuids.length) {
+            const found = new Set(loaded.map((file) => file.uuid));
             const missing = uniqueFileUuids.filter((uuid) => !found.has(uuid));
             throw new NotFoundException(
                 `Files not found: ${missing.join(', ')}`,
             );
         }
+        // keep the order of the request
+        const byUuid = new Map(loaded.map((file) => [file.uuid, file]));
+        const files = uniqueFileUuids
+            .map((uuid) => byUuid.get(uuid))
+            .filter((file): file is FileEntity => !!file)
+            .filter(
+                (file) =>
+                    !skipFilesInTarget || file.mission?.uuid !== missionUUID,
+            );
 
-        // Files that already live in the target mission stay where they are.
-        const filesToMove = files.filter(
-            (file) => file.mission?.uuid !== missionUUID,
-        );
-        if (filesToMove.length === 0) return;
+        const renameByUuid = new Map(Object.entries(renames));
+        const targetNames = new Map<string, string>();
+        for (const file of files) {
+            const newName = renameByUuid.get(file.uuid);
+            if (newName === undefined || newName === file.filename) {
+                targetNames.set(file.uuid, file.filename);
+                continue;
+            }
+            if (!isValidFileName(newName)) {
+                throw new BadRequestException(
+                    `Filename "${newName}" is not valid`,
+                );
+            }
+            if (
+                splitFileName(newName).extension.toLowerCase() !==
+                splitFileName(file.filename).extension.toLowerCase()
+            ) {
+                throw new BadRequestException(
+                    `"${newName}" must keep the extension of "${file.filename}"`,
+                );
+            }
+            targetNames.set(file.uuid, newName);
+        }
 
-        const filenames = filesToMove.map((file) => file.filename);
-        const duplicatesInRequest = filenames.filter(
-            (filename, index) => filenames.indexOf(filename) !== index,
+        const names = [...targetNames.values()];
+        const duplicatesInRequest = names.filter(
+            (name, index) => names.indexOf(name) !== index,
         );
-        const existingInTarget = await this.fileRepository.find({
-            select: { uuid: true, filename: true },
-            where: {
-                mission: { uuid: missionUUID },
-                filename: In(filenames),
-            },
-        });
+        const existingInTarget = await this.findExistingFilenames(
+            missionUUID,
+            names,
+        );
+        // A file that keeps its name in its own mission does not clash with
+        // itself (copy into the source mission needs a rename anyway).
         const conflicts = [
-            ...new Set([
-                ...duplicatesInRequest,
-                ...existingInTarget.map((file) => file.filename),
-            ]),
+            ...new Set([...duplicatesInRequest, ...existingInTarget]),
         ];
         conflicts.sort();
         if (conflicts.length > 0) {
             throw new ConflictException(
                 `Mission "${targetMission.name}" already contains a file ` +
-                    `named ${conflicts.join(', ')}. Rename or delete the ` +
-                    'conflicting files first. No file was moved.',
+                    `named ${conflicts.join(', ')}. Rename or skip the ` +
+                    'conflicting files. No file was changed.',
             );
         }
 
-        const oldMissionUuids = new Map(
-            filesToMove.map((file) => [file.uuid, file.mission?.uuid]),
+        return { targetMission, files, targetNames };
+    }
+
+    /**
+     * Returns the subset of `filenames` that exist in the mission.
+     */
+    async findExistingFilenames(
+        missionUUID: string,
+        filenames: string[],
+    ): Promise<string[]> {
+        if (filenames.length === 0) return [];
+        const existing = await this.fileRepository.find({
+            select: { uuid: true, filename: true },
+            where: {
+                mission: { uuid: missionUUID },
+                filename: In([...new Set(filenames)]),
+            },
+        });
+        return [...new Set(existing.map((file) => file.filename))];
+    }
+
+    /**
+     * Moves files into another mission, which may belong to another project.
+     *
+     * The move is all-or-nothing, see `prepareTransfer` for the checks.
+     * Files that already live in the target mission stay where they are.
+     */
+    async moveFiles(
+        fileUUIDs: string[],
+        missionUUID: string,
+        actor?: UserEntity,
+        action?: ActionEntity,
+        renames: Record<string, string> = {},
+    ): Promise<void> {
+        const { targetMission, files, targetNames } =
+            await this.prepareTransfer(fileUUIDs, missionUUID, renames, {
+                skipFilesInTarget: true,
+            });
+        if (files.length === 0) return;
+
+        const previous = new Map(
+            files.map((file) => [
+                file.uuid,
+                { missionUuid: file.mission?.uuid, filename: file.filename },
+            ]),
         );
 
         try {
             await this.dataSource.transaction(async (manager) => {
-                for (const file of filesToMove) {
+                for (const file of files) {
                     file.mission = targetMission;
+                    file.filename = targetNames.get(file.uuid) ?? file.filename;
                 }
-                await manager.save(FileEntity, filesToMove);
+                await manager.save(FileEntity, files);
             });
         } catch (error: unknown) {
-            // A file with the same name was added to the target mission
-            // after the check above.
-            if (
-                error instanceof QueryFailedError &&
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                error.driverError.code === '23505'
-            ) {
-                throw new ConflictException(
-                    `Mission "${targetMission.name}" already contains a file ` +
-                        'with the same name. No file was moved.',
-                );
-            }
-            throw error;
+            throw this.toConflictOnDuplicateName(error, targetMission);
         }
 
         // The files are moved. Audit events, triggers and storage tags are
         // follow-up work: a failure there must not report the move as failed.
         await Promise.all(
-            filesToMove.map(async (file) => {
+            files.map(async (file) => {
+                const before = previous.get(file.uuid);
                 try {
                     await this.auditService.log(
                         FileEventType.MOVED,
@@ -355,7 +431,7 @@ export class FileLifecycleService implements OnModuleInit {
                             ...(actor ? { actor } : {}),
                             ...(action ? { action } : {}),
                             details: {
-                                fromMission: oldMissionUuids.get(file.uuid),
+                                fromMission: before?.missionUuid,
                                 toMission: missionUUID,
                             },
                         },
@@ -365,6 +441,27 @@ export class FileLifecycleService implements OnModuleInit {
                         file.uuid,
                         TriggerEvent.MOVE,
                     );
+                    if (before && before.filename !== file.filename) {
+                        await this.auditService.log(
+                            FileEventType.RENAMED,
+                            {
+                                fileUuid: file.uuid,
+                                filename: file.filename,
+                                missionUuid: missionUUID,
+                                ...(actor ? { actor } : {}),
+                                ...(action ? { action } : {}),
+                                details: {
+                                    oldFilename: before.filename,
+                                    newFilename: file.filename,
+                                },
+                            },
+                            true,
+                        );
+                        await this.triggerService.addFileEvent(
+                            file.uuid,
+                            TriggerEvent.RENAME,
+                        );
+                    }
                     await this.dataStorage.addTags(file.uuid, {
                         filename: file.filename,
                         missionUuid: missionUUID,
@@ -378,6 +475,186 @@ export class FileLifecycleService implements OnModuleInit {
                 }
             }),
         );
+    }
+
+    /**
+     * Copies files into another mission, which may belong to another project.
+     * The originals stay where they are. The data is copied inside the storage
+     * bucket; nothing is downloaded.
+     *
+     * A copy keeps the name (or the name from `renames`), the dates, the hash
+     * and the topics of its original. Categories belong to a project and are
+     * only kept when the copy stays in the same project.
+     */
+    async copyFiles(
+        fileUUIDs: string[],
+        missionUUID: string,
+        actor: UserEntity,
+        renames: Record<string, string> = {},
+    ): Promise<string[]> {
+        const { targetMission, files, targetNames } =
+            await this.prepareTransfer(fileUUIDs, missionUUID, renames, {
+                skipFilesInTarget: false,
+            });
+
+        const notReady = files.filter((file) => file.state !== FileState.OK);
+        if (notReady.length > 0) {
+            throw new ConflictException(
+                `Only files in state OK can be copied: ${notReady
+                    .map((file) => `${file.filename} (${file.state})`)
+                    .join(', ')}`,
+            );
+        }
+
+        const sources = await this.fileRepository.find({
+            where: { uuid: In(files.map((file) => file.uuid)) },
+            relations: {
+                topics: true,
+                categories: true,
+                mission: { project: true },
+            },
+        });
+        const sourceByUuid = new Map(sources.map((file) => [file.uuid, file]));
+
+        let copies: FileEntity[];
+        try {
+            copies = await this.dataSource.transaction(async (manager) => {
+                const created: FileEntity[] = [];
+                for (const file of files) {
+                    const source = sourceByUuid.get(file.uuid) ?? file;
+                    const sameProject =
+                        source.mission?.project?.uuid !== undefined &&
+                        source.mission.project.uuid ===
+                            targetMission.project?.uuid;
+
+                    const copy = manager.create(FileEntity, {
+                        filename: targetNames.get(file.uuid) ?? file.filename,
+                        mission: targetMission,
+                        creator: actor,
+                        date: source.date,
+                        recordingStartDate: source.recordingStartDate ?? null,
+                        recordingEndDate: source.recordingEndDate ?? null,
+                        recordingTimesCheckedAt:
+                            source.recordingTimesCheckedAt ?? null,
+                        size: source.size,
+                        type: source.type,
+                        // OK only once the data is copied, see below
+                        state: FileState.UPLOADING,
+                        ...(source.hash ? { hash: source.hash } : {}),
+                        ...(source.origin ? { origin: source.origin } : {}),
+                        categories: sameProject ? source.categories : [],
+                    });
+                    const saved = await manager.save(FileEntity, copy);
+                    if (source.topics && source.topics.length > 0) {
+                        await manager.save(
+                            TopicEntity,
+                            source.topics.map((topic) =>
+                                manager.create(TopicEntity, {
+                                    name: topic.name,
+                                    type: topic.type,
+                                    ...(topic.nrMessages === undefined
+                                        ? {}
+                                        : { nrMessages: topic.nrMessages }),
+                                    messageEncoding: topic.messageEncoding,
+                                    frequency: topic.frequency,
+                                    file: saved,
+                                }),
+                            ),
+                        );
+                    }
+                    created.push(saved);
+                }
+                return created;
+            });
+        } catch (error: unknown) {
+            throw this.toConflictOnDuplicateName(error, targetMission);
+        }
+
+        // Copy the data. A copy that fails is marked as ERROR so it is visible
+        // in the target mission instead of silently missing.
+        const failed: string[] = [];
+        await Promise.all(
+            copies.map(async (copy, index) => {
+                const source = files[index];
+                try {
+                    await this.dataStorage.copyFile(source.uuid, copy.uuid);
+                    await this.dataStorage.addTags(copy.uuid, {
+                        filename: copy.filename,
+                        missionUuid: missionUUID,
+                        projectUuid: targetMission.project?.uuid ?? '',
+                    });
+                    await this.fileRepository.update(copy.uuid, {
+                        state: FileState.OK,
+                    });
+                } catch (error) {
+                    logger.error(
+                        `Copying file ${source.uuid} to ${copy.uuid} failed: ${String(error)}`,
+                    );
+                    failed.push(source.filename);
+                    await this.fileRepository.update(copy.uuid, {
+                        state: FileState.ERROR,
+                        stateComment: 'Copying the data failed',
+                    });
+                    return;
+                }
+
+                try {
+                    await this.auditService.log(
+                        FileEventType.CREATED,
+                        {
+                            fileUuid: copy.uuid,
+                            filename: copy.filename,
+                            missionUuid: missionUUID,
+                            actor,
+                            details: {
+                                copiedFrom: source.uuid,
+                                fromMission: source.mission?.uuid,
+                            },
+                        },
+                        true,
+                    );
+                    await this.triggerService.addFileEvent(
+                        copy.uuid,
+                        TriggerEvent.UPLOAD,
+                    );
+                } catch (error) {
+                    logger.error(
+                        `Copied file ${copy.uuid}, but logging its events ` +
+                            `failed: ${String(error)}`,
+                    );
+                }
+            }),
+        );
+
+        if (failed.length > 0) {
+            throw new HttpException(
+                `Copying the data of ${failed.join(', ')} failed. The ` +
+                    'copies are marked as ERROR in the target mission.',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+        return copies.map((copy) => copy.uuid);
+    }
+
+    /**
+     * A unique-name violation means a file with the same name was added to the
+     * target mission after `prepareTransfer` checked it.
+     */
+    private toConflictOnDuplicateName(
+        error: unknown,
+        targetMission: MissionEntity | undefined,
+    ): unknown {
+        if (
+            error instanceof QueryFailedError &&
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            error.driverError.code === '23505'
+        ) {
+            return new ConflictException(
+                `Mission "${targetMission?.name ?? ''}" already contains a ` +
+                    'file with the same name. No file was changed.',
+            );
+        }
+        return error;
     }
 
     async deleteFile(

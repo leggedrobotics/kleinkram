@@ -213,7 +213,18 @@ klein mission delete testMission --project testProject
 
 klein file info data.bag --project testProject --mission testMission
 klein file delete data.bag other.bag --project testProject --mission testMission
+
+# move or copy files into another mission, also of another project
+klein file move data.bag --project testProject --mission testMission --to-project otherProject --to-mission otherMission
+klein file copy data.bag other.bag -p testProject -m testMission --to-project otherProject --to-mission otherMission
+
+# resolve a name conflict in the target mission with a new name
+klein file copy data.bag -p testProject -m testMission --to-project otherProject --to-mission otherMission --rename data.bag=data_1.bag
 ```
+
+`klein file move` and `klein file copy` are all-or-nothing: if a file name is already taken in the target mission, the
+command fails with the conflicting names and nothing is changed. The target mission must exist; create it first with
+`klein mission create`. A copy keeps the originals and is made on the server, nothing is downloaded.
 
 ### Running a Python Script as an Action
 

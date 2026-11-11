@@ -652,6 +652,42 @@ def delete_files(*, client: AuthenticatedClient, file_ids: Collection[UUID]) -> 
         kleinkram.api.routes._delete_files(client, file_ids=ids_, mission_id=mission_id)
 
 
+def move_files(
+    *,
+    client: AuthenticatedClient,
+    file_ids: Collection[UUID],
+    mission_id: UUID,
+    renames: Optional[Mapping[UUID, str]] = None,
+) -> None:
+    """\
+    moves files into another mission, which may belong to another project
+
+    `renames` gives files a new name in the target mission. the move is
+    all-or-nothing: on a name conflict the API refuses it and no file moves
+    """
+    if not file_ids:
+        return
+    kleinkram.api.routes._move_files(client, list(file_ids), mission_id, renames or {})
+
+
+def copy_files(
+    *,
+    client: AuthenticatedClient,
+    file_ids: Collection[UUID],
+    mission_id: UUID,
+    renames: Optional[Mapping[UUID, str]] = None,
+) -> List[UUID]:
+    """\
+    copies files into another mission, the originals stay where they are
+
+    the data is copied on the server. returns the ids of the copies in the
+    order of `file_ids`
+    """
+    if not file_ids:
+        return []
+    return kleinkram.api.routes._copy_files(client, list(file_ids), mission_id, renames or {})
+
+
 def delete_mission(*, client: AuthenticatedClient, mission_id: UUID) -> None:
     mquery = MissionQuery(ids=[mission_id])
     mission = kleinkram.api.routes.get_mission(client, mquery)
