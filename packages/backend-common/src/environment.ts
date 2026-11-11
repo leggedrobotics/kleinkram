@@ -131,9 +131,6 @@ export default {
     get S3_DATA_BUCKET_NAME(): string {
         return asString('S3_DATA_BUCKET_NAME');
     },
-    get S3_DB_BUCKET_NAME(): string {
-        return asString('S3_DB_BUCKET_NAME');
-    },
     get S3_ENDPOINT(): string {
         return asString('S3_ENDPOINT');
     },

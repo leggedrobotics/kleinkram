@@ -44,7 +44,6 @@ export class StorageService implements OnModuleInit {
         const buckets = [
             environment.S3_DATA_BUCKET_NAME,
             environment.S3_ARTIFACTS_BUCKET_NAME,
-            environment.S3_DB_BUCKET_NAME,
         ];
 
         for (const bucketName of buckets) {
