@@ -18,11 +18,14 @@ import {
     CancelProcessingResponseDto,
     CancelUploadResponseDto,
     ConfirmUploadDto,
+    CopyFilesResponseDto,
     DeleteFileResponseDto,
     DeleteMissionResponseDto,
     DownloadResponseDto,
     DriveCreate,
     DriveImportResponseDto,
+    ExistingFilenamesDto,
+    ExistingFilenamesResponseDto,
     FileDto,
     FileEventsDto,
     FileExistsResponseDto,
@@ -41,6 +44,7 @@ import {
     StorageOverviewDto,
     TemporaryAccessRequestDto,
     TemporaryFileAccessesDto,
+    TransferFilesDto,
     UpdateFile,
 } from '@kleinkram/api-dto';
 import {
@@ -66,6 +70,7 @@ import { ParameterUuid as ParameterUID } from '../../validation/parameter-decora
 import { AddUser, AuthHeader } from '../auth/parameter-decorator';
 import {
     AdminOnly,
+    CanCopyFiles,
     CanCreateInMissionByBody,
     CanDeleteFile,
     CanDeleteMission,
@@ -201,18 +206,52 @@ export class FileController {
         type: MoveFilesResponseDto,
     })
     async moveFiles(
-        @BodyUUIDArray('fileUUIDs', 'List of File UUID to be moved')
-        fileUUIDs: string[],
-        @BodyUUID('missionUUID', 'UUID of target Mission') missionUUID: string,
+        @Body() body: TransferFilesDto,
         @AddUser() auth: AuthHeader,
     ): Promise<MoveFilesResponseDto> {
         await this.fileLifecycleService.moveFiles(
-            fileUUIDs,
-            missionUUID,
+            body.fileUUIDs,
+            body.missionUUID,
             auth.user,
             auth.apiKey?.action,
+            body.renames ?? {},
         );
         return { success: true };
+    }
+
+    @Post('copy')
+    @CanCopyFiles()
+    @ApiCreatedResponse({
+        description: 'UUIDs of the copies',
+        type: CopyFilesResponseDto,
+    })
+    async copyFiles(
+        @Body() body: TransferFilesDto,
+        @AddUser() auth: AuthHeader,
+    ): Promise<CopyFilesResponseDto> {
+        const fileUUIDs = await this.fileLifecycleService.copyFiles(
+            body.fileUUIDs,
+            body.missionUUID,
+            auth.user,
+            body.renames ?? {},
+        );
+        return { fileUUIDs };
+    }
+
+    @Post('existingNames')
+    @CanReadMission(fromBody('missionUUID'))
+    @ApiOkResponse({
+        description: 'The requested filenames that exist in the mission',
+        type: ExistingFilenamesResponseDto,
+    })
+    async existingFilenames(
+        @Body() body: ExistingFilenamesDto,
+    ): Promise<ExistingFilenamesResponseDto> {
+        const filenames = await this.fileLifecycleService.findExistingFilenames(
+            body.missionUUID,
+            body.filenames,
+        );
+        return { filenames };
     }
 
     @Get('oneByName')

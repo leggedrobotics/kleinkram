@@ -7,6 +7,7 @@ from kleinkram.wrappers import create_mission
 from kleinkram.wrappers import create_project
 from kleinkram.wrappers import create_template
 from kleinkram.wrappers import create_template_version
+from kleinkram.wrappers import copy_files
 from kleinkram.wrappers import create_trigger
 from kleinkram.wrappers import delete_execution
 from kleinkram.wrappers import delete_file
@@ -34,6 +35,7 @@ from kleinkram.wrappers import list_missions
 from kleinkram.wrappers import list_projects
 from kleinkram.wrappers import list_templates
 from kleinkram.wrappers import list_triggers
+from kleinkram.wrappers import move_files
 from kleinkram.wrappers import run_script
 from kleinkram.wrappers import update_file
 from kleinkram.wrappers import update_mission
@@ -68,6 +70,8 @@ __all__ = [
     "update_file",
     "update_mission",
     "update_project",
+    "move_files",
+    "copy_files",
     "delete_files",
     "delete_file",
     "delete_mission",

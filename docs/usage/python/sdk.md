@@ -151,6 +151,19 @@ kleinkram.update_mission(mission_id="...", metadata={"status": "completed"})
 kleinkram.update_file(file_id="...")
 ```
 
+### Moving and Copying Files
+
+Move or copy files into another mission, also of another project. Both are all-or-nothing: on a name conflict in the
+target mission the call raises and nothing changes. Use `renames` to give files a new name in the target mission.
+
+```python
+# move files; they leave their current mission
+kleinkram.move_files(file_ids=["..."], mission_id="...")
+
+# copy files; the originals stay and the ids of the copies are returned
+copies = kleinkram.copy_files(file_ids=["...", "..."], mission_id="...", renames={"<file id>": "data_1.bag"})
+```
+
 ### Kleinkram Actions
 
 The SDK covers the same action workflows as the `template`, `execution` and `trigger` commands of the CLI. Templates

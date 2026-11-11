@@ -13,6 +13,7 @@ import type {
 } from '@kleinkram/api-dto/types/file/file.dto';
 import type { MoveFilesResponseDto } from '@kleinkram/api-dto/types/file/move-files-response.dto';
 import type { TemporaryAccessRequestDto } from '@kleinkram/api-dto/types/file/temporary-access-request.dto';
+import type { CopyFilesResponseDto } from '@kleinkram/api-dto/types/file/transfer-files.dto';
 import type { StopJobResponseDto } from '@kleinkram/api-dto/types/queue/stop-job-response.dto';
 import axios from 'src/api/axios';
 
@@ -53,10 +54,25 @@ export const updateFile = async ({
 export const moveFiles = async (
     fileUUIDs: string[],
     missionUUID: string,
+    renames: Record<string, string> = {},
 ): Promise<MoveFilesResponseDto> => {
     const response = await axios.patch<MoveFilesResponseDto>('/files', {
         fileUUIDs,
         missionUUID,
+        renames,
+    });
+    return response.data;
+};
+
+export const copyFiles = async (
+    fileUUIDs: string[],
+    missionUUID: string,
+    renames: Record<string, string> = {},
+): Promise<CopyFilesResponseDto> => {
+    const response = await axios.post<CopyFilesResponseDto>('/files/copy', {
+        fileUUIDs,
+        missionUUID,
+        renames,
     });
     return response.data;
 };
