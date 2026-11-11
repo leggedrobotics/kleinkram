@@ -63,7 +63,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(initialConfig);
+        await affiliationGroupService.upsertAccessGroups(initialConfig);
         await createUser('alice@leggedrobotics.com', initialConfig);
 
         // Now add Group B to config and sync
@@ -112,7 +112,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(initialConfig);
+        await affiliationGroupService.upsertAccessGroups(initialConfig);
         await createUser('bob@leggedrobotics.com', initialConfig);
 
         // Remove Group B from config
@@ -198,7 +198,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(initialConfig);
+        await affiliationGroupService.upsertAccessGroups(initialConfig);
         await createUser('carol@leggedrobotics.com', initialConfig);
 
         // Change email pattern so carol no longer matches
@@ -239,7 +239,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(config);
+        await affiliationGroupService.upsertAccessGroups(config);
         await createUser('dave@leggedrobotics.com', config);
 
         await affiliationGroupService.syncAccessGroups(config, userRepository);
@@ -269,7 +269,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(config);
+        await affiliationGroupService.upsertAccessGroups(config);
         await createUser('eve@leggedrobotics.com', config);
 
         // Verify user has a primary group
@@ -319,7 +319,7 @@ describe('Affiliation Group Sync on Reboot', () => {
             ],
         };
 
-        await affiliationGroupService.createAccessGroups(config);
+        await affiliationGroupService.upsertAccessGroups(config);
 
         // Create an external user (non-matching email)
         await createUser('frank@external.com', config);
@@ -356,7 +356,7 @@ describe('Affiliation Group Sync on Reboot', () => {
                 { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
             ],
         };
-        await affiliationGroupService.createAccessGroups(emptyConfig);
+        await affiliationGroupService.upsertAccessGroups(emptyConfig);
         await createUser('mallory@evilleggedrobotics.com', emptyConfig);
         await createUser('trent@sub.leggedrobotics.com', emptyConfig);
 
@@ -383,5 +383,62 @@ describe('Affiliation Group Sync on Reboot', () => {
             );
             expect(affiliationMemberships).toHaveLength(0);
         }
+    });
+
+    test('should rename and restore groups on upsert without touching memberships', async () => {
+        const accessGroupRepository = database.getRepository(AccessGroupEntity);
+        const groupMembershipRepository = database.getRepository(
+            GroupMembershipEntity,
+        );
+
+        const config: AccessGroupConfig = {
+            emails: [
+                {
+                    email: 'leggedrobotics.com',
+                    access_groups: [GROUP_A_UUID, GROUP_B_UUID],
+                },
+            ],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group B', uuid: GROUP_B_UUID, rights: 5 },
+            ],
+        };
+        await affiliationGroupService.upsertAccessGroups(config);
+        await createUser('grace@leggedrobotics.com', config);
+
+        const countMemberships = (uuid: string) =>
+            groupMembershipRepository.count({
+                where: { accessGroup: { uuid } },
+            });
+        expect(await countMemberships(GROUP_A_UUID)).toBe(1);
+        expect(await countMemberships(GROUP_B_UUID)).toBe(1);
+
+        // soft-delete Group B directly, keeping its membership row
+        await accessGroupRepository.softDelete({ uuid: GROUP_B_UUID });
+
+        const updatedConfig: AccessGroupConfig = {
+            emails: [],
+            access_groups: [
+                { name: 'Group A Renamed', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group B', uuid: GROUP_B_UUID, rights: 5 },
+            ],
+        };
+        await affiliationGroupService.upsertAccessGroups(updatedConfig);
+
+        const groupA = await accessGroupRepository.findOneOrFail({
+            where: { uuid: GROUP_A_UUID },
+        });
+        expect(groupA.name).toBe('Group A Renamed');
+
+        const groupB = await accessGroupRepository.findOne({
+            where: { uuid: GROUP_B_UUID },
+        });
+        expect(groupB).not.toBeNull();
+        expect(groupB?.deletedAt ?? null).toBeNull();
+
+        // the empty email list must not remove memberships: upsert only
+        // touches groups
+        expect(await countMemberships(GROUP_A_UUID)).toBe(1);
+        expect(await countMemberships(GROUP_B_UUID)).toBe(1);
     });
 });
