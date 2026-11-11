@@ -15,6 +15,7 @@ import logger, { NestLoggerWrapper } from './logger';
 import { GlobalErrorFilter } from './routing/filters/global-error-filter';
 import { GlobalResponseValidationInterceptor } from './routing/interceptors/output-validation';
 import { AddVersionInterceptor } from './routing/interceptors/version-injector';
+import { responseCompression } from './routing/middlewares/response-compression';
 
 interface ExpressLayer {
     route?: {
@@ -68,6 +69,19 @@ async function bootstrap(): Promise<void> {
     });
 
     app.useBodyParser('json', { limit: '50mb' });
+
+    /**
+     * Compress responses in the application rather than relying on a reverse
+     * proxy, so every deployment benefits. Set API_COMPRESSION_ENABLED=false
+     * when a proxy in front of the API already compresses.
+     */
+    if (environment.API_COMPRESSION_ENABLED) {
+        app.use(responseCompression());
+    } else {
+        logger.info(
+            'Response compression is disabled (API_COMPRESSION_ENABLED=false)',
+        );
+    }
 
     app.useGlobalInterceptors(new AddVersionInterceptor());
     app.use(cookieParser());
