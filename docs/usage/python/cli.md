@@ -45,17 +45,50 @@ klein file delete data.bag -p testProject -m testMission --yes
 
 These options go before the command, e.g. `klein --no-verbose file list -m testMission`.
 
-| Option                | Effect                                                                                                                                                                                                                                                                             |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--no-verbose`        | Output for scripts: `list` commands print one ID per line instead of a table, `info` commands print JSON, `upload` and `download` show no progress bars, and errors are shorter. When listing files, files that are not in the `OK` state are printed to stderr instead of stdout. |
-| `--max-lines <n>`     | Maximum number of rows in a table. `-1` prints all rows.                                                                                                                                                                                                                           |
-| `--debug`             | Show the Python traceback when a command fails, and write the log file at `DEBUG` level.                                                                                                                                                                                           |
-| `--log-level <level>` | Log level for the log file (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Each run writes a log file to `~/.local/state/kleinkram/` (on Windows `%LOCALAPPDATA%\kleinkram`).                                                                                                   |
-| `--version`, `-v`     | Print the CLI version.                                                                                                                                                                                                                                                             |
+| Option                | Effect                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--no-verbose`        | Output for scripts: `list` commands print one ID per line instead of a table, `info` commands print JSON, `upload` and `download` show no progress bars, and errors are shorter. When listing files, files that are not in the `OK` state are printed to stderr instead of stdout. `upload`, `download` and `verify` still print every problem on stderr, and their exit code does not change (see [Exit Codes](#exit-codes)). |
+| `--max-lines <n>`     | Maximum number of rows in a table. `-1` prints all rows.                                                                                                                                                                                                                                                                                                                                                                       |
+| `--debug`             | Show the Python traceback when a command fails, and write the log file at `DEBUG` level.                                                                                                                                                                                                                                                                                                                                       |
+| `--log-level <level>` | Log level for the log file (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Each run writes a log file to `~/.local/state/kleinkram/` (on Windows `%LOCALAPPDATA%\kleinkram`).                                                                                                                                                                                                                                               |
+| `--version`, `-v`     | Print the CLI version.                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ```bash
 # the IDs of all bag files in a mission, for use in a script
 klein --no-verbose file list -p testProject -m testMission "*.bag"
+```
+
+## Exit Codes
+
+`upload`, `download` and `verify` process every file, report each problem on stderr, and then exit with a code that
+says whether everything you asked for happened, like `cp`, `rsync` or `sha256sum -c`. The exit code is the same with
+and without `--no-verbose`; that option only changes how much is printed.
+
+| Code  | Meaning                                                                                                  |
+| ----- | -------------------------------------------------------------------------------------------------------- |
+| `0`   | Every requested file was handled.                                                                        |
+| `1`   | At least one requested file was not uploaded, downloaded or verified; each one is named on stderr.       |
+| `2`   | The command line is wrong (unknown option, missing argument).                                            |
+| `130` | Interrupted with Ctrl+C. Uploads and downloads that were running are cancelled; finished files are kept. |
+
+What counts as handled:
+
+- **`upload`**: the file is in the mission, either uploaded now or already there with the same content. A file whose
+  upload failed, or whose name is taken by a file with different content (or content that cannot be compared yet), is
+  not.
+- **`download`**: the file is in the destination, either downloaded now or already there with the right hash. Files
+  that are skipped because a local file with the same name differs (use `--overwrite`), because the remote file is
+  corrupted (use `--allow-corrupt`) or not in a downloadable state, or that fail the hash check, are not. Non-`.mcap`
+  files skipped by `--topics` / `--start-time` / `--end-time` only get a warning.
+- **`verify`**: the file is in the mission with the same size and hash. A file that is still being uploaded or
+  processed is not verified yet: run `klein verify` again later.
+
+Files left out on purpose with `--skip` do not change the exit code.
+
+```bash
+# stop a script if anything did not make it
+klein --no-verbose upload -p testProject -m testMission -r ./recordings || exit 1
+klein --no-verbose verify -p testProject -m testMission -r ./recordings || exit 1
 ```
 
 ## Core Workflows
@@ -139,13 +172,15 @@ every file with the name it gets in the mission, but uploads nothing and creates
 klein upload --project testProject --mission testMission --dry-run --recursive ./recordings
 ```
 
+With `--no-verbose`, the dry run prints one tab-separated line per file instead of the table (`<action>`,
+`<local path>`, `<name in mission>`), with the action being one of `upload`, `skip-same`, `skip-different` or
+`skip-unchecked`. Backslashes, tabs and line breaks in paths are escaped as `\\`, `\t`, `\n` and `\r`, so every file
+stays on one line.
+
 A file whose name is already used in the mission is always skipped, even if its content changed. The dry run compares
 the content and marks those files as `skip, name taken by a different file`. A real upload makes the same comparison
-afterwards: it lists such files as **NOT uploaded** and exits with code 1, so rename the local file or delete the file in
-the mission first. With `--no-verbose`, it prints one
-tab-separated line per file instead (`<action>`, `<local path>`, `<name in mission>`), with the action being one of
-`upload`, `skip-same`, `skip-different` or `skip-unchecked`. Backslashes, tabs and line breaks in paths are escaped as `\\`, `\t`,
-`\n` and `\r`, so every file stays on one line.
+afterwards: it lists such files as **NOT uploaded** and exits with code 1 (see [Exit Codes](#exit-codes)), so rename
+the local file or delete the file in the mission first.
 
 ::: tip Creating Missions on Upload
 To create a mission automatically during upload if it doesn't already exist, use the `--create` flag. Note that the target project must already exist.
@@ -192,6 +227,9 @@ klein download -p testProject -m testMission --dest ./downloaded_data --nested
 
 :::
 
+A file that already exists in the destination is kept if its hash matches. If it differs, it is skipped and the
+command exits with code 1; pass `--overwrite` to replace it. See [Exit Codes](#exit-codes).
+
 ### Verifying Resources
 
 Use the `verify` command to double-check if your local files were successfully uploaded and processed by the Kleinkram backend.
@@ -199,6 +237,10 @@ Use the `verify` command to double-check if your local files were successfully u
 ```bash
 klein verify --project testProject --mission testMission data.bag
 ```
+
+It exits with code 0 only if every file is in the mission with the same size and hash, and with 1 otherwise (see
+[Exit Codes](#exit-codes)). With `--no-verbose`, it prints the verified paths on stdout and every other file as
+`<status>: <path>` on stderr, e.g. `hash mismatch: data.bag` or `missing: data.bag`.
 
 ### Managing Projects, Missions and Files
 
