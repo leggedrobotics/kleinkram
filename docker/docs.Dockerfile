@@ -45,7 +45,6 @@ RUN SERVER_PORT=3000 \
     S3_ACCESS_KEY=test \
     S3_SECRET_KEY=test \
     S3_DATA_BUCKET_NAME=test \
-    S3_DB_BUCKET_NAME=test \
     S3_ARTIFACTS_BUCKET_NAME=test \
     S3_SCRIPTS_BUCKET_NAME=test \
     S3_ENDPOINT=localhost \

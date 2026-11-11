@@ -62,26 +62,12 @@ import { StorageService } from './storage.service';
                 ),
             inject: ['S3_CLIENTS', StorageAuthService],
         },
-        {
-            provide: 'DbDumpStorageBucket',
-            useFactory: (
-                clients: S3ClientContainer,
-                auth: StorageAuthService,
-            ) =>
-                new S3StorageBucket(
-                    environment.S3_DB_BUCKET_NAME,
-                    clients,
-                    auth,
-                ),
-            inject: ['S3_CLIENTS', StorageAuthService],
-        },
     ],
     exports: [
         FileAuditService,
         'DataStorageBucket',
         'ArtifactStorageBucket',
         'ScriptStorageBucket',
-        'DbDumpStorageBucket',
         StorageService,
     ],
 })
