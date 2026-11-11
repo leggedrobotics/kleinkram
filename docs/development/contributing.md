@@ -47,8 +47,17 @@ approval, this is merged to create a new release.
     ```
 
     This sets the version in every `package.json` and in `cli/setup.cfg`. `pnpm validateVersions` checks that they all
-    match. The API server rejects CLI versions with a different major version and warns about a different minor
-    version, so bump the minor version when the API changes in a way older CLIs should notice.
+    match.
+
+    Bumping the version does not block older clients by itself. Two separate checks exist:
+    - **The `klein` CLI** compares its own version with the server's when a command starts. It refuses to run if the
+      major versions differ and prints a warning if the minor versions differ. This check is part of the CLI commands
+      only; the Python SDK and direct API calls skip it. Bump the minor version when the API changes in a way older
+      CLIs should notice.
+    - **The API server** rejects requests with `426 Upgrade Required` if the `kleinkram-client-version` header is
+      missing or not a valid version, or if the version is in `FORBIDDEN_RANGES` in
+      `backend/src/routing/middlewares/version-checker-middleware.service.ts` (currently `<0.58.0`). To stop older CLIs
+      and SDKs from talking to the new API, extend that list in the release.
 
 2. **Open a Pull Request from `dev` to `main`.** The `check-version-number` workflow fails if the versions do not match
    or the version was not bumped. Some required checks only run on `dev`, so the head commit of the Pull Request must
