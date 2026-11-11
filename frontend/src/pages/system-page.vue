@@ -2,7 +2,17 @@
     <div>
         <title-section title="System" />
 
-        <div v-if="canView" class="q-mt-lg q-mb-lg system-grid">
+        <q-banner v-if="isError" class="q-mt-lg bg-white" rounded>
+            <template #avatar>
+                <q-icon name="sym_o_error" color="negative" />
+            </template>
+            Could not check your permissions for this page.
+            <template #action>
+                <q-btn flat no-caps label="Try again" @click="retry" />
+            </template>
+        </q-banner>
+
+        <div v-else-if="canView" class="q-mt-lg q-mb-lg system-grid">
             <system-storage-card class="system-grid__storage" />
             <system-running-actions class="system-grid__actions" />
             <system-worker-list class="system-grid__workers" />
@@ -21,7 +31,12 @@ import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const { data: permissions, isFetched } = usePermissionsQuery();
+const {
+    data: permissions,
+    isSuccess,
+    isError,
+    refetch,
+} = usePermissionsQuery();
 
 /**
  * Storage, workers and running actions describe the shared infrastructure.
@@ -30,10 +45,16 @@ const { data: permissions, isFetched } = usePermissionsQuery();
  */
 const canView = computed(() => canCreateProject(permissions.value));
 
+const retry = async (): Promise<void> => {
+    await refetch();
+};
+
+// only a successful answer that denies access leads to the 403 page; a failed
+// request shows the banner above instead
 watch(
-    [isFetched, canView],
-    async ([fetched, allowed]) => {
-        if (!fetched || allowed) return;
+    [isSuccess, canView],
+    async ([succeeded, allowed]) => {
+        if (!succeeded || allowed) return;
         await router.replace({
             path: ROUTES.ERROR_403.path,
             query: {

@@ -12,11 +12,7 @@
         </span>
 
         <span class="system-status__item">
-            <q-icon
-                name="sym_o_dns"
-                size="18px"
-                :color="offlineWorkers > 0 ? 'warning' : 'positive'"
-            />
+            <q-icon name="sym_o_dns" size="18px" :color="workersColor" />
             {{ workersLabel }}
         </span>
 
@@ -73,19 +69,26 @@ const storageLabel = computed(() =>
         : `Storage ${Math.round(storageUsage.value * 100).toString()} % used`,
 );
 
-const totalWorkers = computed(() => workers.value?.data.length ?? 0);
-const onlineWorkers = computed(
-    () => workers.value?.data.filter((worker) => worker.reachable).length ?? 0,
-);
-const offlineWorkers = computed(() => totalWorkers.value - onlineWorkers.value);
+/*
+ * While a request is loading or after it failed there is no data: show a dash
+ * instead of zeros, which would look like a healthy (or empty) system.
+ */
+const workersLabel = computed(() => {
+    const list = workers.value?.data;
+    if (!list) return 'Workers –';
+    const online = list.filter((worker) => worker.reachable).length;
+    return `${online.toString()} / ${list.length.toString()} workers online`;
+});
 
-const workersLabel = computed(
-    () =>
-        `${onlineWorkers.value.toString()} / ${totalWorkers.value.toString()} workers online`,
-);
+const workersColor = computed(() => {
+    const list = workers.value?.data;
+    if (!list) return 'grey-8';
+    return list.every((worker) => worker.reachable) ? 'positive' : 'warning';
+});
 
 const actionsLabel = computed(() => {
-    const count = runningActions.value?.count ?? 0;
+    const count = runningActions.value?.count;
+    if (count === undefined) return 'Running actions –';
     return count === 1
         ? '1 action running'
         : `${count.toString()} actions running`;
