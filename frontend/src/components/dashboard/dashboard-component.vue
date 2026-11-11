@@ -2,12 +2,17 @@
     <div>
         <title-section :title="`${greeting}, ${user?.name}`" />
 
-        <div class="q-mt-lg q-mb-lg dashboard-grid">
+        <div
+            class="q-mt-lg q-mb-lg dashboard-grid"
+            :class="{ 'dashboard-grid--projects-only': !showInfrastructure }"
+        >
             <DashboardRecentProjects />
             <DashboardStarredProjects />
-            <DashboardStorageIndicator />
-            <DashboardWorkerLists />
-            <RunningActions />
+            <template v-if="showInfrastructure">
+                <DashboardStorageIndicator />
+                <DashboardWorkerLists />
+                <RunningActions />
+            </template>
         </div>
     </div>
 </template>
@@ -19,10 +24,22 @@ import DashboardStarredProjects from 'components/dashboard/dashboard-starred-pro
 import DashboardStorageIndicator from 'components/dashboard/dashboard-storage-indicator.vue';
 import DashboardWorkerLists from 'components/dashboard/dashboard-worker-list.vue';
 import TitleSection from 'components/title-section.vue';
-import { useUser } from 'src/hooks/query-hooks';
+import {
+    canCreateProject,
+    usePermissionsQuery,
+    useUser,
+} from 'src/hooks/query-hooks';
 import { computed } from 'vue';
 
 const { data: user } = useUser();
+const { data: permissions } = usePermissionsQuery();
+
+/**
+ * Storage, device availability and running actions describe the shared
+ * infrastructure. Only members of an affiliation group (users who may create
+ * projects) see them; external users only get their projects.
+ */
+const showInfrastructure = computed(() => canCreateProject(permissions.value));
 
 const greeting = computed(() => {
     const currentHour = new Date().getHours();
@@ -76,6 +93,24 @@ const greeting = computed(() => {
     .dashboard-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
         grid-template-rows: repeat(2, 350px);
+    }
+}
+
+/*
+ * Without the infrastructure panels only the recent projects (two columns)
+ * and the starred projects (one column) are left. Lay them out in a single
+ * row of three columns instead of leaving empty cells in the larger grid.
+ */
+@media (min-width: 600px) {
+    .dashboard-grid--projects-only {
+        grid-template-rows: none;
+        grid-auto-rows: 350px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid--projects-only {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 </style>
