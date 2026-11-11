@@ -4,6 +4,7 @@ import os
 import re
 import secrets
 import shutil
+import subprocess
 import time
 from pathlib import Path
 
@@ -226,3 +227,76 @@ def test_cancel_execution(api, project, empty_mission):
         time.sleep(0.5)
 
     assert cancelled, f"Execution was not cancelled in 10s. Current state: {execution_obj.state}"
+
+
+def _nested_tree(root: Path) -> list[str]:
+    """\
+    a recording tree with the bags at several depths, plus files the
+    recursive upload must ignore; returns the names that must be uploaded
+    """
+    layout = {
+        "top.bag": "10_KB.bag",
+        "run1/run1_a.bag": "10_KB.bag",
+        "run1/deep/run1_deep.bag": "50_KB.bag",
+        "run2/run2_a.bag": "10_KB.bag",
+    }
+    for rel, source in layout.items():
+        dest = root / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(DATA_PATH / source, dest)
+    (root / "notes.txt").write_text("unsupported suffix")
+    (root / "run2" / ".hidden.bag").write_bytes((DATA_PATH / "10_KB.bag").read_bytes())
+    return sorted(Path(rel).name for rel in layout)
+
+
+def _remote_file_names(project, mission_name: str) -> list[str]:
+    files = kleinkram.wrappers.list_files(project_ids=[project.id], mission_names=[mission_name])
+    return sorted(f.name for f in files)
+
+
+@pytest.mark.slow
+def test_upload_and_verify_recursive_directory(project, tmp_path, api):
+    assert api
+    expected = _nested_tree(tmp_path / "tree")
+
+    mission_name = secrets.token_hex(8)
+    assert run_cmd(f"{CLI} upload -p {project.name} -m {mission_name} --create -r {tmp_path / 'tree'}") == 0
+    assert _remote_file_names(project, mission_name) == expected
+
+    assert run_cmd(f"{CLI} verify -p {project.name} -m {mission_name} -r {tmp_path / 'tree'}") == 0
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("shell", ["sh", "bash", "zsh"])
+def test_upload_quoted_recursive_glob(project, tmp_path, api, shell):
+    """the CLI expands a quoted `**` pattern itself, whatever the shell"""
+    assert api
+    if shutil.which(shell) is None:
+        pytest.skip(f"{shell} is not installed")
+    tree = tmp_path / "tree"
+    expected = _nested_tree(tree)
+
+    mission_name = secrets.token_hex(8)
+    command = f"cd {tree} && {CLI} upload -p {project.name} -m {mission_name} --create '**/*.bag'"
+    res = subprocess.run([shell, "-c", command], capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+    assert _remote_file_names(project, mission_name) == expected
+
+
+@pytest.mark.slow
+def test_upload_recursive_name_clash_creates_nothing(project, tmp_path, api):
+    """clashing names are refused before the mission is created"""
+    assert api
+    for run in ("run1", "run2"):
+        (tmp_path / run).mkdir()
+        shutil.copy(DATA_PATH / "10_KB.bag", tmp_path / run / "data.bag")
+
+    mission_name = secrets.token_hex(8)
+    res = subprocess.run(
+        [CLI, "upload", "-p", project.name, "-m", mission_name, "--create", "-r", str(tmp_path)],
+        capture_output=True,
+        text=True,
+    )
+    assert res.returncode != 0
+    assert "same name" in res.stderr + res.stdout
+    assert kleinkram.wrappers.list_missions(project_ids=[project.id], mission_names=[mission_name]) == []

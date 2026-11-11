@@ -107,6 +107,31 @@ You can also use glob patterns and wildcards to upload multiple files efficientl
 klein upload --project testProject --mission testMission *.bag
 ```
 
+To upload files from subdirectories, pass a directory with `--recursive` (`-r`). The CLI collects every file with a
+supported type below it and ignores everything else (including hidden files and directories):
+
+```bash
+klein upload --project testProject --mission testMission --recursive ./recordings
+```
+
+Or pass a **quoted** `**` pattern, which the CLI expands itself:
+
+```bash
+klein upload --project testProject --mission testMission '**/*.mcap'
+```
+
+::: warning Quote `**` patterns
+Shells handle `**` differently. zsh and fish match files at every depth. bash (without `shopt -s globstar`), sh and
+PowerShell on Linux / macOS treat `**` like `*`, so they match only one directory level and silently miss deeper
+files. PowerShell and cmd on Windows don't expand wildcards at all. Quoting the pattern, or using `--recursive`, gives
+the same result in every shell.
+:::
+
+Kleinkram stores files flat in a mission, under their file name only. If two of the selected files have the same
+name (e.g. `run1/data.mcap` and `run2/data.mcap`), the upload is refused before anything is sent.
+
+`klein verify` accepts the same directories, `--recursive` and patterns.
+
 ::: tip Creating Missions on Upload
 To create a mission automatically during upload if it doesn't already exist, use the `--create` flag. Note that the target project must already exist.
 

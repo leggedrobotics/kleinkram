@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from typing import List
+from typing import Sequence
 
 import typer
 
@@ -13,6 +14,13 @@ from kleinkram.errors import FileNameNotSupported
 from kleinkram.utils import EXPERIMENTAL_FILE_TYPES
 from kleinkram.utils import SUPPORT_FILE_TYPES
 from kleinkram.utils import check_filename_is_sanatized
+
+
+def supported_suffixes(*, experimental_datatypes: bool) -> Sequence[str]:
+    """file suffixes the validator accepts with the given flags"""
+    if experimental_datatypes:
+        return [*SUPPORT_FILE_TYPES, *EXPERIMENTAL_FILE_TYPES]
+    return SUPPORT_FILE_TYPES
 
 
 @dataclass
@@ -91,7 +99,7 @@ class FileValidator:
         hint = "Use --skip to ignore."
 
         if isinstance(e, IsADirectoryError):
-            hint = "Use --skip to ignore directories."
+            hint = "Use --recursive to include the files inside, or --skip to ignore directories."
         elif isinstance(e, DatatypeNotSupported):
             if "Experimental" in base_message:
                 hint = "Use --experimental-datatypes to allow or --skip to ignore."
