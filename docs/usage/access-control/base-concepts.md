@@ -58,6 +58,15 @@ On top of that, affiliation groups can be used to
 - can restrict or allow global access rights (e.g. all users not part of the `RoboticsCorp` affiliation group are not
   allowed create new projects or creation of new access groups)
 
+### System Page
+
+Users who may create projects (admins and members of an affiliation group) get a _System_ tab in the top navigation.
+The System page shows the storage usage, the action workers with their availability, and the running actions. Their
+dashboard shows a one-line summary of it with a link to the page.
+
+Other users do not see the tab or the summary. The API answers `403 Forbidden` when they request the storage usage
+(`GET /files/storage`) or the list of workers (`GET /workers`).
+
 ## Primary Group
 
 Each user has a primary group. This group has the same name as the user and is automatically created when the user is

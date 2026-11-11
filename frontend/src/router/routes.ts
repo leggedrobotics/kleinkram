@@ -210,6 +210,14 @@ const ROUTES = {
         layout: () => import('layouts/main-layout/main-layout.vue'),
     }),
 
+    SYSTEM: routeWithLayout({
+        breadcrumbs: [{ displayName: 'System', to: undefined }],
+        name: 'SystemPage',
+        path: '/system',
+        component: () => import('pages/system-page.vue'),
+        layout: () => import('layouts/main-layout/main-layout.vue'),
+    }),
+
     HOME: routeWithLayout({
         name: 'HomePage',
         path: '/',
