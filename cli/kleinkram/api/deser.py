@@ -298,7 +298,7 @@ def _parse_file(file: FileObject) -> File:
         fsize = file[FileObjectKeys.SIZE]
         fhash = file[FileObjectKeys.HASH]
         ftype = file[FileObjectKeys.TYPE].split(".")[-1]
-        fdate = file[FileObjectKeys.DATE]
+        fdate = _parse_datetime(file[FileObjectKeys.DATE])
         created_at = _parse_datetime(file[FileObjectKeys.CREATED_AT])
         updated_at = _parse_datetime(file[FileObjectKeys.UPDATED_AT])
         state = _parse_file_state(file[FileObjectKeys.STATE])

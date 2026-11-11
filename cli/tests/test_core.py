@@ -191,10 +191,24 @@ def test_verify(mission):
 
 
 @pytest.mark.slow
-def test_update_file():
+def test_update_file(mission):
     client = AuthenticatedClient()
-    with pytest.raises(NotImplementedError):
-        kleinkram.core.update_file(client=client, file_id=uuid4())
+    file = list_files(mission_ids=[mission.id], file_names=["*.bag"])[0]
+    new_name = f"renamed_{token_hex(4)}.bag"
+
+    kleinkram.core.update_file(client=client, file_id=file.id, new_name=new_name)
+
+    updated = kleinkram.api.routes.get_file_by_id(client, file.id)
+    assert updated.name == new_name
+    assert updated.date == file.date
+    assert updated.mission_id == file.mission_id
+
+
+@pytest.mark.slow
+def test_update_non_existing_file():
+    client = AuthenticatedClient()
+    with pytest.raises(kleinkram.errors.FileNotFound):
+        kleinkram.core.update_file(client=client, file_id=uuid4(), new_name="x.bag")
 
 
 @pytest.mark.slow

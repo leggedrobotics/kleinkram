@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+from datetime import timezone
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -96,3 +98,7 @@ def test_get_file_not_found(monkeypatch):
         get_file(client, FileQuery(ids=[FILE_UUID]))
 
     client.get.assert_not_called()
+
+
+def test_parse_file_parses_date():
+    assert _parse_file(_file_payload()).date == datetime(2024, 1, 1, tzinfo=timezone.utc)
