@@ -411,7 +411,10 @@
                                         <div
                                             class="text-caption text-grey-7 ellipsis"
                                         >
-                                            {{ props.row.user.email ?? 'N/A' }}
+                                            {{
+                                                props.row.user.email ??
+                                                'Email hidden'
+                                            }}
                                         </div>
                                     </div>
                                     <q-btn
@@ -547,6 +550,27 @@
                         color="grey-8"
                         class="checkbox-with-hitbox"
                     />
+                </template>
+                <template #body-cell-email="props">
+                    <q-td :props="props">
+                        <span v-if="props.row.user.email">
+                            {{ props.row.user.email }}
+                        </span>
+                        <span
+                            v-else
+                            class="row inline items-center no-wrap text-grey-7"
+                        >
+                            <q-icon
+                                name="sym_o_visibility_off"
+                                size="16px"
+                                class="q-mr-xs"
+                            />
+                            Hidden
+                            <q-tooltip>
+                                Only group editors can see email addresses
+                            </q-tooltip>
+                        </span>
+                    </q-td>
                 </template>
                 <template #body-cell-status="props">
                     <q-td :props="props">

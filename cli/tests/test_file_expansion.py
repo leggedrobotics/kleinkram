@@ -106,6 +106,19 @@ def test_recursive_suffix_match_is_case_sensitive_like_the_upload(tree):
     assert rel(files, tree) == ALL_MCAP
 
 
+@pytest.mark.skipif(not hasattr(os, "geteuid") or os.geteuid() == 0, reason="root can read everything")
+def test_recursive_unreadable_directory_raises(tree):
+    locked = tree / "run1" / "locked"
+    locked.mkdir()
+    (locked / "secret.mcap").write_bytes(b"x")
+    locked.chmod(0)
+    try:
+        with pytest.raises(PermissionError):
+            expand_file_args([str(tree)], recursive=True, suffixes=SUPPORT_FILE_TYPES)
+    finally:
+        locked.chmod(0o755)
+
+
 def test_recursive_does_not_enter_hidden_directories(tree, monkeypatch):
     (tree / ".venv" / "lib").mkdir(parents=True)
     visited = []
