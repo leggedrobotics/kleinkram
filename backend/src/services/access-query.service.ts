@@ -104,6 +104,9 @@ export class AccessQueryService {
                     .leftJoin('memberships.user', 'user')
                     .where('accessGroup.uuid = :uuid', { uuid })
                     .andWhere('user.uuid = :userUuid', { userUuid })
+                    // without this, an expired membership in the target group
+                    // itself counts as sharing one of its projects
+                    .andWhere(ACTIVE_MEMBERSHIP('memberships'))
                     .getCount();
 
                 if (sharedProjectsCount === 0) {

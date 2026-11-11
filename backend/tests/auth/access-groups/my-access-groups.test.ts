@@ -1,8 +1,9 @@
 import type { AccessGroupsDto } from '@kleinkram/api-dto';
 import { GroupMembershipEntity, UserEntity } from '@kleinkram/backend-common';
-import { AccessGroupType } from '@kleinkram/shared';
+import { AccessGroupRights, AccessGroupType } from '@kleinkram/shared';
 import {
     createAccessGroupUsingPost,
+    createProjectUsingPost,
     HeaderCreator,
 } from '../../utils/api-calls';
 import { database } from '../../utils/database-utilities';
@@ -116,6 +117,62 @@ describe('List own access groups', () => {
 
         const { body } = await listMine(external);
         expect(body.data.map((group) => group.uuid)).not.toContain(groupUuid);
+
+        const headers = new HeaderCreator(external);
+        const detail = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}`,
+            {
+                method: 'GET',
+                headers: headers.getHeaders(),
+            },
+        );
+        expect(detail.status).toBe(403);
+    });
+
+    test('an expired member of a group with projects cannot open its details', async () => {
+        const { user: creator } = await generateAndFetchDatabaseUser(
+            'internal',
+            'user',
+        );
+        const { user: external } = await generateAndFetchDatabaseUser(
+            'external',
+            'user',
+        );
+        const groupUuid = await createAccessGroupUsingPost(
+            { name: 'expired_with_project' },
+            creator,
+            [creator, external],
+        );
+        const projectUuid = await createProjectUsingPost(
+            {
+                name: 'expired_with_project_project',
+                description: 'project shared through the group',
+                requiredMetadataTypes: [],
+            },
+            creator,
+        );
+        const creatorHeaders = new HeaderCreator(creator);
+        creatorHeaders.addHeader('Content-Type', 'application/json');
+        const linked = await fetch(
+            `${DEFAULT_URL}/access-groups/${groupUuid}/projects/${projectUuid}`,
+            {
+                method: 'POST',
+                headers: creatorHeaders.getHeaders(),
+                body: JSON.stringify({ rights: AccessGroupRights.READ }),
+            },
+        );
+        expect(linked.status).toBeLessThan(300);
+
+        const membershipRepo = database.getRepository(GroupMembershipEntity);
+        const membership = await membershipRepo.findOneOrFail({
+            where: {
+                accessGroup: { uuid: groupUuid },
+                user: { uuid: external.uuid },
+            },
+        });
+        // a full day: the column has no time zone and NOW() runs in UTC
+        membership.expirationDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        await membershipRepo.save(membership);
 
         const headers = new HeaderCreator(external);
         const detail = await fetch(

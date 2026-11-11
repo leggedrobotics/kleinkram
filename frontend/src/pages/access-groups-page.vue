@@ -170,7 +170,21 @@
                                     <!-- The search endpoint does not expose user
                                          emails, so personal groups show no caption -->
                                     <div
-                                        v-if="tab !== 'users'"
+                                        v-if="isMine"
+                                        class="text-caption text-grey-7 row items-center no-wrap"
+                                    >
+                                        <span
+                                            class="ag-dot"
+                                            :class="{
+                                                'ag-dot--expiring':
+                                                    !!ownMembership(props.row)
+                                                        ?.expirationDate,
+                                            }"
+                                        />
+                                        {{ membershipLabel(props.row) }}
+                                    </div>
+                                    <div
+                                        v-else-if="tab !== 'users'"
                                         class="text-caption text-grey-7 ellipsis"
                                     >
                                         {{ props.row.creator?.name ?? '-' }}
@@ -229,6 +243,42 @@
                                 </q-btn>
                             </div>
                             <div class="row items-center q-gutter-x-sm q-mt-sm">
+                                <template v-if="isMine">
+                                    <q-chip
+                                        dense
+                                        square
+                                        size="sm"
+                                        class="q-ma-none text-weight-medium"
+                                        :class="typeChipClass(props.row.type)"
+                                    >
+                                        {{ typeLabel(props.row.type) }}
+                                    </q-chip>
+                                    <q-chip
+                                        dense
+                                        square
+                                        size="sm"
+                                        class="q-ma-none text-weight-medium"
+                                        :color="
+                                            ownMembership(props.row)
+                                                ?.canEditGroup
+                                                ? 'grey-10'
+                                                : 'grey-3'
+                                        "
+                                        :text-color="
+                                            ownMembership(props.row)
+                                                ?.canEditGroup
+                                                ? 'white'
+                                                : 'grey-9'
+                                        "
+                                    >
+                                        {{
+                                            ownMembership(props.row)
+                                                ?.canEditGroup
+                                                ? 'Editor'
+                                                : 'Member'
+                                        }}
+                                    </q-chip>
+                                </template>
                                 <app-status-chip
                                     v-if="tab === 'users'"
                                     :expiration-date="
@@ -496,6 +546,8 @@ watch(
             tab.value = 'groups';
         }
     },
+    // permissions may already be cached when the page mounts
+    { immediate: true },
 );
 
 watch(
