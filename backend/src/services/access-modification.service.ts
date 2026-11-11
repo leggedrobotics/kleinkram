@@ -27,6 +27,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
+import { notExpired } from './membership-filters';
 import {
     assertNotPublicAccessGroup,
     assertValidPublicAccessRights,
@@ -301,6 +302,7 @@ export class AccessModificationService {
                                 accessGroup: { uuid: accessGroupUUID },
                                 user: { uuid: Not(In(userUuids)) },
                                 canEditGroup: true,
+                                expirationDate: notExpired(),
                             },
                         },
                     );
@@ -691,13 +693,17 @@ export class AccessModificationService {
         });
 
         if (!canEditGroup) {
-            const editorsCount = await this.groupMembershipRepository.count({
+            // count the editors that stay, ignoring expired ones: they can
+            // no longer act on the group
+            const otherEditors = await this.groupMembershipRepository.count({
                 where: {
                     accessGroup: { uuid },
+                    user: { uuid: Not(userUuid) },
                     canEditGroup: true,
+                    expirationDate: notExpired(),
                 },
             });
-            if (editorsCount <= 1) {
+            if (otherEditors === 0) {
                 throw new ConflictException(
                     'Cannot demote the last user with edit rights',
                 );

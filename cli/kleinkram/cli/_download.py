@@ -18,6 +18,7 @@ from kleinkram.api.file_transfer import McapSlice
 from kleinkram.api.query import FileQuery
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
+from kleinkram.cli._context import OPTIONS_ANYWHERE
 from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
@@ -66,7 +67,13 @@ cannot be sliced and are skipped.
 """
 
 
-download_typer = typer.Typer(name="download", no_args_is_help=True, invoke_without_command=True, help=HELP)
+download_typer = typer.Typer(
+    name="download",
+    no_args_is_help=True,
+    invoke_without_command=True,
+    help=HELP,
+    context_settings=OPTIONS_ANYWHERE,
+)
 
 
 @download_typer.callback()
