@@ -1,25 +1,92 @@
 name: Build Sample Actions
 
+# Builds the example action images (rslethz/action:<action>-<tag>).
+#
+# The images install the kleinkram CLI from a wheel built from the same commit,
+# never from PyPI. Installing a version that was published seconds earlier
+# raced PyPI's index ("No matching distribution found").
+#
+#   main -> <action>-latest
+#   dev  -> <action>-dev
+#   any other ref (feature branches, pull requests) builds without pushing.
+
 on:
-    workflow_dispatch:
+    # Called by "Build and Deploy CLI Tool" with the wheel it just published.
+    workflow_call:
         inputs:
-            kleinkram_version:
-                description: 'Kleinkram version to install'
+            wheel-artifact:
+                description: 'Name of an uploaded artifact holding the kleinkram wheel'
                 required: false
+                type: string
                 default: ''
-    workflow_run:
-        workflows: ['Update PyPI']
-        types:
-            - completed
+    workflow_dispatch:
     push:
+        branches:
+            - main
+            - dev
         paths:
             - 'examples/kleinkram-actions/**'
+            - '.github/workflows/build-sample-actions.yml'
+    # Build-only check: PR refs never push images.
+    pull_request:
+        paths:
+            - 'examples/kleinkram-actions/**'
+            - '.github/workflows/build-sample-actions.yml'
+            - '.github/workflows/update-pypi.yml'
+            - '.github/scripts/release.py'
 
 jobs:
-    build-and-push:
+    build-wheel:
+        # Only needed when no caller handed us a wheel.
+        if: ${{ inputs.wheel-artifact == '' }}
         runs-on: ubuntu-latest
-        if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        permissions:
+            contents: read
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v7
+
+            - name: Set up Python
+              uses: actions/setup-python@v7
+              with:
+                  python-version: '3.12'
+
+            - name: Install build
+              run: python -m pip install --upgrade pip build
+
+            # Same steps as the PyPI release: sets __local__ = False, and on
+            # anything but main appends -dev<timestamp> so the CLI defaults to
+            # the dev environment.
+            - name: Run release script
+              run: |
+                  if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+                    python .github/scripts/release.py
+                  else
+                    python .github/scripts/release.py --dev
+                  fi
+
+            - name: Build wheel
+              run: |
+                  cd cli
+                  python -m build --wheel
+
+            - name: Upload wheel
+              uses: actions/upload-artifact@v7
+              with:
+                  name: kleinkram-wheel-sample-actions
+                  path: cli/dist/*.whl
+                  if-no-files-found: error
+
+    build-and-push:
+        needs: build-wheel
+        # Run after build-wheel, or when it was skipped because a wheel was passed in.
+        if: ${{ !cancelled() && (needs.build-wheel.result == 'success' || needs.build-wheel.result == 'skipped') }}
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
         strategy:
+            # One broken example must not cancel the others.
+            fail-fast: false
             matrix:
                 action:
                     [
@@ -30,44 +97,53 @@ jobs:
                         gpu-example,
                         script-runner,
                     ]
-                type: [dev, prod]
+        # A push touching both cli/ and examples/ starts this twice; don't let
+        # the two runs push the same tag at the same time.
+        concurrency:
+            group: sample-action-${{ github.ref }}-${{ matrix.action }}
+            cancel-in-progress: false
 
         steps:
             - name: Checkout code
               uses: actions/checkout@v7
 
+            - name: Download wheel
+              uses: actions/download-artifact@v8
+              with:
+                  name: ${{ inputs.wheel-artifact || 'kleinkram-wheel-sample-actions' }}
+                  path: ${{ runner.temp }}/kleinkram-wheel
+
+            - name: Determine tag
+              id: tag
+              run: |
+                  ls -l "${{ runner.temp }}/kleinkram-wheel"
+                  if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+                    echo "tag=latest" >> "$GITHUB_OUTPUT"
+                    echo "push=true" >> "$GITHUB_OUTPUT"
+                  elif [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+                    echo "tag=dev" >> "$GITHUB_OUTPUT"
+                    echo "push=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "tag=dev" >> "$GITHUB_OUTPUT"
+                    echo "push=false" >> "$GITHUB_OUTPUT"
+                  fi
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v4
 
             - name: Login to Docker Hub
+              if: ${{ steps.tag.outputs.push == 'true' }}
               uses: docker/login-action@v4
               with:
                   username: ${{ secrets.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-            - name: Determine Tag
-              id: tag
-              run: |
-                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-                    if [ "${{ matrix.type }}" == "prod" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
-                      echo "tag=latest" >> $GITHUB_OUTPUT
-                    else
-                      echo "tag=dev" >> $GITHUB_OUTPUT
-                    fi
-                    echo "kleinkram_version=${{ inputs.kleinkram_version }}" >> $GITHUB_OUTPUT
-                  elif [ "${{ matrix.type }}" == "dev" ]; then
-                    echo "tag=dev" >> $GITHUB_OUTPUT
-                    echo "kleinkram_version=" >> $GITHUB_OUTPUT # Installs latest from PyPI which is updated by Update PyPI workflow
-                  else
-                    echo "tag=latest" >> $GITHUB_OUTPUT
-                    echo "kleinkram_version=" >> $GITHUB_OUTPUT # Installs latest from PyPI
-                  fi
-
             - name: Build and push
               uses: docker/build-push-action@v7
               with:
                   context: examples/kleinkram-actions/${{ matrix.action }}
-                  push: true
+                  # Overrides the empty `kleinkram-wheel` stage in the Dockerfile.
+                  build-contexts: |
+                      kleinkram-wheel=${{ runner.temp }}/kleinkram-wheel
+                  push: ${{ steps.tag.outputs.push == 'true' }}
                   tags: rslethz/action:${{ matrix.action }}-${{ steps.tag.outputs.tag }}
-                  build-args: |
-                      KLEINKRAM_VERSION=${{ steps.tag.outputs.kleinkram_version }}
