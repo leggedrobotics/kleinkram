@@ -6,6 +6,7 @@ ends the options, see `kleinkram/cli/_context.py`
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock
@@ -63,8 +64,17 @@ def download(monkeypatch) -> MagicMock:
     return mock
 
 
+ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
 def invoke(runner: CliRunner, args: List[str]):
-    return runner.invoke(app, ["--no-verbose", *args])
+    # wide enough that rich does not wrap or truncate option names in help and errors
+    return runner.invoke(app, ["--no-verbose", *args], env={"COLUMNS": "200"})
+
+
+def plain(text: str) -> str:
+    """without color codes: on CI (GITHUB_ACTIONS) Typer forces colors, which split `--creat` into `-` + `-creat`"""
+    return ANSI.sub("", text)
 
 
 def paths(mock: MagicMock) -> List[str]:
@@ -97,14 +107,14 @@ def test_upload_double_dash_ends_options(runner, upload):
 def test_upload_mistyped_option_is_not_taken_as_a_file(runner, upload):
     result = invoke(runner, ["upload", "a.bag", "-p", "p", "-m", "m", "--creat"])
     assert result.exit_code == 2
-    assert "No such option: --creat" in result.stderr
+    assert "No such option: --creat" in plain(result.stderr)
     upload.assert_not_called()
 
 
 def test_upload_help_after_files(runner, upload):
     result = invoke(runner, ["upload", "a.bag", "-h"])
     assert result.exit_code == 0, result.output
-    assert "--create" in result.stdout
+    assert "--create" in plain(result.stdout)
     upload.assert_not_called()
 
 
