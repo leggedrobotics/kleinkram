@@ -21,6 +21,7 @@ from kleinkram.cli._progress import run_interruptible
 from kleinkram.cli._progress import transfer_progress
 from kleinkram.config import get_shared_state
 from kleinkram.errors import MissionNotFound
+from kleinkram.printing import print_upload_plan
 from kleinkram.utils import format_bytes
 from kleinkram.utils import load_metadata
 from kleinkram.utils import split_args
@@ -93,6 +94,11 @@ def upload(
     ),
     experimental_datatypes: bool = typer.Option(False, help="allow experimental datatypes (yaml, svo2, db3, tum)"),
     ignore_missing_metadata: bool = typer.Option(False, help="ignore missing required metadata"),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="show which files would be uploaded under which name, without uploading or creating anything",
+    ),
     ignore_missing_tags: Optional[bool] = typer.Option(None, "--ignore-missing-tags/--no-ignore-missing-tags", hidden=True),
 ) -> None:
     if ignore_missing_tags is not None:
@@ -120,6 +126,18 @@ def upload(
     _handle_no_files_to_upload(original_count=len(original_file_paths), uploaded_count=len(files_to_upload))
 
     verbose = get_shared_state().verbose
+
+    if dry_run:
+        plan = kleinkram.core.plan_upload(
+            client=AuthenticatedClient(),
+            query=mission_query,
+            file_paths=files_to_upload,
+            create=create,
+            fix_filenames=fix_filenames,
+            metadata=load_metadata(Path(metadata)) if metadata else None,
+        )
+        print_upload_plan(plan, pprint=verbose)
+        return
 
     try:
         if verbose:

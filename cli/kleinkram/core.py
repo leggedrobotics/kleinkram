@@ -61,9 +61,12 @@ from kleinkram.models import FileVerificationStatus
 from kleinkram.models import MetadataPayloadValue
 from kleinkram.models import MetadataValue
 from kleinkram.models import MetadataValueType
+from kleinkram.models import PlannedUpload
 from kleinkram.models import TimeConfig
 from kleinkram.models import TriggerConfig
 from kleinkram.models import TriggerType
+from kleinkram.models import UploadAction
+from kleinkram.models import UploadPlan
 from kleinkram.models import WebhookConfig
 from kleinkram.utils import b64_md5
 from kleinkram.utils import check_file_paths
@@ -292,6 +295,93 @@ def upload(
         on_file_start_cb=on_file_start_cb,
         on_file_progress_cb=on_file_progress_cb,
         on_message_cb=on_message_cb,
+    )
+
+
+def _check_required_metadata(required_metadata_types: Optional[List[str]], metadata: Mapping[str, Any]) -> None:
+    if required_metadata_types and not set(required_metadata_types).issubset(metadata.keys()):
+        raise kleinkram.errors.InvalidMissionMetadata(
+            f"Mission metadata `{required_metadata_types}` is required but missing from metadata: {metadata}"
+        )
+
+
+def _planned_action(path: Path, remote_file: Optional[kleinkram.models.File]) -> UploadAction:
+    """\
+    mirrors the server: a name that exists in the mission (unless the earlier
+    upload was canceled) is refused without looking at the content; the
+    content is compared only to tell the user whether that is fine
+    """
+    if remote_file is None or remote_file.state == FileState.CANCELED:
+        return UploadAction.UPLOAD
+    if remote_file.state != FileState.OK or not remote_file.hash:
+        return UploadAction.SKIP_UNCHECKED
+    if remote_file.size != path.stat().st_size:
+        return UploadAction.SKIP_DIFFERENT
+    if remote_file.hash != b64_md5(path):
+        return UploadAction.SKIP_DIFFERENT
+    return UploadAction.SKIP_SAME
+
+
+def plan_upload(
+    *,
+    client: AuthenticatedClient,
+    query: MissionQuery,
+    file_paths: Sequence[Path],
+    create: bool = False,
+    fix_filenames: bool = False,
+    metadata: Optional[Dict[str, str]] = None,
+) -> UploadPlan:
+    """\
+    what `upload` with the same arguments would do, without changing anything
+
+    runs the same local checks and raises the same errors as `upload` (bad
+    files, clashing names, missing mission without `create`, invalid
+    mission name or metadata), but only reads from the server
+    """
+    check_file_paths(file_paths, check_filename=not fix_filenames)
+    filename_map = get_filename_map(file_paths)
+
+    try:
+        mission = kleinkram.api.routes.get_mission(client, query=query)
+    except MissionNotFound:
+        if not create:
+            raise
+        project = kleinkram.api.routes.get_project(client, query=query.project_query, exact_match=True)
+        mission_name = check_mission_query_is_creatable(query)
+        _validate_mission_name(client, project.id, mission_name)
+        _check_required_metadata(project.required_metadata_types, metadata or {})
+        _get_metadata_map(client, metadata or {})
+        return UploadPlan(
+            project_name=project.name,
+            mission_name=mission_name,
+            mission_id=None,
+            files=[
+                PlannedUpload(path=path, name=name, size=path.stat().st_size, action=UploadAction.UPLOAD)
+                for name, path in filename_map.items()
+            ],
+        )
+
+    file_query = FileQuery(mission_query=MissionQuery(ids=[mission.id]))
+    remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=file_query)}
+
+    planned = []
+    for name, path in filename_map.items():
+        remote_file = remote_files.get(name)
+        planned.append(
+            PlannedUpload(
+                path=path,
+                name=name,
+                size=path.stat().st_size,
+                action=_planned_action(path, remote_file),
+                remote_state=remote_file.state if remote_file is not None else None,
+            )
+        )
+
+    return UploadPlan(
+        project_name=mission.project_name,
+        mission_name=mission.name,
+        mission_id=mission.id,
+        files=planned,
     )
 
 
@@ -795,11 +885,7 @@ def create_mission(
         metadata = {}
 
     _validate_mission_name(client, project_id, mission_name)
-
-    if required_metadata_types and not set(required_metadata_types).issubset(metadata.keys()):
-        raise kleinkram.errors.InvalidMissionMetadata(
-            f"Mission metadata `{required_metadata_types}` is required but missing from metadata: {metadata}"
-        )
+    _check_required_metadata(required_metadata_types, metadata)
 
     metadata_map = _get_metadata_map(client, metadata)
     mission_id = kleinkram.api.routes._create_mission(
