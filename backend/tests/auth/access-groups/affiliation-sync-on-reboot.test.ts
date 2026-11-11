@@ -384,4 +384,61 @@ describe('Affiliation Group Sync on Reboot', () => {
             expect(affiliationMemberships).toHaveLength(0);
         }
     });
+
+    test('should rename and restore groups on upsert without touching memberships', async () => {
+        const accessGroupRepository = database.getRepository(AccessGroupEntity);
+        const groupMembershipRepository = database.getRepository(
+            GroupMembershipEntity,
+        );
+
+        const config: AccessGroupConfig = {
+            emails: [
+                {
+                    email: 'leggedrobotics.com',
+                    access_groups: [GROUP_A_UUID, GROUP_B_UUID],
+                },
+            ],
+            access_groups: [
+                { name: 'Group A', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group B', uuid: GROUP_B_UUID, rights: 5 },
+            ],
+        };
+        await affiliationGroupService.upsertAccessGroups(config);
+        await createUser('grace@leggedrobotics.com', config);
+
+        const countMemberships = (uuid: string) =>
+            groupMembershipRepository.count({
+                where: { accessGroup: { uuid } },
+            });
+        expect(await countMemberships(GROUP_A_UUID)).toBe(1);
+        expect(await countMemberships(GROUP_B_UUID)).toBe(1);
+
+        // soft-delete Group B directly, keeping its membership row
+        await accessGroupRepository.softDelete({ uuid: GROUP_B_UUID });
+
+        const updatedConfig: AccessGroupConfig = {
+            emails: [],
+            access_groups: [
+                { name: 'Group A Renamed', uuid: GROUP_A_UUID, rights: 10 },
+                { name: 'Group B', uuid: GROUP_B_UUID, rights: 5 },
+            ],
+        };
+        await affiliationGroupService.upsertAccessGroups(updatedConfig);
+
+        const groupA = await accessGroupRepository.findOneOrFail({
+            where: { uuid: GROUP_A_UUID },
+        });
+        expect(groupA.name).toBe('Group A Renamed');
+
+        const groupB = await accessGroupRepository.findOne({
+            where: { uuid: GROUP_B_UUID },
+        });
+        expect(groupB).not.toBeNull();
+        expect(groupB?.deletedAt ?? null).toBeNull();
+
+        // the empty email list must not remove memberships: upsert only
+        // touches groups
+        expect(await countMemberships(GROUP_A_UUID)).toBe(1);
+        expect(await countMemberships(GROUP_B_UUID)).toBe(1);
+    });
 });
