@@ -353,3 +353,15 @@ def test_cli_dry_run_table_unlimited_max_lines_shows_every_file(runner, cli, fil
     for file in files:
         assert file.name in result.stdout
     assert "..." not in result.stdout
+
+
+def test_cli_dry_run_table_shows_brackets_in_paths(runner, cli, tmp_path):
+    raw = tmp_path / "[raw]"
+    raw.mkdir()
+    file = raw / "new.mcap"
+    file.write_bytes(b"x")
+    result = runner.invoke(
+        app, ["--verbose", "upload", "-p", "proj", "-m", "run42", "--dry-run", str(file)], env={"COLUMNS": "250"}
+    )
+    assert result.exit_code == 0, result.output
+    assert "[raw]" in result.stdout

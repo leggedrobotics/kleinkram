@@ -350,8 +350,8 @@ def upload_plan_table(plan: UploadPlan) -> Table:
         if entry.action == UploadAction.SKIP_UNCHECKED and entry.remote_state is not None:
             action = f"{action}, remote state {entry.remote_state.value}"
         table.add_row(
-            str(entry.path),
-            entry.name,
+            Text(str(entry.path)),  # Text, not str: rich would read `[raw]` in a path as markup
+            Text(entry.name),
             format_bytes(entry.size),
             Text(action, style=UPLOAD_ACTION_STYLES[entry.action]),
         )
