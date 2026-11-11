@@ -45,3 +45,15 @@ These states are typically only relevant for administrators or debugging purpose
 | <span class="material-symbols-outlined" style="color: red">pulse_alert</span>  | Lost   | The File is registered within the database but cannot be found in the File Storage. This is bad. Contact an Admin!                             |
 
 :::
+
+## Moving Files
+
+To move files into another mission, select them in the file table of a mission and click **Move**. The target mission can belong to
+another project. Moving needs <Delete /> rights on the files and <Create /> rights on the target mission. API keys cannot move
+files.
+
+A mission cannot hold two files with the same name. If a moved file has the same name as a file in the target mission, or two moved
+files have the same name, Kleinkram rejects the request and lists the conflicting names. No file is moved in that case: rename or
+delete the conflicting files first and try again.
+
+To share only a subset of a mission with other people, create a new mission in a project they can access and move the files there.
