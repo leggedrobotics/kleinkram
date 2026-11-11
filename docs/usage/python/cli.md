@@ -140,7 +140,9 @@ klein upload --project testProject --mission testMission --dry-run --recursive .
 ```
 
 A file whose name is already used in the mission is always skipped, even if its content changed. The dry run compares
-the content and marks those files as `skip, name taken by a different file`. With `--no-verbose`, it prints one
+the content and marks those files as `skip, name taken by a different file`. A real upload makes the same comparison
+afterwards: it lists such files as **NOT uploaded** and exits with code 1, so rename the local file or delete the file in
+the mission first. With `--no-verbose`, it prints one
 tab-separated line per file instead (`<action>`, `<local path>`, `<name in mission>`), with the action being one of
 `upload`, `skip-same`, `skip-different` or `skip-unchecked`. Backslashes, tabs and line breaks in paths are escaped as `\\`, `\t`,
 `\n` and `\r`, so every file stays on one line.

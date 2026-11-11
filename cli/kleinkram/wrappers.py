@@ -422,6 +422,12 @@ def upload(
 ) -> UploadResult:
     """Upload files to a mission.
 
+    A file whose name is already taken in the mission is skipped. If its
+    content differs from the file in the mission, it is listed in
+    `UploadResult.conflicts`: it was NOT uploaded. Files that could not be
+    compared (the file in the mission is not processed yet, or the mission
+    could not be read) are listed in `UploadResult.unchecked`.
+
     On Ctrl+C, running uploads stop and are cancelled on the server, and
     `KeyboardInterrupt` is re-raised. What finished before the interrupt is
     available via `kleinkram.errors.get_transfer_result(exc)`.

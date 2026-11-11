@@ -117,6 +117,30 @@ def test_plan_upload_against_existing_mission(empty_mission, tmp_path):
 
 
 @pytest.mark.slow
+def test_upload_reports_changed_files_with_a_taken_name(empty_mission, tmp_path):
+    """the server skips them by name; the result must not pass them off as uploaded"""
+    client = AuthenticatedClient()
+    query = MissionQuery(ids=[empty_mission.id])
+    small, other = DATA_FILES[0], DATA_FILES[1]
+    kleinkram.core.upload(client=client, query=query, file_paths=[small, other])
+    _wait_until_files_ok(empty_mission.id)
+    before = sorted((f.id, f.hash) for f in list_files(mission_ids=[empty_mission.id]))
+
+    changed = tmp_path / other.name
+    content = bytearray(other.read_bytes())
+    content[-1] ^= 0xFF
+    changed.write_bytes(bytes(content))
+
+    result = kleinkram.core.upload(client=client, query=query, file_paths=[small, changed])
+
+    assert (result.uploaded, result.skipped) == (0, 2)
+    assert sorted(result.existing) == sorted([small, changed])
+    assert result.conflicts == [changed]
+    assert result.unchecked == []
+    assert sorted((f.id, f.hash) for f in list_files(mission_ids=[empty_mission.id])) == before
+
+
+@pytest.mark.slow
 def test_plan_upload_does_not_create_the_mission(project):
     mission_name = token_hex(8)
     query = MissionQuery(patterns=[mission_name], project_query=ProjectQuery(ids=[project.id]))

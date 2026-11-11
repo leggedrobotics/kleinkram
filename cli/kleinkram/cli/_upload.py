@@ -9,6 +9,7 @@ import typer
 import kleinkram.core
 import kleinkram.utils
 from kleinkram.api.client import AuthenticatedClient
+from kleinkram.api.file_transfer import UploadResult
 from kleinkram.api.query import MissionQuery
 from kleinkram.api.query import ProjectQuery
 from kleinkram.cli._context import OPTIONS_ANYWHERE
@@ -65,6 +66,42 @@ def _handle_no_files_to_upload(original_count: int, uploaded_count: int) -> None
     else:
         typer.echo(typer.style("No files provided to upload.", fg=typer.colors.RED), err=True)
     raise typer.Exit(code=1)
+
+
+def _report_existing_files(result: UploadResult) -> None:
+    """\
+    files the server skipped because their name is taken in the mission are
+    only fine if they are the same file; say so loudly when they are not
+    """
+    if result.conflicts:
+        typer.echo(
+            typer.style(
+                f"\n{len(result.conflicts)} file(s) were NOT uploaded: a different file with the same name "
+                "is already in the mission:",
+                fg=typer.colors.RED,
+                bold=True,
+            ),
+            err=True,
+        )
+        for path in result.conflicts:
+            typer.echo(f"  {path}", err=True)
+        typer.echo(
+            "Rename the local file(s), or delete the file(s) in the mission (`klein file delete`) and upload again.",
+            err=True,
+        )
+    if result.unchecked:
+        typer.echo(
+            typer.style(
+                f"\n{len(result.unchecked)} file(s) were skipped because a file with the same name is in the mission, "
+                "but the content could not be compared (the file in the mission is not processed yet, "
+                "or the mission could not be read):",
+                fg=typer.colors.YELLOW,
+            ),
+            err=True,
+        )
+        for path in result.unchecked:
+            typer.echo(f"  {path}", err=True)
+        typer.echo("Run `klein verify` later to compare them.", err=True)
 
 
 @upload_typer.callback()
@@ -230,3 +267,6 @@ def upload(
     else:
         if interrupted:
             raise typer.Exit(code=130)  # 128 + SIGINT, the shell convention for Ctrl+C
+        _report_existing_files(result)
+        if result.conflicts:
+            raise typer.Exit(code=1)
