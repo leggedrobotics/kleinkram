@@ -321,3 +321,23 @@ def test_cli_dry_run_escapes_tabs_and_newlines_in_paths(runner, cli, tmp_path):
     action, path, name = line.split("\t")
     assert (action, name) == ("upload", "new.mcap")
     assert path == str(file).replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n")
+
+
+def test_cli_dry_run_table_respects_max_lines(runner, cli, files):
+    result = runner.invoke(
+        app,
+        ["--verbose", "--max-lines", "2", "upload", "-p", "proj", "-m", "run42", "--dry-run", *map(str, files)],
+        env={"COLUMNS": "250"},
+    )
+    assert result.exit_code == 0, result.output
+    assert "new.mcap" in result.stdout and "same.mcap" in result.stdout
+    assert "retry.mcap" not in result.stdout
+    assert "Would upload 2 file(s)" in result.stdout  # the summary still counts every file
+
+
+def test_cli_dry_run_script_output_ignores_max_lines(runner, cli, files):
+    result = runner.invoke(
+        app, ["--no-verbose", "--max-lines", "2", "upload", "-p", "proj", "-m", "run42", "--dry-run", *map(str, files)]
+    )
+    assert result.exit_code == 0, result.output
+    assert len(result.stdout.splitlines()) == len(files)

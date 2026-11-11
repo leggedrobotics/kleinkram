@@ -342,7 +342,10 @@ def upload_action_token(action: UploadAction) -> str:
 
 def upload_plan_table(plan: UploadPlan) -> Table:
     table = Table("local path", "name in mission", "size", "action", title="dry run")
-    for entry in plan.files:
+    # like the other tables, show at most --max-lines rows; the summary below
+    # the table and the script output (--no-verbose) always cover every file
+    max_table_size = get_shared_state().max_table_size
+    for entry in plan.files[:max_table_size]:
         action = entry.action.value
         if entry.action == UploadAction.SKIP_UNCHECKED and entry.remote_state is not None:
             action = f"{action}, remote state {entry.remote_state.value}"
@@ -352,6 +355,8 @@ def upload_plan_table(plan: UploadPlan) -> Table:
             format_bytes(entry.size),
             Text(action, style=UPLOAD_ACTION_STYLES[entry.action]),
         )
+    if len(plan.files) > max_table_size:
+        _add_placeholder_row(table, skipped=len(plan.files) - max_table_size)
     return table
 
 
