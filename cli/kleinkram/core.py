@@ -287,7 +287,7 @@ def upload(
 
     assert mission is not None, "unreachable"
 
-    return kleinkram.api.file_transfer.upload_files(
+    result = kleinkram.api.file_transfer.upload_files(
         client,
         filename_map,
         mission.id,
@@ -296,6 +296,44 @@ def upload(
         on_file_progress_cb=on_file_progress_cb,
         on_message_cb=on_message_cb,
     )
+    _check_existing_files(client, mission_id=mission.id, filename_map=filename_map, result=result, on_message_cb=on_message_cb)
+    return result
+
+
+def _check_existing_files(
+    client: AuthenticatedClient,
+    *,
+    mission_id: UUID,
+    filename_map: Mapping[str, Path],
+    result: kleinkram.api.file_transfer.UploadResult,
+    on_message_cb: Optional[OnMessageCb] = None,
+) -> None:
+    """\
+    the server refuses a file whose name is taken in the mission without
+    looking at the content; compare the refused files with the files in the
+    mission and record the ones that differ in `result.conflicts`, so a
+    changed local file is not reported as "already uploaded"
+    """
+    if not result.existing:
+        return
+
+    names = {path: name for name, path in filename_map.items()}
+    file_query = FileQuery(mission_query=MissionQuery(ids=[mission_id]))
+    try:
+        remote_files = {f.name: f for f in kleinkram.api.routes.get_files(client, file_query=file_query)}
+    except httpx.HTTPError as e:
+        if on_message_cb is not None:
+            on_message_cb(f"could not compare skipped files with the mission: {e}", True)
+        return
+
+    for path in result.existing:
+        action = _planned_action(path, remote_files.get(names[path]))
+        if action == UploadAction.SKIP_DIFFERENT:
+            result.conflicts.append(path)
+            if on_message_cb is not None:
+                on_message_cb(f"NOT uploaded {path}: a different file named {names[path]} is in the mission", True)
+        elif action == UploadAction.SKIP_UNCHECKED:
+            result.unchecked.append(path)
 
 
 def _check_required_metadata(required_metadata_types: Optional[List[str]], metadata: Mapping[str, Any]) -> None:

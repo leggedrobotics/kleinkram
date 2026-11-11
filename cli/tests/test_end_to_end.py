@@ -338,3 +338,28 @@ def test_upload_dry_run_changes_nothing(project, tmp_path, api):
     }
     assert "different file with the same name" in res.stderr
     assert _remote_file_names(project, mission_name) == expected
+
+
+@pytest.mark.slow
+def test_upload_changed_file_with_taken_name_fails(project, tmp_path, api):
+    assert api
+    tree = tmp_path / "tree"
+    _nested_tree(tree)
+    mission_name = secrets.token_hex(8)
+    assert run_cmd(f"{CLI} upload -p {project.name} -m {mission_name} --create -r {tree}") == 0
+
+    # uploading the same files again is fine
+    res = subprocess.run(
+        [CLI, "upload", "-p", project.name, "-m", mission_name, "-r", str(tree)], capture_output=True, text=True
+    )
+    assert res.returncode == 0, res.stderr
+    assert "NOT uploaded" not in res.stderr
+
+    with open(tree / "top.bag", "ab") as f:
+        f.write(b"changed")
+    res = subprocess.run(
+        [CLI, "upload", "-p", project.name, "-m", mission_name, "-r", str(tree)], capture_output=True, text=True
+    )
+    assert res.returncode == 1
+    assert "1 file(s) were NOT uploaded" in res.stderr
+    assert str(tree / "top.bag") in res.stderr

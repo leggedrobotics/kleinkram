@@ -15,6 +15,7 @@ from time import monotonic
 from time import sleep
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import NamedTuple
 from typing import Optional
 from typing import Set
@@ -633,6 +634,14 @@ class UploadResult:
     canceled: int = 0
     total_bytes: int = 0
     elapsed_seconds: float = 0.0
+    # local files the server refused because their name is taken in the mission
+    existing: List[Path] = field(default_factory=list)
+    # of `existing`: the content differs from the file in the mission, so the
+    # local file was NOT uploaded (filled in by `kleinkram.core.upload`)
+    conflicts: List[Path] = field(default_factory=list)
+    # of `existing`: the file in the mission is not in state OK yet, so the
+    # content could not be compared (filled in by `kleinkram.core.upload`)
+    unchecked: List[Path] = field(default_factory=list)
 
 
 @dataclass
@@ -745,6 +754,7 @@ def _resolve_upload_future(
         message = f"uploaded {path}"
     elif state == UploadState.EXISTS:
         result.skipped += 1
+        result.existing.append(path)
         message = f"skipped {path} (already uploaded)"
     else:
         result.canceled += 1
