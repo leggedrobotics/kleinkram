@@ -17,7 +17,9 @@ from unittest.mock import MagicMock
 import pytest
 from typer.testing import CliRunner
 
+import kleinkram.api.file_transfer
 import kleinkram.cli.app
+import kleinkram.core
 from kleinkram.api.file_transfer import UploadResult
 from kleinkram.cli._file_expansion import expand_file_args
 from kleinkram.cli.app import app
@@ -96,10 +98,28 @@ def test_recursive_only_collects_given_suffixes(tree):
     assert rel(files, tree) == ALL_MCAP
 
 
-def test_recursive_suffix_match_is_case_insensitive(tree):
+def test_recursive_suffix_match_is_case_sensitive_like_the_upload(tree):
+    """`check_file_paths` and the server reject `.MCAP`; selecting it would stop the whole batch"""
     (tree / "UPPER.MCAP").write_bytes(b"x")
     files = expand_file_args([str(tree)], recursive=True, suffixes=[".mcap"])
-    assert "UPPER.MCAP" in rel(files, tree)
+    assert "UPPER.MCAP" not in rel(files, tree)
+    assert rel(files, tree) == ALL_MCAP
+
+
+def test_recursive_does_not_enter_hidden_directories(tree, monkeypatch):
+    (tree / ".venv" / "lib").mkdir(parents=True)
+    visited = []
+    real_scandir = os.scandir
+
+    def recording_scandir(path):
+        visited.append(Path(path))
+        return real_scandir(path)
+
+    monkeypatch.setattr(os, "scandir", recording_scandir)
+    expand_file_args([str(tree)], recursive=True, suffixes=SUPPORT_FILE_TYPES)
+
+    assert visited, "the walk should use os.scandir"
+    assert not [p for p in visited if any(part.startswith(".") for part in p.relative_to(tree).parts)]
 
 
 def test_recursive_relative_directory(chdir_tree):
@@ -304,3 +324,20 @@ def test_unquoted_globstar_in_bash_misses_files(tree):
     """
     argv = argv_from_shell("bash", tree, "**/*.mcap")
     assert argv == ["run1/one.mcap"]
+
+
+def test_upload_recursive_with_uppercase_suffix_passes_the_real_core_check(runner, offline, monkeypatch, chdir_tree):
+    """only the server and the transfer are mocked, `kleinkram.core.upload` runs for real"""
+    (chdir_tree / "UPPER.MCAP").write_bytes(b"x")
+    routes = MagicMock()
+    monkeypatch.setattr(kleinkram.core.kleinkram.api, "routes", routes)
+    monkeypatch.setattr("kleinkram.cli._upload.AuthenticatedClient", MagicMock)
+    upload_files = MagicMock(return_value=UploadResult(uploaded=len(ALL_SUPPORTED)))
+    monkeypatch.setattr(kleinkram.api.file_transfer, "upload_files", upload_files)
+
+    result = runner.invoke(app, ["--no-verbose", "upload", "-p", "p", "-m", "m", "-r", "."])
+
+    assert result.exit_code == 0, result.output
+    (call,) = upload_files.call_args_list
+    filename_map = call.args[1]
+    assert sorted(filename_map) == sorted(Path(p).name for p in ALL_SUPPORTED)
