@@ -11,6 +11,20 @@ The valid operations that can be performed on a project are:
 | rename          | Rename the project                            | <Modify/>                                                               |
 | delete          | Delete the project                            | <Delete/>                                                               |
 
+## Managing Project Access
+
+Granting, changing and removing project access (for a user or an access group) needs <Modify/> on the project, and you
+can never act above your own level: you need at least the rights the entry has **before and after** the change.
+
+- To grant <Delete/>, you need <Delete/> yourself.
+- To lower or remove an entry that has <Delete/> (for example, to demote a project owner), you need <Delete/> yourself.
+- With <Modify/>, you can grant, change and remove entries up to <Modify/>.
+- Making a project public or restricted again (**General access**) needs <Delete/>, although public access itself
+  is always <Read/>.
+
+Your own level counts only memberships that have not expired. Project access cannot be set higher than <Delete/>, and
+every project keeps at least one access group with <Delete/>.
+
 ### Example
 
 **Scenario**: A research lab "Robotics Corp" wants to manage access to their "ANYmal Rough Terrain" project.

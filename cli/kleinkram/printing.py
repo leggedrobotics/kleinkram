@@ -322,9 +322,12 @@ def print_file_verification_status(file_status: Mapping[Path, FileVerificationSt
         table = file_verification_status_table(file_status)
         Console().print(table)
     else:
+        # verified paths on stdout for piping, every problem with its reason on stderr
         for path, status in file_status.items():
-            stream = sys.stdout if status == FileVerificationStatus.UPLOADED else sys.stderr
-            print(path, file=stream, flush=True)
+            if status == FileVerificationStatus.UPLOADED:
+                print(path, file=sys.stdout, flush=True)
+            else:
+                print(f"{status.value}: {path}", file=sys.stderr, flush=True)
 
 
 UPLOAD_ACTION_STYLES = {

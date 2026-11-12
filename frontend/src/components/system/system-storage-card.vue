@@ -1,5 +1,5 @@
 <template>
-    <q-card style="background-color: white" class="flex dashboard-card" flat>
+    <q-card style="background-color: white" class="flex system-card" flat>
         <q-card-section style="width: 100%">
             <v-chart
                 :option="option"
@@ -148,12 +148,12 @@ const option = computed(() => {
 </script>
 <style scoped>
 /*
- * On phones the dashboard stacks its panels in a flex column, so the card no
- * longer inherits a height from the grid row. Give the chart an explicit box
+ * On phones the System page stacks its panels in a flex column, so the card
+ * no longer inherits a height from the grid row. Give the chart an explicit box
  * to render into, otherwise its `height: 100%` collapses to zero.
  */
 @media (max-width: 599px) {
-    .dashboard-card {
+    .system-card {
         height: 280px;
     }
 }

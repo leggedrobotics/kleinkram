@@ -47,7 +47,7 @@ Kleinkram allows you to organize and search your data using metadata on missions
 
 #### Mission Level: Metadata
 
-You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization.
+You can add key-value pairs as metadata to missions. Each key is a **metadata type**, which defines the name and datatype (e.g. string, number, boolean, date, location, link) of a value; the value set on a mission is its **metadata**. This allows for powerful filtering and organization. A value of type link must be an absolute `http://` or `https://` URL; other values are rejected.
 
 - **Enforcement**: You can enforce specific metadata keys at the **Project** level. This ensures that all missions within a project have consistent metadata (e.g., requiring a "Robot ID" or "Location" metadata type for every mission).
 - **Usage**: Use this metadata to quickly find all missions performed by a specific robot or in a specific location.
