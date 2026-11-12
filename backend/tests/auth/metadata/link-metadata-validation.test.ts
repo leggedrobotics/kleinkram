@@ -187,6 +187,39 @@ describe('Link Metadata Validation', () => {
         expect(missions).toHaveLength(0);
     });
 
+    test('should accept a valid link sent with an uppercase metadata type uuid', async () => {
+        const { user, projectUuid, linkTypeUuid } = await setup();
+
+        const response = await fetch(`${DEFAULT_URL}/missions`, {
+            method: 'POST',
+            headers: {
+                ...getAuthHeaders(user),
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: `link_metadata_uppercase_${String(Date.now())}`,
+                projectUUID: projectUuid,
+                metadata: {
+                    [linkTypeUuid.toUpperCase()]: 'https://example.com',
+                },
+                ignoreMissingMetadata: true,
+            }),
+        });
+        expect(response.status).toBeLessThan(300);
+    });
+
+    test('should name the metadata type in the error message', async () => {
+        const { user, missionUuid, linkTypeUuid } = await setup();
+
+        const response = await postMetadata(user, missionUuid, {
+            [linkTypeUuid]: 'javascript:alert(1)',
+        });
+        expect(response.status).toBe(422);
+        const body = (await response.json()) as { message: string };
+        expect(body.message).toMatch(/^Metadata "link_\d+" must be/);
+    });
+
     test('should not validate string metadata as a link', async () => {
         const { user, missionUuid, stringTypeUuid } = await setup();
 

@@ -22,10 +22,10 @@ import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
  * `http:` or `https:` URL: the frontend opens these values on click, and a
  * `javascript:` URL would run in the viewer's session.
  */
-const validateLink = <T>(value: T): T => {
+const validateLink = <T>(value: T, name: string): T => {
     if (safeLinkUrl(value) === undefined) {
         throw new UnprocessableEntityException(
-            'Link must be an absolute http:// or https:// URL',
+            `Metadata "${name}" must be an absolute http:// or https:// URL`,
         );
     }
     return value;
@@ -131,7 +131,7 @@ export class MetadataService {
                     // eslint-disable-next-line @typescript-eslint/naming-convention
                     value_string:
                         metadataType.datatype === DataType.LINK
-                            ? validateLink(value)
+                            ? validateLink(value, metadataType.name)
                             : value,
                     mission,
                 });
@@ -243,7 +243,7 @@ export class MetadataService {
 
                 existingMetadata.value_string =
                     metadataType.datatype === DataType.LINK
-                        ? validateLink(value)
+                        ? validateLink(value, metadataType.name)
                         : value;
                 break;
             }
@@ -312,14 +312,24 @@ export class MetadataService {
      * and `updateMetadata` check each value again on their own.
      */
     async validateLinks(metadata: Record<string, unknown>): Promise<void> {
-        const metadataTypeUUIDs = Object.keys(metadata);
-        if (metadataTypeUUIDs.length === 0) return;
+        // PostgreSQL matches uuids case-insensitively but returns them in
+        // lowercase, so look the values up by their lowercase key.
+        const valuesByUUID = new Map(
+            Object.entries(metadata).map(([uuid, value]) => [
+                uuid.toLowerCase(),
+                value,
+            ]),
+        );
+        if (valuesByUUID.size === 0) return;
         const linkTypes = await this.metadataTypeRepository.find({
-            where: { uuid: In(metadataTypeUUIDs), datatype: DataType.LINK },
-            select: { uuid: true },
+            where: {
+                uuid: In([...valuesByUUID.keys()]),
+                datatype: DataType.LINK,
+            },
+            select: { uuid: true, name: true },
         });
-        for (const { uuid } of linkTypes) {
-            validateLink(metadata[uuid]);
+        for (const { uuid, name } of linkTypes) {
+            validateLink(valuesByUUID.get(uuid.toLowerCase()), name);
         }
     }
 
