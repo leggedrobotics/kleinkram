@@ -33,9 +33,15 @@ export const DEVICE_POLL_INTERVAL_SECONDS = 5;
 /**
  * Logins that can be started per minute on the whole instance. The endpoint
  * needs no login, so this bounds what anonymous callers can store in Redis:
- * at most `limit * TTL / 60` pending logins exist at any time.
+ * at most `limit * TTL / 60` pending logins (6000, a few MB) exist at once.
+ *
+ * The limit is global because the API cannot tell callers apart reliably
+ * behind the reverse proxy (forwarded IPs can be forged). It is set high
+ * enough that legitimate logins never reach it and blocking them takes a
+ * sustained flood (10 requests per second); per-client limits belong in the
+ * reverse proxy, which knows the real client address.
  */
-export const DEVICE_LOGINS_PER_MINUTE = 60;
+export const DEVICE_LOGINS_PER_MINUTE = 600;
 
 /**
  * Consonants only (as GitHub does): no vowels, so a code never spells a
