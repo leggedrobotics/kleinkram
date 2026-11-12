@@ -125,8 +125,9 @@ Supported providers are `google`, `github` and, for local development, `fake-oau
 
 ### Logging Out
 
-`klein logout` ends the login of the active server on the server and removes it from this machine.
-`klein logout --all` does this for every server. API keys stay valid; they are not logins.
+`klein logout` logs you out of the active server, and `klein logout --all` out of every server. It deletes the
+saved login from this machine and also tells the server to end the session, so a copy of the token (for example in a
+backup or on another machine) stops working as well. API keys are not logins and stay valid.
 
 ### Sessions
 

@@ -108,16 +108,16 @@ klein --no-verbose verify -p testProject -m testMission -r ./recordings || exit 
 
 ## Servers and Login
 
-| Command                    | What it does                                                                     |
-| -------------------------- | -------------------------------------------------------------------------------- |
-| `klein login <url>`        | Adds the server behind the web app address `<url>`, makes it active and logs in. |
-| `klein login`              | Logs in to the active server again.                                              |
-| `klein login --headless`   | Prints the login code instead of opening a browser.                              |
-| `klein login --key <key>`  | Stores an API key for the active server (add `<url>` if none is set up yet).     |
-| `klein host`               | Lists the saved servers and marks the active one.                                |
-| `klein host use <name>`    | Makes a saved server the active one.                                             |
-| `klein host remove <name>` | Forgets a server and its login.                                                  |
-| `klein logout [--all]`     | Ends the login of the active server (or all), also on the server.                |
+| Command                    | What it does                                                                                                                    |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `klein login <url>`        | Adds the server behind the web app address `<url>`, makes it active and logs in.                                                |
+| `klein login`              | Logs in to the active server again.                                                                                             |
+| `klein login --headless`   | Prints the login code instead of opening a browser.                                                                             |
+| `klein login --key <key>`  | Stores an API key for the active server (add `<url>` if none is set up yet).                                                    |
+| `klein host`               | Lists the saved servers and marks the active one.                                                                               |
+| `klein host use <name>`    | Makes a saved server the active one.                                                                                            |
+| `klein host remove <name>` | Forgets a server and its login.                                                                                                 |
+| `klein logout [--all]`     | Logs out of the active server (all servers with `--all`). The server ends the session, so copies of the token stop working too. |
 
 See the [Setup Guide](./setup.md#authentication) for how the login works.
 
