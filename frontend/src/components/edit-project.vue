@@ -11,7 +11,8 @@
             placeholder="Name..."
             :rules="[
                 (val: string) =>
-                    getNameValidationError(val, 'Project name') ?? true,
+                    val.trim() === project?.name ||
+                    (getNameValidationError(val, 'Project name') ?? true),
                 (val: string) =>
                     !invalidProjectNames.includes(val) ||
                     'A project with that name already exists!',
@@ -100,11 +101,12 @@ async function save_changes(): Promise<void> {
     )
         return;
 
-    // validate input, the input field already shows the reason
-    const nameError = getNameValidationError(
-        projectName.value.trim(),
-        'Project name',
-    );
+    // validate input, the input field already shows the reason; a name from
+    // before the naming rules is kept until it changes
+    const nameError =
+        projectName.value.trim() === project.value?.name
+            ? undefined
+            : getNameValidationError(projectName.value.trim(), 'Project name');
     if (nameError) {
         throw new Error(nameError);
     }

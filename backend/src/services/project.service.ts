@@ -9,7 +9,9 @@ import {
     ProjectWithRequiredMetadataTypesDto,
     ResentProjectDto,
     SortOrder,
+    UpdateProject,
 } from '@kleinkram/api-dto';
+import { getNameValidationError } from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
@@ -779,7 +781,19 @@ export class ProjectService {
         return projectEntityToDto(createdProject);
     }
 
-    async update(uuid: string, project: CreateProject): Promise<ProjectDto> {
+    async update(uuid: string, project: UpdateProject): Promise<ProjectDto> {
+        // names from before the naming rules are kept until they are changed
+        const current = await this.projectRepository.findOneOrFail({
+            where: { uuid },
+        });
+        if (project.name !== current.name) {
+            const nameError = getNameValidationError(
+                project.name,
+                'Project name',
+            );
+            if (nameError) throw new BadRequestException(nameError);
+        }
+
         const exists = await this.projectRepository.exists({
             where: { name: ILike(project.name), uuid: Not(uuid) },
         });

@@ -28,6 +28,7 @@ import {
     ResentProjectsDto,
     UpdateMetadataTypesBodyDto,
     UpdateMetadataTypesDto,
+    UpdateProject,
 } from '@kleinkram/api-dto';
 import {
     BadRequestException,
@@ -138,7 +139,7 @@ export class ProjectController {
     })
     async updateProject(
         @ParameterUID('uuid') uuid: string,
-        @Body() dto: CreateProject,
+        @Body() dto: UpdateProject,
     ): Promise<ProjectDto> {
         return this.projectService.update(uuid, dto);
     }

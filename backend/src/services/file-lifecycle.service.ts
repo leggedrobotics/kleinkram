@@ -26,6 +26,7 @@ import {
     TriggerEvent,
     UserRole,
 } from '@kleinkram/shared';
+import { getFileNameValidationError } from '@kleinkram/validation';
 import {
     BadRequestException,
     ConflictException,
@@ -109,6 +110,12 @@ export class FileLifecycleService implements OnModuleInit {
 
         const oldFilename = databaseFile.filename;
         const isRenamed = file.filename !== oldFilename;
+
+        // names from before the naming rules are kept until they are changed
+        if (isRenamed) {
+            const nameError = getFileNameValidationError(file.filename);
+            if (nameError) throw new BadRequestException(nameError);
+        }
 
         // validate file ending
         const validExtensions = [...FILE_EXTENSION_TO_FILE_TYPE_MAP.entries()]
