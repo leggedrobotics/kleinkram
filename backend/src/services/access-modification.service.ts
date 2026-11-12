@@ -93,14 +93,6 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectEntity> {
-        const project = await this.projectRepository.findOneOrFail({
-            where: { uuid: projectUUID },
-            relations: {
-                project_accesses: {
-                    accessGroup: true,
-                },
-            },
-        });
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
             relations: {
@@ -123,44 +115,49 @@ export class AccessModificationService {
         if (personalAccessGroup === undefined)
             throw new Error('User has no personal access group');
 
-        const existingAccess = await this.projectAccessRepository
-            .createQueryBuilder('projectAccess')
-            .leftJoin('projectAccess.accessGroup', 'accessGroup')
-            .leftJoin('projectAccess.project', 'project')
-            .where('project.uuid = :projectUUID', {
+        await this.entityManager.transaction(async (transaction) => {
+            const project = await this.lockProjectForAccessChange(
+                transaction,
                 projectUUID,
-            })
-            .andWhere('accessGroup.uuid = :accessGroupUUID', {
-                accessGroupUUID: personalAccessGroup.uuid,
-            })
-            .getOne();
+            );
 
-        await this.assertCanChangeProjectRights(
-            projectUUID,
-            auth,
-            rights,
-            existingAccess?.rights,
-        );
-
-        if (existingAccess) {
-            existingAccess.rights = rights;
-            await this.projectAccessRepository.save(existingAccess);
-            return this.projectRepository.findOneOrFail({
-                where: { uuid: projectUUID },
-                relations: {
-                    project_accesses: {
-                        accessGroup: true,
+            const existingAccess = await transaction.findOne(
+                ProjectAccessEntity,
+                {
+                    where: {
+                        project: { uuid: projectUUID },
+                        accessGroup: { uuid: personalAccessGroup.uuid },
                     },
                 },
-            });
-        }
+            );
 
-        const projectAccess = this.projectAccessRepository.create({
-            rights: rights,
-            accessGroup: personalAccessGroup,
-            project: project,
+            await this.assertCanChangeProjectRights(
+                projectUUID,
+                auth,
+                rights,
+                existingAccess?.rights,
+            );
+
+            if (existingAccess) {
+                existingAccess.rights = rights;
+                await transaction.save(existingAccess);
+            } else {
+                await transaction.save(
+                    transaction.create(ProjectAccessEntity, {
+                        rights,
+                        accessGroup: personalAccessGroup,
+                        project,
+                    }),
+                );
+            }
+
+            // lowering your own entry could leave no one with DELETE
+            await this.checkProjectAccessModificationPostConditions(
+                transaction,
+                projectUUID,
+            );
         });
-        await this.projectAccessRepository.save(projectAccess);
+
         return this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: {
@@ -343,67 +340,67 @@ export class AccessModificationService {
     ): Promise<ProjectDto> {
         assertValidPublicAccessRights(accessGroupUUID, rights);
 
-        const project = await this.projectRepository.findOneOrFail({
-            where: { uuid: projectUUID },
-            relations: {
-                project_accesses: {
-                    accessGroup: true,
-                },
-            },
-        });
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
             where: { uuid: accessGroupUUID },
-            relations: {
-                memberships: {
-                    user: true,
-                },
-            },
         });
 
-        const existingAccess = await this.projectAccessRepository
-            .createQueryBuilder('projectAccess')
-            .leftJoin('projectAccess.accessGroup', 'accessGroup')
-            .leftJoin('projectAccess.project', 'project')
-            .where('project.uuid = :projectUUID', {
-                projectUUID,
-            })
-            .andWhere('accessGroup.uuid = :accessGroupUUID', {
-                accessGroupUUID,
-            })
-            .getOne();
+        const event = await this.entityManager.transaction(
+            async (transaction): Promise<AccessGroupEventType | undefined> => {
+                const project = await this.lockProjectForAccessChange(
+                    transaction,
+                    projectUUID,
+                );
 
-        // this endpoint never lowers rights: an existing entry with higher
-        // rights stays as it is, so only the new rights need to be covered
-        await this.assertCanChangeProjectRights(projectUUID, auth, rights);
+                const existingAccess = await transaction.findOne(
+                    ProjectAccessEntity,
+                    {
+                        where: {
+                            project: { uuid: projectUUID },
+                            accessGroup: { uuid: accessGroupUUID },
+                        },
+                    },
+                );
 
-        if (existingAccess) {
-            if (existingAccess.rights >= rights) {
-                return projectEntityToDto(project);
-            }
-            existingAccess.rights = rights;
-            await this.projectAccessRepository.save(existingAccess);
-            const updatedProject = await this.projectRepository.findOneOrFail({
-                where: { uuid: projectUUID },
-            });
+                // this endpoint never lowers rights: an existing entry with
+                // higher rights stays as it is, so only the new rights need
+                // to be covered
+                await this.assertCanChangeProjectRights(
+                    projectUUID,
+                    auth,
+                    rights,
+                );
+
+                if (existingAccess) {
+                    if (existingAccess.rights >= rights) return undefined;
+                    existingAccess.rights = rights;
+                    await transaction.save(existingAccess);
+                    return AccessGroupEventType.UPDATE_PROJECT_ACCESS;
+                }
+
+                await transaction.save(
+                    transaction.create(ProjectAccessEntity, {
+                        rights,
+                        accessGroup,
+                        project,
+                    }),
+                );
+                return AccessGroupEventType.ADD_PROJECT;
+            },
+        );
+
+        if (event !== undefined) {
             this.accessGroupAuditService
                 .log(
-                    accessGroupUUID,
-                    AccessGroupEventType.UPDATE_PROJECT_ACCESS,
+                    accessGroup.uuid,
+                    event,
                     { projectUuid: projectUUID, rights },
                     auth.user,
                 )
                 .catch((error: unknown) =>
                     logger.error(`Audit log failed: ${String(error)}`),
                 );
-            return projectEntityToDto(updatedProject);
         }
 
-        const projectAccess = this.projectAccessRepository.create({
-            rights: rights,
-            accessGroup: accessGroup,
-            project: project,
-        });
-        await this.projectAccessRepository.save(projectAccess);
         const fullProject = await this.projectRepository.findOneOrFail({
             where: { uuid: projectUUID },
             relations: {
@@ -412,16 +409,6 @@ export class AccessModificationService {
                 },
             },
         });
-        this.accessGroupAuditService
-            .log(
-                accessGroupUUID,
-                AccessGroupEventType.ADD_PROJECT,
-                { projectUuid: projectUUID, rights },
-                auth.user,
-            )
-            .catch((error: unknown) =>
-                logger.error(`Audit log failed: ${String(error)}`),
-            );
         return projectEntityToDto(fullProject);
     }
 
@@ -499,6 +486,23 @@ export class AccessModificationService {
     }
 
     /**
+     * Locks the project row until the transaction ends. Every change to a
+     * project's access takes this lock first, then reads the current entries
+     * and checks rights, so two changes cannot interleave between the check
+     * and the write (e.g. an owner raising an entry while a writer's request
+     * that saw the old value lowers it again).
+     */
+    private async lockProjectForAccessChange(
+        transaction: EntityManager,
+        projectUuid: string,
+    ): Promise<ProjectEntity> {
+        return transaction.findOneOrFail(ProjectEntity, {
+            where: { uuid: projectUuid },
+            lock: { mode: 'pessimistic_write' },
+        });
+    }
+
+    /**
      * Rejects storing rights above DELETE on a project. `_ADMIN` is a valid
      * enum value, and every check compares with `>=`, so it would act as
      * DELETE while getting past checks that test for DELETE exactly.
@@ -572,8 +576,12 @@ export class AccessModificationService {
         const currentRights = new Map<string, AccessGroupRights>();
         for (const access of currentAccess) {
             if (access.accessGroup)
-                currentRights.set(access.accessGroup.uuid, access.rights);
+                currentRights.set(
+                    access.accessGroup.uuid.toLowerCase(),
+                    access.rights,
+                );
         }
+        // `newProjectAccess` is normalized by `updateProjectAccess`
         const newRights = new Map<string, AccessGroupRights>();
         for (const access of newProjectAccess) {
             // the rows are upserted in parallel, so with a duplicate either
@@ -634,12 +642,23 @@ export class AccessModificationService {
         newProjectAccess: ProjectAccessDto[],
         authHeader: AuthHeader,
     ): Promise<ProjectAccessListDto> {
+        // PostgreSQL compares uuids case-insensitively, the checks below
+        // compare strings: `abc…` and `ABC…` must count as the same group
+        for (const access of newProjectAccess) {
+            access.uuid = access.uuid.toLowerCase();
+        }
+
         for (const access of newProjectAccess) {
             assertValidPublicAccessRights(access.uuid, access.rights);
         }
 
         await this.entityManager.transaction(
             async (transactionalEntityManager): Promise<void> => {
+                await this.lockProjectForAccessChange(
+                    transactionalEntityManager,
+                    projectUuid,
+                );
+
                 await this.checkProjectAccessModificationPreConditions(
                     transactionalEntityManager,
                     projectUuid,

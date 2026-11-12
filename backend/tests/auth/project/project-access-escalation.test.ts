@@ -195,6 +195,36 @@ describe('Project Access Rights Escalation', () => {
                 AccessGroupRights.READ,
             );
         });
+
+        test('should reject the last delete user lowering their own rights', async () => {
+            const { user: owner } = await generateAndFetchDatabaseUser(
+                'internal',
+                'user',
+            );
+            const projectUuid = await createProjectUsingPost(
+                {
+                    name: 'single_owner_project',
+                    description: 'Project with a single owner',
+                    accessGroups: [],
+                },
+                owner,
+            );
+            const ownerGroup = await personalGroup(owner);
+            expect(await storedRights(projectUuid, ownerGroup.uuid)).toBe(
+                AccessGroupRights.DELETE,
+            );
+
+            const response = await post(
+                owner,
+                `/projects/${projectUuid}/users`,
+                { userUuid: owner.uuid, rights: AccessGroupRights.READ },
+            );
+
+            expect(response.status).toBe(409);
+            expect(await storedRights(projectUuid, ownerGroup.uuid)).toBe(
+                AccessGroupRights.DELETE,
+            );
+        });
     });
 
     describe('POST /access-groups/:uuid/projects/:projectUuid', () => {
@@ -286,26 +316,53 @@ describe('Project Access Rights Escalation', () => {
             );
         });
 
-        test('should reject a writer listing a group twice to sneak in delete rights', async () => {
-            const { writer, projectUuid, writerGroup } = await setupProject();
-            const access = await getProjectAccess(writer, projectUuid);
+        test('should reject a group listed twice, even with rights the caller may grant', async () => {
+            const { owner, projectUuid, writerGroup } = await setupProject();
+            const access = await getProjectAccess(owner, projectUuid);
             const writerEntry = access.find(
                 (entry) => entry.uuid === writerGroup.uuid,
             );
             expect(writerEntry).toBeDefined();
 
+            // the owner may set READ and WRITE; only the duplicate is wrong
             const response = await post(
-                writer,
+                owner,
                 `/projects/${projectUuid}/access`,
-                [
-                    { ...writerEntry, rights: AccessGroupRights.DELETE },
-                    ...access,
-                ],
+                [{ ...writerEntry, rights: AccessGroupRights.READ }, ...access],
             );
 
             expect(response.status).toBe(409);
             expect(await storedRights(projectUuid, writerGroup.uuid)).toBe(
                 AccessGroupRights.WRITE,
+            );
+        });
+
+        test('should reject a writer lowering a delete group through an uppercase uuid', async () => {
+            const { writer, projectUuid, coOwnerGroup } = await setupProject();
+            const access = await getProjectAccess(writer, projectUuid);
+            const coOwnerEntry = access.find(
+                (entry) => entry.uuid === coOwnerGroup.uuid,
+            );
+            expect(coOwnerEntry).toBeDefined();
+
+            // the lowercase entry stays unchanged, the uppercase one is the
+            // same group for PostgreSQL
+            const response = await post(
+                writer,
+                `/projects/${projectUuid}/access`,
+                [
+                    ...access,
+                    {
+                        ...coOwnerEntry,
+                        uuid: coOwnerGroup.uuid.toUpperCase(),
+                        rights: AccessGroupRights.WRITE,
+                    },
+                ],
+            );
+
+            expect(response.status).toBe(409);
+            expect(await storedRights(projectUuid, coOwnerGroup.uuid)).toBe(
+                AccessGroupRights.DELETE,
             );
         });
 
