@@ -16,6 +16,13 @@ export const isPublicAccessGroup = (accessGroupUuid: string): boolean =>
     accessGroupUuid === PUBLIC_ACCESS_GROUP.uuid;
 
 /**
+ * Rights needed to make a project public or restricted again, that is to add,
+ * change or remove the public access group's entry. Public access shares the
+ * project with every user, so it takes the same rights as deleting it.
+ */
+export const PUBLIC_ACCESS_MANAGE_RIGHTS = AccessGroupRights.DELETE;
+
+/**
  * Rejects granting the public access group anything but READ rights.
  */
 export const assertValidPublicAccessRights = (

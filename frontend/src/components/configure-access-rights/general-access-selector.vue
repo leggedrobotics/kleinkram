@@ -21,6 +21,7 @@
                 no-caps
                 class="button-border q-px-sm text-weight-medium"
                 :label="current.label"
+                :disable="disable"
                 aria-label="General access"
             >
                 <q-list style="max-width: 420px">
@@ -53,6 +54,10 @@
             <span class="text-caption text-grey-8 q-mt-xs">
                 {{ current.description }}
             </span>
+            <span v-if="disable" class="text-caption text-grey-8">
+                Only users with delete rights on the project can change general
+                access.
+            </span>
         </div>
 
         <q-chip
@@ -78,6 +83,9 @@ import { getAccessRightDescription } from 'src/services/generic';
 import { computed } from 'vue';
 
 const isPublic = defineModel<boolean>({ required: true });
+
+/** Changing general access needs delete rights on the project. */
+const { disable } = defineProps<{ disable?: boolean }>();
 
 const options = [
     {

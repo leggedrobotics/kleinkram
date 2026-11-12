@@ -19,6 +19,8 @@ can never act above your own level: you need at least the rights the entry has *
 - To grant <Delete/>, you need <Delete/> yourself.
 - To lower or remove an entry that has <Delete/> (for example, to demote a project owner), you need <Delete/> yourself.
 - With <Modify/>, you can grant, change and remove entries up to <Modify/>.
+- Making a project public or restricted again (**General access**) needs <Delete/>, although public access itself
+  is always <Read/>.
 
 Your own level counts only memberships that have not expired. Project access cannot be set higher than <Delete/>, and
 every project keeps at least one access group with <Delete/>.
