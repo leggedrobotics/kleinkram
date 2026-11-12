@@ -26,6 +26,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import SelectMissionMetadata from 'components/select-mission-metadata.vue';
 import { Notify, useDialogPluginComponent } from 'quasar';
 import BaseDialog from 'src/dialogs/base-dialog.vue';
+import { getErrorMessage } from 'src/services/error-handling';
 import { updateMissionMetadata } from 'src/services/mutations/mission';
 import { ref, Ref, watch } from 'vue';
 
@@ -83,6 +84,13 @@ const { mutate: mutateMissionMetadata } = useMutation({
             queryKey: ['missions'],
         });
         onDialogOK();
+    },
+    onError: (error: unknown) => {
+        Notify.create({
+            message: `Error updating metadata: ${getErrorMessage(error)}`,
+            color: 'negative',
+            position: 'bottom',
+        });
     },
 });
 

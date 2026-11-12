@@ -29,6 +29,7 @@ import logger from '../logger';
 import { AccessQueryService } from './access-query.service';
 import { notExpired } from './membership-filters';
 import {
+    assertGrantableAccessRights,
     assertNotPublicAccessGroup,
     assertValidPublicAccessRights,
 } from './public-access';
@@ -93,6 +94,8 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectEntity> {
+        assertGrantableAccessRights(rights);
+
         const dbuser = await this.userRepository.findOneOrFail({
             where: { uuid: userUUID },
             relations: {
@@ -132,6 +135,7 @@ export class AccessModificationService {
             );
 
             await this.assertCanChangeProjectRights(
+                transaction,
                 projectUUID,
                 auth,
                 rights,
@@ -338,6 +342,7 @@ export class AccessModificationService {
         rights: AccessGroupRights,
         auth: AuthHeader,
     ): Promise<ProjectDto> {
+        assertGrantableAccessRights(rights);
         assertValidPublicAccessRights(accessGroupUUID, rights);
 
         const accessGroup = await this.accessGroupRepository.findOneOrFail({
@@ -365,6 +370,7 @@ export class AccessModificationService {
                 // higher rights stays as it is, so only the new rights need
                 // to be covered
                 await this.assertCanChangeProjectRights(
+                    transaction,
                     projectUUID,
                     auth,
                     rights,
@@ -503,19 +509,6 @@ export class AccessModificationService {
     }
 
     /**
-     * Rejects storing rights above DELETE on a project. `_ADMIN` is a valid
-     * enum value, and every check compares with `>=`, so it would act as
-     * DELETE while getting past checks that test for DELETE exactly.
-     */
-    private assertGrantableProjectRights(rights: AccessGroupRights): void {
-        if (rights > AccessGroupRights.DELETE) {
-            throw new ConflictException(
-                'Project access rights cannot be higher than DELETE',
-            );
-        }
-    }
-
-    /**
      * Rejects a change to a project access entry unless the caller holds at
      * least the rights the entry has before (`existingRights`) and after
      * (`newRights`) the change. This covers granting, raising, lowering and
@@ -525,13 +518,15 @@ export class AccessModificationService {
      * memberships and lets global admins through.
      */
     private async assertCanChangeProjectRights(
+        transaction: EntityManager,
         projectUuid: string,
         auth: AuthHeader,
         newRights: AccessGroupRights,
         existingRights?: AccessGroupRights,
     ): Promise<void> {
-        this.assertGrantableProjectRights(newRights);
+        assertGrantableAccessRights(newRights);
         await this.assertHasProjectRights(
+            transaction,
             projectUuid,
             auth,
             Math.max(
@@ -542,14 +537,17 @@ export class AccessModificationService {
     }
 
     private async assertHasProjectRights(
+        transaction: EntityManager,
         projectUuid: string,
         auth: AuthHeader,
         requiredRights: AccessGroupRights,
     ): Promise<void> {
+        // on the transaction's connection, see `hasProjectRights`
         const hasRights = await this.accessQueryService.hasProjectRights(
             projectUuid,
             auth,
             requiredRights,
+            transaction,
         );
         if (!hasRights) {
             throw new ConflictException(
@@ -591,7 +589,6 @@ export class AccessModificationService {
                     'Each access group may only appear once',
                 );
             }
-            this.assertGrantableProjectRights(access.rights);
             newRights.set(access.uuid, access.rights);
         }
 
@@ -615,7 +612,12 @@ export class AccessModificationService {
         // nothing changes: the route guard already requires write rights
         if (requiredRights === undefined) return;
 
-        await this.assertHasProjectRights(projectUuid, auth, requiredRights);
+        await this.assertHasProjectRights(
+            transaction,
+            projectUuid,
+            auth,
+            requiredRights,
+        );
     }
 
     private async checkProjectAccessModificationPostConditions(
@@ -649,6 +651,7 @@ export class AccessModificationService {
         }
 
         for (const access of newProjectAccess) {
+            assertGrantableAccessRights(access.rights);
             assertValidPublicAccessRights(access.uuid, access.rights);
         }
 

@@ -166,6 +166,8 @@ export class MissionService {
             );
         }
 
+        await this.metadataService.validateLinks(metadata);
+
         const mission = this.missionRepository.create({
             name: createMission.name,
             project: project,
