@@ -13,7 +13,7 @@ Kleinkram is a self-hosted, open-source platform for managing and processing rob
 
 ## Documentation
 
-For full documentation, please visit [docs.datasets.leggedrobotics.com](https://docs.datasets.leggedrobotics.com/).
+For full documentation, please visit [kleinkram.dev](https://kleinkram.dev/).
 
 ## Try Kleinkram Locally
 
@@ -38,7 +38,7 @@ The <code>--build</code> flag ensures that the Docker images are built before st
 </details>
 
 > [!WARNING]
-> If you have run Kleinkram locally before, you should consider deleting all existing data. See the <a href="https://docs.datasets.leggedrobotics.com/development/try-locally">Try Kleinkram Locally</a> documentation for more details.
+> If you have run Kleinkram locally before, you should consider deleting all existing data. See the <a href="https://kleinkram.dev/development/try-locally">Try Kleinkram Locally</a> documentation for more details.
 
 > [!TIP]
 > **Troubleshooting missing modules / API not reachable on localhost:3000**
@@ -69,14 +69,14 @@ klein login
 
 <details>
 <summary>Start Developing</summary>
-For a deeper dive into the project structure and development workflow, see the <a href="https://docs.datasets.leggedrobotics.com/development/application-structure">Application Structure</a> documentation. Your development environment is designed for Ubuntu 24.04.
+For a deeper dive into the project structure and development workflow, see the <a href="https://kleinkram.dev/development/application-structure">Application Structure</a> documentation. Your development environment is designed for Ubuntu 24.04.
 </details>
 
 ## Community Guidelines
 
 ### Contributing
 
-We welcome contributions! Please see our [Contributing Guide](https://docs.datasets.leggedrobotics.com/development/contributing) for details on how to get started, including our branching strategy and pull request workflow.
+We welcome contributions! Please see our [Contributing Guide](https://kleinkram.dev/development/contributing) for details on how to get started, including our branching strategy and pull request workflow.
 
 > [!TIP]
 > In short: Fork the repository, create a feature branch from `dev`, and open a pull request targeting the upstream `dev` branch when ready. We will review the changes and merge them into `dev` if they are good.
@@ -89,7 +89,7 @@ Found a bug or have a feature request? Please [open an issue on GitHub](https://
 
 For help and support:
 
-1. Check the [official documentation](https://docs.datasets.leggedrobotics.com/).
+1. Check the [official documentation](https://kleinkram.dev/).
 2. If you can't find an answer, [open an issue on GitHub](https://github.com/leggedrobotics/kleinkram/issues).
 
 ## Citation
